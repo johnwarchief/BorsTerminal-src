@@ -1,0 +1,71 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+// © smartrader19
+
+//@version=6
+indicator("RSI, EMA & Volume Reversal (15m Only)", overlay = true, max_labels_count = 500)
+
+// --- Groups ---
+string G_RSI = "RSI Settings"
+string G_EMA = "EMA Settings"
+string G_VOL = "Volume Settings"
+
+// --- Inputs ---
+int rsiLengthInput      = input.int(14, "RSI Length", minval = 1, group = G_RSI, tooltip = "Number of bars used to calculate the RSI.")
+int rsiOverboughtInput  = input.int(70, "Overbought Level", minval = 50, maxval = 100, group = G_RSI, tooltip = "RSI level considered overbought.")
+int rsiOversoldInput    = input.int(30, "Oversold Level", minval = 0, maxval = 50, group = G_RSI, tooltip = "RSI level considered oversold.")
+int lookbackInput       = input.int(10, "RSI Lookback", minval = 1, group = G_RSI, tooltip = "How many bars back to check if RSI was in overbought/oversold territory.")
+
+int emaLengthInput      = input.int(13, "EMA Length", minval = 1, group = G_EMA, tooltip = "Length of the Exponential Moving Average.")
+
+bool useVolFilterInput  = input.bool(true, "Use Volume Filter", group = G_VOL, tooltip = "Requires signal bar volume to be above its average.")
+int volLengthInput      = input.int(20, "Volume MA Length", minval = 1, group = G_VOL, tooltip = "Length of the Simple Moving Average of volume.")
+
+color bullColorInput    = input.color(#089981, "Bullish Color", group = "Appearance")
+color bearColorInput    = input.color(#f23645, "Bearish Color", group = "Appearance")
+
+// --- Calculations ---
+float rsiValue = ta.rsi(close, rsiLengthInput)
+float emaValue = ta.ema(close, emaLengthInput)
+float volSMA   = ta.sma(volume, volLengthInput)
+
+// Reversal Logic
+// Check if RSI has been in extremes recently
+bool wasOversold   = ta.lowest(rsiValue, lookbackInput) <= rsiOversoldInput
+bool wasOverbought = ta.highest(rsiValue, lookbackInput) >= rsiOverboughtInput
+
+// Volume Filter Condition
+bool volCondition = not useVolFilterInput or volume > volSMA
+
+// Signals
+bool buySignal  = wasOversold   and ta.crossover(close, emaValue)  and volCondition
+bool sellSignal = wasOverbought and ta.crossunder(close, emaValue) and volCondition
+
+// --- Visuals ---
+plot(emaValue, "13 EMA", color = close > emaValue ? bullColorInput : bearColorInput, linewidth = 2)
+
+plotshape(buySignal, 
+     title          = "Buy Label", 
+     style          = shape.labelup, 
+     location       = location.belowbar, 
+     color          = bullColorInput, 
+     text           = "BUY", 
+     textcolor      = chart.bg_color, 
+     size           = size.small)
+
+plotshape(sellSignal, 
+     title          = "Sell Label", 
+     style          = shape.labeldown, 
+     location       = location.abovebar, 
+     color          = bearColorInput, 
+     text           = "SELL", 
+     textcolor      = chart.bg_color, 
+     size           = size.small)
+
+// --- Alerts ---
+alertcondition(buySignal, "Bullish Reversal", "Bullish reversal detected: Price crossed above 13 EMA with high volume after RSI was oversold.")
+alertcondition(sellSignal, "Bearish Reversal", "Bearish reversal detected: Price crossed below 13 EMA with high volume after RSI was overbought.")
+
+
+

@@ -1,0 +1,1004 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator(
+     title            = "Anchored VWAP Pullback & Target Zones",
+     shorttitle       = "AVPT",
+     overlay          = true,
+     max_lines_count  = 500,
+     max_labels_count = 500,
+     max_boxes_count  = 300
+)
+
+// Only bounded timestamp lookups (swingLen <= 40 and a 12-bar pullback window).
+// Historical drawing anchors are stored timestamps, never dynamic time[offset].
+max_bars_back(time, 64)
+max_bars_back(close, 64)
+max_bars_back(high, 64)
+max_bars_back(low, 64)
+max_bars_back(volume, 64)
+
+// ============================================================================
+// 1. ENUMS & INPUTS (14 Inputs — Progressive Disclosure)
+// ============================================================================
+
+enum FilterMode
+    AUTO_OPTIMIZE = "Auto-Optimize (Best Chart Win Rate)"
+    BALANCED      = "Balanced (1.0σ Band · 26% Eff)"
+    CONSERVATIVE  = "Conservative (0.8σ Band · 35% Eff)"
+    AGGRESSIVE    = "Aggressive (1.25σ Band · 18% Eff)"
+    SHALLOW       = "Shallow Pullback (0.65σ · 30% Eff)"
+    DEEP_VALUE    = "Deep Value Reclaim (1.45σ · 22% Eff)"
+    VOL_CLIMAX    = "Volume Climax Reclaim (1.0σ · 1.25x Vol)"
+    CUSTOM        = "Custom Thresholds"
+
+enum TargetMode
+    HYBRID      = "R Ladder + Impulse High/Low Magnet"
+    R_MULTIPLES = "Fixed R Ladder (1R / 2R / 3R)"
+
+enum DashSize
+    TINY   = "Tiny"
+    SMALL  = "Small"
+    NORMAL = "Normal"
+    LARGE  = "Large"
+
+string GRP_ANC  = "1. Structural Anchor & AVWAP Value Band"
+string GRP_FILT = "2. Pullback Chop Filter & Auto-Optimizer"
+string GRP_PLAN = "3. Entry, Stop Loss & TP1–TP3 Targets"
+string GRP_VIS  = "4. Visuals & Dashboard"
+
+int        swingLen       = input.int(10, "Structural Anchor Swing Lookback", minval = 3, maxval = 40, group = GRP_ANC, tooltip = "Confirmed left/right bars used to detect structural swing highs and lows that anchor the impulse VWAP. Confirmed pivots reconstruct exact AVWAP from the true swing bar without repainting.")
+int        maxPbPerAnchor = input.int(2, "Max Pullbacks Per Trend Anchor", minval = 1, maxval = 4, group = GRP_ANC, tooltip = "Maximum number of confirmed pullback trade plans allowed from a single structural anchor before requiring a fresh swing anchor.")
+float      minImpulseAtr  = input.float(1.40, "Min Impulse Expansion (ATR)", minval = 0.60, maxval = 3.50, step = 0.10, group = GRP_ANC, tooltip = "Minimum directional expansion away from the swing anchor (in ATR(14) units) required before the Anchored VWAP arms pullback detection.")
+
+FilterMode filterPreset   = input.enum(FilterMode.AUTO_OPTIMIZE, "Pullback Filter Mode", group = GRP_FILT, tooltip = "Auto-Optimize runs all 6 built-in strategy profiles in parallel across the current asset and timeframe, then selects and renders the exact profile with the highest closed-bar TP1+ Win Rate.")
+float      customMinEr    = input.float(26.0, "Custom Min Trend Efficiency (%)", minval = 10.0, maxval = 70.0, step = 2.0, group = GRP_FILT, active = filterPreset == FilterMode.CUSTOM, tooltip = "Minimum Kaufman Trend Efficiency (0–100%) required to confirm a trending regime and block sideways chop when Mode is set to Custom Thresholds.")
+float      customBandSig  = input.float(1.00, "Custom Value Band Width (Sigma)", minval = 0.40, maxval = 2.20, step = 0.05, group = GRP_FILT, active = filterPreset == FilterMode.CUSTOM, tooltip = "Width of the Anchored VWAP pullback value zone in volume/activity-weighted standard deviations when Mode is set to Custom Thresholds.")
+
+TargetMode targetMode     = input.enum(TargetMode.HYBRID, "Target Projection Mode", group = GRP_PLAN, tooltip = "Fixed R Ladder projects TP1/TP2/TP3 at 1.0R, 2.0R, and 3.0R. R Ladder + Impulse High/Low Magnet snaps TP2 or TP3 to the prior impulse extreme when it offers a clean structural liquidity target.")
+float      slBufferAtr    = input.float(0.20, "Stop Loss Buffer Beyond Pullback (ATR)", minval = 0.05, maxval = 1.00, step = 0.05, group = GRP_PLAN, tooltip = "Base ATR(14) breathing room placed beyond the pullback low/high or AVWAP defense band for the Stop Loss level.")
+bool       useBeRatchet   = input.bool(true, "Move Stop to Breakeven After TP1", group = GRP_PLAN, tooltip = "When enabled, once TP1 is reached on a confirmed bar, the active Stop Loss ratchets to the Entry price (Breakeven) for remaining targets.")
+
+bool       showPastPlans  = input.bool(false, "Keep Historical Trade Plans (Last 5)", group = GRP_VIS, tooltip = "Off by default so only the current/latest trade plan ladder stays on price. Enable to keep the last 5 trade plans of the active profile visible on the chart.")
+bool       showSkipped    = input.bool(false, "Show Filtered (SKIP) Pullbacks", group = GRP_VIS, tooltip = "Displays small muted markers when an AVWAP pullback reclaim occurs but is blocked by the active profile's chop/efficiency filter.")
+bool       showDash       = input.bool(true, "Show Summary Dashboard", group = GRP_VIS, tooltip = "Displays the live Anchored VWAP, Trend Efficiency, Auto-Optimizer Winner, Trade Plan, and Win/Loss performance table in the top-right corner.")
+DashSize   dashSizeInput  = input.enum(DashSize.SMALL, "Table Size", group = GRP_VIS, active = showDash, tooltip = "Scales text size inside the summary dashboard.")
+color      bullCol        = input.color(#00E6A8, "Bullish Trend & Reward Color", group = GRP_VIS, tooltip = "Accent color for Bullish Anchored VWAP bands, BUY callouts, and Take-Profit zones.")
+color      bearCol        = input.color(#FF3B69, "Bearish Trend & Risk Color", group = GRP_VIS, tooltip = "Accent color for Bearish Anchored VWAP bands, SELL callouts, and Stop-Loss zones.")
+
+// ============================================================================
+// 2. USER-DEFINED TYPES (UDTs)
+// ============================================================================
+
+// Stores pure coordinates/states of a trade plan for a specific profile (0..6)
+type SavedPlan
+    int   profId
+    int   dir
+    int   entryBar
+    float entry
+    float initSl
+    float activeSl
+    float risk
+    float tp1
+    float tp2
+    float tp3
+    float tp1R
+    float tp2R
+    float tp3R
+    bool  tpIsMag
+    float qualPct
+    bool  tp1Hit
+    bool  tp2Hit
+    bool  tp3Hit
+    bool  slHit
+    bool  beHit
+    int   status      // 0 = ACTIVE, 1 = TP3 FULL WIN, 2 = PARTIAL WIN (TP1+), -1 = LOSS (SL), 3 = EXPIRED/FLIP
+    int   endTime
+    int   pbLeftTime
+    float pbTop
+    float pbBot
+    int   entryTime
+    float signalY     // Stored price anchor; avoids abovebar/belowbar history lookups
+
+// Self-contained profile engine running across the full chart history
+type ProfileEngine
+    int    id
+    string nameTag
+    float  bandSigma
+    float  outerSigma
+    float  minErPct
+    float  minQual
+    float  slScale
+    float  minRiskAtr
+    float  minRelAct
+    int    totalTrades
+    int    winTrades
+    int    lossTrades
+    int    tp1Count
+    int    tp2Count
+    int    tp3Count
+    float  cumNetR
+    int    lastSigDir
+    float  lastSigQual
+    string lastSigText
+    int    activePlanIdx // Index in global allPlans array (-1 if none)
+    // Per-engine Pullback Arming State
+    bool   bullInZone
+    float  bullPbLow
+    int    bullPbTime
+    int    bullPbUsed
+    bool   bearInZone
+    float  bearPbHigh
+    int    bearPbTime
+    int    bearPbUsed
+    // Per-bar event flags
+    bool   barBullTake
+    bool   barBearTake
+    bool   barBullSkip
+    bool   barBearSkip
+    bool   barTp1Evt
+    bool   barTp2Evt
+    bool   barTp3Evt
+    bool   barSlEvt
+
+// ============================================================================
+// 3. CORE METRICS: VOLATILITY, KAUFMAN EFFICIENCY & RECLAIM QUALITY
+// ============================================================================
+
+f_clamp(float val, float lo, float hi) =>
+    math.min(math.max(val, lo), hi)
+
+float rawAtr      = ta.atr(14)
+float safeAtr     = nz(rawAtr, math.max(high - low, syminfo.mintick * 10.0))
+float barSpan     = math.max(high - low, syminfo.mintick)
+
+float volSma      = ta.sma(volume, 20)
+bool  hasRealVol  = not na(volume) and volume > 0 and not na(volSma) and volSma > 0
+float relActivity = hasRealVol ? (volume / volSma) : (barSpan / math.max(safeAtr, syminfo.mintick))
+float actNorm     = f_clamp(relActivity / 2.0, 0.0, 1.0)
+float barWeight   = hasRealVol ? math.max(nz(volume), 1e-6) : math.max(relActivity, 0.1)
+
+// Kaufman Trend Efficiency Ratio (0-100%) over 10 bars
+int   erLen       = 10
+float netMove     = math.abs(close - nz(close[erLen], close))
+float pathMove    = nz(ta.sma(math.abs(close - nz(close[1], close)), erLen), 0.0) * float(erLen)
+float erPct       = pathMove > 0 ? f_clamp((netMove / pathMove) * 100.0, 0.0, 100.0) : 0.0
+float erNorm      = f_clamp(erPct / 55.0, 0.0, 1.0)
+
+float bullCloseShare = f_clamp((close - low) / barSpan, 0.0, 1.0)
+float bearCloseShare = f_clamp((high - close) / barSpan, 0.0, 1.0)
+float bullBodyBonus  = close > open ? 1.0 : 0.55
+float bearBodyBonus  = close < open ? 1.0 : 0.55
+
+float bullQualScore  = math.round(f_clamp((0.40 * bullCloseShare + 0.35 * erNorm + 0.25 * actNorm) * 100.0 * (close > open ? 1.0 : 0.85), 0.0, 100.0), 1)
+float bearQualScore  = math.round(f_clamp((0.40 * bearCloseShare + 0.35 * erNorm + 0.25 * actNorm) * 100.0 * (close < open ? 1.0 : 0.85), 0.0, 100.0), 1)
+
+// ============================================================================
+// 4. STRUCTURAL ANCHORED VWAP STATE & 7 PARALLEL PROFILE ENGINES
+// ============================================================================
+
+var array<ProfileEngine> engines    = array.new<ProfileEngine>()
+var array<SavedPlan>     allPlans   = array.new<SavedPlan>()
+var array<box>           drawnBoxes = array.new<box>()
+var array<line>          drawnLines = array.new<line>()
+var array<label>         drawnLbls  = array.new<label>()
+
+// Shared Structural Bullish & Bearish Impulse Anchors
+var bool  bullAnchorActive = false
+var int   bullAnchorTime   = 0
+var int   bullAnchorBar    = 0
+var float bullAnchorPrice  = na
+var float bullSumWP        = 0.0
+var float bullSumWP2       = 0.0
+var float bullSumW         = 0.0
+var float bullAvwap        = na
+var float bullStd          = 0.0
+var float bullImpHigh      = na
+var int   bullImpHighTime  = 0
+var bool  bullImpArmed     = false
+
+var bool  bearAnchorActive = false
+var int   bearAnchorTime   = 0
+var int   bearAnchorBar    = 0
+var float bearAnchorPrice  = na
+var float bearSumWP        = 0.0
+var float bearSumWP2       = 0.0
+var float bearSumW         = 0.0
+var float bearAvwap        = na
+var float bearStd          = 0.0
+var float bearImpLow       = na
+var int   bearImpLowTime   = 0
+var bool  bearImpArmed     = false
+
+var int   activeTrendBias  = 0
+
+if barstate.isfirst
+    // 0: Balanced, 1: Conservative, 2: Aggressive, 3: Shallow Pullback, 4: Deep Value Reclaim, 5: Volume Climax, 6: Custom
+    array.push(engines, ProfileEngine.new(0, "Balanced (1.0σ · 26% Eff)",       1.00, 2.00, 26.0, 52.0, 1.00, 0.35, 0.00, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+    array.push(engines, ProfileEngine.new(1, "Conservative (0.8σ · 35% Eff)",   0.80, 1.75, 35.0, 60.0, 1.15, 0.35, 0.00, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+    array.push(engines, ProfileEngine.new(2, "Aggressive (1.25σ · 18% Eff)",    1.25, 2.30, 18.0, 44.0, 0.85, 0.30, 0.00, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+    array.push(engines, ProfileEngine.new(3, "Shallow Pullback (0.65σ · 30%)",  0.65, 1.60, 30.0, 55.0, 0.90, 0.30, 0.00, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+    array.push(engines, ProfileEngine.new(4, "Deep Value Reclaim (1.45σ)",      1.45, 2.50, 22.0, 48.0, 1.25, 0.40, 0.00, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+    array.push(engines, ProfileEngine.new(5, "Volume Climax (1.0σ + 1.25x Vol)",1.00, 2.00, 24.0, 58.0, 0.95, 0.32, 1.25, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+    array.push(engines, ProfileEngine.new(6, "Custom Thresholds",               customBandSig, customBandSig + 1.0, customMinEr, 50.0, 1.00, 0.35, 0.00, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "NONE", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false))
+
+// Keep Custom Thresholds synced if user changes custom inputs
+if array.size(engines) == 7
+    ProfileEngine custEng = array.get(engines, 6)
+    custEng.bandSigma  := customBandSig
+    custEng.outerSigma := customBandSig + 1.0
+    custEng.minErPct   := customMinEr
+
+float ph           = ta.pivothigh(high, swingLen, swingLen)
+float pl           = ta.pivotlow(low, swingLen, swingLen)
+int   pivotTime    = nz(time[swingLen], time)
+int   pbWindowTime = nz(time[12], time)
+float prevHigh     = nz(high[1], high)
+float prevLow      = nz(low[1], low)
+
+float fiveBarMoveAtr = (close - nz(close[5], close)) / math.max(safeAtr, syminfo.mintick)
+bool  bearCrashGuard = fiveBarMoveAtr < -3.6 and close < open
+bool  bullCrashGuard = fiveBarMoveAtr >  3.6 and close > open
+
+// ============================================================================
+// 5. DETERMINISTIC CLOSED-BAR STATE MACHINE (ALL 7 ENGINES IN PARALLEL)
+// ============================================================================
+
+if barstate.isconfirmed and array.size(engines) == 7
+    // ------------------------------------------------------------------------
+    // STEP A: Update & Resolve Active Trade Plan in Each of the 7 Engines
+    // ------------------------------------------------------------------------
+    for eIdx = 0 to 6
+        ProfileEngine eng = array.get(engines, eIdx)
+        eng.barBullTake := false
+        eng.barBearTake := false
+        eng.barBullSkip := false
+        eng.barBearSkip := false
+        eng.barTp1Evt   := false
+        eng.barTp2Evt   := false
+        eng.barTp3Evt   := false
+        eng.barSlEvt    := false
+
+        if eng.activePlanIdx >= 0 and eng.activePlanIdx < array.size(allPlans)
+            SavedPlan cp = array.get(allPlans, eng.activePlanIdx)
+            if cp.status == 0 and bar_index > cp.entryBar
+                if cp.dir == 1
+                    if low <= cp.activeSl
+                        if cp.tp1Hit
+                            cp.beHit        := true
+                            cp.status       := 2
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            eng.winTrades   += 1
+                            float bankedR    = cp.tp2Hit ? ((cp.tp1R + cp.tp2R) * 0.5) : (cp.tp1R * 0.5)
+                            eng.cumNetR     += bankedR
+                        else
+                            cp.slHit        := true
+                            cp.status       := -1
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            eng.lossTrades  += 1
+                            eng.cumNetR     -= 1.0
+                            eng.barSlEvt    := true
+                    else
+                        if not cp.tp1Hit and high >= cp.tp1
+                            cp.tp1Hit     := true
+                            eng.tp1Count  += 1
+                            eng.barTp1Evt := true
+                            if useBeRatchet
+                                cp.activeSl := cp.entry
+                        if not cp.tp2Hit and high >= cp.tp2
+                            cp.tp2Hit     := true
+                            eng.tp2Count  += 1
+                            eng.barTp2Evt := true
+                        if not cp.tp3Hit and high >= cp.tp3
+                            cp.tp3Hit       := true
+                            eng.tp3Count    += 1
+                            eng.barTp3Evt   := true
+                            cp.status       := 1
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            eng.winTrades   += 1
+                            eng.cumNetR     += cp.tp3R
+                        else if (bar_index - cp.entryBar) >= 60
+                            cp.status       := cp.tp1Hit ? 2 : 3
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            if cp.tp1Hit
+                                eng.winTrades += 1
+                                eng.cumNetR   += cp.tp1R
+                            else
+                                float expR = (close - cp.entry) / math.max(cp.risk, syminfo.mintick)
+                                if expR >= 0.0
+                                    eng.winTrades  += 1
+                                else
+                                    eng.lossTrades += 1
+                                eng.cumNetR += expR
+                else if cp.dir == -1
+                    if high >= cp.activeSl
+                        if cp.tp1Hit
+                            cp.beHit        := true
+                            cp.status       := 2
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            eng.winTrades   += 1
+                            float bankedR    = cp.tp2Hit ? ((cp.tp1R + cp.tp2R) * 0.5) : (cp.tp1R * 0.5)
+                            eng.cumNetR     += bankedR
+                        else
+                            cp.slHit        := true
+                            cp.status       := -1
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            eng.lossTrades  += 1
+                            eng.cumNetR     -= 1.0
+                            eng.barSlEvt    := true
+                    else
+                        if not cp.tp1Hit and low <= cp.tp1
+                            cp.tp1Hit     := true
+                            eng.tp1Count  += 1
+                            eng.barTp1Evt := true
+                            if useBeRatchet
+                                cp.activeSl := cp.entry
+                        if not cp.tp2Hit and low <= cp.tp2
+                            cp.tp2Hit     := true
+                            eng.tp2Count  += 1
+                            eng.barTp2Evt := true
+                        if not cp.tp3Hit and low <= cp.tp3
+                            cp.tp3Hit       := true
+                            eng.tp3Count    += 1
+                            eng.barTp3Evt   := true
+                            cp.status       := 1
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            eng.winTrades   += 1
+                            eng.cumNetR     += cp.tp3R
+                        else if (bar_index - cp.entryBar) >= 60
+                            cp.status       := cp.tp1Hit ? 2 : 3
+                            cp.endTime      := time
+                            eng.totalTrades += 1
+                            if cp.tp1Hit
+                                eng.winTrades += 1
+                                eng.cumNetR   += cp.tp1R
+                            else
+                                float expR = (cp.entry - close) / math.max(cp.risk, syminfo.mintick)
+                                if expR >= 0.0
+                                    eng.winTrades  += 1
+                                else
+                                    eng.lossTrades += 1
+                                eng.cumNetR += expR
+
+    // ------------------------------------------------------------------------
+    // STEP B: Update Active Bullish & Bearish Anchored VWAPs
+    // ------------------------------------------------------------------------
+    if bullAnchorActive
+        bullSumWP  += barWeight * hlc3
+        bullSumWP2 += barWeight * hlc3 * hlc3
+        bullSumW   += barWeight
+        bullAvwap  := bullSumWP / math.max(bullSumW, 1e-9)
+        float bVar  = math.max(0.0, (bullSumWP2 / math.max(bullSumW, 1e-9)) - (bullAvwap * bullAvwap))
+        bullStd    := math.max(math.sqrt(bVar), safeAtr * 0.25)
+        if na(bullImpHigh) or high >= bullImpHigh
+            bullImpHigh     := high
+            bullImpHighTime := time
+        if not bullImpArmed and (bullImpHigh - bullAnchorPrice) >= minImpulseAtr * safeAtr
+            bullImpArmed := true
+        if close < bullAnchorPrice or close < (bullAvwap - 2.60 * bullStd)
+            bullAnchorActive := false
+            bullImpArmed     := false
+            for eIdx = 0 to 6
+                ProfileEngine eng = array.get(engines, eIdx)
+                eng.bullInZone := false
+
+    if bearAnchorActive
+        bearSumWP  += barWeight * hlc3
+        bearSumWP2 += barWeight * hlc3 * hlc3
+        bearSumW   += barWeight
+        bearAvwap  := bearSumWP / math.max(bearSumW, 1e-9)
+        float sVar  = math.max(0.0, (bearSumWP2 / math.max(bearSumW, 1e-9)) - (bearAvwap * bearAvwap))
+        bearStd    := math.max(math.sqrt(sVar), safeAtr * 0.25)
+        if na(bearImpLow) or low <= bearImpLow
+            bearImpLow     := low
+            bearImpLowTime := time
+        if not bearImpArmed and (bearAnchorPrice - bearImpLow) >= minImpulseAtr * safeAtr
+            bearImpArmed := true
+        if close > bearAnchorPrice or close > (bearAvwap + 2.60 * bearStd)
+            bearAnchorActive := false
+            bearImpArmed     := false
+            for eIdx = 0 to 6
+                ProfileEngine eng = array.get(engines, eIdx)
+                eng.bearInZone := false
+
+    // ------------------------------------------------------------------------
+    // STEP C: Seed New Structural Swing Anchors (Exact Bar-0 Reconstruction)
+    // ------------------------------------------------------------------------
+    int pBar = bar_index - swingLen
+    ProfileEngine balRef = array.get(engines, 0)
+
+    if not na(pl) and pBar >= 0
+        bool replaceBull = not bullAnchorActive or pl < bullAnchorPrice or balRef.bullPbUsed >= maxPbPerAnchor or (bullImpArmed and pl > bullAnchorPrice and (high - pl) >= minImpulseAtr * safeAtr)
+        if replaceBull and close > pl
+            float sWP  = 0.0
+            float sWP2 = 0.0
+            float sW   = 0.0
+            float mxHi = high
+            int   mxTm = time
+            for i = 0 to swingLen
+                int   k     = swingLen - i
+                float spanK = math.max(nz(high[k], high) - nz(low[k], low), syminfo.mintick)
+                float wk    = hasRealVol ? math.max(nz(volume[k]), 1e-6) : math.max(spanK / math.max(safeAtr, syminfo.mintick), 0.1)
+                float pk    = (nz(high[k], high) + nz(low[k], low) + nz(close[k], close)) / 3.0
+                sWP  += wk * pk
+                sWP2 += wk * pk * pk
+                sW   += wk
+                if nz(high[k], high) >= mxHi
+                    mxHi := nz(high[k], high)
+                    mxTm := nz(time[k], time)
+            bullAnchorActive := true
+            bullAnchorTime   := pivotTime
+            bullAnchorBar    := pBar
+            bullAnchorPrice  := pl
+            bullSumWP        := sWP
+            bullSumWP2       := sWP2
+            bullSumW         := sW
+            bullAvwap        := sWP / math.max(sW, 1e-9)
+            float vB          = math.max(0.0, (sWP2 / math.max(sW, 1e-9)) - (bullAvwap * bullAvwap))
+            bullStd          := math.max(math.sqrt(vB), safeAtr * 0.25)
+            bullImpHigh      := mxHi
+            bullImpHighTime  := mxTm
+            bullImpArmed     := (mxHi - pl) >= minImpulseAtr * safeAtr
+            for eIdx = 0 to 6
+                ProfileEngine eng = array.get(engines, eIdx)
+                eng.bullInZone := false
+                eng.bullPbLow  := na
+                eng.bullPbTime := pivotTime
+                eng.bullPbUsed := 0
+
+    if not na(ph) and pBar >= 0
+        bool replaceBear = not bearAnchorActive or ph > bearAnchorPrice or balRef.bearPbUsed >= maxPbPerAnchor or (bearImpArmed and ph < bearAnchorPrice and (ph - low) >= minImpulseAtr * safeAtr)
+        if replaceBear and close < ph
+            float sWP  = 0.0
+            float sWP2 = 0.0
+            float sW   = 0.0
+            float mnLo = low
+            int   mnTm = time
+            for i = 0 to swingLen
+                int   k     = swingLen - i
+                float spanK = math.max(nz(high[k], high) - nz(low[k], low), syminfo.mintick)
+                float wk    = hasRealVol ? math.max(nz(volume[k]), 1e-6) : math.max(spanK / math.max(safeAtr, syminfo.mintick), 0.1)
+                float pk    = (nz(high[k], high) + nz(low[k], low) + nz(close[k], close)) / 3.0
+                sWP  += wk * pk
+                sWP2 += wk * pk * pk
+                sW   += wk
+                if nz(low[k], low) <= mnLo
+                    mnLo := nz(low[k], low)
+                    mnTm := nz(time[k], time)
+            bearAnchorActive := true
+            bearAnchorTime   := pivotTime
+            bearAnchorBar    := pBar
+            bearAnchorPrice  := ph
+            bearSumWP        := sWP
+            bearSumWP2       := sWP2
+            bearSumW         := sW
+            bearAvwap        := sWP / math.max(sW, 1e-9)
+            float vS          = math.max(0.0, (sWP2 / math.max(sW, 1e-9)) - (bearAvwap * bearAvwap))
+            bearStd          := math.max(math.sqrt(vS), safeAtr * 0.25)
+            bearImpLow       := mnLo
+            bearImpLowTime   := mnTm
+            bearImpArmed     := (ph - mnLo) >= minImpulseAtr * safeAtr
+            for eIdx = 0 to 6
+                ProfileEngine eng = array.get(engines, eIdx)
+                eng.bearInZone := false
+                eng.bearPbHigh := na
+                eng.bearPbTime := pivotTime
+                eng.bearPbUsed := 0
+
+    // Determine dominant structural trend bias
+    if bullAnchorActive and bullImpArmed and not (bearAnchorActive and bearImpArmed)
+        activeTrendBias := 1
+    else if bearAnchorActive and bearImpArmed and not (bullAnchorActive and bullImpArmed)
+        activeTrendBias := -1
+    else if bullAnchorActive and bullImpArmed and bearAnchorActive and bearImpArmed
+        activeTrendBias := bullAnchorBar >= bearAnchorBar ? 1 : -1
+    else if bullAnchorActive
+        activeTrendBias := 1
+    else if bearAnchorActive
+        activeTrendBias := -1
+    else
+        activeTrendBias := 0
+
+    // ------------------------------------------------------------------------
+    // STEP D: Evaluate Pullback Arming & Reclaim Across All 7 Engines
+    // ------------------------------------------------------------------------
+    for eIdx = 0 to 6
+        ProfileEngine eng = array.get(engines, eIdx)
+        int openDir = -99
+        if eng.activePlanIdx >= 0 and eng.activePlanIdx < array.size(allPlans)
+            SavedPlan curP = array.get(allPlans, eng.activePlanIdx)
+            if curP.status == 0
+                openDir := curP.dir
+
+        // 1. Bullish AVWAP Value-Band Pullback & Reclaim
+        if bullAnchorActive and bullImpArmed and eng.bullPbUsed < maxPbPerAnchor and not na(bullAvwap)
+            float bullUpperBand = bullAvwap + eng.bandSigma * bullStd
+            float bullLowerDef  = bullAvwap - eng.outerSigma * bullStd
+            if low <= bullUpperBand and close >= bullLowerDef and close > bullAnchorPrice and high < bullImpHigh
+                if not eng.bullInZone
+                    eng.bullInZone := true
+                    eng.bullPbLow  := low
+                    eng.bullPbTime := time
+                else if low < nz(eng.bullPbLow, low)
+                    eng.bullPbLow  := low
+            else if close < bullLowerDef
+                eng.bullInZone := false
+
+            bool reclaimLong = eng.bullInZone and close > bullAvwap and close > open and close >= (prevHigh - 0.20 * safeAtr)
+            if reclaimLong and openDir != 1
+                float impLeg   = math.max(bullImpHigh - bullAnchorPrice, safeAtr * 0.5)
+                float pbDepth  = (bullImpHigh - nz(eng.bullPbLow, low)) / impLeg
+                bool  passEr   = erPct >= eng.minErPct
+                bool  passQual = bullQualScore >= eng.minQual
+                bool  passAct  = relActivity >= eng.minRelAct
+                bool  passDep  = pbDepth >= 0.12 and pbDepth <= 0.85
+
+                if passEr and passQual and passAct and passDep and not bearCrashGuard
+                    eng.barBullTake := true
+                    eng.lastSigDir  := 1
+                    eng.lastSigQual := bullQualScore
+                    eng.lastSigText := "BUY (AVWAP · " + str.tostring(bullQualScore, "#") + "%)"
+                else
+                    eng.barBullSkip := true
+                    eng.bullInZone  := false
+                    eng.lastSigText := "SKIP (CHOP · " + str.tostring(erPct, "#") + "%)"
+
+        // 2. Bearish AVWAP Value-Band Pullback & Reclaim
+        if bearAnchorActive and bearImpArmed and eng.bearPbUsed < maxPbPerAnchor and not na(bearAvwap) and not eng.barBullTake
+            float bearLowerBand = bearAvwap - eng.bandSigma * bearStd
+            float bearUpperDef  = bearAvwap + eng.outerSigma * bearStd
+            if high >= bearLowerBand and close <= bearUpperDef and close < bearAnchorPrice and low > bearImpLow
+                if not eng.bearInZone
+                    eng.bearInZone := true
+                    eng.bearPbHigh := high
+                    eng.bearPbTime := time
+                else if high > nz(eng.bearPbHigh, high)
+                    eng.bearPbHigh := high
+            else if close > bearUpperDef
+                eng.bearInZone := false
+
+            bool reclaimShort = eng.bearInZone and close < bearAvwap and close < open and close <= (prevLow + 0.20 * safeAtr)
+            if reclaimShort and openDir != -1
+                float impLeg   = math.max(bearAnchorPrice - bearImpLow, safeAtr * 0.5)
+                float pbDepth  = (nz(eng.bearPbHigh, high) - bearImpLow) / impLeg
+                bool  passEr   = erPct >= eng.minErPct
+                bool  passQual = bearQualScore >= eng.minQual
+                bool  passAct  = relActivity >= eng.minRelAct
+                bool  passDep  = pbDepth >= 0.12 and pbDepth <= 0.85
+
+                if passEr and passQual and passAct and passDep and not bullCrashGuard
+                    eng.barBearTake := true
+                    eng.lastSigDir  := -1
+                    eng.lastSigQual := bearQualScore
+                    eng.lastSigText := "SELL (AVWAP · " + str.tostring(bearQualScore, "#") + "%)"
+                else
+                    eng.barBearSkip := true
+                    eng.bearInZone  := false
+                    eng.lastSigText := "SKIP (CHOP · " + str.tostring(erPct, "#") + "%)"
+
+        // 3. Spawn Closed-Bar Trade Plan on Confirmed TAKE Signal
+        if eng.barBullTake or eng.barBearTake
+            if eng.activePlanIdx >= 0 and eng.activePlanIdx < array.size(allPlans)
+                SavedPlan prevP = array.get(allPlans, eng.activePlanIdx)
+                if prevP.status == 0
+                    prevP.status    := prevP.tp1Hit ? 2 : 3
+                    prevP.endTime   := time
+                    eng.totalTrades += 1
+                    if prevP.tp1Hit
+                        eng.winTrades += 1
+                        eng.cumNetR   += prevP.tp1R
+                    else
+                        float flipR = prevP.dir == 1 ? (close - prevP.entry) / math.max(prevP.risk, syminfo.mintick) : (prevP.entry - close) / math.max(prevP.risk, syminfo.mintick)
+                        if flipR >= 0.0
+                            eng.winTrades  += 1
+                        else
+                            eng.lossTrades += 1
+                        eng.cumNetR += flipR
+
+            int   sDir   = eng.barBullTake ? 1 : -1
+            float entryP = close
+            float effSlB = slBufferAtr * eng.slScale
+            float rawSl  = sDir == 1 ? (math.min(nz(eng.bullPbLow, low), bullAvwap - eng.bandSigma * bullStd) - effSlB * safeAtr) : (math.max(nz(eng.bearPbHigh, high), bearAvwap + eng.bandSigma * bearStd) + effSlB * safeAtr)
+            float clampedRisk = f_clamp(math.abs(entryP - rawSl), safeAtr * eng.minRiskAtr, safeAtr * 3.0)
+            float finalSl = sDir == 1 ? (entryP - clampedRisk) : (entryP + clampedRisk)
+
+            float tp1P    = sDir == 1 ? (entryP + 1.0 * clampedRisk) : (entryP - 1.0 * clampedRisk)
+            float tp2P    = sDir == 1 ? (entryP + 2.0 * clampedRisk) : (entryP - 2.0 * clampedRisk)
+            float tp3P    = sDir == 1 ? (entryP + 3.0 * clampedRisk) : (entryP - 3.0 * clampedRisk)
+            float tp2RVal = 2.0
+            float tp3RVal = 3.0
+            bool  isMag   = false
+
+            if targetMode == TargetMode.HYBRID
+                if sDir == 1 and not na(bullImpHigh)
+                    float distR = (bullImpHigh - entryP) / clampedRisk
+                    if distR >= 1.3 and distR <= 2.4
+                        tp2P    := bullImpHigh
+                        tp2RVal := math.round(distR, 1)
+                        isMag   := true
+                    else if distR > 2.4 and distR <= 4.5
+                        tp3P    := bullImpHigh
+                        tp3RVal := math.round(distR, 1)
+                        isMag   := true
+                else if sDir == -1 and not na(bearImpLow)
+                    float distR = (entryP - bearImpLow) / clampedRisk
+                    if distR >= 1.3 and distR <= 2.4
+                        tp2P    := bearImpLow
+                        tp2RVal := math.round(distR, 1)
+                        isMag   := true
+                    else if distR > 2.4 and distR <= 4.5
+                        tp3P    := bearImpLow
+                        tp3RVal := math.round(distR, 1)
+                        isMag   := true
+
+            int   pbLeftTime = math.max(pbWindowTime, sDir == 1 ? eng.bullPbTime : eng.bearPbTime)
+            float pbTop      = sDir == 1 ? (bullAvwap + eng.bandSigma * bullStd) : math.max(high, nz(eng.bearPbHigh, high))
+            float pbBot      = sDir == 1 ? math.min(low, nz(eng.bullPbLow, low)) : (bearAvwap - eng.bandSigma * bearStd)
+            float qVal       = sDir == 1 ? bullQualScore : bearQualScore
+
+            SavedPlan np = SavedPlan.new(
+                 eIdx, sDir, bar_index, entryP, finalSl, finalSl, clampedRisk,
+                 tp1P, tp2P, tp3P, 1.0, tp2RVal, tp3RVal, isMag, qVal,
+                 false, false, false, false, false, 0, time,
+                 pbLeftTime, pbTop, pbBot, time,
+                 sDir == 1 ? low - safeAtr * 0.15 : high + safeAtr * 0.15
+            )
+            array.push(allPlans, np)
+            eng.activePlanIdx := array.size(allPlans) - 1
+
+            if sDir == 1
+                eng.bullInZone := false
+                eng.bullPbUsed += 1
+            else
+                eng.bearInZone := false
+                eng.bearPbUsed += 1
+
+            // Keep allPlans bounded per profile (max 8 saved plans per profile) without invalidating activePlanIdx
+            int profPlanCount = 0
+            int oldestIdx     = -1
+            for k = 0 to array.size(allPlans) - 1
+                SavedPlan spk = array.get(allPlans, k)
+                if spk.profId == eIdx
+                    profPlanCount += 1
+                    if oldestIdx == -1
+                        oldestIdx := k
+            if profPlanCount > 8 and oldestIdx >= 0
+                array.remove(allPlans, oldestIdx)
+                for m = 0 to 6
+                    ProfileEngine em = array.get(engines, m)
+                    if em.activePlanIdx > oldestIdx
+                        em.activePlanIdx -= 1
+
+// ============================================================================
+// 6. SELECT ACTIVE / HIGHEST-WINRATE ENGINE & RENDER VISUALS
+// ============================================================================
+
+int selectedEngIdx = 0
+if array.size(engines) == 7
+    if filterPreset == FilterMode.AUTO_OPTIMIZE
+        float bestWr   = -1.0
+        float bestNetR = -1e9
+        int   bestId   = 0
+        for eIdx = 0 to 5
+            ProfileEngine eng = array.get(engines, eIdx)
+            if eng.totalTrades >= 3
+                float wr = (float(eng.winTrades) / float(eng.totalTrades)) * 100.0
+                if wr > bestWr or (wr == bestWr and eng.cumNetR > bestNetR)
+                    bestWr   := wr
+                    bestNetR := eng.cumNetR
+                    bestId   := eIdx
+        for coreIdx = 0 to 2
+            ProfileEngine cEng = array.get(engines, coreIdx)
+            if cEng.totalTrades > 0
+                float cWr = (float(cEng.winTrades) / float(cEng.totalTrades)) * 100.0
+                if cWr > bestWr or (cWr == bestWr and cEng.cumNetR > bestNetR)
+                    bestWr   := cWr
+                    bestNetR := cEng.cumNetR
+                    bestId   := coreIdx
+        if bestWr < 0.0
+            for eIdx = 0 to 5
+                ProfileEngine eng = array.get(engines, eIdx)
+                if eng.totalTrades > 0
+                    float wr = (float(eng.winTrades) / float(eng.totalTrades)) * 100.0
+                    if wr > bestWr or (wr == bestWr and eng.cumNetR > bestNetR)
+                        bestWr   := wr
+                        bestNetR := eng.cumNetR
+                        bestId   := eIdx
+        selectedEngIdx := bestId
+    else
+        selectedEngIdx := switch filterPreset
+            FilterMode.BALANCED     => 0
+            FilterMode.CONSERVATIVE => 1
+            FilterMode.AGGRESSIVE   => 2
+            FilterMode.SHALLOW      => 3
+            FilterMode.DEEP_VALUE   => 4
+            FilterMode.VOL_CLIMAX   => 5
+            FilterMode.CUSTOM       => 6
+            => 0
+
+ProfileEngine activeEng = array.size(engines) == 7 ? array.get(engines, selectedEngIdx) : ProfileEngine.new(0, "", 1.0, 2.0, 26.0, 52.0, 1.0, 0.35, 0.0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0.0, "", -1, false, na, 0, 0, false, na, 0, 0, false, false, false, false, false, false, false, false)
+
+if barstate.islast and array.size(engines) == 7
+    if array.size(drawnBoxes) > 0
+        for i = 0 to array.size(drawnBoxes) - 1
+            box.delete(array.get(drawnBoxes, i))
+        array.clear(drawnBoxes)
+    if array.size(drawnLines) > 0
+        for i = 0 to array.size(drawnLines) - 1
+            line.delete(array.get(drawnLines, i))
+        array.clear(drawnLines)
+    if array.size(drawnLbls) > 0
+        for i = 0 to array.size(drawnLbls) - 1
+            label.delete(array.get(drawnLbls, i))
+        array.clear(drawnLbls)
+
+    array<int> selPlanIndices = array.new<int>()
+    if array.size(allPlans) > 0
+        for k = 0 to array.size(allPlans) - 1
+            SavedPlan sp = array.get(allPlans, k)
+            if sp.profId == selectedEngIdx
+                array.push(selPlanIndices, k)
+
+    int barSpanMs = math.max(1, nz(time_close - time, 60000))
+    int projectedRightTime = nz(time("", bars_back = -6), time + 6 * barSpanMs)
+
+    // Render Active Structural Anchor Origin Badge (compact, non-intrusive)
+    if activeTrendBias == 1 and bullAnchorActive and bullAnchorTime > 0
+        label ancLb = label.new(
+             x               = bullAnchorTime,
+             y               = bullAnchorPrice,
+             text            = "⚓ AVWAP",
+             xloc            = xloc.bar_time,
+             yloc            = yloc.price,
+             color           = color.new(bullCol, 25),
+             style           = label.style_label_up,
+             textcolor       = #0B0E14,
+             size            = size.tiny,
+             text_formatting = text.format_bold
+        )
+        array.push(drawnLbls, ancLb)
+    else if activeTrendBias == -1 and bearAnchorActive and bearAnchorTime > 0
+        label ancLb = label.new(
+             x               = bearAnchorTime,
+             y               = bearAnchorPrice,
+             text            = "⚓ AVWAP",
+             xloc            = xloc.bar_time,
+             yloc            = yloc.price,
+             color           = color.new(bearCol, 25),
+             style           = label.style_label_down,
+             textcolor       = #0B0E14,
+             size            = size.tiny,
+             text_formatting = text.format_bold
+        )
+        array.push(drawnLbls, ancLb)
+
+    // Draw compact signal badges (last 3 setups) & TradePlan ladder (latest focal setup by default)
+    int totalSelPlans = array.size(selPlanIndices)
+    if totalSelPlans > 0
+        int startSig = showPastPlans ? math.max(0, totalSelPlans - 5) : math.max(0, totalSelPlans - 3)
+        int startPln = showPastPlans ? math.max(0, totalSelPlans - 3) : (totalSelPlans - 1)
+        for idxPos = startSig to totalSelPlans - 1
+            SavedPlan sp = array.get(allPlans, array.get(selPlanIndices, idxPos))
+            if not na(sp.entryTime)
+                color pbCol = sp.dir == 1 ? bullCol : bearCol
+                string sigTag = (sp.dir == 1 ? "BUY " : "SELL ") + str.tostring(sp.qualPct, "#") + "%"
+                label sLbl = label.new(
+                     x               = sp.entryTime,
+                     y               = sp.signalY,
+                     text            = sigTag,
+                     xloc            = xloc.bar_time,
+                     yloc            = yloc.price,
+                     color           = color.new(pbCol, idxPos == totalSelPlans - 1 ? 5 : 25),
+                     style           = sp.dir == 1 ? label.style_label_up : label.style_label_down,
+                     textcolor       = #0B0E14,
+                     size            = size.tiny,
+                     text_formatting = text.format_bold,
+                     tooltip         = (sp.dir == 1 ? "Bullish AVWAP Pullback Reclaim\nSetup Quality: " : "Bearish AVWAP Pullback Reclaim\nSetup Quality: ") + str.tostring(sp.qualPct, "#.1") + "%"
+                )
+                array.push(drawnLbls, sLbl)
+
+        // Draw TradePlan boxes, lines, and labels (right-edge text labels only on the latest focal plan)
+        for idxPos = startPln to totalSelPlans - 1
+            SavedPlan sp = array.get(allPlans, array.get(selPlanIndices, idxPos))
+            bool isLatestPlan = idxPos == totalSelPlans - 1
+            int rightTime = sp.status == 0 ? projectedRightTime : sp.endTime
+            if not na(sp.entryTime) and not na(rightTime)
+                int x1Time = sp.entryTime
+                int x2Time = math.max(rightTime, x1Time + 1)
+
+                if not na(sp.pbLeftTime)
+                    color pbCol = sp.dir == 1 ? bullCol : bearCol
+                    box pbBox = box.new(
+                         left         = sp.pbLeftTime,
+                         top          = sp.pbTop,
+                         right        = sp.entryTime,
+                         bottom       = sp.pbBot,
+                         xloc         = xloc.bar_time,
+                         border_color = color.new(pbCol, 55),
+                         border_width = 1,
+                         border_style = line.style_dotted,
+                         bgcolor      = color.new(pbCol, 90)
+                    )
+                    array.push(drawnBoxes, pbBox)
+
+                box rskBox = box.new(x1Time, math.max(sp.entry, sp.initSl), x2Time, math.min(sp.entry, sp.initSl), xloc = xloc.bar_time, border_color = color.new(bearCol, 70), border_width = 1, bgcolor = color.new(bearCol, 90))
+                box rwdBox = box.new(x1Time, math.max(sp.entry, sp.tp3), x2Time, math.min(sp.entry, sp.tp3), xloc = xloc.bar_time, border_color = color.new(bullCol, 70), border_width = 1, bgcolor = color.new(bullCol, 92))
+                array.push(drawnBoxes, rskBox)
+                array.push(drawnBoxes, rwdBox)
+
+                line eLn  = line.new(x1Time, sp.entry,  x2Time, sp.entry,  xloc = xloc.bar_time, color = color.new(chart.fg_color, 25), width = 1, style = line.style_solid)
+                line sLn  = line.new(x1Time, sp.initSl, x2Time, sp.initSl, xloc = xloc.bar_time, color = color.new(bearCol, 20),        width = 1, style = line.style_solid)
+                line t1Ln = line.new(x1Time, sp.tp1,    x2Time, sp.tp1,    xloc = xloc.bar_time, color = color.new(bullCol, 35),        width = 1, style = line.style_dotted)
+                line t2Ln = line.new(x1Time, sp.tp2,    x2Time, sp.tp2,    xloc = xloc.bar_time, color = color.new(bullCol, 30),        width = 1, style = line.style_dashed)
+                line t3Ln = line.new(x1Time, sp.tp3,    x2Time, sp.tp3,    xloc = xloc.bar_time, color = color.new(bullCol, 15),        width = 1, style = line.style_solid)
+                array.push(drawnLines, eLn)
+                array.push(drawnLines, sLn)
+                array.push(drawnLines, t1Ln)
+                array.push(drawnLines, t2Ln)
+                array.push(drawnLines, t3Ln)
+
+                if isLatestPlan
+                    string pFmt     = format.mintick
+                    string entryTxt = "ENTRY  " + str.tostring(sp.entry, pFmt)
+                    string slState  = sp.slHit ? " ✗" : sp.beHit ? " (BE ✓)" : (sp.tp1Hit and sp.activeSl == sp.entry) ? " (BE)" : " (-1R)"
+                    string slTxt    = "SL  " + str.tostring(sp.initSl, pFmt) + slState
+                    string tp1Txt   = "TP1  " + str.tostring(sp.tp1, pFmt) + " (" + str.tostring(sp.tp1R, "#.#") + "R)" + (sp.tp1Hit ? " ✓" : "")
+                    string magTag2  = (sp.tpIsMag and sp.tp2R != 2.0) ? "·MAG" : ""
+                    string magTag3  = (sp.tpIsMag and sp.tp2R == 2.0) ? "·MAG" : ""
+                    string tp2Txt   = "TP2  " + str.tostring(sp.tp2, pFmt) + " (" + str.tostring(sp.tp2R, "#.#") + "R" + magTag2 + ")" + (sp.tp2Hit ? " ✓" : "")
+                    string tp3Txt   = "TP3  " + str.tostring(sp.tp3, pFmt) + " (" + str.tostring(sp.tp3R, "#.#") + "R" + magTag3 + ")" + (sp.tp3Hit ? " ✓" : "")
+
+                    label eLb  = label.new(x2Time, sp.entry,  entryTxt, xloc = xloc.bar_time, yloc = yloc.price, color = color.new(chart.bg_color, 20), style = label.style_label_left, textcolor = chart.fg_color, size = size.tiny, text_formatting = text.format_bold)
+                    label sLb  = label.new(x2Time, sp.initSl, slTxt,    xloc = xloc.bar_time, yloc = yloc.price, color = color.new(bearCol, sp.slHit ? 20 : 82), style = label.style_label_left, textcolor = chart.fg_color, size = size.tiny, text_formatting = text.format_bold)
+                    label t1Lb = label.new(x2Time, sp.tp1,    tp1Txt,   xloc = xloc.bar_time, yloc = yloc.price, color = color.new(bullCol, sp.tp1Hit ? 20 : 84), style = label.style_label_left, textcolor = chart.fg_color, size = size.tiny, text_formatting = text.format_bold)
+                    label t2Lb = label.new(x2Time, sp.tp2,    tp2Txt,   xloc = xloc.bar_time, yloc = yloc.price, color = color.new(bullCol, sp.tp2Hit ? 20 : 84), style = label.style_label_left, textcolor = chart.fg_color, size = size.tiny, text_formatting = text.format_bold)
+                    label t3Lb = label.new(x2Time, sp.tp3,    tp3Txt,   xloc = xloc.bar_time, yloc = yloc.price, color = color.new(bullCol, sp.tp3Hit ? 15 : 80), style = label.style_label_left, textcolor = chart.fg_color, size = size.tiny, text_formatting = text.format_bold)
+                    array.push(drawnLbls, eLb)
+                    array.push(drawnLbls, sLb)
+                    array.push(drawnLbls, t1Lb)
+                    array.push(drawnLbls, t2Lb)
+                    array.push(drawnLbls, t3Lb)
+
+// ============================================================================
+// 7. SUMMARY DASHBOARD (COMPACT 6-ROW x 2-COLUMN LAYOUT)
+// ============================================================================
+
+var table dash = table.new(position.top_right, 2, 6, border_width = 1)
+
+string tblSizeStr = switch dashSizeInput
+    DashSize.TINY   => size.tiny
+    DashSize.SMALL  => size.small
+    DashSize.NORMAL => size.normal
+    DashSize.LARGE  => size.large
+
+float liveAvwap = activeTrendBias == 1 ? bullAvwap : activeTrendBias == -1 ? bearAvwap : na
+float liveSigma = activeTrendBias == 1 ? bullStd   : activeTrendBias == -1 ? bearStd   : na
+
+if barstate.islast and array.size(engines) == 7
+    table.clear(dash, 0, 0, 1, 5)
+    if showDash
+        ProfileEngine winEng = array.get(engines, selectedEngIdx)
+        color bgHeader = color.new(chart.bg_color, 8)
+        color bgRow    = color.new(chart.bg_color, 18)
+        color bdColor  = color.new(chart.fg_color, 82)
+        color txtMain  = chart.fg_color
+        color txtMuted = color.new(chart.fg_color, 35)
+        color biasCol  = activeTrendBias == 1 ? bullCol : activeTrendBias == -1 ? bearCol : txtMuted
+
+        table.set_bgcolor(dash, bgHeader)
+        table.set_border_color(dash, bdColor)
+
+        // Row 0: Compact Header + Regime / Trend Efficiency
+        bool   erClear = erPct >= winEng.minErPct
+        string regStr  = (activeTrendBias == 1 ? "BULL · " : activeTrendBias == -1 ? "BEAR · " : "NEUTRAL · ") + str.tostring(erPct, "#") + "% Eff"
+        table.cell(dash, 0, 0, "AVPT [PhenLabs]", text_color = txtMain, bgcolor = bgHeader, text_size = tblSizeStr, text_formatting = text.format_bold, text_halign = text.align_left)
+        table.cell(dash, 1, 0, regStr,            text_color = erClear ? biasCol : txtMuted, bgcolor = bgHeader, text_size = tblSizeStr, text_formatting = text.format_bold, text_halign = text.align_right)
+
+        // Row 1: Active Anchored VWAP
+        string avwapInfo = not na(liveAvwap) ? (str.tostring(liveAvwap, format.mintick) + " (±" + str.tostring(winEng.bandSigma, "#.##") + "σ)") : "Scanning..."
+        table.cell(dash, 0, 1, "Anchored VWAP", text_color = txtMuted, bgcolor = bgRow, text_size = tblSizeStr, text_halign = text.align_left)
+        table.cell(dash, 1, 1, avwapInfo,       text_color = biasCol,  bgcolor = bgRow, text_size = tblSizeStr, text_formatting = text.format_bold, text_halign = text.align_right)
+
+        // Row 2: Active Profile (Auto vs Manual)
+        string gateStr = (filterPreset == FilterMode.AUTO_OPTIMIZE ? "Auto: " : "") + winEng.nameTag
+        table.cell(dash, 0, 2, "Filter Profile", text_color = txtMuted, bgcolor = bgRow, text_size = tblSizeStr, text_halign = text.align_left)
+        table.cell(dash, 1, 2, gateStr,          text_color = filterPreset == FilterMode.AUTO_OPTIMIZE ? bullCol : txtMain, bgcolor = bgRow, text_size = tblSizeStr, text_formatting = text.format_bold, text_halign = text.align_right)
+
+        // Row 3: Closed-Bar Win Rate & Net R
+        float  winRate = winEng.totalTrades > 0 ? (float(winEng.winTrades) / float(winEng.totalTrades)) * 100.0 : 0.0
+        string netRStr = (winEng.cumNetR >= 0 ? "+" : "") + str.tostring(winEng.cumNetR, "#.1") + "R"
+        string wrStr   = winEng.totalTrades > 0 ? (str.tostring(winRate, "#.1") + "% (" + str.tostring(winEng.winTrades) + "W/" + str.tostring(winEng.lossTrades) + "L) · " + netRStr) : "0 Trades"
+        color  wrCol   = winRate >= 55.0 ? bullCol : winEng.totalTrades == 0 ? txtMuted : txtMain
+        table.cell(dash, 0, 3, "Win Rate (TP1+)", text_color = txtMuted, bgcolor = bgRow, text_size = tblSizeStr, text_halign = text.align_left)
+        table.cell(dash, 1, 3, wrStr,             text_color = wrCol,    bgcolor = bgRow, text_size = tblSizeStr, text_formatting = text.format_bold, text_halign = text.align_right)
+
+        // Row 4: Target Hit Breakdown
+        string tpHitsStr = "TP1: " + str.tostring(winEng.tp1Count) + " · TP2: " + str.tostring(winEng.tp2Count) + " · TP3: " + str.tostring(winEng.tp3Count)
+        table.cell(dash, 0, 4, "Target Hits", text_color = txtMuted, bgcolor = bgRow, text_size = tblSizeStr, text_halign = text.align_left)
+        table.cell(dash, 1, 4, tpHitsStr,     text_color = txtMain,  bgcolor = bgRow, text_size = tblSizeStr, text_halign = text.align_right)
+
+        // Row 5: Active Trade Plan Status
+        string planStatusStr = winEng.lastSigText
+        color  planCol       = winEng.lastSigDir == 1 ? bullCol : winEng.lastSigDir == -1 ? bearCol : txtMuted
+        if winEng.activePlanIdx >= 0 and winEng.activePlanIdx < array.size(allPlans)
+            SavedPlan lp = array.get(allPlans, winEng.activePlanIdx)
+            planCol := lp.dir == 1 ? bullCol : bearCol
+            string stateTag = lp.tp3Hit ? "TP3✓" : lp.slHit ? "SL✗" : lp.beHit ? "BE✓" : lp.tp2Hit ? "TP2✓" : lp.tp1Hit ? "TP1✓" : "OPEN"
+            planStatusStr := (lp.dir == 1 ? "LONG @ " : "SHORT @ ") + str.tostring(lp.entry, format.mintick) + " (" + stateTag + ")"
+        table.cell(dash, 0, 5, "Trade Plan",    text_color = txtMuted, bgcolor = bgRow, text_size = tblSizeStr, text_halign = text.align_left)
+        table.cell(dash, 1, 5, planStatusStr,   text_color = planCol,  bgcolor = bgRow, text_size = tblSizeStr, text_formatting = text.format_bold, text_halign = text.align_right)
+
+// ============================================================================
+// 8. PINE SCREENER PLOTS (FIRST 10 PLOTS), OVERLAY CURVES & ALERTS
+// ============================================================================
+
+bool  bullTakeSig    = activeEng.barBullTake
+bool  bearTakeSig    = activeEng.barBearTake
+bool  bullSkipSig    = activeEng.barBullSkip
+bool  bearSkipSig    = activeEng.barBearSkip
+bool  tp1HitEvent    = activeEng.barTp1Evt
+bool  tp2HitEvent    = activeEng.barTp2Evt
+bool  tp3HitEvent    = activeEng.barTp3Evt
+bool  slHitEvent     = activeEng.barSlEvt
+float barPullbackQ   = bullTakeSig ? bullQualScore : bearTakeSig ? bearQualScore : 0.0
+
+float screenerSignal = bullTakeSig ? 1.0 : bearTakeSig ? -1.0 : 0.0
+float activePlanDir  = (activeEng.activePlanIdx >= 0 and activeEng.activePlanIdx < array.size(allPlans)) ? (array.get(allPlans, activeEng.activePlanIdx).status == 0 ? float(array.get(allPlans, activeEng.activePlanIdx).dir) : 0.0) : 0.0
+float currentWinRate = activeEng.totalTrades > 0 ? (float(activeEng.winTrades) / float(activeEng.totalTrades)) * 100.0 : 0.0
+
+plot(screenerSignal, "Screener: AVWAP Pullback Signal (+1=Buy, -1=Sell)", display = display.data_window + display.pine_screener)
+plot(barPullbackQ,   "Screener: Pullback Quality Score % (0-100)",        display = display.data_window + display.pine_screener)
+plot(erPct,          "Screener: Trend Efficiency % (0-100)",              display = display.data_window + display.pine_screener)
+plot(activePlanDir,  "Screener: Active Trade Plan (+1=Long, -1=Short)",   display = display.data_window + display.pine_screener)
+plot(currentWinRate, "Screener: Historical TP1+ Win Rate %",              display = display.data_window + display.pine_screener)
+
+// Invisible pane-displayed price anchors so Y-axis stays locked to symbol price when scrolling/zooming
+plot(high, "Price Scale High Anchor", color = color.new(color.white, 100), display = display.pane, editable = false)
+plot(low,  "Price Scale Low Anchor",  color = color.new(color.white, 100), display = display.pane, editable = false)
+
+// Continuous Active Anchored VWAP Curve & Shaded Pullback Value Band (focused on recent 180 bars, breaks cleanly on anchor reset)
+int   activeAnchorBar = activeTrendBias == 1 ? bullAnchorBar : activeTrendBias == -1 ? bearAnchorBar : -1
+bool  anchorSwitched  = activeTrendBias != nz(activeTrendBias[1], 0) or activeAnchorBar != nz(activeAnchorBar[1], -1)
+bool  inRecentWindow  = (last_bar_index - bar_index) <= 180
+float plotAvwapMean   = (inRecentWindow and not anchorSwitched and not na(liveAvwap)) ? liveAvwap : na
+float plotBandTop     = (inRecentWindow and not anchorSwitched and not na(liveAvwap) and not na(liveSigma)) ? (liveAvwap + activeEng.bandSigma * liveSigma) : na
+float plotBandBot     = (inRecentWindow and not anchorSwitched and not na(liveAvwap) and not na(liveSigma)) ? (liveAvwap - activeEng.bandSigma * liveSigma) : na
+color avwapCol        = activeTrendBias == 1 ? bullCol : activeTrendBias == -1 ? bearCol : color.new(color.white, 100)
+color bandEdgeCol     = activeTrendBias == 1 ? color.new(bullCol, 86) : activeTrendBias == -1 ? color.new(bearCol, 86) : color.new(color.white, 100)
+color bandFillCol     = activeTrendBias == 1 ? color.new(bullCol, 92) : activeTrendBias == -1 ? color.new(bearCol, 92) : color.new(color.white, 100)
+
+pMean = plot(plotAvwapMean, "Active Anchored VWAP",      color = avwapCol,    linewidth = 2, style = plot.style_linebr)
+pTop  = plot(plotBandTop,   "Pullback Value Band Upper", color = bandEdgeCol, linewidth = 1, style = plot.style_linebr)
+pBot  = plot(plotBandBot,   "Pullback Value Band Lower", color = bandEdgeCol, linewidth = 1, style = plot.style_linebr)
+fill(pTop, pBot, color = bandFillCol, title = "Anchored VWAP Pullback Value Band")
+
+// Optional skipped-pullback markers
+plotshape(bullSkipSig and showSkipped, title = "Skipped Bullish Pullback", style = shape.circle, location = location.belowbar, color = color.new(bullCol, 55), size = size.tiny, text = "SKIP", textcolor = color.new(chart.fg_color, 40))
+plotshape(bearSkipSig and showSkipped, title = "Skipped Bearish Pullback", style = shape.circle, location = location.abovebar, color = color.new(bearCol, 55), size = size.tiny, text = "SKIP", textcolor = color.new(chart.fg_color, 40))
+
+// Alert conditions
+alertcondition(bullTakeSig, title = "1. Bullish AVWAP Pullback Entry (BUY)", message = "AVPT [PhenLabs]: Confirmed Bullish Anchored VWAP Pullback Reclaim on {{ticker}} ({{interval}}). Entry, SL, and TP1-TP3 trade plan active.")
+alertcondition(bearTakeSig, title = "2. Bearish AVWAP Pullback Entry (SELL)", message = "AVPT [PhenLabs]: Confirmed Bearish Anchored VWAP Pullback Reclaim on {{ticker}} ({{interval}}). Entry, SL, and TP1-TP3 trade plan active.")
+alertcondition(bullTakeSig or bearTakeSig, title = "3. Any Confirmed AVWAP Pullback Entry (BUY or SELL)", message = "AVPT [PhenLabs]: Confirmed Anchored VWAP Pullback signal on {{ticker}} ({{interval}}).")
+alertcondition(tp1HitEvent, title = "4. Trade Plan TP1 Reached", message = "AVPT [PhenLabs]: Active trade plan reached TP1 (1.0R) on {{ticker}} ({{interval}}).")
+alertcondition(tp2HitEvent, title = "5. Trade Plan TP2 Reached", message = "AVPT [PhenLabs]: Active trade plan reached TP2 on {{ticker}} ({{interval}}).")
+alertcondition(tp3HitEvent, title = "6. Trade Plan TP3 Reached", message = "AVPT [PhenLabs]: Active trade plan reached TP3 on {{ticker}} ({{interval}}).")
+alertcondition(slHitEvent,  title = "7. Trade Plan Stop Loss Hit", message = "AVPT [PhenLabs]: Active trade plan hit Stop Loss on {{ticker}} ({{interval}}).")
+
+
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

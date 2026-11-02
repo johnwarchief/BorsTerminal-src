@@ -1,0 +1,415 @@
+//@version=6
+// ============================================================================
+//  Trendlines with Breakouts, Touches & Hold Rate
+// ----------------------------------------------------------------------------
+//  Draws auto trendlines through confirmed swing highs and lows, keeps only
+//  lines that price has not closed through, counts every touch, marks breaks
+//  and retests — and measures, on this symbol, how often a touch held, how
+//  often a break followed through and how often a break was retested.
+//
+//  NON-REPAINTING: lines are anchored to confirmed pivots; touches, breaks
+//  and retests are decided on closed bars. No request.security.
+// ============================================================================
+indicator("Trendlines with Breakouts, Touches & Hold Rate", "Trendlines",
+     overlay = true, max_bars_back = 500, max_lines_count = 120, max_labels_count = 200)
+
+// ─────────────────────────────────────────────────────────────────────────
+//  INPUTS
+// ─────────────────────────────────────────────────────────────────────────
+gT = "Trendlines"
+pivLen  = input.int(8, "Swing length", minval = 2, maxval = 50, group = gT, tooltip = "Bars on each side that confirm a swing. Higher = fewer, longer trendlines.")
+maxPer  = input.int(3, "Active lines per side", minval = 1, maxval = 6, group = gT)
+lookPiv = input.int(6, "Swings searched for an anchor", minval = 2, maxval = 12, group = gT, tooltip = "Each new swing is paired with up to this many earlier swings on the same side; the pair with the most touches wins.")
+tolAtr  = input.float(0.25, "Touch tolerance (× ATR)", minval = 0.05, maxval = 2, step = 0.05, group = gT)
+brkAtr  = input.float(0.10, "Break buffer (× ATR)", minval = 0, maxval = 1, step = 0.05, group = gT, tooltip = "A close must be this far beyond the line to count as a break.")
+minLen  = input.int(10, "Min. bars between anchors", minval = 3, maxval = 200, group = gT)
+minTch  = input.int(3, "Min. touches to draw a line", minval = 2, maxval = 6, group = gT,
+     tooltip = "Two swings can always be joined; a third touch is what makes a trendline. Lines are drawn only once they have this many touches.")
+
+gS = "Measurement"
+moveAtr = input.float(1.0, "A touch holds / a break follows through after (× ATR)", minval = 0.25, maxval = 5, step = 0.25, group = gS)
+evalBar = input.int(20, "Bars to judge a touch or a break", minval = 5, maxval = 100, group = gS)
+
+gD = "Drawing"
+showGlow = input.bool(true, "Line glow", group = gD)
+extR     = input.int(15, "Extend lines right (bars)", minval = 0, maxval = 100, group = gD)
+keepBrk  = input.int(2, "Broken lines kept", minval = 0, maxval = 20, group = gD)
+showEv   = input.bool(true, "Break and retest labels", group = gD)
+showTch  = input.bool(true, "Touch count on each line", group = gD)
+lblSize  = input.string("Large", "Label size", options = ["Small", "Normal", "Large", "Huge"], group = gD)
+
+gP = "Panel"
+showTbl = input.bool(true, "Show panel", group = gP)
+tblPos  = input.string("Bottom Center", "Position", options = ["Bottom Center", "Top Center", "Bottom Right", "Top Right"], group = gP,
+     tooltip = "A scoreboard of six tiles. Bottom centre keeps it clear of the price action and the symbol legend.")
+tblSize = input.string("Normal", "Text size", options = ["Small", "Normal", "Large"], group = gP)
+
+gA = "Alerts"
+alBrk = input.bool(true, "Alert: trendline break", group = gA)
+alNew = input.bool(false, "Alert: new trendline", group = gA)
+alTch = input.bool(false, "Alert: trendline touch", group = gA)
+
+candOn_ = input.bool(true, "Neon candles", group = "Visuals")
+candGlw = input.bool(true, "Glow candles", group = "Visuals", tooltip = "Each body is drawn in four bands that brighten towards the close. Off = flat translucent bodies.")
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THEME — sky support, magenta resistance
+// ─────────────────────────────────────────────────────────────────────────
+bgLum   = 0.2126 * color.r(chart.bg_color) + 0.7152 * color.g(chart.bg_color) + 0.0722 * color.b(chart.bg_color)
+isLight = bgLum > 128
+SUP     = isLight ? #0284C7 : #38BDF8
+RES     = isLight ? #A21CAF : #D946EF
+GREY    = isLight ? #8A8F9C : #6B7080
+TXT     = isLight ? #1A1D24 : #E8EAF0
+MUTE    = isLight ? #5E6472 : #8F96A6
+PANEL   = isLight ? #FFFFFF : #0A0C12
+ROW     = isLight ? #EEF1F6 : #141826
+INK     = #0A0C12
+sLbl    = tblSize == "Small" ? size.tiny : tblSize == "Large" ? size.normal : size.small
+sBig    = tblSize == "Small" ? size.normal : tblSize == "Large" ? size.huge : size.large
+pos     = tblPos == "Bottom Center" ? position.bottom_center : tblPos == "Top Center" ? position.top_center : tblPos == "Bottom Right" ? position.bottom_right : position.top_right
+
+lSz = lblSize == "Small" ? size.small : lblSize == "Normal" ? size.normal : lblSize == "Large" ? size.large : size.huge
+rSz = lblSize == "Small" ? size.tiny : lblSize == "Normal" ? size.small : lblSize == "Large" ? size.normal : size.large   // retest, one step smaller
+
+pct(int a, int b) =>
+    b > 0 ? str.tostring(a * 100.0 / b, "0") + "%" : "—"
+
+// ─────────────────────────────────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────────────────────────────────
+type TL
+    int   side      // 1 resistance (through highs), -1 support (through lows)
+    float p1
+    int   b1
+    float slope
+    int   touches
+    int   lastTouch
+    line  core
+    line  glow
+    label tag
+
+type Ev
+    int   kind      // 1 touch, 2 break
+    int   side
+    float p1
+    int   b1
+    float slope
+    int   bar
+    bool  retested
+    bool  judged
+
+lineAt(float p1, int b1, float slope, int x) =>
+    p1 + slope * (x - b1)
+
+atr = ta.atr(14)
+ph  = ta.pivothigh(high, pivLen, pivLen)
+pl  = ta.pivotlow(low, pivLen, pivLen)
+pB  = bar_index - pivLen
+
+var array<float> hiP = array.new_float()
+var array<int>   hiB = array.new_int()
+var array<float> loP = array.new_float()
+var array<int>   loB = array.new_int()
+var array<TL>    alive  = array.new<TL>()
+var array<line>  dead   = array.new<line>()
+var array<Ev>    events = array.new<Ev>()
+
+// track record
+var int tHeld = 0
+var int tFail = 0
+var int bFoll = 0
+var int bFail = 0
+var int bRet  = 0
+var int bN    = 0
+var int touchAtBreak = 0
+
+evNew = false
+evBrkUp = false
+evBrkDn = false
+evTouch = false
+
+colOf(int side) =>
+    side == 1 ? RES : SUP
+
+// ─────────────────────────────────────────────────────────────────────────
+//  NEW LINES — each new swing paired with earlier swings on the same side
+// ─────────────────────────────────────────────────────────────────────────
+tryLine(int side, float p2, int b2) =>
+    ps = side == 1 ? hiP : loP
+    bs = side == 1 ? hiB : loB
+    n = array.size(ps)
+    bestT = 0
+    bestP = 0.0
+    bestB = 0
+    bestS = 0.0
+    tol = tolAtr * atr
+    if n > 0
+        for k = n - 1 to math.max(0, n - lookPiv)
+            p1 = array.get(ps, k)
+            b1 = array.get(bs, k)
+            // resistance must fall, support must rise
+            okDir = side == 1 ? p2 < p1 : p2 > p1
+            if okDir and b2 - b1 >= minLen and bar_index - b1 < 480
+                s = (p2 - p1) / (b2 - b1)
+                valid = true
+                for x = b1 + 1 to bar_index
+                    v = lineAt(p1, b1, s, x)
+                    c = close[bar_index - x]
+                    if side == 1 ? c > v + tol : c < v - tol
+                        valid := false
+                        break
+                if valid
+                    t = 2
+                    for j = 0 to n - 1
+                        bj = array.get(bs, j)
+                        if bj > b1 and bj < b2 and math.abs(array.get(ps, j) - lineAt(p1, b1, s, bj)) <= tol
+                            t += 1
+                    if t > bestT
+                        bestT := t
+                        bestP := p1
+                        bestB := b1
+                        bestS := s
+    [bestT, bestP, bestB, bestS]
+
+addLine(int side, float p1, int b1, float s, int t) =>
+    c = colOf(side)
+    x2 = bar_index + extR
+    y2 = lineAt(p1, b1, s, x2)
+    g = showGlow ? line.new(b1, p1, x2, y2, color = color.new(c, 82), width = 7) : na
+    l = line.new(b1, p1, x2, y2, color = c, width = 2)
+    tg = showTch ? label.new(x2, y2, str.tostring(t) + " touches", style = label.style_label_left, color = color.new(PANEL, 20), textcolor = c, size = rSz) : na
+    array.push(alive, TL.new(side, p1, b1, s, t, bar_index, l, g, tg))
+
+killLine(TL t, int at) =>
+    line.set_x2(t.core, at)
+    line.set_y2(t.core, lineAt(t.p1, t.b1, t.slope, at))
+    line.set_style(t.core, line.style_dashed)
+    line.set_color(t.core, color.new(colOf(t.side), 45))
+    line.delete(t.glow)
+    label.delete(t.tag)
+    array.push(dead, t.core)
+    if array.size(dead) > keepBrk
+        line.delete(array.shift(dead))
+
+// a new line is a duplicate if a live line on the same side ends at the same price,
+// or fans out of the same anchor with at least as many touches
+sameAs(int side, float p1, int b1, float s, int touches) =>
+    dup = false
+    for t in alive
+        if t.side == side
+            gap = math.abs(lineAt(t.p1, t.b1, t.slope, bar_index) - lineAt(p1, b1, s, bar_index))
+            similar = math.abs(t.slope - s) <= math.max(math.abs(t.slope), math.abs(s)) * 0.35
+            if gap <= tolAtr * atr or (similar and gap <= 0.75 * atr)
+                dup := true
+            if t.b1 == b1 and t.touches >= touches
+                dup := true
+    dup
+
+if barstate.isconfirmed and not na(atr)
+    for side in array.from(1, -1)
+        isPiv = side == 1 ? not na(ph) : not na(pl)
+        if isPiv
+            p2 = side == 1 ? ph : pl
+            [t, p1, b1, s] = tryLine(side, p2, pB)
+            if t >= minTch and not sameAs(side, p1, b1, s, t)
+                addLine(side, p1, b1, s, t)
+                evNew := true
+                // cap the number of live lines per side: the oldest one goes
+                cnt = 0
+                for tl in alive
+                    cnt += tl.side == side ? 1 : 0
+                if cnt > maxPer
+                    for i = 0 to array.size(alive) - 1
+                        tl = array.get(alive, i)
+                        if tl.side == side
+                            line.delete(tl.core)
+                            line.delete(tl.glow)
+                            label.delete(tl.tag)
+                            array.remove(alive, i)
+                            break
+            if side == 1
+                array.push(hiP, p2)
+                array.push(hiB, pB)
+                if array.size(hiP) > 30
+                    array.shift(hiP)
+                    array.shift(hiB)
+            else
+                array.push(loP, p2)
+                array.push(loB, pB)
+                if array.size(loP) > 30
+                    array.shift(loP)
+                    array.shift(loB)
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+    // ── live lines: touches and breaks
+    tol = tolAtr * atr
+    i = 0
+    while i < array.size(alive)
+        t = array.get(alive, i)
+        v = lineAt(t.p1, t.b1, t.slope, bar_index)
+        broke = t.side == 1 ? close > v + brkAtr * atr : close < v - brkAtr * atr
+        if broke
+            bN += 1
+            touchAtBreak += t.touches
+            array.push(events, Ev.new(2, t.side, t.p1, t.b1, t.slope, bar_index, false, false))
+            if t.side == 1
+                evBrkUp := true
+            else
+                evBrkDn := true
+            if showEv
+                label.new(bar_index, t.side == 1 ? low : high, t.side == 1 ? "▲ BREAK" : "▼ BREAK", style = t.side == 1 ? label.style_label_up : label.style_label_down,
+                     color = colOf(t.side), textcolor = t.side == 1 ? color.white : INK, size = lSz)
+            killLine(t, bar_index)
+            array.remove(alive, i)
+        else
+            touched = t.side == 1 ? high >= v - tol : low <= v + tol
+            if touched and bar_index - t.lastTouch > pivLen
+                t.touches += 1
+                t.lastTouch := bar_index
+                evTouch := true
+                array.push(events, Ev.new(1, t.side, t.p1, t.b1, t.slope, bar_index, false, false))
+                if not na(t.tag)
+                    label.set_text(t.tag, str.tostring(t.touches) + " touches")
+            i += 1
+
+    // ── judge touches and breaks
+    j = 0
+    while j < array.size(events)
+        e = array.get(events, j)
+        v = lineAt(e.p1, e.b1, e.slope, bar_index)
+        age = bar_index - e.bar
+        done = false
+        if e.kind == 1
+            // a touch holds when price moves away from the line by the set ATR before closing through it
+            away = e.side == 1 ? v - low >= moveAtr * atr : high - v >= moveAtr * atr
+            through = e.side == 1 ? close > v + brkAtr * atr : close < v - brkAtr * atr
+            if through
+                tFail += 1
+                done := true
+            else if away
+                tHeld += 1
+                done := true
+            else if age > evalBar
+                done := true
+        else
+            // a break: judged once (followed through or failed), kept for the retest window
+            beyond = e.side == 1 ? high - v >= moveAtr * atr : v - low >= moveAtr * atr
+            back   = e.side == 1 ? close < v - brkAtr * atr : close > v + brkAtr * atr
+            near   = e.side == 1 ? low <= v + tol : high >= v - tol
+            if not e.judged
+                if back
+                    bFail += 1
+                    e.judged := true
+                else if beyond and age > 0
+                    bFoll += 1
+                    e.judged := true
+            if age > 1 and near and not back and not e.retested
+                e.retested := true
+                bRet += 1
+                if showEv
+                    label.new(bar_index, e.side == 1 ? low : high, "RETEST", style = e.side == 1 ? label.style_label_up : label.style_label_down,
+                         color = color.new(PANEL, 0), textcolor = colOf(e.side), size = rSz)
+            if back or age > evalBar
+                if not e.judged
+                    bFail += 1
+                done := true
+        if done
+            array.remove(events, j)
+        else
+            j += 1
+
+// keep live lines running to the current bar
+for t in alive
+    x2 = bar_index + extR
+    y2 = lineAt(t.p1, t.b1, t.slope, x2)
+    line.set_xy2(t.core, x2, y2)
+    if not na(t.glow)
+        line.set_xy2(t.glow, x2, y2)
+    if not na(t.tag)
+        label.set_xy(t.tag, x2, y2)
+
+// ─────────────────────────────────────────────────────────────────────────
+//  SCOREBOARD — a row of tiles across the top of the chart:
+//  a colour strip, a small label, one big number, a caption
+// ─────────────────────────────────────────────────────────────────────────
+var table tb = na
+tile(int c, color accent, string lbl, string big, color bigCol, string cap) =>
+    table.cell(tb, c, 0, "", bgcolor = accent, height = 0.6)
+    table.cell(tb, c, 1, lbl, text_color = MUTE, bgcolor = ROW, text_size = sLbl, text_halign = text.align_center)
+    table.cell(tb, c, 2, big, text_color = bigCol, bgcolor = ROW, text_size = sBig, text_halign = text.align_center)
+    table.cell(tb, c, 3, cap, text_color = MUTE, bgcolor = ROW, text_size = sLbl, text_halign = text.align_center)
+
+if barstate.islast and showTbl
+    table.delete(tb)
+    tb := table.new(pos, 6, 4, bgcolor = PANEL, border_color = PANEL, border_width = 4)
+    nR = 0
+    nS = 0
+    bestR = float(na)
+    bestRT = 0
+    bestS = float(na)
+    bestST = 0
+    for t in alive
+        v = lineAt(t.p1, t.b1, t.slope, bar_index)
+        if t.side == 1
+            nR += 1
+            if na(bestR) or math.abs(v - close) < math.abs(bestR - close)
+                bestR := v
+                bestRT := t.touches
+        else
+            nS += 1
+            if na(bestS) or math.abs(v - close) < math.abs(bestS - close)
+                bestS := v
+                bestST := t.touches
+    tile(0, color.new(SUP, 0), "TRENDLINES", "▼" + str.tostring(nR) + "  ▲" + str.tostring(nS), TXT, "live lines")
+    tile(1, RES, "RESISTANCE", na(bestR) ? "—" : "+" + str.tostring(math.abs(bestR - close) / atr, "0.0") + " ATR", RES, na(bestR) ? "no live line" : str.tostring(bestRT) + " touches")
+    tile(2, SUP, "SUPPORT", na(bestS) ? "—" : "−" + str.tostring(math.abs(close - bestS) / atr, "0.0") + " ATR", SUP, na(bestS) ? "no live line" : str.tostring(bestST) + " touches")
+    tile(3, TXT, "TOUCH HELD", pct(tHeld, tHeld + tFail), TXT, "of " + str.tostring(tHeld + tFail) + " touches")
+    tile(4, TXT, "BREAK FOLLOWED", pct(bFoll, bFoll + bFail), TXT, "of " + str.tostring(bN) + " breaks")
+    tile(5, TXT, "RETESTED", pct(bRet, bN), TXT, "avg " + (bN > 0 ? str.tostring(touchAtBreak * 1.0 / bN, "0.0") : "—") + " touches / break")
+
+// ─────────────────────────────────────────────────────────────────────────
+//  ALERTS
+// ─────────────────────────────────────────────────────────────────────────
+if alBrk and evBrkUp
+    alert(syminfo.ticker + " broke above a descending trendline", alert.freq_once_per_bar_close)
+if alBrk and evBrkDn
+    alert(syminfo.ticker + " broke below an ascending trendline", alert.freq_once_per_bar_close)
+if alNew and evNew
+    alert(syminfo.ticker + " new trendline drawn", alert.freq_once_per_bar_close)
+if alTch and evTouch
+    alert(syminfo.ticker + " touched a trendline", alert.freq_once_per_bar_close)
+
+alertcondition(evBrkUp, "Trendline break up", "{{ticker}} broke above a descending trendline")
+alertcondition(evBrkDn, "Trendline break down", "{{ticker}} broke below an ascending trendline")
+alertcondition(evTouch, "Trendline touch", "{{ticker}} touched a trendline")
+
+// ─────────────────────────────────────────────────────────────────────────
+//  GLOW CANDLES (LunqFX house style)
+// ─────────────────────────────────────────────────────────────────────────
+GLOW_UP_DARK  = #38BDF8
+GLOW_DN_DARK  = #D946EF
+GLOW_UP_LIGHT = #0284C7
+GLOW_DN_LIGHT = #A21CAF
+
+glowUp   = isLight ? GLOW_UP_LIGHT : GLOW_UP_DARK
+glowDn   = isLight ? GLOW_DN_LIGHT : GLOW_DN_DARK
+glowEdge = close >= open ? glowUp : glowDn
+glowOn   = candOn_ and candGlw
+GLOW_NONE = color.new(color.black, 100)
+
+plotcandle(candOn_ and not glowOn ? open : na, high, low, close, "Candles", color = color.new(glowEdge, 24), wickcolor = color.new(glowEdge, 18), bordercolor = glowEdge, display = display.pane)
+
+gQ = (close - open) / 4.0
+plotcandle(glowOn ? open : na, glowOn ? math.max(open, close) : na, glowOn ? math.min(open, close) : na, glowOn ? close : na, "Glow mask", color = chart.bg_color, wickcolor = GLOW_NONE, bordercolor = chart.bg_color, display = display.pane)
+plotcandle(glowOn ? open : na, glowOn ? math.max(open, open + gQ) : na, glowOn ? math.min(open, open + gQ) : na, glowOn ? open + gQ : na, "Glow band 1", color = color.new(glowEdge, 78), wickcolor = GLOW_NONE, bordercolor = GLOW_NONE, display = display.pane)
+plotcandle(glowOn ? open + gQ : na, glowOn ? math.max(open + gQ, open + 2 * gQ) : na, glowOn ? math.min(open + gQ, open + 2 * gQ) : na, glowOn ? open + 2 * gQ : na, "Glow band 2", color = color.new(glowEdge, 58), wickcolor = GLOW_NONE, bordercolor = GLOW_NONE, display = display.pane)
+plotcandle(glowOn ? open + 2 * gQ : na, glowOn ? math.max(open + 2 * gQ, open + 3 * gQ) : na, glowOn ? math.min(open + 2 * gQ, open + 3 * gQ) : na, glowOn ? open + 3 * gQ : na, "Glow band 3", color = color.new(glowEdge, 36), wickcolor = GLOW_NONE, bordercolor = GLOW_NONE, display = display.pane)
+plotcandle(glowOn ? open + 3 * gQ : na, glowOn ? math.max(open + 3 * gQ, close) : na, glowOn ? math.min(open + 3 * gQ, close) : na, glowOn ? close : na, "Glow band 4", color = color.new(glowEdge, 8), wickcolor = GLOW_NONE, bordercolor = GLOW_NONE, display = display.pane)
+plotcandle(glowOn ? open : na, glowOn ? high : na, glowOn ? low : na, glowOn ? close : na, "Glow wick", color = GLOW_NONE, wickcolor = color.new(glowEdge, 10), bordercolor = color.new(glowEdge, 30), display = display.pane)
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)

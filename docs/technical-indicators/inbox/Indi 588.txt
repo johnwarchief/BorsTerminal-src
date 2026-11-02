@@ -1,0 +1,688 @@
+
+//@version=6
+indicator("Range Profile Structure", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500, max_bars_back=2000)
+
+// ┌────────────────────────────── Constants ──────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+const string g1 = "Swing Engine"
+const string g2 = "Range Detection"
+const string g3 = "Volume Profile"
+const string g4 = "Breakout Structure"
+const string g5 = "Position Tool"
+const string g6 = "Display"
+
+const color BULL = #00FF66
+const color BEAR = #FF0066
+const color RANGE = #A0A0A0
+
+// ┌────────────────────────────── Inputs ─────────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+// Swing Engine
+int swingLen            = input.int(5, "Swing Length", minval = 2, maxval = 30, group = g1,
+     tooltip = "Number of bars on each side required to confirm a swing high or low used to detect ranges.")
+int swingMemory         = input.int(10, "Swing Memory", minval = 4, maxval = 20, group = g1,
+     tooltip = "Number of recent alternating swing points stored and evaluated for range detection. Consecutive swings on the same side merge into the more extreme one.")
+int atrLen              = input.int(14, "ATR Length", minval = 2, group = g1,
+     tooltip = "Number of bars used to calculate the Average True Range, used for range width limits, edge stability, and the break buffer.")
+
+// Range Detection
+int minTouches          = input.int(2, "Touches Per Edge", minval = 2, maxval = 5, group = g2,
+     tooltip = "Minimum number of swing highs and swing lows each required to form a range.")
+int minRotations        = input.int(3, "Minimum Rotations", minval = 3, maxval = 10, group = g2,
+     tooltip = "Minimum number of alternating swings between the range high and range low required before a range is confirmed.")
+int minRangeBars        = input.int(8, "Minimum Range Span", minval = 3, maxval = 100, group = g2,
+     tooltip = "Minimum number of bars between the oldest and newest swing in a range candidate.")
+float clusterATR        = input.float(0.30, "Edge Stability ATR", minval = 0.05, maxval = 1.0, step = 0.05, group = g2,
+     tooltip = "Tolerance, as a multiple of ATR, for how tightly swings must cluster to form an edge. Also sets how close a new swing must be to an active edge to count as a touch.")
+float minWidthATR       = input.float(1.0, "Minimum Width ATR", minval = 0.25, maxval = 5.0, step = 0.25, inline = "W", group = g2,
+     tooltip = "Minimum and maximum range height, as multiples of ATR. Ranges outside these limits are ignored.")
+float maxWidthATR       = input.float(6.0, "Maximum", minval = 1.0, maxval = 15.0, step = 0.25, inline = "W", group = g2,
+     tooltip = "Minimum and maximum range height, as multiples of ATR. Ranges outside these limits are ignored.")
+float edgeAdapt         = input.float(0.20, "Edge Adaptation", minval = 0.0, maxval = 0.50, step = 0.05, group = g2,
+     tooltip = "How far an active range edge shifts toward each new swing that touches it. A value of 0 keeps the edges fixed after detection.")
+int maxRangeAge         = input.int(0, "Maximum Range Age", minval = 0, maxval = 2000, group = g2,
+     tooltip = "Maximum number of bars a range stays active before it is closed without a breakout. A value of 0 disables the limit.")
+
+// Volume Profile
+bool showProfile        = input.bool(true, "Range Volume Profile", group = g3,
+     tooltip = "Toggles visibility of the volume profile inside each range.")
+int profileBins         = input.int(14, "Profile Rows", minval = 8, maxval = 16, group = g3,
+     tooltip = "Number of horizontal rows the range volume is distributed into. Higher values produce a more detailed profile.")
+int profileWidth        = input.int(40, "Profile Width %", minval = 15, maxval = 60, group = g3,
+     tooltip = "Width of the highest-volume profile row, as a percentage of the range's length in bars. Other rows scale relative to it.")
+bool showPOC            = input.bool(true, "Point of Control", group = g3,
+     tooltip = "Toggles the line at the price row with the highest traded volume inside the range.")
+
+// Breakout Structure
+float breakBuffer       = input.float(0.10, "Break Buffer ATR", minval = 0.0, maxval = 2.0, step = 0.05, group = g4,
+     tooltip = "Distance beyond the range edge, as a multiple of ATR, that price must close to count as outside the range.")
+int breakCloses         = input.int(2, "Break Acceptance Closes", minval = 1, maxval = 5, group = g4,
+     tooltip = "Number of consecutive closes beyond the break buffer required to confirm a breakout or breakdown.")
+bool showBreakLabel     = input.bool(true, "Breakout Tag", group = g4,
+     tooltip = "Toggles the BREAKOUT and BREAKDOWN labels on confirmed range breaks.")
+bool showDeviations     = input.bool(true, "Range Deviations", group = g4,
+     tooltip = "Toggles diamond markers at the extreme of moves that closed outside the range and then closed back inside.")
+int deviationHistory    = input.int(30, "Deviation History", minval = 5, maxval = 100, group = g4,
+     tooltip = "Maximum number of deviation markers kept on the chart. The oldest marker is removed first.")
+
+// Position Tool
+bool showPosition       = input.bool(true, "Breakout Position Tool", group = g5,
+     tooltip = "Toggles the position tool drawn on each confirmed breakout, with entry at the broken edge and stop at the opposite edge.")
+int positionBars        = input.int(10, "Position Width", minval = 3, maxval = 40, group = g5,
+     tooltip = "Number of bars the position tool extends forward from the breakout bar.")
+float tp1Mult           = input.float(0.50, "TP1", minval = 0.10, maxval = 3.0, step = 0.10, inline = "TP", group = g5,
+     tooltip = "Take profit distances from entry, as multiples of the range height.")
+float tp2Mult           = input.float(1.00, "TP2", minval = 0.10, maxval = 4.0, step = 0.10, inline = "TP", group = g5,
+     tooltip = "Take profit distances from entry, as multiples of the range height.")
+float tp3Mult           = input.float(2.00, "TP3", minval = 0.10, maxval = 5.0, step = 0.10, inline = "TP", group = g5,
+     tooltip = "Take profit distances from entry, as multiples of the range height.")
+bool showPositionLabels = input.bool(true, "Position Labels", group = g5,
+     tooltip = "Toggles the ENTRY, SL, TP1, TP2, and TP3 labels on the position tool.")
+
+// Display
+int gradientRows        = input.int(22, "Gradient Smoothness", minval = 12, maxval = 24, group = g6,
+     tooltip = "Number of layers used to draw the range gradient. Higher values produce a smoother fade.")
+int historyCount        = input.int(10, "Completed Ranges", minval = 1, maxval = 10, group = g6,
+     tooltip = "Number of completed ranges kept on the chart. The oldest range is removed first.")
+bool paintCandles       = input.bool(true, "Range Candle Colors", group = g6,
+     tooltip = "Toggles candle coloring while a range is active. Candles shift from the bullish color near the range low to the bearish color near the range high, and take the full color once they close outside the range.")
+int candleTransparency  = input.int(10, "Candle Transparency", minval = 0, maxval = 70, group = g6,
+     tooltip = "Transparency applied to candles colored inside an active range.")
+bool showMidline        = input.bool(false, "Equilibrium", group = g6,
+     tooltip = "Toggles the dotted line at the midpoint of each range.")
+int cooldownBars        = input.int(4, "New Range Cooldown", minval = 0, maxval = 50, group = g6,
+     tooltip = "Number of bars to wait after a range resolves before a new range can be detected.")
+color rangeCol          = input.color(RANGE, "Profile", group = g6,
+     tooltip = "Color used for the active range profile, the candle color at mid-range, and ranges that close without a breakout.")
+color bullCol           = input.color(BULL, "Bullish", inline = "COL", group = g6,
+     tooltip = "Colors used for range edges, gradients, breakouts, deviations, and candles. Bullish applies to the lower half and upward breaks, Bearish to the upper half and downward breaks.")
+color bearCol           = input.color(BEAR, "Bearish", inline = "COL", group = g6,
+     tooltip = "Colors used for range edges, gradients, breakouts, deviations, and candles. Bullish applies to the lower half and upward breaks, Bearish to the upper half and downward breaks.")
+
+
+// ┌────────────────────────────── Types ──────────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+type RangeDraw
+    box shell
+    array<box> gradient
+    array<box> profile
+    line upper
+    line lower
+    line middle
+    line poc
+    label breakTag
+    box rewardBox
+    box riskBox
+    line entryLine
+    line stopLine
+    line tp1Line
+    line tp2Line
+    line tp3Line
+    label entryTag
+    label stopTag
+    label tp1Tag
+    label tp2Tag
+    label tp3Tag
+
+// ┌────────────────────────────── Storage ────────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+var array<float> swingPrice = array.new_float()
+var array<int> swingBar = array.new_int()
+var array<int> swingSide = array.new_int()
+var array<float> rangeProfile = array.new_float()
+var array<RangeDraw> history = array.new<RangeDraw>()
+var array<label> deviationMarks = array.new<label>()
+
+float atr = ta.atr(atrLen)
+float ph = ta.pivothigh(high, swingLen, swingLen)
+float pl = ta.pivotlow(low, swingLen, swingLen)
+
+// ┌────────────────────────────── Swing Engine ───────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+f_add_swing(array<float> prices, array<int> bars, array<int> sides, float price, int bi, int side) =>
+    if prices.size() > 0 and sides.get(0) == side
+        bool replace = side == 1 ? price >= prices.get(0) : price <= prices.get(0)
+        if replace
+            prices.set(0, price)
+            bars.set(0, bi)
+    else
+        prices.unshift(price)
+        bars.unshift(bi)
+        sides.unshift(side)
+
+    while prices.size() > swingMemory
+        prices.pop()
+        bars.pop()
+        sides.pop()
+    true
+
+f_find_range(array<float> prices, array<int> bars, array<int> sides, float atrValue) =>
+    bool found = false
+    float bestTop = na
+    float bestBottom = na
+    int bestLeft = na
+    int bestHighTouches = 0
+    int bestLowTouches = 0
+    int n = prices.size()
+    int minEvents = math.max(minTouches * 2, minRotations + 1)
+    float tolerance = atrValue * clusterATR
+
+    if n >= minEvents and atrValue > 0
+        for count = minEvents to n
+            float highSum = 0.0
+            float lowSum = 0.0
+            float highMin = na
+            float highMax = na
+            float lowMin = na
+            float lowMax = na
+            int highCount = 0
+            int lowCount = 0
+            int oldest = bar_index
+            int newest = 0
+
+            for i = 0 to count - 1
+                float p = prices.get(i)
+                int bi = bars.get(i)
+                int side = sides.get(i)
+
+                oldest := math.min(oldest, bi)
+                newest := math.max(newest, bi)
+
+                if side == 1
+                    highSum += p
+                    highCount += 1
+                    highMin := na(highMin) ? p : math.min(highMin, p)
+                    highMax := na(highMax) ? p : math.max(highMax, p)
+                else
+                    lowSum += p
+                    lowCount += 1
+                    lowMin := na(lowMin) ? p : math.min(lowMin, p)
+                    lowMax := na(lowMax) ? p : math.max(lowMax, p)
+
+            if highCount >= minTouches and lowCount >= minTouches
+                float top = highSum / highCount
+                float bottom = lowSum / lowCount
+                float width = top - bottom
+                bool stable = highMax - highMin <= tolerance * 2.0 and lowMax - lowMin <= tolerance * 2.0
+                bool widthOK = width >= atrValue * minWidthATR and width <= atrValue * math.max(maxWidthATR, minWidthATR)
+                bool spanOK = newest - oldest >= minRangeBars
+                bool rotationsOK = count - 1 >= minRotations
+
+                if top > bottom and stable and widthOK and spanOK and rotationsOK
+                    found := true
+                    bestTop := top
+                    bestBottom := bottom
+                    bestLeft := oldest
+                    bestHighTouches := highCount
+                    bestLowTouches := lowCount
+
+    [found, bestTop, bestBottom, bestLeft, bestHighTouches, bestLowTouches]
+
+// ┌────────────────────────────── Volume Profile ─────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+f_reset_profile(array<float> profile) =>
+    profile.clear()
+    for i = 0 to profileBins - 1
+        profile.push(0.0)
+    true
+
+f_add_profile_bar(array<float> profile, float barLow, float barHigh, float barVolume, float bottom, float top) =>
+    float height = top - bottom
+
+    if height > 0 and barVolume > 0
+        if barHigh == barLow
+            if barHigh >= bottom and barHigh <= top
+                int idx = int(math.floor((barHigh - bottom) / height * profileBins))
+                idx := math.max(0, math.min(profileBins - 1, idx))
+                profile.set(idx, profile.get(idx) + barVolume)
+        else
+            float candleSpan = math.max(barHigh - barLow, syminfo.mintick)
+
+            for i = 0 to profileBins - 1
+                float binLow = bottom + height * i / profileBins
+                float binHigh = bottom + height * (i + 1) / profileBins
+                float overlap = math.max(0.0, math.min(barHigh, binHigh) - math.max(barLow, binLow))
+
+                if overlap > 0
+                    profile.set(i, profile.get(i) + barVolume * overlap / candleSpan)
+    true
+
+f_rebuild_profile(array<float> profile, int left, float top, float bottom) =>
+    f_reset_profile(profile)
+    int span = math.min(bar_index - left, 1500)
+
+    if span >= 0
+        for i = 0 to span
+            f_add_profile_bar(profile, low[i], high[i], nz(volume[i], 0.0), bottom, top)
+    true
+
+// ┌────────────────────────────── Objects ────────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+f_new_range(int left, float top, float bottom) =>
+    box shell = box.new(left, top, bar_index, bottom, xloc=xloc.bar_index, border_color=na, bgcolor=na)
+    array<box> gradient = array.new<box>()
+    array<box> profile = array.new<box>()
+
+    for i = 0 to gradientRows - 1
+        gradient.push(box.new(left, top, bar_index, bottom, xloc=xloc.bar_index, border_color=na, bgcolor=na))
+
+    for i = 0 to profileBins - 1
+        profile.push(box.new(left, top, left, bottom, xloc=xloc.bar_index, border_color=na, bgcolor=na))
+
+    line upper = line.new(left, top, bar_index, top, xloc=xloc.bar_index, color=na, width=2)
+    line lower = line.new(left, bottom, bar_index, bottom, xloc=xloc.bar_index, color=na, width=2)
+    line middle = line.new(left, math.avg(top, bottom), bar_index, math.avg(top, bottom), xloc=xloc.bar_index, color=na, width=1, style=line.style_dotted)
+    line poc = line.new(left, math.avg(top, bottom), bar_index, math.avg(top, bottom), xloc=xloc.bar_index, color=na, width=2)
+
+    RangeDraw.new(shell, gradient, profile, upper, lower, middle, poc, na, na, na, na, na, na, na, na, na, na, na, na)
+
+f_delete_range(RangeDraw d) =>
+    box.delete(d.shell)
+    box.delete(d.rewardBox)
+    box.delete(d.riskBox)
+
+    if d.gradient.size() > 0
+        for i = 0 to d.gradient.size() - 1
+            box.delete(d.gradient.get(i))
+
+    if d.profile.size() > 0
+        for i = 0 to d.profile.size() - 1
+            box.delete(d.profile.get(i))
+
+    line.delete(d.upper)
+    line.delete(d.lower)
+    line.delete(d.middle)
+    line.delete(d.poc)
+    line.delete(d.entryLine)
+    line.delete(d.stopLine)
+    line.delete(d.tp1Line)
+    line.delete(d.tp2Line)
+    line.delete(d.tp3Line)
+
+    label.delete(d.breakTag)
+    label.delete(d.entryTag)
+    label.delete(d.stopTag)
+    label.delete(d.tp1Tag)
+    label.delete(d.tp2Tag)
+    label.delete(d.tp3Tag)
+    true
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+
+// ┌────────────────────────────── Profile Rendering ──────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+f_render_profile(RangeDraw d, array<float> profile, int left, int right, float top, float bottom, color css, bool completed) =>
+    float maxVol = 0.0
+    int pocIndex = 0
+
+    if profile.size() > 0
+        for i = 0 to profile.size() - 1
+            float v = profile.get(i)
+            if v > maxVol
+                maxVol := v
+                pocIndex := i
+
+    int totalBars = math.max(right - left + 1, 1)
+    int maxProfileBars = math.max(2, int(math.round(totalBars * profileWidth / 100.0)))
+    maxProfileBars := math.min(maxProfileBars, totalBars)
+    float height = top - bottom
+
+    if d.profile.size() > 0
+        for i = 0 to d.profile.size() - 1
+            box b = d.profile.get(i)
+            float v = profile.size() > i ? profile.get(i) : 0.0
+            float ratio = maxVol > 0 ? v / maxVol : 0.0
+            float density = math.pow(ratio, 0.72)
+            float binBottom = bottom + height * i / profileBins
+            float binTop = bottom + height * (i + 1) / profileBins
+
+            if showProfile and ratio > 0
+                int widthBars = math.max(1, int(math.round(maxProfileBars * math.pow(ratio, 0.85))))
+                int alpha = int(math.max(42.0, (completed ? 94.0 : 91.0) - density * (completed ? 30.0 : 42.0)))
+                b.set_lefttop(right - widthBars + 1, binTop)
+                b.set_rightbottom(right, binBottom)
+                b.set_bgcolor(color.new(css, alpha))
+            else
+                b.set_bgcolor(na)
+
+    float pocPrice = bottom + height * (pocIndex + 0.5) / profileBins
+    d.poc.set_xy1(left, pocPrice)
+    d.poc.set_xy2(right, pocPrice)
+    d.poc.set_color(showPOC and maxVol > 0 ? color.new(chart.fg_color, completed ? 52 : 28) : na)
+    true
+
+// ┌────────────────────────────── Range Rendering ────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+
+f_render_range(RangeDraw d, array<float> profile, int left, int right, float top, float bottom, int highTouches, int lowTouches, color resolvedCol, bool completed) =>
+    float height = math.max(top - bottom, syminfo.mintick)
+
+    d.shell.set_lefttop(left, top)
+    d.shell.set_rightbottom(right, bottom)
+    d.shell.set_border_color(na)
+
+    int rows = d.gradient.size()
+
+    if rows > 0
+        float rowHeight = height / rows
+
+        for i = 0 to rows - 1
+            float rowTop = top - rowHeight * i
+            float rowBottom = rowTop - rowHeight
+            float position = (i + 0.5) / rows
+            float distance = math.abs(position - 0.5) * 2.0
+            float strength = math.pow(distance, 1.55)
+
+            color rowCol = position < 0.5 ? bearCol : bullCol
+            int alpha = int(99.0 - strength * (completed ? 17.0 : 38.0))
+
+            box layer = d.gradient.get(i)
+            layer.set_lefttop(left, rowTop)
+            layer.set_rightbottom(right, rowBottom)
+            layer.set_bgcolor(color.new(rowCol, alpha))
+
+    int upperAlpha = int(math.max(4.0, 43.0 - highTouches * 8.0))
+    int lowerAlpha = int(math.max(4.0, 43.0 - lowTouches * 8.0))
+
+    d.upper.set_xy1(left, top)
+    d.upper.set_xy2(right, top)
+    d.upper.set_color(color.new(bearCol, completed ? 34 : upperAlpha))
+
+    d.lower.set_xy1(left, bottom)
+    d.lower.set_xy2(right, bottom)
+    d.lower.set_color(color.new(bullCol, completed ? 34 : lowerAlpha))
+
+    float mid = math.avg(top, bottom)
+    d.middle.set_xy1(left, mid)
+    d.middle.set_xy2(right, mid)
+    d.middle.set_color(showMidline ? color.new(chart.fg_color, 80) : na)
+
+    f_render_profile(d, profile, left, right, top, bottom, completed ? resolvedCol : rangeCol, completed)
+    true
+
+// ┌────────────────────────────── Position Tool ──────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+f_draw_position(RangeDraw d, int direction, int breakBar, float top, float bottom) =>
+    float height = top - bottom
+    float entry = direction == 1 ? top : bottom
+    float stop = direction == 1 ? bottom : top
+    float tp1 = direction == 1 ? entry + height * tp1Mult : entry - height * tp1Mult
+    float tp2 = direction == 1 ? entry + height * tp2Mult : entry - height * tp2Mult
+    float tp3 = direction == 1 ? entry + height * tp3Mult : entry - height * tp3Mult
+    int right = breakBar + positionBars
+    color css = direction == 1 ? bullCol : bearCol
+
+    if showPosition
+        if direction == 1
+            d.rewardBox := box.new(breakBar, tp3, right, entry, xloc=xloc.bar_index, border_color=na, bgcolor=color.new(bullCol, 88))
+            d.riskBox := box.new(breakBar, entry, right, stop, xloc=xloc.bar_index, border_color=na, bgcolor=color.new(bearCol, 93))
+        else
+            d.rewardBox := box.new(breakBar, entry, right, tp3, xloc=xloc.bar_index, border_color=na, bgcolor=color.new(bearCol, 88))
+            d.riskBox := box.new(breakBar, stop, right, entry, xloc=xloc.bar_index, border_color=na, bgcolor=color.new(bullCol, 93))
+
+        d.entryLine := line.new(breakBar, entry, right, entry, xloc=xloc.bar_index, color=color.new(chart.fg_color, 8), width=2)
+        d.stopLine := line.new(breakBar, stop, right, stop, xloc=xloc.bar_index, color=color.new(chart.fg_color, 52), width=1, style=line.style_dashed)
+        d.tp1Line := line.new(breakBar, tp1, right, tp1, xloc=xloc.bar_index, color=color.new(css, 62), width=1, style=line.style_dotted)
+        d.tp2Line := line.new(breakBar, tp2, right, tp2, xloc=xloc.bar_index, color=color.new(css, 42), width=1, style=line.style_dotted)
+        d.tp3Line := line.new(breakBar, tp3, right, tp3, xloc=xloc.bar_index, color=color.new(css, 20), width=1)
+
+        if showPositionLabels
+            d.entryTag := label.new(right, entry, "ENTRY", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.new(chart.bg_color, 12), textcolor=chart.fg_color, size=size.tiny)
+            d.stopTag := label.new(right, stop, "SL", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.new(chart.bg_color, 12), textcolor=chart.fg_color, size=size.tiny)
+            d.tp1Tag := label.new(right, tp1, "TP1", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.new(chart.bg_color, 12), textcolor=chart.fg_color, size=size.tiny)
+            d.tp2Tag := label.new(right, tp2, "TP2", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.new(chart.bg_color, 12), textcolor=chart.fg_color, size=size.tiny)
+            d.tp3Tag := label.new(right, tp3, "TP3", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.new(chart.bg_color, 12), textcolor=chart.fg_color, size=size.tiny)
+
+    true
+
+// ┌────────────────────────────── Deviations ─────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+f_add_deviation(int bi, float price, int direction) =>
+    color css = direction == 1 ? bearCol : bullCol
+    label mark = label.new(bi, price, "◆", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_none, textcolor=css, size=size.small)
+    deviationMarks.unshift(mark)
+
+    while deviationMarks.size() > deviationHistory
+        label.delete(deviationMarks.pop())
+    true
+
+// ┌────────────────────────────── Pivot Capture ──────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+if not na(ph)
+    f_add_swing(swingPrice, swingBar, swingSide, ph, bar_index - swingLen, 1)
+
+if not na(pl)
+    f_add_swing(swingPrice, swingBar, swingSide, pl, bar_index - swingLen, -1)
+
+// ┌────────────────────────────── State ──────────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+var bool rangeActive = false
+var float rangeTop = na
+var float rangeBottom = na
+var int rangeLeft = na
+var int rangeOpened = na
+var int highTouches = 0
+var int lowTouches = 0
+var RangeDraw activeDraw = na
+var int profileLastBar = na
+var int breakUpCount = 0
+var int breakDownCount = 0
+var int cooldown = 0
+
+var int deviationDir = 0
+var float deviationExtreme = na
+var int deviationExtremeBar = na
+
+bool signalBreakUp = false
+bool signalBreakDown = false
+bool signalDeviationHigh = false
+bool signalDeviationLow = false
+
+if cooldown > 0
+    cooldown -= 1
+
+// ┌────────────────────────────── Detect Range ───────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+if not rangeActive and cooldown <= 0 and not na(atr)
+    [found, candidateTop, candidateBottom, candidateLeft, candidateHighs, candidateLows] = f_find_range(swingPrice, swingBar, swingSide, atr)
+
+    if found
+        candidateLeft := math.max(candidateLeft, bar_index - 1500)
+        rangeActive := true
+        rangeTop := candidateTop
+        rangeBottom := candidateBottom
+        rangeLeft := candidateLeft
+        rangeOpened := bar_index
+        highTouches := candidateHighs
+        lowTouches := candidateLows
+        activeDraw := f_new_range(rangeLeft, rangeTop, rangeBottom)
+
+        f_rebuild_profile(rangeProfile, rangeLeft, rangeTop, rangeBottom)
+
+        profileLastBar := bar_index
+        breakUpCount := 0
+        breakDownCount := 0
+        deviationDir := 0
+        deviationExtreme := na
+        deviationExtremeBar := na
+
+// ┌────────────────────────────── Refine Range ───────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+if rangeActive
+    float tolerance = atr * clusterATR
+    bool edgesChanged = false
+
+    if not na(ph) and bar_index - swingLen >= rangeLeft and math.abs(ph - rangeTop) <= tolerance
+        rangeTop += (ph - rangeTop) * edgeAdapt
+        highTouches += 1
+        edgesChanged := true
+
+    if not na(pl) and bar_index - swingLen >= rangeLeft and math.abs(pl - rangeBottom) <= tolerance
+        rangeBottom += (pl - rangeBottom) * edgeAdapt
+        lowTouches += 1
+        edgesChanged := true
+
+    if edgesChanged
+        f_rebuild_profile(rangeProfile, rangeLeft, rangeTop, rangeBottom)
+        profileLastBar := bar_index
+    else if bar_index > nz(profileLastBar, bar_index - 1)
+        f_add_profile_bar(rangeProfile, low, high, nz(volume, 0.0), rangeBottom, rangeTop)
+        profileLastBar := bar_index
+
+// ┌────────────────────────────── Breaks & Deviations ────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+int breakDirection = 0
+
+if rangeActive and barstate.isconfirmed
+    float buffer = atr * breakBuffer
+    bool outsideUp = close > rangeTop + buffer
+    bool outsideDown = close < rangeBottom - buffer
+
+    breakUpCount := outsideUp ? breakUpCount + 1 : 0
+    breakDownCount := outsideDown ? breakDownCount + 1 : 0
+
+    if deviationDir == 0
+        if outsideUp
+            deviationDir := 1
+            deviationExtreme := high
+            deviationExtremeBar := bar_index
+        else if outsideDown
+            deviationDir := -1
+            deviationExtreme := low
+            deviationExtremeBar := bar_index
+    else
+        if deviationDir == 1 and high > deviationExtreme
+            deviationExtreme := high
+            deviationExtremeBar := bar_index
+
+        if deviationDir == -1 and low < deviationExtreme
+            deviationExtreme := low
+            deviationExtremeBar := bar_index
+
+        bool backInside = close <= rangeTop and close >= rangeBottom
+
+        if backInside
+            if showDeviations
+                f_add_deviation(deviationExtremeBar, deviationExtreme, deviationDir)
+
+            signalDeviationHigh := deviationDir == 1
+            signalDeviationLow := deviationDir == -1
+            deviationDir := 0
+            deviationExtreme := na
+            deviationExtremeBar := na
+
+    if breakUpCount >= breakCloses
+        breakDirection := 1
+
+    if breakDownCount >= breakCloses
+        breakDirection := -1
+
+    if maxRangeAge > 0 and bar_index - rangeOpened >= maxRangeAge
+        breakDirection := 2
+
+// ┌────────────────────────────── Resolve Range ──────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+if rangeActive and breakDirection != 0
+    color resolvedCol = breakDirection == 1 ? bullCol : breakDirection == -1 ? bearCol : rangeCol
+
+    f_render_range(activeDraw, rangeProfile, rangeLeft, bar_index, rangeTop, rangeBottom, highTouches, lowTouches, resolvedCol, true)
+
+    if breakDirection == 1 or breakDirection == -1
+        bool bullishBreak = breakDirection == 1
+        float entry = bullishBreak ? rangeTop : rangeBottom
+
+        if showBreakLabel
+            activeDraw.breakTag := label.new(bar_index, entry, bullishBreak ? "BREAKOUT  ↑" : "BREAKDOWN  ↓", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.new(resolvedCol, 88), textcolor=chart.fg_color, size=size.small)
+
+        f_draw_position(activeDraw, breakDirection, bar_index, rangeTop, rangeBottom)
+
+        signalBreakUp := bullishBreak
+        signalBreakDown := not bullishBreak
+
+    history.unshift(activeDraw)
+
+    while history.size() > historyCount
+        RangeDraw old = history.pop()
+        f_delete_range(old)
+
+    rangeActive := false
+    activeDraw := na
+
+    swingPrice.clear()
+    swingBar.clear()
+    swingSide.clear()
+
+    breakUpCount := 0
+    breakDownCount := 0
+    deviationDir := 0
+    deviationExtreme := na
+    deviationExtremeBar := na
+    cooldown := cooldownBars
+
+// ┌────────────────────────────── Active Rendering ───────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+if rangeActive
+    f_render_range(activeDraw, rangeProfile, rangeLeft, bar_index, rangeTop, rangeBottom, highTouches, lowTouches, rangeCol, false)
+
+// ┌────────────────────────────── Candle Coloring ────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+color candleCol = na
+
+if paintCandles and rangeActive and rangeTop > rangeBottom
+    float pos = math.max(0.0, math.min(1.0, (close - rangeBottom) / (rangeTop - rangeBottom)))
+    candleCol := pos <= 0.5 ? color.from_gradient(pos, 0.0, 0.5, bullCol, rangeCol) : color.from_gradient(pos, 0.5, 1.0, rangeCol, bearCol)
+    candleCol := color.new(candleCol, candleTransparency)
+
+    if close > rangeTop
+        candleCol := bullCol
+    else if close < rangeBottom
+        candleCol := bearCol
+
+barcolor(candleCol)
+
+// ┌────────────────────────────── Data Window ────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+plot(rangeActive ? rangeTop : na, "Active Range High", display=display.data_window)
+plot(rangeActive ? rangeBottom : na, "Active Range Low", display=display.data_window)
+
+// ┌────────────────────────────── Alerts ─────────────────────────────────┐
+// └──────────────────────────────────────────────────────────────────────────────────┘
+
+alertcondition(signalBreakUp, "Range Breakout", "Range Profile Structure broke upward | {{exchange}}:{{ticker}}")
+alertcondition(signalBreakDown, "Range Breakdown", "Range Profile Structure broke downward | {{exchange}}:{{ticker}}")
+alertcondition(signalDeviationHigh, "Range High Deviation", "Range Profile Structure deviated above the range and confirmed back inside | {{exchange}}:{{ticker}}")
+alertcondition(signalDeviationLow, "Range Low Deviation", "Range Profile Structure deviated below the range and confirmed back inside | {{exchange}}:{{ticker}}")
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)

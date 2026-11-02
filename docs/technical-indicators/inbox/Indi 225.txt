@@ -1,0 +1,597 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=5
+indicator("Auto TrendLine Intelligence [BOS · CHoCH · FVG] [Rehan Khanani]", overlay=true, max_lines_count=500, max_labels_count=500)
+
+// ============================================================
+// GROUP 1: TREND LINE SETTINGS
+// ============================================================
+
+grp1 = "Trend Line Settings"
+pivotLen      = input.int(10,    "Pivot Lookback Length",    minval=3,        group=grp1)
+showMajor     = input.bool(true, "Show Major Trend Lines",                    group=grp1)
+showMinor     = input.bool(true, "Show Minor Trend Lines",                    group=grp1)
+lineExtend    = input.bool(true, "Extend Lines Right",                        group=grp1)
+lineWidth     = input.int(2,     "Major Line Width",         minval=1, maxval=5, group=grp1)
+bullColor     = input.color(#00bcd4, "Support Line Color",                    group=grp1)
+bearColor     = input.color(#ef5350, "Resistance Line Color",                 group=grp1)
+minorBull     = input.color(#26a69a, "Minor Support Color",                   group=grp1)
+minorBear     = input.color(#ff7043, "Minor Resistance Color",                group=grp1)
+
+// ============================================================
+// GROUP 2: SMART MONEY CONCEPTS
+// ============================================================
+
+grp2 = "Smart Money Concepts"
+showBOS       = input.bool(true,  "Show BOS (Break of Structure)",            group=grp2)
+showCHoCH     = input.bool(true,  "Show CHoCH (Change of Character)",         group=grp2)
+showFVG       = input.bool(true,  "Show FVG (Fair Value Gap)",                group=grp2)
+showLiquidity = input.bool(true,  "Show Liquidity Zones",                     group=grp2)
+fvgTransp     = input.int(85,     "FVG Transparency", minval=0, maxval=100,   group=grp2)
+
+// ============================================================
+// GROUP 3: SIGNAL & ENTRY SETTINGS
+// ============================================================
+
+grp3 = "Signal and Entry Settings"
+showSignals   = input.bool(true,  "Show Entry Signals",                       group=grp3)
+atrLen        = input.int(14,     "ATR Length",                               group=grp3)
+atrMult       = input.float(0.5,  "ATR Buffer Multiplier",     minval=0.1,    group=grp3)
+slMult        = input.float(1.5,  "Stop Loss ATR Multiplier",  minval=0.5,    group=grp3)
+rrRatio       = input.float(2.0,  "Risk Reward Ratio",         minval=0.5,    group=grp3)
+showTPSL      = input.bool(true,  "Show TP / SL on Chart",                   group=grp3)
+
+// ============================================================
+// GROUP 4: VOLUME & MOMENTUM FILTER
+// ============================================================
+
+grp4 = "Volume and Momentum Filter"
+useVolFilter  = input.bool(true,  "Enable Volume Filter",                     group=grp4)
+volMult       = input.float(1.2,  "Volume Spike Multiplier",   minval=1.0,    group=grp4)
+useMomFilter  = input.bool(true,  "Enable RSI Momentum Filter",               group=grp4)
+rsiLen        = input.int(14,     "RSI Length",                               group=grp4)
+rsiOB         = input.int(70,     "RSI Overbought",                           group=grp4)
+rsiOS         = input.int(30,     "RSI Oversold",                             group=grp4)
+
+// ============================================================
+// GROUP 5: DASHBOARD
+// ============================================================
+
+grp5 = "Dashboard"
+showDash      = input.bool(true,  "Show Dashboard",                           group=grp5)
+dashPos       = input.string("Top Right", "Dashboard Position",
+     options=["Top Right","Top Left","Bottom Right","Bottom Left"],            group=grp5)
+
+// ============================================================
+// CORE CALCULATIONS
+// ============================================================
+
+atr    = ta.atr(atrLen)
+rsi    = ta.rsi(close, rsiLen)
+ema50  = ta.ema(close, 50)
+ema200 = ta.ema(close, 200)
+volMA  = ta.sma(volume, 20)
+
+// Volume spike filter
+volSpike = volume > volMA * volMult
+
+// Pivot detection — major (longer lookback) and minor
+phMajor = ta.pivothigh(high, pivotLen,     pivotLen)
+plMajor = ta.pivotlow(low,   pivotLen,     pivotLen)
+phMinor = ta.pivothigh(high, pivotLen / 2, pivotLen / 2)
+plMinor = ta.pivotlow(low,   pivotLen / 2, pivotLen / 2)
+
+// ============================================================
+// PIVOT STORAGE — MAJOR
+// ============================================================
+
+var float ph1 = na
+var float ph2 = na
+var int   ph1b = na
+var int   ph2b = na
+var float pl1 = na
+var float pl2 = na
+var int   pl1b = na
+var int   pl2b = na
+
+if not na(phMajor)
+    ph2  := ph1
+    ph2b := ph1b
+    ph1  := phMajor
+    ph1b := bar_index[pivotLen]
+
+if not na(plMajor)
+    pl2  := pl1
+    pl2b := pl1b
+    pl1  := plMajor
+    pl1b := bar_index[pivotLen]
+
+// ============================================================
+// PIVOT STORAGE — MINOR
+// ============================================================
+
+var float mph1 = na
+var float mph2 = na
+var int   mph1b = na
+var int   mph2b = na
+var float mpl1 = na
+var float mpl2 = na
+var int   mpl1b = na
+var int   mpl2b = na
+
+minorPivLen = pivotLen / 2
+
+if not na(phMinor)
+    mph2  := mph1
+    mph2b := mph1b
+    mph1  := phMinor
+    mph1b := bar_index[minorPivLen]
+
+if not na(plMinor)
+    mpl2  := mpl1
+    mpl2b := mpl1b
+    mpl1  := plMinor
+    mpl1b := bar_index[minorPivLen]
+
+// ============================================================
+// PROJECTED PRICE ON TREND LINE AT CURRENT BAR
+// ============================================================
+
+getProj(p1, b1, p2, b2, cb) =>
+    if na(p1) or na(p2) or na(b1) or na(b2)
+        float(na)
+    else
+        slope = (p2 - p1) / (b2 - b1)
+        p1 + slope * (cb - b1)
+
+resProj = getProj(ph1, ph1b, ph2, ph2b, bar_index)
+supProj = getProj(pl1, pl1b, pl2, pl2b, bar_index)
+mResProj = getProj(mph1, mph1b, mph2, mph2b, bar_index)
+mSupProj = getProj(mpl1, mpl1b, mpl2, mpl2b, bar_index)
+
+// ============================================================
+// DRAW MAJOR TREND LINES
+// ============================================================
+
+extMode = lineExtend ? extend.right : extend.none
+
+var line majorRes = line(na)
+var line majorSup = line(na)
+
+if showMajor and not na(ph1b) and not na(ph2b) and not na(ph1) and not na(ph2)
+    if majorRes == line(na)
+        majorRes := line.new(ph2b, ph2, ph1b, ph1,
+             color=bearColor, width=lineWidth,
+             extend=extMode, style=line.style_solid)
+    else
+        line.set_xy1(majorRes, ph2b, ph2)
+        line.set_xy2(majorRes, ph1b, ph1)
+        line.set_color(majorRes, bearColor)
+
+if showMajor and not na(pl1b) and not na(pl2b) and not na(pl1) and not na(pl2)
+    if majorSup == line(na)
+        majorSup := line.new(pl2b, pl2, pl1b, pl1,
+             color=bullColor, width=lineWidth,
+             extend=extMode, style=line.style_solid)
+    else
+        line.set_xy1(majorSup, pl2b, pl2)
+        line.set_xy2(majorSup, pl1b, pl1)
+        line.set_color(majorSup, bullColor)
+
+// ============================================================
+// DRAW MINOR TREND LINES
+// ============================================================
+
+var line minorRes = line(na)
+var line minorSup = line(na)
+
+if showMinor and not na(mph1b) and not na(mph2b) and not na(mph1) and not na(mph2)
+    if minorRes == line(na)
+        minorRes := line.new(mph2b, mph2, mph1b, mph1,
+             color=minorBear, width=1,
+             extend=extMode, style=line.style_dashed)
+    else
+        line.set_xy1(minorRes, mph2b, mph2)
+        line.set_xy2(minorRes, mph1b, mph1)
+
+if showMinor and not na(mpl1b) and not na(mpl2b) and not na(mpl1) and not na(mpl2)
+    if minorSup == line(na)
+        minorSup := line.new(mpl2b, mpl2, mpl1b, mpl1,
+             color=minorBull, width=1,
+             extend=extMode, style=line.style_dashed)
+    else
+        line.set_xy1(minorSup, mpl2b, mpl2)
+        line.set_xy2(minorSup, mpl1b, mpl1)
+
+// ============================================================
+// SMART MONEY: BOS & CHoCH
+// ============================================================
+
+// Break of Structure (BOS): continuation signal
+// Bullish BOS: price breaks above previous swing high
+// Bearish BOS: price breaks below previous swing low
+
+bullBOS = not na(ph1) and close > ph1 and close[1] <= ph1
+bearBOS = not na(pl1) and close < pl1 and close[1] >= pl1
+
+// Change of Character (CHoCH): reversal signal
+// Bullish CHoCH: in downtrend, first break above a lower high
+// Bearish CHoCH: in uptrend, first break below a higher low
+
+downtrend = not na(ph1) and not na(ph2) and ph1 < ph2
+uptrend   = not na(pl1) and not na(pl2) and pl1 > pl2
+
+bullCHoCH = downtrend and close > ph1 and close[1] <= ph1
+bearCHoCH = uptrend   and close < pl1 and close[1] >= pl1
+
+if showBOS and bullBOS and not bullCHoCH
+    label.new(bar_index, high + atr * 0.5,
+         text="BOS", textcolor=color.white,
+         color=color.new(color.teal, 20),
+         style=label.style_label_down, size=size.small)
+
+if showBOS and bearBOS and not bearCHoCH
+    label.new(bar_index, low - atr * 0.5,
+         text="BOS", textcolor=color.white,
+         color=color.new(color.red, 20),
+         style=label.style_label_up, size=size.small)
+
+if showCHoCH and bullCHoCH
+    label.new(bar_index, high + atr * 0.8,
+         text="CHoCH", textcolor=color.white,
+         color=color.new(color.green, 10),
+         style=label.style_label_down, size=size.small)
+
+if showCHoCH and bearCHoCH
+    label.new(bar_index, low - atr * 0.8,
+         text="CHoCH", textcolor=color.white,
+         color=color.new(color.orange, 10),
+         style=label.style_label_up, size=size.small)
+
+// ============================================================
+// SMART MONEY: FAIR VALUE GAP (FVG)
+// ============================================================
+
+// Bullish FVG: gap between candle[2] high and candle[0] low
+// Bearish FVG: gap between candle[2] low and candle[0] high
+
+bullFVG = showFVG and low > high[2] and close[1] > high[2]
+bearFVG = showFVG and high < low[2] and close[1] < low[2]
+
+var box[] fvgBoxes = array.new_box(0)
+
+if bullFVG
+    b = box.new(bar_index - 2, low, bar_index,  high[2],
+         border_color=color.new(color.teal, 60),
+         bgcolor=color.new(color.teal, fvgTransp),
+         border_width=1, extend=extend.right)
+    array.push(fvgBoxes, b)
+
+if bearFVG
+    b = box.new(bar_index - 2, low[2], bar_index, high,
+         border_color=color.new(color.red, 60),
+         bgcolor=color.new(color.red, fvgTransp),
+         border_width=1, extend=extend.right)
+    array.push(fvgBoxes, b)
+
+// Remove FVG box when price fills it (mitigated)
+if array.size(fvgBoxes) > 0
+    i = 0
+    while i < array.size(fvgBoxes)
+        b = array.get(fvgBoxes, i)
+        bTop    = box.get_top(b)
+        bBottom = box.get_bottom(b)
+        if close >= bBottom and close <= bTop
+            box.set_extend(b, extend.none)
+            array.remove(fvgBoxes, i)
+        else
+            i += 1
+
+// ============================================================
+// SMART MONEY: LIQUIDITY ZONES
+// ============================================================
+
+// Equal highs / equal lows = liquidity pools
+eqHighs = showLiquidity and math.abs(ph1 - ph2) < atr * 0.3 and not na(ph1) and not na(ph2)
+eqLows  = showLiquidity and math.abs(pl1 - pl2) < atr * 0.3 and not na(pl1) and not na(pl2)
+
+var line liqHigh = line(na)
+var line liqLow  = line(na)
+
+if eqHighs
+    if liqHigh == line(na)
+        liqHigh := line.new(ph2b, ph1, bar_index, ph1,
+             color=color.new(color.yellow, 30),
+             width=1, style=line.style_dotted, extend=extend.right)
+    else
+        line.set_xy1(liqHigh, ph2b, ph1)
+        line.set_xy2(liqHigh, bar_index, ph1)
+
+if eqLows
+    if liqLow == line(na)
+        liqLow := line.new(pl2b, pl1, bar_index, pl1,
+             color=color.new(color.yellow, 30),
+             width=1, style=line.style_dotted, extend=extend.right)
+    else
+        line.set_xy1(liqLow, pl2b, pl1)
+        line.set_xy2(liqLow, bar_index, pl1)
+
+// ============================================================
+// ENTRY SIGNAL LOGIC (INSTITUTIONAL GRADE)
+// ============================================================
+
+// LONG: price touches support trend line +
+//       above EMA200 + RSI not overbought +
+//       volume spike (optional) + bullish candle
+touchSup   = not na(supProj) and low <= supProj + atr * atrMult and low >= supProj - atr * atrMult
+aboveEMA   = close > ema200
+rsiLongOK  = rsi < rsiOB
+volLongOK  = useVolFilter ? volSpike : true
+momLongOK  = useMomFilter ? rsi > 40 : true
+bullCandle = close > open
+
+longSignal = touchSup and aboveEMA and rsiLongOK and volLongOK and momLongOK and bullCandle and showSignals
+
+// SHORT: price touches resistance trend line +
+//        below EMA200 + RSI not oversold +
+//        volume spike (optional) + bearish candle
+touchRes    = not na(resProj) and high >= resProj - atr * atrMult and high <= resProj + atr * atrMult
+belowEMA    = close < ema200
+rsiShortOK  = rsi > rsiOS
+volShortOK  = useVolFilter ? volSpike : true
+momShortOK  = useMomFilter ? rsi < 60 : true
+bearCandle  = close < open
+
+shortSignal = touchRes and belowEMA and rsiShortOK and volShortOK and momShortOK and bearCandle and showSignals
+
+// ============================================================
+// SIGNAL PLOTS
+// ============================================================
+
+plotshape(longSignal,
+     title="LONG Entry",
+     location=location.belowbar,
+     color=color.new(color.green, 0),
+     style=shape.labelup,
+     text="LONG",
+     textcolor=color.white,
+     size=size.normal)
+
+plotshape(shortSignal,
+     title="SHORT Entry",
+     location=location.abovebar,
+     color=color.new(color.red, 0),
+     style=shape.labeldown,
+     text="SHORT",
+     textcolor=color.white,
+     size=size.normal)
+
+// ============================================================
+// TP / SL LEVELS
+// ============================================================
+
+if showTPSL and longSignal
+    entP = close
+    slP  = entP - atr * slMult
+    tp1P = entP + atr * slMult * rrRatio * 0.5
+    tp2P = entP + atr * slMult * rrRatio
+
+    line.new(bar_index, slP,  bar_index + 8, slP,
+         color=color.new(color.red, 30),   width=2, style=line.style_dashed)
+    line.new(bar_index, tp1P, bar_index + 8, tp1P,
+         color=color.new(color.green, 50), width=1, style=line.style_dashed)
+    line.new(bar_index, tp2P, bar_index + 8, tp2P,
+         color=color.new(color.green, 20), width=2, style=line.style_dashed)
+
+    label.new(bar_index + 8, slP,
+         text="SL: " + str.tostring(slP, format.mintick),
+         color=color.new(color.red, 20), textcolor=color.white,
+         style=label.style_label_left, size=size.small)
+    label.new(bar_index + 8, tp1P,
+         text="TP1: " + str.tostring(tp1P, format.mintick),
+         color=color.new(color.green, 40), textcolor=color.white,
+         style=label.style_label_left, size=size.small)
+    label.new(bar_index + 8, tp2P,
+         text="TP2: " + str.tostring(tp2P, format.mintick),
+         color=color.new(color.green, 20), textcolor=color.white,
+         style=label.style_label_left, size=size.small)
+
+if showTPSL and shortSignal
+    entP = close
+    slP  = entP + atr * slMult
+    tp1P = entP - atr * slMult * rrRatio * 0.5
+    tp2P = entP - atr * slMult * rrRatio
+
+    line.new(bar_index, slP,  bar_index + 8, slP,
+         color=color.new(color.red, 30),   width=2, style=line.style_dashed)
+    line.new(bar_index, tp1P, bar_index + 8, tp1P,
+         color=color.new(color.green, 50), width=1, style=line.style_dashed)
+    line.new(bar_index, tp2P, bar_index + 8, tp2P,
+         color=color.new(color.green, 20), width=2, style=line.style_dashed)
+
+    label.new(bar_index + 8, slP,
+         text="SL: " + str.tostring(slP, format.mintick),
+         color=color.new(color.red, 20), textcolor=color.white,
+         style=label.style_label_left, size=size.small)
+    label.new(bar_index + 8, tp1P,
+         text="TP1: " + str.tostring(tp1P, format.mintick),
+         color=color.new(color.green, 40), textcolor=color.white,
+         style=label.style_label_left, size=size.small)
+    label.new(bar_index + 8, tp2P,
+         text="TP2: " + str.tostring(tp2P, format.mintick),
+         color=color.new(color.green, 20), textcolor=color.white,
+         style=label.style_label_left, size=size.small)
+
+// ============================================================
+// EMA PLOTS
+// ============================================================
+
+plot(ema50,  title="EMA 50",  color=color.new(color.orange, 40), linewidth=1)
+plot(ema200, title="EMA 200", color=color.new(color.yellow, 30), linewidth=2)
+
+// ============================================================
+// PIVOT DOTS
+// ============================================================
+
+plotshape(not na(phMajor),
+     title="Major Pivot High", location=location.abovebar,
+     color=color.new(color.red, 30), style=shape.circle,
+     size=size.tiny, offset=-pivotLen)
+
+plotshape(not na(plMajor),
+     title="Major Pivot Low", location=location.belowbar,
+     color=color.new(color.green, 30), style=shape.circle,
+     size=size.tiny, offset=-pivotLen)
+
+// ============================================================
+// INSTITUTIONAL DASHBOARD
+// ============================================================
+
+dashPosition = dashPos == "Top Right" ? position.top_right : dashPos == "Top Left" ? position.top_left : dashPos == "Bottom Right" ? position.bottom_right : position.bottom_left
+
+var table dash = table.new(dashPosition, 2, 12,
+     bgcolor=color.new(#0d0d0d, 20),
+     border_color=color.new(#334155, 60),
+     border_width=1,
+     frame_color=color.new(#00bcd4, 40),
+     frame_width=2)
+
+if barstate.islast and showDash
+
+    // Header
+    table.cell(dash, 0, 0, "INSTITUTIONAL TRENDLINE PRO",
+         text_color=color.new(#00bcd4, 0), text_size=size.small,
+         bgcolor=color.new(#0d1b2a, 10),
+         text_halign=text.align_center)
+    table.cell(dash, 1, 0, "Rehan Khanani",
+         text_color=color.new(#94a3b8, 0), text_size=size.tiny,
+         bgcolor=color.new(#0d1b2a, 10),
+         text_halign=text.align_center)
+
+    // Market Bias
+    maBias = close > ema200 ? "BULLISH" : "BEARISH"
+    maColor = close > ema200 ? color.new(color.green, 0) : color.new(color.red, 0)
+    table.cell(dash, 0, 1, "Market Bias",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 1, maBias,
+         text_color=maColor, text_size=size.small)
+
+    // Trend Structure
+    structure = uptrend ? "Higher Highs / Higher Lows" : downtrend ? "Lower Highs / Lower Lows" : "Consolidation"
+    strColor  = uptrend ? color.green : downtrend ? color.red : color.orange
+    table.cell(dash, 0, 2, "Structure",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 2, structure,
+         text_color=strColor, text_size=size.tiny)
+
+    // EMA Stack
+    emaStack = close > ema50 and ema50 > ema200 ? "Bullish Stack" :
+               close < ema50 and ema50 < ema200 ? "Bearish Stack" : "Mixed"
+    emaColor = emaStack == "Bullish Stack" ? color.green :
+               emaStack == "Bearish Stack" ? color.red : color.orange
+    table.cell(dash, 0, 3, "EMA Stack",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 3, emaStack,
+         text_color=emaColor, text_size=size.small)
+
+    // RSI Reading
+    rsiZone = rsi > rsiOB ? "Overbought" : rsi < rsiOS ? "Oversold" : rsi > 55 ? "Bullish Zone" : rsi < 45 ? "Bearish Zone" : "Neutral"
+    rsiColor = rsi > rsiOB ? color.red : rsi < rsiOS ? color.green : rsi > 55 ? color.new(color.green, 30) : rsi < 45 ? color.new(color.red, 30) : color.gray
+    table.cell(dash, 0, 4, "RSI (" + str.tostring(rsiLen) + ")",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 4, str.tostring(math.round(rsi, 1)) + "  " + rsiZone,
+         text_color=rsiColor, text_size=size.small)
+
+    // Volume
+    volStatus = volume > volMA * 1.5 ? "High Volume" : volume > volMA ? "Above Avg" : "Below Avg"
+    volColor  = volume > volMA * 1.5 ? color.green : volume > volMA ? color.new(color.green, 40) : color.new(color.gray, 20)
+    table.cell(dash, 0, 5, "Volume",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 5, volStatus,
+         text_color=volColor, text_size=size.small)
+
+    // ATR
+    table.cell(dash, 0, 6, "ATR (" + str.tostring(atrLen) + ")",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 6, str.tostring(atr, format.mintick),
+         text_color=color.yellow, text_size=size.small)
+
+    // Support Level
+    table.cell(dash, 0, 7, "Support TL",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 7, not na(supProj) ? str.tostring(supProj, format.mintick) : "N/A",
+         text_color=color.new(#00bcd4, 0), text_size=size.small)
+
+    // Resistance Level
+    table.cell(dash, 0, 8, "Resistance TL",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 8, not na(resProj) ? str.tostring(resProj, format.mintick) : "N/A",
+         text_color=color.new(#ef5350, 0), text_size=size.small)
+
+    // FVG Status
+    fvgStatus = bullFVG ? "Bullish FVG" : bearFVG ? "Bearish FVG" : "--"
+    fvgColor  = bullFVG ? color.teal    : bearFVG  ? color.red     : color.gray
+    table.cell(dash, 0, 9, "Fair Value Gap",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 9, fvgStatus,
+         text_color=fvgColor, text_size=size.small)
+
+    // SMC Event
+    smcEvent = bullCHoCH ? "Bull CHoCH" : bearCHoCH ? "Bear CHoCH" :
+               bullBOS   ? "Bull BOS"   : bearBOS   ? "Bear BOS"   : "--"
+    smcColor = bullCHoCH or bullBOS ? color.green : bearCHoCH or bearBOS ? color.red : color.gray
+    table.cell(dash, 0, 10, "SMC Event",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 10, smcEvent,
+         text_color=smcColor, text_size=size.small)
+
+    // Signal
+    sigText  = longSignal ? "LONG ENTRY" : shortSignal ? "SHORT ENTRY" : "WATCHING..."
+    sigColor = longSignal ? color.green  : shortSignal ? color.red      : color.new(color.gray, 30)
+    table.cell(dash, 0, 11, "Signal",
+         text_color=color.new(#94a3b8, 0), text_size=size.small)
+    table.cell(dash, 1, 11, sigText,
+         text_color=sigColor, text_size=size.small)
+
+// ============================================================
+// ALERTS
+// ============================================================
+
+alertcondition(longSignal,
+     title="LONG Entry",
+     message="Institutional TrendLine Pro - LONG Entry on {{ticker}} @ {{close}} | TF: {{interval}}")
+
+alertcondition(shortSignal,
+     title="SHORT Entry",
+     message="Institutional TrendLine Pro - SHORT Entry on {{ticker}} @ {{close}} | TF: {{interval}}")
+
+alertcondition(bullBOS,
+     title="Bullish BOS",
+     message="Institutional TrendLine Pro - Bullish Break of Structure on {{ticker}} @ {{close}}")
+
+alertcondition(bearBOS,
+     title="Bearish BOS",
+     message="Institutional TrendLine Pro - Bearish Break of Structure on {{ticker}} @ {{close}}")
+
+alertcondition(bullCHoCH,
+     title="Bullish CHoCH",
+     message="Institutional TrendLine Pro - Bullish Change of Character on {{ticker}} @ {{close}}")
+
+alertcondition(bearCHoCH,
+     title="Bearish CHoCH",
+     message="Institutional TrendLine Pro - Bearish Change of Character on {{ticker}} @ {{close}}")
+
+alertcondition(bullFVG,
+     title="Bullish FVG",
+     message="Institutional TrendLine Pro - Bullish Fair Value Gap on {{ticker}} @ {{close}}")
+
+alertcondition(bearFVG,
+     title="Bearish FVG",
+     message="Institutional TrendLine Pro - Bearish Fair Value Gap on {{ticker}} @ {{close}}")
+
+alertcondition(longSignal or shortSignal,
+     title="Any Entry Signal",
+     message="Institutional TrendLine Pro - Entry Signal on {{ticker}} @ {{close}}")
+
+

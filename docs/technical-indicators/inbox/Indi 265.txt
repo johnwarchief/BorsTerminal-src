@@ -1,0 +1,187 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools:https://t.me/IndicatorsforTV
+
+//  BigBeluga
+
+//@version=6
+indicator('Volume-Trend Order Block Engine [BigBeluga]', overlay = true, max_boxes_count = 500)
+
+// ＩＮＰＵＴＳ ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――{
+
+gp_st = 'Custom Supertrend Settings'
+st_len = input.int(50, title = 'Volatility SMA Length', tooltip = 'Number of candles used to calculate the average range (High - Low).', group = gp_st)
+st_mult = input.float(3.5, title = 'Multiplier', step = 0.1, tooltip = 'Multiplication factor for the custom volatility band.', group = gp_st)
+show_fill = input.bool(true, title = 'Show Trend Cloud Fill', tooltip = 'Enables or disables the background color shading between the close price and the trailing stop line.', group = gp_st)
+
+// NEW: Trend Cloud Color Inputs
+gp_cloud = 'Trend Cloud Settings'
+cloud_bull_col = input.color(#00ffcc, title = 'Bullish Cloud Color', group = gp_cloud)
+cloud_bear_col = input.color(#ff007f, title = 'Bearish Cloud Color', group = gp_cloud)
+
+gp_ob = 'Order Block Settings'
+pivot_len = input.int(7, title = 'Pivot Strength', minval = 1, tooltip = 'The number of bars required to confirm a swing high or swing low pivot (Left & Right strength).', group = gp_ob)
+bull_col = input.color(#00ffcc, title = 'Bullish OB Color', tooltip = 'Color used for both zones inside a Bullish Order Block.', group = gp_ob)
+bear_col = input.color(#ff007f, title = 'Bearish OB Color', tooltip = 'Color used for both zones inside a Bearish Order Block.', group=gp_ob)
+txt_col = input.color(#e0e0e0, title = 'OB Text Label Color', tooltip = 'Color of the Buy % and Sell % text inside the order blocks.', group = gp_ob)
+delete_on_break = input.bool(true, title = 'Delete OB on Complete Break', tooltip = 'If enabled, order blocks will be automatically deleted from the chart once price completely breaks past them.', group = gp_ob)
+
+gp_filt = 'Retest Filter Settings'
+show_bull_retest = input.bool(true, title = 'Bullish Retest Signals', tooltip = 'Enable or disable signals when price cross above the Bullish OB top.', group = gp_filt, inline = 'bull_ret')
+bull_vol_pct    = input.float(50.0, title = 'Min Buy %', minval = 0.0, maxval = 100.0, step = 5.0, tooltip = 'Minimum Buy Volume percentage required in the original pivot window.', group = gp_filt, inline = 'bull_ret')
+bull_sig_col    = input.color(#00ffcc, title = 'Color', group = gp_filt, inline = 'bull_ret')
+
+show_bear_retest = input.bool(true, title = 'Bearish Retest Signals', tooltip = 'Enable or disable signals when price cross below the Bearish OB bottom.', group = gp_filt, inline = 'bear_ret')
+bear_vol_pct    = input.float(50.0, title = 'Min Sell %', minval = 0.0, maxval = 100.0, step = 5.0, tooltip = 'Minimum Sell Volume percentage required in the original pivot window.', group = gp_filt, inline = 'bear_ret')
+bear_sig_col    = input.color(#ff007f, title = 'Color', group = gp_filt, inline = 'bear_ret')
+
+// }
+// ＣＡＬＣＵＬＡＴＩＯＮＳ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――{
+
+custom_atr = ta.sma(high - low, st_len)
+
+var float trend_stop = na
+var int market_trend = 1
+
+upper_band = hl2 + st_mult * custom_atr
+lower_band = hl2 - st_mult * custom_atr
+
+trend_stop := market_trend == 1 ? math.max(lower_band, nz(trend_stop[1], lower_band)) : math.min(upper_band, nz(trend_stop[1], upper_band))
+
+if close > trend_stop[1] and close[1] <= trend_stop[1]
+    market_trend := 1
+    trend_stop := lower_band
+else if close < trend_stop[1] and close[1] >= trend_stop[1]
+    market_trend := -1
+    trend_stop := upper_band
+
+// Pivot & Overlap Logic
+pivot_low = ta.pivotlow(low, pivot_len, pivot_len)
+pivot_high = ta.pivothigh(high, pivot_len, pivot_len)
+
+var box active_top_box = na
+var box active_bot_box = na
+var float active_top = na
+var float active_bot = na
+var float active_buy_ratio = na
+var int active_ob_trend = 0
+
+is_overlapping(float new_top, float new_bot) =>
+    if na(active_top) or na(active_bot)
+        false
+    else
+        not(new_bot > active_top or new_top < active_bot)
+
+p_idx = bar_index - pivot_len
+
+// Local Chart Volume Ratio Calculation
+get_window_volume_ratio(int lookback_len) =>
+    float buy_vol = 0.0
+    float sell_vol = 0.0
+
+    for i = 0 to lookback_len by 1
+        if close[i] >= open[i]
+            buy_vol := buy_vol + volume[i]
+        else
+            sell_vol := sell_vol + volume[i]
+
+    total_vol = buy_vol + sell_vol
+    float buy_pct = total_vol > 0 ? buy_vol / total_vol : 0.5
+    buy_pct
+
+// Trend Based OB Execution
+var int ob_start_bar = na
+
+// 1. Uptrend Order Blocks (Lower Pivots)
+if market_trend == 1 and not na(pivot_low)
+    ob_top = math.min(open[pivot_len], close[pivot_len])
+    ob_bot = ob_top - custom_atr
+
+    if not is_overlapping(ob_top, ob_bot)
+        if not na(active_top_box)
+            box.set_right(active_top_box, p_idx)
+            box.set_right(active_bot_box, p_idx)
+
+        ob_start_bar := p_idx
+        active_top := ob_top
+        active_bot := ob_bot
+        active_ob_trend := 1
+
+        float buy_ratio = get_window_volume_ratio(pivot_len)
+        active_buy_ratio := buy_ratio
+        float sell_ratio = 1.0 - buy_ratio
+        float split_price = active_bot + (active_top - active_bot) * buy_ratio
+
+        string top_text = 'Sell: ' + str.tostring(math.round(sell_ratio * 100)) + '%'
+        string bot_text = 'Buy: ' + str.tostring(math.round(buy_ratio * 100)) + '%'
+
+        active_top_box := box.new(left = ob_start_bar, top = active_top, right = bar_index, bottom = split_price, bgcolor = color.new(bull_col, 85), border_color = color.new(bull_col, 40), text = top_text, text_color = txt_col, text_size = size.small, text_valign = text.align_center, text_halign = text.align_right)
+        active_bot_box := box.new(left = ob_start_bar, top = split_price, right = bar_index, bottom = active_bot, bgcolor = color.new(bull_col, 75), border_color = color.new(bull_col, 40), text = bot_text, text_color = txt_col, text_size = size.small, text_valign = text.align_center, text_halign = text.align_right)
+
+// 2. Downtrend Order Blocks (High Pivots)
+if market_trend == -1 and not na(pivot_high)
+    ob_bot = math.max(open[pivot_len], close[pivot_len])
+    ob_top = ob_bot + custom_atr
+
+    if not is_overlapping(ob_top, ob_bot)
+        if not na(active_top_box)
+            box.set_right(active_top_box, p_idx)
+            box.set_right(active_bot_box, p_idx)
+
+        ob_start_bar := p_idx
+        active_top := ob_top
+        active_bot := ob_bot
+        active_ob_trend := -1
+
+        float buy_ratio = get_window_volume_ratio(pivot_len)
+        active_buy_ratio := buy_ratio
+        float sell_ratio = 1.0 - buy_ratio
+        float split_price = active_bot + (active_top - active_bot) * buy_ratio
+
+        string top_text = 'Sell: ' + str.tostring(math.round(sell_ratio * 100)) + '%'
+        string bot_text = 'Buy: ' + str.tostring(math.round(buy_ratio * 100)) + '%'
+
+        active_top_box := box.new(left = ob_start_bar, top = active_top, right = bar_index, bottom = split_price, bgcolor = color.new(bear_col, 75), border_color = color.new(bear_col, 40), text = top_text, text_color = txt_col, text_size = size.small, text_valign = text.align_center, text_halign = text.align_right)
+        active_bot_box := box.new(left = ob_start_bar, top = split_price, right = bar_index, bottom = active_bot, bgcolor = color.new(bear_col, 85), border_color = color.new(bear_col, 40), text = bot_text, text_color = txt_col, text_size = size.small, text_valign = text.align_center, text_halign = text.align_right)
+
+// Complete Invalidation / Deletion Engine
+if delete_on_break and not na(active_top) and not na(active_bot)
+    bool is_broken = (active_ob_trend == 1 and high < active_bot) or (active_ob_trend == -1 and low > active_top)
+    if is_broken
+        box.delete(active_top_box)
+        box.delete(active_bot_box)
+        active_top := na
+        active_bot := na
+        active_ob_trend := 0
+
+// Real-time Right Extension
+if not na(active_top_box) and not na(active_bot_box)
+    box.set_right(active_top_box, bar_index)
+    box.set_right(active_bot_box, bar_index)
+
+// Retest Signals Logic with Dynamic Independent Filters
+float active_sell_ratio = 1.0 - active_buy_ratio
+float bull_threshold   = bull_vol_pct / 100.0
+float bear_threshold   = bear_vol_pct / 100.0
+
+marketChange = market_trend != market_trend[1]
+
+bool buy_retest = ta.crossover(low, active_top) and show_bull_retest and na(pivot_low) and not na(active_top) and (active_buy_ratio >= bull_threshold) and not marketChange and barstate.isconfirmed
+bool sell_retest = ta.crossunder(high, active_bot) and na(pivot_high) and show_bear_retest and not na(active_bot) and (active_sell_ratio >= bear_threshold) and not marketChange and barstate.isconfirmed
+
+// }
+// ＰＬＯＴ ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――{
+
+// Modified line plot to use the new cloud/trend colors
+st_plot = plot(market_trend != market_trend[1] ? float(na) : trend_stop, title = 'Trend Stop', color = market_trend == 1 ? cloud_bull_col : cloud_bear_col, linewidth = 1, style = plot.style_linebr)
+price_plot = plot(close, title = 'Close Price Reference', display = display.none)
+
+// Modified fill to use the new custom cloud inputs
+fill_color = show_fill ? market_trend == 1 ? color.new(cloud_bull_col, 80) : color.new(cloud_bear_col, 80) : na
+fill(price_plot, st_plot, close, trend_stop, fill_color, color(na))
+
+// Retest Plots using Custom Input Colors
+plotshape(buy_retest, title = "Bullish OB Retest", style = shape.cross, location = location.belowbar, color = bull_sig_col, size = size.tiny)
+plotshape(sell_retest, title = "Bearish OB Retest", style = shape.cross, location = location.abovebar, color = bear_sig_col, size = size.tiny)
+
+// }
+

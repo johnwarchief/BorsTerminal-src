@@ -1,0 +1,397 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=5
+indicator("NDW REGnADX", overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back=500)
+//------------------------------------------------------------------------------
+//Settings
+//-----------------------------------------------------------------------------{
+h = input.float(50.,'Bandwidth', minval = 0)
+mult = input.float(2., minval = 0)
+src = input(close, 'Source')
+
+repaint = input(true, 'Repainting Smoothing', tooltip = 'Repainting is an effect where the indicators historical output is subject to change over time. Disabling repainting will cause the indicator to output the endpoints of the calculations')
+
+//Style
+upCss = input.color(color.teal, 'Colors', inline = 'inline1', group = 'Style')
+dnCss = input.color(color.red, '', inline = 'inline1', group = 'Style')
+
+//-----------------------------------------------------------------------------}
+//Functions
+//-----------------------------------------------------------------------------{
+//Gaussian window
+gauss(x, h) => math.exp(-(math.pow(x, 2)/(h * h * 2)))
+
+//-----------------------------------------------------------------------------}
+//Append lines
+//-----------------------------------------------------------------------------{
+n = bar_index
+
+var ln = array.new_line(0) 
+
+if barstate.isfirst and repaint
+    for i = 0 to 499
+        array.push(ln,line.new(na,na,na,na))
+
+//-----------------------------------------------------------------------------}
+//End point method
+//-----------------------------------------------------------------------------{
+var coefs = array.new_float(0)
+var den = 0.
+
+if barstate.isfirst and not repaint
+    for i = 0 to 499
+        w = gauss(i, h)
+        coefs.push(w)
+
+    den := coefs.sum()
+
+out = 0.
+if not repaint
+    for i = 0 to 499
+        out += src[i] * coefs.get(i)
+out /= den
+mae = ta.sma(math.abs(src - out), 499) * mult
+
+upper = out + mae
+lower = out - mae
+ 
+//-----------------------------------------------------------------------------}
+//Compute and display NWE
+//-----------------------------------------------------------------------------{
+float y2 = na
+float y1 = na
+
+nwe = array.new<float>(0)
+if barstate.islast and repaint
+    sae = 0.
+    //Compute and set NWE point 
+    for i = 0 to math.min(499,n - 1)
+        sum = 0.
+        sumw = 0.
+        //Compute weighted mean 
+        for j = 0 to math.min(499,n - 1)
+            w = gauss(i - j, h)
+            sum += src[j] * w
+            sumw += w
+
+        y2 := sum / sumw
+        sae += math.abs(src[i] - y2)
+        nwe.push(y2)
+    
+    sae := sae / math.min(499,n - 1) * mult
+    for i = 0 to math.min(499,n - 1)
+        if i%2
+            line.new(n-i+1, y1 + sae, n-i, nwe.get(i) + sae, color = upCss)
+            line.new(n-i+1, y1 - sae, n-i, nwe.get(i) - sae, color = dnCss)
+        
+        if src[i] > nwe.get(i) + sae and src[i+1] < nwe.get(i) + sae
+            label.new(n-i, src[i], '▼', color = color(na), style = label.style_label_down, textcolor = dnCss, textalign = text.align_center)
+        if src[i] < nwe.get(i) - sae and src[i+1] > nwe.get(i) - sae
+            label.new(n-i, src[i], '▲', color = color(na), style = label.style_label_up, textcolor = upCss, textalign = text.align_center)
+        
+        y1 := nwe.get(i)
+
+//-----------------------------------------------------------------------------}
+//Dashboard
+//-----------------------------------------------------------------------------{
+var tb = table.new(position.top_right, 1, 1
+  , bgcolor = #1e222d
+  , border_color = #373a46
+  , border_width = 1
+  , frame_color = #373a46
+  , frame_width = 1)
+
+if repaint
+    tb.cell(0, 0, 'Repainting Mode Enabled', text_color = color.white, text_size = size.small)
+
+//-----------------------------------------------------------------------------}
+//Plot
+//-----------------------------------------------------------------------------}
+plot(repaint ? na : out + mae, 'Upper', upCss)
+plot(repaint ? na : out - mae, 'Lower', dnCss)
+
+//Crossing Arrows
+plotshape(ta.crossunder(close, out - mae) ? low : na, "Crossunder", shape.labelup, location.absolute, color(na), 0 , text = '▲', textcolor = upCss, size = size.tiny)
+plotshape(ta.crossover(close, out + mae) ? high : na, "Crossover", shape.labeldown, location.absolute, color(na), 0 , text = '▼', textcolor = dnCss, size = size.tiny)
+
+//-----------------------------------------------------------------------------}
+// Input parameters
+timezone = input.string("UTC", title="Timezone", options=["UTC", "New York time"])  // Changed "Default" to "UTC"
+use_dst = input.bool(false, title="Use Daylight Saving Time")
+
+// Map user-friendly timezone selection to actual timezone values
+selected_timezone = timezone == "New York time" ? "America/New_York" : "Etc/UTC"
+
+// Function to detect the start of a new period
+is_new(resolution) =>
+    t = time(resolution, selected_timezone)
+    not na(t) and (na(t[1]) or t > t[1])
+
+// New day detection with explicit 23:00 or 00:00 start time
+is_new_day() =>
+    current_time = time(timeframe.period, selected_timezone)
+    prev_time = time(timeframe.period, selected_timezone)[1]
+    year = year(current_time, selected_timezone)
+    month = month(current_time, selected_timezone)
+    day = dayofmonth(current_time, selected_timezone)
+    
+    // Define the day start time based on timezone and DST
+    var float day_start = na
+    if timezone == "UTC" and use_dst  // Updated condition to use "UTC"
+        // For UTC with DST: start at 23:00 of the current day
+        day_start := timestamp(selected_timezone, year, month, day, 23, 0)
+    else
+        // For UTC without DST or New York time: start at 00:00
+        day_start := timestamp(selected_timezone, year, month, day, 0, 0)
+    
+    // Check if the current bar crosses the day start
+    current_time >= day_start and (na(prev_time) or prev_time < day_start)
+
+// Other periods
+is_new_week() =>
+    is_new("W")
+
+is_new_month() =>
+    is_new("M")
+
+is_new_quarter() =>
+    is_new("3M")
+
+is_new_half_year() =>
+    is_new("6M")
+
+is_new_year() =>
+    is_new("12M")
+
+// Plotting the breaks
+plot(is_new_day() ? 1 : na, style=plot.style_histogram, color=color.new(color.gray, 50), title="Day Breaks")
+plot(is_new_week() ? 1 : na, style=plot.style_histogram, color=color.new(color.blue, 50), title="Week Breaks")
+plot(is_new_month() ? 1 : na, style=plot.style_histogram, color=color.new(color.red, 50), title="Month Breaks")
+plot(is_new_quarter() ? 1 : na, style=plot.style_histogram, color=color.new(color.gray, 50), title="Quarter Breaks")
+plot(is_new_half_year() ? 1 : na, style=plot.style_histogram, color=color.new(color.gray, 50), title="Half Year Breaks")
+plot(is_new_year() ? 1 : na, style=plot.style_histogram, color=color.new(color.gray, 50), title="Year Breaks")
+
+// === EMA Lines ===
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema100 = ta.ema(close, 100)
+ema200 = ta.ema(close, 200)
+
+plot(ema9, title="EMA 9", color=color.rgb(38, 255, 0), linewidth=2)
+plot(ema20, title="EMA 20", color=color.red, linewidth=2)
+plot(ema50, title="EMA 50", color=color.orange, linewidth=2)
+plot(ema100, title="EMA 100", color=color.aqua, linewidth=2)
+plot(ema200, title="EMA 200", color=color.blue, linewidth=2)
+
+// Stochastic RSI Settings
+stochLength = input.int(14, title='Stochastic RSI Length', minval=1, group='Stochastic RSI Settings', tooltip='This setting determines the period over which the RSI is calculated for the Stochastic RSI. A higher value will make the indicator less sensitive to price changes, smoothing out the fluctuations, but may lag more. A lower value makes it more sensitive and responsive to recent price changes.')
+stochSmoothing = input.int(3, title='Stochastic Smoothing (Slow K)', minval=1, group='Stochastic RSI Settings', tooltip='This is the smoothing period for the Stochastic RSI\'s slow K line. It smooths the %K line to reduce noise and false signals. A higher value means more smoothing, resulting in fewer but potentially more reliable signals.')
+stochOverbought = input.float(90, title='Stoch RSI Overbought Level', minval=0, maxval=100, group='Stochastic RSI Settings', tooltip='This is the threshold above which the Stochastic RSI is considered overbought. When the Stochastic RSI exceeds this level, it may indicate that the asset is overpriced and could be a sell signal. Adjusting this value can help tune the indicator to different market conditions.')
+stochOversold = input.float(10, title='Stoch RSI Oversold Level', minval=0, maxval=100, group='Stochastic RSI Settings', tooltip='Similar to the overbought level, this is the threshold below which the Stochastic RSI is considered oversold. It may indicate that the asset is undervalued and could be a buy signal.')
+
+// RSI Settings
+rsiLength = input.int(14, title='RSI Length', minval=1, group='RSI Settings', tooltip='The period over which the RSI is calculated. The default is 14, but adjusting this can make the RSI more or less sensitive to price changes. A shorter period makes it more sensitive, while a longer period smooths out the fluctuations.')
+rsiOverbought = input.float(90, title='RSI Overbought Level', minval=0, maxval=100, group='RSI Settings', tooltip='Level above which the RSI is considered overbought. Typically set above 90, but here it\'s set to 65. When RSI exceeds this level, it may suggest that the asset is overpriced.')
+rsiNeutral = input.float(50, title='RSI Neutral Level', minval=0, maxval=100, group='RSI Settings', tooltip='The neutral level, usually set at 50, which is the midpoint of the RSI oscillator. It\'s where the RSI is neither indicating overbought nor oversold conditions.')
+rsiOversold = input.float(10, title='RSI Oversold Level', minval=0, maxval=100, group='RSI Settings', tooltip='Level below which the RSI is considered oversold. Typically below 30, but set to 10 here. It may indicate that the asset is undervalued.')
+
+// MACD Settings
+macdLengthFast = input.int(12, title='MACD Fast Length', minval=1, group='MACD Settings', tooltip='The number of periods for the fast EMA in the MACD calculation. A shorter period makes the MACD more responsive to price changes.')
+macdLengthSlow = input.int(26, title='MACD Slow Length', minval=1, group='MACD Settings', tooltip='The number of periods for the slow EMA in the MACD calculation. A longer period makes it less responsive but can help filter out noise.')
+macdSignalLength = input.int(9, title='MACD Signal Length', minval=1, group='MACD Settings', tooltip='The number of periods for the signal line, which is an EMA of the MACD line. It\'s used to generate buy and sell signals through crossovers with the MACD line.')
+
+// ADX Settings
+adxLength = input.int(16, title='ADX Length', minval=1, group='ADX Settings', tooltip='The period over which the ADX is calculated. ADX measures the strength of a trend, with higher values indicating a stronger trend.')
+adxLimit = input.float(26, title='ADX Limit', minval=0, group='ADX Settings', tooltip='The ADX value above which the trend is considered strong. Signals may be filtered based on this condition to avoid whipsaws in ranging markets.')
+
+// Signal Colors
+buyColorGreen = input.color(color.green, title='Buy Signal - RSI <= Oversold', group='Signal Colors', tooltip='The color for buy signals when the RSI is below or equal to the oversold level, indicating a stronger buy signal.')
+buyColorBlue = input.color(color.blue, title='Buy Signal - RSI > Oversold', group='Signal Colors', tooltip='The color for buy signals when the RSI is above the oversold level but still indicating a buy condition.')
+sellColorRed = input.color(color.red, title='Sell Signal - RSI >= Overbought', group='Signal Colors', tooltip='The color for sell signals when the RSI is above or equal to the overbought level, indicating a stronger sell signal.')
+sellColorOrange = input.color(color.orange, title='Sell Signal - RSI < Overbought', group='Signal Colors', tooltip='The color for sell signals when the RSI is below the overbought level but still indicating a sell condition.')
+
+// Conditions
+enableMACDCondition = input.bool(true, title='Enable MACD Trend Condition', group='Conditions', tooltip='Enabling this will require the MACD trend condition to be met for signals to be generated. This adds an additional filter based on the MACD line\'s direction.')
+enableCandleColorCondition = input.bool(true, title='Enable Candle Color Condition', group='Conditions', tooltip='Enabling this will require the candle color to confirm the signal direction. For buys, the candle should close higher than it opened, and for sells, the opposite.')
+enableADXCondition = input.bool(false, title='Enable ADX Condition', group='Conditions', tooltip='Enabling this will require the ADX condition to be met, meaning the ADX value must be above the specified limit for signals to be generated.')
+
+// Support/Resistance Zones
+showSupportResistanceZones = input.bool(true, title='Show Support/Resistance Zones', group='Support/Resistance Zones', tooltip='Enabling this will display support and resistance zones on the chart based on price reversals over a specified number of bars.')
+reversalThreshold = input.int(50, title='Reversal Count for S/R Zone', minval=1, group='Support/Resistance Zones', tooltip='The number of bars over which a reversal must occur to identify a support or resistance level. Higher values require more confirmation for a reversal.')
+zoneLength = input.int(500, title='Zone Length (Candles)', minval=1, group='Support/Resistance Zones', tooltip='The length of the support and resistance zones, measured in candles. This determines how far the horizontal lines extend on the chart.')
+
+// Signal Table
+showTable = input.bool(true, title='Show Signal Table', group='Signal Table', tooltip='Enabling this will show a table at the bottom right of the chart displaying buy and sell signals across different time frames.')
+
+// Calculations
+
+// Calculating RSI
+rsi = ta.rsi(close, rsiLength)
+
+// Calculating Stochastic RSI
+stochRsiK = ta.stoch(rsi, rsi, rsi, stochLength)
+stochRsiD = ta.sma(stochRsiK, stochSmoothing)
+
+// Calculating MACD
+[macdLine, signalLine, _] = ta.macd(close, macdLengthFast, macdLengthSlow, macdSignalLength)
+
+// Check for 3 consecutive bars decreasing (negative) in MACD
+macdDecreasing = macdLine < 0 and macdLine < macdLine[1] and macdLine[1] < macdLine[2] and macdLine[2] < macdLine[3]
+
+// Check for 3 consecutive bars increasing (positive) in MACD
+macdIncreasing = macdLine > 0 and macdLine > macdLine[1] and macdLine[1] > macdLine[2] and macdLine[2] > macdLine[3]
+
+// ADX Calculation
+dirmov(len) =>
+    up = ta.change(high)
+    down = -ta.change(low)
+    plusDM = na(up) ? na : (up > down and up > 0 ? up : 0)
+    minusDM = na(down) ? na : (down > up and down > 0 ? down : 0)
+    truerange = ta.rma(ta.tr, len)
+    plus = fixnan(100 * ta.rma(plusDM, len) / truerange)
+    minus = fixnan(100 * ta.rma(minusDM, len) / truerange)
+    [plus, minus]
+
+adx(dilen, adxlen) =>
+    [plus, minus] = dirmov(dilen)
+    sum = plus + minus
+    adx = 100 * ta.rma(math.abs(plus - minus) / (sum == 0 ? 1 : sum), adxlen)
+    adx
+
+currentAdx = adx(adxLength, adxLength)
+
+// ADX Condition
+adxCondition = currentAdx > adxLimit
+
+// Buy and Sell Conditions
+buyConditionMet = stochRsiK < stochOversold and stochRsiD < stochOversold
+sellConditionMet = stochRsiK > stochOverbought and stochRsiD > stochOverbought
+
+if enableMACDCondition
+    buyConditionMet := buyConditionMet and macdDecreasing
+    sellConditionMet := sellConditionMet and macdIncreasing
+
+if enableADXCondition
+    buyConditionMet := buyConditionMet and adxCondition
+    sellConditionMet := sellConditionMet and adxCondition
+
+// Flags to track conditions met in the previous candle
+var bool buyFlag = false
+var bool sellFlag = false
+var float previousRsiValue = na
+
+// Update flags and store RSI if conditions are met
+if buyConditionMet and (enableCandleColorCondition ? close < open : true)
+    buyFlag := true
+    previousRsiValue := rsi
+
+if sellConditionMet and (enableCandleColorCondition ? close > open : true)
+    sellFlag := true
+    previousRsiValue := rsi
+
+// Determine colors for buy/sell signals based on RSI level
+buyColor = previousRsiValue <= rsiOversold ? buyColorGreen : buyColorBlue
+sellColor = previousRsiValue >= rsiOverbought ? sellColorRed : sellColorOrange
+
+// Signals with flag and candle color checks
+buySignal = buyFlag and (enableCandleColorCondition ? close > open : true)
+sellSignal = sellFlag and (enableCandleColorCondition ? close < open : true)
+
+// Reset flags after signals are triggered
+if buySignal
+    buyFlag := false
+
+if sellSignal
+    sellFlag := false
+
+// Alerts
+alertcondition(buySignal, title='Buy Alert', message='Buy signal generated!')
+alertcondition(sellSignal, title='Sell Alert', message='Sell signal generated!')
+
+// User input to toggle buy/sell signals visibility
+showSignals = input(true, title='Show Buy/Sell Signals')
+
+// Plotting buy/sell signals based on user input with previous RSI value in the text
+if showSignals and buySignal
+    label.new(bar_index, low, 'BUY (' + str.tostring(math.floor(previousRsiValue)) + ')', color=buyColor, style=label.style_label_up, textcolor=color.white, size=size.small)
+
+if showSignals and sellSignal
+    label.new(bar_index, high, 'SELL (' + str.tostring(math.floor(previousRsiValue)) + ')', color=sellColor, style=label.style_label_down, textcolor=color.white, size=size.small)
+
+// --- Support and Resistance Zones ---
+
+// Variables for tracking reversal levels
+var array<float> supportLevels = array.new_float()
+var array<float> resistanceLevels = array.new_float()
+
+// Track reversal levels for support and resistance
+if ta.lowestbars(low, reversalThreshold) == 0
+    array.push(supportLevels, low)
+if ta.highestbars(high, reversalThreshold) == 0
+    array.push(resistanceLevels, high)
+
+// Function to draw support and resistance zones
+drawZone(level, color) =>
+    startBar = bar_index - zoneLength < 0 ? 0 : bar_index - zoneLength
+    endBar = bar_index + 500
+    line.new(startBar, level, endBar, level, color=color, width=2, style=line.style_solid)
+
+// Draw zones if levels meet the threshold for reversals and visibility is enabled
+if showSupportResistanceZones
+    if array.size(supportLevels) >= reversalThreshold
+        lastSupport = array.get(supportLevels, array.size(supportLevels) - 1)
+        drawZone(lastSupport, color.green)
+
+    if array.size(resistanceLevels) >= reversalThreshold
+        lastResistance = array.get(resistanceLevels, array.size(resistanceLevels) - 1)
+        drawZone(lastResistance, color.red)
+
+// Define the time frames
+timeframe5 = '5'
+timeframe15 = '15'
+timeframe1H = '60'
+timeframe4H = '240'
+timeframe1D = 'D'
+
+// Fetch signals and previous RSI values from each time frame
+[buySignal5, sellSignal5, prevRsi5] = request.security(syminfo.tickerid, timeframe5, [buySignal, sellSignal, previousRsiValue])
+[buySignal15, sellSignal15, prevRsi15] = request.security(syminfo.tickerid, timeframe15, [buySignal, sellSignal, previousRsiValue])
+[buySignal1H, sellSignal1H, prevRsi1H] = request.security(syminfo.tickerid, timeframe1H, [buySignal, sellSignal, previousRsiValue])
+[buySignal4H, sellSignal4H, prevRsi4H] = request.security(syminfo.tickerid, timeframe4H, [buySignal, sellSignal, previousRsiValue])
+[buySignal1D, sellSignal1D, prevRsi1D] = request.security(syminfo.tickerid, timeframe1D, [buySignal, sellSignal, previousRsiValue])
+
+// Create the table at the bottom right of the chart
+var table myTable = table.new(position.bottom_right, 6, 2, bgcolor=color.black, border_color=color.white)
+
+// Set column labels for the table
+if showTable
+    table.cell(myTable, 0, 0, 'Time Frame:', text_color=color.white, bgcolor=color.black)
+    table.cell(myTable, 1, 0, '5m', text_color=color.white, bgcolor=color.black)
+    table.cell(myTable, 2, 0, '15m', text_color=color.white, bgcolor=color.black)
+    table.cell(myTable, 3, 0, '1h', text_color=color.white, bgcolor=color.black)
+    table.cell(myTable, 4, 0, '4h', text_color=color.white, bgcolor=color.black)
+    table.cell(myTable, 5, 0, 'D', text_color=color.white, bgcolor=color.black)
+
+    // Set row label for signals
+    table.cell(myTable, 0, 1, 'Signals', text_color=color.white, bgcolor=color.gray)
+
+// Function to determine the color based on the previous RSI value
+getColor(buy, sell, prevRsi) =>
+    if buy
+        prevRsi <= rsiOversold ? buyColorGreen : buyColorBlue
+    else if sell
+        prevRsi >= rsiOverbought ? sellColorRed : sellColorOrange
+    else
+        color.silver // No signal
+
+// Update the table cells with signals and colors in real-time 
+if barstate.isrealtime and showTable
+    table.cell(myTable, 1, 1, buySignal5 ? 'BUY' : sellSignal5 ? 'SELL' : '', text_color=color.white, bgcolor=getColor(buySignal5, sellSignal5, prevRsi5))
+    table.cell(myTable, 2, 1, buySignal15 ? 'BUY' : sellSignal15 ? 'SELL' : '', text_color=color.white, bgcolor=getColor(buySignal15, sellSignal15, prevRsi15))
+    table.cell(myTable, 3, 1, buySignal1H ? 'BUY' : sellSignal1H ? 'SELL' : '', text_color=color.white, bgcolor=getColor(buySignal1H, sellSignal1H, prevRsi1H))
+    table.cell(myTable, 4, 1, buySignal4H ? 'BUY' : sellSignal4H ? 'SELL' : '', text_color=color.white, bgcolor=getColor(buySignal4H, sellSignal4H, prevRsi4H))
+    table.cell(myTable, 5, 1, buySignal1D ? 'BUY' : sellSignal1D ? 'SELL' : '', text_color=color.white, bgcolor=getColor(buySignal1D, sellSignal1D, prevRsi1D))
+
+

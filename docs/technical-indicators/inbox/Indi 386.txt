@@ -1,0 +1,300 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+// ==============================================================================================
+// © Custom Developer
+// Institutional Volume Profile Regression [Pro]
+// ==============================================================================================
+
+indicator("Institutional SMC Volume Profile Regression [Pro]", "IVP Regression Pro", overlay = true, max_lines_count = 500, max_polylines_count = 100, max_labels_count = 500, max_bars_back = 500)
+
+// ----------------------------------------------------------------------------------------------
+// 1. INPUTS & CONFIGURATION
+// ----------------------------------------------------------------------------------------------
+g_reg = "===== REGRESSION CHANNEL CONFIGURATION ====="
+reg_length  = input.int(236, "Regression Horizon", minval = 50, maxval = 490, group = g_reg)
+sd_factor   = input.float(2.0, "Band Deviation (SD)", minval = 0.5, maxval = 4.0, step = 0.25, group = g_reg)
+poly_degree = input.string("Polynomial (Quadratic)", "Channel Curve Model", options = ["Linear Fit", "Polynomial (Quadratic)"], group = g_reg)
+
+g_flow = "===== INWARD VOLUME FLOW BARS ====="
+vol_baseline    = input.int(15, "Volume Baseline Period", minval = 5, group = g_flow)
+bar_scale_atr   = input.float(2.1, "Inward Bar Scale (ATR)", step = 0.1, group = g_flow)
+bar_base_width  = input.int(5, "Base Bar Width", minval = 1, maxval = 5, group = g_flow)
+highlight_edges = input.bool(true, "Highlight Boundary Volume Flares", group = g_flow)
+flare_vol_ratio = input.float(1.0, "Flare Volume Threshold", minval = 1.0, maxval = 3.0, step = 0.05, group = g_flow)
+flare_margin    = input.float(40.0, "Boundary Margin Zone %", minval = 5.0, maxval = 40.0, step = 5.0, group = g_flow)
+
+g_profile = "===== CUMULATIVE RIGHT-SIDE PROFILE ====="
+show_profile     = input.bool(true, "Display Side Volume Profile", group = g_profile)
+profile_bins     = input.int(36, "Profile Resolution (Rows)", minval = 12, maxval = 36, group = g_profile)
+profile_extent   = input.int(30, "Max Horizontal Length (Bars)", minval = 6, maxval = 30, group = g_profile)
+profile_row_w    = input.int(10, "Row Thickness", minval = 3, maxval = 10, group = g_profile)
+show_outline     = input.bool(true, "Show Outline Geometry", group = g_profile)
+
+g_style = "===== VISUAL THEME & PALETTE ====="
+paint_candles = input.bool(true, "Paint Candles by Channel Bias", group = g_style)
+c_bullish     = input.color(#00FF00, "Bullish Volume / Lower Band", inline="col1", group = g_style)
+c_bearish     = input.color(#FF0066, "Bearish Volume / Upper Band", inline="col1", group = g_style)
+c_neutral     = input.color(#555555, "Low Volume / Baseline", group = g_style)
+c_channel     = input.color(#FFFFFF, "Channel Geometry Color", group = g_style)
+
+// ----------------------------------------------------------------------------------------------
+// 2. MATHEMATICAL REGRESSION MATRIX & COMPUTATION
+// ----------------------------------------------------------------------------------------------
+int mode_deg = poly_degree == "Linear Fit" ? 1 : 2
+
+calc_polynomial_fit(float price_src, int len, int deg) =>
+    if barstate.islast
+        mat_x = matrix.new<float>(len, deg + 1, 0.0)
+        for i = 0 to len - 1
+            for j = 0 to deg
+                mat_x.set(i, j, math.pow(i, j))
+        mat_y = matrix.new<float>(len, 1, 0.0)
+        for i = 0 to len - 1
+            mat_y.set(i, 0, price_src[len - 1 - i])
+        mat_xt      = matrix.transpose(mat_x)
+        mat_xtx     = matrix.mult(mat_xt, mat_x)
+        mat_xty     = matrix.mult(mat_xt, mat_y)
+        mat_inv     = matrix.inv(mat_xtx)
+        mat_beta    = matrix.mult(mat_inv, mat_xty)
+        matrix.mult(mat_x, matrix.col(mat_beta, 0))
+
+curve_data = calc_polynomial_fit(hl2, reg_length, mode_deg)
+float dev_spread = ta.stdev(hl2, reg_length)
+float channel_sd = dev_spread * sd_factor
+float current_atr = ta.atr(14)
+float vol_sma = ta.sma(volume, vol_baseline)
+
+// Candle Color Control
+bool bias_up = close > ta.linreg(hl2, reg_length, 0)
+color active_bias_col = bias_up ? c_bullish : c_bearish
+
+plotcandle(open, high, low, close, "Trend Candles",
+     color = active_bias_col, wickcolor = active_bias_col, bordercolor = active_bias_col,
+     display = paint_candles ? display.all : display.none)
+
+// ----------------------------------------------------------------------------------------------
+// 3. GRAPHICAL RENDERING ENGINE
+// ----------------------------------------------------------------------------------------------
+var polyline[] poly_store  = array.new<polyline>()
+var line[]     line_store  = array.new<line>()
+var label[]    mark_store  = array.new<label>()
+
+if barstate.islast and not na(curve_data)
+    int data_len = array.size(curve_data)
+
+    if data_len > 0
+        for p in poly_store
+            p.delete()
+        poly_store.clear()
+        for l in line_store
+            l.delete()
+        line_store.clear()
+        for m in mark_store
+            m.delete()
+        mark_store.clear()
+
+        float max_vol_window = 0.0
+        for i = 0 to data_len - 1
+            int shift = data_len - 1 - i
+            if shift < 490
+                max_vol_window := math.max(max_vol_window, nz(volume[shift]))
+
+        float max_bar_h = nz(current_atr) * bar_scale_atr
+
+        // A. Upper Channel Gradient Fill
+        pts_u_outer = array.new<chart.point>()
+        pts_u_inner = array.new<chart.point>()
+        for i = 0 to data_len - 1
+            float val = array.get(curve_data, i)
+            int pos_x = bar_index + i - reg_length + 1
+            pts_u_outer.push(chart.point.from_index(pos_x, val + channel_sd))
+            pts_u_inner.push(chart.point.from_index(pos_x, val))
+        
+        upper_polygon = array.new<chart.point>()
+        for i = 0 to data_len - 1
+            float val = array.get(curve_data, i)
+            int pos_x = bar_index + i - reg_length + 1
+            upper_polygon.push(chart.point.from_index(pos_x, val + channel_sd))
+        for i = data_len - 1 to 0
+            float val = array.get(curve_data, i)
+            int pos_x = bar_index + i - reg_length + 1
+            upper_polygon.push(chart.point.from_index(pos_x, val))
+        
+        if upper_polygon.size() > 2
+            poly_store.push(polyline.new(upper_polygon, true, true, line_color = color.new(c_channel, 100), fill_color = color.new(c_bearish, 92)))
+
+        // B. Lower Channel Gradient Fill
+        lower_polygon = array.new<chart.point>()
+        for i = 0 to data_len - 1
+            float val = array.get(curve_data, i)
+            int pos_x = bar_index + i - reg_length + 1
+            lower_polygon.push(chart.point.from_index(pos_x, val))
+        for i = data_len - 1 to 0
+            float val = array.get(curve_data, i)
+            int pos_x = bar_index + i - reg_length + 1
+            lower_polygon.push(chart.point.from_index(pos_x, val - channel_sd))
+        
+        if lower_polygon.size() > 2
+            poly_store.push(polyline.new(lower_polygon, true, true, line_color = color.new(c_channel, 100), fill_color = color.new(c_bullish, 92)))
+
+        // C. Outer Glow Bounds
+        pts_upper_glow = array.new<chart.point>()
+        pts_lower_glow = array.new<chart.point>()
+        for i = 0 to data_len - 1
+            float val = array.get(curve_data, i)
+            int pos_x = bar_index + i - reg_length + 1
+            pts_upper_glow.push(chart.point.from_index(pos_x, val + channel_sd))
+            pts_lower_glow.push(chart.point.from_index(pos_x, val - channel_sd))
+
+        if pts_upper_glow.size() > 1
+            poly_store.push(polyline.new(pts_upper_glow, false, false, line_width = 5, line_color = color.new(c_bearish, 85)))
+            poly_store.push(polyline.new(pts_upper_glow, false, false, line_width = 1, line_color = color.new(c_bearish, 10)))
+
+        if pts_lower_glow.size() > 1
+            poly_store.push(polyline.new(pts_lower_glow, false, false, line_width = 5, line_color = color.new(c_bullish, 85)))
+            poly_store.push(polyline.new(pts_lower_glow, false, false, line_width = 1, line_color = color.new(c_bullish, 10)))
+
+        // D. Boundary Contact Indicators
+        for i = data_len - 1 to 0
+            int shift = data_len - 1 - i
+            if shift >= 490
+                continue
+            float center_val = array.get(curve_data, i)
+            float u_bound    = center_val + channel_sd
+            float l_bound    = center_val - channel_sd
+            int x_pos        = bar_index + i - reg_length + 1
+
+            bool touch_up   = high[shift] >= u_bound
+            bool touch_down = low[shift] <= l_bound
+            bool prev_up    = false
+            bool prev_down  = false
+
+            if i > 0
+                int prev_shift = shift + 1
+                float prev_center = array.get(curve_data, i - 1)
+                if prev_shift < 490
+                    prev_up   := high[prev_shift] >= (prev_center + channel_sd)
+                    prev_down := low[prev_shift] <= (prev_center - channel_sd)
+
+            float gap = math.max(nz(current_atr[shift], current_atr) * 0.08, syminfo.mintick * 4.0)
+
+            if touch_up and not prev_up
+                mark_store.push(label.new(x_pos, math.max(high[shift], u_bound) + gap, "", style = label.style_diamond, size = size.small, color = c_bearish, textcolor = c_bearish))
+
+            if touch_down and not prev_down
+                mark_store.push(label.new(x_pos, math.min(low[shift], l_bound) - gap, "", style = label.style_diamond, size = size.small, color = c_bullish, textcolor = c_bullish))
+
+        // E. Inward Volume Pressure Bars
+        int bars_to_render = math.min(data_len, 180)
+        for i = data_len - bars_to_render to data_len - 1
+            int shift = data_len - 1 - i
+            if shift >= 490
+                continue
+
+            int x_pos        = bar_index + i - reg_length + 1
+            float center_val = array.get(curve_data, i)
+            float cur_vol    = nz(volume[shift])
+            float cur_v_sma  = nz(vol_sma[shift])
+            float vol_ratio  = max_vol_window > 0 ? cur_vol / max_vol_window : 0.0
+            float bar_h      = vol_ratio * max_bar_h
+
+            float bar_range  = math.max(high[shift] - low[shift], syminfo.mintick)
+            float buy_pct    = math.max(0.0, math.min(1.0, (close[shift] - low[shift]) / bar_range))
+            float buy_h      = bar_h * buy_pct
+            float sell_h     = bar_h * (1.0 - buy_pct)
+
+            bool is_high_vol = cur_vol > cur_v_sma
+            float rel_vol    = cur_v_sma > 0 ? cur_vol / cur_v_sma : 1.0
+            int dynamic_w    = int(math.max(1, math.min(5, math.round(bar_base_width + (rel_vol - 1.0) * 1.25))))
+            int bar_transp   = is_high_vol ? int(math.max(5, 60 - math.min(rel_vol, 3.0) * 18.0)) : 58
+
+            if buy_h > syminfo.mintick
+                float y_base = center_val - channel_sd
+                line_store.push(line.new(x_pos, y_base, x_pos, y_base + buy_h, color = is_high_vol ? color.new(c_bullish, bar_transp) : color.new(c_neutral, 62), width = dynamic_w))
+
+            if sell_h > syminfo.mintick
+                float y_base = center_val + channel_sd
+                line_store.push(line.new(x_pos, y_base, x_pos, y_base - sell_h, color = is_high_vol ? color.new(c_bearish, bar_transp) : color.new(c_neutral, 62), width = dynamic_w))
+
+        // F. End Cumulative Volume Distribution Profile
+        if show_profile
+            float final_center = array.get(curve_data, data_len - 1)
+            float prof_top     = final_center + channel_sd
+            float prof_bot     = final_center - channel_sd
+            float prof_span    = prof_top - prof_bot
+            float bin_height   = prof_span / profile_bins
+
+            array_buy_vol  = array.new<float>(profile_bins, 0.0)
+            array_sell_vol = array.new<float>(profile_bins, 0.0)
+
+            for i = 0 to data_len - 1
+                int shift = data_len - 1 - i
+                if shift >= 490
+                    continue
+
+                float center_val = array.get(curve_data, i)
+                float c_top      = center_val + channel_sd
+                float c_bot      = center_val - channel_sd
+                float c_span     = c_top - c_bot
+                float c_bin_h    = c_span / profile_bins
+                float cur_vol    = nz(volume[shift])
+                float bar_range  = math.max(high[shift] - low[shift], syminfo.mintick)
+                float buy_pct    = math.max(0.0, math.min(1.0, (close[shift] - low[shift]) / bar_range))
+                float b_vol      = cur_vol * buy_pct
+                float s_vol      = cur_vol * (1.0 - buy_pct)
+
+                for r = 0 to profile_bins - 1
+                    float r_bot = c_bot + c_bin_h * r
+                    float r_top = r_bot + c_bin_h
+                    float overlap = math.max(0.0, math.min(high[shift], r_top) - math.max(low[shift], r_bot))
+                    if overlap > 0
+                        float frac = overlap / bar_range
+                        array_buy_vol.set(r, array_buy_vol.get(r) + b_vol * frac)
+                        array_sell_vol.set(r, array_sell_vol.get(r) + s_vol * frac)
+
+            float prof_max_val = 0.0
+            for r = 0 to profile_bins - 1
+                prof_max_val := math.max(prof_max_val, array_buy_vol.get(r) + array_sell_vol.get(r))
+
+            int start_x = bar_index + 2
+            pts_profile_curve = array.new<chart.point>()
+
+            for r = 0 to profile_bins - 1
+                float b_val = array_buy_vol.get(r)
+                float s_val = array_sell_vol.get(r)
+                float total = b_val + s_val
+                float norm  = prof_max_val > 0 ? total / prof_max_val : 0.0
+                int total_len = int(math.round(norm * profile_extent))
+                int buy_len   = total > 0 ? int(math.round(total_len * b_val / total)) : 0
+                int sell_len  = math.max(0, total_len - buy_len)
+                int buy_x     = start_x + buy_len
+                int end_x     = buy_x + sell_len
+                float y_pos   = prof_bot + bin_height * (r + 0.5)
+                int row_transp = int(math.max(8, 72 - norm * 64.0))
+
+                if buy_len > 0
+                    line_store.push(line.new(start_x, y_pos, buy_x, y_pos, color = color.new(c_bullish, row_transp), width = profile_row_w))
+
+                if sell_len > 0
+                    line_store.push(line.new(buy_x, y_pos, end_x, y_pos, color = color.new(c_bearish, row_transp), width = profile_row_w))
+
+                pts_profile_curve.push(chart.point.from_index(end_x, y_pos))
+
+            if show_outline
+                line_store.push(line.new(bar_index, prof_bot, bar_index, prof_top, color = color.new(c_channel, 30), width = 1))
+                line_store.push(line.new(bar_index, final_center, start_x, final_center, color = color.new(c_channel, 25), width = 1))
+
+                if pts_profile_curve.size() > 1
+                    poly_store.push(polyline.new(pts_profile_curve, true, false, line_width = 1, line_color = color.new(c_channel, 25)))
+
+
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

@@ -1,0 +1,452 @@
+// This work is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+// https://creativecommons.org/licenses/by-nc-sa/4.0/
+// MarkeitTicks
+
+//@version=6
+indicator("Historical Pattern Projection [MarkitTick]", overlay=true, max_bars_back=2000, max_lines_count=500, max_labels_count=50, max_boxes_count=20)
+
+// =========================================================================
+// SECTION 1: INPUT GROUPS & CONFIGURATIONS
+// =========================================================================
+string GRP_CORE  = "⚙️ Core"
+string GRP_PROJ  = "🔮 Proj"
+string GRP_VIS   = "🎨 Vis"
+string GRP_TRADE = "Risk"
+string GRP_DASH  = "Dash"
+
+i_freeze       = input.bool(false, "Freeze Data", group=GRP_CORE, tooltip="")
+i_pattern_len  = input.int(30, "Fingerprint Length", minval=10, maxval=100, group=GRP_CORE, tooltip="")
+i_search_depth = input.int(500, "Search Depth", minval=100, maxval=2000, group=GRP_CORE, tooltip="")
+i_top_matches  = input.int(3, "Top Matches", minval=1, maxval=5, group=GRP_CORE)
+i_min_score    = input.float(60.0, "Min Score (%)", minval=30.0, maxval=95.0, step=1.0, group=GRP_CORE, tooltip="")
+i_proj_len     = input.int(20, "Ghost Length", minval=5, maxval=60, group=GRP_PROJ)
+
+i_show_ghost   = input.bool(true, "Ghost Line", group=GRP_PROJ)
+i_show_range   = input.bool(true, "Range Band", group=GRP_PROJ)
+i_show_match   = input.bool(true, "Best Match Zone", group=GRP_PROJ)
+i_show_score   = input.bool(true, "Score Label", group=GRP_VIS)
+i_show_table   = input.bool(true, "ECHO Dashboard", group=GRP_VIS)
+i_tbl_pos      = input.string("top_right", "Dash Position", options=["top_right","top_left","bottom_right","bottom_left"], group=GRP_VIS)
+i_ghost_color  = input.color(color.new(#7C4DFF,0), "Ghost Color", group=GRP_VIS)
+i_match_color  = input.color(color.new(#FF6F00,0), "Match Color", group=GRP_VIS)
+
+i_show_trade   = input.bool(true, "Trade Levels", group=GRP_TRADE)
+i_entry_width  = input.float(0.25, "Entry Width (xATR)", minval=0.05, maxval=2.0, step=0.05, group=GRP_TRADE)
+i_sl_mult      = input.float(1.5, "SL (xATR)", minval=0.5, maxval=5.0, step=0.1, group=GRP_TRADE)
+i_tp1_mult     = input.float(1.0, "TP1 (xATR)", minval=0.1, maxval=10.0, step=0.1, group=GRP_TRADE)
+i_tp2_mult     = input.float(2.0, "TP2 (xATR)", minval=0.1, maxval=15.0, step=0.1, group=GRP_TRADE)
+i_tp3_mult     = input.float(3.0, "TP3 (xATR)", minval=0.1, maxval=20.0, step=0.1, group=GRP_TRADE)
+i_entry_color  = input.color(color.new(#FFD600,15), "Entry Color", group=GRP_TRADE)
+i_sl_color     = input.color(color.new(#F44336,15), "SL Color", group=GRP_TRADE)
+i_tp_color     = input.color(color.new(#00C853,15), "TP Color", group=GRP_TRADE)
+
+color dash_bg_color  = input.color(color.rgb(10,10,18,5), "BG", group=GRP_DASH)
+color dash_txt_color = input.color(color.rgb(220,220,235,0), "Text", group=GRP_DASH)
+color i_tbl_hdr_bg   = input.color(color.new(#4527A0,15), "Table Header BG", group=GRP_DASH)
+color i_tbl_cell_bg1 = input.color(color.new(#0D0D1A,30), "Table Cell BG 1", group=GRP_DASH)
+color i_tbl_cell_bg2 = input.color(color.new(#0D0D1A,40), "Table Cell BG 2", group=GRP_DASH)
+color i_tbl_cell_bg3 = input.color(color.new(#0D0D1A,50), "Table Cell BG 3", group=GRP_DASH)
+color i_tbl_cell_bg4 = input.color(color.new(#0D0D1A,60), "Table Cell BG 4", group=GRP_DASH)
+color i_tbl_cell_hl  = input.color(color.new(#1A0F2E,20), "Table Highlight BG", group=GRP_DASH)
+color i_tbl_border   = input.color(color.rgb(50,50,70,20), "Table Border", group=GRP_DASH)
+color i_tbl_frame    = input.color(color.rgb(60,60,90,10), "Table Frame", group=GRP_DASH)
+color i_dim          = input.color(color.new(color.gray,10), "Dim Text", group=GRP_DASH)
+color i_dim2         = input.color(color.new(color.gray,5), "Dim Text 2", group=GRP_DASH)
+color i_pur          = input.color(color.new(#CE93D8,0), "Accent Text", group=GRP_DASH)
+
+// =========================================================================
+// SECTION 2: CHART VALIDATION & SAFETY CHECKS
+// =========================================================================
+string clean_ticker = syminfo.prefix + ":" + syminfo.ticker
+
+bool isNonStandard = chart.is_heikinashi or chart.is_renko or chart.is_linebreak or chart.is_kagi or chart.is_pnf
+if isNonStandard and barstate.islast
+    runtime.error("Non-standard charts (Heikin Ashi, Renko, etc.) cause synthetic pricing and historical repainting. Please switch to standard Japanese Candlesticks.")
+
+// =========================================================================
+// SECTION 3: CUSTOM MATH & STATISTICAL FUNCTIONS
+// =========================================================================
+f_zscore(series float src, simple int len) =>
+    float m = ta.sma(src, len)
+    float s = ta.stdev(src, len)
+    s > 0.0 ? (src - m) / s : 0.0
+
+f_pearson(float[] a, float[] b, simple int len) =>
+    float sum_a  = 0.0
+    float sum_b  = 0.0
+    float sum_ab = 0.0
+    float sum_a2 = 0.0
+    float sum_b2 = 0.0
+    for i = 0 to len - 1
+        float ai = array.get(a, i)
+        float bi = array.get(b, i)
+        sum_a  += ai
+        sum_b  += bi
+        sum_ab += ai * bi
+        sum_a2 += ai * ai
+        sum_b2 += bi * bi
+    float n   = float(len)
+    float num = n * sum_ab - sum_a * sum_b
+    float den = math.sqrt((n * sum_a2 - sum_a * sum_a) * (n * sum_b2 - sum_b * sum_b))
+    den > 1e-10 ? num / den : 0.0
+
+// =========================================================================
+// SECTION 4: GLOBAL VARIABLES & STATE INITIALIZATION
+// =========================================================================
+float z_close = f_zscore(close, i_pattern_len)
+float atr_now = ta.atr(14)
+
+var float[] match_scores   = array.new_float(0)
+var int[]   match_bars_ago = array.new_int(0)
+var float[] match_outcome  = array.new_float(0)
+var float[] ghost_path     = array.new_float(0)
+var float[] ghost_high     = array.new_float(0)
+var float[] ghost_low      = array.new_float(0)
+
+var float best_score  = 0.0
+var int   best_offset = 0
+var float avg_outcome = 0.0
+var int   bull_count  = 0
+var int   bear_count  = 0
+var int   neut_count  = 0
+var int   anchor_bar  = bar_index
+var bool  data_frozen = false
+
+// =========================================================================
+// SECTION 5: CORE PATTERN RECOGNITION ALGORITHM
+// =========================================================================
+bool do_update = (barstate.islastconfirmedhistory or (barstate.islast and barstate.isconfirmed)) and not (i_freeze and data_frozen)
+
+if do_update
+    anchor_bar := bar_index
+    array.clear(match_scores)
+    array.clear(match_bars_ago)
+    array.clear(match_outcome)
+    array.clear(ghost_path)
+    array.clear(ghost_high)
+    array.clear(ghost_low)
+    best_score  := 0.0
+    best_offset := 0
+    avg_outcome := 0.0
+    bull_count  := 0
+    bear_count  := 0
+    neut_count  := 0
+    
+    float[] cur_fp = array.new_float(i_pattern_len)
+    for i = 0 to i_pattern_len - 1
+        array.set(cur_fp, i, z_close[i_pattern_len - 1 - i])
+        
+    int max_depth = math.min(i_search_depth, bar_index - i_pattern_len - i_proj_len - 5)
+    for offset = i_pattern_len + i_proj_len + 2 to max_depth
+        float[] cand_fp = array.new_float(i_pattern_len)
+        bool valid = true
+        float cand_m = 0.0
+        
+        for k = 0 to i_pattern_len - 1
+            cand_m += close[offset - k]
+        cand_m /= i_pattern_len
+        
+        float cand_s = 0.0
+        for k = 0 to i_pattern_len - 1
+            float d = close[offset - k] - cand_m
+            cand_s += d * d
+        cand_s := math.sqrt(cand_s / i_pattern_len)
+        
+        for i = 0 to i_pattern_len - 1
+            int idx = offset - i
+            if idx > bar_index
+                valid := false
+                break
+            float z = cand_s > 0.0 ? (close[idx] - cand_m) / cand_s : 0.0
+            array.set(cand_fp, i_pattern_len - 1 - i, z)
+            
+        if not valid
+            continue
+            
+        float corr  = f_pearson(cur_fp, cand_fp, i_pattern_len)
+        float score = (corr + 1.0) / 2.0 * 100.0
+        
+        if score < i_min_score
+            continue
+            
+        float entry_price = close[offset - i_pattern_len]
+        float exit_price  = close[offset - i_pattern_len - i_proj_len]
+        float outcome_pct = entry_price > 0.0 ? (exit_price - entry_price) / entry_price * 100.0 : 0.0
+        
+        int  n_matches = array.size(match_scores)
+        bool inserted  = false
+        
+        if n_matches > 0
+            for m_i = 0 to n_matches - 1
+                if score > array.get(match_scores, m_i)
+                    array.insert(match_scores, m_i, score)
+                    array.insert(match_bars_ago, m_i, offset)
+                    array.insert(match_outcome, m_i, outcome_pct)
+                    inserted := true
+                    break
+                    
+        if not inserted
+            array.push(match_scores, score)
+            array.push(match_bars_ago, offset)
+            array.push(match_outcome, outcome_pct)
+            
+        while array.size(match_scores) > i_top_matches
+            array.pop(match_scores)
+            array.pop(match_bars_ago)
+            array.pop(match_outcome)
+            
+    int n_found = array.size(match_scores)
+    if n_found > 0
+        best_score  := array.get(match_scores, 0)
+        best_offset := array.get(match_bars_ago, 0)
+        float base_price  = close[best_offset - i_pattern_len]
+        float start_price = close
+        float avg_out = 0.0
+        
+        for mi = 0 to n_found - 1
+            float oc = array.get(match_outcome, mi)
+            avg_out += oc
+            if oc > 0.5
+                bull_count += 1
+            else if oc < -0.5
+                bear_count += 1
+            else
+                neut_count += 1
+                
+        avg_outcome := avg_out / n_found
+        float scale = base_price > 0.0 ? start_price / base_price : 1.0
+        
+        for fi = 0 to i_proj_len - 1
+            float hist_price = close[best_offset - i_pattern_len - fi]
+            float proj_price = hist_price * scale
+            array.push(ghost_path, proj_price)
+            float band_width = atr_now * (1.0 + float(fi) * 0.1)
+            array.push(ghost_high, proj_price + band_width)
+            array.push(ghost_low, proj_price - band_width)
+            
+    data_frozen := true
+
+// =========================================================================
+// SECTION 6: VISUALIZATION (MATCH HIGHLIGHTS & GHOST PROJECTIONS)
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.bottom_right, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @mrexpert_ai", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+// =========================================================================
+var line[]  echo_lines  = array.new_line()
+var label[] echo_labels = array.new_label()
+
+if do_update
+    int _esz = array.size(echo_lines)
+    if _esz > 0
+        for i = 0 to _esz - 1
+            line.delete(array.get(echo_lines, i))
+    array.clear(echo_lines)
+    
+    int _lsz = array.size(echo_labels)
+    if _lsz > 0
+        for i = 0 to _lsz - 1
+            label.delete(array.get(echo_labels, i))
+    array.clear(echo_labels)
+    
+    int n_found = array.size(match_scores)
+    if i_show_match and n_found > 0
+        int match_end   = best_offset
+        int match_start = best_offset - i_pattern_len
+        for b = match_start to match_end
+            int   idx      = anchor_bar - b
+            float body_top = math.max(open[b], close[b])
+            float body_bot = math.min(open[b], close[b])
+            body_bot := body_top == body_bot ? body_bot - syminfo.mintick : body_bot
+            
+            array.push(echo_lines, line.new(idx, high[b], idx, body_top, color=i_match_color, width=1))
+            array.push(echo_lines, line.new(idx, body_bot, idx, low[b], color=i_match_color, width=1))
+            array.push(echo_lines, line.new(idx, body_top, idx, body_bot, color=i_match_color, width=5))
+            array.push(echo_lines, line.new(idx-1, body_top, idx, body_top, color=color.new(i_match_color,30), width=1))
+            array.push(echo_lines, line.new(idx-1, body_bot, idx, body_bot, color=color.new(i_match_color,30), width=1))
+            
+        array.push(echo_labels, label.new(x = anchor_bar - match_end, y = high[match_end] * 1.001, text = "ECHO Match\n" + str.tostring(math.round(best_score, 1)) + "% similar", color = color.new(i_match_color, 20), textcolor = color.white, style = label.style_label_down, size = size.small))
+        
+    if i_show_ghost and array.size(ghost_path) > 0
+        int proj_len = array.size(ghost_path)
+        for fi = 0 to proj_len - 2
+            float p1         = array.get(ghost_path, fi)
+            float p2         = array.get(ghost_path, fi + 1)
+            int   fade_alpha = math.round(math.min(85, fi * (85.0 / proj_len)))
+            array.push(echo_lines, line.new(x1 = anchor_bar + fi, y1 = p1, x2 = anchor_bar + fi + 1, y2 = p2, color = color.new(i_ghost_color, fade_alpha), width = 2, style = line.style_solid))
+            
+        float last_proj  = array.get(ghost_path, proj_len - 1)
+        float first_proj = array.get(ghost_path, 0)
+        string ghost_dir = last_proj > first_proj ? "▲" : "▼"
+        float ghost_move = first_proj > 0.0 ? math.abs((last_proj - first_proj) / first_proj * 100.0) : 0.0
+        
+        array.push(echo_labels, label.new(x = anchor_bar + proj_len, y = last_proj, text = ghost_dir + " " + str.tostring(math.round(ghost_move, 2)) + "%\n(Projected)", color = color.new(i_ghost_color, 15), textcolor = color.white, style = label.style_label_left, size = size.small))
+        
+    if i_show_range and array.size(ghost_high) > 0
+        int rng_len = array.size(ghost_high)
+        for fi = 0 to rng_len - 2
+            array.push(echo_lines, line.new(x1 = anchor_bar + fi, y1 = array.get(ghost_high, fi), x2 = anchor_bar + fi + 1, y2 = array.get(ghost_high, fi + 1), color = color.new(i_ghost_color, 50), width = 1, style = line.style_dashed))
+            array.push(echo_lines, line.new(x1 = anchor_bar + fi, y1 = array.get(ghost_low, fi), x2 = anchor_bar + fi + 1, y2 = array.get(ghost_low, fi + 1), color = color.new(i_ghost_color, 50), width = 1, style = line.style_dashed))
+            
+    if i_show_score and n_found > 0
+        color score_color = best_score >= 80.0 ? color.new(#00C853,10) : best_score >= 65.0 ? color.new(#FFD600,10) : color.new(#FF6D00,10)
+        array.push(echo_labels, label.new(x = anchor_bar, y = high, text = "ECHO: " + str.tostring(math.round(best_score, 1)) + "%", color = score_color, textcolor = color.white, style = label.style_label_down, size = size.normal))
+
+// --- Watermark ---
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+
+// =========================================================================
+// SECTION 7: TRADE MANAGEMENT (ENTRY, STOP LOSS & TAKE PROFIT)
+// =========================================================================
+var box[]   trade_boxes  = array.new_box()
+var line[]  trade_lines  = array.new_line()
+var label[] trade_labels = array.new_label()
+var float   alert_entry  = na
+var float   alert_sl     = na
+var float   alert_tp     = na
+
+float atr_trade = ta.atr(14)
+
+if do_update and not na(atr_trade) and atr_trade > 0.0
+    int   n_found_t  = array.size(match_scores)
+    
+    int   trade_bias = n_found_t > 0 ? (avg_outcome > 0.0 ? 1 : avg_outcome < 0.0 ? -1 : 0) : 0
+    
+    float entry_price= close
+    float entry_hi   = entry_price + atr_trade * i_entry_width
+    float entry_lo   = entry_price - atr_trade * i_entry_width
+    float sl_price   = trade_bias > 0 ? entry_price - atr_trade * i_sl_mult  : entry_price + atr_trade * i_sl_mult
+    float tp1_price  = trade_bias > 0 ? entry_price + atr_trade * i_tp1_mult : entry_price - atr_trade * i_tp1_mult
+    float tp2_price  = trade_bias > 0 ? entry_price + atr_trade * i_tp2_mult : entry_price - atr_trade * i_tp2_mult
+    float tp3_price  = trade_bias > 0 ? entry_price + atr_trade * i_tp3_mult : entry_price - atr_trade * i_tp3_mult
+    int   box_right  = anchor_bar + i_proj_len
+    
+    alert_entry := entry_price
+    alert_sl    := sl_price
+    alert_tp    := tp1_price
+
+    int _bsz = array.size(trade_boxes)
+    if _bsz > 0
+        for i = 0 to _bsz - 1
+            box.delete(array.get(trade_boxes, i))
+    array.clear(trade_boxes)
+    
+    int _tlsz = array.size(trade_lines)
+    if _tlsz > 0
+        for i = 0 to _tlsz - 1
+            line.delete(array.get(trade_lines, i))
+    array.clear(trade_lines)
+    
+    int _labsz = array.size(trade_labels)
+    if _labsz > 0
+        for i = 0 to _labsz - 1
+            label.delete(array.get(trade_labels, i))
+    array.clear(trade_labels)
+
+    if i_show_trade and trade_bias != 0
+        array.push(trade_boxes, box.new(left = anchor_bar, top = entry_hi, right = box_right, bottom = entry_lo, bgcolor = color.new(i_entry_color, 80), border_color = color.new(i_entry_color, 20), border_width = 1))
+        array.push(trade_labels, label.new(x = box_right, y = entry_price, text = "Entry " + str.tostring(entry_price, format.mintick), color = color.new(i_entry_color, 15), textcolor = color.black, style = label.style_label_left, size = size.small))
+        
+        array.push(trade_lines, line.new(anchor_bar, sl_price, box_right, sl_price, color=i_sl_color, width=2, style=line.style_solid))
+        array.push(trade_labels, label.new(x = box_right, y = sl_price, text = "SL " + str.tostring(sl_price, format.mintick), color = color.new(i_sl_color, 15), textcolor = color.white, style = label.style_label_left, size = size.small))
+        
+        array.push(trade_lines, line.new(anchor_bar, tp1_price, box_right, tp1_price, color=i_tp_color, width=1, style=line.style_dashed))
+        array.push(trade_labels, label.new(x = box_right, y = tp1_price, text = "TP1 " + str.tostring(tp1_price, format.mintick), color = color.new(i_tp_color, 30), textcolor = color.white, style = label.style_label_left, size = size.small))
+        
+        array.push(trade_lines, line.new(anchor_bar, tp2_price, box_right, tp2_price, color=i_tp_color, width=1, style=line.style_dashed))
+        array.push(trade_labels, label.new(x = box_right, y = tp2_price, text = "TP2 " + str.tostring(tp2_price, format.mintick), color = color.new(i_tp_color, 15), textcolor = color.white, style = label.style_label_left, size = size.small))
+        
+        array.push(trade_lines, line.new(anchor_bar, tp3_price, box_right, tp3_price, color=i_tp_color, width=1, style=line.style_dashed))
+        array.push(trade_labels, label.new(x = box_right, y = tp3_price, text = "TP3 " + str.tostring(tp3_price, format.mintick), color = color.new(i_tp_color, 0), textcolor = color.white, style = label.style_label_left, size = size.small))
+
+bgcolor(barstate.islast and not i_freeze ? color.new(#7C4DFF, 97) : na, offset = -i_pattern_len, title = "Pattern Window")
+
+// =========================================================================
+// SECTION 8: DASHBOARD & STATISTICS TABLE
+// =========================================================================
+int   _n_found_dash  = array.size(match_scores)
+float _best_score_d  = best_score
+float _avg_outcome_d = avg_outcome
+int   _bull_d        = bull_count
+int   _bear_d        = bear_count
+int   _neut_d        = neut_count
+int   _total_d       = _bull_d + _bear_d + _neut_d
+
+int   _bull_pct      = _total_d > 0 ? math.round(_bull_d / _total_d * 100) : 0
+int   _bear_pct      = _total_d > 0 ? math.round(_bear_d / _total_d * 100) : 0
+int   _neut_pct      = _total_d > 0 ? math.round(_neut_d / _total_d * 100) : 0
+
+color _score_clr     = _best_score_d >= 80.0 ? color.new(#00C853,0) : _best_score_d >= 65.0 ? color.new(#FFD600,0) : color.new(#FF6D00,0)
+string _score_lbl    = _best_score_d >= 80.0 ? "🟢 Strong" : _best_score_d >= 65.0 ? "🟡 Moderate" : "🟠 Weak"
+string _score_val    = _n_found_dash > 0 ? str.tostring(math.round(_best_score_d, 1)) + "%  " + _score_lbl : "Searching..."
+
+string _out_sym      = _avg_outcome_d > 0.0 ? "▲ +" : _avg_outcome_d < 0.0 ? "▼ " : "— "
+color  _out_clr      = _avg_outcome_d > 0.0 ? color.new(#00C853,0) : _avg_outcome_d < 0.0 ? color.new(#F44336,0) : color.new(color.gray,20)
+string _out_val      = _n_found_dash > 0 ? _out_sym + str.tostring(math.round(_avg_outcome_d, 2)) + "%" : "—"
+
+string _bias_val     = _n_found_dash > 0 ? (_avg_outcome_d > 0.0 ? "🟢 Bullish" : _avg_outcome_d < 0.0 ? "🔴 Bearish" : "⚪ Neutral") : "—"
+color  _bias_clr     = _avg_outcome_d > 0.0 ? color.new(#00C853,0) : _avg_outcome_d < 0.0 ? color.new(#F44336,0) : color.new(color.gray,20)
+string _votes_val    = "▲" + str.tostring(_bull_pct) + "% ▼" + str.tostring(_bear_pct) + "% —" + str.tostring(_neut_pct) + "%"
+
+var table dash = table.new(position = position.top_right, columns = 2, rows = 14, border_width = 1, border_color = i_tbl_border, frame_width = 1, frame_color = i_tbl_frame)
+
+if i_show_table
+    table.cell(dash, 0, 0, "🔮 ECHO " + clean_ticker, text_color=color.white, bgcolor=i_tbl_hdr_bg, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 0, "", text_color=color.white, bgcolor=i_tbl_hdr_bg, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 1, "Best Match", text_color=i_dim, bgcolor=i_tbl_cell_bg1, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 1, _score_val, text_color=_score_clr, bgcolor=i_tbl_cell_bg1, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 2, "Fingerprint", text_color=i_dim, bgcolor=i_tbl_cell_bg2, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 2, str.tostring(i_pattern_len) + " bars", text_color=i_dim2, bgcolor=i_tbl_cell_bg2, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 3, "Matches", text_color=i_dim, bgcolor=i_tbl_cell_bg2, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 3, str.tostring(_n_found_dash) + " / " + str.tostring(i_top_matches), text_color=i_pur, bgcolor=i_tbl_cell_bg2, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 4, "Avg Move", text_color=i_dim, bgcolor=i_tbl_cell_bg1, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 4, _out_val, text_color=_out_clr, bgcolor=i_tbl_cell_bg1, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 5, "Votes", text_color=i_dim, bgcolor=i_tbl_cell_bg2, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 5, _votes_val, text_color=i_dim2, bgcolor=i_tbl_cell_bg2, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 6, "Proj Bias", text_color=i_dim, bgcolor=i_tbl_cell_bg1, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 6, _bias_val, text_color=_bias_clr, bgcolor=i_tbl_cell_bg1, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 7, "Depth", text_color=color.new(color.gray,20), bgcolor=i_tbl_cell_bg3, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 7, str.tostring(i_search_depth) + " bars", text_color=color.new(color.gray,10), bgcolor=i_tbl_cell_bg3, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+    
+    table.cell(dash, 0, 8, "Top Matches — Score / Move", text_color=i_pur, bgcolor=i_tbl_cell_hl, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+    table.cell(dash, 1, 8, "", text_color=i_pur, bgcolor=i_tbl_cell_hl, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+
+    int _msz = array.size(match_scores)
+    int _cap = math.min(_msz, i_top_matches)
+    if _cap > 0
+        for mi = 0 to _cap - 1
+            float ms = array.get(match_scores, mi)
+            float mo = array.get(match_outcome, mi)
+            int   mb = array.get(match_bars_ago, mi)
+            
+            string oc_sym = mo > 0.0 ? "▲ +" : mo < 0.0 ? "▼ " : "— "
+            color  oc_clr = mo > 0.0 ? color.new(#69F0AE,0) : mo < 0.0 ? color.new(#FF8A80,0) : color.new(color.gray,20)
+            
+            table.cell(dash, 0, 9 + mi, "#" + str.tostring(mi+1) + "  " + str.tostring(math.round(ms,1)) + "%  (" + str.tostring(mb) + "b ago)", text_color=i_dim, bgcolor=i_tbl_cell_bg4, text_size=size.small, text_halign=text.align_left, text_font_family=font.family_monospace)
+            table.cell(dash, 1, 9 + mi, oc_sym + str.tostring(math.round(mo,2)) + "%", text_color=oc_clr, bgcolor=i_tbl_cell_bg4, text_size=size.small, text_halign=text.align_right, text_font_family=font.family_monospace)
+
+// =========================================================================
+// SECTION 9: ALERTS & WEBHOOK TRANSMISSION
+// =========================================================================
+bool _strong = best_score >= 80.0
+
+if do_update and _strong
+    if avg_outcome > 0.0
+        string hook_payload = '{"action": "Buy", "symbol": "' + syminfo.ticker + '", "entry": ' + str.tostring(alert_entry, format.mintick) + ', "take_profit": ' + str.tostring(alert_tp, format.mintick) + ', "stop_loss": ' + str.tostring(alert_sl, format.mintick) + '}'
+        alert(hook_payload, alert.freq_once_per_bar_close)
+    else if avg_outcome < 0.0
+        string hook_payload = '{"action": "Sell", "symbol": "' + syminfo.ticker + '", "entry": ' + str.tostring(alert_entry, format.mintick) + ', "take_profit": ' + str.tostring(alert_tp, format.mintick) + ', "stop_loss": ' + str.tostring(alert_sl, format.mintick) + '}'
+        alert(hook_payload, alert.freq_once_per_bar_close)
+    else
+        string hook_payload = '{"action": "Neutral", "symbol": "' + syminfo.ticker + '", "message": "High-similarity pattern detected without clear bias."}'
+        alert(hook_payload, alert.freq_once_per_bar_close)
