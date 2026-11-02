@@ -3,6 +3,7 @@ import { AppShell } from '@app/shell/AppShell';
 import { MarketPage } from '@features/market/routes/MarketPage';
 import { MarketStatusPage } from '@features/market/routes/MarketStatusPage';
 import { NotificationsPage } from '@features/notifications/ui/NotificationsPage';
+import { TechnicalPage } from '@features/technical/routes/TechnicalPage';
 
 export function App() {
   return (
@@ -10,6 +11,8 @@ export function App() {
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/market" element={<MarketPage />} />
+          <Route path="/technical" element={<TechnicalPage />} />
+          <Route path="/technical/:symbol" element={<TechnicalPage />} />
           <Route path="/market-status" element={<MarketStatusPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="*" element={<Navigate to="/market" replace />} />

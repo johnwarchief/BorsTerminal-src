@@ -197,6 +197,9 @@ func (f *fakeChart) CalendarSymbol(w http.ResponseWriter, _ *http.Request) {
 }
 func (f *fakeChart) MA(w http.ResponseWriter, _ *http.Request)       { f.hit("ma", w) }
 func (f *fakeChart) Patterns(w http.ResponseWriter, _ *http.Request) { f.hit("patterns", w) }
+func (f *fakeChart) Forecast(w http.ResponseWriter, _ *http.Request) { f.hit("forecast", w) }
+func (f *fakeChart) Edge(w http.ResponseWriter, _ *http.Request)     { f.hit("edge", w) }
+func (f *fakeChart) Indicators(w http.ResponseWriter, _ *http.Request) { f.hit("indicators", w) }
 
 // TestChartRoutesAreNotPortedWhenServiceMissing بی سرویس، همان مسیرها ۵۰۱ می‌دهند.
 func TestChartRoutesAreNotPortedWhenServiceMissing(t *testing.T) {
@@ -230,6 +233,27 @@ func TestChartRouteTable(t *testing.T) {
 			t.Fatalf("%s is not in the Python route inventory", tmpl)
 		}
 		path := strings.ReplaceAll(tmpl, "{symbol}", "X")
+		fake := &fakeChart{}
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake, nil, nil, nil, nil)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d", path, rec.Code)
+		}
+		if len(fake.called) != 1 || fake.called[0] != want {
+			t.Fatalf("%s: handlers = %v, want [%s]", path, fake.called, want)
+		}
+	}
+}
+
+// TestAdvancedChartRoutesReachHandlers مسیرهای جدید چارت (پیش‌بینی، لبه، اندیکاتورها) را می‌سنجد.
+func TestAdvancedChartRoutesReachHandlers(t *testing.T) {
+	cases := map[string]string{
+		"/api/chart/FOOLAD/forecast":   "forecast",
+		"/api/chart/FOOLAD/edge":       "edge",
+		"/api/chart/FOOLAD/indicators": "indicators",
+	}
+	for path, want := range cases {
 		fake := &fakeChart{}
 		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake, nil, nil, nil, nil)
 		rec := httptest.NewRecorder()

@@ -1,0 +1,90 @@
+/**
+ * frontend-v2/src/features/technical/ui/__tests__/TechnicalWorkspace.test.tsx
+ *
+ * آزمون‌های یکپارچگی میزکار جامع تکنیکال و کوانت (TechnicalWorkspace):
+ * ۱. رندر نوار ابزار رسم در سمت راست و سایدبار لبه آماری در سمت چپ
+ * ۲. رندر نوار کنترل‌های پیش‌بینی هوش مصنوعی در بالای چارت
+ * ۳. رندر کانتینر کانواسی چارت KLineCharts
+ * ۴. باز و بسته شدن سایدبار لبه آماری با دکمه اختصاصی
+ * ۵. همگام‌سازی نماد فعال با استور مرکزی technicalStore
+ */
+
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TechnicalWorkspace } from '../TechnicalWorkspace';
+import { useTechnicalStore } from '../../model/technicalStore';
+
+// موک کردن موتور klinecharts برای محیط jsdom
+vi.mock('klinecharts', () => ({
+  init: () => ({
+    setStyles: vi.fn(),
+    setDataLoader: vi.fn(),
+    setSymbol: vi.fn(),
+    setPeriod: vi.fn(),
+    resetData: vi.fn(),
+    resize: vi.fn(),
+    createOverlay: vi.fn(),
+    removeOverlay: vi.fn(),
+  }),
+  dispose: vi.fn(),
+  registerOverlay: vi.fn(),
+}));
+
+// موک کردن هوک useChart
+vi.mock('@features/chart/api/useChart', async (original) => {
+  const mod = await original<typeof import('@features/chart/api/useChart')>();
+  return {
+    ...mod,
+    useChart: vi.fn(() => ({
+      data: { status: 'success', candles: [] },
+      isLoading: false,
+      isError: false,
+    })),
+  };
+});
+
+describe('TechnicalWorkspace', () => {
+  beforeEach(() => {
+    useTechnicalStore.getState().reset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders drawing toolbar and candle edge sidebar', () => {
+    render(<TechnicalWorkspace symbol="FOOLAD" />);
+
+    expect(screen.getByTestId('drawing-toolbar')).toBeDefined();
+    expect(screen.getByTestId('candle-edge-card')).toBeDefined();
+  });
+
+  it('renders forecast controls and kline chart container', () => {
+    render(<TechnicalWorkspace symbol="FOOLAD" />);
+
+    expect(screen.getByTestId('forecast-controls')).toBeDefined();
+    expect(screen.getByTestId('kline-chart-container')).toBeDefined();
+    expect(screen.getByTestId('technical-workspace')).toBeDefined();
+  });
+
+  it('toggles candle edge sidebar visibility on button click', () => {
+    render(<TechnicalWorkspace symbol="FOOLAD" />);
+
+    const toggleBtn = screen.getByTitle('بستن سایدبار لبه آماری');
+    expect(toggleBtn).toBeDefined();
+
+    // بستن سایدبار
+    fireEvent.click(toggleBtn);
+    expect(screen.queryByTestId('candle-edge-card')).toBeNull();
+
+    // باز کردن مجدد سایدبار
+    const openBtn = screen.getByTitle('باز کردن سایدبار لبه آماری');
+    fireEvent.click(openBtn);
+    expect(screen.getByTestId('candle-edge-card')).toBeDefined();
+  });
+
+  it('syncs symbol prop to technicalStore selectedSymbol', () => {
+    render(<TechnicalWorkspace symbol="SHASTA" />);
+    expect(useTechnicalStore.getState().selectedSymbol).toBe('SHASTA');
+  });
+});

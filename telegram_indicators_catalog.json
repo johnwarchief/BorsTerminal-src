@@ -1,0 +1,767 @@
+[
+  {
+    "title": "FB_OBwin MT4 Indicator",
+    "dimensions": "1280×608",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "FB_OBwin.ex4",
+        "size": "17.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Fibo RSI8 SingleShot_v122\n\n➡️ Timeframe M30\n➡️ Pair US30\n➡️ Minimum deposit 250$",
+    "dimensions": "590×1280",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "FiboRSI8_SingleShot_v122 @IndicatorsforTV.ex5",
+        "size": "72.8 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "SuperTrend MT4",
+    "dimensions": "1280×579",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "SuperTrend(wHA) @IndicatorsforTV.ex4",
+        "size": "373.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Machine Learning Regression Trend MT5 indicator",
+    "dimensions": "1280×640",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Machine Learning Regression Trend.ex5",
+        "size": "107.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "rsi ma - smooth (mtf + alerts + divergence)  MT4",
+    "dimensions": "1280×563",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "rsi ma - smooth (mtf + alerts + divergence) @IndicatorsforTV.ex4",
+        "size": "446.8 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Breakout Retest Pro EA v2.0 Source Code  MT5",
+    "dimensions": "1280×681",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Breakout Retest Pro EA Source Code @IndicatorsforTV.ex4",
+        "size": "72.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Key Features:\n\n✅ Focused on fast profit capture in the gold market\n✅ Based on breakout logic, but with a faster overall exit rhythm\n✅ Greater emphasis on balancing win rate, efficiency, and profit realization pace\n✅ Locks in profits faster, reducing the psychological pressure caused by profit retracement\n✅ Built-in adaptive parameter system that adjusts to different price ranges\n✅ No grid, no martingale, with clearer risk boundaries\n✅ Can be used together with Gold House or run independently\n\n➡️ Symbol: XAUUSD / GOLD\n➡️ Timeframe: Can be attached to any timeframe\n➡️ Minimum deposit: $100\n➡️ Recommended deposit: $200 or more\n➡️ Broker requirement: Low-spread ECN or RAW account, gold spread within 25 points",
+    "dimensions": "200×200",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Gold Snap  v1.0.mq5",
+        "size": "17.0 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator MSnR Double Breakout Failed Level for Trading View",
+    "dimensions": "1280×647",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 518.txt",
+        "size": "18.7 KB",
+        "downloaded": "Downloaded"
+      },
+      {
+        "filename": "animation.gif",
+        "size": "5.7 MB",
+        "downloaded": "Not downloaded"
+      },
+      {
+        "filename": "Replay Tool.mq5",
+        "size": "57.3 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Double Tap 3D Indicator for Trading View",
+    "dimensions": "1280×653",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 516.txt",
+        "size": "34.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Range Break out with Filters EA MT5",
+    "dimensions": "1227×492",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Range Breakout With Filter.ex5",
+        "size": "57.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Auto Trend Line Intelligence [BOS+CHoCH+FVG] [Rehaan Khannani] for Trading View\n \nAuto Trend Line Intelligence is a professional-grade, institutional-level technical analysis indicator built for traders who think and operate like smart money. It combines automatic trend line detection with full Smart Money Concepts — BOS, CHoCH, and FVG — into one clean, powerful overlay.\n \nIt is a complete market structure analysis system that tells you what the market is doing, why it is doing it and exactly where to enter, exit, and place your stop-loss.",
+    "dimensions": "1280×723",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 225.txt",
+        "size": "24.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "CHoCH Detector MT4",
+    "dimensions": "1280×253",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "CHoCH_Detector@IndicatorsforTV.ex4",
+        "size": "26.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Human Level Structure Engine MT5\n\nMarket Structure Shift (CHoCH) is used to confirm a directional reversal.\n\nBullish CHoCH occurs when price breaks above the last confirmed Lower High (LH), shifting bias from bearish to bullish. Bearish CHoCH occurs when price breaks below the last confirmed Higher Low (HL), shifting bias from bullish to bearish.\n\nAfter confirmation, Areas of Interest (AOI) are mapped for execution. Common zones include Fibonacci Equilibrium anchored from the origin swing, and a post-CHoCH Fair Value Gap (FVG) formed within the first three candles of the breakout impulse, treated as an imbalance-based entry area.\n\nRisk and targets are defined structurally. For buys, stop loss is placed below the origin swing low (0% Fibonacci anchor). For sells, stop loss is placed above the origin swing high (0% anchor). TP1 is set at the breakout structure level (100%). TP2 targets",
+    "dimensions": "750×500",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Human_Level_Structure_Engine.mq5",
+        "size": "40.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator SMC Order Block Scorer for Trading View\n\nThis is a professional-grade Smart Money Concepts (SMC) indicator for TradingView that goes far beyond basic order block detection. It automatically identifies swing structure breaks (BOS/CHoCH), finds Order Blocks, and then scores each OB from 0-100 based on volume profile confluence (POC, Value Area, HVN). Every order block gets a grade (A+/A/B/C) so you instantly know which zones matter most.",
+    "dimensions": "1280×713",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 476.txt",
+        "size": "24.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "ChartThemeManager MT4 indicator for changes colours of charts",
+    "dimensions": "1280×547",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "ChartThemeManager @IndicatorsforTV.ex4",
+        "size": "34.0 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Automatic Wedge & Channel Detector for Trading View\n\nAutomatic Wedge & Channel Detector identifies developing price structures directly on the chart, helping traders recognize where price is compressing, expanding, or moving within established boundaries.\n\nInstead of requiring trendlines to be drawn manually, the indicator analyzes confirmed pivot highs and lows, tests multiple boundary combinations, and selects the structure that best fits recent price action. It can detect parallel channels, converging wedges, symmetrical triangles, ascending or descending triangle-style formations, and expanding structures.\n\nThe goal is not simply to draw two lines. The indicator evaluates how well price respects both boundaries by considering touches, spacing, violations, structural width, balance between the upper and lower sides, and the age of the pattern. This helps reduce arbitrary trendlines and prioritize structures that are better supported by actual price behaviour.",
+    "dimensions": "1280×706",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 407.txt",
+        "size": "65.6 KB",
+        "downloaded": "Downloaded"
+      },
+      {
+        "filename": "Indi 228.txt",
+        "size": "55.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator MM Premium Money Flow for Trading View",
+    "dimensions": "1280×642",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 230.txt",
+        "size": "20.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Support and Resistance Retest Breakout Signals for Trading View\n \nThis script identifies support and resistance zones using pairs of swing highs and swing lows that occur within a volatility-adjusted price tolerance. Instead of drawing levels from a single pivot, it waits for two matching swings to confirm a zone, helping filter out isolated highs and lows that may have little significance.\n\nEach zone contains a buy/sell volume balance estimate calculated from lower timeframe data. This provides additional context about the activity that formed the zone and helps visualize whether buying or selling pressure was more dominant during its creation.\n\nThe script also tracks how price interacts with existing zones after they form. When price fully breaks through a zone and later retests it, bullish or bearish retest signals are generated based on the direction of the breakout.",
+    "dimensions": "1280×720",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 248.txt",
+        "size": "20.0 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Super Trend Pullback Signals for Trading View\n \nSuper trend Pullback Signals is a trend-following continuation indicator designed to identify structured pullbacks within established trends.\n\nThe script combines Super trend detection with ATR-based pullback analysis, Dynamic Value Zones, and momentum confirmation to highlight areas where trend continuation may be developing after a retracement.\n \nImportant Features:\n\nBuilt-in Supertrend trend detection\nDynamic Value Zone around the Supertrend line\nATR-based Pullback Quality Filter (PQF)\nMomentum confirmation candle requirement\nOne signal per trend leg\nBullish and Bearish continuation signals\nTrend flip markers\nAlert support\nClean chart visualization",
+    "dimensions": "1280×723",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 251.txt",
+        "size": "18.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Volume-Trend Order Block Engine [Big Beluga] for Trading View\n \nVolume-Trend Order Block Engine [Big-Beluga] is a powerful trading tool for Trading View. It combines trend direction with volume-weighted Order Blocks (OB) to show you exactly where institutional buyers and sellers are active in real time.\n\nInstead of drawing basic support and resistance lines, this tool filters out market noise using a built-in Super-trend Engine. This ensures you only see order blocks that align with the main market trend. It also splits each block based on buy/sell volume, showing you who is in control.",
+    "dimensions": "1280×722",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 265.txt",
+        "size": "10.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Bands RSI MT4",
+    "dimensions": "1280×703",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "BandsRSI@IndicatorsforTV.mq4",
+        "size": "3.0 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "RSI-3TF_ALERT MT4 indicator",
+    "dimensions": "1280×541",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "RSI-3TF_ALERT (2) @IndicatorsforTV.ex4",
+        "size": "22.8 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Raff Channel Indicator MT4",
+    "dimensions": "835×242",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "raff-channel-indicator@IndicatorsforTV.ex4",
+        "size": "15.0 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Anchored VWAP Pullback & Target Zones for Trading View\n\n Indicator Anchored VWAP Pullback & Target Zones for Trading Manual Re-Anchoring Fatigue: Traditional AVWAP tools require you to manually click new swing highs and lows after every structural break. This engine automatically detects confirmed Break of Structure (BOS) impulses and re-anchors a dual-moment volume/activity-weighted VWAP directly to the impulse origin pivot—where institutional accumulation or distribution actually started.\n✅ Sideways Chop Bleed Around Flat VWAP: Most VWAP pullback scripts fire signals whenever price touches a band, bleeding R-multiples when the anchor leg flattens into sideways consolidation. Before any pullback can arm, the engine requires the active impulse leg to pass a Kaufman Efficiency Ratio (ER) trend-efficiency gate and directional slope check, suppressing low-efficiency chop and marking rejected touches with optional SKIP audit diamonds.",
+    "dimensions": "1280×712",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 583.txt",
+        "size": "58.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Super Trend Pullback Signals for Trading View\n \nSuper trend Pullback Signals is a trend-following continuation indicator designed to identify structured pullbacks within established trends.\n\nThe script combines Super trend detection with ATR-based pullback analysis, Dynamic Value Zones, and momentum confirmation to highlight areas where trend continuation may be developing after a retracement.\n \nImportant Features:\n\nBuilt-in Supertrend trend detection\nDynamic Value Zone around the Supertrend line\nATR-based Pullback Quality Filter (PQF)\nMomentum confirmation candle requirement\nOne signal per trend leg\nBullish and Bearish continuation signals\nTrend flip markers\nAlert support\nClean chart visualization",
+    "dimensions": "1280×723",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 251.txt",
+        "size": "18.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Pullback Sniper Method for Trading View\n\nPullback Sniper Method] is a free open-source pullback, breakout, and trade-visualization indicator designed to help traders analyze structured trend-continuation setups directly on the price chart.\n\nThis script combines:\n\n1  EMA-based trend context\n2  breakout detection\n3 pullback confirmation logic\n4 Fast / Balanced / Strict confirmation modes\n5 optional McGinley and RSI filters\n6 ATR-based TP/SL projection boxes\n7 TP1 / TP2 / TP3 tracking\n8 SL tracking\n9 result labels\n10 signal quality tooltip information\n11 statistics table\n12 premium-style dashboard\n13 multiple visual themes\n14 alert conditions",
+    "dimensions": "1280×722",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 218.txt",
+        "size": "73.0 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Trendlines with Breakouts, Touches & Hold Rate Trading View",
+    "dimensions": "1280×647",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 584.txt",
+        "size": "22.3 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Anchored VWAP Pullback & Target Zones for Trading View\n\n Indicator Anchored VWAP Pullback & Target Zones for Trading Manual Re-Anchoring Fatigue: Traditional AVWAP tools require you to manually click new swing highs and lows after every structural break. This engine automatically detects confirmed Break of Structure (BOS) impulses and re-anchors a dual-moment volume/activity-weighted VWAP directly to the impulse origin pivot—where institutional accumulation or distribution actually started.\n✅ Sideways Chop Bleed Around Flat VWAP: Most VWAP pullback scripts fire signals whenever price touches a band, bleeding R-multiples when the anchor leg flattens into sideways consolidation. Before any pullback can arm, the engine requires the active impulse leg to pass a Kaufman Efficiency Ratio (ER) trend-efficiency gate and directional slope check, suppressing low-efficiency chop and marking rejected touches with optional SKIP audit diamonds.",
+    "dimensions": "1280×712",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 583.txt",
+        "size": "58.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "BB RSI MA MT4",
+    "dimensions": "1280×708",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "BBRSI&MA_v2@IndicatorsforTV.mq4",
+        "size": "5.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Range Profile Structure for Trading View",
+    "dimensions": "1280×659",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 588.txt",
+        "size": "38.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Echo SMA Indicator MT5",
+    "dimensions": "1280×597",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "allert.ex5",
+        "size": "12.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Trendlines with Breakouts, Touches & Hold Rate Trading View",
+    "dimensions": "1280×647",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 584.txt",
+        "size": "22.3 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator seller sells this indicator stating that AI predicts the future trend of the market",
+    "dimensions": "",
+    "time": "at 12:01 PM",
+    "files": [
+      {
+        "filename": "Indi 289.txt",
+        "size": "26.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Historical Pattern Projection for Trading View\n\nThis Indicators detects past pattern of the asset to predict the future trend or range of that asset",
+    "dimensions": "1280×552",
+    "time": "at 12:01 PM",
+    "files": []
+  },
+  {
+    "title": "YUVI FX TRADER NEXORA v1.5 MT5",
+    "dimensions": "1280×726",
+    "time": "at 12:03 PM",
+    "files": [
+      {
+        "filename": "YUVI FX TRADER NEXORA v1.5_fix @IndicatorsforTV.ex5",
+        "size": "247.1 KB",
+        "downloaded": "Not downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Range Breakout EA with Range Filters v5.20 Source code MT5",
+    "dimensions": "1280×426",
+    "time": "at 12:03 PM",
+    "files": [
+      {
+        "filename": "Range Breakout With Filter  @IndicatorsforTV.ex5",
+        "size": "48.5 KB",
+        "downloaded": "Not downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Levels Likely to Break for Trading View\n\nEQH/EQL Liquidity Zones (MTF) identifies areas where price forms equal highs or equal lows. These structures can mark prices where repeated reactions create visible liquidity references above or below the market.\n\nThe indicator compares highs and lows using a volatility-adjusted tolerance instead of requiring exact price equality. It can detect adjacent equal levels or separated swing points, filter formations using RSI state, and display zones from the chart timeframe together with selected higher timeframes.\n\nZones remain active until they are swept according to the selected wick or body rule, or until they reach the configured maximum age. This makes it possible to distinguish current liquidity references from historical formations.",
+    "dimensions": "1280×713",
+    "time": "at 12:03 PM",
+    "files": [
+      {
+        "filename": "Indi 509.txt",
+        "size": "17.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "The breakout and retest strategy is traded support and resistance levels. it involves price breaking through a previous level. \n\nThe break and retest strategy is designed to help traders do two main things, the first is to avoid false breakouts. Many false breakouts start with a candlestick that breaks out of a level but ends with an immediate candlestick that brings the price back into the level. The second thing that the breakout and retest strategy does is that it helps traders confirm a new trend. When the price breaks out from a resistance level and retests it on the other side, it is a clear signal that a new support/ resistance level has formed and a new trend has begun.",
+    "dimensions": "622×628",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Breakout and Retest Scanner V2.28 @IndicatorsforTV.ex4",
+        "size": "150.1 KB",
+        "downloaded": "Not downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Barkat V5 MT5",
+    "dimensions": "1167×1280",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Barkat_v5_29_Compile_Fixed.ex5",
+        "size": "179.9 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Auto Trend Line Intelligence [BOS+CHoCH+FVG] [Rehaan Khannani] for Trading View\n \nAuto Trend Line Intelligence is a professional-grade, institutional-level technical analysis indicator built for traders who think and operate like smart money. It combines automatic trend line detection with full Smart Money Concepts — BOS, CHoCH, and FVG — into one clean, powerful overlay.\n \nIt is a complete market structure analysis system that tells you what the market is doing, why it is doing it and exactly where to enter, exit, and place your stop-loss.",
+    "dimensions": "1280×723",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 225.txt",
+        "size": "24.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Ranked Support & Resistance Zones for Trading View\n \nRanked Support & Resistance Zones is an adaptive S/R engine that transforms traditional pivot-based support and resistance detection into a dynamic ranking, filtering, and prioritization system.\n\nInstead of plotting every detected level equally, the script stores each support and resistance zone as a structured data object, evaluates its quality in real time using multiple market factors, and continuously ranks all active zones by relative strength.\n\nThe result is a cleaner, more intelligent support/resistance framework that focuses on the most relevant zones currently influencing price action.",
+    "dimensions": "1280×725",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 217.txt",
+        "size": "21.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Ultimate Breakout 7.6 MT5",
+    "dimensions": "1267×462",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Ultimate Breakout 7.6 @IndicatorsforTV.ex5",
+        "size": "106.5 KB",
+        "downloaded": "Not downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Divergence for Multiple Indicators v4 for Trading View\n\nThis is a comprehensive multi-indicator divergence detection system for Trading View (Pine Script v4). It automatically scans 11 different indicators for both Regular and Hidden divergences, while simultaneously applying an ADX trend filter and displaying 3 EMAs for confluence. It's designed to find high-probability reversal and continuation setups across any market.\n\nWhat it draws:\n📉 Divergence Lines — Yellow (Positive Regular), Navy (Negative Regular), Lime (Positive Hidden), Red (Negative Hidden)\n🏷 Divergence Labels — Text labels showing which indicators detected the divergence\n📊 3 EMA Lines — Red (EMA 1/9), Blue (EMA 2/21), Green (EMA 3/50)\n🕯 Trend-Colored Candles — Green (uptrend), Red (downtrend), Blue (flat/range)\n📍 Pivot Markers — Optional H/L labels at pivot points\n🔔 Alert Conditions — 6 alert types for all divergence combinations",
+    "dimensions": "1280×713",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 472.txt",
+        "size": "23.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Divergence Tool MT4 Indicator (Trial version)",
+    "dimensions": "1280×547",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Divergence Tool.ex4",
+        "size": "39.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator RSI Divergence Out-of-Sample Optimizer [Lux-Algo] for Trading View\n \nThe RSI Divergence: Out-of-Sample Optimizer indicator is a comprehensive backtesting and optimization tool designed to identify the most effective RSI period for trading price-RSI divergences within a specified historical window and validate those results through out-of-sample and forward testing.",
+    "dimensions": "1280×722",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 247.txt",
+        "size": "41.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Auto Fibo Zig Zag for Trading View",
+    "dimensions": "1280×548",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 155.txt",
+        "size": "30.9 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "AI RSI BB SCALPER MT5",
+    "dimensions": "1253×1152",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "AI RSI BB SCALPER.ex5",
+        "size": "35.9 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator RSI, EMA & Volume Reversal By SmarTrader for  TradingView",
+    "dimensions": "1280×730",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 73.txt",
+        "size": "3.2 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Pivot Channel TrendLines [Big Beluga] for Trading View\n\nThis is an advanced technical analysis indicator  automatically map structural pivot points, project dynamic trendline channels, and track directional breakout signals directly on the chart. Traditional manual trendline drawing is often subjective and time-consuming, while standard indicators fail to account for slope progression and volatility filters. To solve this limitation, this script combines an automated pivot detection engine with ATR-filtered extension lines and real-time breakout triggers.\n\nIt visualizes key market highs and lows, dotted projection channels, and directional signals. The core calculations identify confirmed pivot extremes using configurable lookback periods, compute slope values between successive pivots, and filter out insignificant structures using ATR thresholds. Customizable color palettes, line styles, and extension lengths allow traders to fine-tune the geometric mappings across various asset classes & timeframe",
+    "dimensions": "1280×711",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 442.txt",
+        "size": "7.7 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Strong Pressure Zones for Trading View\n\nStrong Pressure Zones maps where market pressure is concentrated — then waits for the trap. Every swing pivot becomes a volume-weighted pressure pool, drawn as a round heat bubble sized by how much pressure sits there and stamped with a live 0–10 strength rank inside it. Then the engine watches for the one event that flips an ordinary level into a high-conviction reversal: a sweep of the zone (the liquidity grab) followed by a reclaim back through it (the failed break). A pressure pool swept below and reclaimed is a bear trap. A pool swept above and reclaimed is a bull trap. Your chart stays clean — bubbles, level bands and a number, nothing else — while the engine tracks every grab-and-reclaim underneath.\n\nMost level tools trade the bounce or trade the break. This one grades the pressure behind the level, and trades the trap.",
+    "dimensions": "1280×712",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 469.txt",
+        "size": "33.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "EA Obsidian Pivot Engine v1.1 MT5",
+    "dimensions": "1041×1280",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Obsidian Pivot Engine @IndicatorsforTV.ex5",
+        "size": "103.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Machine Learning Smart Money Concepts for Trading View\n \nThe indicator finds swing points using ta.pivothigh / ta.pivotlow with a configurable pivot length. It tracks a simple internal trend state (marketTrend: up / down / neutral) and flags a CHoCH:\n\nBullish CHoCH: price closes above the last swing high while the prevailing state was not already bullish (i.e., a flip up).\n\nBearish CHoCH: price closes below the last swing low while the prevailing state was not already bearish (i.e., a flip down).\n\nThis is the standard SMC definition of \"change of character\", the first sign that the prior trend may be giving way to a new one.",
+    "dimensions": "1280×721",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 268.txt",
+        "size": "27.3 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator seller sells this indicator stating that AI predicts the future trend of the market",
+    "dimensions": "",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 289.txt",
+        "size": "26.6 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Historical Pattern Projection for Trading View\n\nThis Indicators detects past pattern of the asset to predict the future trend or range of that asset",
+    "dimensions": "1280×552",
+    "time": "at 12:04 PM",
+    "files": []
+  },
+  {
+    "title": "Indicator Magic Trading Tool for  Trading View\nMagic Trading Tool (TTSS) is a comprehensive technical analysis indicator that combines multiple strategies to identify trend direction, support/resistance levels, and entry points. Its core components include:\nPrice Action Channel (PAC): An adaptive channel based on EMAs of high, low, and close prices that defines trend strength and consolidation zones\n EMA Ribbon: A set of 9 EMAs (12–36) that visually represents trend momentum through color changes\nLong-term EMAs: Timeframe-adaptive moving averages (75/89, 180/200, 540/633) that serve as trend filters\nFractals & Pivots: Detects local highs/lows and market structure (HH, HL, LH, LL)\nSwing Alerts: Generates buy/sell signals on PAC breakouts with trend confirmation",
+    "dimensions": "1280×725",
+    "time": "at 12:04 PM",
+    "files": [
+      {
+        "filename": "Indi 103.txt",
+        "size": "21.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator RSI Divergence Out-of-Sample Optimizer [Lux-Algo] for Trading View\n \nThe RSI Divergence: Out-of-Sample Optimizer indicator is a comprehensive backtesting and optimization tool designed to identify the most effective RSI period for trading price-RSI divergences within a specified historical window and validate those results through out-of-sample and forward testing.",
+    "dimensions": "1280×722",
+    "time": "at 12:05 PM",
+    "files": [
+      {
+        "filename": "Indi 247.txt",
+        "size": "41.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator GG SHOT Ai V2 for Trading View\n\nFew days ago posted a indicator GG Shot. This indicator is optimized version of GG Shot. Change setting as per asset and time frame. As per some Subs . GG Shot is paid indicator",
+    "dimensions": "1280×516",
+    "time": "at 12:05 PM",
+    "files": [
+      {
+        "filename": "Indi 227.txt",
+        "size": "107.8 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Regression Channel Break out Scanner MT5",
+    "dimensions": "1250×1110",
+    "time": "at 5:06 PM",
+    "files": [
+      {
+        "filename": "RegressionChannelBreakoutScanner @IndicatorsforTV.ex5",
+        "size": "27.3 KB",
+        "downloaded": "Not downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Pivot Channel TrendLines [Big Beluga] for Trading View\n\nThis is an advanced technical analysis indicator  automatically map structural pivot points, project dynamic trendline channels, and track directional breakout signals directly on the chart. Traditional manual trendline drawing is often subjective and time-consuming, while standard indicators fail to account for slope progression and volatility filters. To solve this limitation, this script combines an automated pivot detection engine with ATR-filtered extension lines and real-time breakout triggers.\n\nIt visualizes key market highs and lows, dotted projection channels, and directional signals. The core calculations identify confirmed pivot extremes using configurable lookback periods, compute slope values between successive pivots, and filter out insignificant structures using ATR thresholds. Customizable color palettes, line styles, and extension lengths allow traders to fine-tune the geometric mappings across various asset classes & timeframe",
+    "dimensions": "1280×711",
+    "time": "at 5:07 PM",
+    "files": [
+      {
+        "filename": "Indi 442.txt",
+        "size": "7.7 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Institutional SMC Volume Profile Regression for Trading View\n\nInstitutional Volume Profile Regression [Pro] combines polynomial curve fitting with structural volume distribution analysis to visualize dynamic order flow directly on the chart. It overlays inward volume pressure bars along standard deviation bounds and compiles an end-of-channel volume distribution profile.\n\n💎Features:\n\n✅ 1. Polynomial Regression Channel Model\nComputes a dynamic quadratic curve through matrix operations, creating an adaptive trend baseline that adjusts smoothly to medium-term volatility shifts without lagging.\n✅ 2. Inward Dynamic Volume Pressure Bars\nRenders directional buy and sell volume flow pointing inward from channel boundaries. Bullish accumulation builds from the lower band, while bearish distribution projects down from the upper band.",
+    "dimensions": "1280×713",
+    "time": "at 5:10 PM",
+    "files": []
+  },
+  {
+    "title": "✅ 3. Boundary Volatility Contact Indicators\nMarks first-contact touches at the outer standard deviation limits using directional diamond symbols to point out potential exhaustion zones.\n✅ 4. Cumulative Volume Profile Distribution\nGenerates a horizontal volume distribution profile on the right side of the active regression window. High-volume nodes (HVNs) and low-volume nodes (LVNs) become visible along price levels.\n✅ 5. Visual Trend Candles\nOffers built-in background-aware candle painting that reflects the directional relationship relative to the regression baseline.",
+    "dimensions": "",
+    "time": "at 5:10 PM",
+    "files": [
+      {
+        "filename": "Indi 386.txt",
+        "size": "15.5 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Wave Structure PRO v2 for Trading View\n \nWave Structure PRO v2 is an automated Elliott Wave structure engine. It builds a Zig Zag from confirmed pivots, searches for a valid 1-2-3-4-5 impulse and the following A-B-C correction, validates every candidate against Elliott's three hard rules, and scores how closely each wave matches its ideal Fibonacci proportion. On top of the count it draws the Elliott base channel, Wave 3 / Wave 5 Fibonacci targets, the next-wave retrace zone, and the exact price level where the count becomes invalid.\n\nThis is a structure assistant, not a prediction oracle. Elliott counting is inherently ambiguous, and this engine recounts as new pivots confirm. Everything it shows is derived from confirmed swing points, and it tells you honestly when no valid count exists.",
+    "dimensions": "1280×722",
+    "time": "at 5:11 PM",
+    "files": [
+      {
+        "filename": "Indi 302.txt",
+        "size": "22.7 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Professional Market Structure for TradingView \nThis indicator is designed to simplify market structure by visually identifying the current trend phase using dynamic price channels.\nIt automatically plots structure-based channels by analyzing recent highs, lows, and price slope to determine whether the market is in an ascending (bullish) or descending (bearish) phase.",
+    "dimensions": "1280×726",
+    "time": "at 5:12 PM",
+    "files": [
+      {
+        "filename": "Indi 25.txt",
+        "size": "20.4 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  },
+  {
+    "title": "Indicator Gann medians MA targets for Tradingview",
+    "dimensions": "1280×672",
+    "time": "at 5:12 PM",
+    "files": [
+      {
+        "filename": "Indi 9.txt",
+        "size": "121.1 KB",
+        "downloaded": "Downloaded"
+      }
+    ]
+  }
+]

@@ -7,9 +7,12 @@ import (
 )
 
 const (
-	paperStock = "stock"
-	paperRight = "right"
-	paperFund  = "fund"
+	PaperStock = "stock"
+	PaperRight = "right"
+	PaperFund  = "fund"
+	paperStock = PaperStock
+	paperRight = PaperRight
+	paperFund  = PaperFund
 )
 
 // normalized همان _norm: ي/ى→ی، ك→ک، حذفِ نیم‌فاصله و ZWJ، trim.
@@ -171,4 +174,9 @@ func classify(paperType *int64, name, symbol, sector string) (string, string) {
 		return paperStock, "stock"
 	}
 	return "other", "other"
+}
+
+// Classify همان classify اما اکسپورت‌شده برای استفاده در سایر پکیج‌ها مانند selection.
+func Classify(paperType *int64, name, symbol, sector string) (string, string) {
+	return classify(paperType, name, symbol, sector)
 }

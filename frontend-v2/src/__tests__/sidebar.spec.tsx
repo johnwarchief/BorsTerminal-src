@@ -28,11 +28,12 @@ describe('Sidebar', () => {
     expect(screen.getByText('وضعیت بازار')).toBeTruthy();
   });
 
-  it('marks unbuilt destinations as next-stage', () => {
+  it('marks unbuilt destinations as next-stage and built destinations as live', () => {
     mount();
-    const technical = screen.getByText('تکنیکال').closest('[aria-disabled]');
-    expect(technical?.getAttribute('title')).toContain('بعدی');
-    expect(screen.getByRole('link', { name: /بازار/ })).toBeTruthy();
+    const fundamental = screen.getByText('بنیادی').closest('[aria-disabled]');
+    expect(fundamental?.getAttribute('title')).toContain('بعدی');
+    expect(screen.getByRole('link', { name: /^بازار$/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /^تکنیکال$/ })).toBeTruthy();
   });
 
   it('shows the unread badge', () => {

@@ -11,9 +11,9 @@ interface Group { title: string; items: Item[] }
 const GROUPS: Group[] = [
   { title: 'فضای تحلیل', items: [
     { path: '/market', label: 'بازار', icon: 'grid', live: true },
-    { path: '/technical', label: 'تکنیکال', icon: 'chart' },
+    { path: '/technical', label: 'تکنیکال', icon: 'chart', live: true },
     { path: '/fundamental', label: 'بنیادی', icon: 'file' },
-    { path: '/market-status', label: 'وضعیت بازار', icon: 'pulse' },
+    { path: '/market-status', label: 'وضعیت بازار', icon: 'pulse', live: true },
   ] },
   { title: 'کشف فرصت', items: [
     { path: '/opportunities', label: 'فرصت‌ها', icon: 'compass' },

@@ -51,6 +51,9 @@ type Chart interface {
 	CalendarSymbol(http.ResponseWriter, *http.Request)
 	MA(http.ResponseWriter, *http.Request)
 	Patterns(http.ResponseWriter, *http.Request)
+	Forecast(http.ResponseWriter, *http.Request)
+	Edge(http.ResponseWriter, *http.Request)
+	Indicators(http.ResponseWriter, *http.Request)
 }
 
 // Mstat سیزده مسیرِ GETِ تبِ وضعیت بازار؛ nil یعنی هیچ‌کدام پورت نشده.
@@ -208,6 +211,9 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("GET /api/patterns/{symbol}", srv.Chart.Patterns)
 		mux.HandleFunc("GET /api/chart-db/{symbol}", srv.Chart.ChartDB)
 		mux.HandleFunc("GET /api/fts/{symbol}", srv.Chart.FTS)
+		mux.HandleFunc("GET /api/chart/{symbol}/forecast", srv.Chart.Forecast)
+		mux.HandleFunc("GET /api/chart/{symbol}/edge", srv.Chart.Edge)
+		mux.HandleFunc("GET /api/chart/{symbol}/indicators", srv.Chart.Indicators)
 		// `/api/fts/config` درِ پایتون متعلق به api/market.py است و *پیش از*
 		// `/api/fts/{symbol}` ثبت می‌شود، پس «config» هیچ‌وقت نماد نیست. Go با
 		// الگویِ عام آن را می‌بلعید؛ این ثبتِ صریح همان ترتیب را بازمی‌گرداند.

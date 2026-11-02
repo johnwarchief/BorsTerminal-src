@@ -60,6 +60,11 @@ frontend/src-tauri/target/
 *.zip
 *.7z
 
+# ---- مدل‌های هوش مصنوعی محلی (Kronos / Chronos) ----
+models/
+*.safetensors
+*.onnx
+
 # ---- وضعیت زمان اجرا (توسط syncها بازنویسی می‌شود) ----
 market_sync.json
 sync_status.json

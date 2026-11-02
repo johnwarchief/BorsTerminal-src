@@ -52,6 +52,21 @@ const dom = await page.evaluate(() => {
 });
 const shot = `${OUT}-1366.jpeg`;
 await page.screenshot({ path: shot, type: 'jpeg', quality: 70 } as any);
+// بازِ «توضیحِ شرط‌ها»: شواهد موافق/مخالف، روندِ جریان، pace، محدودیت‌ها دیدنی‌اند؟
+await page.click('[data-testid="pulse-verdict-whys-toggle"]').catch(() => {});
+await page.waitForTimeout(800);
+const expanded = await page.evaluate(() => {
+  const t = (s: string) => (document.querySelector(s)?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  return {
+    evidence: t('[data-testid="pulse-verdict-evidence"]'),
+    pace: t('[data-testid="pulse-verdict-pace"]'),
+    trend: t('[data-testid="pulse-verdict-trend"]'),
+    limits: t('[data-testid="pulse-verdict-limits"]'),
+    change: t('[data-testid="pulse-verdict-change"]'),
+    whys: [...document.querySelectorAll('[data-testid^="pulse-verdict-why-"]')].map(x => x.textContent),
+  };
+});
+await page.screenshot({ path: `${OUT}-expanded.jpeg`, type: 'jpeg', quality: 70 } as any);
 
 const checks: Array<[string, boolean, unknown]> = [
   ['پنلِ حکم دیدنی است (کنترلِ رسیدن)', dom.panel && !!dom.label, dom.panel],
@@ -61,6 +76,11 @@ const checks: Array<[string, boolean, unknown]> = [
   ['هیچ «وارد نشو»ای بی‌رأیِ قاطعِ موتور رویِ صفحه نیست',
     (vd.verdict === 'avoid') === dom.label.includes('وارد نشو'), { dom: dom.label, verdict: vd.verdict }],
   ['افقیِ صفحه سرریز ندارد (RTL)', dom.overflowX <= 0, dom.overflowX],
+  ['پنلِ بازشده شواهد/روند/محدودیت را نشان می‌دهد (هرچه موتور فرستاده)',
+    (!(ms?.for?.length || ms?.against?.length) || expanded.evidence.includes('شواهد')) &&
+    (!ms?.flow_trend || expanded.trend.length > 0) &&
+    (!ms?.limitations?.length || expanded.limits.includes('محدودیت')),
+    expanded],
 ];
 const failed = checks.filter(([, ok]) => !ok);
 writeFileSync(`${OUT}.json`, JSON.stringify({ base: BASE, at: new Date().toISOString(),

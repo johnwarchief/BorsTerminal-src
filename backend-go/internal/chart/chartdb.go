@@ -142,9 +142,10 @@ func orZero(v sql.NullFloat64) float64 {
 // ضریبِ تازه‌ای اینجا ساخته نمی‌شود. جدولِ نبود ⇒ [].
 func (s *Service) corporateEvents(ctx context.Context, symbol string) []map[string]any {
 	pred, params := s.pred(ctx, "l_val18", symbol)
-	q := fmt.Sprintf("SELECT ins_code FROM instruments WHERE %s ORDER BY updated_at DESC LIMIT 1", pred)
+	allParams := append(params, symbol)
+	q := fmt.Sprintf("SELECT ins_code FROM instruments WHERE %s ORDER BY (CASE WHEN l_val18=? THEN 0 ELSE 1 END), updated_at DESC LIMIT 1", pred)
 	var ins any
-	if err := s.market.QueryRowContext(ctx, q, params...).Scan(&ins); err != nil {
+	if err := s.market.QueryRowContext(ctx, q, allParams...).Scan(&ins); err != nil {
 		return []map[string]any{}
 	}
 	insCode := stringValue(ins)
@@ -373,12 +374,24 @@ func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int
 	} else if src == "" {
 		src = "local-db-unseen"
 	}
-	cap := s.adjustCapability(evs, src)
-	var fctEvents []adjustEvent
-	if pyTruthy(cap["combined_available"]) {
-		fctEvents = evs
+	adjCap := s.adjustCapability(evs, src)
+	var fct []float64
+	if adjustment == 0 {
+		fct = make([]float64, len(times))
+		for i := range fct {
+			fct[i] = 1.0
+		}
+	} else if adjustment == 1 || adjustment == 2 {
+		autoEvents := s.LoadAutonomousAdjustmentEvents(ctx, symbol)
+		fct = ComputeAdjustmentFactors(times, autoEvents, AdjustmentMode(adjustment))
+	} else {
+		var fctEvents []adjustEvent
+		if pyTruthy(adjCap["combined_available"]) {
+			fctEvents = evs
+		}
+		fct = factorsFromEvents(times, fctEvents)
 	}
-	fct := factorsFromEvents(times, fctEvents)
+
 	facts := make([]map[string]any, 0, len(rows))
 	for i, c := range rows {
 		facts = append(facts, map[string]any{"time": c["time"], "factor": fct[i]})
@@ -401,7 +414,8 @@ func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int
 	body := map[string]any{
 		"status": "success", "symbol": symbol, "count": len(rows),
 		"candles": rows, "volumes": vols, "factors": facts,
-		"adjustEvents": evMaps, "adjustSource": src, "adjustCapability": cap,
+		"adjustEvents": evMaps, "adjustSource": src, "adjustCapability": adjCap,
+
 		"corporateEvents": s.corporateEvents(ctx, symbol),
 		"liveInjected":    liveInjected, "liveError": nilIfEmpty(liveErr),
 		"adjustment": adjustment, "fts": fts,

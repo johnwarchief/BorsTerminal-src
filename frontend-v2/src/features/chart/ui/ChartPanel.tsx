@@ -18,7 +18,7 @@ export function ChartPanel({ symbol }: { symbol: string }) {
   const lib = useRef<((container: HTMLElement) => void) | null>(null);
   const bars = useRef<ReturnType<typeof toKlineBars>>([]);
 
-  bars.current = query.data?.candles?.length ? toKlineBars(query.data.candles) : [];
+  bars.current = query.data?.candles?.length ? toKlineBars(query.data.candles, query.data.factors) : [];
 
   useEffect(() => {
     const hostEl = host.current;
@@ -65,6 +65,15 @@ export function ChartPanel({ symbol }: { symbol: string }) {
   return (
     <div className="relative h-full w-full">
       <div data-testid="chart-panel" ref={host} className="h-full w-full" dir="ltr" />
+      {symbol ? (
+        <a
+          href={`#/technical/${encodeURIComponent(symbol)}`}
+          title="باز کردن در میزکار تکنیکال پیشرفته"
+          className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded bg-[#181b22]/90 hover:bg-[#daa520]/25 text-[#daa520] border border-[#daa520]/40 text-[11px] font-semibold backdrop-blur transition-all shadow"
+        >
+          <span>میزکار تکنیکال ↗</span>
+        </a>
+      ) : null}
       {query.isLoading ? (
         <div data-testid="chart-loading" className="absolute inset-0 grid place-items-center bg-panel t-95 text-text-3">در حالِ بارگذاری چارت…</div>
       ) : null}
