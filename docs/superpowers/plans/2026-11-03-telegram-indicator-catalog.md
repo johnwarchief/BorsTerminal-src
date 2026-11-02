@@ -39,6 +39,7 @@ Applies to every task.
 - `PYTHONIOENCODING=utf-8` for any Persian stdout on this machine.
 - Preserve each file's existing CRLF/LF. New files in `frontend-v2/src` use LF, matching the rest of that tree.
 - No `fetch` anywhere in this feature. If one ever appears, it must be inside `shared/api/http.ts`.
+- `frontend-v2` has no eslint: neither an `eslint.config.*` nor the package in `devDependencies`. The gate for this tree is `npx tsc -b` plus `npx vitest run`. Adding eslint here is a dependency decision for the owner, not something to slip into a task.
 - UI copy: short, no invented methodology wording. A caption from the channel is shown verbatim or not at all.
 - Any animation must respect `@media (prefers-reduced-motion: reduce)`.
 - Stop feature work by 08:50 Tehran time; the trading window belongs to the live monitors.
@@ -1204,7 +1205,7 @@ Expected: 8 passed. Two known jsdom traps: `loading` is reflected as an attribut
 - [ ] **Step 6: Typecheck and commit**
 
 ```bash
-cd /c/Users/PCMOD/Desktop/BorsTerminal/frontend-v2 && npx tsc -b && npx eslint src/features/technical/ui/TelegramCatalogList.tsx src/features/technical/lib/telegramIndicatorCatalog.ts
+cd /c/Users/PCMOD/Desktop/BorsTerminal/frontend-v2 && npx tsc -b
 cd /c/Users/PCMOD/Desktop/BorsTerminal
 git add frontend-v2/src/features/technical/ui/TelegramCatalogList.tsx frontend-v2/src/features/technical/ui/__tests__/TelegramCatalogList.test.tsx frontend-v2/src/app/styles.css
 git commit -m "feat(technical): فهرست مرجع 64 سطری کاتالوگ تلگرام با بندانگشتی و لایت‌باکس"
