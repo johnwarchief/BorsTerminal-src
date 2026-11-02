@@ -1,8 +1,9 @@
 /**
  * ui/__tests__/TelegramCatalogList.test.tsx
  *
- * شمارش سطر، فیلترِ جستجو، lazy بودن تصویر، باز/بسته شدن لایت‌باکس، و اینکه
- * سطرِ پیاده‌شده سوئیچ دارد و سطرِ دیگر نوشتهٔ «پیاده‌سازی نشده».
+ * شمارش سطر، فیلترِ جستجو، lazy بودن تصویر، باز/بسته شدن لایت‌باکس و
+ * مسیرِ فوکوسش، و اینکه سطرِ پیاده‌شده سوئیچ دارد و سطرِ دیگر نوشتهٔ
+ * «پیاده‌سازی نشده».
  */
 
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
@@ -60,6 +61,25 @@ describe('TelegramCatalogList', () => {
     expect(screen.getByTestId('telegram-lightbox')).toBeDefined();
     fireEvent.keyDown(screen.getByTestId('telegram-lightbox'), { key: 'Escape' });
     expect(screen.queryByTestId('telegram-lightbox')).toBeNull();
+  });
+
+  it('moves focus into the lightbox and back to the thumb that opened it', () => {
+    render(<TelegramCatalogList />);
+    const thumb = screen.getByTestId('telegram-thumb-p12');
+    fireEvent.click(thumb);
+
+    const lightbox = screen.getByTestId('telegram-lightbox');
+    expect(lightbox.contains(document.activeElement)).toBe(true);
+
+    const closeBtn = screen.getByTestId('telegram-lightbox-close');
+    fireEvent.keyDown(lightbox, { key: 'Tab' });
+    expect(document.activeElement).toBe(closeBtn);
+    fireEvent.keyDown(lightbox, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(closeBtn);
+
+    fireEvent.keyDown(lightbox, { key: 'Escape' });
+    expect(screen.queryByTestId('telegram-lightbox')).toBeNull();
+    expect(document.activeElement).toBe(thumb);
   });
 
   it('linked rows toggle the overlay, others say not implemented', () => {
