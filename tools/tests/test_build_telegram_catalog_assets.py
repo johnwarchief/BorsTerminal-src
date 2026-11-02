@@ -20,10 +20,13 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from tools.build_telegram_catalog_assets import (
+    MAX_WIDTH,
     ExportShapeError,
     build_rows,
+    main,
     parse_export,
     to_payload,
+    write_photos,
 )
 
 FIXTURE_HTML = """
@@ -152,3 +155,98 @@ def test_build_rows_fails_when_the_source_image_is_absent(tmp_path):
     _write_sources(entries[:-1], tmp_path)
     with pytest.raises(ExportShapeError):
         build_rows(entries, tmp_path, expected=3)
+
+
+def _build_synthetic_export(
+    export_dir: Path,
+    *,
+    rows: int = 64,
+    no_caption: int = 3,
+    distinct_sources: int = 57,
+    distinct_attachments: int = 60,
+) -> None:
+    """exportِ مصنوعی که هر چهار دروازۀ شکلی را دقیقاً صدق می‌کند
+    (64/3/57/60، همان عددهایِ spec §11 روی exportِ واقعی). با kwargs می‌توان
+    یک دروازه را شکست و ثابت کرد main بلند می‌شکند و چیزی نمی‌نویسد."""
+    export_dir.mkdir(parents=True, exist_ok=True)
+    blocks: list[str] = []
+    for i in range(1, rows + 1):
+        src_idx = i if i <= distinct_sources else i - distinct_sources
+        src = f"photos/photo_{src_idx}@02-11-2026_12-01-58.jpg"
+        text = "" if 8 <= i < 8 + no_caption else f'<div class="text">Cap {i}</div>'
+        blocks.append(
+            f'<div class="message default clearfix" id="m{i}"><div class="body">'
+            f'<div class="media_wrap clearfix">'
+            f'<a class="photo_wrap clearfix pull_left" href="{src}">'
+            f'<img class="photo" src="{src[:-4]}_thumb.jpg"/></a>'
+            f"</div>{text}</div></div>"
+        )
+        if i <= distinct_attachments:
+            blocks.append(
+                f'<div class="message default clearfix joined" id="f{i}">'
+                '<div class="body"><div class="media_wrap clearfix">'
+                '<div class="media clearfix pull_left media_file"><div class="body">'
+                f'<div class="title bold">file_{i}.mq4</div>'
+                "</div></div></div></div></div>"
+            )
+    (export_dir / "messages.html").write_text("\n".join(blocks), encoding="utf-8")
+    for s in range(1, distinct_sources + 1):
+        target = export_dir / f"photos/photo_{s}@02-11-2026_12-01-58.jpg"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (100, 60)).save(target)
+
+
+def _main_argv(export_dir: Path, tmp_path: Path, extra: tuple = ()) -> list[str]:
+    return [
+        "--export-dir", str(export_dir),
+        "--out-dir", str(tmp_path / "out"),
+        "--json-out", str(tmp_path / "catalog.json"),
+        *extra,
+    ]
+
+
+def test_main_accepts_an_export_matching_all_four_gates(tmp_path, capsys):
+    export = tmp_path / "export"
+    _build_synthetic_export(export)
+    assert main(_main_argv(export, tmp_path, ("--dry-run",))) == 0
+    printed = capsys.readouterr().out
+    assert "rows: 64" in printed
+    assert "rows with no caption: 3" in printed
+    assert "distinct source images: 57" in printed
+    assert "attachment names: 60" in printed
+
+
+@pytest.mark.parametrize(
+    "broken_gate",
+    [
+        {"no_caption": 2},
+        {"no_caption": 4},
+        {"distinct_sources": 56},
+        {"distinct_sources": 58},
+        {"distinct_attachments": 59},
+        {"distinct_attachments": 61},
+    ],
+)
+def test_main_fails_loudly_and_writes_nothing_on_any_gate_break(
+    tmp_path, broken_gate
+):
+    export = tmp_path / "export"
+    _build_synthetic_export(export, **broken_gate)
+    with pytest.raises(ExportShapeError):
+        main(_main_argv(export, tmp_path))
+    assert not (tmp_path / "out").exists()
+    assert not (tmp_path / "catalog.json").exists()
+
+
+def test_dims_is_the_source_size_not_the_delivered_webp(tmp_path):
+    """معنای قفل‌شده در review: dims ابعادِ تصویرِ مبدأِ export است، هرچند
+    webpِ تحویلی روی MAX_WIDTH سقف می‌خورد (نسبت حفظ). اگر کسی بعداً dims را
+    بی‌صدا به اندازهٔ فایلِ تحویلی «اصلاح» کند، این آزمون قرمز می‌شود."""
+    entries = parse_export(FIXTURE_HTML)
+    _write_sources(entries, tmp_path)
+    rows = build_rows(entries, tmp_path, expected=3)
+    out_dir = tmp_path / "webp"
+    write_photos(rows, entries, tmp_path, out_dir)
+    assert rows[0].dims == "1280×640"
+    with Image.open(out_dir / "p01.webp") as delivered:
+        assert delivered.size == (MAX_WIDTH, 450)

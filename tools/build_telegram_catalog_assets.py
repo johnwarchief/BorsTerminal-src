@@ -12,6 +12,8 @@ export تنها سرچشمۀ ردیف‌هاست. telegram_indicators_catalog.js
 
 هر انحرافِ شکلی بلند شکست می‌خورد، نه اینکه بی‌صدا سطرِ بی‌عکس بسازد — همان
 دردی که frontend/src/features/technical/lib/tvIndicatorCatalog.ts:1 نوشته است.
+چهار عددِ spec §11 (تعدادِ ردیف، ردیف‌های بی‌کپشن، مبدأهایِ متمایز، نام‌های
+پیوستِ متمایز) ثابتِ module‌اند و در main پیش از نوشتنِ هر فایل وارسی می‌شوند.
 """
 
 from __future__ import annotations
@@ -28,6 +30,15 @@ from typing import Any
 TOTAL_ROWS = 64
 MAX_WIDTH = 900
 WEBP_QUALITY = 78
+
+# سه دروازۀ شکلیِ دیگر، هم‌سطحِ TOTAL_ROWS: همان سه عددی که spec §11 روی
+# exportِ 2026-11-03 اندازه گرفته است. اگر چت پستِ تازه بگیرد، درستِ همان
+# کاری را باید بکنیم که با TOTAL_ROWS می‌کنیم: ویرایشِ همین ثابت‌ها؛ پس این
+# دروازه‌ها از دروازۀ تعدادِ ردیف شکننده‌تر نیستند. هر چهار عدد در main
+# وارسی می‌شوند — پیش از write_photos، تا انحرافِ شکلی چیزی ننویسد.
+EXPECTED_NO_CAPTION_ROWS = 3
+EXPECTED_DISTINCT_SOURCE_IMAGES = 57
+EXPECTED_DISTINCT_ATTACHMENT_NAMES = 60
 
 
 class ExportShapeError(RuntimeError):
@@ -47,6 +58,11 @@ class CatalogRow:
     title_en: str
     caption_en: str
     photo: str
+    # معنا: ابعادِ تصویرِ مبدأ (source) در export، نه ابعادِ فایلِ webp
+    # تحویل‌شده. تحویلی روی MAX_WIDTH سقف می‌خورد و نسبتِ اندازۀ اصلی حفظ
+    # می‌شود؛ آزمونِ test_dims_is_the_source_size_not_the_delivered_webp
+    # همین معنا را قفل می‌کند تا کسی بعداً بی‌صدا dims را به اندازهٔ فایل
+    # تحویلی «اصلاح» نکند (p01: dims=1280×608، فایلِ روی‌دیسک 900×428).
     dims: str
     attachments: list[str] = field(default_factory=list)
 
@@ -184,11 +200,32 @@ def main(argv: list[str] | None = None) -> int:
     rows = build_rows(entries, args.export_dir)
 
     no_caption = [r.id for r in rows if not r.title_en]
+    distinct_sources = len({e.src for e in entries})
+    distinct_attachments = len({f for r in rows for f in r.attachments})
     print(f"html: {html_path.name}")
     print(f"rows: {len(rows)}")
     print(f"rows with no caption: {len(no_caption)} {no_caption}")
-    print(f"distinct source images: {len({e.src for e in entries})}")
-    print(f"attachment names: {len({f for r in rows for f in r.attachments})}")
+    print(f"distinct source images: {distinct_sources}")
+    print(f"attachment names: {distinct_attachments}")
+
+    # هر چهار دروازۀ شکلی اینجا اثبات می‌شوند، نه فقط چاپ: TOTAL_ROWS را
+    # build_rows زده است و سه دروازۀ دیگر همین‌جا. انحراف بلند می‌شکند و
+    # چون این وارسی پیش از write_photos است، هیچ فایلِ تازه‌ای نوشته نمی‌شود.
+    if len(no_caption) != EXPECTED_NO_CAPTION_ROWS:
+        raise ExportShapeError(
+            f"rows with no caption: {len(no_caption)} {no_caption}, "
+            f"expected {EXPECTED_NO_CAPTION_ROWS}"
+        )
+    if distinct_sources != EXPECTED_DISTINCT_SOURCE_IMAGES:
+        raise ExportShapeError(
+            f"distinct source images: {distinct_sources}, "
+            f"expected {EXPECTED_DISTINCT_SOURCE_IMAGES}"
+        )
+    if distinct_attachments != EXPECTED_DISTINCT_ATTACHMENT_NAMES:
+        raise ExportShapeError(
+            f"attachment names: {distinct_attachments}, "
+            f"expected {EXPECTED_DISTINCT_ATTACHMENT_NAMES}"
+        )
 
     if args.dry_run:
         print("dry-run: nothing written")
