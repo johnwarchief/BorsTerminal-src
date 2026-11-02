@@ -130,7 +130,7 @@ Deliverable: `tools/build_telegram_catalog_assets.py` which, given the export fo
 - Produces:
   - `frontend-v2/src/features/technical/data/telegram-indicators.json` — array of `{ id: "p01", titleEn: str, captionEn: str, photo: "p01.webp", dims: str, attachments: str[] }`
   - `frontend-v2/src/features/technical/assets/telegram-indicators/pNN.webp`
-  - importable functions: `parse_export(html_text: str) -> list[PhotoEntry]`, `match_rows(catalog: list[dict], photos: list[PhotoEntry]) -> list[MatchedRow]`, `to_payload(rows: list[MatchedRow]) -> list[dict]`, `convert_photos(photos, export_dir, matches, out_dir) -> int`, and the exception `CatalogMismatch`
+  - importable functions: `parse_export(html_text: str) -> list[PhotoEntry]`, `match_rows(catalog: list[dict], photos: list[PhotoEntry]) -> list[MatchedRow]`, `caption_disagreements(catalog: list[dict], photos: list[PhotoEntry]) -> list[str]`, `to_payload(rows: list[MatchedRow]) -> list[dict]`, `convert_photos(photos, export_dir, matches, out_dir) -> int`, the exception `CatalogMismatch`, and the constant `CAPTION_MISMATCH_TOLERANCE = 8`
   - `PhotoEntry` is a dataclass with `src: str, width: int | None, height: int | None, caption: str`.
 
 - [ ] **Step 1: Write the failing test**
@@ -159,6 +159,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from tools.build_telegram_catalog_assets import (
     CatalogMismatch,
+    caption_disagreements,
     match_rows,
     parse_export,
     to_payload,
@@ -230,6 +231,26 @@ def test_payload_keys_are_camelcase_matching_the_zod_schema():
     assert set(payload[0]) == {"id", "titleEn", "captionEn", "photo", "dims", "attachments"}
     assert payload[0]["photo"] == "p01.webp"
     assert payload[0]["attachments"] == ["FB_OBwin.ex4"]
+
+
+def test_caption_disagreements_is_the_order_sensor():
+    """ابعادِ یکسان دو پستِ جابه‌جا را نمی‌گیرد؛ این تابع همان کار را می‌کند.
+    بدونِ این، match_rowsِ صرفاً موقعیتی بی‌صدا عکسِ اشتباه را به ردیفِ
+    اشتباه می‌چسباند و UI همیشه درست به‌نظر می‌رسد."""
+    photos = parse_export(FIXTURE_HTML)
+    swapped = [CATALOG_3[1], CATALOG_3[0], CATALOG_3[2]]
+    assert caption_disagreements(swapped, photos) == ["p01", "p02"]
+
+
+def test_caption_disagreements_skips_rows_with_no_caption():
+    photos = parse_export(FIXTURE_HTML)
+    assert caption_disagreements(CATALOG_3, photos) == []
+
+
+def test_caption_disagreements_needs_equal_lengths():
+    photos = parse_export(FIXTURE_HTML)
+    with pytest.raises(CatalogMismatch):
+        caption_disagreements(CATALOG_3[:2], photos)
 ```
 
 - [ ] **Step 2: Run it, confirm it fails for the right reason**
@@ -271,6 +292,10 @@ from typing import Any
 MAX_WIDTH = 900
 WEBP_QUALITY = 78
 TOTAL_ROWS = 64
+# تطبیقِ موقعیتیِ عکسِ export ← ردیفِ کاتالوگ. ابعادِ یکسان دو پستِ جابه‌جا را
+# نمی‌گیرد، پس سطرِ اولِ کپشن سنسورِ مستقل است. تلگرام کپشن را در HTML کوتاه
+# می‌کند، بنابراین تلورانس صفر نیست و لیستِ نخوانده‌ها چاپ می‌شود.
+CAPTION_MISMATCH_TOLERANCE = 8
 
 
 class CatalogMismatch(RuntimeError):
@@ -355,6 +380,37 @@ def _as_int(value: str | None) -> int | None:
 def _clean(text: str) -> str:
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     return "\n".join(lines)
+
+
+def _norm(text: str) -> str:
+    return " ".join((text or "").lower().split())
+
+
+def _first_line(text: str) -> str:
+    for line in (text or "").splitlines():
+        if line.strip():
+            return line.strip()
+    return ""
+
+
+def caption_disagreements(
+    catalog: list[dict[str, Any]], photos: list[PhotoEntry]
+) -> list[str]:
+    """ردیف‌هایی که سطرِ اولِ کپشنِ export با سطرِ اولِ عنوانِ کاتالوگ نمی‌خواند.
+    بدونِ نرمال‌سازیِ واژگان: هر اختلافِ واقعی باید در لیستِ چاپ‌شده دیده شود."""
+    if len(catalog) != len(photos):
+        raise CatalogMismatch(
+            f"caption cross-check needs equal lengths, got {len(catalog)} vs {len(photos)}"
+        )
+    bad: list[str] = []
+    for i, (row, photo) in enumerate(zip(catalog, photos), start=1):
+        html_cap = _norm(_first_line(photo.caption))
+        cat_head = _norm(_first_line(row.get("title") or ""))
+        if not html_cap or not cat_head:
+            continue
+        if html_cap[:40] != cat_head[:40]:
+            bad.append(f"p{i:02d}")
+    return bad
 
 
 def parse_export(html_text: str) -> list[PhotoEntry]:
@@ -461,11 +517,21 @@ def main(argv: list[str] | None = None) -> int:
     if len(matches) != TOTAL_ROWS:
         raise CatalogMismatch(f"expected {TOTAL_ROWS} rows, matched {len(matches)}")
 
-    missing_title = [m.id for m in matches if not m.title_en]
-    missing_caption = [m.id for m in matches if not m.caption_en]
+    disagreements = caption_disagreements(catalog, photos)
+    no_title = [m.id for m in matches if not m.title_en]
+    no_caption = [m.id for m in matches if not m.caption_en]
     print(f"rows: {len(matches)}")
-    print(f"rows with no title: {len(missing_title)} {missing_title}")
-    print(f"rows with no caption body: {len(missing_caption)} (expected 32)")
+    print(f"rows with no title: {len(no_title)} {no_title}")
+    print(f"rows with no caption body: {len(no_caption)}")
+    print(
+        f"caption cross-check: {len(disagreements)} of {len(matches)} disagree "
+        f"(tolerance {CAPTION_MISMATCH_TOLERANCE}) {disagreements}"
+    )
+    if len(disagreements) > CAPTION_MISMATCH_TOLERANCE:
+        raise CatalogMismatch(
+            "export order does not match the catalog order on "
+            f"{len(disagreements)} rows — refusing to pair positionally"
+        )
 
     if args.dry_run:
         print("dry-run: nothing written")
@@ -491,7 +557,7 @@ if __name__ == "__main__":
 - [ ] **Step 4: Run the tests**
 
 Run: `cd /c/Users/PCMOD/Desktop/BorsTerminal && PYTHONIOENCODING=utf-8 python -m pytest tools/tests/test_build_telegram_catalog_assets.py -v`
-Expected: 5 passed.
+Expected: 8 passed.
 
 - [ ] **Step 5: Dry-run against the real export**
 
@@ -502,7 +568,7 @@ cd /c/Users/PCMOD/Desktop/BorsTerminal
 PYTHONIOENCODING=utf-8 python tools/build_telegram_catalog_assets.py --export-dir "$TEMP/bors_telegram_export" --dry-run
 ```
 
-Expected: `rows: 64` and `rows with no caption body: 32`. If `32` differs, the spec's measured number and the real export disagree — stop and report which is right; do not edit the expectation to make it pass.
+Expected: `rows: 64`, `rows with no caption body: 32`, and a `caption cross-check: N of 64 disagree (tolerance 8) [...]` line. The `32` is descriptive, not a gate — it is derived from the same field the spec measured, so its agreeing proves nothing. The gate is the cross-check: above `N = 8` the tool refuses to pair positionally. Report `N` and the id list even when it passes. Do not raise `CAPTION_MISMATCH_TOLERANCE` to make it pass — if Telegram truncates captions inside the HTML, that is a finding about the export, not a number to tune.
 
 - [ ] **Step 6: Real run, then report the measured size**
 
@@ -1288,4 +1354,4 @@ If `_audit/telegram-catalog-live` is gitignored, leave it out of the commit and 
 - **Spec coverage:** §3 extraction → Tasks 1–2. §3.5 inbox → Task 3. §4 data contract → Task 2 output + Task 4 schema. §5 storage and glob → Task 2 (`--out-dir`) + Task 4 Step 1/4. §6 UI, search, lightbox, RTL, `toFaDigits`, motion and reduced-motion → Task 5. §6 placement as third block → Task 6. §7 error states → Task 4 `assertCatalog` + Task 5 empty-search branch + the `بدون کپشن` fallback. §8 tests → Tasks 2, 4, 5, 6 plus the live gate in Task 7. §9 unverified items → Task 2 Step 6 (size), Task 4 Step 5 (title spelling), Task 7 Step 1 (backend).
 - **Placeholders:** none. Every code step has the code.
 - **Type consistency:** `PhotoEntry`, `MatchedRow`, `CatalogMismatch`, `parse_export`, `match_rows`, `to_payload`, `convert_photos` are defined in Task 2 and used only there. `TelegramRow`, `TELEGRAM_CATALOG`, `TELEGRAM_OVERLAY_LINKS`, `UNLINKED_OVERLAYS`, `searchTelegramRows` are defined in Task 4 and consumed in Task 5. `TelegramCatalogList` is defined in Task 5 and consumed in Task 6. The JSON keys emitted by Task 2 (`id`, `titleEn`, `captionEn`, `photo`, `dims`, `attachments`) are mapped explicitly by `to_payload` — not by `m.__dict__`, which would emit snake_case — and `test_payload_keys_are_camelcase_matching_the_zod_schema` pins them against the zod schema in Task 4.
-- **Known risk:** the export HTML shape. Task 1 Step 3 is deliberately a gate before any parser is written against it.
+- **Known risk:** the export HTML shape, and the positional pairing of export photos to catalog rows. Task 1 Step 3 is deliberately a gate before any parser is trusted; `caption_disagreements` is the independent sensor for the pairing, because equal dimensions do not catch a swapped order.
