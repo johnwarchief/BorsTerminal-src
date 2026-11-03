@@ -73,15 +73,17 @@ def fetch_day(s, d):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sessions", type=int, default=60)
+    ap.add_argument("--until", help="YYYY-MM-DD; default: max(d_even)")
     ap.add_argument("--dry", action="store_true", help="بنویس نه؛ فقط اندازه‌گیری")
     args = ap.parse_args()
 
     conn = sqlite3.connect(DB)
     conn.execute("PRAGMA journal_mode=WAL")
     latest = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
-    if not latest:
+    if not latest and not args.until:
         sys.exit("bank: no market_watch rows")
-    until = dt.datetime.strptime(str(latest), "%Y%m%d")
+    until = (dt.datetime.strptime(args.until, "%Y-%m-%d") if args.until
+             else dt.datetime.strptime(str(latest), "%Y%m%d"))
     print(f"پایانِ پنجره از market_watch: {until:%Y-%m-%d} — {args.sessions} نشست sought می‌شود")
 
     have = conn.execute("SELECT COUNT(DISTINCT date) FROM price_history WHERE date >= ?",

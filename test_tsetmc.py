@@ -1244,7 +1244,11 @@ def fetch_paper_types(getter, label="paperTypes"):
     # سه برابرِ واقعی. اکنون خاص‌ترین طبقه برنده می‌شود: ۸ (صندوق) > ۴
     # (حق تقدم) > ۲/۱ (سهام). خواندن هم‌چنان از pt=1 شروع می‌شود تا اگر
     # ابزاری فقط آن‌جاست، سهامِ ساده بماند.
-    rank = {8: 3, 4: 2, 2: 1, 1: 1}
+    # v9.10.4 — مرجعِ طبقه، `mstat_engine.classify` است نه rankِ paperType.
+    # سنجشِ زندهٔ ۲۰۲۶-۱۱-۰۳: پاسخِ pt=8 سهامِ واقعی (شبندر، فولاد، …) را هم
+    # برگرداند و rankِ ۸>۱ آن‌ها را صندوق ذخیره کرد (سهام ۱٬۳۳۵ → ۳۹۲).
+    # classify اول نام/سکتور را می‌بیند؛ paperType فقط تأییدِ ثانویه است.
+    import mstat_engine as _mstat
     for pt in (1, 2, 4, 8):
         try:
             rows = getter(f"{BASE}/ClosingPrice/GetMarketWatch?market=0"
@@ -1257,17 +1261,19 @@ def fetch_paper_types(getter, label="paperTypes"):
             ic = x.get("insCode")
             if not ic:
                 continue
-            # v9.8.2 — TSETMC قراردادهای اختیار را در پاسخِ paperType=1 (همان
-            # فهرستِ سهام) هم می‌فرستد. آن‌ها را ثبت نمی‌کنیم تا paper_type شان
-            # NULL بماند و در mstat_engine.classify به‌جای سهام، «other» شوند
-            # (همانند mstat_engine.is_option). وگرنه حجمِ خردِ اختیارها جدولِ
-            # الگوی ساعت و تجمیعِ حجمِ سهام را آلوده می‌کرد.
-            nm = (x.get("lvc") or "") + " " + (x.get("lva") or "")
-            if "اختيار" in nm or "اختیار" in nm:
-                continue
-            cur = out.get(ic)
-            if cur is None or rank[pt] > rank[cur]:
-                out[ic] = pt
+            # lva = نماد (l_val18) و lvc = نام (l_val30) — نگاشتِ اشتباهِ نسخهٔ
+            # قبل، اوراق/صندوق را سهام می‌کرد. همین قرارداد در inst.append هم هست.
+            lva = x.get("lva") or ""
+            lvc = x.get("lvc") or ""
+            cls, _kind = _mstat.classify(pt, l_val30=lvc, l_val18=lva, sector_name="")
+            if cls == _mstat.PAPER_FUND:
+                out[ic] = 8
+            elif cls == _mstat.PAPER_RIGHT:
+                out[ic] = 4
+            elif cls == _mstat.PAPER_STOCK:
+                out[ic] = 1
+            # other/option/bond/teseh: paper_type باید NULL بماند تا در
+            # assetType «other» شود، نه سهام/صندوقِ جعلی.
     return out
 
 
