@@ -870,6 +870,8 @@ SUITES = [
     ('dev/test_fts_updater_schema_v11.py',   'codal updater 26-col schema'),
     ('dev/test_codal_validation_v11.py',     'codal staging validation gates'),
     ('dev/test_codal_auto_update_v11.py',    'codal no-ADB orchestrator dry-run'),
+    ('dev/test_codal_event_update.py',
+                                     'codal event-driven 5-axis: cadence, invalidate, quarantine, locks, freshness'),
     ('dev/test_codal_snapshot_meta_v11.py',  'codal snapshot meta'),
     ('dev/test_codal_publish_v11.py',        'codal publish dry-run/last-good'),
     ('dev/test_codal_schedule_v11.py',       'codal scheduler + startup catch-up'),

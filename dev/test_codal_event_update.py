@@ -12,7 +12,10 @@ import sys
 import tempfile
 import time
 
-os.environ["BORS_CODAL_OFFLINE"] = "1"
+# گیتِ زندهٔ opt-in: فقط با `--live` و تأییدِ مالک، بیِ اجبارِ آفلاین اجرا می‌شود.
+LIVE = "--live" in sys.argv
+if not LIVE:
+    os.environ["BORS_CODAL_OFFLINE"] = "1"
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -742,8 +745,15 @@ section("worker: budget-exhausted skip is distinct")
 c11 = fresh_db()
 PL.cursor_set(c11, PL.DAILY_REQUEST_CURSOR,
               json.dumps({"day": "2026-11-03", "count": PL.DAILY_REQUEST_CAP}))
-r11 = PL.worker_once(conn=c11, now="2026-11-03 20:00:00", network=None,
-                     busy={"busy": False, "reason": "idle"})
+# قفلِ شبانهٔ واقعی در ریشهٔ مخزن نباید این تست را شکننده کند؛ مثلِ بقیهٔ
+# تست‌هایِ worker، orchestrator_busy خنثی می‌شود.
+real_orch11 = PL.orchestrator_busy
+PL.orchestrator_busy = lambda *a, **k: {"busy": False, "reason": ""}
+try:
+    r11 = PL.worker_once(conn=c11, now="2026-11-03 20:00:00", network=None,
+                         busy={"busy": False, "reason": "idle"})
+finally:
+    PL.orchestrator_busy = real_orch11
 wk11 = r11.get("wakeup") or {}
 ck(r11.get("skipped") == "budget-exhausted"
    and (r11.get("daily_requests") or {}).get("count") == PL.DAILY_REQUEST_CAP
@@ -751,3 +761,29 @@ ck(r11.get("skipped") == "budget-exhausted"
    and wk11.get("at") == "2026-11-04 00:00:00",
    "بودجهٔ تمام‌شده ⇒ skipِ متمایز با بیدارباش تا نیمه‌شب",
    {k: r11.get(k) for k in ("skipped", "daily_requests", "wakeup")})
+
+# ── ۸) گیتِ زندهٔ اختیاری (فقط با --live و تأییدِ مالک؛ نه بخشی از CI) ──────
+if LIVE:
+    section("live: read-only CODAL page (no writes)")
+    try:
+        sess = CF.make_session()
+        try:
+            letters = CF.fetch_page(sess, 1, CF.feed_query("3", 1, "1405/01/01"))
+        finally:
+            sess.close()
+    except Exception as exc:
+        print("  SKIP live probe: %s" % exc)
+    else:
+        if letters is None:
+            print("  SKIP live probe: blocked/no response")
+        else:
+            ck(isinstance(letters, list) and len(letters) > 0,
+               "فید کدال یک صفحهٔ غیرخالی برگرداند (بی‌نوشتن)")
+
+failed = CHECKS.count(False)
+print("\n%d passed / %d failed" % (CHECKS.count(True), failed))
+try:
+    shutil.rmtree(TMP, ignore_errors=True)
+except Exception:
+    pass
+sys.exit(1 if failed else 0)
