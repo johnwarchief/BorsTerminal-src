@@ -230,3 +230,54 @@ ck(tuple(state) == ("quarantined", "negative_revenue:revenue"),
 rows = c.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
 ck(rows == 0, "هیچ ردیفِ خرابی در canonical نیست", rows)
 ck(out.get("quarantined") == 1, "شمارشِ چرخه قرنطینه را گزارش می‌کند", out)
+
+# ── ۵) قفلِ متقابل با خط شبانه ───────────────────────────────────────────
+section("locks: orchestrator vs incremental worker")
+
+
+def write_lock(work, age_s=30):
+    p = os.path.join(work, "codal_auto.lock")
+    open(p, "w", encoding="utf-8").write("1 test")
+    ts = datetime.datetime.now().timestamp() - age_s
+    os.utime(p, (ts, ts))
+
+
+work = tempfile.mkdtemp(prefix="codal_lock_", dir=TMP)
+write_lock(work, age_s=30)
+b = PL.orchestrator_busy(work_dir=work)
+ck(b["busy"] is True and b["reason"] == "lock-fresh",
+   "قفلِ تازهٔ شبانه ⇒ مشغول", b)
+os.utime(os.path.join(work, "codal_auto.lock"),
+         (datetime.datetime.now().timestamp() - 7 * 3600,) * 2)
+b = PL.orchestrator_busy(work_dir=work)
+ck(b["busy"] is False, "قفلِ کهنه‌تر از ۶ ساعت ⇒ آزاد", b)
+
+real_busy = PL.orchestrator_busy
+PL.orchestrator_busy = lambda *a, **k: {"busy": True, "reason": "lock-fresh",
+                                        "stage": "fetching"}
+try:
+    r = PL.worker_once(conn=fresh_db(), now="2026-11-03 10:30:00",
+                       network=False, busy={"busy": False, "reason": "idle"})
+finally:
+    PL.orchestrator_busy = real_busy
+ck(r.get("skipped") == "orchestrator-busy"
+   and r.get("wakeup", {}).get("seconds") == 300,
+   "worker در پنجرهٔ شبانه هیچ کاری نمی‌کند", r)
+
+import codal_auto_update as A  # noqa: E402  (مسیرِ dev از قبل در sys.path است)
+db = os.path.join(TMP, "lockprobe.db")
+conn = sqlite3.connect(db)
+conn.execute("CREATE TABLE pipeline_lock (key TEXT PRIMARY KEY, owner TEXT,"
+             " heartbeat_at TEXT, note TEXT)")
+conn.execute("INSERT INTO pipeline_lock VALUES ('codal_pipeline','x',?, '')",
+             (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
+conn.commit()
+conn.close()
+ck(A._pipeline_lock_free(db) is False, "قفلِ تازهٔ pipeline ⇒ آزاد نیست")
+conn = sqlite3.connect(db)
+conn.execute("UPDATE pipeline_lock SET heartbeat_at=?",
+             ((datetime.datetime.now() - datetime.timedelta(seconds=600))
+              .strftime("%Y-%m-%d %H:%M:%S"),))
+conn.commit()
+conn.close()
+ck(A._pipeline_lock_free(db) is True, "قفلِ کهنه (۱۰ دقیقه) ⇒ آزاد")

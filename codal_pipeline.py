@@ -45,6 +45,7 @@ import os
 import random
 import sqlite3
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
@@ -66,6 +67,7 @@ __all__ = [
     "worker_once", "start_worker", "stop_worker", "worker_status",
     "next_wakeup", "catchup_state", "crawler_busy", "market_in_session",
     "offline_gate", "status_payload",
+    "orchestrator_busy", "ORCHESTRATOR_LOCK_STALE_S",
     "CADENCE_IDLE_S", "CADENCE_BACKLOG_S", "DISCOVERY_MIN_GAP_S",
     "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
@@ -1310,6 +1312,42 @@ def crawler_busy(status_path=None, max_age_s=900, now_dt=None):
             "reason": "fresh-codal-phase" if busy else "idle"}
 
 
+ORCHESTRATOR_LOCK_STALE_S = 6 * 3600
+ORCHESTRATOR_TERMINAL_STAGES = frozenset({
+    "done", "dry_run_ok", "paused", "locked", "client_busy",
+    "backup_failed", "fetch_failed", "validation_failed", "merge_failed",
+    "materialize_failed", "snapshot_failed", "sign_failed", "publish_failed",
+    "failed",
+})
+
+
+def orchestrator_busy(now=None, work_dir=None):
+    """آیا خط شبانهٔ ۱۸:۳۰ در حال اجراست؟ (فقط خواندنِ فایل، بدونِ importِ api)"""
+    work = work_dir or ROOT
+    lock = os.path.join(work, "codal_auto.lock")
+    try:
+        age = time.time() - os.path.getmtime(lock)
+        if 0 <= age <= ORCHESTRATOR_LOCK_STALE_S:
+            return {"busy": True, "reason": "lock-fresh", "stage": "lock"}
+    except OSError:
+        pass
+    status_path = os.path.join(work, "codal_auto_status.json")
+    try:
+        with open(status_path, "r", encoding="utf-8") as fh:
+            status = json.load(fh)
+    except (OSError, ValueError):
+        status = {}
+    if not isinstance(status, dict):
+        status = {}
+    stage = str(status.get("stage") or "").strip().lower()
+    if stage and stage not in ORCHESTRATOR_TERMINAL_STAGES:
+        age_s = _age_s(status.get("updated_at") or status.get("started_at"),
+                       _to_dt(now))
+        if age_s is not None and -300 <= age_s <= ORCHESTRATOR_LOCK_STALE_S:
+            return {"busy": True, "reason": "status-active", "stage": stage}
+    return {"busy": False, "reason": "", "stage": stage}
+
+
 def next_wakeup(conn, now=None, network_gap_s=DISCOVERY_MIN_GAP_S):
     """چراغِ بیدارباش بعدی + علتش — از خودِ صف و checkpoint.
 
@@ -1407,6 +1445,13 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
     try:
         if busy is None:
             busy = crawler_busy(status_path=status_path)
+        orch = orchestrator_busy(_to_dt(now))
+        if orch["busy"]:
+            return {"skipped": "orchestrator-busy", "reason": orch.get("reason", ""),
+                    "network": False,
+                    "wakeup": {"seconds": 300, "reason": "orchestrator-busy",
+                               "need_network": False,
+                               "at": now, "queue": counts(conn)}}
         network_gap_s, publication = current_network_gap(conn, now=now, jitter=True)
         age_net = _age_s(cursor_get(conn, CURSOR_LAST_NETWORK), _to_dt(now))
         want = age_net is None or age_net >= int(network_gap_s)

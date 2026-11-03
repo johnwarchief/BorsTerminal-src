@@ -71,6 +71,7 @@ CLIENT_STATUS_STALE_SECONDS = 6 * 3600
 # اجرا کند (خروجِ ۰ برای locked/paused در _exit_code) و app.py هم در همین
 # پنجره با cooldown از اسپاونِ دوباره خودداری می‌کند.
 LOCK_STALE_SECONDS = 6 * 3600
+PIPELINE_LOCK_WAIT_S = 120
 MATERIALIZE_TIMEOUT = 3600
 SIGN_TIMEOUT = 300
 CALENDAR_TIMEOUT = 300
@@ -157,6 +158,30 @@ def _release_lock(path):
         os.remove(path)
     except OSError:
         pass
+
+
+def _pipeline_lock_free(db_path):
+    """آیا قفلِ heartbeat-دارِ worker آزاد/کهنه است؟ خطای DB ⇒ آزاد (fail-open
+    برای این گیتِ کوتاه؛ خودِ merge بعداً با قفلِ codal_auto محافظت می‌شود)."""
+    try:
+        uri = pathlib.Path(db_path).resolve().as_uri() + "?mode=ro"
+        conn = sqlite3.connect(uri, uri=True, timeout=5)
+        try:
+            row = conn.execute(
+                "SELECT heartbeat_at FROM pipeline_lock WHERE key='codal_pipeline'"
+            ).fetchone()
+        finally:
+            conn.close()
+    except Exception:
+        return True
+    if not row or not row[0]:
+        return True
+    try:
+        hb = datetime.datetime.strptime(
+            str(row[0])[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return True
+    return (datetime.datetime.now() - hb).total_seconds() > 180
 
 
 def _client_download_active():
@@ -348,6 +373,15 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
         return result
 
     try:
+        _write_status(stage="pipeline_wait", mode=mode, started_at=started_at,
+                      last_error=None, published=False)
+        deadline = time.time() + PIPELINE_LOCK_WAIT_S
+        while not _pipeline_lock_free(main_db):
+            if time.time() >= deadline:
+                return _fail(result, "pipeline_busy",
+                             "pipeline_lock still held after %ds" % PIPELINE_LOCK_WAIT_S)
+            time.sleep(2)
+
         _write_status(stage="backing_up", mode=mode, started_at=started_at,
                       last_error=None, published=False)
 
