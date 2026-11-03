@@ -620,7 +620,8 @@ stub_pub = {"windows": [list(w) for w in CAD.DEFAULT_WINDOWS],
             "source": "default", "samples": 0,
             "labels": CAD.window_labels(CAD.DEFAULT_WINDOWS),
             "inside_window": True, "network_gap_s": 777, "enabled": True}
-PL.current_network_gap = lambda conn, now=None, jitter=True: (777, dict(stub_pub))
+PL.current_network_gap = lambda conn, now=None, jitter=True, cache_write=True: (
+    777, dict(stub_pub))
 try:
     sp = PL.status_payload(c6, now="2026-11-03 10:00:00")
 finally:
@@ -677,3 +678,76 @@ row = c7.execute("SELECT cache_invalidated FROM pipeline_runs ORDER BY id DESC"
 ck(row is not None and int(row[0] or 0) == 3,
    "pipeline_runs هم همان عددِ کامل را ثبت می‌کند",
    tuple(row) if row is not None else None)
+
+# ── ۷هـ) بازبینی: skipِ قفل بودجه نمی‌خورد و status نوشتن ندارد ─────────────
+section("worker: lock-skip does not charge daily budget")
+c8 = fresh_db()
+PL.cursor_set(c8, PL.DAILY_REQUEST_CURSOR,
+              json.dumps({"day": "2026-11-03", "count": 3}))
+real_rc8 = PL.run_cycle
+real_gate8 = PL.offline_gate
+real_orch8 = PL.orchestrator_busy
+PL.run_cycle = lambda *a, **k: {"skipped": "locked", "run_id": None, "pages": 0}
+PL.offline_gate = lambda: False
+PL.orchestrator_busy = lambda *a, **k: {"busy": False, "reason": ""}
+try:
+    r8 = PL.worker_once(conn=c8, now="2026-11-03 20:00:00", network=True,
+                        busy={"busy": False, "reason": "idle"})
+finally:
+    PL.run_cycle = real_rc8
+    PL.offline_gate = real_gate8
+    PL.orchestrator_busy = real_orch8
+stored8 = json.loads(PL.cursor_get(c8, PL.DAILY_REQUEST_CURSOR) or "{}")
+ck(r8.get("skipped") == "locked"
+   and (r8.get("daily_requests") or {}).get("count") == 3
+   and stored8.get("count") == 3,
+   "skipِ قفل (بیِ run_id/صفحه) سهمِ روز را کم نمی‌کند",
+   {"skipped": r8.get("skipped"), "daily_requests": r8.get("daily_requests"),
+    "stored": stored8})
+
+section("health: read-only publication cache")
+c9 = fresh_db()
+add_notice(c9, 7100, "فولاد")
+h9 = PL.health(c9)
+ck(PL.cursor_get(c9, PL.PUB_WINDOWS_CURSOR) is None,
+   "health کشِ pub_windows_v1 را نمی‌نویسد",
+   PL.cursor_get(c9, PL.PUB_WINDOWS_CURSOR))
+ck((h9.get("publication") or {}).get("network_gap_s") is not None,
+   "health بازهم network_gap_s را گزارش می‌کند", h9.get("publication"))
+
+section("hardening: corrupt cursors never crash health/worker")
+c10 = fresh_db()
+PL.cursor_set(c10, "notice_incomplete_streak", "not-a-number")
+PL.cursor_set(c10, PL.DAILY_REQUEST_CURSOR,
+              json.dumps({"day": "2026-11-03", "count": "many"}))
+h10 = PL.health(c10)
+ck(h10.get("incomplete_streak") == 0
+   and (h10.get("daily_requests") or {}).get("count") == 0,
+   "cursorِ غیرعددی در health ایمن صفر می‌شود",
+   {k: h10.get(k) for k in ("incomplete_streak", "daily_requests")})
+real_orch10 = PL.orchestrator_busy
+real_gate10 = PL.offline_gate
+PL.offline_gate = lambda: False
+PL.orchestrator_busy = lambda *a, **k: {"busy": False, "reason": ""}
+try:
+    r10 = PL.worker_once(conn=c10, now="2026-11-03 20:00:00", network=False,
+                         busy={"busy": False, "reason": "idle"})
+finally:
+    PL.offline_gate = real_gate10
+    PL.orchestrator_busy = real_orch10
+ck(r10.get("skipped") == "nothing-to-do",
+   "cursorِ خراب بودجهٔ worker را نمی‌ترکاند", r10)
+
+section("worker: budget-exhausted skip is distinct")
+c11 = fresh_db()
+PL.cursor_set(c11, PL.DAILY_REQUEST_CURSOR,
+              json.dumps({"day": "2026-11-03", "count": PL.DAILY_REQUEST_CAP}))
+r11 = PL.worker_once(conn=c11, now="2026-11-03 20:00:00", network=None,
+                     busy={"busy": False, "reason": "idle"})
+wk11 = r11.get("wakeup") or {}
+ck(r11.get("skipped") == "budget-exhausted"
+   and (r11.get("daily_requests") or {}).get("count") == PL.DAILY_REQUEST_CAP
+   and wk11.get("seconds") == 4 * 3600
+   and wk11.get("at") == "2026-11-04 00:00:00",
+   "بودجهٔ تمام‌شده ⇒ skipِ متمایز با بیدارباش تا نیمه‌شب",
+   {k: r11.get(k) for k in ("skipped", "daily_requests", "wakeup")})

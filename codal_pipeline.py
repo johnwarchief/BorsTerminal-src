@@ -633,10 +633,12 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     return res
 
 
-def publication_windows(conn, now=None):
+def publication_windows(conn, now=None, cache_write=True):
     """پنجره‌های انتشار از هیستوگرامِ ساعتِ اطلاعیه‌های اخیر.
 
     کش روزانه در `pipeline_cursor`؛ خطای DB/ستون ⇒ پیش‌فرض، نه استثنا.
+    `cache_write=False` مسیرِ فقط‌خواندنی است (health): کشِ موجود خوانده
+    می‌شود ولی کشِ تازه هرگز نوشته نمی‌شود — status نباید بنویسد.
     """
     today = str(now or now_s())[:10]
     try:
@@ -672,18 +674,20 @@ def publication_windows(conn, now=None):
         "source": "learned" if samples >= PUB_WINDOWS_MIN_SAMPLES else "default",
         "samples": samples,
     }
-    try:
-        cursor_set(conn, PUB_WINDOWS_CURSOR, json.dumps(out, ensure_ascii=False),
-                   note="publication windows")
-    except sqlite3.Error:
-        pass
+    if cache_write:
+        try:
+            cursor_set(conn, PUB_WINDOWS_CURSOR,
+                       json.dumps(out, ensure_ascii=False),
+                       note="publication windows")
+        except sqlite3.Error:
+            pass
     return out
 
 
-def current_network_gap(conn, now=None, jitter=True):
+def current_network_gap(conn, now=None, jitter=True, cache_write=True):
     """فاصلهٔ مجازِ پاسِ شبکه + توصیفِ پنجره برای status."""
     at = _to_dt(now) or datetime.datetime.now()
-    pub = publication_windows(conn, now=now)
+    pub = publication_windows(conn, now=now, cache_write=cache_write)
     enabled = str(os.environ.get("BORS_CODAL_FAST_WINDOW", "1")).strip().lower() \
         not in ("0", "false", "no", "off")
     jitter_s = random.uniform(-60.0, 60.0) if jitter and enabled else 0.0
@@ -1298,6 +1302,15 @@ def _to_dt(s):
         return None
 
 
+def _int_or(value, default=0):
+    """تبدیلِ ایمن به int — cursorِ دست‌کاری‌شده/غیرعددی نباید status یا worker
+    را بترکاند؛ مقدارِ نامعتبر یعنی «صفر»، نه استثنا."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _age_s(s, now_dt=None):
     d = _to_dt(s)
     if not d:
@@ -1499,7 +1512,7 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
             req = {}
         if not isinstance(req, dict) or req.get("day") != day:
             req = {"day": day, "count": 0}
-        budget_left = DAILY_REQUEST_CAP - int(req.get("count") or 0)
+        budget_left = DAILY_REQUEST_CAP - _int_or(req.get("count"))
         want = age_net is None or age_net >= int(network_gap_s)
         want = want and not busy["busy"]
         use_network = want if network is None else bool(network)
@@ -1510,6 +1523,24 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
         if (not use_network and not force
                 and not counts(conn)["retryable"]
                 and not dirty_count(conn)):
+            if budget_left <= 0:
+                # بودجهٔ امروز تمام است و کارِ محلی هم نیست: «کاری نکردیم» را
+                # صریح گزارش کن و تا نیمه‌شبِ روزِ بعد بخواب، نه تیکِ ۶۰ثانیه‌ایِ
+                # nothing-to-do. تصمیمِ شبکه دست‌نخورده است — بودجه از قبل
+                # use_network را خاموش کرده بود، فقط دلیل/بیدارباش عوض می‌شود.
+                now_dt = _to_dt(now) or datetime.datetime.now()
+                midnight = datetime.datetime.combine(
+                    now_dt.date() + datetime.timedelta(days=1),
+                    datetime.time())
+                secs = max(CADENCE_MIN_S,
+                           int((midnight - now_dt).total_seconds()))
+                return {"skipped": "budget-exhausted", "reason": "daily-cap",
+                        "network": False, "daily_requests": req,
+                        "wakeup": {"at": midnight.strftime("%Y-%m-%d %H:%M:%S"),
+                                   "seconds": secs,
+                                   "reason": "budget-exhausted",
+                                   "need_network": True,
+                                   "queue": counts(conn)}}
             return {"skipped": "nothing-to-do", "reason": busy.get("reason", ""),
                     "network": False}
         defer_recalc = market_in_session(_to_dt(now))
@@ -1525,9 +1556,11 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
                        note="cycle=%s skipped=%s" % (res.get("run_id"),
                                                      res.get("skipped")))
         res["network"] = use_network
-        if use_network:
+        # فقط چرخهٔ واقعی بودجه می‌خورد: skipِ «locked» (بیِ run_id، بیِ درخواست)
+        # نباید سهمِ روز را کم کند.
+        if use_network and res.get("run_id"):
             used = int(res.get("pages") or 0) or 1
-            req["count"] = int(req.get("count") or 0) + used
+            req["count"] = _int_or(req.get("count")) + used
             try:
                 cursor_set(conn, DAILY_REQUEST_CURSOR, json.dumps(req),
                            note="pages=%d" % used)
@@ -1678,7 +1711,8 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
     last_data = _scalar("SELECT MAX(tried_at) FROM codal_extracted"
                         " WHERE state='done'")
     try:
-        gap, pub = current_network_gap(conn, now=None, jitter=False)
+        gap, pub = current_network_gap(conn, now=None, jitter=False,
+                                       cache_write=False)
     except Exception:
         gap, pub = SLOW_GAP_S, {"windows": [list(w) for w in CAD.DEFAULT_WINDOWS],
                                 "source": "default", "samples": 0,
@@ -1703,8 +1737,10 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
         "publication": pub,
         "last_new_notice_at": _scalar("SELECT MAX(fetched_at) FROM codal_notices"),
         "gap_flag": cursor_get(conn, "notice_gap_flag") == "1",
-        "incomplete_streak": int(cursor_get(conn, "notice_incomplete_streak", "0") or 0),
-        "daily_requests": {"day": req.get("day"), "count": int(req.get("count") or 0)},
+        "incomplete_streak": _int_or(cursor_get(conn, "notice_incomplete_streak",
+                                                "0")),
+        "daily_requests": {"day": req.get("day"),
+                           "count": _int_or(req.get("count"))},
         "last_successful_sync": ({"at": last_ok[0], "cycle": last_ok[1],
                                   "processed": last_ok[2], "done": last_ok[3],
                                   "failed": last_ok[4]} if last_ok else None),
@@ -1732,8 +1768,9 @@ def status_payload(conn, now=None):
     """
     h = health(conn)
     h["catchup"] = catchup_state(conn, now=now)
-    # همان gapِ پویایی که worker برایِ تصمیمِ پاسِ شبکه به کار می‌برد — نه
-    # پیش‌فرضِ ثابتِ ۳ ساعت، وگرنه cadenceِ گزارش‌شده با رفتارِ worker نمی‌خواند.
+    # gapِ پایهٔ **بدونِ jitter** که health گزارش می‌کند — نه پیش‌فرضِ ثابتِ
+    # ۳ ساعت. worker پیش از تصمیمِ پاسِ شبکه jitterِ ±۶۰ثانیه هم می‌زند، پس
+    # cadenceِ نمایشی «مبنای» فاصله است، نه دقیقاً ورودیِ worker.
     gap_s = (h.get("publication") or {}).get("network_gap_s") or SLOW_GAP_S
     h["cadence"] = next_wakeup(conn, now=now, network_gap_s=gap_s)
     try:
