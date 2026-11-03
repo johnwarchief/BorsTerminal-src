@@ -136,23 +136,59 @@ export function cardFacts(card: FtsCard): CardFact[] {
       : fact));
 }
 
-function freshnessBadge(card: FtsCard): { text: string; title: string } | null {
+const AXIS_LABEL: Record<string, string> = {
+  '1_growth': 'رشد فروش',
+  '2_eps_trend': 'سودآوری ۳ ساله',
+  '3_gross_margin': 'حاشیه سود ناخالص',
+  '4_sales_to_mcap': 'پتانسیل سود',
+  '5_industry': 'صنعت',
+};
+
+const STATE_LABEL: Record<string, string> = {
+  fresh: 'تازه',
+  stale: 'نیازمند بازمحاسبه',
+  missing: 'بدون داده',
+  quarantined: 'قرنطینه',
+};
+
+const ATTENTION_STATES = new Set(['stale', 'missing', 'quarantined']);
+const FUNDAMENTAL_AXES = ['1_growth', '2_eps_trend', '3_gross_margin'] as const;
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** فقط تاریخ؛ مقدار تاریخ‌تنها به وقت محلی خوانده می‌شود تا روز جابه‌جا نشود. */
+function formatAsOf(asOf: string): string {
+  const parts = DATE_ONLY.exec(asOf);
+  const date = parts
+    ? new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]))
+    : new Date(asOf);
+  if (Number.isNaN(date.getTime())) return asOf;
+  return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(date);
+}
+
+function freshnessBadge(card: FtsCard): { text: string; title: string; dot: string } | null {
   const fresh = card.freshness;
-  if (!fresh?.as_of) return null;
-  const date = new Date(fresh.as_of);
-  const time = Number.isNaN(date.getTime())
-    ? fresh.as_of
-    : new Intl.DateTimeFormat('fa-IR', {
-        hour: '2-digit', minute: '2-digit',
-      }).format(date);
-  const needsAttention = Object.entries(fresh.axes ?? {})
-    .filter(([, axis]) => axis?.state && axis.state !== 'fresh')
-    .map(([key, axis]) => `${key} (${axis.state})`);
+  const axes = fresh?.axes;
+  if (!fresh || !axes) return null;
+  const stamps = FUNDAMENTAL_AXES
+    .map((key) => axes[key]?.as_of)
+    .filter((value): value is string => Boolean(value));
+  if (stamps.length === 0) return null;
+  const oldest = stamps.reduce((a, b) => (a < b ? a : b));
+  const needsAttention: string[] = [];
+  for (const [key, axis] of Object.entries(axes)) {
+    const state = axis?.state;
+    if (!state || !ATTENTION_STATES.has(state)) continue;
+    needsAttention.push(`${AXIS_LABEL[key] ?? key} (${STATE_LABEL[state] ?? state})`);
+  }
+  const until = formatAsOf(oldest);
   return {
-    text: `تازه تا ${time}`,
+    text: needsAttention.length
+      ? `دادهٔ بنیادی تا ${until} · ${toFaDigits(needsAttention.length)} محور نیازمند بررسی`
+      : `دادهٔ بنیادی تا ${until}`,
     title: needsAttention.length
-      ? `نیازمند توجه: ${needsAttention.join('، ')}`
+      ? `نیازمند بررسی: ${needsAttention.join('، ')}`
       : 'همهٔ محورها از منبع تازه‌اند',
+    dot: needsAttention.length ? 'bg-down' : 'bg-up',
   };
 }
 
@@ -176,7 +212,7 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
       {fresh ? (
         <div data-testid="fundamental-freshness" title={fresh.title}
           className="flex items-center gap-1 px-1 pt-1 t-85 text-text-3">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
+          <span className={clsx('inline-block h-1.5 w-1.5 rounded-full', fresh.dot)} aria-hidden />
           <span>{fresh.text}</span>
         </div>
       ) : null}

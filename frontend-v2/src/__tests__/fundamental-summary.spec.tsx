@@ -191,21 +191,83 @@ describe('FundamentalCards', () => {
     expect(screen.getByRole('group', { name: /۴\. پتانسیل سود تا آخر سال/ })).toBe(axis4);
   });
 
-  it('shows the source freshness timestamp only when the API supplies it', () => {
+  it('anchors the badge on the oldest fundamental axis and counts attention', () => {
+    serve({
+      ...card,
+      freshness: {
+        as_of: '2026-11-03T12:10:00+03:30',
+        axes: {
+          '1_growth': { as_of: '2026-11-03T12:10:00+03:30', source: 'monthly_sales', state: 'fresh' },
+          '2_eps_trend': { as_of: '2026-10-15T09:30:00+03:30', source: 'financial_statements', state: 'fresh' },
+          '3_gross_margin': { as_of: '2026-09-20T08:00:00+03:30', source: 'financial_statements', state: 'stale' },
+        },
+      },
+    } as unknown as FtsCard);
+    render(<FundamentalCards symbol="فولاد" />);
+    const badge = screen.getByTestId('fundamental-freshness');
+    expect(badge.textContent).toContain('دادهٔ بنیادی');
+    expect(badge.textContent).toContain('۱ محور نیازمند بررسی');
+    const oldest = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' })
+      .format(new Date('2026-09-20T08:00:00+03:30'));
+    expect(badge.textContent).toContain(oldest);
+    const title = badge.getAttribute('title') ?? '';
+    expect(title).toContain('حاشیه سود ناخالص');
+    expect(title).toContain('نیازمند بازمحاسبه');
+    expect(title).not.toContain('3_gross_margin');
+    expect(title).not.toContain('stale');
+    expect(badge.firstElementChild?.className).toContain('bg-down');
+  });
+
+  it('shows a Persian date without a clock for date-only stamps', () => {
+    serve({
+      ...card,
+      freshness: {
+        as_of: '2026-11-03',
+        axes: {
+          '1_growth': { as_of: '2026-11-03', source: 'monthly_sales', state: 'fresh' },
+          '2_eps_trend': { as_of: '2026-10-15', source: 'financial_statements', state: 'fresh' },
+          '3_gross_margin': { as_of: '2026-09-20', source: 'financial_statements', state: 'fresh' },
+        },
+      },
+    } as unknown as FtsCard);
+    render(<FundamentalCards symbol="فولاد" />);
+    const text = screen.getByTestId('fundamental-freshness').textContent ?? '';
+    expect(text).toContain('دادهٔ بنیادی');
+    expect(text).not.toMatch(/[۰-۹]:[۰-۹]/);
+    const oldest = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(2026, 8, 20));
+    expect(text).toContain(oldest);
+  });
+
+  it('renders no badge when per-axis freshness is absent or null', () => {
+    serve({
+      ...card,
+      freshness: { as_of: '2026-11-03T12:10:00+03:30' },
+    } as unknown as FtsCard);
+    const first = render(<FundamentalCards symbol="فولاد" />);
+    expect(screen.queryByTestId('fundamental-freshness')).toBeNull();
+    first.unmount();
+
+    serve({ ...card, freshness: { as_of: null, axes: null } } as unknown as FtsCard);
+    render(<FundamentalCards symbol="فولاد" />);
+    expect(screen.queryByTestId('fundamental-freshness')).toBeNull();
+  });
+
+  it('keeps the badge green when every axis is fresh', () => {
     serve({
       ...card,
       freshness: {
         as_of: '2026-11-03T12:10:00+03:30',
         axes: {
           '1_growth': { as_of: '2026-11-03', source: 'monthly_sales', state: 'fresh' },
-          '3_gross_margin': { as_of: '2026-09-20', source: 'financial_statements', state: 'stale' },
+          '2_eps_trend': { as_of: '2026-10-15', source: 'financial_statements', state: 'fresh' },
+          '3_gross_margin': { as_of: '2026-09-20', source: 'financial_statements', state: 'fresh' },
         },
       },
     } as unknown as FtsCard);
     render(<FundamentalCards symbol="فولاد" />);
     const badge = screen.getByTestId('fundamental-freshness');
-    expect(badge.textContent).toContain('تازه');
-    expect(badge.getAttribute('title')).toContain('3_gross_margin');
+    expect(badge.getAttribute('title')).toBe('همهٔ محورها از منبع تازه‌اند');
+    expect(badge.firstElementChild?.className).toContain('bg-up');
   });
 
   it('does not invent freshness when the API omits it', () => {
