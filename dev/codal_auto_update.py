@@ -161,8 +161,12 @@ def _release_lock(path):
 
 
 def _pipeline_lock_free(db_path):
-    """آیا قفلِ heartbeat-دارِ worker آزاد/کهنه است؟ خطای DB ⇒ آزاد (fail-open
-    برای این گیتِ کوتاه؛ خودِ merge بعداً با قفلِ codal_auto محافظت می‌شود)."""
+    """آیا قفلِ heartbeat-دارِ worker آزاد/کهنه است؟ خطای DB ⇒ آزاد (fail-open).
+
+    workerِ افزایشی هرگز `codal_auto.lock` نمی‌گیرد، پس هیچ گیتِ بعدی‌ای merge را
+    در برابرِ او نمی‌بندد؛ تنها پشتوانهٔ این fail-open همان خواندنِ فوریِ
+    `_backup_db` از main است: اگر DB واقعاً قفل/خراب باشد، backup همان‌جا شکست
+    می‌خورد و کار به merge نمی‌رسد."""
     try:
         uri = pathlib.Path(db_path).resolve().as_uri() + "?mode=ro"
         conn = sqlite3.connect(uri, uri=True, timeout=5)
@@ -379,7 +383,8 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
         while not _pipeline_lock_free(main_db):
             if time.time() >= deadline:
                 return _fail(result, "pipeline_busy",
-                             "pipeline_lock still held after %ds" % PIPELINE_LOCK_WAIT_S)
+                             "pipeline_busy: pipeline_lock still held after %ds"
+                             % PIPELINE_LOCK_WAIT_S)
             time.sleep(2)
 
         _write_status(stage="backing_up", mode=mode, started_at=started_at,
@@ -438,6 +443,13 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
         # دروازهٔ اول یک TOCTOU است؛ اینجا بدونِ merge برمی‌گردیم (data intact).
         if _client_download_active():
             return _fail(result, "client_busy", "client_busy")
+
+        # بازبینیِ دومِ قفلِ pipeline دقیقاً پیش از merge: staging/واکشی/گیت‌ها
+        # می‌تواند از TTLِ ۱۸۰ثانیه‌ای بگذرد و worker دوباره قفل بگیرد؛ همان
+        # TOCTOUِ دروازهٔ نخست، این‌بار سمتِ worker.
+        if not _pipeline_lock_free(main_db):
+            return _fail(result, "pipeline_busy",
+                         "pipeline_lock reacquired before merge")
 
         _write_status(stage="merging", validation=_validation_summary(validation),
                       latest_periods=periods)

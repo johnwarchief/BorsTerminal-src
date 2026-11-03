@@ -1132,6 +1132,12 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             touched.update(tally.get("symbols") or [])
             out["processed"] += len(rows)
             processed += len(rows)
+            # چرخه می‌تواند با POLITE/scrape از TTLِ قفل (۱۸۰ث) بگذرد؛ heartbeat
+            # پس از هر batch تازه می‌شود تا خطِ شبانه قفل را «آزاد» نبیند.
+            try:
+                lock_heartbeat(conn, "codal_pipeline", owner)
+            except sqlite3.Error:
+                pass
         # باطل‌سازیِ فوری، مستقل از `recalc`: ردیفِ `fts_results` همان نمادهایی
         # که تازه نوشته شدند همین‌جا می‌رود، پس کهنه پیش از چرخۀ بعد هم دیده
         # نمی‌شود. `pipeline_dirty` دست‌نخورده می‌ماند تا محاسبۀ کامل بعداً
@@ -1181,6 +1187,12 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
                         (sym, ax, "recalc-missed", now))
             conn.commit()
             out["dirty"] = dirty_count(conn)
+        # پیش از نوشتنِ گزارش/checkpointِ نهایی هم یک‌بار قفل را تازه می‌کنیم؛
+        # محاسبهٔ recalc یا درج‌های بالا می‌توانند از TTL گذشته باشند.
+        try:
+            lock_heartbeat(conn, "codal_pipeline", owner)
+        except sqlite3.Error:
+            pass
         # checkpoint فقط وقتی جلو می‌رود که کارِ بازِ قدیمی نمانده باشد
         c = counts(conn)
         newest = conn.execute(
@@ -1317,7 +1329,7 @@ ORCHESTRATOR_TERMINAL_STAGES = frozenset({
     "done", "dry_run_ok", "paused", "locked", "client_busy",
     "backup_failed", "fetch_failed", "validation_failed", "merge_failed",
     "materialize_failed", "snapshot_failed", "sign_failed", "publish_failed",
-    "failed",
+    "pipeline_busy", "failed",
 })
 
 

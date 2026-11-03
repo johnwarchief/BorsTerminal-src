@@ -281,3 +281,79 @@ conn.execute("UPDATE pipeline_lock SET heartbeat_at=?",
 conn.commit()
 conn.close()
 ck(A._pipeline_lock_free(db) is True, "قفلِ کهنه (۱۰ دقیقه) ⇒ آزاد")
+
+# ── ۶) heartbeat چرخهٔ طولانی و مسیرِ انتظارِ run() ────────────────────────
+section("locks: heartbeat refresh + run() pipeline wait")
+
+term_work = tempfile.mkdtemp(prefix="codal_term_", dir=TMP)
+with open(os.path.join(term_work, "codal_auto_status.json"), "w",
+          encoding="utf-8") as fh:
+    json.dump({"stage": "pipeline_busy",
+               "updated_at": datetime.datetime.now().isoformat(
+                   timespec="seconds")}, fh)
+b = PL.orchestrator_busy(work_dir=term_work)
+ck(b["busy"] is False,
+   "انتظارِ ناموفق (pipeline_busy) ترمینال است، نه ۶ ساعت مشغول", b)
+ck("pipeline_busy" not in A._BENIGN_SKIPS,
+   "pipeline_busy عمداً benign نیست (merge/publish نشده ⇒ exit 1)")
+
+hb_calls = []
+real_hb = PL.lock_heartbeat
+
+
+def counting_hb(conn, key, owner, note=""):
+    hb_calls.append((key, owner))
+    return real_hb(conn, key, owner, note=note)
+
+
+c = fresh_db()
+add_notice(c, 5001, "فولاد")
+PL.enqueue(c, [(5001, "ms")])
+PL.lock_heartbeat = counting_hb
+try:
+    out = PL.run_cycle(c, "hb-owner", discover=None,
+                       scrape=lambda n: ms_row(5001, "فولاد"),
+                       now="2026-11-03 10:30:00", instruments=lambda conn: {})
+finally:
+    PL.lock_heartbeat = real_hb
+ck(len(hb_calls) >= 1
+   and all(k == "codal_pipeline" and o == "hb-owner" for k, o in hb_calls),
+   "چرخه پس از batch و پیش از checkpoint قفل را heartbeat می‌کند", hb_calls)
+ck(out.get("error") is None and out.get("done") == 1,
+   "چرخهٔ heartbeat بدونِ خطا و با یک کار انجام شد", out)
+
+wait_dir = tempfile.mkdtemp(prefix="codal_wait_", dir=TMP)
+wait_db = os.path.join(wait_dir, "market.db")
+conn = sqlite3.connect(wait_db)
+conn.execute("CREATE TABLE pipeline_lock (key TEXT PRIMARY KEY, owner TEXT,"
+             " heartbeat_at TEXT, note TEXT)")
+conn.execute("INSERT INTO pipeline_lock VALUES ('codal_pipeline','w',?, '')",
+             (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
+conn.commit()
+conn.close()
+wait_staging = os.path.join(wait_dir, "market.db.staging")
+orig_paths = (A.STATUS, A.LOCK, A.PAUSE, A.CLIENT_DB_STATUS,
+              A.PIPELINE_LOCK_WAIT_S)
+A.STATUS = os.path.join(wait_dir, "codal_auto_status.json")
+A.LOCK = os.path.join(wait_dir, "codal_auto.lock")
+A.PAUSE = os.path.join(wait_dir, "codal_auto_pause")
+A.CLIENT_DB_STATUS = os.path.join(wait_dir, "codal_db_status.json")
+A.PIPELINE_LOCK_WAIT_S = 0
+wait_status = {}
+try:
+    ck(A._client_download_active() is False, "دانلودِ کلاینت فعال نیست")
+    ck(not os.path.exists(A.PAUSE), "فایلِ pause وجود ندارد")
+    r = A.run(dry_run=True, db_path=wait_db, staging_dir=wait_staging)
+    with open(A.STATUS, "r", encoding="utf-8") as fh:
+        wait_status = json.load(fh)
+    wait_lock = A.LOCK
+finally:
+    (A.STATUS, A.LOCK, A.PAUSE, A.CLIENT_DB_STATUS,
+     A.PIPELINE_LOCK_WAIT_S) = orig_paths
+ck(any("pipeline_busy" in e for e in r["errors"]),
+   "run() با قفلِ تازهٔ pipeline ⇒ خطای pipeline_busy", r)
+ck(not os.path.exists(wait_staging),
+   "هیچ staging DB/backup ساخته نشد", os.listdir(wait_dir))
+ck(wait_status.get("stage") == "pipeline_busy",
+   "status همان stage ترمینالِ pipeline_busy را ثبت کرد", wait_status)
+ck(not os.path.exists(wait_lock), "قفلِ orchestrator آزاد شد")
