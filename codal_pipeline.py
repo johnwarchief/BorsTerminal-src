@@ -615,6 +615,21 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     res["enqueued"] = added
     res["watermarks"] = advanced
     res.setdefault("found", 0)
+    # پرچمِ شکاف: «فیدِ این پاس کامل خوانده شد؟» پاسِ ناقص/بلاک‌شده یعنی ممکن
+    # است اطلاعیه‌ای میانِ صفحات جا مانده باشد؛ شمارندۀ پیاپی برایِ escalation
+    # است و هر پاسِ کامل هر دو را صفر می‌کند تا پرچم کهنه نماند.
+    if res.get("complete", True) and not res.get("blocked"):
+        cursor_set(conn, "notice_gap_flag", "0", note="discovery complete")
+        cursor_set(conn, "notice_incomplete_streak", "0",
+                   note="discovery complete")
+    else:
+        cursor_set(conn, "notice_gap_flag", "1", note="discovery incomplete")
+        try:
+            streak = int(cursor_get(conn, "notice_incomplete_streak", "0") or 0) + 1
+        except (TypeError, ValueError):
+            streak = 1
+        cursor_set(conn, "notice_incomplete_streak", str(streak),
+                   note="discovery incomplete")
     return res
 
 
@@ -1072,8 +1087,8 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
     `pipeline_dirty` دست‌نخورده می‌ماند (`out["recalc_invalidate_only"]`).
     """
     now = now or now_s()
-    out = {"skipped": None, "recovered": 0, "found": 0, "enqueued": 0,
-           "done": 0, "empty": 0, "failed": 0, "rejected": 0,
+    out = {"skipped": None, "recovered": 0, "found": 0, "pages": 0,
+           "enqueued": 0, "done": 0, "empty": 0, "failed": 0, "rejected": 0,
            "processed": 0, "symbols": [], "dirty": 0, "recomputed": 0,
            "cache_invalidated": 0, "checkpoint_before": cursor_get(conn, "discovery_day"),
            "checkpoint_after": None, "run_id": None, "error": None,
@@ -1104,6 +1119,7 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
         if discover:
             found = discover(conn) or {}
             out["found"] = int(found.get("found") or 0)
+            out["pages"] = int(found.get("pages") or 0)
         # کارها از `pending_notices` می‌آیند: همان فیلترِ «صندوق/مشتق را با
         # پارسرِ صورتِ مالی نخور» و همان ترتیبِ canonical — تعریفِ دوم نمی‌شود.
         pend = CF.pending_notices(conn)
@@ -1145,6 +1161,10 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
         if touched:
             out["touched"] = sorted(touched)
             out["invalidated_symbols"] = _invalidate_materialized(conn, sorted(touched))
+            # `pipeline_runs.cache_invalidated` باید هم باطل‌سازیِ فوری و هم
+            # مرحلهٔ محاسبه را نشان دهد، وگرنه گزارشِ چرخه کم می‌شمارد.
+            out["cache_invalidated"] = (int(out.get("cache_invalidated") or 0)
+                                        + int(out.get("invalidated_symbols") or 0))
             # کشِ payload اسکرینر سراسری است؛ یک‌بار در هر چرخه، نه per-symbol.
             try:
                 from api.screener import invalidate_screener_cache
@@ -1168,7 +1188,8 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             dirty = dirty_take(conn, limit=RECALC_BATCH)
             res = recalc(conn, dirty) or {}
             out["recomputed"] = int(res.get("recomputed") or 0)
-            out["cache_invalidated"] = int(res.get("cache_invalidated") or 0)
+            out["cache_invalidated"] = (int(out.get("cache_invalidated") or 0)
+                                        + int(res.get("cache_invalidated") or 0))
             out["recalc_failed"] = int(res.get("failed") or 0)
             reported = res.get("done_symbols")
             # فقط وقتی محاسبه‌گر خروجیِ **تک‌نمادی** گزارش می‌کند، بی‌جواب‌ها را
@@ -1441,7 +1462,9 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
     `network=None` یعنی خودِ زمان‌بند تصمیم بگیرد: اگر خزندۀ دستی در کار است،
     یا پاسِ شبکه‌ای زودتر از فاصلۀ تطبیقیِ `current_network_gap` از این است
     (پنجرۀ انتشارِ یادگرفته: ۶۰۰ ثانیه داخلِ پنجره، ۳ ساعت بیرون)، فقط صفِ
-    محلی/کارهایِ بازیابی‌شدنی زده می‌شود (بی‌درخواستِ تازه). `recalc=None` هنگامِ
+    محلی/کارهایِ بازیابی‌شدنی زده می‌شود (بی‌درخواستِ تازه). سقفِ روزانۀ
+    صفحه‌هایِ فید (`DAILY_REQUEST_CAP`) بر همین تصمیم حاکم است: بودجۀ تمام‌شده
+    یعنی پاسِ شبکه حتی با `network=True` موکول می‌شود. `recalc=None` هنگامِ
     بازارِ باز یعنی حالتِ invalidate-only: ردیفِ `fts_results` نمادهایِ
     نوشته‌شده **همان‌جا** باطل می‌شود ولی محاسبۀ سنگین به چرخۀ بعد موکول
     است — نمادها درِ `pipeline_dirty` می‌مانند و چیزی گم نمی‌شود.
@@ -1466,9 +1489,22 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
                                "at": now, "queue": counts(conn)}}
         network_gap_s, publication = current_network_gap(conn, now=now, jitter=True)
         age_net = _age_s(cursor_get(conn, CURSOR_LAST_NETWORK), _to_dt(now))
+        # بودجۀ روزانۀ درخواست: هر پاسِ شبکه به اندازۀ صفحه‌هایِ خوانده‌شده
+        # (/دست‌کم ۱) از سهمِ روز کم می‌کند تا یک چرخۀ بی‌پایان، کدال را
+        # بی‌سقف نکوبد. روزِ تازه یعنی شمارنده از صفر.
+        day = str(now)[:10]
+        try:
+            req = json.loads(cursor_get(conn, DAILY_REQUEST_CURSOR) or "{}")
+        except (TypeError, ValueError, sqlite3.Error):
+            req = {}
+        if not isinstance(req, dict) or req.get("day") != day:
+            req = {"day": day, "count": 0}
+        budget_left = DAILY_REQUEST_CAP - int(req.get("count") or 0)
         want = age_net is None or age_net >= int(network_gap_s)
         want = want and not busy["busy"]
         use_network = want if network is None else bool(network)
+        if budget_left <= 0:
+            use_network = False
         if offline_gate():
             use_network = False
         if (not use_network and not force
@@ -1489,6 +1525,15 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
                        note="cycle=%s skipped=%s" % (res.get("run_id"),
                                                      res.get("skipped")))
         res["network"] = use_network
+        if use_network:
+            used = int(res.get("pages") or 0) or 1
+            req["count"] = int(req.get("count") or 0) + used
+            try:
+                cursor_set(conn, DAILY_REQUEST_CURSOR, json.dumps(req),
+                           note="pages=%d" % used)
+            except sqlite3.Error:
+                pass
+        res["daily_requests"] = req
         res["publication"] = publication
         res["network_gap_s"] = int(network_gap_s)
         res["recalc_deferred"] = bool(defer_recalc and recalc is None)
@@ -1523,7 +1568,9 @@ def start_worker(db_path=None, owner=None, *, budget=8, tick_s=30,
                 _WORKER["cycles"] = int(_WORKER.get("cycles") or 0) + 1
                 _WORKER["last"] = {k: r.get(k) for k in
                                    ("skipped", "processed", "done", "failed",
-                                    "network", "recalc_deferred", "error")}
+                                    "network", "recalc_deferred", "error",
+                                    "touched", "invalidated_symbols",
+                                    "recalc_invalidate_only")}
                 wait = int((r.get("wakeup") or {}).get("seconds") or CADENCE_MIN_S)
             except Exception as e:
                 _WORKER["last_error"] = "%s: %s" % (type(e).__name__, e)
@@ -1630,6 +1677,20 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
     # این دو درِ پاسخِ سلامت جدا می‌مانند.
     last_data = _scalar("SELECT MAX(tried_at) FROM codal_extracted"
                         " WHERE state='done'")
+    try:
+        gap, pub = current_network_gap(conn, now=None, jitter=False)
+    except Exception:
+        gap, pub = SLOW_GAP_S, {"windows": [list(w) for w in CAD.DEFAULT_WINDOWS],
+                                "source": "default", "samples": 0,
+                                "labels": CAD.window_labels(CAD.DEFAULT_WINDOWS),
+                                "inside_window": False, "network_gap_s": SLOW_GAP_S,
+                                "enabled": False}
+    try:
+        req = json.loads(cursor_get(conn, DAILY_REQUEST_CURSOR) or "{}")
+    except (TypeError, ValueError, sqlite3.Error):
+        req = {}
+    if not isinstance(req, dict):
+        req = {}
     return {
         "queue": c,
         "dirty_symbols": dirty_count(conn),
@@ -1639,6 +1700,11 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
         "data_epoch": "%s|%s" % (last_data or "",
                                  _scalar("SELECT COUNT(*) FROM financial_statements")
                                  or 0),
+        "publication": pub,
+        "last_new_notice_at": _scalar("SELECT MAX(fetched_at) FROM codal_notices"),
+        "gap_flag": cursor_get(conn, "notice_gap_flag") == "1",
+        "incomplete_streak": int(cursor_get(conn, "notice_incomplete_streak", "0") or 0),
+        "daily_requests": {"day": req.get("day"), "count": int(req.get("count") or 0)},
         "last_successful_sync": ({"at": last_ok[0], "cycle": last_ok[1],
                                   "processed": last_ok[2], "done": last_ok[3],
                                   "failed": last_ok[4]} if last_ok else None),
@@ -1666,7 +1732,10 @@ def status_payload(conn, now=None):
     """
     h = health(conn)
     h["catchup"] = catchup_state(conn, now=now)
-    h["cadence"] = next_wakeup(conn, now=now)
+    # همان gapِ پویایی که worker برایِ تصمیمِ پاسِ شبکه به کار می‌برد — نه
+    # پیش‌فرضِ ثابتِ ۳ ساعت، وگرنه cadenceِ گزارش‌شده با رفتارِ worker نمی‌خواند.
+    gap_s = (h.get("publication") or {}).get("network_gap_s") or SLOW_GAP_S
+    h["cadence"] = next_wakeup(conn, now=now, network_gap_s=gap_s)
     try:
         h["incomplete_extractions"] = int(conn.execute(
             "SELECT COUNT(*) FROM codal_extracted WHERE state='empty'"

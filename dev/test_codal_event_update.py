@@ -10,6 +10,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import time
 
 os.environ["BORS_CODAL_OFFLINE"] = "1"
 for _s in (sys.stdout, sys.stderr):
@@ -507,3 +508,172 @@ from api.fundamental import router as FR  # noqa: E402
 paths = [r.path for r in FR.routes]
 ck(paths.index("/api/fundamental/freshness") < paths.index("/api/fundamental/{symbol}"),
    "route تازگی پیش از مسیرِ پویا ثبت شده است", paths)
+
+# ── ۷) وضعیت، پرچم شکاف و بودجهٔ روزانه ─────────────────────────────────
+section("status: gap flag / daily budget / publication")
+c = fresh_db()
+for i in range(240):
+    add_notice(c, 5000 + i, "نماد%d" % i,
+               pub="1405/07/20 %02d:10:00" % (9 + (i % 3)))
+h = PL.health(c)
+ck("publication" in h and "network_gap_s" in h["publication"],
+   "health پنجره و gap را گزارش می‌کند", h.get("publication"))
+ck("daily_requests" in h and "gap_flag" in h
+   and "incomplete_streak" in h and "last_new_notice_at" in h,
+   "کلیدهای تازهٔ status حاضرند", sorted(h.keys()))
+ck("quarantined" in h.get("queue", {}),
+   "health قرنطینه را در queue نگه می‌دارد", h.get("queue"))
+ck(h.get("last_new_notice_at") == "2026-11-03 00:00:00"
+   and h.get("gap_flag") is False and h.get("incomplete_streak") == 0,
+   "مقدارهای تازهٔ status از خود بانک می‌آیند",
+   {k: h.get(k) for k in ("last_new_notice_at", "gap_flag",
+                          "incomplete_streak")})
+
+c2 = fresh_db()
+blocked = PL.discover_auto(c2, fetch=lambda *a, **k: None,
+                           now="2026-11-03 20:00:00")
+ck(blocked.get("complete") is False and blocked.get("blocked") is True,
+   "فیدِ بی‌پاسخ ⇒ پاسِ ناقص/بلاک اعلام می‌شود", blocked)
+ck(PL.cursor_get(c2, "notice_gap_flag") == "1",
+   "پاسِ ناقص ⇒ پرچم شکاف روشن")
+ck(int(PL.cursor_get(c2, "notice_incomplete_streak", "0") or 0) >= 1,
+   "شمارندهٔ شکافِ پیاپی افزایش یافت")
+blocked2 = PL.discover_auto(c2, fetch=lambda *a, **k: None,
+                            now="2026-11-03 20:10:00")
+ck(int(PL.cursor_get(c2, "notice_incomplete_streak") or 0) == 2,
+   "پاسِ ناقصِ دوم شمارندهٔ پیاپی را یکی بالا می‌برد", blocked2)
+real_dn = CF.discover_notices
+CF.discover_notices = lambda *a, **k: {"found": 0, "items": [], "floors": {},
+                                       "complete": True, "blocked": False,
+                                       "pages": 1, "newest": None}
+try:
+    PL.discover_auto(c2, fetch=lambda *a, **k: None,
+                     now="2026-11-03 20:20:00")
+finally:
+    CF.discover_notices = real_dn
+ck(PL.cursor_get(c2, "notice_gap_flag") == "0"
+   and int(PL.cursor_get(c2, "notice_incomplete_streak") or 0) == 0,
+   "کشفِ کامل ⇒ پرچم و شمارندهٔ شکاف صفر می‌شوند",
+   (PL.cursor_get(c2, "notice_gap_flag"),
+    PL.cursor_get(c2, "notice_incomplete_streak")))
+
+c3 = fresh_db()
+real_disc = PL.discover_auto
+PL.discover_auto = lambda *a, **k: {"found": 0, "enqueued": 0, "items": [],
+                                    "floors": {}, "complete": True,
+                                    "blocked": False, "pages": 2}
+try:
+    out = PL.run_cycle(c3, "test", discover=PL.discover_auto,
+                       scrape=lambda n: (None, None, "empty"),
+                       now="2026-11-03 20:00:00", instruments=lambda conn: {})
+finally:
+    PL.discover_auto = real_disc
+ck(out.get("pages") == 2, "run_cycle تعداد صفحه‌های فید را گزارش می‌کند", out)
+
+# ── ۷ب) بودجهٔ روزانهٔ درخواست در worker_once ─────────────────────────────
+section("worker: daily request budget")
+c5 = fresh_db()
+real_gate = PL.offline_gate
+real_orch = PL.orchestrator_busy
+real_cap = PL.DAILY_REQUEST_CAP
+PL.discover_auto = lambda *a, **k: {"found": 0, "enqueued": 0, "items": [],
+                                    "floors": {}, "complete": True,
+                                    "blocked": False, "pages": 2}
+PL.offline_gate = lambda: False
+PL.orchestrator_busy = lambda *a, **k: {"busy": False, "reason": ""}
+PL.DAILY_REQUEST_CAP = 4
+try:
+    r1 = PL.worker_once(conn=c5, now="2026-11-03 20:00:00", network=None,
+                        busy={"busy": False, "reason": "idle"})
+    r2 = PL.worker_once(conn=c5, now="2026-11-03 20:10:00", network=True,
+                        busy={"busy": False, "reason": "idle"})
+    r3 = PL.worker_once(conn=c5, now="2026-11-03 20:20:00", network=True,
+                        force=True, busy={"busy": False, "reason": "idle"})
+    r4 = PL.worker_once(conn=c5, now="2026-11-04 20:00:00", network=None,
+                        busy={"busy": False, "reason": "idle"})
+finally:
+    PL.discover_auto = real_disc
+    PL.offline_gate = real_gate
+    PL.orchestrator_busy = real_orch
+    PL.DAILY_REQUEST_CAP = real_cap
+ck(r1.get("network") is True and r1.get("pages") == 2
+   and (r1.get("daily_requests") or {}).get("count") == 2,
+   "پاسِ شبکه صفحه‌های فید را در بودجهٔ روز می‌نویسد",
+   {k: r1.get(k) for k in ("network", "pages", "daily_requests")})
+ck((r2.get("daily_requests") or {}).get("count") == 4,
+   "بودجهٔ روز انباشته می‌شود", r2.get("daily_requests"))
+ck(r3.get("network") is False and r3.get("pages") == 0
+   and (r3.get("daily_requests") or {}).get("count") == 4,
+   "بودجهٔ تمام‌شده ⇒ پاسِ شبکه حتی با network=True متوقف می‌شود",
+   {k: r3.get(k) for k in ("network", "pages", "daily_requests")})
+ck(r4.get("network") is True
+   and (r4.get("daily_requests") or {}).get("day") == "2026-11-04"
+   and (r4.get("daily_requests") or {}).get("count") == 2,
+   "روزِ تازه ⇒ بودجه از صفر شروع می‌شود", r4.get("daily_requests"))
+
+# ── ۷ج) بازبینی: gapِ پویا در status_payload و فیلدهایِ lastِ worker ──────
+section("status_payload: dynamic gap from health publication")
+c6 = fresh_db()
+PL.cursor_set(c6, PL.CURSOR_LAST_NETWORK, "2026-11-03 10:00:00")
+real_gap = PL.current_network_gap
+stub_pub = {"windows": [list(w) for w in CAD.DEFAULT_WINDOWS],
+            "source": "default", "samples": 0,
+            "labels": CAD.window_labels(CAD.DEFAULT_WINDOWS),
+            "inside_window": True, "network_gap_s": 777, "enabled": True}
+PL.current_network_gap = lambda conn, now=None, jitter=True: (777, dict(stub_pub))
+try:
+    sp = PL.status_payload(c6, now="2026-11-03 10:00:00")
+finally:
+    PL.current_network_gap = real_gap
+ck("network_gap_s" in sp.get("publication", {}),
+   "status_payload پنجرهٔ انتشار را گزارش می‌کند", sp.get("publication"))
+ck((sp.get("cadence") or {}).get("seconds") == 777
+   and (sp.get("cadence") or {}).get("reason") == "discovery-gap",
+   "status_payload همان gapِ پویای worker را به کار می‌برد", sp.get("cadence"))
+
+section("worker_status: new cycle fields reach last")
+real_wo = PL.worker_once
+PL.worker_once = lambda **k: {"skipped": None, "touched": ["فولاد"],
+                              "invalidated_symbols": 2,
+                              "recalc_invalidate_only": True,
+                              "wakeup": {"seconds": 60}}
+PL._WORKER["last"] = None
+try:
+    PL.start_worker(":memory:", owner="last-fields",
+                    conn_factory=lambda: None)
+    for _ in range(100):
+        if PL._WORKER.get("last"):
+            break
+        time.sleep(0.02)
+finally:
+    PL.stop_worker(timeout_s=2)
+    PL.worker_once = real_wo
+last = PL.worker_status().get("last") or {}
+ck({"touched", "invalidated_symbols", "recalc_invalidate_only"} <= set(last),
+   "فیلدهای تازهٔ چرخه در worker_status می‌نشینند", last)
+ck(last.get("invalidated_symbols") == 2 and last.get("touched") == ["فولاد"],
+   "مقدارهای last همان خروجی چرخه‌اند", last)
+
+# ── ۷د) بازبینی: cache_invalidated باطل‌سازیِ فوری را هم می‌شمارد ──────────
+section("run_cycle: cache_invalidated includes immediate invalidation")
+c7 = fresh_db()
+add_notice(c7, 7001, "فولاد")
+PL.enqueue(c7, [(7001, "ms")])
+real_inv = PL._invalidate_materialized
+PL._invalidate_materialized = lambda conn, symbols: len(symbols)
+try:
+    out = PL.run_cycle(
+        c7, "acct", discover=None,
+        scrape=lambda n: ms_row(7001, "فولاد"),
+        recalc=lambda conn, dirty: {"recomputed": len(dirty),
+                                    "cache_invalidated": 2},
+        now="2026-11-03 20:00:00", instruments=lambda conn: {})
+finally:
+    PL._invalidate_materialized = real_inv
+ck(out.get("invalidated_symbols") == 1 and out.get("cache_invalidated") == 3,
+   "cache_invalidated باطل‌سازیِ فوری و محاسبه را با هم می‌شمارد", out)
+row = c7.execute("SELECT cache_invalidated FROM pipeline_runs ORDER BY id DESC"
+                 " LIMIT 1").fetchone()
+ck(row is not None and int(row[0] or 0) == 3,
+   "pipeline_runs هم همان عددِ کامل را ثبت می‌کند",
+   tuple(row) if row is not None else None)
