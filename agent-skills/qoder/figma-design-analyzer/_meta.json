@@ -1,0 +1,11 @@
+{
+  "owner": "plume-lj",
+  "slug": "figma-design-analyzer",
+  "displayName": "figma-design-analyzer",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1776152341019,
+    "commit": "https://github.com/openclaw/skills/commit/b14e1be508d1a936424a956b6640fa812429e8bd"
+  },
+  "history": []
+}

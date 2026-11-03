@@ -1,0 +1,11 @@
+{
+  "owner": "muyanshouji",
+  "slug": "frontend-agent",
+  "displayName": "Frontend Agent",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772928417416,
+    "commit": "https://github.com/openclaw/skills/commit/94bb9ec871258ec554eb2f5c2807537af330ba01"
+  },
+  "history": []
+}

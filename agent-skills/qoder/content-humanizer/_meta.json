@@ -1,0 +1,11 @@
+{
+  "owner": "wyhw",
+  "slug": "content-humanizer-zh",
+  "displayName": "内容人性化助手",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773816816857,
+    "commit": "https://github.com/openclaw/skills/commit/552dad2fc7ee2194e8beddb505583370854fa1c5"
+  },
+  "history": []
+}

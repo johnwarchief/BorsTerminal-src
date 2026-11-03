@@ -62,6 +62,13 @@ CJK_ALLOW_REASON = {MABNA: "نامِ ژاپنیِ ایچیموکو درِ یاد
 #: فایل‌هایی که ك/ي عربی درِ آنها بی‌استثنا خطاست (متنِ سرخطی، نه دادهٔ تابلو)
 STRICT_KEF_YEH_PREFIXES = ("execution_", "dev/execution_", "docs/execution/")
 
+#: درختِ اسکیل‌هایِ واردشده از ماشینِ دیگر (agent-skills/): بستۀ دست‌نخوردهٔ
+#: اسکیل‌هایِ شخصِ سوم که عمداً عبارت‌هایِ فعال‌سازِ چینی در توضیحشان دارند.
+#: این‌ها محتوایِ خودِ اسکیل‌اند، نه نویسهٔ جاافتاده در متنِ فارسیِ ما؛ پس فقط
+#: سنسورِ CJK رویِ همین درخت خاموش است و دو سنسورِ دیگر سرِ جایشان می‌مانند.
+#: ویرایشِ محتوایِ آن کپی، آرشیو را خراب می‌کند.
+VENDORED_CJK_PREFIXES = ("agent-skills/",)
+
 #: سم‌هایِ selftest هم با کدپوینت، نه با نویسهٔ خام
 POISON_CJK = chr(0x89C2) + chr(0x6D4B)
 POISON_KEF = chr(0x0643)
@@ -94,10 +101,11 @@ def hits_in(path, text, strict_kef_yeh=None):
     if strict_kef_yeh is None:
         strict_kef_yeh = path.startswith(STRICT_KEF_YEH_PREFIXES)
     allowed = CJK_ALLOW.get(path, frozenset())
+    cjk_exempt = path.startswith(VENDORED_CJK_PREFIXES)
     out = []
     for n, line in enumerate(text.split("\n"), 1):
         for tok in CJK.findall(line):
-            if tok not in allowed:
+            if not cjk_exempt and tok not in allowed:
                 out.append(("CJK", n, tok))
         if BARE_BANNER.search(line):
             out.append(("BANNER", n, line.strip()[:48]))

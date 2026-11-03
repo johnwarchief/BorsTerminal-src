@@ -1,0 +1,21 @@
+examples:
+  - id: llm-principles
+    title:
+      zh: 大模型工作原理
+      en: How LLMs Work
+    description:
+      zh: 用工程蓝图风格示意图说明大语言模型如何工作
+      en: Explain LLM mechanics with a flat blueprint-style diagram
+    prompt:
+      zh: 解释大模型工作原理
+      en: Explain the working principles of large language models (LLMs)
+  - id: cicd-pipeline
+    title:
+      zh: CI/CD 流水线
+      en: CI/CD Pipeline
+    description:
+      zh: Build → Test → Review → Deploy 四阶段及环境配置
+      en: Four stages plus environment configuration
+    prompt:
+      zh: CI/CD 流水线流程图，包含 Build → Test → Review → Deploy 四个阶段及环境配置
+      en: CI/CD Pipeline Flowchart, including four stages — Build → Test → Review → Deploy — along with environment configuration.

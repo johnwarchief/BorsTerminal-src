@@ -1,0 +1,11 @@
+{
+  "owner": "dxie48892-jpg",
+  "slug": "multi-agent-workflow",
+  "displayName": "Multi Agent Workflow",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1774069516345,
+    "commit": "https://github.com/openclaw/skills/commit/83cd22c1d62b2e40143ccc1a93652287fbc6548e"
+  },
+  "history": []
+}
