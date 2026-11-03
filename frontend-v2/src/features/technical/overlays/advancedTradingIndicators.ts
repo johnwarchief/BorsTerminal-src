@@ -64,8 +64,82 @@ export const SUPER_TREND_PULLBACK_DEFAULTS = {
   pullbackAtr: 1.0,
 };
 
+/**
+ * کدام بازه‌های figure باید بمانند؟
+ *
+ * حلقهٔ تشخیص اول همهٔ سقف‌ها و بعد همهٔ کف‌ها را می‌سازد، پس «آخرینِ آرایه»
+ * با «آخرینِ بازار» یکی نیست. اینجا مرتب‌سازی بر اساس barIndex است و خروجی
+ * بازه‌های figure به ترتیبِ خودشان است تا بتوان مستقیم slice کرد.
+ */
+export function capPatternFigures(
+  marks: Array<{ figureStart: number; barIndex: number }>,
+  figureCount: number,
+  cap: number
+): Array<{ from: number; to: number }> {
+  if (marks.length <= cap) return [];
+  const keep = new Set([...marks].sort((a, b) => a.barIndex - b.barIndex).slice(-cap));
+  const ordered = [...marks].sort((a, b) => a.figureStart - b.figureStart);
+  const ranges: Array<{ from: number; to: number }> = [];
+  for (let i = 0; i < ordered.length; i++) {
+    if (!keep.has(ordered[i])) continue;
+    const from = ordered[i].figureStart;
+    const to = i + 1 < ordered.length ? ordered[i + 1].figureStart : figureCount;
+    ranges.push({ from, to });
+  }
+  return ranges;
+}
+
 function num(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * پالتِ اعلام‌شده در خودِ سورسِ Pine:
+ * docs/technical-indicators/inbox/Indi 516.txt سطرهای ۴۸ تا ۳
+ *   cTop #FF2079 · cBot #00F0FF · cWin #39FF14 · cLoss #FF5F1F · cTP #FFF01F · cNeck #BC13FE
+ *
+ * پیش از این اورلی در تمِ روشن هر رنگ را به هویۀ دیگری از Tailwind عوض می‌کرد
+ * (#be123c، #7c3aed، #047857، #9f1239) که در هیچ‌کدام از آن شش خط نیست. سورس
+ * فقط یک پالت دارد و تصویرِ مرجع هم همان را می‌زند، پس تمِ روشن هم همین شش رنگ
+ * را با آلفا می‌گیرد، نه هویۀ اختراع‌شده.
+ */
+export const DOUBLE_TAP_INK = {
+  top: '#ff2079',
+  bottom: '#00f0ff',
+  win: '#39ff14',
+  loss: '#ff5f1f',
+  target: '#fff01f',
+  neck: '#bc13fe',
+  labelText: '#000000',
+};
+
+/** rgba از یک hex، برای پرِ Face‌های سه‌بعدی (سورس: fill_color = color.new(c, 55|85)) */
+function rgba(hex: string, alphaPct: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${(100 - alphaPct) / 100})`;
+}
+
+/**
+ * برچسبِ مرجع یک جعبۀ رنگی با متنِ سیاه است (label.new(..., color = c, textcolor = #000000)),
+ * نه متنِ رنگیِ بی‌پس‌زمینه. TextStyle در klinecharts خودش backgroundColor و padding
+ * دارد، پس یک figure کافی است و مستطیلِ دستی لازم نیست.
+ */
+function chip(bg: string, size = 10) {
+  return {
+    color: DOUBLE_TAP_INK.labelText,
+    backgroundColor: bg,
+    size,
+    weight: 'bold',
+    family: 'Vazirmatn, sans-serif',
+    paddingLeft: 6,
+    paddingRight: 6,
+    paddingTop: 3,
+    paddingBottom: 3,
+    borderRadius: 2,
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -193,7 +267,6 @@ export function registerDoubleTap3DOverlay(): void {
       const n = dataList.length;
       if (n < 20) return [];
 
-      const isLight = getIsLight();
       const stored = useTechnicalStore.getState().indicatorParams.DoubleTap3D ?? {};
       const pivLeft = num(stored.pivLeft, DOUBLE_TAP_DEFAULTS.pivLeft);
       const pivRight = num(stored.pivRight, DOUBLE_TAP_DEFAULTS.pivRight);
@@ -210,7 +283,7 @@ export function registerDoubleTap3DOverlay(): void {
        * بلوکِ یک الگو رخ می‌دهند، این نشانگر اجازه می‌دهد رسمِ الگوهای قدیمی‌تر
        * دور ریخته شود بی‌آنکه ساختار تابع عوض شود.
        */
-      const patternFigureStarts: number[] = [];
+      const patternMarks: Array<{ figureStart: number; barIndex: number }> = [];
 
       // شناسایی پیوت‌های سقف و کف
       const isPivotHigh = (idx: number): boolean => {
@@ -319,7 +392,7 @@ export function registerDoubleTap3DOverlay(): void {
               const y3 = getY(params, p3Price);
 
               const patternStatus = breakoutIdx !== -1 ? 'active' : 'forming';
-              patternFigureStarts.push(figures.length);
+              patternMarks.push({ figureStart: figures.length, barIndex: p1.index });
               detectedPatterns.push({
                 id: `double-top-${p1.index}`,
                 type: 'DOUBLE_TOP',
@@ -337,42 +410,36 @@ export function registerDoubleTap3DOverlay(): void {
                 status: patternStatus,
               });
 
-              // ۱. ساقه‌های ۵ نقطه‌ای سه‌بعدی و سایه‌دار الگوی کامل M (P0 -> P1 -> Neck -> P2 -> P3)
-              figures.push({
-                type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: x0, y: y0 },
-                    { x: x1, y: y1 },
-                    { x: xNeck, y: yNeck },
-                    { x: x2, y: y2 },
-                    { x: x3, y: y3 },
-                  ],
-                },
-                styles: {
-                  color: isLight ? '#be123c' : '#ff2079',
-                  size: 2.5,
-                  style: 'solid',
-                },
-              });
+              // ۱. Faces سه‌بعدی: سورس دو چندضلعیِ پر می‌کشد
+              //    (topFace = fill 45%، sideFace = fill 15%)، نه فقط خط.
+              const legPts = [
+                { x: x0, y: y0 },
+                { x: x1, y: y1 },
+                { x: xNeck, y: yNeck },
+                { x: x2, y: y2 },
+                { x: x3, y: y3 },
+              ];
+              // روبانِ سه‌بعدی: باندِ نازکِ هم‌عرضِ مسیر، نه پرِ چندضلعیِ بسته.
+              // بستنِ مسیر، مثلثِ غول‌آسایی پر می‌کرد که کندل‌ها را می‌پوشاند؛
+              // مرجع یک روبانِ هم‌عرض در طولِ زیگزاگ می‌کشد.
+              const band = 7;
+              const lowerPts = legPts.map((pt) => ({ x: pt.x, y: pt.y + band }));
+              const sidePts = legPts.map((pt) => ({ x: pt.x + 5, y: pt.y + band }));
 
-              // سایه سه‌بعدی پایه‌ها (3D Extrusion)
+              figures.push({
+                type: 'polygon',
+                attrs: { coordinates: [...legPts, ...sidePts.slice().reverse()] },
+                styles: { color: rgba(DOUBLE_TAP_INK.top, 85), borderSize: 0 },
+              });
+              figures.push({
+                type: 'polygon',
+                attrs: { coordinates: [...legPts, ...lowerPts.slice().reverse()] },
+                styles: { color: rgba(DOUBLE_TAP_INK.top, 55), borderColor: DOUBLE_TAP_INK.top, borderSize: 1 },
+              });
               figures.push({
                 type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: x0 + 3, y: y0 + 3 },
-                    { x: x1 + 3, y: y1 + 3 },
-                    { x: xNeck + 3, y: yNeck + 3 },
-                    { x: x2 + 3, y: y2 + 3 },
-                    { x: x3 + 3, y: y3 + 3 },
-                  ],
-                },
-                styles: {
-                  color: isLight ? 'rgba(190, 18, 60, 0.20)' : 'rgba(255, 32, 121, 0.35)',
-                  size: 1.5,
-                  style: 'solid',
-                },
+                attrs: { coordinates: legPts },
+                styles: { color: DOUBLE_TAP_INK.top, size: 2.5, style: 'solid' },
               });
 
               // ۲. خط‌گردن افقی کامل با رنگ درخشان
@@ -388,14 +455,14 @@ export function registerDoubleTap3DOverlay(): void {
                   ],
                 },
                 styles: {
-                  color: isLight ? '#7c3aed' : '#bc13fe',
-                  size: 1.8,
+                  color: DOUBLE_TAP_INK.neck,
+                  size: 2,
                   style: 'dashed',
                   dashedValue: [5, 3],
                 },
               });
 
-              // برچسب خط‌گردن و الگوی سقف دوقلو
+              // برچسب الگو: جعبۀ رنگی با متنِ سیاه (label.new با textcolor = #000000)
               figures.push({
                 type: 'text',
                 attrs: {
@@ -405,46 +472,54 @@ export function registerDoubleTap3DOverlay(): void {
                   align: 'center',
                   baseline: 'bottom',
                 },
-                styles: {
-                  color: isLight ? '#9f1239' : '#ff2079',
-                  size: 9,
-                  family: 'Vazirmatn, sans-serif',
-                  weight: 'bold',
-                },
+                styles: chip(DOUBLE_TAP_INK.top),
               });
 
-              // ۳. خطوط حد سود TP1 و حد ضرر SL
+              // ۳. هدف‌ها و حد ضرر با استایلِ خودِ سورس:
+              //    TP1 توپر · TP2 خط‌چین · SL نقطه‌چین، هر سه width = 2
               const yTp1 = getY(params, tp1);
+              const yTp2 = getY(params, tp2);
+              const ySl = getY(params, stopLoss);
+              const tp1Text = `TP1 ${toFaDigits(Math.round(tp1))}`;
+              const tp2Text = `TP2 ${toFaDigits(Math.round(tp2))}`;
+              const slText = `SL ${toFaDigits(Math.round(stopLoss))}`;
+              // وقتی سه سطح نزدیک هم‌اند، برچسب‌ها روی هم می‌افتند؛ هر کدام ۶۲px
+              // عقب‌تر می‌نشیند و خطش هم با آن کوتاه می‌شود تا برچسب از خط جدا نشود.
+              const xTp1 = xEnd;
+              const xTp2 = Math.max(x2 + 30, xEnd - 62);
+              const xSl = Math.max(x2 + 30, xEnd - 124);
+
               figures.push({
                 type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: x2, y: yTp1 },
-                    { x: xEnd, y: yTp1 },
-                  ],
-                },
-                styles: {
-                  color: isLight ? '#047857' : '#39ff14',
-                  size: 1,
-                  style: 'dashed',
-                  dashedValue: [3, 3],
-                },
+                attrs: { coordinates: [{ x: x2, y: yTp1 }, { x: xTp1, y: yTp1 }] },
+                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'solid' },
+              });
+              figures.push({
+                type: 'text',
+                attrs: { x: xTp1, y: yTp1 - 6, text: tp1Text, align: 'right', baseline: 'bottom' },
+                styles: chip(DOUBLE_TAP_INK.target, 9),
               });
 
               figures.push({
+                type: 'line',
+                attrs: { coordinates: [{ x: x2, y: yTp2 }, { x: xTp2, y: yTp2 }] },
+                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'dashed', dashedValue: [6, 4] },
+              });
+              figures.push({
                 type: 'text',
-                attrs: {
-                  x: xEnd,
-                  y: yTp1 - 4,
-                  text: `هدف TP1: ${toFaDigits(Math.round(tp1))}`,
-                  align: 'right',
-                  baseline: 'bottom',
-                },
-                styles: {
-                  color: isLight ? '#047857' : '#39ff14',
-                  size: 8,
-                  family: 'Vazirmatn, sans-serif',
-                },
+                attrs: { x: xTp2, y: yTp2 - 6, text: tp2Text, align: 'right', baseline: 'bottom' },
+                styles: chip(DOUBLE_TAP_INK.target, 9),
+              });
+
+              figures.push({
+                type: 'line',
+                attrs: { coordinates: [{ x: x2, y: ySl }, { x: xSl, y: ySl }] },
+                styles: { color: DOUBLE_TAP_INK.loss, size: 2, style: 'dotted', dashedValue: [2, 3] },
+              });
+              figures.push({
+                type: 'text',
+                attrs: { x: xSl, y: ySl - 6, text: slText, align: 'right', baseline: 'bottom' },
+                styles: chip(DOUBLE_TAP_INK.loss, 9),
               });
             }
           }
@@ -527,7 +602,7 @@ export function registerDoubleTap3DOverlay(): void {
               const y3 = getY(params, t3Price);
 
               const patternStatus = breakoutIdx !== -1 ? 'active' : 'forming';
-              patternFigureStarts.push(figures.length);
+              patternMarks.push({ figureStart: figures.length, barIndex: t1.index });
               detectedPatterns.push({
                 id: `double-bottom-${t1.index}`,
                 type: 'DOUBLE_BOTTOM',
@@ -545,114 +620,95 @@ export function registerDoubleTap3DOverlay(): void {
                 status: patternStatus,
               });
 
-              // ۱. ساقه‌های ۵ نقطه‌ای سه‌بعدی و سایه‌دار الگوی کامل W (T0 -> T1 -> Neck -> T2 -> T3)
-              figures.push({
-                type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: x0, y: y0 },
-                    { x: x1, y: y1 },
-                    { x: xNeck, y: yNeck },
-                    { x: x2, y: y2 },
-                    { x: x3, y: y3 },
-                  ],
-                },
-                styles: {
-                  color: isLight ? '#0284c7' : '#00f0ff',
-                  size: 2.5,
-                  style: 'solid',
-                },
-              });
+              // ۱. Faces سه‌بعدی کف دوقلو، هم‌شکلِ بلوکِ M ولی با cBot
+              const legPts = [
+                { x: x0, y: y0 },
+                { x: x1, y: y1 },
+                { x: xNeck, y: yNeck },
+                { x: x2, y: y2 },
+                { x: x3, y: y3 },
+              ];
+              // روبانِ سه‌بعدی کف: باند به سمتِ بالا
+              const band = 7;
+              const upperPts = legPts.map((pt) => ({ x: pt.x, y: pt.y - band }));
+              const sidePts = legPts.map((pt) => ({ x: pt.x + 5, y: pt.y - band }));
 
-              // سایه سه‌بعدی پایه‌ها
+              figures.push({
+                type: 'polygon',
+                attrs: { coordinates: [...legPts, ...sidePts.slice().reverse()] },
+                styles: { color: rgba(DOUBLE_TAP_INK.bottom, 85), borderSize: 0 },
+              });
+              figures.push({
+                type: 'polygon',
+                attrs: { coordinates: [...legPts, ...upperPts.slice().reverse()] },
+                styles: { color: rgba(DOUBLE_TAP_INK.bottom, 55), borderColor: DOUBLE_TAP_INK.bottom, borderSize: 1 },
+              });
               figures.push({
                 type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: x0 + 3, y: y0 + 3 },
-                    { x: x1 + 3, y: y1 + 3 },
-                    { x: xNeck + 3, y: yNeck + 3 },
-                    { x: x2 + 3, y: y2 + 3 },
-                    { x: x3 + 3, y: y3 + 3 },
-                  ],
-                },
-                styles: {
-                  color: isLight ? 'rgba(2, 132, 199, 0.20)' : 'rgba(0, 240, 255, 0.35)',
-                  size: 1.5,
-                  style: 'solid',
-                },
+                attrs: { coordinates: legPts },
+                styles: { color: DOUBLE_TAP_INK.bottom, size: 2.5, style: 'solid' },
               });
 
               const xStart = Math.min(x0, x1);
               const xEnd = Math.min(bounding.width, Math.max(x2 + 80, x3 + 40, xNeck + 120));
 
-              // خط‌گردن درخشان بنفش
+              // خط‌گردن
               figures.push({
                 type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: xStart, y: yNeck },
-                    { x: xEnd, y: yNeck },
-                  ],
-                },
-                styles: {
-                  color: isLight ? '#7c3aed' : '#bc13fe',
-                  size: 1.8,
-                  style: 'dashed',
-                  dashedValue: [5, 3],
-                },
+                attrs: { coordinates: [{ x: xStart, y: yNeck }, { x: xEnd, y: yNeck }] },
+                styles: { color: DOUBLE_TAP_INK.neck, size: 2, style: 'dashed', dashedValue: [5, 3] },
               });
 
               // برچسب کف دوقلو W
+              const wText = `کف دوقلو W (${toFaDigits(score)}٪)`;
               figures.push({
                 type: 'text',
-                attrs: {
-                  x: x2,
-                  y: y2 + 10,
-                  text: `کف دوقلو W (${toFaDigits(score)}٪)`,
-                  align: 'center',
-                  baseline: 'top',
-                },
-                styles: {
-                  color: isLight ? '#0369a1' : '#00f0ff',
-                  size: 9,
-                  family: 'Vazirmatn, sans-serif',
-                  weight: 'bold',
-                },
+                attrs: { x: x2, y: y2 + 10, text: wText, align: 'center', baseline: 'top' },
+                styles: chip(DOUBLE_TAP_INK.bottom),
               });
 
-              // تارگت TP1
+              // ۳. هدف‌ها و حد ضرر با استایلِ سورس (برای W: هدف‌ها بالای خط‌گردن)
               const yTp1 = getY(params, tp1);
+              const yTp2 = getY(params, tp2);
+              const ySl = getY(params, stopLoss);
+              const tp1Text = `TP1 ${toFaDigits(Math.round(tp1))}`;
+              const tp2Text = `TP2 ${toFaDigits(Math.round(tp2))}`;
+              const slText = `SL ${toFaDigits(Math.round(stopLoss))}`;
+              const xTp1 = xEnd;
+              const xTp2 = Math.max(x2 + 30, xEnd - 62);
+              const xSl = Math.max(x2 + 30, xEnd - 124);
+
               figures.push({
                 type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: x2, y: yTp1 },
-                    { x: xEnd, y: yTp1 },
-                  ],
-                },
-                styles: {
-                  color: isLight ? '#047857' : '#39ff14',
-                  size: 1,
-                  style: 'dashed',
-                  dashedValue: [3, 3],
-                },
+                attrs: { coordinates: [{ x: x2, y: yTp1 }, { x: xTp1, y: yTp1 }] },
+                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'solid' },
+              });
+              figures.push({
+                type: 'text',
+                attrs: { x: xTp1, y: yTp1 + 6, text: tp1Text, align: 'right', baseline: 'top' },
+                styles: chip(DOUBLE_TAP_INK.target, 9),
               });
 
               figures.push({
+                type: 'line',
+                attrs: { coordinates: [{ x: x2, y: yTp2 }, { x: xTp2, y: yTp2 }] },
+                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'dashed', dashedValue: [6, 4] },
+              });
+              figures.push({
                 type: 'text',
-                attrs: {
-                  x: xEnd,
-                  y: yTp1 + 4,
-                  text: `هدف TP1: ${toFaDigits(Math.round(tp1))}`,
-                  align: 'right',
-                  baseline: 'top',
-                },
-                styles: {
-                  color: isLight ? '#047857' : '#39ff14',
-                  size: 8,
-                  family: 'Vazirmatn, sans-serif',
-                },
+                attrs: { x: xTp2, y: yTp2 + 6, text: tp2Text, align: 'right', baseline: 'top' },
+                styles: chip(DOUBLE_TAP_INK.target, 9),
+              });
+
+              figures.push({
+                type: 'line',
+                attrs: { coordinates: [{ x: x2, y: ySl }, { x: xSl, y: ySl }] },
+                styles: { color: DOUBLE_TAP_INK.loss, size: 2, style: 'dotted', dashedValue: [2, 3] },
+              });
+              figures.push({
+                type: 'text',
+                attrs: { x: xSl, y: ySl + 6, text: slText, align: 'right', baseline: 'top' },
+                styles: chip(DOUBLE_TAP_INK.loss, 9),
               });
             }
           }
@@ -675,13 +731,20 @@ export function registerDoubleTap3DOverlay(): void {
 
       /**
        * سقفِ رسم، نه سقفِ تشخیص. استور همه را نگه می‌دارد تا تب «اسکنر الگوها»
-       * واقعی بماند؛ فقط روی چارت آخرین N الگو می‌ماند. بدونِ این، سپيد با
-       * پارامترهای درست هم ۹ الگو × ۶ شکل = ۵۴ شکل می‌کشید.
+       * واقعی بماند؛ فقط آخرین N الگو روی چارت می‌ماند.
+       *
+       * «آخرین» یعنی به ترتیبِ زمانِ بازار، نه ترتیبِ حلقه. حلقه اول همهٔ سقف‌ها و
+       * بعد همهٔ کف‌ها را می‌سازد؛ با بریدنِ انتهای آرایه، هر سقفی حذف می‌شد تا
+       * وقتی کف‌ها به سقف برسند. سنجهٔ پیکسل دقیقاً همین را گرفت: در حالتِ
+       * سه‌الگویی فقط #00f0ff (کف) رسم می‌شد و #ff2079 صفر بود.
        */
       const cap = useTechnicalStore.getState().maxDrawnPatterns;
-      if (patternFigureStarts.length > cap) {
-        const keepFrom = patternFigureStarts[patternFigureStarts.length - cap];
-        figures.splice(0, keepFrom);
+      const ranges = capPatternFigures(patternMarks, figures.length, cap);
+      if (ranges.length) {
+        const kept: OverlayFigure[] = [];
+        for (const r of ranges) kept.push(...figures.slice(r.from, r.to));
+        figures.length = 0;
+        figures.push(...kept);
       }
 
       return figures;

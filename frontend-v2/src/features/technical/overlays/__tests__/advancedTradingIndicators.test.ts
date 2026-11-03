@@ -14,6 +14,7 @@ import {
   ADVANCED_INDICATORS_REGISTRY,
   DOUBLE_TAP_DEFAULTS,
   TRENDLINE_DEFAULTS,
+  capPatternFigures,
   registerAllAdvancedIndicators,
   registerDoubleTap3DOverlay,
   registerSuperTrendPullbackOverlay,
@@ -218,6 +219,25 @@ describe('Advanced Trading Indicators Registry & Overlays', () => {
     const strict = template.createPointFigures(createMockParams('DoubleTap3D'));
     expect(useTechnicalStore.getState().detectedDoubleTapPatterns.length).toBeLessThan(detectedAll);
     expect(strict.length).toBeLessThan(all.length);
+  });
+
+  it('the cap keeps the last patterns by market time, not by loop order', () => {
+    // حلقه اول همهٔ سقف‌ها را می‌سازد و بعد کف‌ها، پس «آخرینِ آرایه» با «آخرینِ
+    // بازار» یکی نیست. با بریدنِ انتهای آرایه، هر سقفی قربانی می‌شد تا وقتی کف‌ها
+    // به سقف برسند؛ سنجهٔ پیکسل همین را گرفت (فقط #00f0ff رسم می‌شد).
+    const marks = [
+      { figureStart: 0, barIndex: 100 }, // M قدیمی
+      { figureStart: 6, barIndex: 300 }, // M جدید
+      { figureStart: 12, barIndex: 200 }, // W
+      { figureStart: 18, barIndex: 50 }, // W قدیمی
+    ];
+    // دو الگوی آخرِ زمانی: W@200 و M@300 ⇒ بازه‌های ۶..۱۲ و ۱۲..۱۸
+    expect(capPatternFigures(marks, 24, 2)).toEqual([
+      { from: 6, to: 12 },
+      { from: 12, to: 18 },
+    ]);
+    // وقتی سقف از تعداد الگوها کمتر نیست، هیچ‌چیز بریده نمی‌شود
+    expect(capPatternFigures(marks, 24, 4)).toEqual([]);
   });
 
   it('SuperTrendPullback creates supertrend line, value zones and pullback arrows', () => {
