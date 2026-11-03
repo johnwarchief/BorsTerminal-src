@@ -57,8 +57,8 @@ from codal_row_gate import validate_extracted_row   # noqa: E402
 
 __all__ = [
     "now_s", "ensure_schema", "cursor_get", "cursor_set", "enqueue", "claim",
-    "mark_done", "mark_failed", "release_stale", "counts", "run_start",
-    "run_update", "run_finish", "last_run", "dirty_mark", "dirty_take",
+    "mark_done", "mark_failed", "release_stale", "release_quarantine", "counts",
+    "run_start", "run_update", "run_finish", "last_run", "dirty_mark", "dirty_take",
     "dirty_count", "lock_acquire", "lock_heartbeat", "lock_release", "lock_state",
     "health", "process_claimed", "run_cycle",
     "discover_auto", "watermarks", "cursor_notice_tn",
@@ -66,14 +66,16 @@ __all__ = [
     "discover_instruments", "coverage_resolver",
     "worker_once", "start_worker", "stop_worker", "worker_status",
     "next_wakeup", "catchup_state", "crawler_busy", "market_in_session",
-    "offline_gate", "status_payload",
+    "offline_gate", "status_payload", "maybe_invalidate_screener",
     "orchestrator_busy", "ORCHESTRATOR_LOCK_STALE_S",
     "CADENCE_IDLE_S", "CADENCE_BACKLOG_S", "DISCOVERY_MIN_GAP_S",
-    "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
+    "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE", "CURSOR_DEEP_PASS",
+    "PAGES_PER_CAT", "DEEP_PAGES_PER_CAT",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
     "publication_windows", "current_network_gap",
     "PUB_WINDOWS_CURSOR", "DAILY_REQUEST_CURSOR", "DAILY_REQUEST_CAP",
     "FAST_GAP_S", "SLOW_GAP_S",
+    "SCREENER_CACHE_DEBOUNCE_S", "CURSOR_SCREENER_DROP",
 ]
 
 # بودجۀ تلاش و backoffِ نمایی (ثانیه). بی‌این، یکِ اطلاعیهٔ بد‌نشانی هر چرخه
@@ -283,6 +285,36 @@ def release_stale(conn, older_than_s=CLAIM_STALE_S, now=None):
     return cur.rowcount
 
 
+def release_quarantine(conn, tracing_nos=None, reason="operator"):
+    """آزادسازیِ دستیِ ردیف‌هایِ قرنطینه‌شده — تنها راهِ خروج از قرنطینه.
+
+    قرنطینه عمداً از retry خودکار بیرون است (گیتِ ردیفی رد شده)، پس بدونِ این
+    دريچه یکِ ردیفِ رد‌شده تا ابد از چرخه بیرون می‌ماند. ردیف به `queued`
+    برمی‌گردد با `error_kind='requeued'` تا «تلاشِ تازهٔ اپراتور» از «خطایِ
+    اصلیِ گیت» در گزارش جدا بماند؛ `attempts` دست‌نخورده می‌ماند (تاریخِ
+    تلاش‌ها گم نمی‌شود). `tracing_nos=None` یعنی همهٔ قرنطینه‌ها.
+    """
+    where = "state='quarantined'"
+    params = [str(reason)[:300], now_s()]
+    if tracing_nos:
+        ids = []
+        for tn in tracing_nos:
+            try:
+                ids.append(int(tn))
+            except (TypeError, ValueError):
+                continue
+        if not ids:
+            return 0
+        where += " AND tracing_no IN (%s)" % ",".join("?" * len(ids))
+        params += ids
+    cur = conn.execute(
+        "UPDATE codal_extracted SET state='queued', error_kind='requeued',"
+        " last_error=?, next_attempt_at=NULL, claim_owner=NULL, claimed_at=NULL,"
+        " updated_at=? WHERE " + where, params)
+    conn.commit()
+    return cur.rowcount
+
+
 # ─── شمارش‌ها و گزارشِ چرخه ──────────────────────────────────────────────── #
 
 def counts(conn):
@@ -429,6 +461,43 @@ def dirty_take(conn, limit=None):
 
 RECALC_BATCH = 80               # سقفِ نماد در هر چرخه
 
+# کشِ payload اسکرینر/قیف **سراسری** است؛ هر باطل‌سازی یعنی اسکنِ دوبارهٔ کل
+# بازار (اندازه‌گیری‌شده: ~۲۷ ثانیه). در کادنسِ ۶۰۰ثانیه‌ای، باطل‌سازی در هر
+# چرخهٔ نویسنده یعنی این هزینه هر ۱۰ دقیقه. پس فقط dropِ payload (نه
+# `fts_results`) با ۳۰۰ ثانیه debounce می‌شود و زمانِ آخرین drop در
+# `pipeline_cursor` می‌ماند (چند process/restart هم همین را می‌بینند).
+SCREENER_CACHE_DEBOUNCE_S = 300
+CURSOR_SCREENER_DROP = "screener_payload_drop_at"
+_EPOCH_DT = datetime.datetime(1970, 1, 1)
+
+
+def maybe_invalidate_screener(conn, invalidate, now=None,
+                              min_interval_s=SCREENER_CACHE_DEBOUNCE_S,
+                              **kwargs):
+    """باطل‌سازیِ کشِ payload اسکرینر با debounceِ ماندگار.
+
+    `invalidate` خودِ `api.screener.invalidate_screener_cache` است (تزریق می‌شود
+    تا این ماژول stdlib-only بماند و گارد آفلاین بتواند بی‌import واقعی بسنجد).
+    برمی‌گرداند آیا این بار drop انجام شد. `fts_results` این‌جا لمس نمی‌شود؛
+    باطل‌سازیِ ردیفِ مادی همچنان بی‌تأخیر است.
+    """
+    at = _to_dt(now) or datetime.datetime.now()
+    stamp = int((at - _EPOCH_DT).total_seconds())
+    try:
+        last = int(float(cursor_get(conn, CURSOR_SCREENER_DROP, "0") or 0))
+    except (TypeError, ValueError):
+        last = 0
+    if last and 0 <= stamp - last < int(min_interval_s):
+        return False
+    invalidate(**kwargs)
+    try:
+        cursor_set(conn, CURSOR_SCREENER_DROP, str(stamp),
+                   note="screener payload drop (debounced %ss)"
+                   % int(min_interval_s))
+    except sqlite3.Error:
+        pass
+    return True
+
 
 def recompute_dirty(conn, dirty=None, *, judge=None, invalidate=None,
                     limit=RECALC_BATCH, now=None):
@@ -468,9 +537,12 @@ def recompute_dirty(conn, dirty=None, *, judge=None, invalidate=None,
         # بی‌مورد بودنِ آن یعنی قیف همان ردیفِ کهنه را نشان می‌دهد. بی‌`dirty`ِ
         # مصرف‌شده هیچ‌وقت صدا زده نمی‌شود، و `drop_materialized=False` چون
         # ردیفِ جدول را همین‌جا بردیم (در EXE هم تنها این راه می‌ماند).
+        # از موجِ رفعِ بازبینیِ نهایی، فقط همین drop با ۳۰۰ثانیه debounce
+        # می‌شود؛ باطل‌سازیِ `fts_results` بالا بی‌تأخیر مانده است.
         try:
             from api.screener import invalidate_screener_cache
-            invalidate_screener_cache(drop_materialized=False)
+            maybe_invalidate_screener(conn, invalidate_screener_cache,
+                                      now=now, drop_materialized=False)
         except Exception:
             pass
     if judge:
@@ -566,6 +638,12 @@ def lock_state(conn, key):
 # نگه داشته می‌شود و هرگز جانشینِ این نشانک یا قاطیِ دورۀ مالی نمی‌شود.
 CURSOR_NOTICE_TN = "notice_scan_tn_cat"
 CURSOR_NOTICE_DATE = "notice_newest_date"
+# بودجهٔ صفحهٔ هر دسته در هر پاسِ کشف: پاسِ عادی ۲، پاسِ عمیق (پس از پاسِ
+# ناقص/بلاک) ۳. عددِ قبلی (۶) با کادنسِ ۶۰۰ثانیه‌ای بودجهٔ روز را می‌سوزاند
+# و کشف را ساعت‌ها پیش از پایانِ پنجره متوقف می‌کرد.
+PAGES_PER_CAT = 2
+DEEP_PAGES_PER_CAT = 3
+CURSOR_DEEP_PASS = "notice_deep_pass"
 
 
 def cursor_notice_tn(cat):
@@ -594,9 +672,16 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     """
     cats = tuple(cats or CF.DISCOVERY_FEED_CATS)
     wms = watermarks(conn, cats)
+    # پاسِ عمیق: پس از پاسِ ناقص/بلاک، همان کشف با ۳ صفحه در هر دسته تکرار
+    # می‌شود تا شکافِ احتمالیِ میانِ صفحات جبران شود؛ پاسِ کامل پرچم را پاک
+    # می‌کند و کادنس به ۲ صفحه برمی‌گردد. `max_pages`ِ صریح بر پرچم مقدم است
+    # (گاردهای موجود همان را تزریق می‌کنند).
+    deep = str(cursor_get(conn, CURSOR_DEEP_PASS, "0") or "0").strip() == "1"
+    pages = (int(max_pages) if max_pages
+             else (DEEP_PAGES_PER_CAT if deep else PAGES_PER_CAT))
     res = CF.discover_notices(
         conn, watermarks=wms, cats=cats,
-        max_pages=int(max_pages or CF.DISCOVERY_MAX_PAGES),
+        max_pages=pages,
         overlap_pages=int(overlap_pages if overlap_pages is not None
                           else CF.DISCOVERY_OVERLAP_PAGES),
         session=session, fetch=fetch, pace=pace, now=now) or {}
@@ -622,8 +707,12 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
         cursor_set(conn, "notice_gap_flag", "0", note="discovery complete")
         cursor_set(conn, "notice_incomplete_streak", "0",
                    note="discovery complete")
+        cursor_set(conn, CURSOR_DEEP_PASS, "0", note="discovery complete")
     else:
         cursor_set(conn, "notice_gap_flag", "1", note="discovery incomplete")
+        # پاسِ بعدی عمیق (۳ صفحه/دسته) اجرا می‌شود تا شکافِ میانِ صفحات
+        # جبران شود؛ پاسِ کامل همین پرچم را پاک می‌کند.
+        cursor_set(conn, CURSOR_DEEP_PASS, "1", note="discovery incomplete")
         try:
             streak = int(cursor_get(conn, "notice_incomplete_streak", "0") or 0) + 1
         except (TypeError, ValueError):
@@ -685,20 +774,35 @@ def publication_windows(conn, now=None, cache_write=True):
 
 
 def current_network_gap(conn, now=None, jitter=True, cache_write=True):
-    """فاصلهٔ مجازِ پاسِ شبکه + توصیفِ پنجره برای status."""
+    """فاصلهٔ مجازِ پاسِ شبکه + توصیفِ پنجره برای status.
+
+    breaker: سه پاسِ پیاپیِ ناقص/بلاک (`notice_incomplete_streak`) یعنی احتمالِ
+    شکافِ کشف بالا رفته است؛ فاصلهٔ پایه تشدید می‌شود:
+    `min(SLOW_GAP_S, max(1800, base * 2**min(streak-2, 6)))`. jitter **پس از**
+    تشدید روی عددِ پایه می‌نشیند تا تصمیمِ breaker با نوسانِ تصادفی قاطی نشود.
+    پاسِ کامل شمارنده را صفر می‌کند (در `discover_auto`) و کادنس به ۶۰۰ثانیه
+    برمی‌گردد.
+    """
     at = _to_dt(now) or datetime.datetime.now()
     pub = publication_windows(conn, now=now, cache_write=cache_write)
     enabled = str(os.environ.get("BORS_CODAL_FAST_WINDOW", "1")).strip().lower() \
         not in ("0", "false", "no", "off")
     jitter_s = random.uniform(-60.0, 60.0) if jitter and enabled else 0.0
     hour = at.hour + at.minute / 60.0
-    gap = CAD.gap_seconds(hour, pub["windows"], enabled=enabled,
-                          fast=FAST_GAP_S, slow=SLOW_GAP_S, jitter_s=jitter_s)
+    base = CAD.gap_seconds(hour, pub["windows"], enabled=enabled,
+                           fast=FAST_GAP_S, slow=SLOW_GAP_S, jitter_s=0)
+    streak = _int_or(cursor_get(conn, "notice_incomplete_streak", "0"))
+    if streak >= 3:
+        base = min(SLOW_GAP_S,
+                   max(1800, int(base * (2 ** min(streak - 2, 6)))))
+    gap = max(CAD.MIN_GAP_S, min(SLOW_GAP_S, int(base + jitter_s)))
     info = dict(pub)
     info["inside_window"] = CAD.inside_window(hour, pub["windows"])
     info["labels"] = CAD.window_labels(pub["windows"])
     info["network_gap_s"] = gap
     info["enabled"] = enabled
+    info["incomplete_streak"] = streak
+    info["breaker"] = bool(streak >= 3)
     return gap, info
 
 
@@ -1100,9 +1204,21 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
            # نمادهایی که همین چرخه دادهٔ تازه نوشتند و ردیفِ مادی‌شده‌شان فوراً
            # باطل شد؛ `recalc_invalidate_only` یعنی محاسبۀ سنگین موکول است.
            "touched": [], "invalidated_symbols": 0,
-           "recalc_invalidate_only": False}
+           "recalc_invalidate_only": False, "screener_dropped": False}
     if not lock_acquire(conn, "codal_pipeline", owner, now=now):
         out["skipped"] = "locked"
+        return out
+    # TOCTOU: میانِ بررسیِ worker و گرفتنِ قفل، خطِ شبانه می‌تواند شروع شود.
+    # بلافاصله پس از قفل دوباره می‌بینیم؛ اگر مشغول است قفل آزاد و هیچ
+    # کار/نوشتنی انجام نمی‌شود (همان قراردادِ `orchestrator-busy`).
+    try:
+        orch = orchestrator_busy(_to_dt(now))
+    except Exception:
+        orch = {"busy": False}
+    if orch.get("busy"):
+        lock_release(conn, "codal_pipeline", owner)
+        out["skipped"] = "orchestrator-busy"
+        out["reason"] = orch.get("reason", "")
         return out
     run_id = run_start(conn, "cycle", owner, checkpoint_before=out["checkpoint_before"])
     out["run_id"] = run_id
@@ -1169,12 +1285,17 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             # مرحلهٔ محاسبه را نشان دهد، وگرنه گزارشِ چرخه کم می‌شمارد.
             out["cache_invalidated"] = (int(out.get("cache_invalidated") or 0)
                                         + int(out.get("invalidated_symbols") or 0))
-            # کشِ payload اسکرینر سراسری است؛ یک‌بار در هر چرخه، نه per-symbol.
+            # کشِ payload اسکرینر سراسری است؛ یک‌بار در هر چرخه، نه per-symbol،
+            # و با debounceِ ۳۰۰ثانیه‌ای (باطل‌سازیِ `fts_results` بالا بی‌تأخیر
+            # ماند). debounce در `pipeline_cursor` می‌ماند، پس restart هم آن را
+            # از دست نمی‌دهد.
             try:
                 from api.screener import invalidate_screener_cache
-                invalidate_screener_cache(drop_materialized=False)
+                out["screener_dropped"] = maybe_invalidate_screener(
+                    conn, invalidate_screener_cache, now=now,
+                    drop_materialized=False)
             except Exception:
-                pass
+                out["screener_dropped"] = False
         out["symbols"] = sorted({s for s in
                                  [r[0] for r in conn.execute(
                                      "SELECT DISTINCT symbol FROM pipeline_dirty")]})
@@ -1261,7 +1382,11 @@ PUB_WINDOWS_MIN_SAMPLES = 200
 FAST_GAP_S = CAD.FAST_GAP_S
 SLOW_GAP_S = CAD.SLOW_GAP_S
 DAILY_REQUEST_CURSOR = "codal_daily_requests"
-DAILY_REQUEST_CAP = 200
+# سقفِ سختِ صفحهٔ فید در روز: پنجرهٔ ۱۲ساعته با کادنسِ ۶۰۰ثانیه = ۷۲ پاس، و
+# ۴ صفحه/پاس (۲ به‌ازایِ هر دسته) = ۲۸۸ صفحه؛ به‌علاوهٔ حاشیهٔ بیرونِ پنجره
+# (~۳۲) ⇒ ۳۲۰ < ۴۰۰. عددِ قبلی (۲۰۰) کشف را ۲.۵ تا ۴ ساعت پیش از پایانِ
+# پنجره می‌بست و SLA ≤۱۵ دقیقه را نقض می‌کرد.
+DAILY_REQUEST_CAP = 400
 CURSOR_LAST_NETWORK = "notice_last_network_pass_at"
 CODAL_BUSY_PHASES = ("codal_sync", "codal_backoff", "codal_paused", "codal_stopped")
 _WORKER: dict = {"thread": None, "stop": None, "owner": None, "started_at": None,
@@ -1796,6 +1921,8 @@ def main(argv=None):
     """`python codal_pipeline.py --once --json [--db PATH] [--budget N] [--force]`
 
     یکِ چرخه، بی‌رشتۀ نگه‌دارنده، خروجیِ JSON = همان چیزی که `health()` می‌دهد.
+    `--release-quarantine [--tracing-no N ...]` تنها راهِ خروجِ دستیِ ردیف‌هایِ
+    رد‌شده از قرنطینه است (بی‌شبکه، فقط UPDATE محلی).
     این دريچه برایِ «برنامهٔ زمان‌بندیِ ویندوز» ساخته شده تا وقتی BorsTerminal
     باز نیست هم عقب‌ماندگی جبران شود — اما **خودِ ثبتِ وظیفه را انجام نمی‌دهد**
     (بندِ ۱۲ مأموریت: عملیاتِ سیستمی بدونِ مجوزِ مالک ممنوع). مرزِ عملیاتی و
@@ -1813,6 +1940,10 @@ def main(argv=None):
     ap.add_argument("--status", action="store_true", help="فقط سلامتِ خط")
     ap.add_argument("--catchup", action="store_true",
                     help="فقط وضعیتِ عقب‌ماندگی (بی‌نوشتن)")
+    ap.add_argument("--release-quarantine", action="store_true",
+                    help="آزادسازیِ ردیف‌هایِ قرنطینه‌شده (بی‌شبکه)")
+    ap.add_argument("--tracing-no", action="append", type=int, default=None,
+                    help="فقط همین tracing_noها را آزاد کن (تکرارپذیر)")
     ap.add_argument("--json", action="store_true", help="خروجیِ JSON")
     a = ap.parse_args(argv)
     db = a.db or CF.DB_PATH
@@ -1821,7 +1952,11 @@ def main(argv=None):
     CF.create_schema(conn)
     CF.migrate_schema(conn)
     try:
-        if a.status:
+        if a.release_quarantine:
+            out = {"released": release_quarantine(conn,
+                                                  tracing_nos=a.tracing_no),
+                   "tracing_nos": a.tracing_no}
+        elif a.status:
             out = health(conn, db_path=db)
         elif a.catchup:
             out = catchup_state(conn)

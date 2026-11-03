@@ -95,8 +95,12 @@ a = Analysis(
                    # `codal_pipeline` صف/checkpoint/قفلِ worker است و `app.py`
                    # (حلقۀ استارتاپ) و `api/_sync_codal.py` (دستۀ چرخه و سلامت)
                    # سطح-بال importش می‌کنند؛ بی‌این خط EXE رویِ اولین چرخه
-                   # ModuleNotFoundError می‌دهد.
-                   'codal_pipeline',
+                   # ModuleNotFoundError می‌دهد. `codal_cadence` (پنجرهٔ انتشار و
+                   # فاصلهٔ شبکه) و `codal_row_gate` (گیتِ ردیفی/قرنطینه) در دورِ
+                   # به‌روزرسانیِ رویدادمحورِ ۵ محور تازه شدند و سطح-بال از
+                   # `codal_pipeline` خوانده می‌شوند — مثلِ بقیهٔ ماژول‌هایِ ریشه
+                   # صریح فهرست می‌شوند تا به حدسِ اسکنِ ایستا سپرده نشوند.
+                   'codal_pipeline', 'codal_cadence', 'codal_row_gate',
                    # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
                    # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
                    # api._core / api.fundamental / api.chart / api.screener و

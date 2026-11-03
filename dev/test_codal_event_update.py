@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import time
@@ -374,7 +375,15 @@ ck(CP.j2g_date("1405/06/31 12:10:00") == "2026-09-22 12:10:00",
    "تاریخ+ساعت حفظ می‌شود", CP.j2g_date("1405/06/31 12:10:00"))
 ck(CP.j2g_date("") is None, "تاریخ خالی ⇒ None")
 
+import api.fundamental as AF  # noqa: E402
 from api.fundamental import freshness_of  # noqa: E402
+
+ck(AF._asof_iso("2026-11-03") == "2026-11-03",
+   "as_of فقط-روز دست‌نخورده می‌ماند")
+ck(AF._asof_iso("2026-09-22 09:00:00") == "2026-09-22T09:00:00+03:30",
+   "as_of زمان‌دار ISO-8601 با +03:30 می‌شود")
+ck(AF._asof_iso(None) is None and AF._asof_iso("") is None,
+   "as_of خالی None می‌ماند (بی‌ساختنِ تاریخ)")
 
 c = fresh_db()
 c.execute("INSERT INTO instruments (ins_code, l_val18, l_val30, paper_type)"
@@ -403,8 +412,9 @@ PL.dirty_mark(c, "فولاد", "monthly_sales", reason="test")
 fr = freshness_of(c, "فولاد")
 ck(fr["axes"]["1_growth"]["state"] == "stale",
    "شاخص ۱ dirty ⇒ stale", fr["axes"]["1_growth"])
-ck(fr["axes"]["1_growth"]["as_of"] == "2026-09-22 09:00:00",
-   "as_of از publish_date شمسی به میلادی تبدیل شد", fr["axes"]["1_growth"])
+ck(fr["axes"]["1_growth"]["as_of"] == "2026-09-22T09:00:00+03:30",
+   "as_of از publish_date شمسی به میلادیِ ISO با +03:30 تبدیل شد",
+   fr["axes"]["1_growth"])
 ck(fr["axes"]["1_growth"]["source"] == "monthly_sales"
    and fr["axes"]["1_growth"]["tracing_no"] == 9100,
    "منبع و tracing_no درست است", fr["axes"]["1_growth"])
@@ -413,7 +423,11 @@ ck(fr["axes"]["2_eps_trend"]["state"] == "fresh"
    "شاخص ۲ از FS حسابرسی‌شده و fresh است", fr["axes"]["2_eps_trend"])
 ck(fr["axes"]["5_industry"]["as_of"] == "2026-11-03",
    "شاخص ۵ از روزِ تابلو", fr["axes"]["5_industry"])
-ck(fr["as_of"] == "2026-11-03", "as_of کارت بیشینهٔ محورهاست", fr["as_of"])
+ck(fr["as_of"] == "2026-08-01T09:00:00+03:30",
+   "as_of کارت = قدیمی‌ترین محورِ بنیادی (۱/۲/۳)، نه بیشینهٔ تابلو‌محور",
+   fr["as_of"])
+ck(fr["axes"]["2_eps_trend"]["as_of"] == "2026-08-01T09:00:00+03:30",
+   "as_of شاخصِ ۲ هم ISO با +03:30 است", fr["axes"]["2_eps_trend"])
 ck(fr["axes"]["1_growth"]["reason"] == "test",
    "دلیلِ stale از pipeline_dirty در محور می‌آید", fr["axes"]["1_growth"])
 
@@ -763,6 +777,243 @@ ck(r11.get("skipped") == "budget-exhausted"
    and wk11.get("at") == "2026-11-04 00:00:00",
    "بودجهٔ تمام‌شده ⇒ skipِ متمایز با بیدارباش تا نیمه‌شب",
    {k: r11.get(k) for k in ("skipped", "daily_requests", "wakeup")})
+
+# ── ۸) موجِ رفعِ بازبینیِ نهایی: بودجه/صفحه، breaker و پاسِ عمیق ─────────────
+section("fix-wave: budget arithmetic / quiet+deep pages / breaker")
+
+ck(PL.DAILY_REQUEST_CAP == 400,
+   "سقفِ روزانهٔ درخواست ۴۰۰ است", PL.DAILY_REQUEST_CAP)
+ck(4 * (12 * 6) + 4 * 8 <= PL.DAILY_REQUEST_CAP,
+   "پنجرهٔ ۱۲ساعته با ۶۰۰ثانیه و ۴صفحه/پاس + حاشیه در سقفِ ۴۰۰ جا می‌شود",
+   4 * (12 * 6) + 4 * 8)
+ck(PL.PAGES_PER_CAT == 2 and PL.DEEP_PAGES_PER_CAT == 3,
+   "صفحهٔ هر دسته: عادی ۲، عمیق ۳",
+   (PL.PAGES_PER_CAT, PL.DEEP_PAGES_PER_CAT))
+
+
+def _feed_letter(tn, sym):
+    return {"TracingNo": tn, "Symbol": sym, "CompanyName": sym,
+            "Title": "گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به ۱۴۰۵/۰۶/۳۱",
+            "LetterCode": "1", "PublishDateTime": "1405/07/20 10:00:00",
+            "SentDateTime": "1405/07/20 10:00:00",
+            "Url": "/L/Detail/%d" % tn, "PdfUrl": "uploads/a.pdf",
+            "ExcelUrl": ""}
+
+
+class _PagedFeed:
+    def __init__(self, pages):
+        self.pages = pages
+
+    def __call__(self, session, page, query):
+        lst = self.pages.get(str(query.get("Category"))) or []
+        i = int(page) - 1
+        return lst[i] if 0 <= i < len(lst) else []
+
+
+def _five_pages(base):
+    return [[_feed_letter(base + i, "نماد%d" % i)] for i in range(1, 6)]
+
+
+feed_pages = {"1": _five_pages(20000), "3": _five_pages(21000)}
+c_b = fresh_db()
+r_quiet = PL.discover_auto(c_b, fetch=_PagedFeed(feed_pages),
+                           now="2026-11-03 20:00:00")
+ck(r_quiet["pages"] == 4,
+   "پاسِ آرام ۲ صفحه/دسته = ۴ صفحه (نه ۶)", r_quiet["pages"])
+ck(PL.cursor_get(c_b, "notice_deep_pass") == "1",
+   "بودجهٔ صفحه پیش از مرزِ کهنه ⇒ پرچمِ پاسِ عمیق روشن",
+   PL.cursor_get(c_b, "notice_deep_pass"))
+r_deep = PL.discover_auto(c_b, fetch=_PagedFeed(feed_pages),
+                          now="2026-11-03 20:10:00")
+ck(r_deep["pages"] == 6,
+   "پاسِ عمیق ۳ صفحه/دسته = ۶ صفحه", r_deep["pages"])
+
+real_cfd = CF.discover_notices
+CF.discover_notices = lambda *a, **k: {"found": 0, "items": [], "floors": {},
+                                       "complete": True, "blocked": False,
+                                       "pages": 2, "newest": None}
+try:
+    PL.discover_auto(c_b, now="2026-11-03 20:20:00")
+finally:
+    CF.discover_notices = real_cfd
+ck(PL.cursor_get(c_b, "notice_deep_pass") == "0",
+   "پاسِ کامل پرچمِ عمیق را پاک می‌کند",
+   PL.cursor_get(c_b, "notice_deep_pass"))
+
+c_br = fresh_db()
+for i in range(240):
+    add_notice(c_br, 30000 + i, "ب%d" % i,
+               pub="1405/07/20 %02d:10:00" % (9 + (i % 3)))
+PL.cursor_set(c_br, "notice_incomplete_streak", "2")
+gap2, info2 = PL.current_network_gap(c_br, now="2026-11-03 10:00:00",
+                                     jitter=False)
+ck(gap2 == 600 and info2.get("breaker") is False,
+   "streak=۲ هنوز کادنسِ عادی ۶۰۰ثانیه", (gap2, info2.get("breaker")))
+PL.cursor_set(c_br, "notice_incomplete_streak", "3")
+gap3, info3 = PL.current_network_gap(c_br, now="2026-11-03 10:00:00",
+                                     jitter=False)
+ck(gap3 == 1800 and info3.get("breaker") is True,
+   "streak=۳ ⇒ breaker: gap پایه به ۱۸۰۰ثانیه می‌رسد", gap3)
+PL.cursor_set(c_br, "notice_incomplete_streak", "9")
+gap9, _ = PL.current_network_gap(c_br, now="2026-11-03 10:00:00", jitter=False)
+ck(gap9 == 10800, "streak بالا به سقفِ ۳ ساعت می‌رسد", gap9)
+gapj, _ = PL.current_network_gap(c_br, now="2026-11-03 10:00:00", jitter=True)
+ck(10740 <= gapj <= 10800,
+   "jitter پس از breaker می‌نشیند و به سقف clamp می‌شود", gapj)
+CF.discover_notices = lambda *a, **k: {"found": 0, "items": [], "floors": {},
+                                       "complete": True, "blocked": False,
+                                       "pages": 2, "newest": None}
+try:
+    PL.discover_auto(c_br, now="2026-11-03 10:05:00")
+finally:
+    CF.discover_notices = real_cfd
+gap_after, _ = PL.current_network_gap(c_br, now="2026-11-03 10:00:00",
+                                      jitter=False)
+ck(PL.cursor_get(c_br, "notice_incomplete_streak") == "0"
+   and gap_after == 600,
+   "پاسِ کامل شمارنده و breaker را صفر می‌کند (بازگشت به ۶۰۰ثانیه)",
+   (PL.cursor_get(c_br, "notice_incomplete_streak"), gap_after))
+
+# ── ۸ب) آزادسازیِ قرنطینه (تابع + CLI، بی‌شبکه) ─────────────────────────────
+section("fix-wave: quarantine release + CLI")
+c_rel = fresh_db()
+add_notice(c_rel, 8101, "فولاد")
+c_rel.execute("INSERT INTO codal_extracted (tracing_no, kind, ok, tried_at,"
+              " state, attempts, updated_at, last_error, error_kind)"
+              " VALUES (8101,'fs',0,'2026-11-03 10:00:00','quarantined',1,"
+              " '2026-11-03 10:00:00','negative_revenue:revenue','validation')")
+n_rel = PL.release_quarantine(c_rel)
+row_rel = c_rel.execute(
+    "SELECT state, error_kind, next_attempt_at, claim_owner, claimed_at"
+    " FROM codal_extracted WHERE tracing_no=8101").fetchone()
+ck(n_rel == 1 and row_rel[0] == "queued" and row_rel[1] == "requeued",
+   "آزادسازیِ قرنطینه ⇒ queued با error_kind=requeued", tuple(row_rel))
+ck(row_rel[2] is None and row_rel[3] is None and row_rel[4] is None,
+   "پاک‌شدنِ next_attempt_at/claim_owner/claimed_at", tuple(row_rel))
+claimed_rel = PL.claim(c_rel, "rel-owner", limit=1,
+                       now="2026-11-03 10:05:00")
+ck([int(x[0]) for x in claimed_rel] == [8101],
+   "ردیفِ آزادشده همان‌جا claim می‌شود", claimed_rel)
+
+c_rel2 = fresh_db()
+for _tn in (8201, 8202):
+    c_rel2.execute("INSERT INTO codal_extracted (tracing_no, kind, ok, tried_at,"
+                   " state, attempts, updated_at, last_error, error_kind)"
+                   " VALUES (?, 'fs', 0, '2026-11-03 10:00:00', 'quarantined',"
+                   " 1, '2026-11-03 10:00:00', 'gross_gt_revenue', 'validation')",
+                   (_tn,))
+ck(PL.release_quarantine(c_rel2, tracing_nos=[8202]) == 1,
+   "آزادسازیِ انتخابی فقط tracing_no خواسته‌شده را برمی‌گرداند")
+states_rel = dict(c_rel2.execute(
+    "SELECT tracing_no, state FROM codal_extracted").fetchall())
+ck(states_rel == {8201: "quarantined", 8202: "queued"},
+   "بقیهٔ ردیف‌هایِ قرنطینه دست‌نخورده می‌مانند", states_rel)
+ck(PL.release_quarantine(c_rel2, tracing_nos=[999999]) == 0,
+   "tracing_no ناموجود صفر ردیف آزاد می‌کند")
+
+rel_db = os.path.join(TMP, "release_cli.db")
+rc = sqlite3.connect(rel_db)
+rc.row_factory = sqlite3.Row
+CF.create_schema(rc)
+CF.migrate_schema(rc)
+PL.ensure_schema(rc)
+for _tn in (8301, 8302):
+    rc.execute("INSERT INTO codal_extracted (tracing_no, kind, ok, tried_at,"
+               " state, attempts, updated_at, last_error, error_kind)"
+               " VALUES (?, 'fs', 0, '2026-11-03 10:00:00', 'quarantined',"
+               " 1, '2026-11-03 10:00:00', 'gross_gt_revenue', 'validation')",
+               (_tn,))
+rc.commit()
+rc.close()
+env_cli = dict(os.environ, PYTHONIOENCODING="utf-8", BORS_CODAL_OFFLINE="1")
+r_cli = subprocess.run(
+    [sys.executable, os.path.join(ROOT, "codal_pipeline.py"), "--db", rel_db,
+     "--json", "--release-quarantine", "--tracing-no", "8302"],
+    capture_output=True, text=True, env=env_cli, timeout=180, cwd=ROOT)
+lines_cli = [x for x in (r_cli.stdout or "").splitlines() if x.startswith("{")]
+payload_cli = json.loads(lines_cli[-1]) if lines_cli else {}
+rc2 = sqlite3.connect(rel_db)
+states_cli = dict(rc2.execute(
+    "SELECT tracing_no, state FROM codal_extracted").fetchall())
+rc2.close()
+ck(r_cli.returncode == 0 and payload_cli.get("released") == 1
+   and states_cli == {8301: "quarantined", 8302: "queued"},
+   "CLI --release-quarantine --tracing-no بی‌شبکه همان کار را می‌کند",
+   {"rc": r_cli.returncode, "payload": payload_cli, "states": states_cli,
+    "err": (r_cli.stderr or "")[-160:]})
+
+# ── ۸ج) بازبینیِ TOCTOU قفل در run_cycle ────────────────────────────────────
+section("fix-wave: run_cycle lock TOCTOU recheck")
+c_m2 = fresh_db()
+real_orch_m2 = PL.orchestrator_busy
+PL.orchestrator_busy = lambda *a, **k: {"busy": True, "reason": "lock-fresh",
+                                        "stage": "fetching"}
+try:
+    out_m2 = PL.run_cycle(c_m2, "m2", now="2026-11-03 10:30:00",
+                          instruments=None)
+finally:
+    PL.orchestrator_busy = real_orch_m2
+ck(out_m2.get("skipped") == "orchestrator-busy"
+   and out_m2.get("run_id") is None,
+   "run_cycle پس از گرفتنِ قفل، مشغول‌بودنِ خطِ شبانه را دوباره می‌بیند",
+   out_m2)
+ck(PL.lock_state(c_m2, "codal_pipeline")["held"] is False,
+   "قفل در مسیرِ orchestrator-busy آزاد می‌شود")
+ck(c_m2.execute("SELECT COUNT(*) FROM pipeline_runs").fetchone()[0] == 0,
+   "هیچ چرخهٔ ساختگی ثبت نمی‌شود")
+
+# ── ۸د) کشِ ۶۰ثانیه‌ایِ route تازگیِ دسته‌ای ─────────────────────────────────
+section("fix-wave: freshness bulk cache (60s)")
+calls_fo = []
+real_fo = AF.freshness_of
+AF._FRESHNESS_CACHE.clear()
+AF.freshness_of = lambda conn, s, now=None: (calls_fo.append(s),
+                                             {"symbol": s})[1]
+try:
+    p1 = AF.freshness_bulk(c_m2, ["الف", "ب"], now=1000.0)
+    p2 = AF.freshness_bulk(c_m2, ["ب", "الف"], now=1030.0)
+    p3 = AF.freshness_bulk(c_m2, ["الف", "ب"], now=1061.0)
+finally:
+    AF.freshness_of = real_fo
+    AF._FRESHNESS_CACHE.clear()
+ck(len(calls_fo) == 4 and p2 is p1 and p3 is not p1,
+   "دو فراخوانیِ درونِ ۶۰ثانیه یک محاسبه؛ پس از TTL دوباره محاسبه",
+   (calls_fo, p2 is p1, p3 is p1))
+ck(p1.get("count") == 2
+   and [x["symbol"] for x in p1["items"]] == ["الف", "ب"],
+   "payload و ترتیبِ درخواست حفظ می‌شود", p1)
+
+# ── ۸هـ) debounceِ ۳۰۰ثانیه‌ایِ dropِ payload اسکرینر ───────────────────────
+section("fix-wave: screener payload drop debounce (300s)")
+import api.screener as SCR  # noqa: E402
+
+c_sc = fresh_db()
+for _tn, _sym in ((8401, "فولاد"), (8402, "خودرو"), (8403, "شپنا")):
+    add_notice(c_sc, _tn, _sym)
+PL.enqueue(c_sc, [(8401, "ms"), (8402, "ms"), (8403, "ms")])
+drops_sc, inv_sc = [], []
+real_si = SCR.invalidate_screener_cache
+real_inv_sc = PL._invalidate_materialized
+SCR.invalidate_screener_cache = lambda **kw: drops_sc.append(dict(kw))
+PL._invalidate_materialized = lambda conn, symbols: (
+    inv_sc.append(list(symbols)), len(symbols))[1]
+try:
+    for _i, _now in enumerate(("2026-11-03 20:00:00", "2026-11-03 20:03:00",
+                               "2026-11-03 20:05:30")):
+        PL.run_cycle(c_sc, "sc%d" % _i, discover=None,
+                     scrape=lambda n: ms_row(n[0], n[1]), budget=1,
+                     now=_now, instruments=None)
+finally:
+    SCR.invalidate_screener_cache = real_si
+    PL._invalidate_materialized = real_inv_sc
+ck(len(inv_sc) == 3,
+   "باطل‌سازیِ fts_results هر سه چرخه بی‌تأخیر اجرا شد", inv_sc)
+ck(len(drops_sc) == 2,
+   "dropِ payload اسکرینر: دو چرخهٔ نخست در ۳۰۰ثانیه یک‌بار، چرخهٔ سوم دوباره",
+   drops_sc[-3:])
+ck(PL.cursor_get(c_sc, PL.CURSOR_SCREENER_DROP) is not None,
+   "زمانِ آخرین drop در pipeline_cursor ماندگار است",
+   PL.cursor_get(c_sc, PL.CURSOR_SCREENER_DROP))
 
 # ── ۸) گیتِ زندهٔ اختیاری (فقط با --live و تأییدِ مالک؛ نه بخشی از CI) ──────
 if LIVE:

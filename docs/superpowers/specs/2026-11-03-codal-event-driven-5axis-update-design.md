@@ -113,7 +113,7 @@ network_gap_s(now, windows, enabled=True, fast=600, slow=3*3600)
 - `worker_once` پارامترِ جدید `network_gap_s=None` می‌گیرد؛ اگر None باشد خودش از مدل می‌سازد.
 - `want = age_net is None or age_net >= gap` (همان شرطِ فعلی، با gapِ پویا).
 - `next_wakeup` همان gap را می‌گیرد تا خوابِ نخ هم تطبیقی شود؛ `CADENCE_MIN_S=60` دست‌نخورده می‌ماند.
-- بودجهٔ هر پاس: حداکثر ۲ صفحه برای هر دسته (`discover_auto(max_pages=2)`). تخمین: ۲ درخواست/۱۰دقیقه × ۱۰ ساعت پنجره + ۲ درخواست/۳ساعت بیرون ≈ ۱۳۰ درخواست/روز. سقف سخت: ۲۰۰ درخواست/روز با شمارندهٔ روزانه در `pipeline_cursor`.
+- بودجهٔ هر پاس: حداکثر ۲ صفحه برای هر دسته (`discover_auto(max_pages=2)`؛ پاسِ عمیق پس از پاسِ ناقص ۳ صفحه: `DEEP_PAGES_PER_CAT=3`). تخمین: ۴ صفحه/پاس × ۷۲ پاسِ پنجرهٔ ۱۲ساعته = ۲۸۸ + حاشیهٔ بیرونِ پنجره ≈ ۳۲۰ درخواست/روز. سقف سخت: ۴۰۰ درخواست/روز با شمارندهٔ روزانه در `pipeline_cursor` (حکمِ اجرایی ۲۰۲۶-۱۱-۰۳؛ عددِ قبلی ۲۰۰ کشف را ۲.۵–۴ ساعت پیش از پایانِ پنجره می‌بست).
 - محیط: `BORS_CODAL_FAST_WINDOW=1` (پیش‌فرض در بیلد frozen روشن؛ در سورس/تست تابعِ همان `BORS_NO_FETCH_LOOPS` حاکم است). خاموش = رفتار امروز (۳ ساعت).
 
 ### ۴.۲. پردازش، اعتبارسنجی و مادی‌سازی
@@ -176,7 +176,8 @@ network_gap_s(now, windows, enabled=True, fast=600, slow=3*3600)
 ```
 
 - `state` در فاز ۱: `fresh` / `stale` (در `pipeline_dirty` یا منبع جدیدتر از مادی) / `missing` / `quarantined` (آخرین تلاش رد شد؛ `reason` کدِ گیت).
-- `as_of` تاریخِ میلادیِ نرمال‌شده است (همان قراردادِ `d_even`)، با `T` و منطقهٔ زمانیِ تهران؛ تاریخِ شمسی فقط در `period_end` می‌آید.
+- `as_of` تاریخِ میلادیِ نرمال‌شده است: تاریخِ فقط-روز به‌صورت `YYYY-MM-DD` و برچسبِ زمان‌دار به‌صورت ISO-8601 با منطقهٔ تهران `YYYY-MM-DDTHH:MM:SS+03:30` (حکمِ اجرایی ۲۰۲۶-۱۱-۰۳)؛ تاریخِ شمسی فقط در `period_end` می‌آید.
+- `as_of` سطحِ کارت (فیلدِ بالایی) = **قدیمی‌ترین** `as_of` محورهای ۱/۲/۳ (سنِ دادهٔ بنیادی، هم‌راستا با حکمِ نشان)؛ محورهای ۴/۵ آن را به سمتِ تابلو جابه‌جا نمی‌کنند.
 - `GET /api/fundamental/freshness` (دسته‌ای؛ کش ۶۰ ثانیه) و افزودن بلوک `freshness` به پاسخِ `/api/fundamental/{symbol}`. این route باید **پیش از** مسیرِ پویای `/{symbol}` در `api/fundamental.py` ثبت شود، وگرنه «freshness» به‌عنوان نماد گرفته می‌شود.
 - کارت v2: نشانِ «تازه تا HH:MM» با tooltipِ شاخص‌های stale؛ اگر `missing` بود، نشان ساخته نشود (تازگیِ جعلی ممنوع).
 
@@ -192,10 +193,11 @@ network_gap_s(now, windows, enabled=True, fast=600, slow=3*3600)
 ### ۴.۵. شبکه، خطا و circuit breaker
 
 - `discover_notices` امروز `blocked`/`incomplete`/`floors` را برمی‌گرداند و نشانک را فقط برای دستهٔ کامل جلو می‌برد؛ همان حفظ می‌شود.
-- **breaker:** اگر `blocked=True` یا سه پاسِ پیاپی `incomplete=True` بود: `network_gap_s = min(3h, max(30m, 2×gap))` تا سه پاس؛ سپس بازگشت به کادنسِ عادی. رخداد در `pipeline_runs`/status با `gap_flag` ثبت می‌شود.
-- **پاسِ عمیق:** نخستین پاسِ پس از `incomplete` با `max_pages=3` اجرا می‌شود؛ اگر هنوز incomplete بود، `gap_flag` در freshness/status می‌ماند.
+- **breaker:** اگر `blocked=True` یا سه پاسِ پیاپی `incomplete=True` بود (`notice_incomplete_streak >= 3`): فاصلهٔ **پایه** (بی‌jitter) تشدید می‌شود به `min(3h, max(30m, base × 2^min(streak−2, 6)))`؛ jitter پس از آن می‌نشیند. پاسِ کامل شمارنده و `gap_flag` را صفر می‌کند و کادنس به ۶۰۰ ثانیه برمی‌گردد. رخداد در `pipeline_runs`/status با `gap_flag` ثبت می‌شود.
+- **پاسِ عمیق:** پرچمِ `notice_deep_pass` در `pipeline_cursor` رویِ پاسِ `incomplete`/`blocked` روشن می‌شود و پاسِ بعدی با `DEEP_PAGES_PER_CAT=3` (به‌جای ۲) اجرا می‌شود؛ پاسِ کامل پرچم را پاک می‌کند.
 - **jitter** و `POLITE` دست‌نخورده؛ ADB در worker استفاده نمی‌شود.
-- **سقف روزانه:** شمارندهٔ `daily_requests` در `pipeline_cursor`؛ عبور از ۲۰۰ → توقف پاسِ شبکه تا نیمه‌شبِ بعد، با وضعیتِ `budget-exhausted` (نه شکستِ خاموش).
+- **سقف روزانه:** شمارندهٔ `daily_requests` در `pipeline_cursor`؛ عبور از ۴۰۰ → توقف پاسِ شبکه تا نیمه‌شبِ بعد، با وضعیتِ `budget-exhausted` (نه شکستِ خاموش).
+- **آزادسازیِ قرنطینه:** `release_quarantine(conn, tracing_nos=None, reason="operator")` ردیف‌هایِ `quarantined` را به `queued` با `error_kind='requeued'` برمی‌گرداند؛ دريچهٔ CLI: `python codal_pipeline.py --release-quarantine [--tracing-no N ...]` (بی‌شبکه، فقط UPDATE محلی).
 
 ### ۴.۶. مشاهده‌پذیری
 
@@ -292,7 +294,7 @@ network_gap_s(now, windows, enabled=True, fast=600, slow=3*3600)
 | p95 بیرونِ پنجره | ≤ ۳ ساعت | همان |
 | اطلاعیهٔ جاافتادهٔ بی‌صدا | صفر | هر `tracing_no` تازه در چرخهٔ بعد (≤ ۱۰ دقیقه) در صف؛ شکاف = `gap_flag` |
 | ردیفِ کهنهٔ مادی در بازارِ باز | صفر | `pipeline_dirty` ∩ `fts_results` بعد از چرخه |
-| درخواست روزانه | ≤ ۲۰۰ | شمارندهٔ `daily_requests` |
+| درخواست روزانه | ≤ ۴۰۰ | شمارندهٔ `daily_requests` |
 | نرخ ۴۲۹ | < ۱٪ | `pipeline_runs`/status |
 | نوشتنِ هم‌زمان | صفر | آزمونِ قفل + لاگِ `orchestrator-busy` |
 
@@ -315,3 +317,17 @@ network_gap_s(now, windows, enabled=True, fast=600, slow=3*3600)
 1. `overdue` (کادنسِ تاریخیِ هر نماد) در فاز ۲ بیاید یا همین فاز ۱؟ پیشنهاد: فاز ۲، چون نیازمند مدلِ p90 تأخیر و آزمونِ کافی است.
 2. اولویتِ watchlist در فاز ۲ با اتصالِ `user.db`؛ تا آن زمان ترتیبِ canonical صف حفظ می‌شود.
 3. آیا `GET /api/fundamental/freshness` باید در قیف/اسکرینر هم مصرف شود یا فعلاً فقط کارت؟ پیشنهاد: کارت + وضعیت؛ مصرف در قیف فاز بعد.
+
+---
+
+## Implementation rulings (2026-11-03)
+
+حکم‌هایِ اجراییِ نهایی که بر متنِ بالا مقدم‌اند (پس از بازبینیِ کلِ شاخه):
+
+- **بودجه/صفحه (C1):** `DAILY_REQUEST_CAP=400`؛ `PAGES_PER_CAT=2` و `DEEP_PAGES_PER_CAT=3` (پرچمِ `notice_deep_pass` در `pipeline_cursor`). ۱۲ساعت × ۷۲ پاس × ۴ صفحه + حاشیه ≤ ۴۰۰.
+- **Breaker (I1):** با `notice_incomplete_streak >= 3` فاصلهٔ پایه `min(3h, max(30m, base × 2^min(streak−2, 6)))` می‌شود (jitter پس از آن)؛ پاسِ کامل به ۶۰۰ثانیه برمی‌گردد و پرچمِ پاسِ عمیق را پاک می‌کند.
+- **آزادسازیِ قرنطینه (I2):** `release_quarantine()` + CLI `--release-quarantine [--tracing-no N ...]`؛ خروجی `queued` با `error_kind='requeued'`، بی‌شبکه.
+- **`as_of` ISO (M1):** زمان‌دار `YYYY-MM-DDTHH:MM:SS+03:30`، فقط-روز `YYYY-MM-DD`. `as_of` کارت = قدیمی‌ترین محورهای ۱/۲/۳.
+- **نشانِ تازگی:** سنِ نشان از محورهای ۱/۲/۳ (بنیادی) خوانده می‌شود، نه از بیشینهٔ محورهای تابلو.
+- **سلامت read-only:** `health()`/`--status` هیچ کش/checkpoint نمی‌نویسد (شاملِ `pub_windows_v1`).
+- **کش‌ها:** freshness دسته‌ای TTL=۶۰ثانیه (process-local، کلید تاپلِ مرتب‌شدهٔ نمادها)؛ dropِ payload اسکرینر debounce=۳۰۰ثانیه در `pipeline_cursor` — باطل‌سازیِ `fts_results` بی‌تأخیر.

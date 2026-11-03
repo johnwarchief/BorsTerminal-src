@@ -54,6 +54,7 @@ import datetime
 import os
 import re
 import sqlite3
+import time
 
 
 router = APIRouter()
@@ -2249,12 +2250,38 @@ def _sym_where(conn, column, symbol, domain=None):
     return fts_engine.sym_in(conn, column, symbol, domain)
 
 
+def _asof_iso(value):
+    """`as_of` را به قراردادِ ISO-8601 با منطقهٔ تهران درمی‌آورد.
+
+    تاریخِ فقط-روز (`YYYY-MM-DD`) همان می‌ماند؛ برچسبِ زمان‌دار
+    (`YYYY-MM-DD HH:MM:SS`) به `YYYY-MM-DDTHH:MM:SS+03:30` تبدیل می‌شود.
+    مقدارِ نامفهوم دست‌نخورده برمی‌گردد تا `missing` بی‌دلیل ساخته نشود.
+    """
+    s = str(value or "").strip()
+    if not s:
+        return None
+    if len(s) == 10 and s[4] == "-" and s[7] == "-":
+        return s
+    if len(s) >= 19 and s[10] == " ":
+        return s[:10] + "T" + s[11:19] + "+03:30"
+    return s
+
+
+FRESHNESS_CACHE_TTL_S = 60
+# کشِ process-local: کلید = تاپلِ مرتب‌شدهٔ نمادها، مقدار = (stamp, payload).
+# بدونِ schema و بدونِ اشتراک بینِ پروسه‌ها؛ route دسته‌ای ~۷ کوئری/نماد می‌زند
+# و ۶۰ ثانیه کش کافی است که پنل/کارت یک محاسبه را دوباره نسازند.
+_FRESHNESS_CACHE: dict = {}
+
+
 def freshness_of(conn, symbol, now=None):
     """تازگیِ هر یک از ۵ محور از canonical — بدونِ جدولِ تازه.
 
-    `as_of` تاریخِ منبع است (میلادی)، نه زمانِ اجرای برنامه. ترتیبِ وضعیت:
-    quarantined > stale > missing > fresh. هر خواندنِ canonical گارد دارد؛ رویِ
-    بانکی که جدولش را هنوز ندارد محور `missing` می‌شود، نه خطای ۵۰۰.
+    `as_of` تاریخِ منبع است (میلادی، ISO-8601 با `T` و منطقهٔ تهران `+03:30`
+    وقتی ساعت دارد)، نه زمانِ اجرای برنامه؛ تاریخِ فقط-روز (`YYYY-MM-DD`) بدونِ
+    زمان می‌ماند. ترتیبِ وضعیت: quarantined > stale > missing > fresh. هر
+    خواندنِ canonical گارد دارد؛ رویِ بانکی که جدولش را هنوز ندارد محور
+    `missing` می‌شود، نه خطای ۵۰۰.
     """
     ms = None
     try:
@@ -2353,9 +2380,12 @@ def freshness_of(conn, symbol, now=None):
     if board_iso and len(board_iso) == 8:
         board_iso = "%s-%s-%s" % (board_iso[:4], board_iso[4:6], board_iso[6:])
     # publish_date اگر بود ولی تبدیل نشد (`j2g_date` ⇒ None)، دوره جای آن را
-    # می‌گیرد؛ `as_of` هرگز «None به‌خاطرِ تاریخِ خراب» نمی‌شود.
-    ms_asof = (CP.j2g_date(ms[2]) or CP.j2g_date(ms[1])) if ms else None
-    fs_asof = (CP.j2g_date(fs[2]) or CP.j2g_date(fs[1])) if fs else None
+    # می‌گیرد؛ `as_of` هرگز «None به‌خاطرِ تاریخِ خراب» نمی‌شود. مقدارِ زمان‌دار
+    # به ISO-8601 با منطقهٔ تهران (`+03:30`) می‌رود؛ فقط-روز همان می‌ماند.
+    ms_asof = (_asof_iso(CP.j2g_date(ms[2]) or CP.j2g_date(ms[1]))
+               if ms else None)
+    fs_asof = (_asof_iso(CP.j2g_date(fs[2]) or CP.j2g_date(fs[1]))
+               if fs else None)
 
     def axis(name, source, as_of, tracing_no=None, period_end=None,
              present=True):
@@ -2370,7 +2400,7 @@ def freshness_of(conn, symbol, now=None):
             # دلیلِ dirty تا UI «در انتظارِ بازمحاسبه» را از «ردِ اعتبارسنجی»
             # جدا کند؛ هر دو `stale` نیستند ولی هر دو دلیل دارند.
             reason = dirty.get(name) or ""
-        return {"as_of": as_of, "source": source,
+        return {"as_of": _asof_iso(as_of), "source": source,
                 "tracing_no": tracing_no,
                 "period_end": CP.canonicalize(period_end) if period_end else None,
                 "state": state,
@@ -2394,14 +2424,39 @@ def freshness_of(conn, symbol, now=None):
         "5_industry": axis("5_industry", "instruments", board_iso,
                            present=bool(board_iso)),
     }
-    stamps = [a["as_of"] for a in axes.values() if a.get("as_of")]
-    return {"symbol": symbol, "as_of": max(stamps) if stamps else None,
+    # `as_of` کارت = قدیمی‌ترین محورِ بنیادی (۱/۲/۳)، نه بیشینهٔ محورها: نشانِ
+    # «تازه تا …» باید سنِ قدیمی‌ترین منبعِ بنیادی را نشان دهد (حکمِ badge)؛
+    # محورهای ۴/۵ (تابلو/صنعت) سنِ دادهٔ بنیادی را پنهان نمی‌کنند.
+    fund_stamps = [axes[k]["as_of"] for k in
+                   ("1_growth", "2_eps_trend", "3_gross_margin")
+                   if axes[k].get("as_of")]
+    return {"symbol": symbol,
+            "as_of": min(fund_stamps) if fund_stamps else None,
             "axes": axes}
+
+
+def freshness_bulk(conn, syms, now=None):
+    """پاسخِ دسته‌ایِ `/api/fundamental/freshness` با کشِ ۶۰ثانیه‌ای.
+
+    کلید = تاپلِ مرتب‌شدهٔ نمادها (ترتیبِ درخواست در کلید اثر ندارد)؛ در hit
+    همان payloadِ دفعهٔ قبل برمی‌گردد. `now` فقط برایِ تست تزریق می‌شود و
+    پیش‌فرض ساعتِ monotonic است (تغییرِ ساعتِ سیستم TTL را نمی‌شکند).
+    """
+    syms = [str(s).strip() for s in (syms or []) if str(s or "").strip()]
+    key = tuple(sorted(syms))
+    stamp = time.monotonic() if now is None else float(now)
+    hit = _FRESHNESS_CACHE.get(key)
+    if hit is not None and 0 <= stamp - hit[0] < FRESHNESS_CACHE_TTL_S:
+        return hit[1]
+    payload = {"status": "success", "count": len(syms),
+               "items": [freshness_of(conn, s) for s in syms]}
+    _FRESHNESS_CACHE[key] = (stamp, payload)
+    return payload
 
 
 @router.get("/api/fundamental/freshness")
 def api_fundamental_freshness(symbols: str = ""):
-    """تازگیِ ۵ محور برای فهرستِ نمادها (حداکثر ۲۰۰)."""
+    """تازگیِ ۵ محور برای فهرستِ نمادها (حداکثر ۲۰۰) — کشِ ۶۰ثانیه."""
     conn = get_db()
     try:
         syms = [s.strip() for s in symbols.split(",") if s.strip()]
@@ -2410,8 +2465,7 @@ def api_fundamental_freshness(symbols: str = ""):
                 "SELECT l_val18 FROM instruments WHERE COALESCE(paper_type,1)=1"
                 " ORDER BY l_val18 LIMIT 200").fetchall()]
         syms = syms[:200]
-        return {"status": "success", "count": len(syms),
-                "items": [freshness_of(conn, s) for s in syms]}
+        return freshness_bulk(conn, syms)
     finally:
         conn.close()
 
