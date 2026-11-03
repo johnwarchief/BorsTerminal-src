@@ -190,4 +190,27 @@ describe('FundamentalCards', () => {
     expect(label).toContain('رد');
     expect(screen.getByRole('group', { name: /۴\. پتانسیل سود تا آخر سال/ })).toBe(axis4);
   });
+
+  it('shows the source freshness timestamp only when the API supplies it', () => {
+    serve({
+      ...card,
+      freshness: {
+        as_of: '2026-11-03T12:10:00+03:30',
+        axes: {
+          '1_growth': { as_of: '2026-11-03', source: 'monthly_sales', state: 'fresh' },
+          '3_gross_margin': { as_of: '2026-09-20', source: 'financial_statements', state: 'stale' },
+        },
+      },
+    } as unknown as FtsCard);
+    render(<FundamentalCards symbol="فولاد" />);
+    const badge = screen.getByTestId('fundamental-freshness');
+    expect(badge.textContent).toContain('تازه');
+    expect(badge.getAttribute('title')).toContain('3_gross_margin');
+  });
+
+  it('does not invent freshness when the API omits it', () => {
+    serve(card);
+    render(<FundamentalCards symbol="فولاد" />);
+    expect(screen.queryByTestId('fundamental-freshness')).toBeNull();
+  });
 });

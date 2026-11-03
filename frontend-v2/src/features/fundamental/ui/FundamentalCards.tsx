@@ -136,6 +136,26 @@ export function cardFacts(card: FtsCard): CardFact[] {
       : fact));
 }
 
+function freshnessBadge(card: FtsCard): { text: string; title: string } | null {
+  const fresh = card.freshness;
+  if (!fresh?.as_of) return null;
+  const date = new Date(fresh.as_of);
+  const time = Number.isNaN(date.getTime())
+    ? fresh.as_of
+    : new Intl.DateTimeFormat('fa-IR', {
+        hour: '2-digit', minute: '2-digit',
+      }).format(date);
+  const needsAttention = Object.entries(fresh.axes ?? {})
+    .filter(([, axis]) => axis?.state && axis.state !== 'fresh')
+    .map(([key, axis]) => `${key} (${axis.state})`);
+  return {
+    text: `تازه تا ${time}`,
+    title: needsAttention.length
+      ? `نیازمند توجه: ${needsAttention.join('، ')}`
+      : 'همهٔ محورها از منبع تازه‌اند',
+  };
+}
+
 export function FundamentalCards({ symbol }: { symbol: string }) {
   const query = useFtsCard(symbol);
 
@@ -150,47 +170,57 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
     );
   }
 
+  const fresh = freshnessBadge(query.data);
   return (
-    <div data-testid="fundamental-cards"
-      className="grid min-h-0 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] content-start gap-1 overflow-y-auto p-1">
-      {cardFacts(query.data).map((fact) => {
-        const chip = CHIP[fact.quality];
-        const sub = fact.secondary;
-        const subChip = sub ? CHIP[sub.quality] : null;
-        return (
-          <div
-            key={fact.key}
-            data-testid={`fundamental-card-${fact.key}`}
-            role="group"
-            aria-label={`${fact.label} — ${chip.word}${sub ? `؛ ${sub.label} ${sub.value} ${subChip!.word}` : ''}`}
-            title={`${fact.label} — ${fact.value} — ${fact.note}${sub ? `
+    <div className="flex min-h-0 flex-col gap-1">
+      {fresh ? (
+        <div data-testid="fundamental-freshness" title={fresh.title}
+          className="flex items-center gap-1 px-1 pt-1 t-85 text-text-3">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-up" aria-hidden />
+          <span>{fresh.text}</span>
+        </div>
+      ) : null}
+      <div data-testid="fundamental-cards"
+        className="grid min-h-0 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] content-start gap-1 overflow-y-auto p-1">
+        {cardFacts(query.data).map((fact) => {
+          const chip = CHIP[fact.quality];
+          const sub = fact.secondary;
+          const subChip = sub ? CHIP[sub.quality] : null;
+          return (
+            <div
+              key={fact.key}
+              data-testid={`fundamental-card-${fact.key}`}
+              role="group"
+              aria-label={`${fact.label} — ${chip.word}${sub ? `؛ ${sub.label} ${sub.value} ${subChip!.word}` : ''}`}
+              title={`${fact.label} — ${fact.value} — ${fact.note}${sub ? `
 ${sub.label}: ${sub.value} — ${sub.note}` : ''}`}
-            className="flex min-h-0 min-w-0 flex-col gap-0.5 rounded-[var(--radius-sm)] border border-line bg-panel-2 px-2 py-1.5"
-          >
-            <div className="flex items-center justify-between gap-1">
-              <span className="flex min-w-0 items-center gap-1">
-                <span className="grid h-4 w-4 flex-none place-items-center rounded-full bg-panel-3 t-85 text-text-3">
-                  {toFaDigits(fact.key.slice(0, 1))}
-                </span>
-                <span className="truncate t-9 text-text-3">{fact.label.replace(/^\S+\s/, '')}</span>
-              </span>
-              <span className={clsx('flex-none t-85 font-bold', chip.tone)}>{chip.word}</span>
-            </div>
-            <b className="num truncate t-125 font-extrabold leading-tight text-text">{fact.value}</b>
-            <span className="line-clamp-2 t-85 leading-relaxed text-text-3">{fact.note}</span>
-            {sub && subChip ? (
-              <span data-testid="fundamental-industry"
-                className="flex min-w-0 items-center justify-between gap-1 border-t border-line pt-0.5 t-85">
-                <span className="truncate text-text-3">{sub.label}</span>
+              className="flex min-h-0 min-w-0 flex-col gap-0.5 rounded-[var(--radius-sm)] border border-line bg-panel-2 px-2 py-1.5"
+            >
+              <div className="flex items-center justify-between gap-1">
                 <span className="flex min-w-0 items-center gap-1">
-                  <span className="truncate text-text-2">{sub.value}</span>
-                  <b className={clsx('flex-none', subChip.tone)}>{subChip.word}</b>
+                  <span className="grid h-4 w-4 flex-none place-items-center rounded-full bg-panel-3 t-85 text-text-3">
+                    {toFaDigits(fact.key.slice(0, 1))}
+                  </span>
+                  <span className="truncate t-9 text-text-3">{fact.label.replace(/^\S+\s/, '')}</span>
                 </span>
-              </span>
-            ) : null}
-          </div>
-        );
-      })}
+                <span className={clsx('flex-none t-85 font-bold', chip.tone)}>{chip.word}</span>
+              </div>
+              <b className="num truncate t-125 font-extrabold leading-tight text-text">{fact.value}</b>
+              <span className="line-clamp-2 t-85 leading-relaxed text-text-3">{fact.note}</span>
+              {sub && subChip ? (
+                <span data-testid="fundamental-industry"
+                  className="flex min-w-0 items-center justify-between gap-1 border-t border-line pt-0.5 t-85">
+                  <span className="truncate text-text-3">{sub.label}</span>
+                  <span className="flex min-w-0 items-center gap-1">
+                    <span className="truncate text-text-2">{sub.value}</span>
+                    <b className={clsx('flex-none', subChip.tone)}>{subChip.word}</b>
+                  </span>
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

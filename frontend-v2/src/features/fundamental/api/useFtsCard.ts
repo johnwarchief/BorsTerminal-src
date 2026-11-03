@@ -39,10 +39,25 @@ const Axis5Schema = z.looseObject({
   sector: Str,
 }).nullish();
 
+const FreshnessAxisSchema = z.looseObject({
+  as_of: Str,
+  source: Str,
+  tracing_no: Num,
+  period_end: Str,
+  state: z.enum(['fresh', 'stale', 'missing', 'quarantined']).nullish(),
+  reason: Str,
+});
+
+const FreshnessSchema = z.looseObject({
+  as_of: Str,
+  axes: z.record(z.string(), FreshnessAxisSchema).nullish(),
+});
+
 export const FtsCardSchema = z.looseObject({
   status: z.literal('success'),
   symbol: z.string(),
   sector: Str,
+  freshness: FreshnessSchema.nullish(),
   message: Str,
   passes: z.record(z.string(), Bool).nullish(),
   indicators: z.looseObject({
