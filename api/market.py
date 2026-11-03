@@ -33,6 +33,18 @@ _FTS_INDUSTRY_MODES = ("Exclude_Mandatory_Pricing", "Rank_Only",
                        "Include_Industries", "Exclude_Industries")
 
 
+def _normalise_mandatory_sectors(values) -> list:
+    """فهرستِ الزامیِ قیمت‌گذاریِ دستوری را به سه صنعتِ جزوه قفل می‌کند.
+
+    فایلِ ذخیره‌شده فقط می‌تواند همان سه صنعت را تکرار کند و هرگز توکنِ تازه
+    (دارو/غذا/قند/شوینده/بیمه) اضافه نمی‌کند. ترتیبِ ورودی حفظ می‌شود؛ اگر
+    هیچ‌کدام نماند، پیش‌فرضِ سرور برمی‌گردد.
+    """
+    allowed = list(FTS_DEFAULTS["mandatory_sectors"])
+    kept = [s for s in (values or []) if s in allowed]
+    return kept or allowed
+
+
 def load_fts_config() -> dict:
     """پیش‌شرط‌ها را میخواند و کلیدهای نسل قدیم را به ساختار v8 مهاجرت میدهد."""
     try:
@@ -68,13 +80,22 @@ def load_fts_config() -> dict:
         if isinstance(v, str):
             v = [s.strip() for s in v.replace("،", ",").split(",") if s.strip()]
         cfg[k] = [str(s).strip() for s in (v or []) if str(s).strip()]
+    # Task 8 migration: pre-1.0.87 saves may carry the old 6/8-item list
+    # (incl. بیمه/قند/شوینده/دارو/غذا). The owner contract is exactly the
+    # booklet three; a persisted list may only repeat them, never add tokens.
+    cfg["mandatory_sectors"] = _normalise_mandatory_sectors(cfg.get("mandatory_sectors"))
     for k, v in list(cfg.items()):
         if k in FTS_STR_KEYS:
             cfg[k] = str(v)
         elif k in FTS_LIST_KEYS:
             continue
         elif isinstance(FTS_DEFAULTS[k], bool):
-            cfg[k] = bool(v)
+            if k == "reject_insurance":
+                # وتویِ سختِ بیمه فقط با بولِ واقعی خاموش می‌شود؛ JSON `null`
+                # یا رشتهٔ "false" نباید بی‌صدا وتو را بردارد.
+                cfg[k] = v if isinstance(v, bool) else FTS_DEFAULTS[k]
+            else:
+                cfg[k] = bool(v)
         elif k.endswith("_max") or k.endswith("_years") or k.endswith("_sessions"):
             try:
                 cfg[k] = int(float(v))
@@ -152,6 +173,106 @@ def get_market(request: Request, fields: str = ""):
     if cached is not None:
         return cached
     return _build_market_response(request)
+
+
+@router.get("/api/market/closes")
+def market_closes(request: Request):
+    """نقشهٔ سبکِ «نماد ← قیمتِ پایانی» برایِ نوارهایِ حد ضرر/پرتفوی.
+
+    چرا: `useMarketCloses` پیش‌تر از فیدِ کاملِ `/api/market` (۶٫۸MB خام،
+    ~۱٫۲MB gzip) فقط همین یک عدد را برمی‌داشت. صفحهٔ `master` و پرتفوی هم
+    همان بدنهٔ سنگین را در هر ورود می‌کشیدند. این مسیر فقط دو ستون از همان
+    ردیفِ تابلو می‌خواند؛ ETag از (revision، d_even، h_even، fetched_at) ساخته
+    می‌شود، پس پولینگِ بی‌تغییر ۳۰۴ِ صفر‌بایت می‌گیرد و کشِ کهنه سرو نمی‌شود.
+    داده همان p_closingِ همان نشست است؛ هیچ محاسبهٔ دومی اضافه نشده.
+    """
+    conn = get_db()
+    try:
+        day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
+        if not day:
+            return _ORJ_JSON({"status": "success", "closes": {}, "count": 0})
+        meta = conn.execute(
+            "SELECT MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_watch WHERE d_even=?",
+            (day,)).fetchone()
+        rev = market_state.revision()
+        import hashlib
+        etag = '"closes-%s-%s-%s-%s"' % (
+            rev, int(day), int(meta[0] or 0),
+            hashlib.md5(str(meta[2] or "").encode("utf-8")).hexdigest()[:8])
+        inm = request.headers.get("if-none-match") if request is not None else None
+        if inm and _inm_matches(inm, etag):
+            return Response(status_code=304, headers={"ETag": etag})
+        rows = conn.execute(
+            "SELECT i.l_val18, m.p_closing FROM market_watch m "
+            "LEFT JOIN instruments i ON i.ins_code=m.ins_code WHERE m.d_even=?",
+            (day,)).fetchall()
+        closes = {}
+        for sym, close in rows:
+            if sym and close is not None:
+                closes[str(sym)] = float(close)
+        body, _ = _encode_board({
+            "status": "success",
+            "asof": {"d_even": int(day), "h_even": int(meta[0] or 0)},
+            "rev": int(rev), "count": len(closes), "closes": closes,
+        })
+        return Response(content=body, media_type="application/json",
+                        headers={"ETag": etag, "Cache-Control": "no-store"})
+    finally:
+        conn.close()
+
+
+@router.get("/api/market/row")
+def market_row(request: Request, symbol: str = ""):
+    """یک ردیفِ تابلوی همان نماد — برایِ سایدبارِ نماد (حد ضرر/مظنه/پرچم).
+
+    سایدبار پیش‌تر برایِ پیدا کردنِ یک ردیف، فیدِ کاملِ `/api/market` (۶٫۸MB
+    خام / ~۱٫۲MB gzip) را می‌کشید. این مسیر همان ردیفِ آینهٔ دلتا را برمی‌گرداند
+    (همان شکل و همان فیلدها، نه یک محاسبهٔ دوم)؛ اگر تابلویِ این پروسه هنوز
+    ساخته نشده باشد، همان مسیرِ رسمیِ ساخت را یک‌بار اجرا می‌کند. ETag از
+    revision ساخته می‌شود، پس پولینگِ بی‌تغییر ۳۰۴ِ صفر‌بایت است.
+    """
+    import hashlib
+    import fts_engine as _fe
+    sym = str(symbol or "").strip()
+    if not sym:
+        return {"status": "success", "row": None}
+
+    def _find():
+        want = _fe.norm_fa(sym)
+        with _DELTA_LOCK:
+            if not _DELTA.get("ready"):
+                return None
+            for row in _DELTA["by_code"].values():
+                rs = str(row.get("symbol") or "")
+                if rs == sym or (want and _fe.norm_fa(rs) == want):
+                    return row
+        return None
+
+    row = _find()
+    if row is None:
+        try:
+            _build_market_response(_MarketInternalRequest())
+        except Exception:
+            pass
+        row = _find()
+    rev = int(market_state.revision() or 0)
+    etag = '"row-%s-%s"' % (rev, hashlib.md5(sym.encode("utf-8")).hexdigest()[:8])
+    inm = request.headers.get("if-none-match") if request is not None else None
+    if inm and _inm_matches(inm, etag):
+        return Response(status_code=304, headers={"ETag": etag})
+    body, _ = _encode_board({"status": "success", "symbol": sym, "row": row, "rev": rev})
+    return Response(content=body, media_type="application/json",
+                    headers={"ETag": etag, "Cache-Control": "no-store"})
+
+
+def _inm_matches(field: str, etag: str) -> bool:
+    """مقایسهٔ ضعیفِ If-None-Match (همان قاعدهٔ funnel، محلی تا import حلقه نشود)."""
+    tag = etag[2:] if etag.startswith("W/") else etag
+    for part in str(field or "").split(","):
+        p = part.strip()
+        if p == "*" or (p[2:] if p.startswith("W/") else p) == tag:
+            return True
+    return False
 
 
 # ── تازه‌سازیِ پس‌زمینه‌ای (#176) ────────────────────────────────────────
@@ -1696,7 +1817,11 @@ def set_fts_config(payload: dict = None):
         elif k in FTS_STR_KEYS:
             cfg[k] = str(v)
         elif isinstance(FTS_DEFAULTS[k], bool):
-            cfg[k] = bool(v)
+            if k == "reject_insurance":
+                # فقط بولِ واقعی؛ null/رشته یعنی پیش‌فرضِ امن (True).
+                cfg[k] = v if isinstance(v, bool) else FTS_DEFAULTS[k]
+            else:
+                cfg[k] = bool(v)
         elif k.endswith("_max") or k.endswith("_years") or k.endswith("_sessions"):
             try:
                 cfg[k] = int(float(v))
@@ -1724,6 +1849,9 @@ def set_fts_config(payload: dict = None):
                 continue
             if cfg[k] < 0:
                 errors[k] = "مقدار منفی مجاز نیست"
+    # Task 8: حتی اگر کلاینت فهرستِ قدیمی بفرستد، فقط سه صنعتِ جزوه روی دیسک
+    # می‌نشیند (همان قاعدهٔ load؛ Save دیگر superset ذخیره نمی‌کند).
+    cfg["mandatory_sectors"] = _normalise_mandatory_sectors(cfg.get("mandatory_sectors"))
     if str(cfg.get("industry_mode") or "").strip() not in _FTS_INDUSTRY_MODES:
         errors["industry_mode"] = "حالتِ شناخته‌شده‌ای نیست"
     if cfg.get("hourglass_ma52_position") not in ("below", "above", "either"):

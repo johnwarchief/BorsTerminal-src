@@ -1,0 +1,743 @@
+{
+ "observed": {
+  "bors_sync": "2026-10-20 15:19:51",
+  "tsetmc_fetched_at": "2026-10-20T17:13:36",
+  "bors_live": 3303,
+  "tsetmc": 3287,
+  "joined": 3281,
+  "same_tick": 3093
+ },
+ "fields": {
+  "p_last": {
+   "all": {
+    "compared": 3281,
+    "agree": 3175,
+    "differ": 106,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 46225.0,
+      "source": 46036.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 20244.0,
+      "source": 20243.0
+     },
+     {
+      "symbol": "آسال",
+      "bors": 11170.0,
+      "source": 11169.0
+     },
+     {
+      "symbol": "آسان",
+      "bors": 13805.0,
+      "source": 13804.0
+     },
+     {
+      "symbol": "آفاق",
+      "bors": 12205.0,
+      "source": 12204.0
+     }
+    ],
+    "exact_rate": 0.967693
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 82,
+    "differ": 106,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 46225.0,
+      "source": 46036.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 20244.0,
+      "source": 20243.0
+     },
+     {
+      "symbol": "آسال",
+      "bors": 11170.0,
+      "source": 11169.0
+     },
+     {
+      "symbol": "آسان",
+      "bors": 13805.0,
+      "source": 13804.0
+     },
+     {
+      "symbol": "آفاق",
+      "bors": 12205.0,
+      "source": 12204.0
+     }
+    ],
+    "exact_rate": 0.43617
+   }
+  },
+  "p_closing": {
+   "all": {
+    "compared": 3281,
+    "agree": 3195,
+    "differ": 86,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 46547.0,
+      "source": 46475.0
+     },
+     {
+      "symbol": "آلتون",
+      "bors": 82907.0,
+      "source": 82868.0
+     },
+     {
+      "symbol": "ارزش مسكن",
+      "bors": 37267.0,
+      "source": 37219.0
+     },
+     {
+      "symbol": "امرالد",
+      "bors": 34943.0,
+      "source": 34944.0
+     },
+     {
+      "symbol": "امين شهر",
+      "bors": 21114.0,
+      "source": 21190.0
+     }
+    ],
+    "exact_rate": 0.973788
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 102,
+    "differ": 86,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 46547.0,
+      "source": 46475.0
+     },
+     {
+      "symbol": "آلتون",
+      "bors": 82907.0,
+      "source": 82868.0
+     },
+     {
+      "symbol": "ارزش مسكن",
+      "bors": 37267.0,
+      "source": 37219.0
+     },
+     {
+      "symbol": "امرالد",
+      "bors": 34943.0,
+      "source": 34944.0
+     },
+     {
+      "symbol": "امين شهر",
+      "bors": 21114.0,
+      "source": 21190.0
+     }
+    ],
+    "exact_rate": 0.542553
+   }
+  },
+  "price_yesterday": {
+   "all": {
+    "compared": 3281,
+    "agree": 3281,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 188,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   }
+  },
+  "p_first": {
+   "all": {
+    "compared": 3281,
+    "agree": 3280,
+    "differ": 1,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "عسبلان",
+      "bors": 0.0,
+      "source": 3641771.0
+     }
+    ],
+    "exact_rate": 0.999695
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 187,
+    "differ": 1,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "عسبلان",
+      "bors": 0.0,
+      "source": 3641771.0
+     }
+    ],
+    "exact_rate": 0.994681
+   }
+  },
+  "p_max": {
+   "all": {
+    "compared": 3281,
+    "agree": 3275,
+    "differ": 6,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "امين شهر",
+      "bors": 21150.0,
+      "source": 21271.0
+     },
+     {
+      "symbol": "بلد",
+      "bors": 11258.0,
+      "source": 11310.0
+     },
+     {
+      "symbol": "دهدشت",
+      "bors": 15720.0,
+      "source": 0.0
+     },
+     {
+      "symbol": "عسبلان",
+      "bors": 0.0,
+      "source": 3641771.0
+     },
+     {
+      "symbol": "كارآمد",
+      "bors": 18932.0,
+      "source": 18933.0
+     }
+    ],
+    "exact_rate": 0.998171
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 182,
+    "differ": 6,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "امين شهر",
+      "bors": 21150.0,
+      "source": 21271.0
+     },
+     {
+      "symbol": "بلد",
+      "bors": 11258.0,
+      "source": 11310.0
+     },
+     {
+      "symbol": "دهدشت",
+      "bors": 15720.0,
+      "source": 0.0
+     },
+     {
+      "symbol": "عسبلان",
+      "bors": 0.0,
+      "source": 3641771.0
+     },
+     {
+      "symbol": "كارآمد",
+      "bors": 18932.0,
+      "source": 18933.0
+     }
+    ],
+    "exact_rate": 0.968085
+   }
+  },
+  "p_min": {
+   "all": {
+    "compared": 3281,
+    "agree": 3267,
+    "differ": 14,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 46133.0,
+      "source": 46036.0
+     },
+     {
+      "symbol": "آسان",
+      "bors": 13805.0,
+      "source": 13804.0
+     },
+     {
+      "symbol": "دهدشت",
+      "bors": 15720.0,
+      "source": 0.0
+     },
+     {
+      "symbol": "زروان",
+      "bors": 52201.0,
+      "source": 52190.0
+     },
+     {
+      "symbol": "زعف0510پ18",
+      "bors": 2850000.0,
+      "source": 2840000.0
+     }
+    ],
+    "exact_rate": 0.995733
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 174,
+    "differ": 14,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 46133.0,
+      "source": 46036.0
+     },
+     {
+      "symbol": "آسان",
+      "bors": 13805.0,
+      "source": 13804.0
+     },
+     {
+      "symbol": "دهدشت",
+      "bors": 15720.0,
+      "source": 0.0
+     },
+     {
+      "symbol": "زروان",
+      "bors": 52201.0,
+      "source": 52190.0
+     },
+     {
+      "symbol": "زعف0510پ18",
+      "bors": 2850000.0,
+      "source": 2840000.0
+     }
+    ],
+    "exact_rate": 0.925532
+   }
+  },
+  "tmin": {
+   "all": {
+    "compared": 3281,
+    "agree": 3281,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 188,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   }
+  },
+  "price_change": {
+   "all": {
+    "compared": 3281,
+    "agree": 3175,
+    "differ": 106,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 70.0,
+      "source": -119.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 25.0,
+      "source": 24.0
+     },
+     {
+      "symbol": "آسال",
+      "bors": 13.0,
+      "source": 12.0
+     },
+     {
+      "symbol": "آسان",
+      "bors": 11.0,
+      "source": 10.0
+     },
+     {
+      "symbol": "آفاق",
+      "bors": 17.0,
+      "source": 16.0
+     }
+    ],
+    "exact_rate": 0.967693
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 82,
+    "differ": 106,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آتش",
+      "bors": 70.0,
+      "source": -119.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 25.0,
+      "source": 24.0
+     },
+     {
+      "symbol": "آسال",
+      "bors": 13.0,
+      "source": 12.0
+     },
+     {
+      "symbol": "آسان",
+      "bors": 11.0,
+      "source": 10.0
+     },
+     {
+      "symbol": "آفاق",
+      "bors": 17.0,
+      "source": 16.0
+     }
+    ],
+    "exact_rate": 0.43617
+   }
+  },
+  "q_tot_tran": {
+   "all": {
+    "compared": 3281,
+    "agree": 3093,
+    "differ": 188,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آبي",
+      "bors": 892695114.0,
+      "source": 1124557831.0
+     },
+     {
+      "symbol": "آتش",
+      "bors": 36104095.0,
+      "source": 45364929.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 108052005.0,
+      "source": 108819289.0
+     },
+     {
+      "symbol": "آرامش",
+      "bors": 32223148.0,
+      "source": 32546095.0
+     },
+     {
+      "symbol": "آسا",
+      "bors": 19064958.0,
+      "source": 25979466.0
+     }
+    ],
+    "exact_rate": 0.9427
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 0,
+    "differ": 188,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آبي",
+      "bors": 892695114.0,
+      "source": 1124557831.0
+     },
+     {
+      "symbol": "آتش",
+      "bors": 36104095.0,
+      "source": 45364929.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 108052005.0,
+      "source": 108819289.0
+     },
+     {
+      "symbol": "آرامش",
+      "bors": 32223148.0,
+      "source": 32546095.0
+     },
+     {
+      "symbol": "آسا",
+      "bors": 19064958.0,
+      "source": 25979466.0
+     }
+    ],
+    "exact_rate": 0.0
+   }
+  },
+  "q_tot_cap": {
+   "all": {
+    "compared": 3281,
+    "agree": 3093,
+    "differ": 188,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آبي",
+      "bors": 9480449940933.0,
+      "source": 11942820869013.0
+     },
+     {
+      "symbol": "آتش",
+      "bors": 1680527389496.0,
+      "source": 2108318224150.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 2187315033489.0,
+      "source": 2202847798388.0
+     },
+     {
+      "symbol": "آرامش",
+      "bors": 668764559911.0,
+      "source": 675467001949.0
+     },
+     {
+      "symbol": "آسا",
+      "bors": 219503022541.0,
+      "source": 299109753926.0
+     }
+    ],
+    "exact_rate": 0.9427
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 0,
+    "differ": 188,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آبي",
+      "bors": 9480449940933.0,
+      "source": 11942820869013.0
+     },
+     {
+      "symbol": "آتش",
+      "bors": 1680527389496.0,
+      "source": 2108318224150.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 2187315033489.0,
+      "source": 2202847798388.0
+     },
+     {
+      "symbol": "آرامش",
+      "bors": 668764559911.0,
+      "source": 675467001949.0
+     },
+     {
+      "symbol": "آسا",
+      "bors": 219503022541.0,
+      "source": 299109753926.0
+     }
+    ],
+    "exact_rate": 0.0
+   }
+  },
+  "z_tot_tran": {
+   "all": {
+    "compared": 3281,
+    "agree": 3093,
+    "differ": 188,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آبي",
+      "bors": 1623.0,
+      "source": 1900.0
+     },
+     {
+      "symbol": "آتش",
+      "bors": 1160.0,
+      "source": 2405.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 364.0,
+      "source": 380.0
+     },
+     {
+      "symbol": "آرامش",
+      "bors": 227.0,
+      "source": 231.0
+     },
+     {
+      "symbol": "آسا",
+      "bors": 142.0,
+      "source": 189.0
+     }
+    ],
+    "exact_rate": 0.9427
+   },
+   "same_tick": {
+    "compared": 3093,
+    "agree": 3093,
+    "differ": 0,
+    "missing": 0,
+    "examples": [],
+    "exact_rate": 1.0
+   },
+   "later_tick": {
+    "compared": 188,
+    "agree": 0,
+    "differ": 188,
+    "missing": 0,
+    "examples": [
+     {
+      "symbol": "آبي",
+      "bors": 1623.0,
+      "source": 1900.0
+     },
+     {
+      "symbol": "آتش",
+      "bors": 1160.0,
+      "source": 2405.0
+     },
+     {
+      "symbol": "آتيه ملت",
+      "bors": 364.0,
+      "source": 380.0
+     },
+     {
+      "symbol": "آرامش",
+      "bors": 227.0,
+      "source": 231.0
+     },
+     {
+      "symbol": "آسا",
+      "bors": 142.0,
+      "source": 189.0
+     }
+    ],
+    "exact_rate": 0.0
+   }
+  }
+ },
+ "sums": {
+  "volume": {
+   "bors": 87230342693.0,
+   "source": 90358459086.0,
+   "diff_rows": 188
+  },
+  "value": {
+   "bors": 2147383000907857.0,
+   "source": 2261349148849972.0,
+   "diff_rows": 188
+  },
+  "trades": {
+   "bors": 2275031.0,
+   "source": 2355148.0,
+   "diff_rows": 188
+  }
+ }
+}

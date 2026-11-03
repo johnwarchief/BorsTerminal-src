@@ -1,0 +1,109 @@
+{
+ "switches": [
+  {
+   "round": 0,
+   "zone": "S",
+   "ms": 111
+  },
+  {
+   "round": 0,
+   "zone": "T",
+   "ms": 133
+  },
+  {
+   "round": 0,
+   "zone": "F",
+   "ms": 41
+  },
+  {
+   "round": 0,
+   "zone": "M",
+   "ms": 161
+  },
+  {
+   "round": 0,
+   "zone": "master",
+   "ms": 113
+  },
+  {
+   "round": 1,
+   "zone": "S",
+   "ms": 39
+  },
+  {
+   "round": 1,
+   "zone": "T",
+   "ms": 41
+  },
+  {
+   "round": 1,
+   "zone": "F",
+   "ms": 36
+  },
+  {
+   "round": 1,
+   "zone": "M",
+   "ms": 52
+  },
+  {
+   "round": 1,
+   "zone": "master",
+   "ms": 95
+  },
+  {
+   "round": 2,
+   "zone": "S",
+   "ms": 72
+  },
+  {
+   "round": 2,
+   "zone": "T",
+   "ms": 36
+  },
+  {
+   "round": 2,
+   "zone": "F",
+   "ms": 39
+  },
+  {
+   "round": 2,
+   "zone": "M",
+   "ms": 52
+  },
+  {
+   "round": 2,
+   "zone": "master",
+   "ms": 69
+  }
+ ],
+ "zoom": [
+  {
+   "action": "chart-zoom-in",
+   "ms": 22
+  },
+  {
+   "action": "chart-zoom-in",
+   "ms": 40
+  },
+  {
+   "action": "chart-zoom-out",
+   "ms": 32
+  },
+  {
+   "action": "chart-fit",
+   "ms": 42
+  },
+  {
+   "action": "chart-focus-T",
+   "ms": 24
+  },
+  {
+   "action": "chart-focus-all",
+   "ms": 35
+  }
+ ],
+ "dom": {
+  "nodes": 663,
+  "svg": 248
+ }
+}

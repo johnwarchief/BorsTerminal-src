@@ -345,10 +345,25 @@ def main() -> int:
        "دربه‌دیوار و چراغِ چرخۀ بعدی هم درِ پاسخ‌اند",
        (sp["offline_gate"], sp["cadence"]))
     import codal_periods as _CP
-    expected_undated = len(_CP.undated_counts(c6))
-    ck(sp["undated_notices"] == expected_undated,
-       "شمارشِ «بی‌دوره» از خودِ codal_periods.undated_counts می‌آید، نه از شمارندۀ ساختگی",
-       (sp["undated_notices"], expected_undated))
+    # دو ردیفِ بی‌دورۀ واقعی می‌کاریم تا شمارشِ پاسخ از خودِ ردیف‌ها بیاید، نه از
+    # تعدادِ کلیدهای دیکشنری. دامِ پیشین `len(undated_counts())` را به خودش
+    # می‌داد (۳ == ۳) و با صفربودنِ بی‌دوره‌ها هم سبز می‌ماند — یعنی سنسور کور بود.
+    for _tno in (1301, 1302):
+        c6.execute("INSERT INTO financial_statements (tracing_no, symbol, company_name,"
+                   " title, period_end, revenue, unit) VALUES (?,'بی‌دوره','شرکت بی‌دوره'"
+                   ",'صورت مالی میاندورهای',NULL,1000.0,'میلیون ریال')", (_tno,))
+    c6.commit()
+    want_undated = int(c6.execute("SELECT (SELECT COUNT(*) FROM financial_statements WHERE %s)"
+                                  " + (SELECT COUNT(*) FROM monthly_sales WHERE %s)"
+                                  % (_CP.UNDATED_SQL, _CP.UNDATED_SQL)).fetchone()[0])
+    sp = PL.status_payload(c6, now="2026-10-14 20:00:00")
+    ck(sp["undated_notices"] == want_undated == 2,
+       "شمارشِ «بی‌دوره» شمارِ ردیف‌هایِ واقعی است، نه تعدادِ کلیدهای دیکشنری",
+       (sp["undated_notices"], want_undated, len(_CP.undated_counts(c6))))
+    c6.execute("DELETE FROM financial_statements WHERE tracing_no=1301")
+    c6.commit()
+    ck(PL.status_payload(c6, now="2026-10-14 20:00:00")["undated_notices"] == 1,
+       "دامِ سنسور: با حذفِ یکِ ردیفِ بی‌دوره، پاسخ یکِ واحد پایین می‌آید")
     src = open(os.path.join(ROOT, "api", "fundamental.py"),
                encoding="utf-8").read()
     ck("/api/sync/codal/pipeline" in src and "status_payload" in src,

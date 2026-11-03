@@ -1,0 +1,26 @@
+# RA365 Round 28 evidence (2026-10-25)
+# branch mission/ra365-round28-adjusted-root-cause-2026-10-24 from 24a01ed9; production code unchanged
+9300721bf7b2922a5ca447c0c14fc72728cd874a352fe1506f2b549044ff2fc4 *docs/RA365-ROUND28-ADJUSTED-ROOT-CAUSE-REPORT.md
+0c41673ab12e06f3c18a433484b51eb43d865d17324562a71989ca771d05d084 *docs/RA365-ROUND28-AUDIT-INTEGRITY.md
+fa52acd90e21ecc94048cdd7f3680e22f0fc0d6517a10cdb6e9d96679a6e8a11 *artifacts/ra365/r28/low-adjusted-classes.csv
+8edc3dfe7a56469f4d46147e6b5fcf23e87fbd3054ee09b34b2609313fa60b21 *artifacts/ra365/r28/audit-summary.json
+1ce77c6b80f330156b394cdd43738e38a9e3b93a0ec688f3abf33f0ca28eaa27 *artifacts/ra365/r28/audit-per-asset.csv
+a797cd6b9c753ea830cbd3b7645a615ba233f9afa78ceee1e12f26fe3df47158 *tools/ra365_round28_chain_debug.py
+5c097ccad8478633d9250fff9603bcc438a5d0196bbe4d8cf3602f0635be00df *dev/test_ra365_round28_chain_debug_v1.py
+# chain tables
+a563bca05d6789cb603342ee460db70cd0baad7fb6ce7064ee65a34074c596ed *artifacts/ra365/r28/chain/chain-11.csv
+c813282e53401cfa9965e23d2ef0c1e08994dc2865599f1883651dab09f6cd73 *artifacts/ra365/r28/chain/chain-136.csv
+d2551ca96e009dbdd0e40fcaee8b0b9bebcf443338b4624b03216948dc03cdfe *artifacts/ra365/r28/chain/chain-1567.csv
+1c3ec21b1ea88c77c859e03fcba9ddc79f15af2e85376a0e385117b470e7d7a8 *artifacts/ra365/r28/chain/chain-1656.csv
+973964221dee614d59b40812209793adc15b86e957adb0fcb7395ee246b31f3d *artifacts/ra365/r28/chain/chain-1951.csv
+20817d41f2f5e99b8a0dd937a12fbdd6d40bfca0eff29af6a3d572f8471d7cf6 *artifacts/ra365/r28/chain/chain-23973.csv
+55ebd76a9c1ccd309396936b89317ecea4406869f08ad4144cb4a3580f924cbd *artifacts/ra365/r28/chain/chain-2768.csv
+b6a39008b5008c0313250b58e9f439c61915c07cb31e467e31608eea2d6aba4c *artifacts/ra365/r28/chain/chain-463.csv
+# frozen inputs / payload manifest (Round 27, outside Git)
+4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c *D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl
+79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f *D:/BorsTerminal-tmp/ra365_round18/cohort.jsonl
+98e30784bb1a46b1ea0d73ac6f086dc6bde459cffd3ecc958cfba12a42494eda *artifacts/ra365/r27/payload-manifest.sha256
+# protected DBs
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/ra365-round18/market.db
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f *D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
+33378e793864850f3c68d83a18fe55b9f9dbf8a1f5ed7999a6c3f4adb10c96da *artifacts/ra365/r28/full-gate.log

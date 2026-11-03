@@ -51,7 +51,7 @@ const FEED = {
     },
     jet: { active: true, resistance: 4210, ceiling: 4500, ath: false, close: 4213, pct_above_res: 0.7 },
     exit_engine: { verdict: 'hold', l1: { hard_stop: 3980, ma14: 4050 } },
-    hourglass: { active: false, action: 'NORMAL', ma52: 4400, weekly_rsi5: 58.2 },
+    hourglass: { active: false, action: 'NORMAL', ma52: 4400, weekly_rsi: 58.2, rsi_period: 7 },
   },
 } as unknown as FtsPlanFeed;
 
@@ -88,7 +88,8 @@ describe('buildDossier — ترجمه، نه داوری', () => {
     expect(d.levels.resistance).toBe(4210);
     expect(d.levels.hardStop).toBe(3980);
     expect(d.hourglass.ma52).toBe(4400);
-    expect(d.hourglass.rsi5).toBe(58.2);
+    expect(d.hourglass.weeklyRsi).toBe(58.2);
+    expect(d.hourglass.rsiPeriod).toBe(7);
     expect(d.technical.basis).toBe('tsetmc-adjusted');
   });
 
@@ -141,7 +142,7 @@ describe('buildDossier — ترجمه، نه داوری', () => {
 
   it('ساعتِ شنیِ سنجیده‌نشده «غیرفعال» خوانده نمی‌شود', () => {
     const noHg = JSON.parse(JSON.stringify(FEED));
-    noHg.fts.hourglass = { active: null, action: 'UNKNOWN', ma52: null, weekly_rsi5: null };
+    noHg.fts.hourglass = { active: null, action: 'UNKNOWN', ma52: null, weekly_rsi: null, rsi_period: null };
     const d = buildDossier(candidate(), noHg as FtsPlanFeed, 'فولاد');
     expect(d.hourglass.active).toBeNull();
   });

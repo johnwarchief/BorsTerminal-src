@@ -1,0 +1,6 @@
+$ C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\venv_build\Scripts\python.exe scripts/check_build_env.py
+[build-env] interpreter: C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\venv_build\Scripts\python.exe
+[build-env] python     : 3.14.4
+[build-env] OK — 13 importable modules: PyInstaller, docx, fastapi, httpx, numpy, openpyxl, orjson, pandas, pythonnet, reportlab, requests, uvicorn, webview
+
+EXIT=0

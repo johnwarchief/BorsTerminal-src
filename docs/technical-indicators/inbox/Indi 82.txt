@@ -1,0 +1,251 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=5
+indicator(title = '3rd Wave BB TrendLines',shorttitle = '3rd Wave BB TrendLines', overlay=true, max_bars_back=500, max_lines_count=500, max_labels_count=500)
+ 
+// импорт необходимых функций для расчета и отображения зигзага 
+import LonesomeTheBlue/CreateAndShowZigzag/1 as ZigZag
+
+// Управляемые элементы для настройки и корректировки
+prd = input.int(defval=8, title='ZigZag Period', minval=2, maxval=50, group='setup')
+ret_rate_min = input.float(defval=0.382, title='Min/Max Retracements', minval=0.100, maxval=0.900, inline='retrate', group='setup')
+ret_rate_max = input.float(defval=0.786, title='', minval=0.100, maxval=0.900, inline='retrate', group='setup')
+checkvol_support = input.bool(defval=true, title='Check Volume Support', group='setup')
+target1_enb = input.bool(defval=true, title='Target 1', inline='t1', group='targets')
+target1_ret = input.float(defval=1., title='', inline='t1', group='targets', tooltip="%X of wave 1 from the beginning of wave 2")
+target2_enb = input.bool(defval=true, title='Target 2', inline='t2', group='targets')
+target2_ret = input.float(defval=1.618, title='', inline='t2', group='targets', tooltip="%X of wave 1 from the beginning of wave 2")
+target3_enb = input.bool(defval=false, title='Target 3', inline='t3', group='targets')
+target3_ret = input.float(defval=2.618, title='', inline='t3', group='targets', tooltip="%X of wave 1 from the beginning of wave 2")
+target4_enb = input.bool(defval=false, title='Target 4', inline='t4', group='targets')
+target4_ret = input.float(defval=3.618, title='', inline='t4', group='targets', tooltip="%X of wave 1 from the beginning of wave 2")
+showwave12 = input.bool(defval=true, title='Show Wave 1 and 2', group='colors')
+showbo = input.bool(defval=true, title='Zone', inline='bocol', group='colors')
+bupcol = input.color(defval=color.rgb(0, 255, 0, 85), title='', inline='bocol', group='colors')
+bdncol = input.color(defval=color.rgb(255, 0, 0, 85), title='', inline='bocol', group='colors')
+showzigzag = input.bool(defval=false, title='Zig Zag', inline='zzcol', group='colors')
+upcol = input.color(defval=color.rgb(86, 255, 199), title='', inline='zzcol', group='colors')
+dncol = input.color(defval=color.rgb(255, 121, 168), title='', inline='zzcol', group='colors')
+
+// Полосы Боллинджера
+bb_length = input.int(defval=20, title='Bollinger Bands Period', group='Bollinger Bands')
+bb_mult = input.float(defval=2.0, title='Bollinger Bands Multiplier', group='Bollinger Bands')
+bb_basis = ta.sma(close, bb_length)
+bb_upper = bb_basis + ta.stdev(close, bb_length) * bb_mult
+bb_lower = bb_basis - ta.stdev(close, bb_length) * bb_mult
+
+plot(bb_basis, color=color.rgb(33, 149, 243, 70), title='BB Basis', force_overlay = true)
+p1 = plot(bb_upper, color=color.rgb(255, 82, 82, 70), title='BB Upper', force_overlay = true)
+p2 = plot(bb_lower, color=color.rgb(76, 175, 79, 70), title='BB Lower', force_overlay = true)
+fill(p1, p2, color=color.rgb(0, 123, 255, 95))
+
+// RSI и дивергенция
+rsi_length = input.int(defval=14, title='RSI Period', group='RSI')
+rsi_overbought = input.float(defval=70, title='RSI Overbought Level', group='RSI')
+rsi_oversold = input.float(defval=30, title='RSI Oversold Level', group='RSI')
+rsi = ta.rsi(close, rsi_length)
+
+plot(rsi, color=color.purple, title='RSI', display = display.none)
+hline(rsi_overbought, 'Overbought', color=color.red, display = display.none)
+hline(rsi_oversold, 'Oversold', color=color.green, display = display.none)
+
+// Проверка дивергенции по RSI
+var float rsi_high_prev = na
+var float rsi_low_prev = na
+var float price_high_prev = na
+var float price_low_prev = na
+
+if (not na(rsi) and rsi[1] > rsi[2] and rsi[1] > rsi_overbought)
+    rsi_high_prev := rsi[1]
+    price_high_prev := high[1]
+
+if (not na(rsi) and rsi[1] < rsi[2] and rsi[1] < rsi_oversold)
+    rsi_low_prev := rsi[1]
+    price_low_prev := low[1]
+
+// Определение дивергенции
+bool rsi_bearish_div = (not na(rsi_high_prev) and rsi > rsi_high_prev and high > price_high_prev)
+bool rsi_bullish_div = (not na(rsi_low_prev) and rsi < rsi_low_prev and low < price_low_prev)
+
+plotshape(series=rsi_bearish_div, location=location.abovebar, color=color.rgb(255, 82, 82, 70), textcolor = color.white, style=shape.labeldown, text='div', title='RSI Bearish Divergence', force_overlay = true)
+plotshape(series=rsi_bullish_div, location=location.belowbar, color=color.rgb(76, 175, 79, 70), textcolor = color.white, style=shape.labelup, text='div', title='RSI Bullish Divergence', force_overlay = true)
+
+// определения для массивов зигзагов
+var max_array_size = 10 // максимальная длина массива зигзага
+var zigzag = array.new_float(0)
+oldzigzag = array.copy(zigzag) // сохраняем старый зигзаг
+
+// получаем зигзаг
+dir = ZigZag.getZigzag(zigzag, prd, max_array_size)
+// отображаем зигзаг
+if showzigzag
+    ZigZag.showZigzag(zigzag, oldzigzag, dir, upcol, dncol)
+
+int len = array.size(zigzag) >= 8 ? bar_index - math.round(array.get(zigzag, 7)) : 1
+bool vol_support = (not checkvol_support or (checkvol_support and ta.linreg(volume, len, 0) - ta.linreg(volume, len, 1) > 0))
+var bool can_check_it = true
+bool thereisbo = false
+if (dir != dir[1])
+    can_check_it := true
+
+// проверяем, есть ли возможная 3-я волна и показываем пробой, если он есть
+// check if there is possible 3rd wave and show breakout if there is any
+if array.size(zigzag) >= 8 and can_check_it
+    w12 = math.abs(array.get(zigzag, 2) - array.get(zigzag, 4)) / math.abs(array.get(zigzag, 4) - array.get(zigzag, 6))
+    if w12 >= ret_rate_min and w12 <= ret_rate_max and (dir == 1 and high > array.get(zigzag, 4) or dir == -1 and low < array.get(zigzag, 4))
+        can_check_it := false
+        if vol_support
+            thereisbo := true
+            // draw bo
+            if showbo
+                box.new(left=math.round(array.get(zigzag, 7)), top=array.get(zigzag, 4), right=bar_index, bottom=array.get(zigzag, 6), border_color=#2195f3, border_width=0, border_style=line.style_dotted, bgcolor=color.rgb(242, 54, 70, 80), force_overlay = true)
+
+            if showwave12
+                line.new(x1=math.round(array.get(zigzag, 7)), y1=array.get(zigzag, 6), x2=math.round(array.get(zigzag, 5)), y2=array.get(zigzag, 4), force_overlay = true)
+                line.new(x1=math.round(array.get(zigzag, 5)), y1=array.get(zigzag, 4), x2=math.round(array.get(zigzag, 3)), y2=array.get(zigzag, 2), force_overlay = true)
+                label.new(x=math.round(array.get(zigzag, 7)), y=array.get(zigzag, 6), text='0', color=color.new(color.white, 100), textcolor=color.blue, style=dir == 1 ? label.style_label_up : label.style_label_down, force_overlay = true)
+                label.new(x=math.round(array.get(zigzag, 5)), y=array.get(zigzag, 4), text='1', color=color.new(color.white, 100), textcolor=color.blue, style=dir == 1 ? label.style_label_down : label.style_label_up, force_overlay = true)
+                label.new(x=math.round(array.get(zigzag, 3)), y=array.get(zigzag, 2), text='2', color=color.new(color.white, 100), textcolor=color.blue, style=dir == 1 ? label.style_label_up : label.style_label_down, force_overlay = true)
+    
+            // draw label
+            label.new(x=bar_index, y=close, color=dir == 1 ? upcol : dncol, style=dir == 1 ? label.style_label_up : label.style_label_down, size=size.tiny, force_overlay = true)
+    
+            base = array.get(zigzag, 2)
+            wave1 = math.abs(array.get(zigzag, 4) - array.get(zigzag, 6))
+
+            if target1_enb and target2_enb and not target3_enb and not target4_enb
+                box.new(left=math.round(array.get(zigzag, 7)), top=array.get(zigzag, 4), right=bar_index, bottom=math.max(base + dir * wave1 * target2_ret, 0), border_color=#2195f3, border_width=0, border_style=line.style_dotted, bgcolor=color.rgb(8, 153, 129, 80), force_overlay = true)
+            else 
+                if target1_enb and target3_enb and not target4_enb
+                    box.new(left=math.round(array.get(zigzag, 7)), top=array.get(zigzag, 4), right=bar_index, bottom=math.max(base + dir * wave1 * target3_ret, 0), border_color=#2195f3, border_width=0, border_style=line.style_dotted, bgcolor=color.rgb(8, 153, 129, 80), force_overlay = true)
+                else
+                    if target1_enb and target4_enb
+                        box.new(left=math.round(array.get(zigzag, 7)), top=array.get(zigzag, 4), right=bar_index, bottom=math.max(base + dir * wave1 * target4_ret, 0), border_color=#2195f3, border_width=0, border_style=line.style_dotted, bgcolor=color.rgb(8, 153, 129, 80), force_overlay = true)
+
+            if target1_enb
+                line.new(x1=bar_index, y1=math.max(base + dir * wave1 * target1_ret, 0), x2=math.round(array.get(zigzag, 7)), y2=math.max(base + dir * wave1 * target1_ret, 0), color=color.rgb(41, 209, 7, 60), style=line.style_dashed, force_overlay = true)
+            if target2_enb
+                line.new(x1=bar_index, y1=math.max(base + dir * wave1 * target2_ret, 0), x2=math.round(array.get(zigzag, 7)), y2=math.max(base + dir * wave1 * target2_ret, 0), color=color.rgb(41, 209, 7, 60), style=line.style_dashed, force_overlay = true)
+            if target3_enb
+                line.new(x1=bar_index, y1=math.max(base + dir * wave1 * target3_ret, 0), x2=math.round(array.get(zigzag, 7)), y2=math.max(base + dir * wave1 * target3_ret, 0), color=color.rgb(41, 209, 7, 60), style=line.style_dashed, force_overlay = true)
+            if target4_enb
+                line.new(x1=bar_index, y1=math.max(base + dir * wave1 * target4_ret, 0), x2=math.round(array.get(zigzag, 7)), y2=math.max(base + dir * wave1 * target4_ret, 0), color=color.rgb(41, 209, 7, 47), style=line.style_dashed, force_overlay = true)
+
+alertcondition(thereisbo and dir ==  1, title = "Breakout Long",  message = "Breakout Long")
+alertcondition(thereisbo and dir == -1, title = "Breakout Short", message = "Breakout Short")
+
+// #################### Trendline Pivots ####################
+
+dtlColor        = input.color(color.red, 'Down Trend Line Color', inline = '0', group = 'Trendline Pivots')
+utlColor        = input.color(color.green, 'Up Trend Line Color', inline = '1', group = 'Trendline Pivots')
+pastColor       = input.color(color.orange, 'Crossed Line Color', inline = '2', group = 'Trendline Pivots')
+extendLine      = input.bool(false, 'Extend Lines Until Crossed', inline = '3', group = 'Trendline Pivots')
+onlyLast        = input.bool(false, 'Most Recent Line Only', inline = '3', tooltip = 'If multiple lines share pivot points, checking this will only show the most recent line.', group = 'Trendline Pivots')
+hideCrossed     = input.bool(false, 'Hide Crossed Lines', inline = '4', group = 'Trendline Pivots')
+showCross       = input.bool(true, 'Show Crosses', inline ='4', tooltip = 'Hiding crossed lines will only leave trend lines on the chart that have not been breached by your selected source. Showing crosses will plot an "X" where price crosses the trendline based on your selected source.', group = 'Trendline Pivots')
+crossDown       = input.color(color.red, 'Cross Below Color', inline = '5', group = 'Trendline Pivots')
+crossUp         = input.color(color.lime, 'Cross Above Color', inline = '5', group = 'Trendline Pivots')
+maxLines        = input.int(4, 'Max Number of Crossed Lines to Show', step = 2, minval = 0, maxval = 50, group = 'Trendline Pivots')
+crossSrc        = input.string('Close', 'Cross Source', options = ['Close', 'High/Low'], group = 'Trendline Pivots')
+maxLineLen      = input.int(252, 'Max Line Length', tooltip = 'Will remove line if it is not crossed after selected amount of bars', group = 'Trendline Pivots')
+pivLen          = input.int(9, 'Pivot Length', step = 1, minval = 1, group = 'Trendline Pivots')
+maxLines        := hideCrossed ? 0 : maxLines
+isLog           = input.bool(false, 'Log Scale', tooltip = 'Select this option if using a log chart.', group = 'Trendline Pivots')
+
+type pivot
+    string pivType
+    int x1
+    float y1
+    int x2
+    float y2
+
+// arrays
+var line[] dtlArray = array.new_line()
+var line[] utlArray = array.new_line()
+
+//functions
+createLine(ptype, x1, y1, x2, y2)=>
+    piv = pivot.new(ptype, x1, y1, x2, y2)
+    trendline = line.new(x1, y1, x2, y2, extend = extendLine ? extend.right : extend.none, color = ptype == 'ph' ? dtlColor : utlColor, width = 2, force_overlay = true)
+    if ptype == 'ph'
+        dtlArray.unshift(trendline)
+    else if ptype == 'pl'
+        utlArray.unshift(trendline)
+    piv
+
+getSlope(line)=>
+    slopePh = (line.get_y2(line) - line.get_y1(line))/(line.get_x2(line) -line.get_x1(line))
+    extendedPh = line.get_y2(line) - slopePh * (line.get_x2(line) - bar_index)
+    extendedPh
+
+getSlopeLog(line)=>
+    slopePh = (math.log(line.get_y2(line)) - math.log(line.get_y1(line)))/(line.get_x2(line) -line.get_x1(line))
+    extendedPh = math.exp(math.log(line.get_y2(line)) - slopePh * (line.get_x2(line) - bar_index))
+    extendedPh
+
+// variables
+ph = ta.pivothigh(high, pivLen, pivLen)
+pl = ta.pivotlow(low, pivLen, pivLen)
+var int utlX1 = na, var float utlY1 = na
+var int utlX2 = na, var float utlY2 = na
+var int dtlX2 = na, var float dtlY2 = na
+var int dtlX1 = na, var float dtlY1 = na
+
+
+if pl
+    utlX1 := utlX2, utlY1 := utlY2
+    utlX2 := bar_index[pivLen], utlY2 := low[pivLen]
+    if utlY1 < utlY2
+        createLine('pl', utlX1, utlY1, utlX2, utlY2)
+ 
+if ph
+    dtlX1 := dtlX2, dtlY1 := dtlY2
+    dtlX2 := bar_index[pivLen], dtlY2 := high[pivLen]
+    if dtlY1 > dtlY2
+        createLine('ph', dtlX1, dtlY1, dtlX2, dtlY2)
+
+for l in utlArray
+    src = crossSrc == 'Close' ? close : low
+    first = l == utlArray.get(0)
+    extended = not isLog ? getSlope(l) : getSlopeLog(l)
+    l.set_xy2(bar_index, extended)
+    if l.get_x2() - l.get_x1() > maxLineLen
+        l.delete()
+    if src > line.get_price(l, bar_index) and not first and onlyLast
+        l.delete()
+    var line [] tempUtl = array.new_line(maxLines/2)
+    var label [] tempUL = array.new_label(maxLines/2)
+    if src < line.get_price(l, bar_index)
+        newLine = line.new(line.get_x1(l), line.get_y1(l), line.get_x2(l), line.get_y2(l), color = pastColor, style = line.style_dashed, width = 1, force_overlay = true)
+        crossLabel = showCross ? label.new(bar_index, low, ' ', yloc = yloc.belowbar, color = crossDown, style = label.style_xcross, size = size.tiny, force_overlay = true) : na
+        alert(str.tostring(syminfo.ticker) + ' crossing below trendline', alert.freq_once_per_bar)
+        line.delete(l)
+        tempUtl.unshift(newLine)
+        tempUL.unshift(crossLabel)
+    if tempUtl.size() > (maxLines/2)
+        line.delete(tempUtl.pop())
+        label.delete(tempUL.pop())
+
+for l in dtlArray
+    first = l == dtlArray.get(0)
+    src = crossSrc == 'Close' ? close : high
+    extended = not isLog ? getSlope(l) : getSlopeLog(l)
+    l.set_xy2(bar_index, extended)
+    if l.get_x2() - l.get_x1() > maxLineLen
+        l.delete()
+    if src < line.get_price(l, bar_index) and not first and onlyLast
+        l.delete()
+    var line [] tempDtl = array.new_line(maxLines/2)
+    var label [] tempDL = array.new_label(maxLines/2)
+    if src > line.get_price(l, bar_index)
+        newLine = line.new(line.get_x1(l), line.get_y1(l), line.get_x2(l), line.get_y2(l), color = pastColor, style = line.style_dashed, width = 1, force_overlay = true)
+        crossLabel = showCross ? label.new(bar_index, high, '', yloc = yloc.abovebar, style = label.style_xcross, color = crossUp, size = size.tiny, force_overlay = true) : na
+        alert(str.tostring(syminfo.ticker) + ' crossing above trendline', alert.freq_once_per_bar)
+        line.delete(l)
+        tempDtl.unshift(newLine)
+        tempDL.unshift(crossLabel)
+    if tempDtl.size() > (maxLines/2)
+        line.delete(tempDtl.pop())
+        label.delete(tempDL.pop())
+

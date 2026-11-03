@@ -1,0 +1,30 @@
+[
+ {
+  "t": 4060,
+  "status": 200,
+  "etag": "W/\"b6d3fbce4abdcc16\"",
+  "gz": "388056"
+ },
+ {
+  "t": 3638,
+  "method": "GET",
+  "url": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true",
+  "inm": null
+ },
+ {
+  "t": 13815,
+  "mark": "return"
+ },
+ {
+  "t": 14016,
+  "status": 304,
+  "etag": "W/\"b6d3fbce4abdcc16\"",
+  "gz": null
+ },
+ {
+  "t": 13945,
+  "method": "GET",
+  "url": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true",
+  "inm": "W/\"b6d3fbce4abdcc16\""
+ }
+]

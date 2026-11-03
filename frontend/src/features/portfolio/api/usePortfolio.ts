@@ -2,8 +2,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
-import { useMarketFeedShared } from '@shared/api/marketFeed';
-import type { MarketFeed } from '@shared/types/marketRow';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { sessionPollMs } from '@shared/lib/marketHours';
 import { PortfolioDecisionSchema } from '../model/portfolioSignals';
@@ -56,27 +54,45 @@ export function usePortfolio() {
 
 
 /** قیمت پایانی جاری نمادها برای کنترل حد ضرر */
-// Phase پرفورمنس: selectِ پایدار + کشِ کلید=مرجعِ rows. پیش‌تر هر poll (حتی
-// بی‌تغییری) Mapِ ۵۵۹۸ردیفی از نو ساخته می‌شد؛ حالا فقط با تغییرِ واقعیِ آرایه.
-let closesCache: { src: MarketFeed['data']; map: Map<string, number> } | null = null;
+// صفحهٔ «مستر»، پرتفوی و نوارِ زنجیره فقط همین عدد را می‌خواستند، ولی از فیدِ
+// کاملِ /api/market (۶٫۸MB خام) می‌خواندند. مسیرِ سبکِ /api/market/closes همان
+// p_closingِ همان نشست را در ~۱۵۰KB می‌دهد و با ETag در پولینگِ بی‌تغییر ۳۰۴
+// می‌شود؛ مپ و کلیدهایِ نرمال‌شده عیناً مثلِ قبل ساخته می‌شوند.
+const MarketClosesSchema = z.object({
+  status: z.string(),
+  rev: z.number().nullish(),
+  asof: z
+    .object({ d_even: z.number().nullish(), h_even: z.number().nullish() })
+    .nullish(),
+  count: z.number().nullish(),
+  closes: z.record(z.string(), z.number()),
+});
+export type MarketClosesFeed = z.infer<typeof MarketClosesSchema>;
 
-function selectMarketCloses(feed: MarketFeed): Map<string, number> {
-  if (closesCache && closesCache.src === feed.data) return closesCache.map;
+let closesCache: { src: MarketClosesFeed['closes']; map: Map<string, number> } | null = null;
+
+function selectMarketCloses(feed: MarketClosesFeed): Map<string, number> {
+  if (closesCache && closesCache.src === feed.closes) return closesCache.map;
   const map = new Map<string, number>();
-  for (const r of feed.data) {
-    if (r.p_closing != null) {
-      map.set(r.symbol, r.p_closing);
-      map.set(normalizeFa(r.symbol), r.p_closing);
+  for (const [symbol, close] of Object.entries(feed.closes)) {
+    if (close != null) {
+      map.set(symbol, close);
+      map.set(normalizeFa(symbol), close);
     }
   }
-  closesCache = { src: feed.data, map };
+  closesCache = { src: feed.closes, map };
   return map;
 }
 
 export function useMarketCloses() {
-  // حدِ ضرر از همان تابلو خوانده می‌شود. پیش‌ازین این یک کوئریِ مستقل با
-  // اسکیمایِ دوفیلدی بود و — آن‌طور که در #1193ِ درختِ استراتژی دیدیم — کلیدِ
-  // فقط-آدرس درِ shared/api/http باعث می‌شد آبجکتِ چروکیدهٔ آن به کشِ تابلو
-  // نشت کند. با کلیدِ مشترک این طبقه خطا هم از بین می‌رود.
-  return useMarketFeedShared(selectMarketCloses, 60_000);
+  return useQuery({
+    queryKey: ['market-closes'],
+    queryFn: ({ signal }) =>
+      http<MarketClosesFeed>('/api/market/closes', { schema: MarketClosesSchema, signal }),
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: () => sessionPollMs(60_000),
+    refetchOnWindowFocus: false,
+    select: selectMarketCloses,
+  });
 }

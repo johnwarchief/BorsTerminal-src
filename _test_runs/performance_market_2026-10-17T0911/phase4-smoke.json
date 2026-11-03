@@ -1,0 +1,58 @@
+{
+ "bundle": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\dist\\BorsTerminal_Ultimate",
+ "port": 8123,
+ "checks": [
+  {
+   "name": "بوتِ بک‌اندِ بسته‌شده (بی‌`python`ِ سیستم)",
+   "ok": true,
+   "detail": "8.2s"
+  },
+  {
+   "name": "`/api/health` ازِ EXE",
+   "ok": true,
+   "detail": 200
+  },
+  {
+   "name": "SPA ازِ داخلِ بسته سرو می‌شود (نه dev server)",
+   "ok": true,
+   "detail": "200 494B"
+  },
+  {
+   "name": "`/api/market` با gzipِ سطحِ ۱ (بی‌`BORS_GZIP_LEVEL`ِ محیطی)",
+   "ok": true,
+   "detail": "wire=1551992B decoded=6526372B gzip MISS"
+  },
+  {
+   "name": "اعتبارسنجیِ مشروطِ تابلو ⇒ `304` با صفر بایت",
+   "ok": true,
+   "detail": 304
+  },
+  {
+   "name": "قیفِ سرد ⇒ `200` + `X-Cache: MISS`",
+   "ok": true,
+   "detail": "wire=465810B decoded=7502033B 3038.4ms"
+  },
+  {
+   "name": "قیفِ گرم درِ همان TTL ⇒ `HIT` با بدنهٔ بایت‌به‌بایت یکی",
+   "ok": true,
+   "detail": "26.6ms vs 3038.4ms، etag یکی=True"
+  },
+  {
+   "name": "POSTِ مشروط ⇒ `304` با صفر بایت",
+   "ok": true,
+   "detail": 304
+  },
+  {
+   "name": "دادهٔ واقعی ازِ بانکِ کپی‌شده می‌آید",
+   "ok": true,
+   "detail": "6023 ردیف، last_sync=2026-10-15 02:17:08"
+  },
+  {
+   "name": "بسته بسته شد و پورت آزاد است",
+   "ok": true,
+   "detail": "pid=11556"
+  }
+ ],
+ "at": "2026-10-17 17:35:26",
+ "summary": "10/10"
+}

@@ -55,6 +55,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
   const ex = data.exit_engine;
   const l1 = ex?.l1;
   const l4 = ex?.l4;
+  // واگرایی رویِ چارت رسم نمی‌شود (کرانۀ l4 منتشر نشده)، پس اوجِ پیشینِ RSI همین‌جا
+  // خوانده می‌شود تا تُنِ زردِ ردیف بی‌توضیح نماند؛ بی‌واگرایی، فقط خودِ RSI.
+  const divPeak = l4?.rsi_divergence === true ? l4.rsi_prev_peak ?? null : null;
+  const rsiRowValue = l4?.rsi == null
+    ? '-'
+    : toFaDigits(l4.rsi.toFixed(1)) +
+      (divPeak == null ? '' : ` (اوجِ پیشین ${toFaDigits(divPeak.toFixed(1))})`);
   const vm = verdictMeta(ex?.verdict);
   const setups = setupBadgesOf(data);
 
@@ -67,19 +74,24 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
 
       {/* روند چند تایم فریمی با پیوت ها */}
       <div>
-        <div className="mb-1.5 text-[11px] font-bold text-text-secondary">روند در چند تایم‌فریم (ساختار HH/HL)</div>
+        <div className="mb-1.5 text-3xs font-bold text-text-secondary">روند در چند تایم‌فریم (ساختار HH/HL)</div>
         <div className="grid grid-cols-3 gap-2">
           {(['D', 'W', 'M'] as const).map((k) => {
             const leg = t?.[k];
+            const mj = t?.major_swings?.[k];
             const tr = leg?.trend ?? 'na';
             const tone = trendTone(tr);
+            // اطلاعِ موقتِ جدا از حکمِ قطعی: Extreme در حالِ شکل‌گیری که پنجرۀ
+            // تأییدش کامل نشده. رسمِ جهت و رأیِ قیف به این عدد وابسته نیست.
+            const prov = mj?.provisional;
+            const provPrice = prov?.high?.price ?? prov?.low?.price ?? null;
             return (
               <div key={k} className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] text-text-muted">{k === 'D' ? 'روزانه' : k === 'W' ? 'هفتگی' : 'ماهانه'}</span>
+                  <span className="text-3xs text-text-muted">{k === 'D' ? 'روزانه' : k === 'W' ? 'هفتگی' : 'ماهانه'}</span>
                   <Badge tone={tone}>{TREND_FA[tr] ?? TREND_FA.na}</Badge>
                 </div>
-                <div className="flex flex-col gap-0.5 text-[10px] text-text-secondary">
+                <div className="flex flex-col gap-0.5 text-3xs text-text-secondary">
                   <span className="flex justify-between">
                     <span>سقف اخیر</span>
                     <span className="num">{fmtPrice(leg?.last_high)}</span>
@@ -92,11 +104,43 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
                     <span>کف اخیر</span>
                     <span className="num">{fmtPrice(leg?.last_low)}</span>
                   </span>
+                  {mj?.counts ? (
+                    <span className="flex justify-between" data-testid={`fts-major-counts-${k}`}>
+                      <span>ماژور (سقف/کف)</span>
+                      <span className="num">
+                        {toFaDigits(mj.counts.major_highs ?? 0)}/{toFaDigits(mj.counts.major_lows ?? 0)}
+                        {mj.counts.dropped_minor ? ` · ${toFaDigits(mj.counts.dropped_minor)} کوچک` : ''}
+                      </span>
+                    </span>
+                  ) : null}
+                  {provPrice != null ? (
+                    <span className="flex justify-between text-text-muted" data-testid={`fts-provisional-${k}`}>
+                      <span>در حال شکل‌گیری (تأیید نشده)</span>
+                      <span className="num">{fmtPrice(provPrice)}</span>
+                    </span>
+                  ) : null}
                 </div>
               </div>
             );
           })}
         </div>
+        {t?.major_swings?.D?.as_of || t?.major_swings?.D?.reason ? (
+          <div className="mt-1.5 flex flex-col gap-1 text-3xs text-text-muted">
+            {t.major_swings.D?.as_of ? (
+              <span data-testid="fts-trend-asof">
+                مبنایِ سریِ بسته: <b className="num">{toFaDigits(t.major_swings.D.as_of)}</b>
+              </span>
+            ) : null}
+            {/* «دو Extreme ماژور نداریم» با «روند نزولی است» یکی نیست — هر دو متن
+                درِ رابط خوانده می‌شوند تا کاربر علتِ رد را حدس نزند. */}
+            {t.major_swings.D?.reason ? (
+              <span data-testid="fts-trend-reason-d">روزانۀِ ساختار: {t.major_swings.D.reason}</span>
+            ) : null}
+            {t.major_swings.W?.reason ? (
+              <span data-testid="fts-trend-reason-w">هفتگیِ ساختار: {t.major_swings.W.reason}</span>
+            ) : null}
+          </div>
+        ) : null}
         {t?.alignment === 'up' || t?.alignment === 'down' ? (
           <div className="mt-1.5">
             <Badge tone={t.alignment === 'up' ? 'green' : 'red'}>
@@ -110,12 +154,12 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
       {t?.matrix ? (
         <div className={`rounded-xl border p-2.5 ${t.matrix.decision === 'PERMITTED' ? 'border-border-accent bg-accent-green/10' : t.matrix.decision === 'REJECT' ? 'border-border-c bg-accent-red/10' : 'border-border-c bg-bg-card/40'}`}>
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-text-primary">ماتریس تصمیم‌گیری FTS</span>
+            <span className="text-3xs font-bold text-text-primary">ماتریس تصمیم‌گیری FTS</span>
             <Badge tone={t.matrix.decision === 'PERMITTED' ? 'green' : t.matrix.decision === 'REJECT' ? 'red' : 'gray'}>
               {t.matrix.decision === 'PERMITTED' ? 'ورود مجاز' : t.matrix.decision === 'REJECT' ? 'ممنوعیت ورود' : 'بدون رأی'}
             </Badge>
           </div>
-          <p className="text-[11px] text-text-secondary leading-relaxed">{t.matrix.desc}</p>
+          <p className="text-3xs text-text-secondary leading-relaxed">{t.matrix.desc}</p>
         </div>
       ) : null}
 
@@ -123,21 +167,21 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
       {data.hourglass?.active ? (
         <div className="rounded-xl border border-accent-green/40 bg-accent-green/15 p-2.5">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-accent-green">استراتژی ساعت شنی (اهرم ۲x-۴x)</span>
+            <span className="text-3xs font-bold text-accent-green">استراتژی ساعت شنی (اهرم ۲x-۴x)</span>
             <Badge tone="green">شتاب‌دهنده</Badge>
           </div>
-          <p className="mb-1.5 text-[10px] text-text-secondary">{data.hourglass.desc}</p>
-          <div className="flex justify-between text-[10px] text-text-secondary">
+          <p className="mb-1.5 text-3xs text-text-secondary">{data.hourglass.desc}</p>
+          <div className="flex justify-between text-3xs text-text-secondary">
             <span>قیمت هفتگی: <b className="num">{fmtPrice(data.hourglass.weekly_close)}</b></span>
             <span>MA52 هفتگی: <b className="num">{fmtPrice(data.hourglass.ma52)}</b></span>
-            <span>RSI(5) هفتگی: <b className="num">{data.hourglass.weekly_rsi5 != null ? toFaDigits(data.hourglass.weekly_rsi5.toFixed(1)) : '-'}</b></span>
+            <span>RSI{data.hourglass.rsi_period != null ? `(${toFaDigits(data.hourglass.rsi_period)})` : ''} هفتگی: <b className="num">{data.hourglass.weekly_rsi != null ? toFaDigits(data.hourglass.weekly_rsi.toFixed(1)) : '-'}</b></span>
           </div>
         </div>
       ) : null}
 
       {/* زون‌های فیبوناچی */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">
+        <div className="mb-1 text-3xs font-bold text-text-secondary">
           زون‌های فیبوناچی (مقیاس لگاریتمی) — زمینۀ تحلیل، نه سیگنال ورود
         </div>
         {fib ? (
@@ -147,7 +191,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
                 fib.zone_33_40?.in_zone ? 'border-border-accent bg-accent-blue/10' : 'border-[var(--hairline)]'
               }`}
             >
-              <div className="mb-0.5 flex items-center justify-between text-[10px]">
+              <div className="mb-0.5 flex items-center justify-between text-3xs">
                 <span className="text-text-secondary">زون اصلاح ۳۳-۴۰٪</span>
                 {fib.zone_33_40?.in_zone ? <Badge tone="blue">داخل زون</Badge> : null}
               </div>
@@ -160,7 +204,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
                 fib.zone_618_70?.in_zone ? 'border-border-accent bg-accent-blue/10' : 'border-[var(--hairline)]'
               }`}
             >
-              <div className="mb-0.5 flex items-center justify-between text-[10px]">
+              <div className="mb-0.5 flex items-center justify-between text-3xs">
                 <span className="text-text-secondary">زون طلایی ۶۱.۸-۷۰٪</span>
                 {fib.zone_618_70?.in_zone ? <Badge tone="blue">داخل زون</Badge> : null}
               </div>
@@ -170,13 +214,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             </div>
           </div>
         ) : (
-          <p className="text-[10px] text-text-muted">سقف/کف پیوت کافی برای ساخت زون وجود ندارد</p>
+          <p className="text-3xs text-text-muted">سقف/کف پیوت کافی برای ساخت زون وجود ندارد</p>
         )}
       </div>
 
       {/* ستاپ های فعال سمت سرور */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">ستاپ های فعال (موتور سمت سرور)</div>
+        <div className="mb-1 text-3xs font-bold text-text-secondary">ستاپ های فعال (موتور سمت سرور)</div>
         {setups.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {setups.map((s) => (
@@ -186,13 +230,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             ))}
           </div>
         ) : (
-          <p className="text-[10px] text-text-muted">موتور سرور هیچ ستاپ فعالی گزارش نکرده است</p>
+          <p className="text-3xs text-text-muted">موتور سرور هیچ ستاپ فعالی گزارش نکرده است</p>
         )}
       </div>
 
       {/* جزئیات موتور خروج */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">موتور خروج چهارلایه</div>
+        <div className="mb-1 text-3xs font-bold text-text-secondary">موتور خروج چهارلایه</div>
         <dl className="flex flex-col gap-1 text-xs">
           <Row
             label="حد ضرر سخت"
@@ -201,7 +245,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
           />
           <Row label="مبنای حد ضرر" value={(l1?.stop_basis && STOP_BASIS_FA[l1.stop_basis]) ?? l1?.stop_basis ?? '-'} />
           <Row label="MA14 تعقیبی" value={fmtPrice(l1?.ma14)} tone={l1?.ma14_exit ? 'red' : undefined} />
-          <Row label="RSI" value={l4?.rsi == null ? '-' : toFaDigits(l4.rsi.toFixed(1))} tone={l4?.rsi_divergence ? 'yellow' : undefined} />
+          <Row label="RSI" value={rsiRowValue} tone={l4?.rsi_divergence ? 'yellow' : undefined} />
           {ex?.signals && ex.signals.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">
               {ex.signals.map((s) => (
@@ -218,7 +262,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
       {data.point_hunt?.active ? (
         <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-text-secondary">شکار نقطه (کف دایامتریک)</span>
+            <span className="text-3xs font-bold text-text-secondary">شکار نقطه (کف دایامتریک)</span>
             <Badge tone="blue">{toFaDigits(data.point_hunt.touches ?? 0)} لمس</Badge>
           </div>
           <dl className="flex flex-col gap-1 text-xs">

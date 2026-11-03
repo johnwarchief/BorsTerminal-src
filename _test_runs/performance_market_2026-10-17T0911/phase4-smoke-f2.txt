@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+date: Sat, 17 Oct 2026 13:58:28 GMT
+server: uvicorn
+etag: "5b764ce28320cba0"
+x-cache: HIT
+content-length: 465810
+content-type: application/json
+vary: Accept-Encoding
+content-encoding: gzip
+cache-control: no-cache, no-store, must-revalidate
+pragma: no-cache
+

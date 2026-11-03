@@ -1,0 +1,128 @@
+{
+  "base": "http://127.0.0.1:8020",
+  "route": "/market",
+  "seconds": 70,
+  "hits": [
+    {
+      "t": 962,
+      "path": "/api/update/version",
+      "status": 200,
+      "inm": false,
+      "xc": ""
+    },
+    {
+      "t": 4014,
+      "path": "/api/notifications/feed",
+      "status": 200,
+      "inm": false,
+      "xc": ""
+    },
+    {
+      "t": 4270,
+      "path": "/api/funnel",
+      "status": 200,
+      "inm": false,
+      "xc": "MISS"
+    },
+    {
+      "t": 4273,
+      "path": "/api/market",
+      "status": 200,
+      "inm": false,
+      "xc": "MISS"
+    },
+    {
+      "t": 4275,
+      "path": "/api/selection/portfolio",
+      "status": 200,
+      "inm": false,
+      "xc": ""
+    },
+    {
+      "t": 4458,
+      "path": "/api/screener",
+      "status": 200,
+      "inm": false,
+      "xc": ""
+    }
+  ],
+  "marks": [
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    },
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    },
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    },
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    },
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    },
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    },
+    {
+      "visibility": "visible",
+      "focus": true,
+      "hidden": false,
+      "rows": {
+        "tbody tr": 0,
+        "[role=row]": 0,
+        ".group.cursor-pointer": 0,
+        "a_href_asset": 0
+      }
+    }
+  ]
+}

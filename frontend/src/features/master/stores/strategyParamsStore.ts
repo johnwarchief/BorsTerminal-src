@@ -16,7 +16,6 @@ export interface StrategyParameters {
   jetStabilizationDays: number; // مهلت روزهای تثبیت ستاپ جت (پیش‌فرض: 3 روز)
   fibStep1Level: number; // تراز پله ۱ فیبو (پیش‌فرض: 38.2%)
   fibStep2Level: number; // تراز پله ۲ فیبو (پیش‌فرض: 61.8%)
-  hourglassWeeklyRsi: number; // سطحِ اشباع فروشِ RSI هفتگی (دورۀ ۵) — ۳۰، عینِ موتور
   thirdPeakWeeklyPct: number; // آستانه نزدیکی به خط روند در سقف سوم هفتگی (پیش‌فرض: 10%)
   thirdPeakDailyPct: number; // آستانه نزدیکی به خط روند در سقف سوم روزانه (پیش‌فرض: 5%)
 
@@ -50,11 +49,6 @@ export const FTS_DEFAULT_PARAMS: StrategyParameters = {
   jetStabilizationDays: 3,
   fibStep1Level: 38.2,
   fibStep2Level: 61.8,
-  // «RSI < ۷» اشتباهِ خوانشِ قبلی بود: در چارت ۴، ۷ و ۵ **دورۀ** شاخص‌اند، نه
-  // سطحِ آن (ابزار کمکی: RSI=7 در ناحیه اشباع؛ ساعت شنی: MA=52 و RSI=5).
-  // عددی که داوری می‌کند سطحِ اشباع است: `HOURGLASS_RSI_MAX = 30` در
-  // `lib/strictGates.ts` و همان ۳۰ در `api/chart.py` (RSI پنج‌رفتۀ هفتگی).
-  hourglassWeeklyRsi: 30,
   thirdPeakWeeklyPct: 10,
   thirdPeakDailyPct: 5,
 
@@ -81,8 +75,12 @@ function loadPersistedParams(): StrategyParameters {
     if (typeof window !== 'undefined' && window.localStorage) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        return { ...FTS_DEFAULT_PARAMS, ...parsed };
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        // فقط کلیدهایی که درِ مدلِ امروز هست برمی‌گردند: پارامتری که از مدل
+        // بیرون رفته (مثلِ hourglassWeeklyRsiِ تکراری) نباید از localStorage زنده بماند.
+        const known = Object.fromEntries(
+          Object.entries(parsed).filter(([k]) => k in FTS_DEFAULT_PARAMS));
+        return { ...FTS_DEFAULT_PARAMS, ...known };
       }
     }
   } catch {

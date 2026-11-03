@@ -1,0 +1,58 @@
+simulated CI: DB_PATH = C:\Users\PCMOD\Desktop\_bors-easytrader\_audit\ci_sim_no_market_db.db
+── test_wiring
+ok   ۱ execution درِ importِ api_router هست
+ok   ۱ execution درِ فهرست mods هست
+ok   ۱ execution ازِ بیلدِ فریزشده حذف نمی‌شود
+ok   ۲ fts_terminal.spec درِ hiddenimports 'api.execution' دارد
+ok   ۲ bors_setup.spec درِ hiddenimports 'api.execution' دارد
+ok   ۳ پیش‌فرضِ EXE (بی‌متغیرِ محیطی): mock و dry-run قفل
+ok   ۳ انتخابِ آداپتور فقط ازِ محیط خوانده می‌شود
+ok   ۳ سکوی مجاز: mock/easytrader — Online-Plus/Titan درِ فهرست نیست (رأیِ مالک ۱۴۰۵-۰۷-۲۴)
+ok   ۳ ترافیکِ زنده بی‌BORS_EXECUTION_LIVE خاموش است
+ok   ۳ هیچ مسیرِ بدنه‌ای dry_run را عوض نمی‌کند
+── test_kill_switch
+ok   ۴ قفلِ بسته ⇒ HALTED
+ok   ۴ دلیلِ رد درِ checks دیده می‌شود
+ok   ۴ بی‌ارسالِ واقعی به سرور
+ok   ۵ قفل پسِ restart همان HALTED است
+ok   ۶ حالتِ TRIPPED ثبت شد
+── test_risk_rules
+ok   ۷ exposure نداده‌شده ⇒ RISK_LIMIT
+ok   ۷-پ سقفِ نماد نگهبان است
+ok   ۸ بی‌سقفِ exposure داوری نمی‌شود
+ok   ۸ نبودِ context ⇒ None، نه صفر
+ok   ۸ ضرر روزانه ⇒ RISK_LIMIT
+ok   ۸ max_order_value نگهبان است
+── test_rate_and_duplicate
+ok   ۹ dry-run پنجرۀ نرخِ واقعی را نمی‌خورد
+ok   ۹ پنجرۀ نرخ نگهبان است
+ok   ۱۰ تکراری پسِ restart گرفته شد
+ok   ۱۰ بی‌تماسِ دوم با سرور
+── test_timeout_and_trail
+ok   ۱۱ timeout ⇒ UNKNOWN_RESULT
+ok   ۱۱ timeout بی‌retryِ خودکار
+ok   ۱۱ reconcile بسته‌اش می‌کند
+ok   ۱۲ dispatch اول از همه ثبت می‌شود
+ok   ۱۲ خطایِ timeout هم ردِّپا می‌شود
+ok   ۱۲ reconcile بعدِ خطا می‌آید (ترتیبِ رخداد، نه ترتیبِ آرایه)
+ok   ۱۳ token/cookie رویِ دیسک نیست
+ok   ۱۳ redaction ساختار را نمی‌شکند
+── test_http_door
+ok   ۱۴ status از رشتۀ دیگر خطا نمی‌دهد
+ok   ۱۴ status حالتِ قفل را اعلام می‌کند
+ok   ۱۴ status دروغ نمی‌گوید: live نیست و dry-run است
+ok   ۱۴ status مسیرِ ردِّپا را می‌گوید
+ok   ۱۴ halt کار می‌کند
+ok   ۴ بدنهٔ درخواست هم قفل را باز نمی‌کند
+ok   ۱۴ resume دستی کار می‌کند
+ok   ۶ resumeِ TRIPPED بی‌confirm رد می‌شود
+ok   ۶ resume با confirm=True راه می‌دهد
+ok   ۱۵ unknown_result درِ open_ids می‌ماند
+ok   ۱۵ بازیابی وضعیتی نمی‌سازد
+── test_negative_controls
+ok   ۱۶-الف اگر redact خاموش شود، token رویِ دیسک می‌آید
+ok   ۱۶-ب با جعلِ exposureِ صفر، سفارش می‌گذرد (پس سنسور زنده است)
+ok   ۱۶-پ اگر دروازۀ توقف بی‌اثر شود، سفارش می‌سازد (سنسور زنده است)
+ok   ۱۶-ت متنِ api/__init__.py دو بار execution دارد
+
+48 passed / 0 failed

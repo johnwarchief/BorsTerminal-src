@@ -179,20 +179,20 @@ export default function FtsIndicatorRail({ symbol, fallbackRow }: {
             className={`block rounded-md border px-1.5 py-1 text-start transition-colors ${CARD_TONE[f.quality]}`}
           >
             <div className="flex items-start justify-between gap-1">
-              <span className="min-w-0 text-[9.5px] font-bold leading-tight text-text-secondary">
+              <span className="min-w-0 text-3xs font-bold leading-tight text-text-secondary">
                 {label}
               </span>
               <span data-testid={`inspector-card-verdict-${a.col}`}
-                    className={`shrink-0 text-[8.5px] font-black leading-tight ${WORD_TONE[f.quality]}`}>
+                    className={`shrink-0 text-3xs font-black leading-tight ${WORD_TONE[f.quality]}`}>
                 {QUALITY_WORD[f.quality]}
               </span>
             </div>
             <div className="mt-0.5 flex items-end justify-between gap-1.5">
-              <span data-testid={`inspector-ind-${a.col}`} className="num text-[12px] font-black leading-none">
+              <span data-testid={`inspector-ind-${a.col}`} className="num text-2xs font-black leading-none">
                 {f.value}
               </span>
               <span
-                className="min-w-0 max-w-[58%] text-[8.5px] leading-tight text-text-muted line-clamp-2"
+                className="min-w-0 max-w-[58%] text-3xs leading-tight text-text-muted line-clamp-2"
                 title={f.pass == null ? gapTooltip(a.key) : undefined}
               >
                 {f.note}
@@ -203,14 +203,14 @@ export default function FtsIndicatorRail({ symbol, fallbackRow }: {
       })}
       {card.isPending && !data ? (
         <span data-testid="inspector-fts-cards-pending"
-              className="text-[8.5px] leading-tight text-text-muted">
+              className="text-3xs leading-tight text-text-muted">
           کارتِ بنیادی هنوز نخوانده شده — تا رسیدنش همان مقادیرِ جدولِ غربالگری
           نشان داده می‌شود و هیچ عددی از خودِ ساختگی نیست.
         </span>
       ) : null}
       {card.isError ? (
         <span data-testid="inspector-fts-cards-error"
-              className="text-[8.5px] leading-tight text-accent-red">
+              className="text-3xs leading-tight text-accent-red">
           کارتِ بنیادی خوانده نشد؛ مقادیرِ زیر از ردیفِ غربالگری‌اند و علتِ هر
           محور درِ تبِ بنیادی است.
         </span>

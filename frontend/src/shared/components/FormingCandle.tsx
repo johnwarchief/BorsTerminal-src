@@ -106,7 +106,7 @@ export function FormingCandleStrip({
   const cell = (label: string, v: number | null) => (
     <span className="flex items-baseline gap-1" title={`${label}ِ همین روز`}>
       <span className="text-3xs text-text-muted">{label}</span>
-      <span className="num text-[10px] font-bold text-text-primary">{v != null && v > 0 ? fmtInt(v) : '—'}</span>
+      <span className="num text-3xs font-bold text-text-primary">{v != null && v > 0 ? fmtInt(v) : '—'}</span>
     </span>
   );
   return (

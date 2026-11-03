@@ -1,0 +1,4 @@
+﻿asset_id,symbol,rows,base_exact,base_tol,corr_exact,corr_tol,raw_bad,W_comp_rows,W_comp_pass,W_noncomp_rows,W_noncomp_pass,M_comp_rows,M_comp_pass,M_noncomp_rows,M_noncomp_pass,factor_corr,factor_suppress,raw_corr
+107,كپارس,1424,1424,1424,1424,1424,0,323,323,3,1,78,78,3,1,0,0,0
+113,سصوفي,1531,1531,1531,1531,1531,0,339,339,3,0,78,78,3,1,0,0,0
+6,غدشت,3108,3108,3108,3108,3108,0,383,383,2,0,266,266,3,2,0,0,0

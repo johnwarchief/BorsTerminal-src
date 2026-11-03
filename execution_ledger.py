@@ -154,7 +154,15 @@ class ExecutionLedger:
 
     # ---- ۲) خواندن --------------------------------------------------------
     def events(self, execution_id: str | None = None, *, kinds: Iterable[str] | None = None,
-               limit: int = 500) -> list[dict]:
+               limit: int = 500, symbol: str | None = None, status: str | None = None,
+               since_epoch: float | None = None, until_epoch: float | None = None,
+               order_state: str | None = None) -> list[dict]:
+        """فیلترهایِ خواندنی برایِ «سابقه» — هیچ‌کدام نوشتنی نیستند.
+
+        `symbol`/`status`/`order_state` دقیقاً همان ستون‌هایِ ردِّپا را می‌سنجند؛
+        `since_epoch`/`until_epoch` بازۀِ زمانیِ epoch‌اند (رابطِ کاربر تاریخ را
+        به epoch می‌شکند تا ساعتِ منطقه‌ای درِ فیلتر نقش نبازد).
+        """
         q = "SELECT * FROM execution_event"
         cond, args = [], []
         if execution_id is not None:
@@ -164,6 +172,17 @@ class ExecutionLedger:
             k = list(kinds)
             cond.append("kind IN (%s)" % ",".join("?" * len(k)))
             args.extend(k)
+        for col, val in (("symbol", symbol), ("status", status),
+                        ("order_state", order_state)):
+            if val:
+                cond.append("%s = ?" % col)
+                args.append(val)
+        if since_epoch is not None:
+            cond.append("at_epoch >= ?")
+            args.append(float(since_epoch))
+        if until_epoch is not None:
+            cond.append("at_epoch <= ?")
+            args.append(float(until_epoch))
         if cond:
             q += " WHERE " + " AND ".join(cond)
         q += " ORDER BY id DESC LIMIT ?"

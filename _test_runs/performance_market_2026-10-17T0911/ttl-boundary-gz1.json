@@ -1,0 +1,193 @@
+{
+ "mode": "boundary",
+ "first_etag": "\"0827fc9640dd5f22\"",
+ "first_as_of": "696",
+ "hit_offsets_s": [
+  1.0,
+  2.04,
+  3.1,
+  4.14,
+  5.17,
+  6.21,
+  7.24,
+  9.98,
+  11.01,
+  12.04,
+  13.07,
+  14.11,
+  15.15
+ ],
+ "miss_offsets_s": [
+  0.0,
+  8.3
+ ],
+ "last_hit_offset": 15.15,
+ "first_miss_offset": 0.0,
+ "rows": [
+  {
+   "offset_s": 0.0,
+   "ms": 2504.9,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 1.0,
+   "ms": 38.9,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 2.04,
+   "ms": 50.9,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 3.1,
+   "ms": 38.0,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 4.14,
+   "ms": 26.0,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 5.17,
+   "ms": 28.1,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 6.21,
+   "ms": 27.9,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 7.24,
+   "ms": 49.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"0827fc9640dd5f22\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 8.3,
+   "ms": 671.2,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 9.98,
+   "ms": 28.9,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 11.01,
+   "ms": 23.8,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 12.04,
+   "ms": 25.1,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 13.07,
+   "ms": 31.3,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 14.11,
+   "ms": 34.0,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  },
+  {
+   "offset_s": 15.15,
+   "ms": 27.3,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"ec41ede3c77f4152\"",
+   "as_of": "696",
+   "head": "{\"status\":\"success\",\"eng",
+   "tail": "mbols\":0,\"running\":false,\"queued\":0,\"done\":0,\"failed\":0,\"in_flight\":0,\"last_ms\":0,\"error\":null}}"
+  }
+ ]
+}

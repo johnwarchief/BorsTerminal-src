@@ -1,0 +1,44 @@
+{
+  "observed_at": "2026-10-20T23:05:00+03:30",
+  "access": {
+    "login_used": false,
+    "public_only": true,
+    "credentials_or_session_read": false
+  },
+  "endpoints": {
+    "https://tradersarena.ir/data/market0": {
+      "status": 200,
+      "top_level_keys": ["m", "d", "j", "um", "b", "st", "sf", "nsf", "cf", "scf", "lf", "afl", "s", "sx", "o", "pm", "pp", "q", "iw", "ia", "rb", "rs", "lb", "ls", "xyz", "freq", "bbn", "sh", "pos"],
+      "observed": {
+        "j": "1405/07/28",
+        "d": 1859,
+        "iw": [8272444.35, 18620.63, 0.23],
+        "ia": [2251347.23, 28573.75, 1.29],
+        "pm": [249],
+        "pp": [609]
+      },
+      "meaning": "public aggregate payload; only the two headline indices are independently interpretable from the visible page; other arrays need TA-specific documentation"
+    },
+    "https://tradersarena.ir/data/industries-csv": {
+      "status": 200,
+      "format": "array rows; first columns are industry code/name, later columns are values",
+      "rows_sampled": 1
+    },
+    "https://tradersarena.ir/data/mainwatch/symbols": {
+      "status": 200,
+      "rows": 20,
+      "note": "20 symbols; p_last/p_closing/percent/volume were matched in the prior round"
+    },
+    "https://tradersarena.ir/data/market/chart/totals0": {
+      "status": 200,
+      "note": "intraday totals series; clock differs from Bors snapshot"
+    }
+  },
+  "not_public": {
+    "historical_key_stats": "https://tradersarena.ir/homepage/<date> redirects to /login",
+    "price_weighted_index": "not found on the public home or public data endpoints",
+    "client_split_values": "not found on the public surface",
+    "gold_bubble_intrinsic": "not found on the public surface"
+  },
+  "boundary": "No login, CAPTCHA, MFA, account bypass or private session was attempted."
+}

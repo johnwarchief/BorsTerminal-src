@@ -48,6 +48,7 @@ const SPLIT = {
   pc_sell_m_toman: 46.1,
   power: 1.76,
   money_flow_b_toman: -4055.9,
+  value_source: 'reconstructed',
   source: 'local:market.db',
 };
 const PHASES = {
@@ -142,6 +143,16 @@ describe('صفحۀ «وضعیت بازار» با داده', () => {
     await waitFor(() => expect(screen.getByTestId('clientsplit-retail')).toBeInTheDocument());
     expect(screen.getByTestId('phase-n>b')).toBeInTheDocument();
     expect(screen.getByTestId('phase-p>s')).toBeInTheDocument();
+  });
+
+  it('سهم ارزش خرید/فروش با «قدرت» اشتباه نمی‌شود و منبع ارزش اعلام می‌شود', async () => {
+    renderPage(FULL);
+    await waitFor(() => expect(screen.getByTestId('clientsplit-retail')).toBeInTheDocument());
+    const retail = screen.getByTestId('clientsplit-retail');
+    expect(retail.textContent).toContain('سهم خرید');
+    expect(retail.textContent).toContain('سهم فروش');
+    expect(retail.textContent).not.toContain('قدرت');
+    expect(screen.getByTestId('clientsplit-value-source')).toHaveTextContent('محاسبه‌شده');
   });
 
   it('جدول‌های صنایع و نمادهای زیرِ نظر ردیف می‌سازند', async () => {

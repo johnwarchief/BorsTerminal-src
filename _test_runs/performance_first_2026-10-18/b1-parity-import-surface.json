@@ -1,0 +1,29 @@
+{
+ "suite": "dev/fts_engine_paths_parity_v1076.py",
+ "repo_modules_loaded": [
+  "_test_runs/performance_first_2026-10-18/b1_parity_import_surface.py",
+  "api/__init__.py",
+  "api/_core.py",
+  "api/fundamental.py",
+  "api/market.py",
+  "bors_config.py",
+  "bors_flags.py",
+  "client_split.py",
+  "codal_periods.py",
+  "fts_engine.py",
+  "market_state.py",
+  "mstat_engine.py",
+  "notifier.py",
+  "tape_flags.py"
+ ],
+ "changed_files_vs_HEAD": [
+  "api/funnel.py",
+  "dev/funnel_body_cache_v1.py",
+  "frontend/src/__tests__/m1-ux-integrity.spec.tsx",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx",
+  "frontend/src/shared/components/FreshnessBadge.tsx",
+  "frontend/src/shared/lib/feedFreshness.ts",
+  "tools/perf_cache_rhythm_gzip_probe.py"
+ ],
+ "intersection": []
+}

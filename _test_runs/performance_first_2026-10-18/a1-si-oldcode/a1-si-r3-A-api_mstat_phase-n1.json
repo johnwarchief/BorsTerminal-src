@@ -1,0 +1,117 @@
+[
+ {
+  "verb": "POST",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=5ms",
+  "build_ms": 708,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 20.5,
+  "cheap_during_n": 2,
+  "cheap_during_med": 289.0,
+  "cheap_during_max": 474.4,
+  "cheap_during_series": [
+   474,
+   104
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=5ms",
+  "build_ms": 776,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 13.7,
+  "cheap_during_n": 2,
+  "cheap_during_med": 325.7,
+  "cheap_during_max": 624.0,
+  "cheap_during_series": [
+   624,
+   27
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=5ms",
+  "build_ms": 1513,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 13.8,
+  "cheap_during_n": 5,
+  "cheap_during_med": 233.6,
+  "cheap_during_max": 443.1,
+  "cheap_during_series": [
+   443,
+   168,
+   135,
+   257,
+   234
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "POST",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=5ms",
+  "build_ms": 679,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 11.4,
+  "cheap_during_n": 2,
+  "cheap_during_med": 294.8,
+  "cheap_during_max": 349.6,
+  "cheap_during_series": [
+   240,
+   350
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ }
+]

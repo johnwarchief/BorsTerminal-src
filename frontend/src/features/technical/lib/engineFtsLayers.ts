@@ -2,11 +2,15 @@
 // رابطِ موتور (engine/types) اورلی را «نیتِ موتور-مستقل» می‌گیرد: level، band،
 // segment، marker. چارتِ klinecharts همین داورها را با اورلی‌هایِ ثبت‌شدهٔ خودش
 // می‌کشد؛ این فایل همان عددها را به همان شکل به آن رابط می‌دهد تا موتورِ دوم
-// «تحلیلِ دوم» نسازد. هیچ داوری اینجا حساب نمی‌شود و هیچ عددی ساخته نمی‌شود:
+// «تحلیلِ دوم» نسازد. «همان شکل» یعنی سوییچِ روشن/خاموش و رنگِ هر لایه هم از
+// همان `fts-pattern-prefs` خوانده می‌شود که چارتِ کهنه می‌خواند (مرحلۀ ۶).
+// هیچ داوری اینجا حساب نمی‌شود و هیچ عددی ساخته نمی‌شود:
 // چیزی که سرور نگفته رسم نمی‌شود (قاعدهٔ «بی‌داده رأی نیست»).
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
+import { alpha, PATTERN_PREFS_DEFAULT, type PatternKind, type PatternPrefs } from './patternOverlays';
 import type { ChartOverlaySpec } from '../engine/types';
 import { FTS_OVERLAY_COLORS } from './ftsOverlays';
+import { toFaDigits } from '@shared/lib/fmt';
 
 export type FtsLayerInput = {
   fts: FtsAnalysisData | null | undefined;
@@ -21,6 +25,12 @@ export type FtsLayerInput = {
   /** سلسله‌مراتبِ دورِ J: سطح‌هایِ هفتگانه فیبو پیش‌فرض رسم نمی‌شوند (زمینه، مزاحمِ
    *  کندل). همان flag درِ هر دو موتور رعایت می‌شود تا ظاهرِ دو موتور یکی بماند. */
   showFibLevels?: boolean;
+  /** سوییچ‌هایِ کاتالوگ (`fts-pattern-prefs`). بی‌این پارامتر همه روشن می‌مانند،
+   *  ولی درِ رابطِ کاربری *باید* داده شود: چارتِ کهنه همین سوییچ‌ها را می‌خواند
+   *  (`patternOverlays.ts` :: `on(kind)`)، پس اگر این موتور نخواندشان، سوییچِ
+   *  پنل درِ موتورِ دوم فقط localStorage را عوض می‌کند و هیچ پیکسلی تکان نمی‌خورد
+   *  — مرحلۀ ۶، بومِ زنده: خاموش/روشن‌کردنِ «جعبۀ رنج» هیچ‌یک از شش بوم را عوض نکرد. */
+  prefs?: PatternPrefs;
 };
 
 const num = (v: unknown): number | null =>
@@ -74,6 +84,20 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
   const fts = i.fts;
   if (!fts) return [];
   const out: ChartOverlaySpec[] = [];
+  // همان داورِ چارتِ کهنه: بی‌prefs یا با `enabled !== false` ⇒ روشن. کلیدها را
+  // کاتالوگِ لایه‌ها (`ftsIndicatorCatalog.ts` :: `toggle`) می‌دهد، نه این فایل.
+  const on = (k: PatternKind) => i.prefs?.[k]?.enabled !== false;
+  // رنگ هم از همان prefs می‌آید، نه ثابتِ این فایل: چارتِ کهنه `styleFor(...).color`
+  // را از همان کلید می‌خواند (`patternOverlays.ts` :: `col`)، پس رنگ‌هایِ ثابتِ
+  // اینجا درِ دو موتور را جدا می‌کرد — با پیش‌فرض‌ها CHoCH نارنجیِ `#fb923c` در
+  // کهنه و سرخِ `#ff3860` اینجا. تفاتها از خواندنِ دو فایلِ رنگ دیده شد، نه از
+  // بومِ زنده؛ سنجشِ پیکسلیِ رنگ در دورِ مرحلۀ ۵ هنوز انجام نشده است.
+  const col = (k: PatternKind) => i.prefs?.[k]?.color ?? PATTERN_PREFS_DEFAULT[k].color;
+  // tintِ کمربند همان ۰٫۱۲ِ پیشین می‌ماند و فقط هم‌رنگِ لبه می‌شود: سبکِ
+  // نقش‌محورِ کهنه (ROLE_STYLES.opacityCap) درِ این موتور پیاده نیست و بی‌آن
+  // کپی‌شدن، عددِ شفافیت ساختگیِ دوم می‌شد — این تفاتِ باقی‌مانده در سندِ
+  // مرحلۀ ۶ باز است.
+  const tint = (hex: string): string => alpha(hex, 0.12);
   const disp = (rial: number | null | undefined): number | null => {
     const v = num(rial);
     return v == null ? null : i.toDisp(v);
@@ -81,6 +105,8 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
 
   // ۱) زون‌های فیبو -- عددِ سرور، جهتِ سرور (موجِ نزولی از کف به بالا)
   const fib = fts.fib;
+  // موجِ provisional = ساختارِ تأییدشده نیست (P0#4)؛ برچسب باید این را بگوید.
+  const forming = fib?.leg?.provisional === true ? ' (در حال تشکیل)' : '';
   for (const [key, edge, fill, label] of [
     ['zone_33_40', FTS_OVERLAY_COLORS.fibStep1Edge, FTS_OVERLAY_COLORS.fibStep1, 'زون اصلاح ۳۳-۴۰٪'],
     ['zone_618_70', FTS_OVERLAY_COLORS.fibStep2Edge, FTS_OVERLAY_COLORS.fibStep2, 'زون طلایی ۶۱.۸-۷۰٪'],
@@ -88,7 +114,7 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
     const z = fib?.[key];
     const lo = disp(z?.lo);
     const hi = disp(z?.hi);
-    if (lo != null && hi != null && hi > lo) out.push(band(`fib-${key}`, 'fts-fib', lo, hi, label, edge, fill, i));
+    if (lo != null && hi != null && hi > lo) out.push(band(`fib-${key}`, 'fts-fib', lo, hi, label + forming, edge, fill, i));
   }
   for (const lv of i.showFibLevels ? fib?.levels ?? [] : []) {
     const p = disp(lv.price);
@@ -107,7 +133,7 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
 
   // ۲) ستاپ‌ها و سطوحِ تک‌خطی — جت فقط وضعیتِ فعلی (کندلِ آخر)
   const jet = disp(fts.jet?.resistance);
-  if (fts.jet?.active === true && jet != null) {
+  if (on('jet') && fts.jet?.active === true && jet != null) {
     const fromTs = fts.jet?.resistance_date ? i.tsForDate(fts.jet.resistance_date) : null;
     if (fromTs != null && fromTs < i.anchorTs) {
       out.push({
@@ -118,34 +144,68 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
           { timestamp: fromTs, value: jet },
           { timestamp: i.anchorTs, value: jet },
         ],
-        color: FTS_OVERLAY_COLORS.jet,
+        color: col('jet'),
         label: 'JET',
         width: 2,
         dashed: false,
       });
     } else {
-      out.push(level('jet', jet, 'JET', FTS_OVERLAY_COLORS.jet, i));
+      out.push(level('jet', jet, 'JET', col('jet'), i));
     }
   }
   const ch = disp(fts.choch?.level);
-  if ((fts.choch?.bearish === true || fts.choch?.bullish === true) && ch != null) {
-    out.push(level('choch', ch, 'CHoCH', FTS_OVERLAY_COLORS.chohRed, i, true));
+  if (on('choch') && (fts.choch?.bearish === true || fts.choch?.bullish === true) && ch != null) {
+    out.push(level('choch', ch, 'CHoCH', col('choch'), i, true));
   }
   const neck = disp(fts.double_bottom?.neckline);
-  if (fts.double_bottom?.active === true && neck != null) {
-    out.push(level('double-bottom', neck, 'خط گردن (کف دوقلو)', '#10b981', i));
+  if (on('double') && fts.double_bottom?.active === true && neck != null) {
+    out.push(level('double-bottom', neck, 'خط گردن (کف دوقلو)', col('double'), i));
+  }
+  // سقف دوقلو و سر و شانه: هر دو از لایۀ ۳ِ همان موتور می‌آیند (`double_top`/
+  // `hs_break` + `level`/`neckline`) و درِ چارتِ کهنه رسم می‌شدند؛ درِ این موتور
+  // نبودند — مرحلۀ ۶ رجیستری را با مسیرِ رسم می‌سنجد، نه با دکمه.
+  const dTop = disp(fts.exit_engine?.l3?.level ?? fts.exit_engine?.l3?.neckline);
+  if (on('double') && fts.exit_engine?.l3?.double_top === true && dTop != null) {
+    out.push(level('double-top', dTop, 'خط گردن (سقف دوقلو)', col('double'), i));
+  }
+  const hsNeck = disp(fts.exit_engine?.l3?.neckline);
+  if (on('headshoulders') && fts.exit_engine?.l3?.hs_break === true && hsNeck != null) {
+    out.push(level('head-shoulders', hsNeck, 'خط گردن سر و شانه', col('headshoulders'), i));
+  }
+  // جعبۀ رنج — باکسِ کراندار به همان ۲۰ کندلی که قاعدۀ سرور تعریف کرده است؛
+  // بی‌start_date/end_date از سرور هیچ باکسی نمی‌کشیم، چون extent روی کلِ دید
+  // دروغ می‌گفت (مرحلۀ ۶، شکافِ ب-۳).
+  const boxTop = disp(fts.range_box?.top);
+  const boxBottom = disp(fts.range_box?.bottom);
+  const boxStart = fts.range_box?.start_date ? i.tsForDate(fts.range_box.start_date) : null;
+  const boxEnd = fts.range_box?.end_date ? i.tsForDate(fts.range_box.end_date) : null;
+  if (on('rangebox') && boxTop != null && boxBottom != null && boxStart != null && boxEnd != null) {
+    out.push({
+      id: 'range-box',
+      kind: 'band',
+      group: 'fts-pattern',
+      points: [
+        { timestamp: boxStart, value: boxBottom },
+        { timestamp: boxEnd, value: boxTop },
+      ],
+      color: col('rangebox'),
+      fill: tint(col('rangebox')),
+      label: fts.range_box?.active === true ? 'شکست جعبه رنج' : 'جعبه رنج',
+      width: 1,
+      dashed: true,
+    });
   }
   const floor = disp(fts.point_hunt?.floor_price);
   // مارکرِ خرید رویِ کندلِ تریگر است، نه لنگرِ کفِ کانال (#221)
   const triggerTs = fts.point_hunt?.trigger_date ? i.tsForDate(fts.point_hunt.trigger_date) : null;
-  if (fts.point_hunt?.active === true && floor != null && triggerTs != null) {
+  if (on('pointhunt') && fts.point_hunt?.active === true && floor != null && triggerTs != null) {
     out.push({
       id: 'point-hunt',
       kind: 'marker',
       group: 'fts-pattern',
       points: [{ timestamp: triggerTs, value: floor }],
-      color: '#a78bfa',
-      label: `تریگر نقطه‌زنی (${String(fts.point_hunt.touches ?? 0)} لمس)`,
+      color: col('pointhunt'),
+      label: `تریگر نقطه‌زنی (${toFaDigits(fts.point_hunt.touches ?? 0)} لمس)`,
       width: 1,
     });
   }
@@ -171,18 +231,65 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
   const stop = disp(fts.exit_engine?.l1?.hard_stop);
   if (stop != null) out.push(level('hard-stop', stop, 'حد ضرر', '#f23645', i, true));
   const ma14 = disp(fts.exit_engine?.l1?.ma14);
-  if (fts.exit_engine?.l1?.ma14_exit === true && ma14 != null) {
-    out.push(level('ma14-exit', ma14, 'خروج (زیر MA14)', '#fb7185', i));
+  if (on('ma14exit') && fts.exit_engine?.l1?.ma14_exit === true && ma14 != null) {
+    out.push(level('ma14-exit', ma14, 'خروج (زیر MA14)', col('ma14exit'), i));
   }
+  // پهنای باند از سرور (B4): «سرور عدد نگفته رسم نمی‌شود» — بی‌band_pct
+  // سطحِ تنها می‌مانیم و ناحیه نمی‌سازیم؛ ±۲٪/±۳٪ِ دست‌نویسِ پیشین حذف.
   const third = disp(fts.exit_engine?.l3?.third_peak_level);
-  if (fts.exit_engine?.l3?.third_peak === true && third != null) {
-    out.push(band('third-peak', 'fts-pattern', i.toDisp(third * 0.98), i.toDisp(third * 1.02),
-      'منطقه پرریسک سقف سوم', '#facc15', 'rgba(250, 204, 21, 0.12)', i));
+  const thirdBand = num(fts.exit_engine?.l3?.third_peak_band_pct);
+  if (on('thirdpeak') && fts.exit_engine?.l3?.third_peak === true && third != null) {
+    if (thirdBand != null) {
+      const f = thirdBand / 100;
+      out.push(band('third-peak', 'fts-pattern', i.toDisp(third * (1 - f)), i.toDisp(third * (1 + f)),
+        'منطقه پرریسک سقف سوم', col('thirdpeak'), tint(col('thirdpeak')), i));
+    } else {
+      out.push(level('third-peak', third, 'سقف سوم', col('thirdpeak'), i, true));
+    }
   }
   const ma52 = disp(fts.hourglass?.ma52);
-  if (fts.hourglass?.active === true && ma52 != null) {
-    out.push(band('hourglass', 'fts-pattern', i.toDisp(ma52 * 0.97), i.toDisp(ma52 * 1.03),
-      'ساعت شنی', '#38bdf8', 'rgba(56, 189, 248, 0.12)', i));
+  const ma52Band = num(fts.hourglass?.ma52_band_pct);
+  if (on('hourglass') && fts.hourglass?.active === true && ma52 != null) {
+    if (ma52Band != null) {
+      const f = ma52Band / 100;
+      out.push(band('hourglass', 'fts-pattern', i.toDisp(ma52 * (1 - f)), i.toDisp(ma52 * (1 + f)),
+        'ساعت شنی', col('hourglass'), tint(col('hourglass')), i));
+    } else {
+      out.push(level('hourglass', ma52, 'ساعت شنی', col('hourglass'), i, true));
+    }
+  }
+
+  // ۵) پولبکِ شاخۀ صعودی — سطحِ آخرین سقف + وضعیتِ لمسر/ستاپ، بی‌عددِ ساختگی
+  const pbLevel = disp(fts.pullback?.level);
+  if (on('pullback') && pbLevel != null && (fts.pullback?.touching === true || fts.pullback?.active === true)) {
+    out.push(level('pullback', pbLevel,
+      fts.pullback?.active === true ? 'پولبک (تأیید)' : 'پولبک (در حال تشکیل)',
+      col('pullback'), i, fts.pullback?.active !== true));
+  }
+
+  // ۶) نقاطِ ساختاریِ تأییدشده (HH/HL/LH/LL) — لایۀ «ساختار روند». زمانِ
+  // تأیید (confirm_time) درِ خودِ نقطه است تا کلیکِ شواهد «کِی فهمیدیم» را
+  // جدا از «کِی رخ داد» بگوید؛ رسم فقط رویِ پیوت‌هایِ تأییدشدهٔ داخل دید.
+  // روزانۀ مرجع + هفتگیِ زمینه (هر دو درِ payload؛ تا نسخهٔ W فقط منتشر
+  // نمی‌شد و هیچ‌جا خوانده نمی‌شد — شکافِ ب-۱).
+  if (on('structure')) {
+    for (const [tf, pts] of [['D', fts.structure_points?.D], ['W', fts.structure_points?.W]] as const) {
+      for (const p of pts ?? []) {
+        const v = disp(p.price);
+        const ts = i.tsForDate(String(p.time).slice(0, 10));
+        if (v == null || ts == null) continue;
+        const bear = p.label === 'LH' || p.label === 'LL';
+        out.push({
+          id: `structure-${tf}-${p.time}`,
+          kind: 'marker',
+          group: 'fts-structure',
+          points: [{ timestamp: ts, value: v }],
+          color: bear ? '#f87171' : col('structure'),
+          label: tf === 'W' ? `${p.label} (W)` : p.label,
+          width: 1,
+        });
+      }
+    }
   }
 
   return out;

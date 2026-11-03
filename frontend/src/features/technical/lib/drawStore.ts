@@ -13,6 +13,13 @@ export type StoredOverlay = {
   lock?: boolean;
   styles?: Record<string, unknown>;
   extendData?: Record<string, unknown>;
+  /** اولویتِ لایه — بی‌این، ترسیمِ بازیابی‌شده زیرِ لایه‌هایِ موتور می‌ماند و
+      ماوس به آن نمی‌رسد (سنجشِ ۱۴۰۵-۰۷-۲۷: zLevel ازِ ۷۵ به ۰ افت می‌کرد) */
+  zLevel?: number;
+  /** سه پرچمِ figure که رابط هنگامِ ساخت می‌دهد و ازِ دست‌نویسِ ذخیره می‌آیند */
+  needDefaultPointFigure?: boolean;
+  needDefaultXAxisFigure?: boolean;
+  needDefaultYAxisFigure?: boolean;
 };
 
 const PREFIX = 'fts-draw';

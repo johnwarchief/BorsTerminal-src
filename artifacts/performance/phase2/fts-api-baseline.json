@@ -1,0 +1,163 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "git_commit": "a4228cefc9ec5c84436f86b30d83f492316fb462",
+ "started_at": "2026-10-22T21:59:48+0330",
+ "methods": "read-only GET/POST; POST body is the UI default funnel request",
+ "gets": {
+  "funnel registry": {
+   "path": "/api/funnel/registry",
+   "first_ms": 120.73,
+   "first_status": 200,
+   "first_raw": 25293,
+   "first_gz": 7688,
+   "first_etag": null,
+   "p50_ms": 13.89,
+   "p95_ms": 17.81,
+   "n": 30,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 25293,
+   "gzip_bytes": 7688
+  },
+  "funnel trace فولاد": {
+   "path": "/api/funnel/trace?symbol=%D9%81%D9%88%D9%84%D8%A7%D8%AF&preset=trend&chain=&fund_mode=standard&exceptions=%7B%7D&drop_suffix=true",
+   "first_ms": 1074.08,
+   "first_status": 200,
+   "first_raw": 2500,
+   "first_gz": 1159,
+   "first_etag": null,
+   "p50_ms": 9.37,
+   "p95_ms": 14.3,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 2500,
+   "gzip_bytes": 1159
+  },
+  "fts plan فولاد": {
+   "path": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "first_ms": 1036.04,
+   "first_status": 200,
+   "first_raw": 28455,
+   "first_gz": 7768,
+   "first_etag": null,
+   "p50_ms": 870.13,
+   "p95_ms": 2061.69,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 28455,
+   "gzip_bytes": 7768
+  },
+  "fts config": {
+   "path": "/api/fts/config",
+   "first_ms": 11.54,
+   "first_status": 200,
+   "first_raw": 1121,
+   "first_gz": 620,
+   "first_etag": null,
+   "p50_ms": 6.79,
+   "p95_ms": 27.38,
+   "n": 30,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 1121,
+   "gzip_bytes": 620
+  },
+  "key levels فولاد": {
+   "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/key-levels",
+   "first_ms": 3.4,
+   "first_status": 200,
+   "first_raw": 661,
+   "first_gz": 661,
+   "first_etag": null,
+   "p50_ms": 4.49,
+   "p95_ms": 10.02,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 661,
+   "gzip_bytes": 661
+  },
+  "market closes": {
+   "path": "/api/market/closes",
+   "first_ms": 131.09,
+   "first_status": 200,
+   "first_raw": 78512,
+   "first_gz": 31130,
+   "first_etag": "\"closes-0-20261014-160254-749ee1c7\"",
+   "p50_ms": 56.38,
+   "p95_ms": 188.24,
+   "n": 30,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 78512,
+   "gzip_bytes": 31130
+  },
+  "screener": {
+   "path": "/api/screener",
+   "first_ms": 1339.78,
+   "first_status": 200,
+   "first_raw": 1203781,
+   "first_gz": 122598,
+   "first_etag": null,
+   "p50_ms": 361.81,
+   "p95_ms": 925.33,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 1203781,
+   "gzip_bytes": 122598
+  }
+ },
+ "funnel_post": {
+  "path": "/api/funnel",
+  "body": {
+   "preset": "trend",
+   "chain": [],
+   "logic": "and",
+   "fund_mode": "standard",
+   "tech_chain": [],
+   "strategy_settings": {},
+   "exceptions": {},
+   "drop_suffix": true
+  },
+  "first_ms": 131.95,
+  "first_status": 200,
+  "first_raw": 7574466,
+  "first_gz": 388054,
+  "first_etag": "W/\"761e7b0ba3e91de3\"",
+  "first_x_cache": "HIT",
+  "p50_ms": 145.96,
+  "p95_ms": 988.45,
+  "n": 10,
+  "statuses": [
+   200
+  ],
+  "digests": 0,
+  "raw_bytes": 7574466,
+  "gzip_bytes": 388054,
+  "etag": "W/\"2e854d70ff85c00f\"",
+  "conditional": {
+   "status": 412,
+   "ms": 5.75,
+   "raw": 0,
+   "gz": 0,
+   "etag": "W/\"2e854d70ff85c00f\""
+  }
+ }
+}

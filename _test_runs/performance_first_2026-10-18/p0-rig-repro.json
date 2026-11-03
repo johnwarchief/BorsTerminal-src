@@ -1,0 +1,73 @@
+{
+ "at": "2026-10-17 22:43:58",
+ "fix_sha": "525babf6671d33eaa4b502599c1497d8ecb2eb762e511c278435b167d57ca12b",
+ "bug_sha": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+ "post_timeout_s": 340.0,
+ "env": {
+  "BORS_NO_FETCH_LOOPS": "1"
+ },
+ "screener_cache_orig_sha": "9d2b7a2367b8e0ece8d860c17937085cf2c51743c4a82bf7199aec78723247d1",
+ "fixed": {
+  "tag": "fixed",
+  "funnel_sha": "525babf6671d33eaa4b502599c1497d8ecb2eb762e511c278435b167d57ca12b",
+  "db_pristine": true,
+  "screener_disk_cache_absent": true,
+  "ready_s": 4.346556663513184,
+  "post_sent_at_s": 4.36,
+  "post_first": {
+   "http": 200,
+   "x_cache": "MISS",
+   "status": "success",
+   "bytes": 7488719,
+   "ms": 150892
+  },
+  "post_first_done_at_s": 155.26,
+  "post_second": {
+   "http": 200,
+   "x_cache": "HIT",
+   "status": "success",
+   "bytes": 7488739,
+   "ms": 214
+  },
+  "screener": {
+   "http": 200,
+   "bytes": 1139009,
+   "ms": 283
+  },
+  "log_events": [],
+  "log": "rig-p0-fixed.out"
+ },
+ "bug": {
+  "tag": "bug",
+  "funnel_sha": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+  "db_pristine": true,
+  "screener_disk_cache_absent": true,
+  "ready_s": 3.6313276290893555,
+  "post_sent_at_s": 3.64,
+  "post_first": {
+   "http": 200,
+   "x_cache": "MISS",
+   "status": "success",
+   "bytes": 7488697,
+   "ms": 310645
+  },
+  "post_first_done_at_s": 314.3,
+  "post_second": {
+   "http": 200,
+   "x_cache": "HIT",
+   "status": "success",
+   "bytes": 7488717,
+   "ms": 486
+  },
+  "screener": {
+   "http": 200,
+   "bytes": 1138881,
+   "ms": 355
+  },
+  "log_events": [],
+  "log": "rig-p0-bug.out"
+ },
+ "final_funnel_sha": "525babf6671d33eaa4b502599c1497d8ecb2eb762e511c278435b167d57ca12b",
+ "db_restored_after": true,
+ "screener_cache_restored": true
+}

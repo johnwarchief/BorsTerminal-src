@@ -109,9 +109,14 @@ describe('سیمِ دو موتور به یک نگاشت', () => {
     expect(ffc).not.toMatch(/fetch\(|http\(/);
   });
 
-  it('سریِ تعدیل‌شده از همان `adjustEvents` می‌آید؛ رویدادِ مبدأ درِ آن نمی‌رود', () => {
-    expect(page).toContain("applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined')");
+  it('سریِ تعدیل‌شده از ضریبِ سرور می‌آید؛ رویدادِ مبدأ درِ آن نمی‌رود', () => {
+    // قدمِ ۵: ضریبِ هر کندل را `api/chart.py` می‌شمارد و صفحه همان آرایه را اعمال
+    // می‌کند. چیزی که ثابت می‌ماند: `corporateEvents` (نشانگرِ مبدأ) هرگز جای
+    // ضریبِ زنجیره را نمی‌گیرد، و مرورگر دیگر از `adjustEvents` ضریبِ دوم نمی‌سازد.
+    expect(page).toContain('applyAdjustmentToCandles(feed.candles, adjustFactors ?? [], FFC_ADJUSTMENT_MODE)');
     expect(page).not.toMatch(/applyAdjustmentToCandles\([^)]*corpEvents/);
+    expect(page).not.toMatch(/applyAdjustmentToCandles\([^)]*mapBackendAdjustEvents/);
     expect(wrapper).not.toMatch(/applyAdjustmentToCandles\([^)]*corpEvents/);
+    expect(wrapper).not.toMatch(/applyAdjustmentToCandles\([^)]*(corporateActions|mapBackendAdjustEvents)/);
   });
 });

@@ -12,6 +12,7 @@ import type {
   PhasesFeed,
 } from '../api/useMarketStatusFeed';
 import { asOfText } from '../api/useMarketStatusFeed';
+import { WidgetFreshness } from './WidgetFreshness';
 
 /** شمارشی که نیامده خط تیره است، نه صفر — صفر ادعای «سنجیده شد و نبود» می‌کند */
 function countOrDash(v: number | null | undefined): string {
@@ -24,12 +25,16 @@ export function StatusPanel({
   title,
   hint,
   asof,
+  fresh,
   children,
 }: {
   testId: string;
   title: string;
   hint?: string;
   asof?: AsOf | null;
+  /** `status` وِ `dataUpdatedAt` خودِ کوئریِ همینِ ویجت — برایِ تفکیکِ
+   *  «در حالِ خواندن / خطا رویِ دادهٔ کهنه / بی‌پاسخ» ازِ ساعتِ منبع. */
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
   children: React.ReactNode;
 }) {
   const stamp = asOfText(asof);
@@ -42,8 +47,18 @@ export function StatusPanel({
         <h3 className="text-2xs font-black text-text-primary" title={hint}>
           {title}
         </h3>
-        <span className="num-text text-3xs text-text-muted" data-testid={`${testId}-asof`}>
-          {stamp ? `ساعتِ داده: ${stamp}` : 'ساعتِ داده: بی‌داده'}
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          {fresh ? (
+            <WidgetFreshness
+              label={title}
+              testId={`${testId}-fresh`}
+              input={{ status: fresh.status ?? '', dataUpdatedAt: fresh.dataUpdatedAt ?? 0,
+                       error: fresh.error }}
+            />
+          ) : null}
+          <span className="num-text text-3xs text-text-muted" data-testid={`${testId}-asof`}>
+            {stamp ? `ساعتِ داده: ${stamp}` : 'ساعتِ داده: بی‌داده'}
+          </span>
         </span>
       </div>
       {children}
@@ -81,11 +96,13 @@ export function BreadthHistogram({
   isLoading,
   isError,
   onRetry,
+  fresh,
 }: {
   data: HistogramFeed | undefined;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
 }) {
   const buckets = data?.histo12 ?? [];
   const max = buckets.reduce((m, b) => Math.max(m, b.count), 0);
@@ -95,7 +112,7 @@ export function BreadthHistogram({
       testId="status-histogram"
       title="توزیعِ درصدِ تغییرِ قیمت"
       hint={data?.basis ? `مبنایِ سنجش: ${data.basis}` : undefined}
-      asof={data?.asof}
+      asof={data?.asof} fresh={fresh}
     >
       {isError && !data ? (
         <PanelError testId="status-histogram" onRetry={onRetry} />
@@ -159,18 +176,20 @@ export function ClientSplitPanel({
   isLoading,
   isError,
   onRetry,
+  fresh,
 }: {
   data: ClientSplitFeed | undefined;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
 }) {
   const rows: Array<{ key: 'retail' | 'institutional'; label: string }> = [
     { key: 'retail', label: 'حقیقی' },
     { key: 'institutional', label: 'حقوقی' },
   ];
   return (
-    <StatusPanel testId="status-clientsplit" title="تفکیکِ خریدِ حقیقی و حقوقی" asof={data?.asof}>
+    <StatusPanel testId="status-clientsplit" title="تفکیکِ خریدِ حقیقی و حقوقی" asof={data?.asof} fresh={fresh}>
       {isError && !data ? (
         <PanelError testId="status-clientsplit" onRetry={onRetry} />
       ) : isLoading && !data ? (
@@ -182,7 +201,7 @@ export function ClientSplitPanel({
             const buy = s?.buy_b_toman;
             const sell = s?.sell_b_toman;
             const have = typeof buy === 'number' && typeof sell === 'number' && buy + sell > 0;
-            const buyPct = have ? (buy! / (buy! + sell!)) * 100 : 0;
+            const mixPct = have ? (buy! / (buy! + sell!)) * 100 : 0;
             return (
               <div key={key} data-testid={`clientsplit-${key}`} className="flex flex-col gap-0.5">
                 <div className="flex items-baseline justify-between gap-2 text-2xs">
@@ -190,24 +209,39 @@ export function ClientSplitPanel({
                   {have ? (
                     <span className="num-text text-text-secondary">
                       خرید <span className="num">{fmtInt(buy)}</span> · فروش{' '}
-                      <span className="num">{fmtInt(sell)}</span> میلیارد تومان · قدرت{' '}
-                      <span className="num">{fmtPct(s?.buy_pct ?? null)}</span>
+                      <span className="num">{fmtInt(sell)}</span> م.ت · سهم خرید{' '}
+                      <span className="num">{fmtPct(s?.buy_pct ?? null)}</span> · سهم فروش{' '}
+                      <span className="num">{fmtPct(s?.sell_pct ?? null)}</span>
                     </span>
                   ) : (
                     <span className="text-text-muted">بی‌داده</span>
                   )}
                 </div>
-                <div dir="ltr" className="flex h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary">
-                  <span className="block bg-accent-green" style={{ width: `${have ? buyPct : 0}%` }} />
+                <div
+                  dir="ltr"
+                  className="flex h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary"
+                  title="ترکیب خرید و فروش همین گروه (نه سهم حقیقی/حقوقی)"
+                >
+                  <span className="block bg-accent-green" style={{ width: `${have ? mixPct : 0}%` }} />
                   <span className="block flex-1 bg-accent-red/80" />
                 </div>
               </div>
             );
           })}
           <p className="num-text text-3xs text-text-secondary">
-            خالصِ خریدِ حقیقی: <span className="num">{fmtInt(data?.pc_buy_m_toman)}</span> · فروش:{' '}
-            <span className="num">{fmtInt(data?.pc_sell_m_toman)}</span> م.ت · جریانِ کل:{' '}
-            <span className="num">{fmtInt(data?.money_flow_b_toman)}</span> میلیارد تومان
+            سرانهٔ خرید حقیقی: <span className="num">{fmtInt(data?.pc_buy_m_toman)}</span> م.ت · سرانهٔ فروش:{' '}
+            <span className="num">{fmtInt(data?.pc_sell_m_toman)}</span> م.ت · قدرت خریدار:{' '}
+            <span className="num">{data?.power == null ? '—' : toFaDigits(data.power.toFixed(2)) + '×'}</span> ·
+            جریان خالص حقیقی: <span className="num">{fmtInt(data?.money_flow_b_toman)}</span> میلیارد تومان
+          </p>
+          <p data-testid="clientsplit-value-source" className="num-text text-3xs text-text-muted">
+            {data?.value_source === 'native'
+              ? 'ارزش: بومی منبع (ClientTypeHistory)'
+              : data?.value_source === 'mixed'
+                ? 'ارزش: ترکیبی از بومی و محاسبه‌شده'
+                : data?.value_source === 'reconstructed'
+                  ? 'ارزش: محاسبه‌شده از حجم × VWAP — نه مقدار بومی منبع'
+                  : 'ارزش: منبع نامعلوم'}
           </p>
         </div>
       )}
@@ -221,11 +255,13 @@ export function SessionPhasesPanel({
   isLoading,
   isError,
   onRetry,
+  fresh,
 }: {
   data: PhasesFeed | undefined;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
 }) {
   const rows = [
     { key: 'green', tone: 'text-accent-green border-accent-green/40 bg-accent-green/10', items: data?.green ?? [] },
@@ -235,6 +271,7 @@ export function SessionPhasesPanel({
     <StatusPanel
       testId="status-phases"
       title="چرخشِ وضعیتِ نمادها"
+      fresh={fresh}
       hint="جابه‌جاییِ وضعیتِ هر نماد (صفِ خرید/فروش/مثبت/منفی) بین دو نقطۀِ نمونه‌برداریِ متوالی"
     >
       {isError && !data ? (

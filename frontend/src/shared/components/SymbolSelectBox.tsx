@@ -56,7 +56,7 @@ export default function SymbolSelectBox({
     >
       <span
         aria-hidden
-        className={`grid h-4 w-4 place-items-center rounded-[3px] border text-[10px] font-black leading-none ${
+        className={`grid h-4 w-4 place-items-center rounded-[3px] border text-3xs font-black leading-none ${
           on
             ? 'border-accent-blue bg-accent-blue/20 text-accent-blue'
             : 'border-border-c bg-bg-card/70 text-transparent hover:border-accent-blue/60'

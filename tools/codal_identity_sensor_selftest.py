@@ -45,6 +45,7 @@ G = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(G)
 
 _ORIG = {
+    "SI._line_candidates": SI._line_candidates,
     "SI.key": SI.key,
     "SI.line_variants": SI.line_variants,
     "FE.pick_reference": FE.pick_reference,
@@ -59,6 +60,9 @@ def reds_for(conn):
     G.section_layer(conn)
     G.section_paths(conn)
     G.section_regressions(conn)
+    # بخشِ رأیِ مالک هم باید درِ کارزارها سنجیده شود؛ بی‌این، چک‌هایِ T30..T34
+    # هرگز اجرا نمی‌شوند و «گیتِ ISINِ خاموش» بی‌قرمزِ باقی می‌ماند.
+    G.section_ruling_a(conn)
     return {msg for ok, msg in G.CHECKS if not ok}
 
 
@@ -168,18 +172,20 @@ def m_eps_blind():
 
 
 def m_isin_off():
-    real = _ORIG["SI.line_variants"]
+    """کارزاییِ گیتِ ISIN: هر نامزدی را «تأییدشده» جا می‌زند.
 
+    پیش‌تر کلِ `line_variants` جایگزین می‌شد؛ پس ازِ رأیِ مالک ۲۰۲۶-۱۰-۱۷ که
+    داوری درِ `_line_candidates` است و `line_variants` فقط رویتِ آن، کارزا باید
+    همان داوری را خراب کند — وگرنه بی‌اثر می‌ماند و گارد «سبزِ کاذب» می‌دهد
+    (همین رخ داد: سنسور قرمز نمی‌کرد و کسی نمی‌فهمید چرا).
+    """
     def no_gate(conn, symbol, domain=SI.CODAL):
-        slot = SI._slot(conn)
-        k = SI.key(symbol)
-        base = re.sub(r"(?<=\D)\d$", "", k)
-        if base and base != k:
-            raws = tuple(r for r in slot["by_key"].get(base, ()) if SI.key(r) == base)
-            if raws:
-                return raws, "isin-agree"
-        return real(conn, symbol, domain)
-    SI.line_variants = no_gate
+        raws, ev, _merged = _ORIG["SI._line_candidates"](conn, symbol, domain)
+        if raws:
+            return raws, "isin-agree", True          # هر نامزدی = ادغامِ تأییدشده
+        return _ORIG["SI._line_candidates"](conn, symbol, domain)
+    SI._line_candidates = no_gate
+
 
 
 def m_conflicts_off():
@@ -227,7 +233,7 @@ CASES = [
     ("۲) پلکان+sبدِ بی‌پرچم (سرشتِ HEAD)", m_ladder_blind, ("R2", "R5ب", "R10", "T12ب")),
     ("۳) سبدِ سالِ بی‌پرچم", m_bucket_blind, ("T12ب",)),
     ("۴) نردبانِ EPSِ بی‌قاعده", m_eps_blind, ("R13", "R2")),
-    ("۵) گیتِ ISINِ خاموش", m_isin_off, ("T6", "T9")),
+    ("۵) گیتِ ISINِ خاموش", m_isin_off, ("T6", "T9", "T31", "T33")),
     ("۶) row_conflictsِ تهی", m_conflicts_off, ("R12",)),
     ("۸) کشِ بی‌اعتبارنشدنِ نوشتِ خودِ اتصال", m_cache_same_conn_off, ("T21",)),
 ]

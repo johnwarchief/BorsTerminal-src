@@ -66,7 +66,7 @@ export function RegulatoryState({
   const tone = stopped
     ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
     : supervised
-      ? 'border-accent-amber/40 bg-accent-amber/10 text-accent-amber'
+      ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow'
       : 'border-[var(--hairline)] bg-bg-card/40 text-text-secondary';
   const whyLines = (row.stop_reasons || '').split('\n').map((s) => s.trim()).filter(Boolean);
   const supLines = (row.sup_reasons || '').split('\n').map((s) => s.trim()).filter(Boolean);
@@ -100,8 +100,8 @@ export function RegulatoryState({
       </div>
 
       <details className="mt-0.5">
-        <summary className="cursor-pointer select-none text-[9.5px] text-text-muted">جزئیات</summary>
-        <ul className="mt-0.5 flex flex-col gap-0.5 pl-3 text-[9.5px] text-text-secondary">
+        <summary className="cursor-pointer select-none text-3xs text-text-muted">جزئیات</summary>
+        <ul className="mt-0.5 flex flex-col gap-0.5 ps-3 text-3xs text-text-secondary">
           {titled ? (
             <li>
               وضعیتِ معاملاتی: {row.st_title}

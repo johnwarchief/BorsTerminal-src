@@ -1,0 +1,19 @@
+$ (cwd=frontend) npm.cmd ci
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 358 packages, and audited 359 packages in 2m
+
+92 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (2 moderate, 5 high, 7 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+EXIT=0

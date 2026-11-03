@@ -8,13 +8,14 @@
 می‌شود و هیچ‌وقت درِ قیف جا نمی‌گیرد (همان چیزی که بر سرِ دو فایلِ «ورود
 پول هوشمند» آمد).
 
-پنج چیز سنجیده می‌شود:
+شش چیز سنجیده می‌شود:
   ۱) هر `docs/*.txt` درِ رجیستری هست و برعکس؛
   ۲) sha256ِ پین‌شده با فایلِ رویِ دیسک می‌خواند (منبع عوض شد ⇒ گارد قرمز)؛
   ۳) هر `backend_impl` واقعاً import و callable است؛
   ۴) هر عددِ پارامتر درِ متنِ فایلِ ارجاع‌داده‌شده پیدا می‌شود (با نرمال‌سازی
      دلتا: ۰٫۰۲ ← `1.02`، و قدرمطلق برایِ کرانِ منفی)؛
-  ۵) نسخهٔ ruleset با یک تغییرِ عدد عوض می‌شود و بی‌تغییری ثابت می‌ماند
+  ۵) هر `test_refs` رویِ دیسک هست و لااقل یکِ همان فایل `filter_id` را نام می‌برد؛
+  ۶) نسخهٔ ruleset با یک تغییرِ عدد عوض می‌شود و بی‌تغییری ثابت می‌ماند
      (کنترلِ منفی: سنسور باید خودش را ببیند).
 """
 from __future__ import annotations
@@ -120,6 +121,44 @@ for f in R.FILTERS:
             tokens |= numbers_in(open(cited_path, encoding="utf-8").read())
         ck(appears_in(p.value, tokens),
            f"{f.filter_id}.{p.param_id} = {p.value} درِ متنِ {os.path.basename(cited)} پیدا شد")
+
+# ── ۴.۵) هر test_refs رویِ دیسک هست ───────────────────────────────────────
+# چرا: `test_refs` درِ رجیستری زنجیرۀ اثبات است و از راهِ `as_json()` درِ
+# `/api/funnel/registry` هم خوانده می‌شود. تا پیش از این هیچ‌جا مسیرهایش سنجیده
+# نمی‌شد، پس یک ارجاع به فایلی که هرگز وجود نداشت (`dev/test_tape_flags_v1059.py`)
+# ماه‌ها سبز می‌ماند. بندِ ۳ بالای همین فایل «backend_impl زنده است» را می‌سنجد؛
+# این بند همان را برایِ تست‌ها می‌بندد.
+ref_paths = sorted({tp for f in R.FILTERS for tp in f.test_refs})
+for rp in ref_paths:
+    ck(os.path.exists(os.path.join(REPO, rp)), f"test_refs موجود: {rp}")
+broken = [rp for rp in ref_paths if not os.path.exists(os.path.join(REPO, rp))]
+if broken:
+    print("        ارجاعِ شکسته:", ", ".join(broken))
+ck(bool(ref_paths), f"{len(ref_paths)} فایلِ تستِ متفاوت درِ رجیستری ارجاع شده")
+ck(all(f.test_refs for f in R.FILTERS), "هیچ فیلتری بی‌ارجاعِ تست نیست")
+# هر فیلتر باید لااقل یک فایلِ تست داشته باشد که **خودِ همان filter_id** را نام می‌برد؛
+# وگرنه فهرستِ مشترک می‌تواند فیلترِ تازه را بی‌پوشش سبز نگه دارد.
+for f in R.FILTERS:
+    named = []
+    for rp in f.test_refs:
+        fp = os.path.join(REPO, rp)
+        if not os.path.exists(fp):
+            continue
+        body = open(fp, encoding="utf-8", errors="replace").read()
+        if f.filter_id in body or f.backend_impl in body or f.name in body:
+            named.append(rp)
+    ck(bool(named), f"{f.filter_id}: لااقل یک تستِ خودش را نام می‌برد ({len(named)} فایل)")
+
+# کنترلِ منفی: سنسور باید ارجاعِ جعلی را ببیند (نه اینکه همیشه سبز بدهد)
+_fake = R.BY_ID["f_clock"]
+_saved = _fake.test_refs
+try:
+    object.__setattr__(_fake, "test_refs", _saved + ("dev/no_such_test_guard_probe.py",))
+    ck(any(not os.path.exists(os.path.join(REPO, rp)) for rp in R.BY_ID["f_clock"].test_refs),
+       "کنترلِ منفی: ارجاعِ تستِ جعلی تشخیص داده می‌شود")
+finally:
+    object.__setattr__(_fake, "test_refs", _saved)
+ck(R.BY_ID["f_clock"].test_refs == _saved, "کنترلِ منفی برگشت؛ test_refs دستنخورده ماند")
 
 # ── ۵) presetها ───────────────────────────────────────────────────────────
 ids = set(R.filter_ids())

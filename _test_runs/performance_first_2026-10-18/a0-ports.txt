@@ -1,0 +1,5 @@
+8010 pid=2676 start=10/16/2026 1:59:11 AM cmd=C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\uiux-2-0\.venv-ui\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning
+8000 pid=13660 start=10/15/2026 4:02:45 AM cmd=C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python.exe -u app.py
+pid 13660 external=
+pid 2676 external=46.102.143.218:443
+pid 10424 external=

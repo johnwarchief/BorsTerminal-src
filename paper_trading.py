@@ -24,7 +24,7 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
@@ -38,6 +38,9 @@ from trade_sim import BUY, SELL, Bar, CostModel, SimAccount, apply_fill
 #: کلیدِ وضعیتِ حساب درِ جدولِ flags — تنها راهِ بازیابی پسِ restart.
 STATE_KEY = "paper_account"
 HISTORY_KEY = "paper_history"
+#: سیگنال‌هایِ پرِشده‌نبودۀ نشستِ پیشین. بی‌این کلید، خاموش/روشن کردنِ برنامه
+#: سفارشِ درِ انتظار را پاک می‌کرد و پیگیریِ آن نشست از دست می‌رفت.
+PENDING_KEY = "paper_pending"
 
 
 def order_id(symbol: str, date: str, action: str) -> str:
@@ -45,6 +48,36 @@ def order_id(symbol: str, date: str, action: str) -> str:
     می‌شود — حتی پسِ restart، چون ردِّپا رویِ دیسک است.
     """
     return "paper:%s:%s:%s" % (symbol, date, action)
+
+
+def _draft_dump(d: OrderDraft) -> dict[str, Any]:
+    """سفارشِ درِ انتظار به JSON — بی‌این، restart سیگنالِ دیروز را پاک می‌کند."""
+    i = d.instrument
+    return {"execution_id": d.execution_id, "symbol": i.symbol, "ins_code": i.ins_code,
+            "isin": i.isin, "broker_instrument": i.broker_instrument,
+            "resolution": i.resolution.value, "side": d.side.value, "price": d.price,
+            "quantity": d.quantity, "mode": d.mode.value,
+            "price_source": d.price_source, "price_as_of": d.price_as_of}
+
+
+def _draft_load(x: Mapping[str, Any]) -> OrderDraft | None:
+    """برعکسِ `_draft_dump`; هر ساختارِ ناشناخته ⇒ None (نه سفارشِ نصفه)."""
+    try:
+        sym = str(x["symbol"])
+        return OrderDraft(
+            execution_id=str(x["execution_id"]),
+            instrument=InstrumentRef(symbol=sym, ins_code=x.get("ins_code"),
+                                     isin=x.get("isin"),
+                                     broker_instrument=x.get("broker_instrument"),
+                                     resolution=Resolution(str(x.get("resolution")
+                                                               or "unresolved"))),
+            side=Side(str(x["side"])), price=x.get("price"),
+            quantity=x.get("quantity"),
+            mode=OrderMode(str(x.get("mode") or "safe")),
+            price_source=str(x.get("price_source") or "restored"),
+            price_as_of=x.get("price_as_of"))
+    except (KeyError, ValueError, TypeError):
+        return None
 
 
 class PaperBroker(BrokerAdapter):
@@ -292,6 +325,15 @@ class PaperSession:
         self.ledger.save_state(STATE_KEY, self.account.snapshot())
         self.ledger.save_state(HISTORY_KEY, {"sessions": self._seen_sessions[-400:],
                                              "last_seen": self.last_seen})
+        self.ledger.save_state(PENDING_KEY, {
+            "drafts": [_draft_dump(d) for d in getattr(self, "_pending", {}).values()]})
+
+    def pending_symbols(self) -> set[str]:
+        """نمادهایی که سیگنالِ پرِشده‌نداشته رویِ دِک دارند (یا درِ حافظه)."""
+        pend = dict(self.ledger.load_state(PENDING_KEY) or {})
+        out = {str(d.get("symbol")) for d in (pend.get("drafts") or []) if d.get("symbol")}
+        out |= {str(d.instrument.symbol) for d in getattr(self, "_pending", {}).values()}
+        return {s for s in out if s}
 
     def recover(self) -> bool:
         """وضعیتِ حساب را از دیسک برمی‌گرداند و سفارش‌هایِ باز را به سرویس می‌دهد.
@@ -309,6 +351,15 @@ class PaperSession:
         if hist:
             self._seen_sessions = list(hist.get("sessions") or [])
             self.last_seen = dict(hist.get("last_seen") or {})
+            loaded = True
+        pend = self.ledger.load_state(PENDING_KEY)
+        if pend:
+            drafts = {}
+            for x in pend.get("drafts") or []:
+                d = _draft_load(x)
+                if d is not None:
+                    drafts[d.execution_id] = d
+            self._pending = drafts
             loaded = True
         for eid in self.ledger.open_ids():
             last = self.ledger.latest_status(eid)
@@ -423,5 +474,9 @@ class PaperSession:
                              halt_state=self.ledger.kill_state(), notes=notes)
 
     def run(self, bars: Sequence[Bar]) -> list[PaperDecision]:
+        """بازپخشِ یکِ فهرستِ ردیف (مسیرِ بک‌تست/گارد). دفترِ انتظار را ازِ نو
+        باز می‌کند — پس برایِ «یکِ فشارِ دکمه» درِ برنامه مصرف نمی‌شود؛ آن مسیر
+        `_step` درِ `api/bot.py` است که سیگنال‌هایِ دیروز را نگه می‌دارد.
+        """
         self._pending = {}
         return [self.on_bar(b) for b in bars]

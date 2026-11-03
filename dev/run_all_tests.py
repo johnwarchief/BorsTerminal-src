@@ -5,12 +5,26 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 """
 import os, re, subprocess, sys
 
+# Gate suites must not inherit the production reference-correction pack: a test
+# fixture can reuse a real symbol, and the pack is keyed by ins_code/name.  The
+# dedicated Round 32B suite creates its own temporary packs and explicitly
+# re-enables the loader.  This keeps legacy expectations deterministic.
+os.environ["BORS_CORRECTIONS_DISABLE"] = "1"
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # ترجمانِ شمارشِ گاردها (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۷): «۰ pass / ۰ fail» بودنِ
 # یکِ suite یعنی گزارشگر خروجی‌اش را نفهمیده، نه اینکه صفرِ بررسی سبز شده باشد.
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from guard_counts import summarize  # noqa: E402
+
+# Gate safety: a bare `python dev/run_all_tests.py` must not run against the
+# operational DB. Delegate to the wrapper that copies the DB, sets
+# BORS_WORK_DIR/BORS_DB and BORS_NO_FETCH_LOOPS=1, and fingerprints the source.
+if __name__ == "__main__" and os.environ.get("BORS_GATE_ISOLATED") != "1":
+    print("[gate] unisolated invocation — delegating to dev/gate_db_guard.py")
+    _args = [sys.executable, os.path.join(_HERE, "gate_db_guard.py")] + sys.argv[1:]
+    raise SystemExit(subprocess.call(_args))
 
 os.chdir(os.path.join(_HERE, '..'))
 
@@ -29,6 +43,48 @@ SUITES = [
     # شمارِ سطل را در ۲۹ از ۴۰ نماد جدا می‌دید. گارد با منفی‌کنترلِ ISO.
     ('dev/ce_weekly_bucket_v1073.py', 'confidence_engine weekly bucket == chart Saturday bucket'),
     ('dev/mstat_local_v975.py',       'mstat dashboard computed from local market.db'),
+    # PERF-S3: اسنپ‌شات حالا میانِ اتصال‌ها مشترک است ⇒ باید ثابت بماند که هیچ
+    # پنلی رویِ ردیف‌هایش نمی‌نویسد، نوشتنِ تازه کش را باطل می‌کند، و دوِ فایلِ
+    # بانکِ مختلف هرگز یکی نشمرده می‌شوند.
+    ('dev/mstat_snapshot_cache_v1.py', 'shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation'),
+    # PERF-R1: بی‌تک‌پروازگی، هر درخواستِ سردِ هم‌زمان اسنپ‌شاتِ خودش را می‌ساخت
+    # (سنجشِ مرورگر: ۱۰٫۸s تا آمادگیِ تبِ وضعیت بازار).
+    ('dev/mstat_snapshot_singleflight_v1.py', 'cold concurrent panel requests share one snapshot build'),
+    # PERF-R5: بررسیِ idempotentِ اسکیما هر درخواست اجرا می‌شد؛ حالا یک‌بار
+    # به‌ازایِ (فایل، schema_version) و با باطل‌شدنِ درست پس از ALTER بیرونی.
+    ('dev/get_db_schema_once_v1.py', 'get_db schema checks run once per DB schema_version'),
+    # PERF-R6: TTLِ نشست‌محور (۴۵s باز، ۳۰۰s بسته) + کلیدِ داده؛ نوشتنِ تازه
+    # باید کلید را عوض کند و کشِ کهنه سرو نشود.
+    ('dev/mstat_cache_durability_v1.py', 'mstat panel cache: session-aware TTL and data-key invalidation'),
+    # PERF-R2: پنلِ سلامتِ منبع هر درخواست دو اسکنِ کامل می‌زد (۳۴۳ms برایِ
+    # ۳۹۸بایت)؛ کشِ محتوا-کلید باید همان عدد را بدهد و با درجِ تازه باطل شود.
+    ('dev/notifications_sources_cache_v1.py', 'notification source facts cache by DB identity + content key'),
+    # PERF-R3: سریِ شاخص ۷۴۴KB بود و هر بازدید از نو ساخته/فرستاده می‌شد؛
+    # ETag باید ۳۰۴ِ صفر‌بایت بدهد و با refresh/limit/انقضا باطل شود.
+    ('dev/market_index_etag_v1.py', 'TEDPIX series: content ETag, fresh-cache 304, refresh/limit invalidation'),
+    # PERF-R4: نقشهٔ سبکِ قیمتِ پایانی جایِ فیدِ کاملِ ۶٫۸MB را در master/پرتفوی
+    # گرفت؛ همان p_closingِ همان ردیف، با ETag و ۳۰۴ِ بی‌بدنه.
+    ('dev/market_closes_v1.py', 'lightweight market closes map: same row values, ETag/304'),
+    # P2-R1: سایدبار یک ردیفِ تابلو می‌خواهد، نه ۶٫۸MB؛ و اسکرینر یک ردیف، نه ۱٫۲MB.
+    ('dev/market_row_endpoint_v1.py', 'single market row: same p_closing, ETag/304, unknown stays null'),
+    ('dev/screener_symbol_scope_v1.py', 'screener symbols= returns exactly the same row as the full payload'),
+    # P2-R2: GETِ شرطیِ قیف باید همان بدنهٔ POST را بدهد و کلیدِ داده با
+    # revision/screener/tech عوض شود.
+    ('dev/funnel_get_parity_v1.py', 'funnel GET == POST body for same inputs'),
+    ('dev/funnel_signature_v1.py', 'funnel data signature changes with revision/screener/tech'),
+    # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
+    ('dev/market_last_trade_semantics_v1.py',
+     'market LAST: source LAST wins, zero is not missing, no stale/derived price'),
+    # نبودِ عمقِ صنعت باید null بماند، نه صفرِ قابل‌نمایش.
+    ('dev/mstat_industry_depth_semantics_v1.py',
+     'industry queue depth: missing stays null, available depth is summed'),
+    # کارتِ «قیمت وزنی ارزشی» = شاخصِ رسمیِ TSETMC، نه میانگینِ ارزشیِ معاملات.
+    ('dev/market_price_index_card_v1.py',
+     'official price-weighted index card; missing index stays unavailable, not zero'),
+    ('dev/mstat_value_source_semantics_v1.py',
+     'client value provenance: native/mixed/reconstructed, no hidden fallback'),
+    ('dev/market_impact_official_v1.py',
+     'official TSETMC index impact; derived fallback is explicitly labelled'),
     # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
     # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
     ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),
@@ -38,11 +94,7 @@ SUITES = [
     ('dev/test_delta_update.py',      'delta patch select/apply + fallback'),
     ('dev/test_fund_revenue_v1027.py', 'fund sheet: سود سهام هرگز «فروش» نمی‌شود'),
     ('dev/loopback_guard_v1029.py',   'API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست'),
-    ('dev/shell_launcher_v103.py',    'پوستهٔ Tauri: fallback لانچر، تنظیمِ بستن، وجود در باندل'),
     ('dev/fund_not_applicable_v1028.py', 'صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر)'),
-    # B4/Task 0: فیلدِ افزودنیِ monetary.series اول درِ پایتون منتشر و تست می‌شود
-    # (§۱۵ بند ۵ فایل تصمیمات)؛ Go بعداً همین را با پاریتی پورت می‌کند.
-    ('dev/fund_monetary_series_b4.py', 'سریِ ماهانۀ کارت ۱ از پایتون منتشر می‌شود، بی‌تغییرِ رأی'),
     ('dev/typography_guard.py',        'هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs)'),
     # NPM-LOCK: ریلیزِ ۱٫۰٫۳۹ درِ CI مُرد چون قفلِ npm با package.json نمی‌خواند
     # (npm ci → ERESOLVE). این گارد همان داوریِ npm را پیش ازِ تگ می‌زند؛ بی‌شبکه
@@ -93,15 +145,114 @@ SUITES = [
      'weekly gate + weekly hourglass stay frozen (measured on real bank rows)'),
     ('dev/test_adjustment_phasea.py',
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
+    ('dev/test_unproven_base_events_v1.py',
+     'unproven base-price gaps (positive, fund micro) never enter the adjustment chain'),
+    ('dev/test_functional_availability_v1.py',
+     'functional availability statuses: complete, partial window, no-event classes, source gap, stale'),
+    ('dev/test_rahavard_contract_v1.py',
+     'Rahavard data contract fixture: type0/type7 factor, OHLC, weekly sum, LAST basis'),
+    ('dev/test_fund_profit_and_backfill_v1.py',
+     'official fund distributions + single-session backfill enter the canonical chain'),
+    ('dev/test_session_anomaly_v1.py',
+     'cross-sectional session anomaly: synthetic positives, official-row negatives, typed-event survival'),
+    # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
+    # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
+    ('dev/test_fts_zero_volume_collapse_v1.py',
+     'RC3: several VOL=0 halt rows collapse to ONE event; telescoped factor (series) unchanged; independent events never merge'),
+    ('dev/test_fts_basis_anchor_v1.py',
+     'RC1: switching display basis (last<->closing) never moves the CLOSING adjustment anchor and never fabricates a missing last'),
+    ('dev/test_fts_ma_source_v1.py',
+     'api/ma: SMA == independent rolling mean, None before window-1, and the canonical adjustment factor actually shifts the MA'),
+    ('dev/test_candle_boundary_v1.py',
+     'RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price'),
+    # مرحلۀِ ۳ (§B): هویتِ رویداد از محاسبۀِ ضریب جدا شود — ضریبِ دقیق از ردیفِ مبدأ می‌نشیند
+    # ولی تاریخِ دیدہ‌شدہ جابه‌جا نمی‌شود؛ ردیفِ مبدأِ ناهمخوان جای عددِ درست را نمی‌گیرد؛
+    # مطالبۀِ یکِ ردیفِ مبدأ با دو رویداد → هیچ‌کدام تیز/حذف نمی‌شود؛ بی‌دفتر → نه صفر نه حدس.
+    ('dev/test_fts_event_identity_v1.py',
+     '§B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged'),
+    # مرحلۀِ ۳ (§C): RC4 — تشخیصِ تکرارپذیرِ شکافِ price_history و ترمیمِ idempotentِ
+    # «فقطِ روزهایِ مفقود» رویِ بانکِ موقت؛ بی‌حذف، بی‌duplicate، بی‌جعلِ open/last،
+    # dry_run بی‌اثر، اولویتِ src حفظِ ردیفِ منتشرشده. نوشتنِ عملیاتی قفل است.
+    ('dev/test_history_gap_repair_v1.py',
+     'RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board'),
+    # Phase 4 (مرحلۀِ ۵/۷): موتورِ canonicalِ نوع‌محورِ تعدیل — فرمولِ هر نوع با مثالِ دستی،
+    # مرز/نامعتبر/مفقود → incomplete/invalid (بی‌حدس، بی‌خنثیِ خاموش)، زنجیرۀِ deterministic با
+    # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.
+    ('dev/test_adjustment_engine_v1.py',
+     'Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check'),
+    # Phase 5 (مرحلۀِ ۳): ledgerِ canonicalِ رویداد — نسبتِ رسمی از خودِ ردیف (بی‌proxy)، همانِ
+    # روز ادغام با تقدمِ priceAdjust (بی‌اعمالِ دوباره)، مفقود→incomplete، خارجازکران→invalid،
+    # idempotent، ابزارِ نادرست→تهی، نوع فقط وقتی CODAL یکتا (مختلط→unresolved)، مؤثر≠انتشار.
+    ('dev/test_corporate_ledger_v1.py',
+     'Phase5 ledger: official source-ratio (no proxy), same-day dedup w/ priceAdjust precedence, incomplete/invalid never fabricated, idempotent, wrong-instrument empty, CODAL type only when unique, effective!=publish'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
+    # Task 1 (Phase 1): دروازهٔ جهانِ FTS — صندوق/غیرشرکت از جدول بیرون، بیمه
+    # شرکت می‌ماند، و شرکتِ واقعیِ بی‌صنعت (۲۶ نماد) در جدول و کارت یکسان
+    # «شرکت» است. رویِ DB موقت با اسکیمای کامل؛ market.db فقط خواندنی.
+    ('dev/test_fts_universe_v11.py',  'FTS universe: classifier + bulk_scan/card agree on a temp DB'),
+    # Task 2 (Phase 1): شاخص ۱ برای خدماتی/مالی/هلدینگ از صورتِ مالی (میاندوره
+    # ÷ همان دورهٔ سالِ قبل، fallback سالانه، N/A با دلیل). نقشهٔ تک‌گذرِ bulk و
+    # `i1_basis` باید با `indicators["1"]["monetary"]["basis"]` کارت یکی باشد.
+    ('dev/test_ind1_fs_path_v11.py',  'FTS indicator 1 FS path: helper + bulk_scan/card basis parity on a temp DB'),
+    # Task 3 (Phase 1): یک قاعدهٔ وتوی ۱ب برای کارت و اسکرینر. رگرسیونِ
+    # ZeroDivisionِ «لبن» (کمیتِ گردشده به −۱۰۰٪) فقط این‌جاست؛ بی‌ثبت در
+    # SUITES هرگز درِ گیت اجرا نمی‌شد و شکستش بی‌صدا می‌ماند.
+    ('dev/test_ind1b_parity_v11.py',  '1b parity + vol=-100 regression'),
+    # Task 4 (Phase 1): N/A صادقانه — `i1_na`/`i1_reason`/`i1_basis` رویِ ردیف،
+    # دلیلِ یکسانِ کارت/جدول، تفکیکِ شکافِ ماهانه از صورتِ مالی، و «جدیدترین
+    # دوره» به‌جای fallbackِ بی‌صدای دورهٔ قدیمی. سه‌گانهٔ ۱بِ اسکرینر هم این‌جاست.
+    ('dev/test_fts_na_v11.py',        'honest N/A: row fields, reasons, newest-period only'),
+    # Task 5 (Phase 1): برچسبِ شاهدِ EPS — «سالانهٔ حسابرسی‌شده» مقدم، تنزل‌های
+    # حسابرسی‌نشده/میاندوره صریح، تلفیقی «نمایشی» و N/A (نه رد)، و کمتر از سه
+    # سال «دادهٔ ناکافی». همان برچسب در کارت، ردیفِ bulk و scan_symbol؛ سریِ
+    # EPS در همهٔ حالت‌ها (از جمله تلفیقی) دیده می‌شود.
+    ('dev/test_fts_evidence_v11.py',  'EPS evidence labels: one tier label on card, row and scan_symbol'),
+    # Task 6 (Phase 1): طبقهٔ نمایشیِ حاشیه — below_floor/floor/standard/good رویِ
+    # کارت، ردیفِ bulk و scan_symbol؛ ۵۰٪ فقط برچسب است و کف ۲۰/استاندارد ۳۰
+    # دست‌نخورده می‌ماند؛ مالی/هلدینگ/صندوق N/A با دلیل و بی‌برچسب (نه صفر).
+    ('dev/test_fts_margin_v11.py',    'margin tiers: 20/30 gate unchanged, 50 label-only, N/A stays None'),
+    # Task 7 (Phase 1): مسیرِ پذیرشِ شاخص ۴ — دو مسیرِ ص ۵ (نسبت فروش ≥ ۰٫۳۳× /
+    # پتانسیل سود ناخالص ≥ ۴۰٪) یکی نمی‌شوند و برچسبِ سالانه‌سازی از خودِ موتور
+    # می‌آید. بی‌ثبت در SUITES، رگرسیونِ «مسیر دوم» بی‌صدا می‌ماند.
+    ('dev/test_fts_ind4_v11.py',      'indicator 4 acceptance paths: sales_to_mcap vs profit_potential, annualize label'),
+    # Task 8 (Phase 1): سه صنعتِ الزامیِ جزوه (خودرو/نیروگاه/لاستیک) — نه شوینده —
+    # و بیمه به‌عنوانِ وتوی جدا. فهرستِ `mandatory_sectors`ِ رابط با سرور یکی است.
+    ('dev/test_fts_sector_v11.py',    'sector gate: three booklet mandatory industries, insurance separate veto'),
+    # Task 10B (Phase 1): جهانِ ماهانه — فقط شرکت‌های تولیدی/خدماتی، صندوق/
+    # کارگزاری/اوراق/مشتقه بیرون، و شاخصِ ۱ با صورتِ مالی (نه‌فقط ماهانه) برای
+    # نمادی که گزارشِ ماهانه ندارد. رویِ DB موقت؛ market.db فقط خواندنی.
+    ('dev/test_fts_monthly_universe_v11.py',
+     'monthly universe: company scope on a temp DB, indicator 1 falls back to FS'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',
      'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
     ('dev/test_fts_asof_cutoff.py',
      'FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak'),
+    # مرحلۀ ۲ دورِ تطبیقِ دوم: موتورِ سوم حالا رابطِ APIِ جدایِ بی‌رأی دارد
+    # (`/api/structure3`)، پس قراردادش باید آزمودنی باشد نه فقط harness:
+    # چهار حالتِ صریحِ ورودی، آستانه‌هایی که فقط از خودِ موتور خوانده می‌شوند،
+    # پیشوند-پایداری/بی‌دادهٔ آینده، تفکیکِ ATR از کف، و اینکه هیچ چیزی درِ
+    # کشِ رأیِ رسمی FTS نوشته نمی‌شود.
+    ('dev/test_structure3_engine.py',
+     'engine 3 contract: explicit input states, thresholds only from the engine itself, '
+     'prefix-stability (no future data), ATR-vs-floor split, and zero writes to the FTS vote'),
+    # مرحلۀ ۳ دورِ تطبیقِ دوم: جدولِ «قاعده → الگوریتم → ترسیم» اگر اسمِ بی‌کد
+    # ببرد، رجیستریِ توهمی می‌شود (مرحلۀ ۹ همان را ممنوع می‌کند). این گارد
+    # ارجاع‌های سند را با خودِ کد می‌سنجد: وجودِ نام، سطرِ `NAME:LINE`،
+    # پربودنِ ستونِ «کد» به‌جز ردیف‌های صریحاً AMBIGUOUS، و درستِ موتورِ
+    # نسبت‌داده‌شده (`engine1`/`CE`/`tape`). چهار سندِ دست‌کاری‌شده هم به‌عنوان
+    # کنترلِ منفی روی‌اش اجرا می‌شود — سبزی که خطا را نمی‌بیند دلیلِ درستی نیست.
+    ('dev/test_rule_map_citations.py',
+     'FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file'),
+    # مرحلۀ ۳: سه مسیرِ زندۀ موتورِ اول که هیچ آزمونِ مستقیمی نداشتند (پولبک،
+    # سطوحِ کلیدی + order-block، نقاطِ ساختاری) و قاعدۀ اکیدِ پیوت — کندلِ
+    # تک‌قیمتیِ TSETMC (فولاد: ۳۰٪ سطرها H==L) نباید «سقفِ تأییدشده» بسازد،
+    # بدونِ آنکه هیچ حکمی جابه‌جا شود (سنجیده شد: ۹ نماد، داوری بایت‌به‌بایت یکسان).
+    ('dev/test_fts_untested_paths_v1.py',
+     'pullback / key-levels / structure-points behavior + the strict pivot rule (flat TSETMC rows draw no ceiling)'),
     ('dev/test_trend_engine_flag.py',
      'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',
@@ -129,21 +280,103 @@ SUITES = [
                                       "indicator-3 no-data is 'not measured', never 'rejected' (both cache paths)"),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
-    # درزِ BORS_DATA_DIR (B0): اگر متغیر تنظیم باشد مسیرها از آن می‌آیند، و اگر
-    # نباشد reload باید همان مسیرهایِ ریشۀ ریپو را بدهد — نه هر چیزِ دیگری.
+    # B0-B4 migration fixtures (4-axes): data-dir seam + board/mstat/chart/fundamental goldens
     ('dev/test_bors_data_dir_seam.py', 'BORS_DATA_DIR seam: override wins, unset keeps the repo paths'),
     ('dev/test_board_fixture_v1120.py', 'B1 board fixture + goldens + SQL text are current'),
-    # B2: فیکسچرِ وضعیت بازار رویِ همان فیکسچرِ تابلو (تا /api/market و پرچم‌هایِ
-    # mainwatch واقعی باشند)، اوراکلِ طلایی با ساعتِ سنجاق‌شده، و چهار صحنه.
     ('dev/test_mstat_fixture_v1121.py', 'B2 mstat fixture + goldens + pinned clock are current'),
     ('dev/test_chart_fixture_b3.py',  'B3 chart fixture + goldens + offline seams are current'),
-    # B4: فیکسچر/اوراکل/طلاییِ بنیادی و نوار — قطعیت، تازگی، و محتوای هر کیس
     ('dev/test_fundamental_fixture_b4.py',   'fundamental + tape-history fixture, oracle, goldens'),
     ('dev/test_fundamental_vectors_b4.py',   'layer vectors are a fresh oracle run, not hand-edited'),
+    ('dev/test_db_isolation_v1.py',   'DB isolation: temp copy, logical fingerprint, fetch-loop gate'),
+    ('dev/test_official_ledger_dedupe_v1.py',
+                                      'one official ledger row is applied once, even across a long suspension'),
+    ('dev/test_dps_formula_v1.py',    'DPS factor = close_ex/(close_ex+dps); reserve capital change = pv/nw'),
+    ('dev/test_share_type_evidence_v1.py',
+                                      'official no-cash share evidence: deterministic ingest, idempotent, paid-in rejected'),
+    ('dev/test_round14_official_events_v1.py',
+                                      'Round 14: capital vs share ratio, official DPS, type7 P and no silent fallback'),
+    ('dev/test_round15_dps_source_duplicate_v1.py',
+                                      'Round 15: DPS source-ratio duplicate, combined gap, evidence-gated 10-day window'),
+    ('dev/test_round16_candle_closing_dps_v1.py',
+                                      'Round 16: type7 DPS base is the effective candle closing (holdout)'),
+    ('dev/test_gate_incomplete_db_v1.py',
+                                      'Round 16: an empty/partial gate DB is refused before copying'),
+    ('dev/test_round17_gap_precedence_v1.py',
+                                      'Round 17: observed gap/share precedence over a separate DPS'),
+    ('dev/test_round17_codal_parser_v1.py',
+                                      'Round 17: general CODAL composition parser (Farak/after-label/stage)'),
+    ('dev/test_round17_migration_v1.py',
+                                      'Round 17: staged migration is keyed, idempotent, reversible'),
+    ('dev/test_round18_raw_parity_v1.py',
+                                      'Round 18: raw OHLC mapping, basis, tolerance and cause taxonomy'),
+    ('dev/test_round18_taxonomy_v1.py',
+                                      'Round 18: raw mismatch attribution is evidence-backed'),
+    ('dev/test_round18_history_repair_v1.py',
+                                      'Round 18: published price_history repair is keyed, prioritized and idempotent'),
+    ('dev/test_ra365_round20_formula_oracle_v1.py',
+                                      'Round 20: proven Rahavard DPS/reserve formulas; contribution S remains unverified'),
+    ('dev/test_ra365_round21_long_gap_share_v1.py',
+                                      'Round 21: an official share change inside a long suspension still adjusts'),
+    ('dev/test_ra365_round22_multi_pa_v1.py',
+                                      'Round 22: multiple official PA rows on one date are all applied'),
+    ('dev/test_ra365_round22_isolated_gap_v1.py',
+                                      'Round 22: isolated small unproven base gaps are noise; combined ones survive'),
+    ('dev/test_ra365_round22_dps_sharpen_v1.py',
+                                      'Round 22: a DPS row keeps the candle-closing formula over the sharpened PA ratio'),
+    ('dev/test_ra365_round23_live_dps_close_v1.py',
+                                      'Round 23: the live DPS base is the parsed official close, not the DB close'),
+    ('dev/test_ra365_round24_feed_shrink_v1.py',
+                                      'Round 24: a shrinking feed never promotes a fabricated base gap; cache writes are idempotent'),
+    ('dev/test_ra365_round25_share_leg_dedupe_v1.py',
+                                      'Round 25: the official share leg of an observed base gap is applied once'),
+    ('dev/test_ra365_round25_combined_dps_v1.py',
+                                      'Round 25: a combined share+DPS action keeps the official price leg'),
+    ('dev/test_ra365_round27_timeframe_audit_v1.py',
+                                      'Round 27: D/W/M audit keys, aggregation, re-anchoring and stamp-independent pairing'),
+    ('dev/test_ra365_round27_source_modes_v1.py',
+                                      'Round 27: shadow source modes never mix sources in one series and mark UNAVAILABLE'),
+    ('dev/test_ra365_round28_chain_debug_v1.py',
+                                      'Round 28: aligned factor-chain debugger classifies RATIO_DIFF/EXTRA/REF_ONLY'),
+    ('dev/test_ra365_round29_combined_gap_merge_v1.py',
+                                      'Round 29: a combined base gap absorbs its share and DPS legs exactly once'),
+    ('dev/test_ra365_round30_chart_route_v1.py',
+                                      'Round 30: /api/chart/{symbol} is wired to the live handler, not a candles helper'),
+    ('dev/test_ra365_round31_visible_hl_v1.py',
+                                      'Round 31: /api/chart exposes the literal high/low the Rahavard type7 shows'),
+    ('dev/test_ra365_round32b_correction_pack_v1.py',
+                                      'Round 32B: versioned factor/raw corrections replace or suppress by effective date'),
+    ('dev/test_ra365_round32c_corrections_fixes_v1.py',
+                                      'Round 32C: future events survive the pack horizon; corrected high_raw moves the visible high/low'),
+    ('dev/test_ra365_round32d_calendar_v1.py',
+                                      'Round 32D: non-comparable W/M keys get the reference calendar bar, or an explicit unavailable'),
+    ('dev/test_ra365_round32e_fts_calendar_v1.py',
+                                      'Round 32E: the FTS weekly/monthly resampler uses the reference calendar bars when covered'),
+    ('dev/test_ra365_round32f_formula_audit_v1.py',
+                                      'Round 32F: the formula audit buckets steps and official coverage; the formula already matches official fund ratios'),
+    ('dev/test_ra365_round32g_reference_formula_v1.py',
+                                      'Round 32G: Rahavard performance formula — close_ex/(close_ex+dps), par/(par+dps), rights at the effective close'),
+    ('dev/test_ra365_round32h_codal_dps_v1.py',
+                                      'Round 32H: announced assembly DividendPerShare parser + live close/(close+dps) formula locks'),
+    ('dev/test_ra365_round32h_codal_dps_wiring_v1.py',
+                                      'Round 32H: the chart prefers the Codal DPS with the official close; PA-D path stays the fallback'),
+    ('dev/test_ra365_round32h_codal_dps_ingest_v1.py',
+                                      'Round 32H: Codal DPS ingest writes only proven rows, resumes, and respects the request budget'),
+    ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
+    ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
+    ('dev/test_history_repair_writer_v1.py',
+                                      'history repair writes src=published on a temp DB; closed gate writes nothing'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
+    ('dev/installer_watchdog_guard.py',
+                                      'install watchdog waits without blocking and runs the setup'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۷: پیوتِ Minor نباید روندِ ماژور را برگرداند، داورِ جهت همان
+    # `_fts_classify_trend` می‌ماند (اثباتِ بایت‌به‌بایت با نسخۀِ a853cc75)، کندلِ
+    # تکمیل‌نشده درِ ساختارِ جهت نمی‌نشیند و `provisional` رأی یا حکمِ قیف را عوض
+    # نمی‌کند. بی‌شبکه و بی‌market.db — همه فیکسچر؛ سنجشِ دادهٔ واقعی جداست
+    # (`_audit/major_swing_before_after.py`).
+    ('dev/major_swing_trend_v1.py',   'major-swing trend grading: System 1 judge preserved, no lookahead, provisional is information only'),
     # وتوی مجمع (رأیِ مالک، نه چارت): برچسبِ جدول و وتوی اسکرینر باید یک افق و یک
     # پنجرۀ تقویم داشته باشند، و وتو بیرونِ کشِ ۱۲ ساعته حساب شود. بی‌شبکه —
     # هم تقویم و هم کشِ اسکرینر جعل می‌شوند.
@@ -171,6 +404,19 @@ SUITES = [
                                        'incremental sync: new symbol + new monthly report'),
     # R1/R2 housekeeping (plans/codal-final-audit.md): dedupe اصلاحیه‌ها +
     # backfill ستون‌های «سال قبل». یدم‌پذیر و روی کپیِ تازه اجرا می‌شود.
+    # مأموریت تطبیق 2026-10-17: گروه/تبِ نامعتبر نباید «صفرِ معتبر» بدهد،
+    # و صفرِ واقعیِ یک دستۀ معتبر نباید رد شود.
+    ('dev/mstat_group_validate_v1120.py',
+     'mstat params: unknown group/tab is a loud 400, a legitimately-empty category still returns 200'),
+    # مرحلۀ ۲ مأموریت تب بازار (2026-10-19): دامنهٔ نقشه باید همان چیزی باشد که
+    # برچسب می‌گوید — و top50 نباید بترکد. بی‌این گارد، «طلا» کلِ بازار می‌شد.
+    ('dev/market_treemap_scope_v1.py',
+     'market map scope: alias groups resolve, top50 uses the engine stamp, label never lies'),
+    # مأموریت تطبیق 2026-10-17: «یک شاخص، یک قاعده» — کارتِ دماسنج/عمق و
+    # نقطۀ تایم‌لاین باید رویِ ورودیِ یکسان عددِ یکی بدهند؛ پوشاندنِ
+    # درِ سریِ تاریخی مخلوط نشود.
+    ('dev/mstat_breadth_basis_v1121.py',
+     'breadth/queue basis: card and timeline count the same universe; stale-basis points are masked'),
     ('dev/db_housekeeping.py --selftest',
                                        'R1/R2 housekeeping: dedupe + prev-year backfill'),
     # Phase B (plans/production-packaging-and-unpark-plan.md): onedir build.
@@ -326,6 +572,21 @@ SUITES = [
     # تازه‌ای نوشته نمی‌شود. بی‌شبکه، بی‌market.db.
     ('dev/codal_incremental_recalc_v1104.py',
                                      'incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds'),
+    # بندِ C و D فازِ اولِ مأموریت: لایۀ HTTP. پنج گاردِ بالا موتور و دفترِ کار را
+    # می‌سنجیدند؛ هیچ‌کدام درخواستِ HTTP نمی‌فرستاد، و وجودِ اندپوینتِ سلامت با
+    # grepِ متنِ `api/fundamental.py` ثابت می‌شد. اینجا کارتِ بنیادی و سلامتِ کدال
+    # رویِ سیم سنجیده می‌شوند: ردپایِ منبع/واحد پس از JSON، غایب ≠ صفر، ۴۰۴ به‌جای
+    # ۵۰۰، خانۀ schemaِ zodِ رابط در پاسخ، و چرخۀ خطا‌دار جای «موفق» نمی‌نشیند.
+    # بی‌شبکه، بی‌market.db (بانکِ موقت با اسکیماِ خودِ codal_fetcher).
+    ('dev/codal_api_contract_v1115.py',
+                                     'fundamental HTTP layer: card provenance, missing!=zero, 404 not 500, health schema fields, failed cycle never successful'),
+    # بند ۴ فاز اول: ۴۲۹ باید **وضعیتِ واقعیِ HTTP** باشد، نه برچسبِ رشته‌ایِ
+    # `last_error="429"` درِ گاردِ صف. سرورِ لوپ‌بَک ۴۲۹ واقعی می‌دهد (صفرِ درخواستِ
+    # بیرونی)، `API`ِ خزنده به آن بند می‌شود، `time.sleep` ضبط می‌شود ⇒ نردبانِ
+    # بک‌آف، بی‌None-نشدنِ پاسخِ موفق، بالا‌رفتنِ شمارندۀ ۴۲۹هایِ پی‌در‌پی، و
+    # جلو نرفتنِ نشانکِ کشف/«موفق» نشدنِ چرخۀ شکسته.
+    ('dev/codal_http_429_v1116.py',
+                                     'real HTTP 429 over a loopback socket: backoff ladder, cursor frozen, failed cycle never successful'),
     # مأموریت «کاراییِ بازارِ زنده + تطبیقِ وضعیتِ بازار» (۱۴۰۵-۰۷-۲۷): شمارشِ
     # پروسه با PowerShell ~۵۹۰ms است و درِ هر پولینگِ UI پرداخته می‌شد
     # (sync-state با بدنۀ ۱۴۱ بایت ⇒ p50 = 573ms). گاردِ ttl + stale-while-
@@ -387,6 +648,13 @@ SUITES = [
     # SMART-MONEY: «ورود پول هوشمند» و «کد به کد» عینِ دو فایلِ تازهٔ جزوه،
     # درِ همان tape_flags؛ ماتریسِ حدی/بی‌داده + سیم‌کشیِ رابطِ بی‌آینه.
     ('dev/tape_smartmoney_v1074.py', 'tape smart-money: two new file filters, one canonical judge'),
+    # BOUNDARIES (رأیِ مالک 2026-10-18، پاسخ ۶): برای پنج آستانه‌ای که فقط پاریتی
+    # داشتند و هیچ تستِ یک‌واحدی نداشتند — CLOCK_TRADES، SUSP_TRADES،
+    # NOQTEH_MAX_DIST، LEGAL_SHARE_OF_TVOL، ROOBI_QD1_MIN — حالتِ زیر/رویِ/بالایِ
+    # آستانه با عملگرِ واقعیِ tape_flags سنجیده می‌شود. هیچ عددی عوض نمی‌شود؛
+    # گارد صریحاً برمی‌گردد اگر مقدارِ ثابت درِ منبع جابه‌جا شده باشد.
+    ('dev/tape_threshold_boundaries_v1.py',
+     'tape thresholds: below/at/above boundary for the five untested constants'),
     # TAPE-HISTORY: سابقۀ ماندگارِ «کدام فیلتر، کدام نماد، کدام روز» در user.db؛
     # یک روز = یک ردیف (دفعاتِ ساختگی ممنوع)، «غیرفعال» ≠ «ثبت نشده»، و ماضی
     # از دادهٔ امروز بازسازی نمی‌شود.
@@ -404,6 +672,10 @@ SUITES = [
     # بند ۷.۱ مأموریت: اسکرینر بقایایِ قیف را می‌خواند و هیچ دروازۀ دورزدن ندارد.
     ('dev/test_screener_funnel_gate_v1.py',
                                       'screener candidate = tape∧technicalfundamental pass; no bypass door'),
+    # قفلِ ساختِ قیف بیرونِ انتظارِ رشتهٔ گرمِ اسکرینر: درِ استارت‌آپ همان رشته
+    # `_run` همان کلید را صدا می‌زند (اسموکِ B2 ۱۸۰ ثانیه ایستاد).
+    ('dev/test_funnel_warm_deadlock_v1.py',
+                                      'funnel build lock never held while waiting for the screener warm-up'),
     # بند ۶ مأموریت: مرکزِ اعلان از کدال، با ادغامِ تکراری و بی‌تيترِ ساختگی.
     ('dev/test_notifications_v1.py',
                                       'notification centre: codal-only source, explainable levels, dedupe'),
@@ -431,6 +703,11 @@ SUITES = [
     # حالتِ بنیادی، استثنایِ برچسب‌دار و رتبۀ تحویل. ۲۲ بندِ مأموریت، همگی
     # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
     ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
+    # STRATEGY SETTINGS (رأیِ مالک ۱۴-۰۷-۷): کمربند ۳۳-۴۰ با شاهدِ عددی،
+    # شرطِ هفتگی/روزانۀ قابلِ انتخاب، و آستانۀ الگوی ساعت که *واقعاً* درِ
+    # محاسبه می‌نشیند. بی‌این بند، «تنظیم» فقط یک برچسبِ دیدنی می‌ماند.
+    ('dev/funnel_strategy_settings_v1.py',
+     'strategy settings: fib evidence, per-timeframe conditions, clock threshold'),
     # FUNNEL PRESET DISTINCT: هر Preset باید **خروجِ موتور** را عوض کند، نه فقط
     # عنوانِ دکمه. این گارد تا پیش از این درِ `run_all_tests` ثبت نبود (باگِ P0:
     # «تغییر Preset جدول را عوض نمی‌کند» سبز می‌ماند) و فقط رجیستری را می‌خواند؛
@@ -473,6 +750,52 @@ SUITES = [
     # /api/execution/* درِ api_router + hiddenimports. آزمونِ رشتۀِ دوم و
     # کنترلِ منفیِ سه‌گانه درِ همین فایل است.
     ('dev/execution_ledger_v1108.py', 'sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۴ (§۴-الف/ب و §۶): آداپتورِ واقعیِ EasyTrader/Orbis-MTS.
+    # ترافیک تزریقی است و بی‌نشست هیچ سوکتی باز نمی‌شود؛ ۲۰۰ با
+    # `isSuccessful:false` رد می‌شود (حتی با `id`)؛ timeout ⇒ UNKNOWN و هیچ
+    # ارسالِ دوباره؛ صف بی‌داده ⇒ None نه صفر؛ token درِ لاگ/ردِّپا/دیسک
+    # نمی‌ماند. سوئیتِ قراردادِ بالا (`run_contract`) رویِ همین آداپتور هم
+    # اجرا می‌شود — با یکِ استثنایِ ثبت‌شده که خطرِ همان case رویِ دفترِ خودِ
+    # بروکرِ بدیل دوباره سنجیده می‌شود.
+    ('dev/easytrader_adapter_v1113.py', 'easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend'),
+    # فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴: ربات تا پیش‌ازِ این فقط *موتور* بود
+    # (`paper_trading.py` + ۵۴ سنجه) و هیچ endpoint و هیچ پنلی نداشت، پس درِ
+    # برنامه وجود نداشت. این گارد قراردادِ `api/bot.py` را می‌سنجد: پیش‌فرضِ
+    # کاغذی و خاموش، اجرایِ فقط با درخواستِ صریح، اعتبارسنجیِ بی‌پذیرشِ typo،
+    # سه قفلِ اجرایِ واقعی (env + capabilities از runtime + عبارتِ تأیید)،
+    # ردِّ HALTED، بازنگشتِ TRIPPED، no_data بی‌صفرِ جعلی، خطایِ بانک به‌جای 500،
+    # و نبودِ هرگونه credential درِ پاسخ.
+    # مأموریت ۱۴۰۵-۰۷-۲۶ (سرخطی): لایۀ «اتصال به EasyTrader». نشانیِ حدسی باز
+    # نمی‌شود (بی‌دامنۀ تأییدشده ⇒ NO_LOGIN_HOST و هیچ پروسه‌ای شروع نمی‌شود)،
+    # حالتِ نشست فقط از پرسشِ واقعی می‌آید (۴۰۱⇒EXPIRED، timeout⇒UNKNOWN)، پنجرۀ
+    # باز به‌تنهایی «متصل» نیست، راز هیچ‌جا نمی‌نشیند، و چرخۀ mock (preflight ←
+    # prepare ← دروازۀ توقف ← ارسال ← reconcile ← حسابرسی) یکِ قصد = یکِ ارسال را
+    # ثابت می‌کند. بی‌شبکه، بی‌سفارشِ واقعی، رویِ بانکِ ردِّپایِ موقت.
+    ('dev/sarkhati_connect_v1117.py',
+                                     'sarkhati connect layer: allow-listed login window, session state only from a real probe, no secret persistence, mock cycle with duplicate-send guard'),
+    # §۲ مأموریتِ ۱۴۰۵-۰۷-۲۵: نُه گیتِ P0 پیش ازِ هر ادعایِ Live — نشستِ
+    # بی‌راستی‌آزمایی POST نمی‌کند، عبارتِ تأیید درِ بک‌اند اعتبارسنجی می‌شود،
+    # «نبودن درِ فهرست» شکستِ قطعی نیست، بی‌سقفِ ریسک fail-closed است،
+    # /api/* ناشناخته JSON 404 می‌دهد (نه HTMLِ ۲۰۰)، پیش‌نمایش/probe ازِ
+    # دروازۀ ارسال مستقل‌اند، و لغو درِ سطحِ HTTP قفلِ per-id دارد.
+    # همه باِ ترافیکِ بدل و tripwire؛ بی‌سفارشِ واقعی.
+    ('dev/p0_gates_v1118.py',
+     'p0 gates: unverified session cannot POST, confirm phrase validated in backend, absence from the order list is not failure, fail-closed risk config, JSON 404 for unknown /api/*, preview independent of the send gate, per-id cancel lock'),
+    # مأموریتِ 2026-10-17 (§۲–۵): فیکسچرِ قراردادِ سیم باِ منشأ، ابطالِ تأیید با
+    # تغییرِ نشست، سه مبدأِ جدا (ورود/UI/API)، صداقتِ حالت‌ها و رتبۀِ صف،
+    # زمان‌سنجیِ monotonic با p50/p95/p99، و کنترل‌هایِ منفیِ پاک‌سازیِ لاگ.
+    ('dev/sarkhati_protocol_v1119.py',
+     'sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls'),
+    # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
+    # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
+    # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.
+    ('dev/broker_connect_v1120.py',
+     'broker connection: disk adapter selection with env precedence, write gate env-only, read-only mode refuses POST, session proof names the route that verified it, 401 never connected, config/portfolio leak nothing'),
+    # تبِ مستقلِ «سرخطی» (مأموریتِ 2026-10-17): لغوِ واقعی باِ تأییدِ صریح و
+    # قفلِ ردیفی، و سابقۀِ فیلترشدنیِ بی‌راز.
+    ('dev/sarkhati_tab_v1122.py',
+     'sarkhati tab: cancel semantics (explicit confirm, per-row lock, read-back proof) + events filters'),
+    ('dev/bot_api_v1114.py', 'bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session'),
     # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
     # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،
     # لغو، ضرر روزانه، kill switch، restart، reconcile، ردِّپا) به‌همراه
@@ -488,6 +811,10 @@ SUITES = [
     # سنسور با سمِ --selftest راستی‌آزمایی می‌شوند؛ بیرونِ سرخطی ك/ي عربی
     # فقط شمارشِ اطلاعیه (۳۵۰ سطر، اکثراً املایِ خودِ نمادهایِ تابلو).
     ('dev/persian_glyph_guard.py', 'persian text: no stray CJK, no eaten section digit'),
+    # ابزارِ آزمونِ ریسپانسیو (clip_audit) یکِ جدولِ دستیِ ۱۰ سطری داشت که باِ
+    # routes.tsx هم‌خوان نبود: '#/' را تابلو می‌شمرد (به /master می‌رود) و چهار
+    # صفحه را نمی‌شناخت. این گارد همان رانش را می‌بندد — با سمِ --selftest.
+    ('dev/qa_routes_guard.py', 'QA route table is derived from routes.tsx, never hand-listed'),
     # SARKHATI Stage G: خواندنِ وضعیتِ سفارش و جایِ صف. سه معنایِ متفاوتِ
     # «نمی‌دانیم» (بی‌capability / پاسخِ خالی / ردیفِ بی‌مقدار) را از صفر
     # جدا می‌گذارد، و ثابت می‌کند هیچ refresh یا پایشی سفارشِ تازه
@@ -520,6 +847,34 @@ SUITES = [
     # برمی‌گردد.
     ('dev/boot_page_v1081.py',
                                      'boot page: real download/extract progress, RTL page, handoff + error'),
+    # مرحلۀ ۷ (مأموریتِ مهندسیِ اندیکاتورهای FTS): «موتورِ سوم» باید تفاوتِ
+    # الگوریتمیِ محاسبه‌پذیر داشته باشد، نه بازمصرفِ فراکتال با نامِ تازه. این
+    # harness همان سری را به هر دو موتور می‌دهد و روی دادهٔ محلی هم می‌سنجد.
+    ('dev/structure_engine3_compare_v1.py',
+                                     'engine3 vs engine1: provably different pivot sets, both anti-repaint'),
+    # مرحلۀ ۱۰: هر لایه دو زمان دارد (وقوع و تأیید) و هیچ انوتیشنی از آینده نگاه
+    # نمی‌کند — prefix-stability در هر دو موتور + payload کاملِ /api/fts + کندلِ
+    # در حال تشکیل + هر دو مبنایِ رأیِ روند.
+    ('dev/fts_antirepaint_v1086.py',
+                                     'anti-repaint: two-time pivots, prefix-stability, no future-look in payload'),
+    # دورِ ادغامِ System 2 (رأیِ مالک ۱۴۰۵-۰۷-۲۸): جهتِ موجِ System 1 نگه داشته
+    # شد و پرچمِ `provisional` از System 2 افزوده شد. این harness ثابت می‌کند
+    # پرچم هیچ کمربند و هیچ رأیی را جابه‌جا نمی‌کند (و دو فرمول هم یکی بودند).
+    ('dev/fts_wave_direction_v1125.py',
+                                     'wave direction: extremes rule kept, provisional flag moves no fib zone'),
+    # PHASE 2 (auto-update, no ADB): eight offline guards — 26-col schema,
+    # staging validation gates, dry-run orchestrator, snapshot meta, publish
+    # dry-run/last-good, scheduler + startup catch-up, Cat6 calendar merge,
+    # client meta compare. None of them call CODAL; the owner-authorized live
+    # dry-run is recorded separately.
+    ('dev/test_fts_updater_schema_v11.py',   'codal updater 26-col schema'),
+    ('dev/test_codal_validation_v11.py',     'codal staging validation gates'),
+    ('dev/test_codal_auto_update_v11.py',    'codal no-ADB orchestrator dry-run'),
+    ('dev/test_codal_snapshot_meta_v11.py',  'codal snapshot meta'),
+    ('dev/test_codal_publish_v11.py',        'codal publish dry-run/last-good'),
+    ('dev/test_codal_schedule_v11.py',       'codal scheduler + startup catch-up'),
+    ('dev/test_calendar_merge_v11.py',       'calendar Cat6 merge'),
+    ('dev/test_codal_client_meta_v11.py',    'codal client meta compare'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
@@ -532,18 +887,31 @@ JS_SUITES = [
 # فایلِ generated هم سبز بماند و «تست به‌خاطر نبودِ داده شکست» رخ ندهد.
 FIXTURE_GEN = 'dev/make_fts_ui_fixture.py'
 
+#: دادهٔ مرجعِ این سوئیت‌ها عمداً در Git نیست (gitignored) و در clone تازه هم
+#: نیست. نبودِ فایل = SKIP صریح با نامِ فایل، نه FAILِ محیطی و نه سبزِ بی‌سنجش.
+#: با حضورِ فایل، همان سوئیت کامل و بی‌تغییر اجرا می‌شود.
+REQUIRES = {
+    'dev/test_adjustment_engine_v1.py': '_audit/ra365_ref_bars.json',
+    'dev/db_housekeeping.py --selftest': 'market.db.lzma',
+}
+
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
+# This suite explicitly tests the dev/portable path-resolution contract; the
+# global test workdir override is exactly what it must not see. It creates its
+# own temp dirs and never touches the operational DB.
+NO_DB_ISOLATION = {'dev/test_portable_v1.py'}
 bad = []
 #: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
 #: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
 uncounted = []
 
 
-def run(argv, label):
+def run(argv, label, env_override=None):
     try:
         r = subprocess.run(argv, capture_output=True, text=True, encoding='utf-8',
-                           errors='replace', timeout=600, env=env, shell=False)
+                           errors='replace', timeout=600, env=env_override or env,
+                           shell=False)
     except FileNotFoundError:
         print('  SKIP %-40s (%s not found)' % (label, argv[0]))
         return
@@ -571,16 +939,31 @@ def run(argv, label):
 
 # Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
 # script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
+skipped = []
 for script, label in SUITES:
-    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
+    need = REQUIRES.get(script)
+    if need and not os.path.exists(need.replace('/', os.sep)):
+        skipped.append((label, need))
+        print('  SKIP %-40s (fixture missing: %s)' % (label, need))
+        continue
+    suite_env = env
+    if script in NO_DB_ISOLATION:
+        suite_env = {k: v for k, v in env.items()
+                     if k not in ('BORS_WORK_DIR', 'BORS_DB')}
+    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label,
+        env_override=suite_env)
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
 for script, label in JS_SUITES:
     run(['node', script.replace('/', os.sep)], label)
 
 total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
-print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
+print('\n%d suite counted, %d silent (exit-code only), %d skipped (fixture missing)' % (
+    total_suites - len(uncounted) - len(skipped), len(uncounted), len(skipped)))
 if uncounted:
     print('  silent: ' + ', '.join(uncounted))
+if skipped:
+    for label, need in skipped:
+        print('  skip: %s (%s)' % (label, need))
 print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
 sys.exit(1 if bad else 0)

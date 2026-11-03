@@ -30,17 +30,13 @@ type DraftConfig = Pick<
   'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min' | 'v10_inflation_basis' | 'hourglass_rsi_period' | 'hourglass_rsi_oversold' | 'hourglass_ma52_position'
 > & { v10_sales_to_mcap_min: number; v10_monetary_growth_min: number; v10_inflation_basis: number };
 
-/** حالت گیت نرخ‌گذاری دستوری — چندگزینه‌ای به‌جای تاگل خشک */
-type PricingGateMode = 'free_only' | 'jump_allowed' | 'all';
+/** حالت گیت نرخ‌گذاری دستوری — «حذف سه صنعتِ جزوه» یا «همه صنایع» */
+type PricingGateMode = 'free_only' | 'all';
 
 const PRICING_GATE_LABEL: Record<PricingGateMode, string> = {
-  free_only: 'صنایع آزاد/صادراتی/بورس کالا',
-  jump_allowed: 'صنایع مجاز با جهش نرخ (دارو، غذا)',
+  free_only: 'حذف سه صنعتِ دستوریِ جزوه',
   all: 'همه صنایع',
 };
-
-/** صنایع دستوری جزوه؛ در حالت «جهش نرخ» دارو و غذا از فهرست حذف می‌شوند */
-const JUMP_ALLOWED_SECTORS = ['دارو', 'غذا'];
 
 /** سند v2.1 — حداقل پوشش سود ناخالص تخمینی (منطق OR با نسبت فروش) */
 const POTENTIAL_GUIDE_DEFAULT = 40;
@@ -54,8 +50,6 @@ const GATE_KEYS = {
   pharmaExempt: 'pharma_margin_exempt_min',
   baseMarket: 'exclude_base_market',
 } as const;
-/** صنعت بیمه — در فهرست صنایع دستوری؛ توگل «حذف کامل بیمه» همین را روشن/خاموش می‌کند */
-const INSURANCE_TOKEN = 'بیمه';
 
 function draftFrom(c: FtsConfig | null | undefined): DraftConfig {
   return {
@@ -233,22 +227,18 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       const d = draftFrom(cfg.data.config);
       setDraft(d);
       setEpsGate((d.v10_eps_years ?? 3) >= 3);
-      // جهش‌مجاز یعنی جزوه-دستوری منهای دارو/غذا؛ همه یعنی Rank_Only
-      const mandatory = cfg.data.config.mandatory_sectors ?? FTS_GUIDE_DEFAULTS.mandatory_sectors;
-      // سند v2.1 — بیمه از فهرست صنایع دستوری؛ باقی دروازه‌ها از کلیدهای جدید
+      // بیمه وتویِ مستقل است (reject_insurance) — نه عضوی از فهرستِ دستوری.
+      // سند v2.1 — باقی دروازه‌ها از کلیدهای جدید
       // (اگر بک‌اند آن کلیدها را نداشته باشد، POST دورشان می‌ریزد و پیش‌فرض UI می‌ماند)
-      setInsuranceGate(mandatory.some((s) => s.includes(INSURANCE_TOKEN)));
+      setInsuranceGate(cfg.data.config.reject_insurance ?? true);
       const rawCfg = cfg.data.config as unknown as Record<string, unknown>;
       setHoldingsNa(rawCfg[GATE_KEYS.holdingsNa] == null ? true : Boolean(rawCfg[GATE_KEYS.holdingsNa]));
       setPharmaExempt(Number(rawCfg[GATE_KEYS.pharmaExempt] ?? 0) > 0);
       setBaseMarketGate(rawCfg[GATE_KEYS.baseMarket] == null ? true : Boolean(rawCfg[GATE_KEYS.baseMarket]));
-      if (cfg.data.config.industry_mode === 'Rank_Only') {
-        setPricingGate('all');
-      } else if (JUMP_ALLOWED_SECTORS.every((s) => !mandatory.includes(s))) {
-        setPricingGate('jump_allowed');
-      } else {
-        setPricingGate('free_only');
-      }
+      // «همه صنایع» = Rank_Only؛ هر حالتِ دیگری یعنی حذفِ سه صنعتِ دستوریِ جزوه.
+      // دارو و غذا در هر دو حالت مجازند؛ حالتِ سومی که آن‌ها را جدا کند وجود
+      // ندارد (حکمِ مالک، Task 8).
+      setPricingGate(cfg.data.config.industry_mode === 'Rank_Only' ? 'all' : 'free_only');
     }
   }, [cfg.data]);
 
@@ -259,26 +249,17 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
 
   const onSave = () => {
     const base = cfg.data?.config ?? FTS_GUIDE_DEFAULTS;
-    const mandatorySectors =
-      pricingGate === 'free_only'
-        ? [...FTS_GUIDE_DEFAULTS.mandatory_sectors]
-        : pricingGate === 'jump_allowed'
-          ? [...FTS_GUIDE_DEFAULTS.mandatory_sectors].filter((s) => !JUMP_ALLOWED_SECTORS.includes(s))
-          : [...(base.mandatory_sectors ?? FTS_GUIDE_DEFAULTS.mandatory_sectors)];
-    // سند v2.1 — «حذف کامل صنعت بیمه»: بیمه از فهرست صنایع دستوری (که با Exclude_Mandatory_Pricing حذف می‌شوند)
-    if (insuranceGate) {
-      if (!mandatorySectors.some((s) => s.includes(INSURANCE_TOKEN))) mandatorySectors.push(INSURANCE_TOKEN);
-    } else {
-      for (let i = mandatorySectors.length - 1; i >= 0; i -= 1) {
-        if (mandatorySectors[i].includes(INSURANCE_TOKEN)) mandatorySectors.splice(i, 1);
-      }
-    }
+    /** حکمِ مالک (Task 8): فهرستِ ارسالی همیشه همان سه صنعتِ جزوه است و
+     *  هرگز بیمه/قند/شوینده/دارو/غذا در آن نمی‌نشیند. بیمه کلیدِ جدا دارد. */
+    const mandatorySectors = [...FTS_GUIDE_DEFAULTS.mandatory_sectors];
     const nextIndustryMode = pricingGate === 'all' ? 'Rank_Only' : 'Exclude_Mandatory_Pricing';
     const payload: Record<string, unknown> = {
       ...base,
       ...draft,
       industry_mode: nextIndustryMode,
       mandatory_sectors: mandatorySectors,
+      /** وتویِ مستقلِ بیمه — روشن/خاموش، جدا از صنایعِ دستوری */
+      reject_insurance: insuranceGate,
       v10_eps_years: epsGate ? 3 : 1,
       /** ۱ب — فِیزیکی: رشد غیرمنفی + گستره؛ خاموش = برداشتن هر دو الزام (عدد منفی بک‌اند را رد می‌کند) */
       v10_volume_growth_min: 0,
@@ -548,7 +529,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
               ))}
             </div>
             <span className="break-words text-2xs leading-snug text-text-muted">
-              خودرو، دارو، نیروگاه، غذا و… بسته به حالت انتخابی از غربالگری کنار گذاشته می‌شوند
+              خودرو (و قطعات)، نیروگاه (تولید/عرضه/توزیع برق) و لاستیک — سه صنعتِ دستوریِ جزوه — در حالتِ «حذف» کنار گذاشته می‌شوند؛ دارو و غذا مجازند (نه الزامی).
             </span>
           </div>
 
@@ -564,7 +545,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           <ToggleRow
             label="حذف کامل نمادهای صنعت بیمه"
             scope="دروازهٔ سخت"
-            hint="«بیمه» در فهرست صنایع دستوری می‌ماند؛ با حالت «حذف صنایع دستوری» بیمه کامل از واچلیست بیرون می‌رود."
+            hint="وتویِ مستقل و پیش‌فرض روشن؛ حتی وقتی بیمه در فهرستِ صنایعِ دستوری نیست، از واچ‌لیست بیرون می‌رود (کلید کانفیگ: reject_insurance)."
             checked={insuranceGate}
             onChange={setInsuranceGate}
           />

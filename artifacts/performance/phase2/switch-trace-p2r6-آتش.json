@@ -1,0 +1,138 @@
+{
+ "symbol": "آتش",
+ "readyMs": 2591,
+ "totalKB": 16,
+ "requests": [
+  {
+   "url": "/api/market/row",
+   "query": "symbol=آتش",
+   "enc": 849,
+   "ms": 54
+  },
+  {
+   "url": "/api/calendar/upcoming",
+   "query": "days=14",
+   "enc": 77,
+   "ms": 53
+  },
+  {
+   "url": "/api/selection/portfolio",
+   "query": "",
+   "enc": 374,
+   "ms": 539
+  },
+  {
+   "url": "/api/watchlist",
+   "query": "",
+   "enc": 51,
+   "ms": 518
+  },
+  {
+   "url": "/api/fts/آتش",
+   "query": "",
+   "enc": 6740,
+   "ms": 2483
+  },
+  {
+   "url": "/api/chart/آتش/key-levels",
+   "query": "",
+   "enc": 659,
+   "ms": 2448
+  },
+  {
+   "url": "/api/fundamental/آتش",
+   "query": "",
+   "enc": 6253,
+   "ms": 2277
+  },
+  {
+   "url": "/api/screener",
+   "query": "symbols=آتش&preset=tech_first",
+   "enc": 1287,
+   "ms": 1808
+  },
+  {
+   "url": "/api/calendar/آتش",
+   "query": "",
+   "enc": 55,
+   "ms": 521
+  },
+  {
+   "url": "/api/tape-history",
+   "query": "codes=56987424987755487&days=5",
+   "enc": 264,
+   "ms": 789
+  }
+ ],
+ "http": [
+  {
+   "status": 200,
+   "url": "/api/update/version"
+  },
+  {
+   "status": 200,
+   "url": "/api/selection/portfolio"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel/registry"
+  },
+  {
+   "status": 200,
+   "url": "/api/market/closes"
+  },
+  {
+   "status": 200,
+   "url": "/api/notifications/feed?limit=60"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel?preset=tech_first&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true"
+  },
+  {
+   "status": 200,
+   "url": "/api/market/row?symbol=آتش"
+  },
+  {
+   "status": 200,
+   "url": "/api/calendar/upcoming?days=14"
+  },
+  {
+   "status": 200,
+   "url": "/api/watchlist"
+  },
+  {
+   "status": 200,
+   "url": "/api/calendar/آتش"
+  },
+  {
+   "status": 200,
+   "url": "/api/selection/portfolio"
+  },
+  {
+   "status": 200,
+   "url": "/api/tape-history?codes=56987424987755487&days=5"
+  },
+  {
+   "status": 200,
+   "url": "/api/screener?symbols=آتش&preset=tech_first"
+  },
+  {
+   "status": 200,
+   "url": "/api/fundamental/آتش"
+  },
+  {
+   "status": 200,
+   "url": "/api/chart/آتش/key-levels"
+  },
+  {
+   "status": 200,
+   "url": "/api/fts/آتش"
+  }
+ ],
+ "started": 10
+}

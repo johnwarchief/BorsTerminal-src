@@ -1,0 +1,186 @@
+{
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "product": "D:/BorsTerminal-tmp/r29_bench/full_shard0,D:/BorsTerminal-tmp/r29_bench/full_shard1,D:/BorsTerminal-tmp/r29_bench/full_shard2,D:/BorsTerminal-tmp/r29_bench/full_shard3,D:/BorsTerminal-tmp/r29_bench/full_shard4,D:/BorsTerminal-tmp/r29_bench/full_shard5",
+ "assets_paired": 1989,
+ "assets_ref": 2595,
+ "timeframes": {
+  "D": {
+   "raw_lit": {
+    "rows": 1194446,
+    "row_ok": 1192633,
+    "row_pct": 99.8482,
+    "fields": {
+     "o_cmp": 1194446,
+     "o_exact": 1193542,
+     "h_cmp": 1194446,
+     "h_exact": 1193676,
+     "l_cmp": 1194446,
+     "l_exact": 1193943,
+     "c_cmp": 1194446,
+     "c_exact": 1193989,
+     "v_cmp": 1194446,
+     "v_exact": 1193670
+    }
+   },
+   "raw_con": {
+    "rows": 1194446,
+    "row_ok": 1046370,
+    "row_pct": 87.603,
+    "fields": {
+     "o_cmp": 1194446,
+     "o_exact": 1193542,
+     "h_cmp": 1194446,
+     "h_exact": 1092403,
+     "l_cmp": 1194446,
+     "l_exact": 1148915,
+     "c_cmp": 1194446,
+     "c_exact": 1193989,
+     "v_cmp": 1194446,
+     "v_exact": 1193670
+    }
+   },
+   "adj": {
+    "rows": 1194446,
+    "row_ok": 771499,
+    "row_pct": 64.5905,
+    "fields": {
+     "o_cmp": 1194446,
+     "o_exact": 307186,
+     "h_cmp": 1194446,
+     "h_exact": 307247,
+     "l_cmp": 1194446,
+     "l_exact": 307295,
+     "c_cmp": 1194446,
+     "c_exact": 307304,
+     "v_cmp": 1194446,
+     "v_exact": 1193670
+    }
+   }
+  },
+  "W": {
+   "raw_lit": {
+    "rows": 275776,
+    "row_ok": 272960,
+    "row_pct": 98.9789,
+    "fields": {
+     "o_cmp": 275776,
+     "o_exact": 274805,
+     "h_cmp": 275776,
+     "h_exact": 274311,
+     "l_cmp": 275776,
+     "l_exact": 274580,
+     "c_cmp": 275776,
+     "c_exact": 273937,
+     "v_cmp": 275776,
+     "v_exact": 272558
+    }
+   },
+   "raw_con": {
+    "rows": 275776,
+    "row_ok": 247362,
+    "row_pct": 89.6967,
+    "fields": {
+     "o_cmp": 275776,
+     "o_exact": 274805,
+     "h_cmp": 275776,
+     "h_exact": 256581,
+     "l_cmp": 275776,
+     "l_exact": 266643,
+     "c_cmp": 275776,
+     "c_exact": 273937,
+     "v_cmp": 275776,
+     "v_exact": 272558
+    }
+   },
+   "adj": {
+    "rows": 275776,
+    "row_ok": 176162,
+    "row_pct": 63.8787,
+    "fields": {
+     "o_cmp": 275776,
+     "o_exact": 73019,
+     "h_cmp": 275776,
+     "h_exact": 72161,
+     "l_cmp": 275776,
+     "l_exact": 72615,
+     "c_cmp": 275776,
+     "c_exact": 71654,
+     "v_cmp": 275776,
+     "v_exact": 272558
+    }
+   }
+  },
+  "M": {
+   "raw_lit": {
+    "rows": 69268,
+    "row_ok": 66723,
+    "row_pct": 96.3259,
+    "fields": {
+     "o_cmp": 69268,
+     "o_exact": 68460,
+     "h_cmp": 69268,
+     "h_exact": 68309,
+     "l_cmp": 69268,
+     "l_exact": 68494,
+     "c_cmp": 69268,
+     "c_exact": 67535,
+     "v_cmp": 69268,
+     "v_exact": 66123
+    }
+   },
+   "raw_con": {
+    "rows": 69268,
+    "row_ok": 61359,
+    "row_pct": 88.582,
+    "fields": {
+     "o_cmp": 69268,
+     "o_exact": 68460,
+     "h_cmp": 69268,
+     "h_exact": 64676,
+     "l_cmp": 69268,
+     "l_exact": 66700,
+     "c_cmp": 69268,
+     "c_exact": 67535,
+     "v_cmp": 69268,
+     "v_exact": 66123
+    }
+   },
+   "adj": {
+    "rows": 69268,
+    "row_ok": 43011,
+    "row_pct": 62.0936,
+    "fields": {
+     "o_cmp": 69268,
+     "o_exact": 19387,
+     "h_cmp": 69268,
+     "h_exact": 19142,
+     "l_cmp": 69268,
+     "l_exact": 19300,
+     "c_cmp": 69268,
+     "c_exact": 18263,
+     "v_cmp": 69268,
+     "v_exact": 66123
+    }
+   }
+  }
+ },
+ "coverage": {
+  "D": {
+   "paired": 1194446,
+   "ref_only": 35826,
+   "product_only": 939725
+  },
+  "W": {
+   "paired": 275776,
+   "ref_only": 8174,
+   "product_only": 240337
+  },
+  "M": {
+   "paired": 69268,
+   "ref_only": 2068,
+   "product_only": 62573
+  }
+ },
+ "assets_unmatched": 1,
+ "derived_monthly": true
+}

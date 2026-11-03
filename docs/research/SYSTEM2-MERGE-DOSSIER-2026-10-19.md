@@ -1,0 +1,523 @@
+# پروندۀ ادغامِ System 2 — چرا ادغامِ خطِ اصلیِ System 2 «حلِّ تعارض» نیست
+
+مرحۀ ۴ مأموریتِ ادغام. هیچ‌چیز درِ این سند حدس نیست: هر سطر ازِ `git merge-tree`،
+`git show` و `git cat-file` رویِ SHAهایِ ثبت‌شده درِ §۴ آمده.
+
+مبنایِ ادغام: `integration/system1-2-2026-10-19` = `2a9f3f0f`
+(پیش ازِ آن `f6fbfd77`؛ System 1 کامل + سه خطِ پاکِ همسایه ادغام شده و درِ
+`github` منتشر شده‌اند).
+
+## ۱) سه خطِ System 2، سه سرنوشتِ متفاوت
+
+| ref | tip | کامیتِ منحصربه‌فرد نسبت باِ `github/main` (`f9cea521`) | ادغام باِ `2a9f3f0f` | نتیجه |
+| --- | --- | --- | --- | --- |
+| `mission/technical-algorithm-engine` | `60888acc` | ۳ | — | **CLEAN — ادغام شد** (`478aa069`) |
+| `mission/qa-full-uiux-perf-2026-10-16` | `402acbfe` | ۳ | — | **CLEAN — ادغام شد** (`c81cadad`) |
+| `mission/ui-workstation-redesign-2026-10-15` | `e5570a81` | ۱ | — | **CLEAN — ادغام شد** (`f6fbfd77`) |
+| `github/mission/market-status-parity-tradersarena-2026-10-17` | `7d9d0e4f` | ۵ | ۱ تعارض | فقط `docs/AGENT-INDEX.md` (تولیدشدنی) — **حل‌ناشده، بی‌ریسک** |
+| `github/mission/system2-perf-market-hours-2026-10-17` | `9594c7ff` | ۶۱ | ۱۸ تعارض / ۳۲ هانک | **مسدود — تصمیمِ مهندسی می‌خواهد (§۲)** |
+| `github/mission/ui-audit-system-2-2026-10-15` | `3feb5257` | ۶۶ | ۲۴ تعارض | همان خانواده، پرحاشیه‌تر |
+| `github/handoff/system-2/inventory-2026-10-15` | `5f3b0a74` | ۶۱ | ۱۷ تعارض | زیرمجموعۀِ `fts-indicator-engineering` را دارد |
+| `github/fix/system-2-reproducible-fixtures-2026-10-15` | `c68dbc0a` | ۵۶ | ۱۷ تعارض | « |
+| `github/mission/fts-indicator-engineering` | `ff6b2fb4` | ۵۱ | ۱۷ تعارض | درونِ سه شاخۀِ بالا هست (containment سنجیده شد) |
+| `mission/uiux-2-0-redesign-2026-10-16` | `a3984f02` | ۶۶ | ۴۸ تعارض | `api/execution.py` و دو گاردِ execution را **موازیِ** System 1 ساخته (add/add) |
+| `integration/uiux-2-0-review-2026-10-16` | `65080701` | ۳ |  تعارض | `TapeTable.tsx` + `AGENT-INDEX.md` — کارِ نمایِ کارتیِ تابلو |
+
+`git merge-base --is-ancestor` برایِ جدولِ بالا اجرا شد؛ نتیجه: زنجیرهٔ System 2
+خطی نیست — `system2-perf-market-hours` و `handoff/inventory` و
+`fix/reproducible-fixtures` هر سه `fts-indicator-engineering` را دارند، ولی
+`ui-audit-system-2` هیچ‌کدام را ندارد و هیچ‌کدام هم او را. پس «یکی ادغام کن،
+تمام می‌شود» صادق نیست.
+
+## ۲) چهار تعارضِ واقعی (نه مکانیکی)
+
+### الف) `api/funnel.py` — دو بازسازیِ هم‌زمان رویِ یکِ تابع
+
+| تابع | `github/main` | مبنایِ مشترک (`f5a10166`) | System 1 (خطِ انتشار) | System 2 |
+| --- | --- | --- | --- | --- |
+| `_run_entry` | ندارد | ندارد | ندارد | **دارد** |
+| `_shape` | ندارد | ندارد | ندارد | **دارد** |
+| `_funnel_http` | ندارد | ندارد | ندارد | **دارد** |
+| `_cache_key` | ندارد | ندارد | ندارد | **دارد** |
+| `_run` (بازگشتی) | دارد | دارد | دارد، باِ `tech_chain` + `settings` | **شکسته به سه تابع**؛ `_run` برمی‌گرداند `(payload, ts, built)` |
+
+System 1 پارامترهایِ «تکنیکال‌اول» و «تنظیمِ مستقلِ استراتژی» را به همان `_run`ِ
+قدیم افزود (`weekly_mode`، `daily_mode`، `clock_delta_pct`، `tech_chain` +
+اعتبارسنجیِ `REG.TECH_BY_ID` و `REG.validate_settings`). System 2 لایۀ
+کش/شکلِ پاسخ را جدا کرد (`_shape` برایِ پاسخِ کامل/کاسته + `cached_for_ms`).
+**هیچ‌کدام باِ «هر دو طرف را نگه دار» درست نمی‌شود**: امضایِ `_run` و نوعِ
+بازگشتش فرق کرده. حلِّ درست = بردنِ پارامترهایِ System 1 درونِ ساختارِ تازهٔ
+System 2، و بعد **اثباتِ بی‌جابه‌جاییِ رأی‌ها** (تطبیقِ بدنهٔ `/api/funnel` برایِ
+هر preset، پیش و پس) — نه یکِ resolve سه‌خطی.
+
+### ب) `api/market_status.py` — دو طرحِ کارایی برایِ یکِ لایۀِ کش
+
+- System 1: `_mstat_state()` — یکِ پویشِ «حالتِ بانک» درِ هر درخواست، چون ده پنل
+  آن را تکرار می‌کردند (سنجشِ درِ کامنت: ~۸–۱۰ms به‌ازای پنل، ترکیبِ بی‌کش ~۱۰۳ms؛
+  و پاسخِ ۲٬۵۰ms وقتی ttlِ تب ده پنل را درون‌خطی می‌ساخت).
+- System 2: `_mstat_call()` با PERF-S3 — حذفِ اتصالِ دوم (هر `get_db()` ≈ ۴ms؛
+  شاهدِ `_audit/perf/SQLITE_CONN_BASELINE.json`) و کشِ نتیجه به‌ازای حالتِ بانک.
+
+این دو **یکِ مشکل را ازِ دو سو** حل می‌کنند و بدنه‌هایِ مشترک را بازنویسی کرده‌اند.
+ادغامِ صحیح یعنی اجرایِ دوبارهٔ هر دو سنجش رویِ کدِ واحد؛ وگرنه یکی ازِ دو
+بهبودِ اندازه‌گیری‌شده بی‌صدا می‌رود.
+
+### پ) `api/chart.py` — دو **معنایِ متفاوت** برایِ جهتِ موج
+
+```
+System 1:  direction = "up" if lo_idx <= hi_idx else "down"      # جایِ نسبیِ دو Extreme
+System 2:  direction = "up" if hi_i >= lo_i else "down"          # + provisional: True
+```
+
+System 2 پرچمِ `provisional` را افزوده (رأیِ P0 #4 و باگِ «فولاد» #161: موجِ
+min/max بی‌پیوتِ فراکتالی «در حالِ تشکیل» است، نه ساختارِ تأییدشده). System 1 هم
+دلیلِ خودش را درِ کامنت دارد (پیش از این همین شاخه همیشه `up` می‌داد). این
+تصمیمِ **روش‌شناسی** است، نه فنی: رأیِ روند، کمربندهایِ فیبو و سیگنالِ رابط ازِ
+همین خوانده می‌شوند. مطابقِ قاعدۀِ مخزن (آستانه و دروازۀ روش رأیِ مالک است) این
+را من انتخاب نمی‌کنم.
+
+### ت) `frontend/src/__tests__/design-token-guard.spec.ts` (add/add) و `tones.ts`
+
+هر دو خط یکِ گاردِ «کلاسِ رنگِ بی‌توکن» نوشته‌اند. یکِ نسخه باید بماند وگرنه گارد
+دو بار اجرا می‌شود یا بدتر، ضعیف‌ترینِ دو نسخه حاکم می‌شود.
+
+## ۳) چیزهایی که باید حفظ شوند و درِ هیچ ادغامی نیستند
+
+| مورد | کجا | وضعیت | تصمیم |
+| --- | --- | --- | --- |
+| `TapeCards.tsx` و `tapeColumns.ts` | `integration/uiux-2-0-review-2026-10-16` (کامیت‌شده) + **نسخۀِ تغییرکردهٔ کامیت‌نشده درِ worktree `_bors-uiux-integration`** | کارِ کامیت‌شده قابلِ انتقال است؛ نسخۀِ کامیت‌نشده کارِ نشستِ دیگری است | درِ §۷ سندِ ممیزیِ تابلو به‌صورتِ بسته‌هایِ T‑۱/T‑۲ برنامه‌ریزی شده؛ به‌عنوانِ «ادغامِ فوری» انجام نشد چون باِ `TapeTable`ِ خطِ انتشار (که `MicroBadge`/`tapeRowTone` را جدا کرده) درگیر می‌شود |
+| `api/fundamental.py`، `api/screener.py`، `fts_engine.py` (تغییرِ کامیت‌نشده) | worktree `_bors-fund-browser` (detached `e08dc567`) | دست‌نخورده باقی ماند | کارِ نشستِ دیگری است؛ فقط ثبت شد تا گم نشود |
+| `tools/ta_def_probe.py` (تغییرِ کامیت‌نشده) | worktree `_bors-ta-parity` | دست‌نخورده | همان |
+| `mstat_panels.py` (۷۳۷ سطرِ تازه) + `StatusShell`/`MarketTreemap`/`MarketGlanceCards`/`RankedPanels`/`OrderOwnershipSection`/`Sparkline` | فقط درِ `github/mission/system2-perf-market-hours-2026-10-17` | درِ `github/main` و درِ `2a9f3f0f` **نیست** | باِ همان خط ادغام می‌شود؛ مشکل فقط چهار فایلِ مشترکِ §۲ است، نه این فایل‌ها |
+| `mission/system2-chart-parity-engine1-2026-10-18` | **وجود ندارد** | `git ls-remote --heads github` تنها `mission/system2-perf-market-hours-2026-10-17` را نشان می‌دهد؛ درِ `git for-each-ref` محلی هم هیچ refِ هم‌نامِ «chart-parity/engine1» نیست | نامِ شاخه درِ دستورِ مأموریت باِ مخزن نمی‌خواند؛ کارِ پاریتیِ چارت درِ `mission/technical-algorithm-engine` و `mission/market-status-parity-tradersarena-2026-10-17` دیده شد و آن اولی ادغام شد |
+
+## ۴) مسیرِ رفعِ مانع (به ترتیبِ وابستگی)
+
+1. **دو رأیِ مالک** لازم است: (الف) جهتِ موج و `provisional` (§۲‑پ) کدام باشد؛
+   (ب) لایۀِ کشِ `market_status` کدام طرح را نگه دارد (§۲‑ب). بدونِ این دو، هر
+   انتخابی یکِ بهبودِ اندازه‌گیری‌شده را بی‌صدا می‌سوزاند.
+2. `api/funnel.py`: پارامترهایِ System 1 (`tech_chain`، `weekly_mode`،
+   `daily_mode`، `clock_delta_pct`) به ساختارِ `_run_entry`/`_shape` منتقل شوند؛
+   سپس **تطبیقِ بدنهٔ `/api/funnel`** برایِ هر پنج preset و هر دو منطقِ
+   اشتراک/اجتماع، پیش و پس ازِ تغییر (این همان چیزی است که مالک «عددِ رأی باید
+   ثابت بماند» می‌خواند).
+3. `design-token-guard.spec.ts`: یکی ازِ دو نسخه بماند (نسخۀِ System 2 کامل‌تر
+   به‌نظر می‌رسد چون گارد را درِ `run_all_tests` ثبت کرده) — باِ شاهدِ diff.
+4. سپس ادغامِ `9594c7ff` (کلِ System 2: وضعیتِ بازار + موتورِ تعدیل + کاتالوگِ
+   اندیکاتور) و بعد `7d9d0e4f` (پاریتیِ TradersArena) و درِ آخر `65080701`
+   (نمایِ کارتیِ تابلو).
+5. هر مرحله باِ `git merge-tree --write-tree` پیش‌سنجیده شود و تعارض‌ها باِ نامِ
+   فایل و تصمیم درِ همین سند افزوده شوند.
+
+## ۴-الف) رأی‌های مالک (۲۰۲۶-۱۰-۱۹) — تصمیمِ هر ۱۸ فایل
+
+**رأیِ ۱ — `api/chart.py`:** جهتِ موجِ System 1 می‌ماند
+(`direction = "up" if lo_idx <= hi_idx else "down"`) و `provisional: True` ازِ
+System 2 افزوده می‌شود. هیچ رأیِ FTS یا کمربندِ فیبو بی‌اجازه جابه‌جا نمی‌شود.
+تست‌هایِ لازم: موجِ موقت (بی‌پیوتِ فراکتالی)، موجِ تأییدشده، دادهٔ ناکافی،
+نقطۀِ مرزیِ `hi == lo`، و یکِ آزمونِ برابریِ رأیِ FTS پیش/پس ازِ افزودنِ پرچم.
+
+**رأیِ ۲ — `api/market_status.py`:** گزینهٔ C. «یکِ پویشِ حالتِ بانک درِ هر
+درخواست»ِ System 1 حفظ می‌شود (ده پنل ازِ تکرارِ پویش نجات می‌یابد) و
+«یکِ اتصال برایِ نشانک + پنل»ِ System 2 (PERF-S3) رویش سوار می‌شود. مبنایِ
+تصمیم، اعدادِ خودِ System 2 است: سه حالت (S1 / S2 / ترکیب) باِ ورودیِ یکسان
+باِ p50/p95/p99، شمارِ اتصال‌ها، محاسبۀِ تکراری، همزمانی، invalidation، تازگی و
+برابریِ بدنهٔ پاسخ سنجیده می‌شوند. اگر ترکیب برتریِ S2 را نگه ندارد، اصلاح و
+دوباره سنجیده می‌شود — بی‌عدد، برتری ادعا نمی‌شود.
+
+| فایل | تصمیم |
+| --- | --- |
+| `api/__init__.py` | اتحادِ فهرست: `market_index, diagnostics, execution, bot, structure3` + هر دو کامنتِ توضیحی |
+| `dev/run_all_tests.py` | ours (شمارش ازِ `dev/guard_counts.summarize`) و **انتقالِ چهار الگویِ شمارشِ System 2 بهِ خودِ `guard_counts.py`** (`N/M passed`، «N بررسی سبز، M شکست»، «N سبز، M قرمز»، `N_pass / M_fail`) — وگرنه گاردِ «شمارشِ واقعی» دوباره سکوت را سبز می‌خواند |
+| `docs/README.md` | اتحادِ سه سطرِ جدولِ research (TECH-FIRST، RAHAVARD-CANDLE-ADJUSTMENT-PARITY، TECHNICAL-RAHAVARD-PARITY-AUDIT) |
+| `fts_terminal.spec` | اتحادِ `hiddenimports` (جاافتادن = `ModuleNotFoundError` درِ EXE) |
+| `design-token-guard.spec.ts` | **گارد حفظ می‌شود** (نسخۀ کامل‌تر + ثبتِ درِ `run_all_tests`). حذفِ گارد مجاز نیست |
+| `market/lib/tones.ts` | ترکیب باِ **بازگشت بهِ توکن** (`text-tone-pos` …)؛ اگر کلاسِ System 2 گارد را می‌شکند، کلاس اصلاح می‌شود نه گارد |
+| `api/funnel.py` | ساختارِ theirs (`_run_entry`/`_shape`/`_funnel_http`/`_cache_key`) + پارامترهایِ ours (`tech_chain`، `weekly_mode`، `daily_mode`، `clock_delta_pct`، `REG.TECH_BY_ID`، `REG.validate_settings`). **کلیدِ کش باید `tech_chain`/`settings` را هم ببرد.** معیارِ پذیرش: تطبیقِ بدنهٔ `/api/funnel` برایِ پنج preset × دو منطقِ اشتراک/اجتماع پیش و پس، باِ ثبتِ اعداد |
+| `api/market_status.py` / `api/chart.py` | §۴-الف بالا |
+| `technical-feed.spec.tsx`، `technical-pattern-wiring.spec.tsx` | theirs، سپس Vitestِ کامل؛ اگر باِ `provisional` درافتادند، **تست اصلاح می‌شود، نه حذف** |
+| `MarketStatusPage.tsx`، `FtsStatusCard.tsx`، `useFtsAnalysis.ts`، `patternOverlays.ts`، `SymbolInspector.tsx`، `FtsFunnelAllStages.tsx`، `FtsCustomChainBuilder.tsx` | theirs برایِ ویژگی‌هایِ تازه، باِ حفظِ هر سطرِ رابطیِ System 1؛ دو قید: هیچ کلاسِ رنگِ تازه بی‌توکنِ موجود درِ `tokens.css`، و پلکانِ چهارسطریِ اتصالِ سرخطی دست‌نخورده |
+
+**ترتیبِ اجرا:** (۰) این سند کامیت و push شود — **پیش ازِ هر تلاشِ ادغام**، چون
+`git merge --abort` تغییراتِ حل‌نشدهٔ همین فایل را هم برگرداند (تجربۀِ همین
+جلسه). (۱) `git merge --no-ff github/mission/system2-perf-market-hours-2026-10-17`
+(۲) چهار فایلِ اتحادِ ساده (۳) `chart.py` + تست (۴) `funnel.py` + تطبیقِ پنج
+preset × دو منطق (۵) `market_status.py` + بنچمارکِ سه‌حالته (۶) `tones.ts` +
+گاردِ توکن (۷) هفت فایلِ فرانت → `tsc -b` + `eslint src` +
+`vitest run --maxWorkers=2` (۸) `dev/run_all_tests.py` باِ
+`npm_config_allow_scripts` پاک‌شده + `dev/version_anchor_guard.py`
+(۹) ادغامِ `7d9d0e4f` و `65080701` (تعارضشان فقط `AGENT-INDEX.md` تولیدشدنی و
+`TapeTable.tsx` است) (۱۰) bumpِ ششِ لنگرۀِ نسخه → fast-forwardِ `main` (بی‌force)
+→ تگ → بیلدِ CI ازِ همان تگ → تستِ خودِ بسته → انتشار درِ کانالِ پایدار.
+
+**یادآوریِ محیط (تا قرمزِ جعلی تکرار نشود):** درِ worktree تازه `npm ci` باید باِ
+`npm_config_allow_scripts= npm ci` اجرا شود و وجودِ `node_modules/vitest`
+بررسی شود؛ و گاردهایِ نماد→کارگزاری به `market.db` **هم‌سازی‌شده** نیاز دارند
+(۶٬۰۱۸ نماد، نه ۵٬۲۹۶ِ baseline) وگرنه `p0_gates` چهار `NOT_ORDERABLE`ِ دروغین
+می‌دهد.
+
+## ۵) آنچه بی‌تغییر ماند
+
+`main` (محلی `92703183` / `github/main f9cea521`)، `release/1.0.91-strategy-fts`
+(`0dc5d0be`)، `mission/broker-connect-ui-2026-10-18` (`ea26f1d7`)،
+`mission/uiux-strategy-fts-2026-10-18` (`daf7b8f1`) و همهٔ worktreeهایِ دیگر
+دست‌نخورده‌اند. تنها اهرمِ بازگشتِ ساخته‌شده: `integration/system1-2-2026-10-19`
+(محلی + `github`) و باندلِ `bors-s12-refs.bundle` (۵٬۳۰۴٬۰۳۶ بایت، ۱۹ ref،
+`git bundle verify` سالم).
+
+
+## ۵-الف) مبنایِ رأیِ قیف — ثبت‌شده پیش ازِ هر تلاشِ ادغام (۲۰۲۶-۰۱:۰۱)
+
+`tools/funnel_verdict_baseline.py` (تازۀِ همین مرحلۀِ ادغام) چهلِ حالت را درون‌فرآیندی
+ازِ `api.funnel._run` می‌خواند: پنج preset × دو منطقِ اشتراک/اجتماع، سه زنجیرۀ
+دستیِ تابلو، چهار زنجیرۀ فیلترِ تکنیکال، چهار تنظیمِ مستقلِ «تکنیکال اول»، سه
+حالتِ بنیادی، دو حالتِ `drop_suffix`، یکِ `params`+`exceptions`، و شش خطایِ
+اعتبارسنجی. `as_of`/`cached_for_ms`/`timeline` ازِ هش بیرون‌اند؛ `start_refresh`
+رشتهٔ پس‌زمینه خاموش می‌ماند تا دو اجرا رویِ یکِ داده مقایسه شوند (شمارۀ
+`pending_symbols` همچنان ثبت می‌شود).
+
+**خودِ سنجش قبل ازِ استفاده سنجیده شد** (بی‌این، «صفر جابه‌جایی» بی‌معیار است):
+
+| CONTROL | نتیجه |
+| --- | --- |
+| دو اجرایِ پیاپی درِ یکِ کد (`pre` ↔ `pre2`) | ۴۰/۴۰ هشِ یکسان → قطعی |
+| آستانۀ کذایی: `logic` درِ `api/funnel.py` به «and» قفل شد (`ruleset_version` دست‌نخورده) | ۶ حالت جابه‌جا، دقیقاً شش `__or`؛ ۳۴ حالتِ دیگر یکسان → حساس درِ سطحِ رأی، نه فقط درِ مهرِ نسخه |
+| بازگردانی ازِ copy و اجرایِ سوم | دوباره ۴۰/۴۰ یکسان باِ `pre` |
+
+مبنایِ زمینه: `instruments=6018`، `tape_history=145516`، نشستِ `20261014`. هر
+مقایسۀِ پیش/پس که این دو عدد را نبیند، بی‌اعتبار است (`--compare` خودش هشدار
+می‌دهد).
+
+| حالت | digest | status |
+| --- | --- | --- |
+| `swing__and` | `086873426362d5b2` | success |
+| `swing__or` | `acd20ca1753be42d` | success |
+| `trend__and` | `2eb9c4f6e46f5063` | success |
+| `trend__or` | `340d07623cb7dc9d` | success |
+| `hourglass__and` | `f0bf811aac266230` | success |
+| `hourglass__or` | `f0bf811aac266230` | success |
+| `tech_first__and` | `eac186c5f56fb3c2` | success |
+| `tech_first__or` | `eac186c5f56fb3c2` | success |
+| `custom__and` | `b270b8c92c40fcd7` | success |
+| `custom__or` | `b270b8c92c40fcd7` | success |
+| `custom_chain0__and` | `985506f04f091ab3` | success |
+| `custom_chain0__or` | `0f0224e4957d5255` | success |
+| `custom_chain1__and` | `4c2d495f00d8fa0c` | success |
+| `custom_chain1__or` | `cd1910eb5f75c3a6` | success |
+| `custom_chain2__and` | `da42ebf1460eb07e` | success |
+| `custom_chain2__or` | `a1d632d9c3d2c233` | success |
+| `tech_weekly_up__and` | `22135ee77051d78b` | success |
+| `tech_weekly_up__or` | `22135ee77051d78b` | success |
+| `tech_weekly_up_daily_up__and` | `c23f583792995831` | success |
+| `tech_weekly_up_daily_up__or` | `c23f583792995831` | success |
+| `tech_setup_jet_risk_divergence__and` | `a1f5b00baeb942c0` | success |
+| `tech_setup_jet_risk_divergence__or` | `a1f5b00baeb942c0` | success |
+| `tech_hourglass_accelerate__and` | `0acaa8cf1230781a` | success |
+| `tech_hourglass_accelerate__or` | `0acaa8cf1230781a` | success |
+| `set_weekly_mode=require_up` | `d662a69006a1f2fe` | success |
+| `set_daily_mode=require_up_weekly_mode=reject_down` | `cc8bd37b64abbe9d` | success |
+| `set_clock_delta_pct=2_daily_mode=require_up` | `60afc3c71cbdcd92` | success |
+| `set_clock_delta_pct=2` | `8dd04e22f29f69ca` | success |
+| `fund_hard__trend` | `db9e34c6a2d20892` | success |
+| `fund_standard__trend` | `2eb9c4f6e46f5063` | success |
+| `fund_exception__trend` | `54bd04d4263db5e9` | success |
+| `keep_suffix__swing` | `a6baf99709a347b2` | success |
+| `keep_suffix__trend` | `2df67e74fe26e194` | success |
+| `params__custom` | `7e35355a8fd253fe` | success |
+| `err_unknown_preset` | `1b028d43d4ce8264` | error |
+| `err_unknown_logic` | `ce7d059ed95f4ff0` | error |
+| `err_unknown_tech` | `ebda5d5bb4b0cb2f` | error |
+| `err_unknown_setting_key` | `6eb414a48fc1a44c` | error |
+| `err_unknown_setting_value` | `d48d7cbeaec2b0cf` | error |
+| `err_unknown_fund_mode` | `ff6f378dec848be7` | error |
+
+sha: 245eea4768f5e7502348649db70b9f36d3532220 | context: {"instruments": 6018, "tape_history": 145516}
+
+معيارِ پذیرشِ حلِّ `api/funnel.py`: `--compare pre post` باید صفرِ جابه‌جایی بدهد، یا هر جابه‌جاییِ باقی‌مانده توضیحِ طرح‌دار درِ همین سند داشته باشد.
+
+## ۶) مرحلۀ ادغامِ `9594c7ff` — آنچه شد و عددِ هر اثبات
+
+مبنایِ ادغام: `f6a6d988` (برچسبِ `s12-premerge-checkpoint`) = `245eea47` + ابزارِ §۵-الف.
+هر ۱۸ تعارض حل شد؛ هیچ فایلِ مرتبطی حذف نشد.
+
+### الف) چهار اتحادِ ساده
+| فایل | تصمیم | نکته |
+| --- | --- | --- |
+| `api/__init__.py` | اتحاد: `market_index, diagnostics, execution, bot, structure3` + هر دو کامنت | رأیِ §۴-الف عیناً |
+| `docs/README.md` | اتحادِ سه سطرِ جدول | `RAHAVARD-CANDLE-…` و `TECHNICAL-RAHAVARD-…` درِ درختِ ادغام‌شدۀ فعلی موجودند (سنجیده شد) |
+| `fts_terminal.spec` | اتحادِ `hiddenimports` | سه ماژولِ ریشۀ System 2 درِ هیچ نسخۀ spec نبود: `adjustment_engine`، `corporate_ledger`، `mstat_panels`. هر سه سطح‌بالِ یک دروازۀ API‌اند؛ افزوده شدند (`dev/onedir_contract_v11.py` PASS) |
+| `dev/run_all_tests.py` | ours (شمارش ازِ `guard_counts`) + انتقالِ الگوها | رأیِ §۴-الف |
+
+### ب) `dev/guard_counts.py` — دو الگو افزوده شد و یک معنا تصحیح
+الگوی `N_pass / M_fail` افزوده شد و «سبز، قرمز» از «سنجه، خطا» جدا شد. مبدأِ واقعی
+خوانده شد: `dev/fts_engine_paths_parity_v1076.py:120` چاپ می‌کند `%d سبز، %d قرمز`
+با `(len(CHECKS)-len(bad), len(bad))` ⇒ عددِ اول *موفق* است. معنایِ پیشینِ System 1
+(کل/خطا) فقط درِ وجودِ شکست اشتباه می‌کرد: «۸ سبز، ۴ قرمز» را «۴/۸» می‌خواند.
+expectationِ کهنه درِ `dev/guard_counts_v1110.py` باِ ذکرِ مبدأ تصحیح شد و دو سنجهٔ
+تازه افزوده شد: ۲۲/۲۲ سبز.
+
+### پ) `api/chart.py` — رأیِ مالک ۱، باِ عددی که فرضِ سند را باطل می‌کند
+`lo_idx <= hi_idx` (System 1) و `hi_i >= lo_i` (System 2) یکِ گزاره‌اند: روی ۴٬۰۰۰
+سریِ تصادفی ۴٬۰۰۰/۴٬۰۰۰ جهتِ یکسان. پس «انتخابِ جهت» لازم نبود؛ تنها چیزی که
+افزوده شد پرچمِ `provisional` است. بلوکِ فیبو (کمربندها + سطوح + `retrace_*`) درِ
+۲۴۴/۲۴۴ حالت بیت‌به‌بیت یکسان ماند — `in_fib` درِ `api/chart.py:3484` ازِ همین
+`in_zone` خوانده می‌شود، پس «رأی جابه‌جا نشد» سنجیده شده است، نه فرض.
+گیت: `dev/fts_wave_direction_v1125.py` (۱۷ سنجه، ۰ خطا، باِ منفی‌کنترل) — درِ
+`SUITES` ثبت شد.
+
+### ت) `api/funnel.py` — ساختارِ System 2 + شش لایۀ پارامتر
+`_cache_key`، `_funnel_http`، `_run`، `_run_entry`، `_build` و هر دو route حالا
+`tech_chain`/`settings` را عبور می‌دهند؛ اعتبارسنجی درِ نگهبانِ تک‌نسخۀ
+`_strategy_params()` است تا route و `_run_entry` دو ترجمۀ دست‌نویس نداشته باشند، و
+`stg`ِ *پس از* اعتبارسنجی درِ کلید می‌نشیند (پیش‌فرضِ بازشده و درخواستِ خالی یکِ
+کلید). اثبات: چهل حالت درِ *یکِ فرآیند* از هر دو پیاده‌سازی گذشتند — ۴۰/۴۰ هشِ
+یکسان (`--ab s12-premerge-checkpoint:api/funnel.py`).
+
+> درسِ ابزار: اولین مقایسه دو فایلِ JSON گرفته‌شده درِ دو ساعت را سنجید و ۲۳
+> «جابه‌جایی» گزارش کرد. علتِ هر ۲۳ نوشتنِ `funnel_tech_scan` توسطِ بک‌اندِ زنده بود
+> (`scan_as_of` و روندِ روزانه جابه‌جا شده بود)، نه ادغام. مقایسۀ بی‌ثباتیِ داده
+> بی‌معنا است؛ حالتِ `--ab` ساخته شد تا هر دو پیاده‌سازی درِ یکِ لحظه رویِ یکِ بانک
+> بخوانند. `git diff --stat` هم ثابت کرد ادغام درِ این مسیر جزِ `api/funnel.py`
+> فایلِ دیگری را عوض نکرده (`fts_engine`، `funnel_registry`، `funnel_tech_scan`،
+> `api/market`، `api/screener` بی‌تغییر).
+
+### ث) `api/market_status.py` — گزینهٔ C باِ بنچمارکِ سه‌حالته
+`_mstat_state()` (یکِ پویش برایِ کل تب) + اتصالِ مشترک (نشانک و پنل روی یکِ اتصال).
+`tools/mstat_cache_benchmark.py` هر نسخّه را درِ فرآیندِ جدا سنجید؛ نسخۀ
+تک‌فرآیندیِ اول ترتیب را به دروغ می‌گفت (۱٬۹۰۵ → ۵۰۵ → ۱۹۵ ms).
+
+| سنجش | s1 | s2 | ترکیبی |
+| --- | --- | --- | --- |
+| تب گرم p50/p95/p99 (ms) | ۴٫۷۴/۵٫۹/۶٫۸۱ | ۵۰۶/۵۵۶/۵۶۴ | ۲٫۳۹/۳٫۰/۳٫۲۹ |
+| اتصال به‌ازای درخواستِ گرم | ۲٫۰ | ۱٫۰ | ۱٫۰ |
+| پنلِ تنها، اتصال درِ سر‌سرد | ۲ | ۱ | ۱ |
+| شش رشتهٔ هم‌زمان: محاسبۀ موتور | ۷۲۴۰ | ۲۱٬۷۰۵ | ۷۲۳۹ |
+| پس ازِ سوختنِ ttl (ms) | ۳٫۷۹ | ۷٫۵۸ | ۳٫۲۶ |
+| سقفِ کهنه (ثانیه) | ۹۰ | ندارد | ۹۰ |
+| کلیدهایِ بدنهٔ `/api/mstat/board` | ۱۲ | ۱۸ | ۱۸ |
+
+ترکیبی هر سنجشِ حالتِ پایدار را می‌بَرد و بدنه‌اش ابرمجموعۀ هر دو است. تنها جایی که
+s2 بهتر است شمارِ اتصال درِ سر‌سرد است (۱ در برابرِ ۱۱)، که زمانِ دیوارِ سر‌سرد را
+تغییر نمی‌دهد (۲٬۰۵۵ms در برابرِ ۲٬۲۹۹ms) و یک‌بار درِ هر حالتِ بانک می‌آید، نه درِ
+هر پولینگ.
+
+دو نقصِ واقعی درِ همین مسیر پیدا و رفع شد:
+۱) `/api/mstat/series` روی ۵۰۰ می‌شکست — از خودِ System 2: کلیدِ کش آرگومانِ فهرستی
+   را هاش می‌خواست (`TypeError: cannot use 'tuple' as a dict key`). فقط *کلید*
+   نرمال می‌شود؛ آرگومانِ واقعی دست‌نخورده به موتور می‌رود.
+   `dev/mstat_status_panels_contract_v1.py`: ۱۸۳/۱۸۵ → ۲۰۱/۲۰۱.
+۲) یکِ `get_db()` بی‌مصرف درِ `mstat_board` (`_board_all` آن را مصرف نمی‌کند) —
+   ≈۲٫۳۵ms ازِ p50ِ گرم. پارامترِ مرده حذف شد.
+
+گیت‌هایِ همین مسیر: `mstat_swr_v1111` ۱۶/۱۶ (باِ چهار منفی‌کنترل)،
+`mstat_local_v975` ۲۰۸/۰، `mstat_snapshot_cache_v1` ۱۰/۱۰،
+`mstat_status_panels_contract_v1` ۲۰۱/۲۰۱، `funnel_body_cache_v1` ۲۴/۰.
+
+### ج) گاردِ توکن و `tones.ts` — فرضِ سند برعکس درآمد
+§۴-الف گفت «نسخۀ System 2 کامل‌تر است». اندازه‌گیری: `HEAD` ۱۲۵ سطر و `9594c7ff`
+۱۰۴ سطر؛ نسخۀ System 1 دو سنجۀ اضافه دارد — جاروبِ خانوادۀ `tone-*` و الزامِ وجودِ
+هر شش `--color-tone-*`، به‌علاوه آزمونِ «هیچ `text-[Npx]` بیرونِ نردبان». نسخۀ
+سخت‌گیرانۀ‌تر نگه داشته شد (رأی: «حذفِ گارد مجاز نیست»). خودِ گارد هم سبز است: ۴/۴.
+
+کلاس‌هایِ شکست‌سازِ System 2 اصلاح شدند، گارد نه: هفت نقض —
+`FtsIndicatorPanel.tsx` پنج `text-[11px]` (دقیقاً `--fs-3xs`ِ نردبان) و
+`SymbolInspector.tsx` دو `text-[8.5px]` → `text-3xs`. `market/lib/tones.ts` به لایۀ
+معنایی (`text-tone-pos` …) برگشت: دو نسخّه فقط درِ نامِ کلاس فرق داشتند (۷۰ در ۷۰).
+
+### چ) هفت تصمیمِ رابطیِ باقی‌مانده
+| فایل | تصمیم | چرا |
+| --- | --- | --- |
+| `MarketStatusPage.tsx` | ساختارِ theirs + بازگرداندنِ `fresh={{…}}` به سه پنل و متنِ سرتیترِ ours | theirs چهار پنلِ System 1 را نگه می‌داشت اما نشانۀ تازگی افتاده بود؛ `MarketStatusPanels.tsx:37` همان prop را هنوز می‌گیرد |
+| `FtsStatusCard.tsx` + `technical-feed.spec.tsx` | theirs (`code:'pending'`، آبی) | کامنتِ P0§3 که درِ فایلِ ماندۀ ادغام است صریحاً `pending` را جداکنندۀ «موتور اجرا نشده» از «داده کم است» می‌داند؛ `insufficient` همان دو را یکی می‌کرد. specِ تازه supersets است (صریحِ insufficient را هم می‌سنجد) |
+| `patternOverlays.ts` | theirs برایِ پولبک/ساختار/جعبۀ رنج + نامِ فیلدِ ours | `api/chart.py:3798-3809` فقط `weekly_rsi`، `rsi_period` و `ma52_band_pct` می‌فرستد؛ `weekly_rsi5` هیچ‌جا ارسال نمی‌شود، پس برچسبِ «RSI۵» دروغ می‌گفت و دورۀ کاربرمحور (رأیِ ۲۴) را گم می‌کرد |
+| `useFtsAnalysis.ts` | `ma52_band_pct` افزوده شد، `weekly_rsi5` نیامد | سنجشِ مصرف‌کننده: هیچ جایِ رابط او را نمی‌خواند و سرور نمی‌فرستد (کامنتِ «backend برایِ سازگاری برمی‌گرداند» نادرست بود) |
+| `SymbolInspector.tsx`, `FtsFunnelAllStages.tsx`, `FtsCustomChainBuilder.tsx` | ours | سطرهایِ رابطیِ System 1 (عنوانِ tooltip و متنِ دکمۀ بازنشانی) |
+| `feedFreshness.ts` | منطقِ theirs (`boardFromPastDay`) باِ متنِ اصلاح‌شده | متنِ ours («ردیفی از امروزِ تابلو…») برایِ شاخۀ تازه نادرست بود: شرطِ دوم ازِ نشستِ پیشین می‌آید. متن درست شد، نه تست |
+| `MarketTreemap.tsx` | `left-1` → `start-1` | گاردِ RTLِ System 1 کلاسِ فیزیکیِ بی‌دفتر را سرخ می‌کند؛ دفترِ بازبینی گشاد نشد |
+
+### خ) ESLint و گیت‌هایِ فرانت
+سه خطا: دو درِ فایل‌هایِ تازۀ System 2 (`let`→`const`، `as Record<string, any>`→
+`as AppliedStyles`ِ صریح) و یکی ازپیش‌موجود (`funnel-preset-switch.spec.tsx` درِ
+base، HEAD و theirs بایت‌به‌بیت یکسان است ⇒ ادغام نساختمانش). هر سه رفع شد؛ حذفِ
+`@ts-nocheck` باِ `tsc -b` سنجیده شد (صفر خطا ⇒ pragma بی‌مورد بود).
+`npx tsc -b` ۰ خطا، `npx eslint src` ۰ خطا، `npx vitest run --maxWorkers=2`
+۱٬۹۶۵ سبز / ۰ سرخ / ۵ پرهیز درِ ۱۹۱ پروندّه.
+
+### د) آنچه درِ این دور *نمانده* و باید دانسته شود
+• System 2 باِ خود ۲۷۰ فایل درِ `_test_runs/performance_first_*` و ۱۶۲ فایل درِ
+  `_audit/` (≈۱۶۰ هزار سطر) می‌آورد، از جمله نسخۀ پشتیبانِ `api_funnel.py` و
+  `app.py`. حذف نشدند: سه گاردِ خودی (`dev/sarkhati_*`، `dev/uiux_audit_v1124.py`)
+  به آن مسیر ارجاع می‌دهند و سند‌هایِ پرفورمنس ستون‌هایشان را از آن می‌خوانند.
+  این حجم درِ مخزنِ محصول یک تصمیمِ باز است، نه نتیجهٔ ادغام.
+• `mstat_panels` و دو هم‌خانواده‌اش تنها درِ همین دور به spec افزوده شدند؛ درِ
+  شاخۀ خودِ System 2 نبودند (بیلدِ منجمد از آن شاخه رویِ اولین `/api/chart` می‌مرد).
+• گیتِ تمامِ مخزن (`dev/run_all_tests.py`) رویِ `43bae957` اجرا شد: ۱۳۷ سوئیت
+  شمارش‌شده، ۲۵ سوئیت «بی‌شمارش (فقط exit code)»، و **۹ سطرِ قرمز درِ ۴ سوئیت**
+  که سه‌تاش درِ §۸ رفع شد و یکی (§۸-د) با دادهٔ بیرونی مسدود است.
+
+## ۸) گیتِ کامل رویِ `43bae957` — چهار قرمز و سرنوشتِ هر کدام
+
+پیش ازِ این، سبزِ `tsc/eslint/vitest` و گاردهایِ تک‌تکِ من «گیتِ کامل» حساب نشد.
+`dev/run_all_tests.py` چهار سوئیت را قرمز کرد. یک نقص از خودِ ادغام بود که **هیچ**
+تستِ واحدی نمی‌گرفت.
+
+### الف) `api/chart.py:463,646` — فراخوانِ کهن‌مدل، بلعیده‌شده درِ `except`
+`api/_core.py:403` درِ مأموریتِ هویتِ نماد دو پارامترِ تازه گرفت
+(`sym_pred(conn, col, symbol, domain)`)؛ System 1 هر ۹ فراخوانِ `api/chart.py` را
+تازه کرد، System 2 هر ۱۱ فراخوانِ خودش را کهنه داشت. ادغام نه‌فراخوانِ کهنه را
+بازگرداند و نه رفع — دو سطرِ متعلق‌به‌توابعِ خودِ System 2 (`_ledger_events_for`،
+`_ledger_coverage`) باقی ماند و `TypeError` درِ `except Exception: return []`
+(سطرِ ۴۹۹) و `st["error"] = str(e)` (سطرِ ۷۱۳) گم می‌شد.
+
+اثرِ اندازه‌گیری‌شده (پیش ازِ رفع، رویِ همین بانک):
+- `_ledger_events_for('خودرو') → []` ⇒ تیزکردنِ ضریبِ تعدیل ازِ دفترِ رسمی هرگز اجرا
+  نمی‌شد.
+- `_ledger_coverage(...) → available:false` و رشتهٔ خامِ پایتون درِ `ledger-unavailable:…`
+  به رابط می‌رفت.
+
+چرا هیچ تستی نگرفت: `dev/test_adjustment_phasea.py:366` و
+`dev/test_fts_event_identity_v1.py:35` هر دو `_ledger_events_for` را باِ lambda
+جای‌گزین می‌کنند (۵۷/۰ و ۱۴/۰ سبز) — همان الگویِ «fixture یک شاخۀ مرده را می‌پوشاند».
+رفع: هر دو فراخوان به `sym_pred(conn, "l_val18", symbol, "board")` (عینِ همان
+الگویی که سطرِ ۱۱۲۲ برایِ همان کوئری دارد). پس ازِ رفع، رویِ بانکِ واقعی:
+خودرو ۶، فولاد ۱۴، شپنا ۱۲ ردیفِ دفتر.
+
+**و سنجه‌ای که جلویِ تکرارش را می‌گیرد** — درِ `dev/undef_name_guard.py` افزوده شد،
+نه درِ یکِ فایلِ جدید: «شکلِ فراخوان» ماژول‌به‌ماژول، باِ `import`هایِ حل‌شدنی.
+سه اسباتِ کاذب درِ راهِ رسیدن به این شکل کشف و رفع شد (هم‌نامِ دو ماژول `_col`،
+آرگومانِ keyword درِ `_settled(level, above)`، و ستارۀ import) و هفت خودسنجی دارد.
+منفی‌کنترلِ واقعی: همان سنجان رویِ `HEAD:api/chart.py` **۲** ایراد می‌دهد
+(سطرهایِ ۴۶۳ و ۶۴۶) و رویِ درختِ اصلاح‌شده **۰** — پس سنسور باگِ خودِ این ادغام
+را می‌بیند، نه فقط نمونۀ ساختگی. وضعیتِ کنونی: ۵۶ ماژول، ۰ ایراد.
+
+### ب) چهار روتِ جدیدِ mstat بی‌دروازۀ گروه بودند
+`api/market_status.py:403,415,425,435` (treemap / tops / orderflows / ownership)
+گروه را بی‌`_check_group` به `_mstat_call` می‌دادند، و `mstat_panels.py:98` هر
+گروهِ ناشناخته را بی‌صدا «all» می‌کرد و همان رشتهٔ بیگانه را درِ `group_label`
+پس می‌داد: پرسشِ غلط باِ «همۀ بازار» جواب می‌گفت. دروازه افزوده شد (TREEMAP_GROUPS
+⊂ `_VALID_GROUP` سنجیده شد: ۱۰ در ۱۶، بی‌هیچ مقدارِ بیرون‌مانده ⇒ هیچ درخواستِ
+مشروعی نمی‌شکند) و `dev/mstat_group_validate_v1120.py` همان چهار روت را پوشش داد:
+۱۴ → ۱۸ سنجه، ۰ خطا. `mstat_status_panels_contract_v1` هم پس ازِ تغییر ۲۰۱/۲۰۱ ماند.
+
+### پ) ترتیبِ پیامِ خطایِ قیف
+`_funnel_http` پارامترهایِ استراتژی را *پیش از* `_run_entry` می‌سنجید، پس درخواستی
+که هم `fund_mode` غلط داشت هم فیلترِ تکنیکال، پیامِ دومی را می‌گرفت. `_basics_error()`
+مشترک ساخته شد و ترتیبِ پیشین برگشت: preset ← fund_mode ← logic ← tech/settings.
+سنجشِ HTTP: `{fund_mode:'soft', tech_chain:['t_not_real']}` ⇒ «fund_modeِ ناشناخته».
+تطبیقِ چهل‌حالتۀ `--ab` هم پس ازِ این تغییر ۴۰/۴۰ ماند.
+
+### ت) هایژین: قرمزی که ازِ *ماشین* آمد، نه ازِ ادغام — و یک تصمیمِ باز
+`dev/repo_hygiene_v97.py` ۱۲۲/۱۲۳ می‌گفت ۲۷۰ فایلِ track‌شده درِ ignore نشسته‌اند.
+منبعِ آن ignore `.git/info/exclude` **همین ماشین** بود (سطرِ ۷: `_test_runs/`)؛ `git
+check-ignore -v` همان فایل را نشان داد و `.gitignore` مخزن هیچ قاعدۀ `_test_runs`
+ندارد. پس درِ CI و درِ یکِ clone تازه آن فایل‌ها ignore نیستند و گارد سبز است —
+قرمزی artifactِ تنظیمِ محلی بود، نه نقصِ ادغام.
+
+۱) **انجام‌شده:** سطرِ محلی comment شد؛ گارد ۱۲۳/۱۲۳. **هیچ فایلی ازِ مخزن بیرون
+   نرفت** (رأیِ مالک: «هیچ تغییرِ مرتبطی صرفاً به دلیلِ ناقص‌بودن حذف نشود»).
+۲) **برگردانده‌شده:** نخست ۲۷۰ فایل را untrack کردم + قاعده درِ `.gitignore` +
+   دوازده استثنا (گارد سبز شد). بعد ازِ دیدنِ منشأِ قاعده، **همه را برگرداندم**:
+   `.gitignore` بایت‌به‌بیت باِ HEAD یکی است و `git ls-files _test_runs` دوباره ۲۷۰
+   می‌دهد. دلیلِ برگشت: بیرون‌بردنِ این حجم تصمیمِ وزنِ مخزن است، نه رفعِ نقص.
+
+**تصمیمِ بازِ تو:** System 2 باِ خود ۲۷۰ فایل درِ `_test_runs/` و ۱۶۲ فایل درِ
+`_audit/` می‌آورد (≈۱۶۰ هزار سطر، از جمله نسخۀ پشتیبانِ `api_funnel.py` و `app.py`).
+سه گاردِ خودی (`dev/sarkhati_tab_live_v1123.py`، `dev/sarkhati_regress_live_v1123.py`،
+`dev/uiux_audit_v1124.py`) آن مسیر را فقط **می‌نویسند** (نمی‌خوانند)، پس untrack
+هیچ گاردی را نمی‌شکند؛ سند‌هایِ `PERFORMANCE-*` اما به ۳۴ مسیر از آن ارجاع
+می‌دهند (۱۲‌تاشان فایل‌هایِ موجود‌اند). اگر بگویی «بیرون برود»، کارِ یکِ کامیت است:
+قاعده درِ `.gitignore` + `git rm -r --cached _test_runs` + استثناهایِ دوازده‌گانه.
+
+### ث) `FTS-RULE-ALGORITHM-MAP.md` — استنادها باِ جابه‌جاییِ سطر کهنه شده بودند
+`dev/test_rule_map_citations.py` ۱۰/۱۱ می‌گفت NAME:LINE به سطرِ خودِ تابع نمی‌رسد:
+`_fts_analyze_candles:3602` → ۳۶۳۱، `_fts_jet_setup:2580` → ۲۶۰۹،
+`_fts_analyze_symbol:3966` → ۳۹۹۳. سه استناد (چهار باِ تکرارِ سطرِ ۱۱ و ۱۲) باِ
+محاسبهٔ واقعی ازِ خودِ کد تصحیح شد؛ ۱۱/۱۱.
+
+### ح) پنجمین قرمز: خودِ گاردِ ربات باِ «متن» می‌سنجید، نه «ساختار»
+`dev/bot_api_v1114.py:244` ثبت‌شدنِ ربات را باِ جستارِ `"bot]"` درِ `api/__init__.py`
+می‌سنجید. اتحادِ §۶‑الف فهرست را به `…, execution, bot, structure3]` برد — یعنی
+`bot` هنوز ثبت بود ولی رشتهٔ «bot]» دیگر نبود: **قرمزِ جعلی ازِ ادغامِ من**.
+به‌جایِ تنگ‌کردنِ جستار، داوریِ ساختاری نشست: روترِ تجمیعی واقعی راه می‌رود و
+`/api/bot/…` باید درِ آن باشد. دو تله درِ همین راه افتاد و هر دو ثبت‌اند:
+`include_router` درِ این نسخۀ FastAPI تنبل است (`.routes` شیءِ `_IncludedRouter`
+بی‌`path` می‌دهد) و شمارشِ نخست صفر شد — که همان «صفرِ بی‌معنا»ست؛ باِ
+`original_router` درست شد: ۱۳۷ مسیر، ۸ تای ربات، ۲۱ تای mstat.
+گارد حالا ۷۰/۰ است و دو سنجه دارد: ساختارِ روتر + منبع (`mods`).
+
+### ج) قرمزی که رفع نمی‌شود: شاهدِ بیرونیِ `Phase4 engine`
+`dev/test_adjustment_engine_v1.py` ۳۸/۳۹ است و تنها سنجهٔ قرمز «ج۰ شاهدِ مرجع موجود
+نیست (نمونۀِ واقعی رد شد — نباید بی‌شمارنده سبز شود)» است. این گارد **عمداً** وقتی
+`_audit/ra365_ref_bars.json` نباشد سرخ می‌شود. آن فایل درِ هیچ جایِ این ماشین نیست
+(جست‌وجویِ کلِ دیسک: صفر) و ساختنش واکشیِ زنده از رهاورد ۳۶۵ است — حوزۀِ مسئولِ دیگر و
+قبلاً مسدودِ شکستِ واکشی. وضعیت: **NOT_RUN-BY-DATA**، نه رفع‌شده، نه نادیده‌گرفته‌شده.
+گارد تغییر نکرد؛ تست حذف یا skip نشد.
+
+### چ) شمارشِ نهاییِ گیتِ کامل
+`43bae957`: ۱۳۷ سوئیت شمارش‌شده، ۲۵ سوئیت «بی‌شمارش (فقط exit code)»، و **پنج
+سوئیت قرمز**. سرنوشتِ هر پنج:
+
+| سوئیت | علت | سرانجام |
+| --- | --- | --- |
+| `test_adjustment_engine_v1` (Phase4) ۳۸/۳۹ | نبودِ شاهدِ بیرونیِ رهاورد | **NOT_RUN-BY-DATA** (§۸‑ج) — گارد نرم نشد |
+| `bot_api_v1114` ۶۸/۱ | جستارِ متنیِ کهنه، باوجودِ ثبت‌بودنِ ربات | رفعِ ساختاری (§۸‑ح) → ۷۰/۰ |
+| `repo_hygiene_v97` ۱۲۲/۱۲۳ | قاعدۀ `_test_runs/` درِ `info/exclude` همین ماشین | سطرِ محلی بسته شد؛ **۲۷۰ فایل track ماند** (§۸‑ت) → ۱۲۳/۱۲۳ |
+| `test_rule_map_citations` ۱۰/۱۱ | سه استنادِ NAME:LINE باِ جابه‌جاییِ سطر | بازمحاسبه ازِ کد (§۸‑ث) → ۱۱/۱۱ |
+| `mstat_group_validate_v1120` ۱۴/۰ (سبزِ ناقص) | چهار روت اصلاً پوشش نداشت | دروازه + پوشش (§۸‑ب) → ۱۸/۰ |
+
+به‌علاوه دو نقصِ *کارِکردی* که هیچ گاردی نمی‌گرفت و بازبینِ مستقل دید:
+فراخوانِ کهن‌مدلِ `sym_pred` (§۸‑الف، باِ منفی‌کنترلِ ۲ ایراد رویِ HEAD) و ترتیبِ
+پیامِ خطایِ قیف (§۸‑پ). پس «سبزِ گیت‌ها» پیش ازِ این مرحلۀ پنج‌تایی، خودش سه
+پوشش‌نداشت داشت.
+
+## ۷) تطبیقِ «هیچ تغییرِ مرتبطی از قلم نیفتاده» — رویِ `43bae957`
+
+سه جهت سنجیده شد، بی‌نگاه‌کردن به متنِ کامیت.
+
+### الف) هر فایلِ عوض‌کردهٔ سه شاخه درِ کامیتِ ادغام نشسته است؟
+| شاخه → کامیت | فایلِ تغییرکرده | درِ کامیتِ ادغام | بی‌اثر |
+| --- | --- | --- | --- |
+| `9594c7ff` → `f7931187` | ۶۰۱ | ۵۹۸ | ۱۰ |
+| `7d9d0e4f` → `956f523e` | ۱۰ | ۱۰ | ۰ |
+| `65080701` → `43bae957` | ۱۰ | ۷ | ۴ |
+
+«بی‌اثر» یعنی کامیتِ ادغام نسبت باِ پدرِ اولش درِ آن فایل چیزی عوض نکرد. برایِ هر
+۱۴ فایل، *تک‌تکِ سطرهایی که آن شاخه افزوده بود* باِ متنِ نهایی مقایسه شد:
+
+| فایل | سطرِ افزودهٔ branch | نبود درِ نتیجۀ ادغام | تصمیم |
+| --- | --- | --- | --- |
+| `design-token-guard.spec.ts` | ۱۰۴ | ۱ | theirs regex بدونِ `tone-*` است؛ نسخۀ سخت‌گیرانۀ ours (§۶‑ج) |
+| `market/lib/tones.ts` | ۷۰ | ۲۰ | نام‌هایِ `accent-*` به لایۀ معنایی برگشت (رأیِ §۴-الف) |
+| `widgets/SymbolInspector.tsx` | ۴ | ۲ | دو `text-[8.5px]` → `text-3xs` (§۶‑ج) |
+| `FtsFunnelAllStages.tsx` | ۶ | ۱ | سطرِ فشردهٔ دکمه؛ ours tooltip را نگه می‌دارد |
+| `FtsCustomChainBuilder.tsx` | ۱ | ۰ | همه آمد، فقط چیدمان فرق داشت |
+| `Topbar.tsx`, `MarketStatusTables.tsx`, `RegulatoryState.tsx`, `NotificationsPage.tsx`, `WatchlistStar.tsx`, `WatchTable.tsx`, `MicroBadge.tsx`, `tapeRowTone.ts` | ۱–۴۴ | ۰ | تغییرِ آن شاخه از پیش درِ خطِ انتشار بود؛ چیزی نیفتاد |
+
+### ب) سطرهایِ System 1 که «نیست» — همه بازنویسی‌اند، نه حذف
+درِ §۶ شمارشِ یک‌طرفه ۳۴ سطرِ System 1 را «نبود» نشان داد. جاروبِ دوسویه دقیق‌تر
+شد: ۲۵۴ فایل را System 1 و ۱۶۶ فایل را System 2 (بی‌شاهد) عوض کرده؛ **۳۰ فایل
+دوطرفه‌اند** و درِ همان ۳۰، تنها ۴ فایل سطرِ دست‌نخوردهٔ System 1 ندارند:
+`api/funnel.py` (۱۰ سطرِ اعتبارسنجی که به `_strategy_params()` رفت — همان متن،
+همان پیام، و شش حالتِ خطایِ `--ab` هشِ یکسان می‌دهند)،
+`technical-pattern-wiring.spec.tsx` (۵ سطرِ fixture که با `bandPct` بازنویسی شد)،
+`patternOverlays.ts` (۲ سطرِ قالب‌شکسته: `rsiPeriod; bandPct?` و
+`const hgLabel = …`)، و `api/chart.py` (یک سطر که `"provisional": True` گرفت).
+بیست‌وشش فایلِ دوطرفۀ دیگر سطر‌به‌سطر حفظ شدند.
+
+### پ) چهار خطی که درِ این سه خط *نیست* و ادغام نشد
+`ff6b2fb4` (کاتالوگِ اندیکاتور) درِ `9594c7ff` نهفته است و آمد. اینها نه:
+
+| ref | خط | کامیتِ منحصربه‌فرد | سطرِ محصولیِ نرسیده |
+| --- | --- | --- | --- |
+| `3feb5257` | ممیزیِ UIِ System 2 | ۱۶ | ۱۱۲ در ۱۷ فایل (نمونه: `nahayatNegarStyles.css` ۲۶، `TechnicalPage.tsx` ۱۱، `SymbolInspector.tsx` ۱۳) |
+| `a3984f02` | بازطراحیِ uiux ۲٫۰ | ۱۵ | ۵۱۹۰ در ۷۷ فایل — بیشترش probe درِ `tools/` و fixtureِ execution؛ `OrderLinePage.tsx` ۲۳۲ سطر |
+| `5f3b0a74` | handoff/inventory | ۱۰ | ۰ (فقط سند) |
+| `c68dbc0a` | fixtureهایِ تکرارپذیر | ۵ | ۱۰٬۵۵۷ که ۱۰٬۴۵۵اش یک فایلِ `dev/fixtures/ra365_witness_subset.json` است |
+
+دلیلِ ندادنشان به این خط: دستورِ مأموریت سه SHA را نام برد و «وابستگی‌هایِ لازم»
+را خواست. هیچ‌کدام وابستۀ آن سه نیستند — `a3984f02` دروازۀ execution را *موازیِ*
+System 1 ساخته (افزودن/افزودن، طبقِ §۱) و System 1 خطِ انتشارِ خودش را دارد.
+**هیچ گاردِ درِ HEAD به فایلِ آن شاخه‌ها وابسته نیست**: `dev/test_adjustment_engine_v1.py`
+درِ SUITES هست (`run_all_tests.py:119`) اما هیچ‌جا `ra365_witness_subset` را صدا
+نمی‌زند (جاروبِ `dev/` و `tools/`). این چهار خط برایِ مالک یک تصمیمِ باز است، نه
+کارِ نیمه‌تمامِ این ادغام.

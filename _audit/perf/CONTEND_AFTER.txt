@@ -1,0 +1,39 @@
+  market                       200  first=    190ms p50=    190 p95=    332 max=    332  raw=6,997,312 gz= 868,605  etag304=304/0B@7ms
+  mstat board                  200  first=   1834ms p50=   1527 p95=   1834 max=   1834  raw=  241,968 gz=  50,379
+  mstat summary                200  first=     80ms p50=     13 p95=     80 max=     80  raw=    3,727 gz=   1,355
+  mstat mainwatch              200  first=    362ms p50=     37 p95=    362 max=    362  raw=   77,596 gz=  13,600
+  mstat treemap                200  first=     61ms p50=     34 p95=     61 max=     61  raw=   93,921 gz=  16,713
+  mstat industries             200  first=     34ms p50=     12 p95=     34 max=     34  raw=   13,937 gz=   3,039
+  mstat phases                 200  first=    400ms p50=     10 p95=    400 max=    400  raw=      474 gz=     474
+  mstat smart-money            200  first=    358ms p50=     17 p95=    358 max=    358  raw=    3,573 gz=   1,525
+  chart cached                 200  first=     44ms p50=     41 p95=     44 max=     44  raw=      295 gz=     295
+  funnel registry              200  first=     10ms p50=      9 p95=     10 max=     10  raw=   13,418 gz=   3,814
+
+[AFTER_1] window=10s  backend_cpu=6.3s  total_p50_sum=1890ms  median=34ms
+wrote _audit/perf/CONTEND.json#AFTER_1
+  market                       200  first=    129ms p50=    121 p95=    129 max=    129  raw=6,997,312 gz= 868,605  etag304=304/0B@7ms
+  mstat board                  200  first=   1687ms p50=   1403 p95=   1687 max=   1687  raw=  241,968 gz=  50,379
+  mstat summary                200  first=     14ms p50=     10 p95=     14 max=     14  raw=    3,727 gz=   1,355
+  mstat mainwatch              200  first=     30ms p50=     30 p95=     33 max=     33  raw=   77,596 gz=  13,600
+  mstat treemap                200  first=     30ms p50=     30 p95=     30 max=     30  raw=   93,921 gz=  16,713
+  mstat industries             200  first=     17ms p50=     17 p95=     17 max=     17  raw=   13,937 gz=   3,039
+  mstat phases                 200  first=     12ms p50=     12 p95=     12 max=     12  raw=      474 gz=     474
+  mstat smart-money            200  first=     13ms p50=     13 p95=     15 max=     15  raw=    3,573 gz=   1,525
+  chart cached                 200  first=     55ms p50=     55 p95=     62 max=     62  raw=      295 gz=     295
+  funnel registry              200  first=     14ms p50=      9 p95=     14 max=     14  raw=   13,418 gz=   3,814
+
+[AFTER_2] window=8s  backend_cpu=3.8s  total_p50_sum=1701ms  median=30ms
+wrote _audit/perf/CONTEND.json#AFTER_2
+  market                       200  first=    119ms p50=    119 p95=    135 max=    135  raw=6,997,312 gz= 868,605  etag304=304/0B@5ms
+  mstat board                  200  first=   1653ms p50=   1500 p95=   1653 max=   1653  raw=  241,968 gz=  50,374
+  mstat summary                200  first=     12ms p50=     11 p95=     12 max=     12  raw=    3,727 gz=   1,355
+  mstat mainwatch              200  first=     31ms p50=     30 p95=     31 max=     31  raw=   77,596 gz=  13,600
+  mstat treemap                200  first=     30ms p50=     30 p95=     30 max=     30  raw=   93,921 gz=  16,713
+  mstat industries             200  first=     13ms p50=     13 p95=     15 max=     15  raw=   13,937 gz=   3,039
+  mstat phases                 200  first=     14ms p50=     10 p95=     14 max=     14  raw=      474 gz=     474
+  mstat smart-money            200  first=     13ms p50=     13 p95=     13 max=     13  raw=    3,573 gz=   1,525
+  chart cached                 200  first=     54ms p50=     40 p95=     54 max=     54  raw=      295 gz=     295
+  funnel registry              200  first=      9ms p50=      9 p95=     12 max=     12  raw=   13,418 gz=   3,814
+
+[AFTER_3] window=8s  backend_cpu=3.6s  total_p50_sum=1776ms  median=30ms
+wrote _audit/perf/CONTEND.json#AFTER_3

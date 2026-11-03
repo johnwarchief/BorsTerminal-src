@@ -1,400 +1,1000 @@
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:12064 - "GET /api/market HTTP/1.1" 200 OK
-==================================================================
-  BorsTerminal_Ultimate - smart preflight
-==================================================================
-  data root: C:\Users\PCMOD\AppData\Local\Programs\BorsTerminal Ultimate
-  [OK]  market.db: 5,302 instruments (TSETMC + Codal data inside)
-  [OK]  bundled libraries: pandas/numpy/fastapi/uvicorn/requests (self-contained)
-  [OK]  everything ready - starting ...
-==================================================================
-INFO:     Started server process [32056]
+INFO:     Started server process [7244]
 INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
 [startup] codal schema migrated (additive, idempotent)
 [startup] market sync thread spawned
 [startup] screener warm thread spawned
 [market-sync] thread started
 Starting full market-watch fetch ...
 [startup] board refresh loop spawned (90s, session-windowed)
-[startup] pulse snapshot loop spawned
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-INFO:     127.0.0.1:14146 - "GET / HTTP/1.1" 200 OK
-[OK] http://127.0.0.1:8001
+[startup] board tick loop spawned (5s, session-windowed)
+[startup] pulse snapshot loop spawned (300s, session-windowed)
+[startup] candle projection spawned (local-only, one pass)
+[screener] loaded from disk cache
+  [candles-from-board] latest: 1725 کندل از 1 نشست برایِ 1٬725 نماد (نوشتۀ تازه/بازنشانی‌شده: 7)
 [startup] market sync already running — skip
+Symbols fetched: 3,000
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,773
+Boards map: 3,000
+Paper-type map: 1,148
+  [order-book] پنج خطِ عمق برایِ 2,909 نماد در order_book
+  [market-total] 28,461.2 همت (TSETMC GetMarketOverview)
+  [market-index] 8317190.71 / هموزن 2178787.13
+INFO:     127.0.0.1:3671 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3678 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+2026-10-12 11:48:13 [market] history windows rebuilt in 9.66s (sig=(20261012, 436684, 18414710894771.64, 115099, 3286360730323.0, 138105, 5897538405451.0, 20261011))
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1732 کندل از 1 نشست برایِ 1٬732 نماد (نوشتۀ تازه/بازنشانی‌شده: 7)
+============================================================
+Saved symbols: 3,000 | client-type records: 1,773
+Total trade value: 2,070,289,583,818,327.0 Rials
+Total volume: 71,850,480,949.0 shares
+Updated: 2026-10-12 11:48:02
+============================================================
+[market-sync] done
 [screener] cache miss, running heavy bulk scan...
-INFO:     127.0.0.1:12058 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:12058 - "GET /vendor/fonts/vazirmatn.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:13816 - "GET /assets/index-H6Or8TbK.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9590 - "GET /assets/index-Do7QeWFG.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:1871 - "GET /vendor/klinecharts.min.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:1871 - "GET /vendor/fonts/vazirmatn-900.ttf HTTP/1.1" 200 OK
-INFO:     127.0.0.1:13816 - "GET /vendor/fonts/vazirmatn-700.ttf HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9590 - "GET /vendor/fonts/vazirmatn-400.ttf HTTP/1.1" 200 OK
-INFO:     127.0.0.1:12058 - "GET /favicon.ico HTTP/1.1" 200 OK
+[screener] cache warmed
 [screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
-fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
-INFO:     127.0.0.1:1879 - "GET /api/update/version HTTP/1.1" 200 OK
-Symbols fetched: 3,348
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,870
+INFO:     127.0.0.1:1971 - "GET /api/update/version HTTP/1.1" 200 OK
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] saved to disk cache
+INFO:     127.0.0.1:1974 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1972 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1973 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1975 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8144 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8143 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8147 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7969 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7972 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8142 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8146 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7971 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7174 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7175 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7973 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7974 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8145 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8141 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7176 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7970 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7173 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7177 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4646 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2597 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14334 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1947 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4647 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14335 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10365 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3211 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4648 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3403 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14336 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3212 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13470 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8285 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3404 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3213 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2411 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7463 - "GET /api/market/delta?since=22 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2150 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2146 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11228 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7469 - "GET /api/market/delta?since=22 HTTP/1.1" 200 OK
+[screener] cache warmed
+INFO:     127.0.0.1:7933 - "GET /api/market/delta?since=22 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7208 - "GET /api/market/delta?since=22 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1809 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10339 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10342 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10340 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10341 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10344 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10343 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13648 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2674 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13645 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13650 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5799 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13649 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11006 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13646 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5121 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2510 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11007 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12566 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12596 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6605 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5094 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5092 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4335 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8683 - "GET /api/market/delta?since=33 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10949 - "GET /api/market/delta?since=33 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9190 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2902 - "GET /api/market/delta?since=34 HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+INFO:     127.0.0.1:9115 - "GET /api/market/delta?since=35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14534 - "POST /api/funnel HTTP/1.1" 200 OK
+Symbols fetched: 3,062
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,792
+Boards map: 3,062
+INFO:     127.0.0.1:12657 - "GET /api/market/delta?since=36 HTTP/1.1" 200 OK
+Paper-type map: 1,858
+INFO:     127.0.0.1:8314 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9264 - "GET /api/market/delta?since=37 HTTP/1.1" 200 OK
+  [order-book] پنج خطِ عمق برایِ 2,972 نماد در order_book
+  [market-total] 28,470.7 همت (TSETMC GetMarketOverview)
+  [market-index] 8320272.92 / هموزن 2179154.12
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1743 کندل از 1 نشست برایِ 1٬743 نماد (نوشتۀ تازه/بازنشانی‌شده: 12)
+============================================================
+Saved symbols: 3,062 | client-type records: 1,792
+Total trade value: 2,088,007,906,518,539.0 Rials
+Total volume: 72,863,923,816.0 shares
+Updated: 2026-10-12 11:52:17
+============================================================
+[market-sync] done
+INFO:     127.0.0.1:3496 - "GET /api/market/delta?since=37 HTTP/1.1" 200 OK
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
 [screener] saved to disk cache
 [screener] cache warmed
-Boards map: 3,348
-Paper-type map: 1,173
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+INFO:     127.0.0.1:9489 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9492 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2800 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13325 - "GET /api/market/delta?since=38 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9491 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12711 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9493 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12710 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9490 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2020 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12713 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4349 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12712 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9494 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8158 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5311 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2028 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8159 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5312 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14155 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5045 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1082 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8337 - "GET /api/market/delta?since=45 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2568 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5582 - "GET /api/market/delta?since=46 HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,004
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,801
+Boards map: 3,004
+Paper-type map: 1,148
+  [order-book] پنج خطِ عمق برایِ 2,912 نماد در order_book
+  [market-total] 28,474.4 همت (TSETMC GetMarketOverview)
+  [market-index] 8320272.92 / هموزن 2179154.12
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1747 کندل از 1 نشست برایِ 1٬747 نماد (نوشتۀ تازه/بازنشانی‌شده: 3)
 ============================================================
-Saved symbols: 3,348 | client-type records: 1,870
-Total trade value: 1,282,297,297,037,191.0 Rials
-Total volume: 96,342,217,078.0 shares
-Updated: 2026-09-26 12:32:00
+Saved symbols: 3,004 | client-type records: 1,801
+Total trade value: 2,125,616,578,309,498.0 Rials
+Total volume: 73,523,742,407.0 shares
+Updated: 2026-10-12 11:54:51
 ============================================================
 [market-sync] done
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:3515 - "GET /api/market HTTP/1.1" 200 OK
-INFO:     127.0.0.1:3516 - "GET /api/market HTTP/1.1" 200 OK
-INFO:     127.0.0.1:5966 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:5967 - "GET /assets/index-Do7QeWFG.js HTTP/1.1" 200 OK
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,066
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,807
+Boards map: 3,066
+Paper-type map: 1,861
+  [order-book] پنج خطِ عمق برایِ 2,973 نماد در order_book
+  [market-total] 28,476.4 همت (TSETMC GetMarketOverview)
+  [market-index] 8322867.39 / هموزن 2179474.97
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1756 کندل از 1 نشست برایِ 1٬756 نماد (نوشتۀ تازه/بازنشانی‌شده: 10)
+============================================================
+Saved symbols: 3,066 | client-type records: 1,807
+Total trade value: 2,136,791,361,893,638.0 Rials
+Total volume: 74,146,118,341.0 shares
+Updated: 2026-10-12 11:57:13
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,069
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,810
+Boards map: 3,069
+Paper-type map: 1,862
+  [order-book] پنج خطِ عمق برایِ 2,975 نماد در order_book
+  [market-total] 28,478.2 همت (TSETMC GetMarketOverview)
+  [market-index] 8322867.39 / هموزن 2179474.97
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1759 کندل از 1 نشست برایِ 1٬759 نماد (نوشتۀ تازه/بازنشانی‌شده: 3)
+============================================================
+Saved symbols: 3,069 | client-type records: 1,810
+Total trade value: 2,170,594,659,116,006.0 Rials
+Total volume: 74,821,643,680.0 shares
+Updated: 2026-10-12 11:59:44
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+[market-sync] thread started
+Starting full market-watch fetch ...
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/StaticData/GetStaticData (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  FATAL: market-watch fetch failed (network/firewall) - exiting cleanly.
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+[screener] saved to disk cache
+[screener] cache warmed
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+[market-sync] thread started
+Starting full market-watch fetch ...
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/StaticData/GetStaticData (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  FATAL: market-watch fetch failed (network/firewall) - exiting cleanly.
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+[screener] saved to disk cache
+  [warning] TSETMC fetch failed (ConnectionError): HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=1&paperTypes%5B1%5D=2&paperTypes%5B2%5D=3&paperTypes%5B3%5D=4&paperTypes%5B4%5D=5&paperTypes%5B5%5D=6&paperTypes%5B6%5D=7&paperTypes%5B7%5D=8&paperTypes%5B8%5D=9&showTraded=false&withBestLimits=true&hEven=0 (Caused by ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,087
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,881
+Boards map: 3,087
+Paper-type map: 1,868
+  [order-book] پنج خطِ عمق برایِ 2,989 نماد در order_book
+  [market-total] 28,490.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8326719.64 / هموزن 2180020.08
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1830 کندل از 1 نشست برایِ 1٬830 نماد (نوشتۀ تازه/بازنشانی‌شده: 70)
+============================================================
+Saved symbols: 3,087 | client-type records: 1,881
+Total trade value: 2,208,375,583,930,284.0 Rials
+Total volume: 77,820,158,716.0 shares
+Updated: 2026-10-12 12:07:24
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,029
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,891
+Boards map: 3,029
+Paper-type map: 1,154
+  [order-book] پنج خطِ عمق برایِ 2,930 نماد در order_book
+  [market-total] 28,492.3 همت (TSETMC GetMarketOverview)
+  [market-index] 8328035.34 / هموزن 2180253.08
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1838 کندل از 1 نشست برایِ 1٬838 نماد (نوشتۀ تازه/بازنشانی‌شده: 8)
+============================================================
+Saved symbols: 3,029 | client-type records: 1,891
+Total trade value: 2,210,652,266,336,654.0 Rials
+Total volume: 78,530,746,421.0 shares
+Updated: 2026-10-12 12:10:01
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,030
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,898
+Boards map: 3,030
+Paper-type map: 1,154
+  [order-book] پنج خطِ عمق برایِ 2,931 نماد در order_book
+  [market-total] 28,494.3 همت (TSETMC GetMarketOverview)
+  [market-index] 8328035.34 / هموزن 2180253.08
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1842 کندل از 1 نشست برایِ 1٬842 نماد (نوشتۀ تازه/بازنشانی‌شده: 4)
+============================================================
+Saved symbols: 3,030 | client-type records: 1,898
+Total trade value: 2,219,058,286,853,622.0 Rials
+Total volume: 79,282,869,695.0 shares
+Updated: 2026-10-12 12:12:34
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,030
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,905
+Boards map: 3,030
+Paper-type map: 1,154
+  [order-book] پنج خطِ عمق برایِ 2,931 نماد در order_book
+  [market-total] 28,497.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8329469.8 / هموزن 2180552.41
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1850 کندل از 1 نشست برایِ 1٬850 نماد (نوشتۀ تازه/بازنشانی‌شده: 8)
+============================================================
+Saved symbols: 3,030 | client-type records: 1,905
+Total trade value: 2,227,659,929,582,119.0 Rials
+Total volume: 80,075,235,914.0 shares
+Updated: 2026-10-12 12:15:04
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,093
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,909
+Boards map: 3,093
+Paper-type map: 1,873
+  [order-book] پنج خطِ عمق برایِ 2,992 نماد در order_book
+  [market-total] 28,499.1 همت (TSETMC GetMarketOverview)
+  [market-index] 8329469.8 / هموزن 2180552.41
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1855 کندل از 1 نشست برایِ 1٬855 نماد (نوشتۀ تازه/بازنشانی‌شده: 6)
+============================================================
+Saved symbols: 3,093 | client-type records: 1,909
+Total trade value: 2,246,628,971,089,186.0 Rials
+Total volume: 81,164,905,297.0 shares
+Updated: 2026-10-12 12:17:31
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,032
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,918
+Boards map: 3,032
+Paper-type map: 1,156
+  [order-book] پنج خطِ عمق برایِ 2,931 نماد در order_book
+  [market-total] 28,501.3 همت (TSETMC GetMarketOverview)
+  [market-index] 8329469.8 / هموزن 2180552.41
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1858 کندل از 1 نشست برایِ 1٬858 نماد (نوشتۀ تازه/بازنشانی‌شده: 2)
+============================================================
+Saved symbols: 3,032 | client-type records: 1,918
+Total trade value: 2,250,947,902,520,134.0 Rials
+Total volume: 82,143,834,513.0 shares
+Updated: 2026-10-12 12:19:59
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+INFO:     127.0.0.1:14433 - "POST /api/auth/login HTTP/1.1" 405 Method Not Allowed
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,033
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,920
+Boards map: 3,033
+Paper-type map: 1,157
+  [order-book] پنج خطِ عمق برایِ 2,932 نماد در order_book
+  [market-total] 28,502.3 همت (TSETMC GetMarketOverview)
+  [market-index] 8330820.97 / هموزن 2180864.22
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1861 کندل از 1 نشست برایِ 1٬861 نماد (نوشتۀ تازه/بازنشانی‌شده: 3)
+============================================================
+Saved symbols: 3,033 | client-type records: 1,920
+Total trade value: 2,260,680,715,424,775.0 Rials
+Total volume: 82,971,519,393.0 shares
+Updated: 2026-10-12 12:22:19
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,035
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,928
+Boards map: 3,035
+Paper-type map: 1,159
+  [order-book] پنج خطِ عمق برایِ 2,932 نماد در order_book
+  [market-total] 28,505.2 همت (TSETMC GetMarketOverview)
+  [market-index] 8330820.97 / هموزن 2180864.22
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1869 کندل از 1 نشست برایِ 1٬869 نماد (نوشتۀ تازه/بازنشانی‌شده: 8)
+============================================================
+Saved symbols: 3,035 | client-type records: 1,928
+Total trade value: 2,268,898,518,183,066.0 Rials
+Total volume: 83,886,608,939.0 shares
+Updated: 2026-10-12 12:24:50
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,098
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,936
+Boards map: 3,098
+Paper-type map: 1,878
+  [order-book] پنج خطِ عمق برایِ 2,993 نماد در order_book
+  [market-total] 28,507.4 همت (TSETMC GetMarketOverview)
+  [market-index] 8332110.87 / هموزن 2181116.57
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1872 کندل از 1 نشست برایِ 1٬872 نماد (نوشتۀ تازه/بازنشانی‌شده: 4)
+============================================================
+Saved symbols: 3,098 | client-type records: 1,936
+Total trade value: 2,283,201,504,891,008.0 Rials
+Total volume: 85,642,243,038.0 shares
+Updated: 2026-10-12 12:27:12
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+[market-sync] thread started
+Starting full market-watch fetch ...
+Symbols fetched: 3,036
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,947
+Boards map: 3,036
+Paper-type map: 1,164
+  [order-book] پنج خطِ عمق برایِ 2,927 نماد در order_book
+  [market-total] 28,510.2 همت (TSETMC GetMarketOverview)
+  [market-index] 8332110.87 / هموزن 2181116.57
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1882 کندل از 1 نشست برایِ 1٬882 نماد (نوشتۀ تازه/بازنشانی‌شده: 9)
+============================================================
+Saved symbols: 3,036 | client-type records: 1,947
+Total trade value: 2,291,214,090,139,446.0 Rials
+Total volume: 87,776,375,066.0 shares
+Updated: 2026-10-12 12:29:39
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
 [market-sync] thread started
 Starting full market-watch fetch ...
   Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,348
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,871
-Boards map: 3,348
-Paper-type map: 1,173
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+Symbols fetched: 3,000
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,952
+Boards map: 3,000
+Paper-type map: 1,165
+  [order-book] پنج خطِ عمق برایِ 2,886 نماد در order_book
+  [market-total] 28,510.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8333959.58 / هموزن 2181408.86
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1885 کندل از 1 نشست برایِ 1٬885 نماد (نوشتۀ تازه/بازنشانی‌شده: 3)
 ============================================================
-Saved symbols: 3,348 | client-type records: 1,871
-Total trade value: 1,286,696,658,461,149.0 Rials
-Total volume: 96,501,133,062.0 shares
-Updated: 2026-09-26 12:33:42
+Saved symbols: 3,000 | client-type records: 1,952
+Total trade value: 2,300,072,325,814,519.0 Rials
+Total volume: 88,314,525,248.0 shares
+Updated: 2026-10-12 12:31:59
 ============================================================
 [market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
 [market-sync] thread started
 Starting full market-watch fetch ...
   Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,349
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,870
-Boards map: 3,349
-Paper-type map: 1,174
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+Symbols fetched: 3,061
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,952
+Boards map: 3,061
+Paper-type map: 1,882
+  [order-book] پنج خطِ عمق برایِ 2,947 نماد در order_book
+  [market-total] 28,510.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8333959.58 / هموزن 2181408.86
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [candles-from-board] latest: 1885 کندل از 1 نشست برایِ 1٬885 نماد (نوشتۀ تازه/بازنشانی‌شده: 0)
 ============================================================
-Saved symbols: 3,349 | client-type records: 1,870
-Total trade value: 1,289,599,014,133,830.0 Rials
-Total volume: 96,636,545,100.0 shares
-Updated: 2026-09-26 12:35:15
+Saved symbols: 3,061 | client-type records: 1,952
+Total trade value: 2,311,836,976,983,336.0 Rials
+Total volume: 88,581,893,097.0 shares
+Updated: 2026-10-12 12:34:17
 ============================================================
 [market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
 [market-sync] thread started
 Starting full market-watch fetch ...
   Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,350
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,870
-Boards map: 3,350
-  [warning] TSETMC fetch failed (HTTPError): 502 Server Error: Bad Gateway for url: https://cdn.tsetmc.com/api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=2&showTraded=false&withBestLimits=false&hEven=0
-Paper-type map: 1,025
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+Symbols fetched: 3,062
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,952
+Boards map: 3,062
+Paper-type map: 1,883
+  [order-book] پنج خطِ عمق برایِ 2,947 نماد در order_book
+  [market-total] 28,510.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8333968.86 / هموزن 2181412.37
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
   [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+  [candles-from-board] latest: 1886 کندل از 1 نشست برایِ 1٬886 نماد (نوشتۀ تازه/بازنشانی‌شده: 1)
 ============================================================
-Saved symbols: 3,350 | client-type records: 1,870
-Total trade value: 1,293,764,570,269,339.0 Rials
-Total volume: 96,795,353,907.0 shares
-Updated: 2026-09-26 12:36:58
+Saved symbols: 3,062 | client-type records: 1,952
+Total trade value: 2,314,392,371,203,486.0 Rials
+Total volume: 88,641,349,825.0 shares
+Updated: 2026-10-12 12:36:37
 ============================================================
 [market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
 [market-sync] thread started
 Starting full market-watch fetch ...
   Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,350
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,870
-Boards map: 3,350
-Paper-type map: 1,175
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+Symbols fetched: 3,062
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,952
+Boards map: 3,062
+Paper-type map: 1,884
+  [order-book] پنج خطِ عمق برایِ 2,947 نماد در order_book
+  [market-total] 28,510.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8333968.86 / هموزن 2181412.37
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
   [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+  [candles-from-board] latest: 1886 کندل از 1 نشست برایِ 1٬886 نماد (نوشتۀ تازه/بازنشانی‌شده: 0)
 ============================================================
-Saved symbols: 3,350 | client-type records: 1,870
-Total trade value: 1,298,669,080,245,783.0 Rials
-Total volume: 96,938,738,170.0 shares
-Updated: 2026-09-26 12:38:47
+Saved symbols: 3,062 | client-type records: 1,952
+Total trade value: 2,317,156,106,520,211.0 Rials
+Total volume: 88,703,094,398.0 shares
+Updated: 2026-10-12 12:38:55
 ============================================================
 [market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+INFO:     127.0.0.1:2574 - "GET /api/health HTTP/1.1" 200 OK
 [market-sync] thread started
 Starting full market-watch fetch ...
   Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,351
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,875
-Boards map: 3,351
-Paper-type map: 1,176
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+Symbols fetched: 3,047
+  market date: 20261012 (from GetMarketOverview)
+Client-type records: 1,954
+Boards map: 3,047
+Paper-type map: 1,884
+  [order-book] پنج خطِ عمق برایِ 2,931 نماد در order_book
+  [market-total] 28,510.9 همت (TSETMC GetMarketOverview)
+  [market-index] 8333968.86 / هموزن 2181412.37
+INFO:     127.0.0.1:1995 - "GET /api/update/version HTTP/1.1" 200 OK
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
   [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+  [candles-from-board] latest: 1886 کندل از 1 نشست برایِ 1٬886 نماد (نوشتۀ تازه/بازنشانی‌شده: 0)
 ============================================================
-Saved symbols: 3,351 | client-type records: 1,875
-Total trade value: 1,301,173,808,268,919.0 Rials
-Total volume: 97,018,797,983.0 shares
-Updated: 2026-09-26 12:40:27
+Saved symbols: 3,047 | client-type records: 1,954
+Total trade value: 2,320,482,110,724,332.0 Rials
+Total volume: 88,813,475,549.0 shares
+Updated: 2026-10-12 12:41:19
 ============================================================
 [market-sync] done
-INFO:     127.0.0.1:8974 - "GET /api/mstat/pulse HTTP/1.1" 200 OK
-INFO:     127.0.0.1:8975 - "GET /api/mstat/overview HTTP/1.1" 200 OK
-fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
-INFO:     127.0.0.1:8976 - "GET /api/mstat/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:10273 - "GET /api/mstat/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9142 - "GET /api/mstat/thermometer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9143 - "GET /api/mstat/clientsplit HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9144 - "GET /api/mstat/histogram HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9145 - "GET /api/mstat/smart-money HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9146 - "GET /api/mstat/industries HTTP/1.1" 200 OK
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,393
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,875
-Boards map: 3,393
-Paper-type map: 1,847
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,393 | client-type records: 1,875
-Total trade value: 1,306,783,477,869,659.0 Rials
-Total volume: 97,125,261,887.0 shares
-Updated: 2026-09-26 12:42:01
-============================================================
-[market-sync] done
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:11777 - "GET /api/market HTTP/1.1" 200 OK
-INFO:     127.0.0.1:13729 - "GET /api/market HTTP/1.1" 200 OK
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,352
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,875
-Boards map: 3,352
-Paper-type map: 1,177
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,352 | client-type records: 1,875
-Total trade value: 1,306,053,376,970,173.0 Rials
-Total volume: 97,159,837,591.0 shares
-Updated: 2026-09-26 12:43:35
-============================================================
-[market-sync] done
-fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
-INFO:     127.0.0.1:2128 - "GET /api/mstat/summary HTTP/1.1" 200 OK
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:1880 - "GET /api/market HTTP/1.1" 200 OK
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:9252 - "GET /api/market HTTP/1.1" 200 OK
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,394
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,875
-Boards map: 3,394
-Paper-type map: 1,848
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,394 | client-type records: 1,875
-Total trade value: 1,312,480,247,655,550.0 Rials
-Total volume: 97,286,989,073.0 shares
-Updated: 2026-09-26 12:45:17
-============================================================
-[market-sync] done
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:11890 - "GET /api/market HTTP/1.1" 200 OK
-fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
-INFO:     127.0.0.1:10935 - "GET /api/mstat/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:10936 - "GET /api/mstat/thermometer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:10937 - "GET /api/mstat/clientsplit HTTP/1.1" 200 OK
-INFO:     127.0.0.1:10940 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,789
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 1,875
-Boards map: 3,789
-Paper-type map: 2,243
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,789 | client-type records: 1,875
-Total trade value: 1,321,722,734,329,572.0 Rials
-Total volume: 97,493,195,466.0 shares
-Updated: 2026-09-26 12:46:51
-============================================================
-[market-sync] done
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,821
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,010
-Boards map: 3,821
-Paper-type map: 2,275
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,821 | client-type records: 2,010
-Total trade value: 1,325,101,635,570,296.0 Rials
-Total volume: 97,616,098,664.0 shares
-Updated: 2026-09-26 12:48:26
-============================================================
-[market-sync] done
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,839
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,010
-Boards map: 3,839
-Paper-type map: 2,293
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,839 | client-type records: 2,010
-Total trade value: 1,328,603,006,485,576.0 Rials
-Total volume: 97,866,213,209.0 shares
-Updated: 2026-09-26 12:50:00
-============================================================
-[market-sync] done
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,802
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,024
-Boards map: 3,803
-Paper-type map: 1,627
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,802 | client-type records: 2,024
-Total trade value: 1,327,299,888,662,668.0 Rials
-Total volume: 97,882,561,794.0 shares
-Updated: 2026-09-26 12:51:35
-============================================================
-[market-sync] done
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,850
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,010
-Boards map: 3,850
-Paper-type map: 2,304
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,850 | client-type records: 2,010
-Total trade value: 1,336,905,199,977,743.0 Rials
-Total volume: 98,215,839,729.0 shares
-Updated: 2026-09-26 12:53:18
-============================================================
-[market-sync] done
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,850
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,010
-Boards map: 3,850
-Paper-type map: 2,304
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,850 | client-type records: 2,010
-Total trade value: 1,339,941,775,381,278.0 Rials
-Total volume: 98,294,309,690.0 shares
-Updated: 2026-09-26 12:54:53
-============================================================
-[market-sync] done
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,809
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,026
-Boards map: 3,809
-Paper-type map: 1,632
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,809 | client-type records: 2,026
-Total trade value: 1,337,669,817,524,137.0 Rials
-Total volume: 98,271,016,454.0 shares
-Updated: 2026-09-26 12:56:27
-============================================================
-[market-sync] done
-INFO:     127.0.0.1:10470 - "GET /api/market/status HTTP/1.1" 200 OK
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-INFO:     127.0.0.1:10479 - "GET /api/market/status HTTP/1.1" 200 OK
-Symbols fetched: 3,812
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,133
-Boards map: 3,812
-Paper-type map: 1,634
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,812 | client-type records: 2,133
-Total trade value: 1,341,511,737,248,165.0 Rials
-Total volume: 98,416,839,676.0 shares
-Updated: 2026-09-26 12:58:00
-============================================================
-[market-sync] done
-pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
-INFO:     127.0.0.1:13565 - "GET /api/market?limit=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:9569 - "GET /api/market?limit=0 HTTP/1.1" 200 OK
-[market-sync] thread started
-Starting full market-watch fetch ...
-  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
-Symbols fetched: 3,813
-  market date: 20260926 (from GetMarketOverview)
-Client-type records: 2,133
-Boards map: 3,814
-Paper-type map: 1,636
-  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
-  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
-============================================================
-Saved symbols: 3,813 | client-type records: 2,133
-Total trade value: 1,343,581,552,113,603.0 Rials
-Total volume: 98,514,095,796.0 shares
-Updated: 2026-09-26 12:59:40
-============================================================
-[market-sync] done
-fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
-INFO:     127.0.0.1:3376 - "GET /api/market-status/overview HTTP/1.1" 200 OK
-INFO:     127.0.0.1:3379 - "GET /api/mstat/board HTTP/1.1" 200 OK
-INFO:     127.0.0.1:14785 - "GET /api/market-status/overview HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2531 - "GET /api/mstat/industries HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2532 - "GET /api/mstat/mainwatch HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2533 - "GET /api/mstat/histogram HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2534 - "GET /api/mstat/thermometer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2535 - "GET /api/mstat/timeline?mode=cum HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2536 - "GET /api/mstat/clientsplit HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2537 - "GET /api/mstat/smart-money HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2538 - "GET /api/mstat/depth HTTP/1.1" 200 OK
-INFO:     127.0.0.1:2539 - "GET /api/mstat/phases HTTP/1.1" 200 OK
-INFO:     127.0.0.1:3647 - "GET /api/mstat/industries HTTP/1.1" 200 OK
-INFO:     127.0.0.1:3648 - "GET /api/mstat/timeline?mode=cum HTTP/1.1" 200 OK
-INFO:     127.0.0.1:10992 - "GET /api/diagnostics/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:5051 - "GET /api/diagnostics/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1998 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1996 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14497 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1997 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12889 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1999 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2000 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8893 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14496 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10390 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8894 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13198 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9232 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7463 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9233 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14521 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7464 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9231 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2374 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12409 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9234 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4468 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1554 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed
+INFO:     127.0.0.1:1764 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1767 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1765 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1766 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12958 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12957 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4793 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4795 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4794 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12959 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4797 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1935 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4796 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6189 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2214 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1936 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1937 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6191 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6190 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5617 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9949 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6188 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8049 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4734 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10212 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     Started server process [5480]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+[startup] codal schema migrated (additive, idempotent)
+[startup] market sync thread spawned
+[startup] screener warm thread spawned
+[startup] board refresh loop spawned (90s, session-windowed)
+[startup] board tick loop spawned (5s, session-windowed)
+[startup] pulse snapshot loop spawned (300s, session-windowed)
+[startup] candle projection spawned (local-only, one pass)
+[screener] loaded from disk cache
+[startup] market closed and board is from 20261012 — serving the stored session, no network sync
+  [candles-from-board] latest: 2193 کندل از 1 نشست برایِ 2٬193 نماد (نوشتۀ تازه/بازنشانی‌شده: 14)
+INFO:     127.0.0.1:6094 - "GET /api/health HTTP/1.1" 200 OK
+2026-10-12 22:11:03 [market] history windows rebuilt in 5.51s (sig=(20261012, 436684, 18414710894771.64, 115099, 3286360730323.0, 138105, 5897538405451.0, 20261011))
+[screener] cache warmed
+INFO:     127.0.0.1:9614 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9618 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9615 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1453 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9617 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9616 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1455 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1454 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9404 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1457 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1452 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1456 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11000 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10492 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8211 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4781 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1197 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8210 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1194 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10491 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1208 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8793 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6293 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6296 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6294 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6295 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13007 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6298 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6297 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8626 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8625 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6741 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5602 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8627 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8624 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8628 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2144 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2143 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4766 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3756 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5558 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5979 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4640 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1195 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1196 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1198 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7497 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1200 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1199 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1197 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8404 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8403 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11764 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8405 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11755 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8402 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8406 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10770 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8773 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10232 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12051 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10771 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2747 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12052 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2422 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3918 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3921 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3919 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3920 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1177 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3923 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3922 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3666 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3665 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1336 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1173 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3667 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3664 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3668 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5604 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5603 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9613 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14086 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1027 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8015 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14809 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14812 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14810 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14811 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5760 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14813 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13825 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13431 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14814 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2117 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13823 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13827 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13826 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13824 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14616 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2934 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10652 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12167 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10232 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10653 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1434 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12437 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6143 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6146 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6144 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6145 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12591 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6148 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6147 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3095 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3094 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9890 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2421 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3096 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13628 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3097 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6226 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10489 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10488 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7782 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1142 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14452 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7548 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7551 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7549 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7550 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7553 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7552 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9352 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9354 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6887 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9356 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9353 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9355 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12683 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7608 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12684 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10232 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7609 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11425 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3537 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7607 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13628 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13882 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13699 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14341 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6562 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6563 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6207 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6565 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6564 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6566 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6567 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5321 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5320 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3490 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3585 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5322 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8247 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5323 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5970 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5971 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9312 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4563 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4222 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10366 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5048 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6300 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6303 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6301 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6304 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13249 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13251 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6305 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3406 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13250 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13252 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12800 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12484 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12801 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12485 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14319 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14320 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2459 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5403 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3208 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11443 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13253 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6302 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8076 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13176 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13177 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13179 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13178 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4399 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13180 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14955 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14953 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14280 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13181 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14954 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2423 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7675 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14956 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8359 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8358 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10236 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7761 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9612 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13395 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13420 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13427 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1437 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6803 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11414 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11454 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11455 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10626 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6659 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10625 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6658 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12947 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6660 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9649 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6657 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6661 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9648 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8578 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8577 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13306 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8676 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8705 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8677 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8294 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2844 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10756 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12767 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10759 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10757 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10758 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10761 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10760 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6975 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6974 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8750 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1340 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6976 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6973 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6977 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1443 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1442 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2731 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12699 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5503 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13631 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7961 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7962 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7964 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7963 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10233 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7966 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7965 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14334 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14333 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13104 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5011 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4630 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2662 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14335 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2424 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6503 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14373 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6504 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2685 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3543 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4131 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5638 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10460 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1995 - "GET /api/update/version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10463 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10461 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10462 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10464 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14470 - "GET /api/selection/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14469 - "GET /api/notifications/feed?limit=60 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3112 - "POST /api/funnel HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14471 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14472 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7535 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5907 - "GET /api/fts/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10465 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6462 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2793 - "GET /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9394 - "GET /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13358 - "GET /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1043 - "GET /api/screener HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2794 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13430 - "GET /api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF HTTP/1.1" 200 OK

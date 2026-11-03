@@ -1,0 +1,159 @@
+{
+ "at": "2026-10-17 23:19:41",
+ "funnel_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+ "repeats": 4,
+ "db_pristine_before": true,
+ "ready_s": 4.826846599578857,
+ "runs": [
+  {
+   "run": 1,
+   "rc": 0,
+   "dur_s": 51.1,
+   "hog_pct_one_core": 68.8,
+   "green_red": [
+    22,
+    0
+   ],
+   "timing_items": [
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ POST ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'HIT', 'HIT', 'HIT', 'MISS', 'HIT'], 'ms': [1529, 1374, 1501, 1432, 1252, 1348]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ POST ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ POST: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 708, 'build_ms': 1529, 'ratio': 0.463}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ GET ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'MISS', 'HIT', 'HIT', 'HIT', 'HIT'], 'ms': [1487, 1451, 1437, 1298, 1304, 1487]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ GET ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ GET: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 240, 'build_ms': 1487, 'ratio': 0.161}]"
+    }
+   ],
+   "log": "p0-c20-run1.txt"
+  },
+  {
+   "run": 2,
+   "rc": 0,
+   "dur_s": 52.0,
+   "hog_pct_one_core": 85.4,
+   "green_red": [
+    22,
+    0
+   ],
+   "timing_items": [
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ POST ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'HIT', 'HIT', 'HIT', 'MISS', 'HIT'], 'ms': [1752, 1723, 1700, 1611, 1698, 1685]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ POST ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ POST: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 685, 'build_ms': 1752, 'ratio': 0.391}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ GET ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'HIT', 'HIT', 'HIT', 'MISS', 'HIT'], 'ms': [1766, 1893, 1674, 1663, 1438, 1861]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ GET ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ GET: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 425, 'build_ms': 1893, 'ratio': 0.224}]"
+    }
+   ],
+   "log": "p0-c20-run2.txt"
+  },
+  {
+   "run": 3,
+   "rc": 0,
+   "dur_s": 51.4,
+   "hog_pct_one_core": 84.4,
+   "green_red": [
+    22,
+    0
+   ],
+   "timing_items": [
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ POST ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'MISS', 'HIT', 'HIT', 'HIT', 'HIT'], 'ms': [1668, 1638, 1608, 1766, 1666, 1630]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ POST ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ POST: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 344, 'build_ms': 1766, 'ratio': 0.195}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ GET ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'HIT', 'MISS', 'HIT', 'HIT', 'HIT'], 'ms': [1316, 1384, 1233, 1456, 1243, 1482]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ GET ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ GET: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 372, 'build_ms': 1482, 'ratio': 0.251}]"
+    }
+   ],
+   "log": "p0-c20-run3.txt"
+  },
+  {
+   "run": 4,
+   "rc": 0,
+   "dur_s": 51.3,
+   "hog_pct_one_core": 91.7,
+   "green_red": [
+    22,
+    0
+   ],
+   "timing_items": [
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ POST ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'HIT', 'HIT', 'MISS', 'HIT', 'HIT'], 'ms': [1741, 1498, 1678, 1362, 1771, 1758]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ POST ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ POST: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 373, 'build_ms': 1771, 'ratio': 0.21}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۸ GET ×۶ هم‌زمان ⇒ دقیقاً یک MISS  [{'x_cache': ['HIT', 'HIT', 'HIT', 'HIT', 'MISS', 'HIT'], 'ms': [1454, 1435, 1345, 1369, 1104, 1245]}]"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۱۹ GET ×۶: همهٔ بدنه‌ها، بی‌`cached_for_ms`، یکی‌اند"
+    },
+    {
+     "status": "ok",
+     "item": "ok   ۲۰ GET: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  [{'cheap_ms': 253, 'build_ms': 1454, 'ratio': 0.174}]"
+    }
+   ],
+   "log": "p0-c20-run4.txt"
+  }
+ ],
+ "db_pristine_after": true,
+ "funnel_sha_after": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9"
+}

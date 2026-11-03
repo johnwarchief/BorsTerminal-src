@@ -148,9 +148,16 @@ def _work_dir():
          می‌رود؛ وگرنه استخراج market.db.lzma و سینک با «Permission denied»
          گیر می‌کنند.
       ۳) dev: ریشۀ ریپو.
+
+    `BORS_WORK_DIR` یک درِ صریحِ آزمون/جداسازی است: وقتی تنظیم شود، همهٔ
+    فایل‌های نوشتنی (db، user.db، کش‌ها، وضعیت) به همان پوشه می‌روند و
+    هیچ نوشتنی به پوشهٔ عملیاتی نمی‌رسد. در اجرای عادی تنظیم نمی‌شود.
     """
-    # درزِ پاریتی/CI؛ در نبودِ متغیر هیچ رفتاری عوض نمی‌شود.
-    override = (os.environ.get("BORS_DATA_DIR") or "").strip()
+    # BORS_WORK_DIR مسیرِ کاریِ main است؛ BORS_DATA_DIR درزِ پاریتی/CI و Go
+    # باقی می‌ماند. اولویت با WORK_DIR است تا رفتارِ main دست‌نخورده بماند.
+    override = (os.environ.get("BORS_WORK_DIR")
+                or os.environ.get("BORS_DATA_DIR")
+                or "").strip()
     if override:
         return os.path.abspath(override)
     if _FROZEN:
@@ -233,6 +240,13 @@ def _resolve_market_db():
 
 
 DB_PATH = _resolve_market_db()
+
+# `BORS_DB` صریح‌ترین درِ جداسازی است: مسیرِ فایلِ db را مستقل از
+# exe_dir/WORK_DIR تعیین می‌کند. آزمون‌ها با این متغیر روی کپیِ موقت
+# اجرا می‌شوند؛ اجرای عادی آن را تنظیم نمی‌کند.
+_db_override = (os.environ.get("BORS_DB") or "").strip()
+if _db_override:
+    DB_PATH = os.path.abspath(_db_override)
 
 # جدول‌هایی از market.db که نوشتهٔ خودِ کاربرند، نه دادهٔ بازار. هنگامِ
 # جایگزینیِ baseline این‌ها از فایلِ قدیمی به فایلِ تازه منتقل می‌شوند؛ در غیر
@@ -799,10 +813,17 @@ FTS_DEFAULTS = {
     "sales_to_mcap_ideal": 1.0,    # ایده‌آل = ۱× — نمایشی، نه گیتِ رد
     "profit_potential_min": 40.0,  # Min_Profit_Potential_To_MarketCap = ۴۰٪ (سند v2.1)
     # ۵) فیلتر صنعت — تفکیک قیمت‌گذاری آزاد/بورس کالا از دستوری
+    # حکمِ مالک (Task 8): الزامیِ جزوه فقط سه صنعت است — خودرو/قطعات،
+    # نیروگاه (تولید/عرضه/توزیع برق) و لاستیک. قند و شکر، شوینده و بیمه
+    # الزامی نیستند؛ دارو و غذا مجازند (نه الزامی). بیمه وتویِ سختِ جداگانه
+    # است (`reject_insurance`)، نه یک توکنِ قیمت‌گذاریِ دستوری.
     "industry_mode": "Exclude_Mandatory_Pricing",
-    "mandatory_sectors": ["خودرو", "نیروگاه", "قند و شکر", "لاستیک", "شوینده", "بیمه"],
+    "mandatory_sectors": ["خودرو", "نیروگاه", "لاستیک"],
     "free_sectors": ["سیمان", "پتروشیمی", "شیمیایی", "فلزات", "کانی", "کاشی", "سرامیک", "شیشه",
                      "کانه", "معادن", "نفت", "محصولات فلزی"],
+    # وتویِ مستقلِ صنعت بیمه — نه از فهرستِ بالا و نه از industry_mode.
+    # False فقط همین وتو را خاموش می‌کند؛ گیت‌های دیگر دست‌نخورده‌اند.
+    "reject_insurance": True,
     # غربالگری نهایی
     "watchlist_max": 50,           # سقف واچ‌لیست (جزوه: نهایتاً ۵۰ سهم)
     "mcap_min_hmt": 0.0,           # پیش‌شرط: حداقل ارزش بازار (همت)
@@ -870,4 +891,4 @@ MA_WINDOWS = [5, 20, 50, 120]
 # هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
 # اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
 # در latest.json می‌نویسد).
-APP_VERSION = "1.0.88"
+APP_VERSION = "1.0.95"

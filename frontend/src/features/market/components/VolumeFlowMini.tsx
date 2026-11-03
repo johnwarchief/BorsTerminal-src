@@ -85,13 +85,13 @@ export function VolumeFlowMini({ symbol, compact = false }: { symbol: string; co
             })}
           </div>
 
-          <div className="flex items-center justify-between text-[9px] text-text-muted">
+          <div className="flex items-center justify-between text-3xs text-text-muted">
             <span className="num">{toFaDigits(MARKET_OPEN)}</span>
             <span className="text-accent-yellow">پنجره‌های FTS: {FTS_WINDOW_LABELS.join(' · ')}</span>
             <span className="num">{toFaDigits(MARKET_CLOSE)}</span>
           </div>
 
-          <div className="flex items-center gap-3 text-[9px] text-text-muted">
+          <div className="flex items-center gap-3 text-3xs text-text-muted">
             <span className="inline-flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-sm bg-accent-green/80" /> صعودی
             </span>

@@ -1,0 +1,25 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "route": "/master",
+ "seconds": 60,
+ "cpu": {
+  "taskSeconds": 0.477,
+  "scriptSeconds": 0.066,
+  "layoutSeconds": 0.038
+ },
+ "api": {
+  "requests": 1,
+  "encodedBytes": 388065,
+  "items": [
+   {
+    "u": "/api/market/closes",
+    "method": "fetch",
+    "ms": 2990,
+    "enc": 31130
+   }
+  ]
+ },
+ "heapMB": 17.8,
+ "nodes": 731,
+ "listeners": 233
+}

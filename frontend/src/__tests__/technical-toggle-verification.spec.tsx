@@ -41,6 +41,10 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
         statusShowVolume: true,
         statusShowIndicators: true,
         showLegend: true,
+        // پرچم‌هایِ لایه که از stateِ چارت به ftsConfigStore منتقل شدند (مرحلۀ ۶)
+        showFibLevels: false,
+        showHistoryEvents: false,
+        showStructure3: false,
         gridColor: '#242731',
         gridStyle: 'solid',
         showGridHorz: true,
@@ -52,7 +56,6 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
         timezone: 'Asia/Tehran',
         showXAxis: true,
         showYAxis: true,
-        splitLayout: 1,
         fibLogarithmic: false,
         axisScaleLock: false,
         legendAlways: false,

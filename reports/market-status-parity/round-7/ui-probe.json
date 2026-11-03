@@ -1,0 +1,40 @@
+{
+ "observed_at": "2026-10-20T13:30:25.465Z",
+ "results": [
+  {
+   "tag": "1366x768",
+   "title": "ترمینال تحلیل بورس",
+   "cards": 18,
+   "clients": 3,
+   "industryRows": 45,
+   "overflow": {
+    "doc": 1366,
+    "win": 1366
+   },
+   "hasNewIndexLabel": true,
+   "hasOldIndexLabel": false,
+   "hasClientShareLabels": true,
+   "hasClientSource": true,
+   "hasTapeRial": false,
+   "hasTomanUnit": true
+  },
+  {
+   "tag": "1600x900",
+   "title": "ترمینال تحلیل بورس",
+   "cards": 18,
+   "clients": 3,
+   "industryRows": 45,
+   "overflow": {
+    "doc": 1600,
+    "win": 1600
+   },
+   "hasNewIndexLabel": true,
+   "hasOldIndexLabel": false,
+   "hasClientShareLabels": true,
+   "hasClientSource": true,
+   "hasTapeRial": false,
+   "hasTomanUnit": true
+  }
+ ],
+ "consoleErrors": []
+}

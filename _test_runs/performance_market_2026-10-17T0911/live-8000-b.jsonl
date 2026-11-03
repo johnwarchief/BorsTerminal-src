@@ -1,0 +1,13 @@
+{"path": "/api/market/delta", "wall": 1792216408.3641427, "mono": 252475.667, "ms": 1035.6, "http": 200, "bytes": 54, "ct": "application/json", "top_rev": 0, "top_status": "full"}
+{"path": "/api/market", "wall": 1792216408.3625715, "mono": 252475.665, "ms": 1098.1, "http": 200, "bytes": 6997312, "ct": "application/json", "top_rev": 0, "top_count": 5981, "top_status": "success", "meta_d_even": 20261014, "meta_h_even": 183235}
+{"path": "/api/market/sync-state", "wall": 1792216408.3670564, "mono": 252475.67, "ms": 4232.6, "http": 200, "bytes": 265, "ct": "application/json", "top_status": "success"}
+{"path": "/api/screener", "wall": 1792216408.6371534, "mono": 252475.94, "ms": 5089.3, "http": 200, "bytes": 1138891, "ct": "application/json", "top_count": 922, "top_status": "success"}
+{"path": "/api/funnel", "wall": 1792216408.771967, "mono": 252476.074, "ms": 5019.8, "http": 200, "bytes": 7487209, "ct": "application/json", "top_status": "success"}
+{"path": "/api/chart-db/%D8%B4%D9%BE%D9%86%D8%A7", "wall": 1792216408.82094, "mono": 252476.123, "ms": 5178.5, "http": 200, "bytes": 166631, "ct": "application/json", "top_count": 508, "top_status": "success"}
+{"path": "/api/mstat/board", "wall": 1792216408.53666, "mono": 252475.839, "ms": 6288.6, "http": 200, "bytes": 241968, "ct": "application/json", "top_status": "ok", "top_source": "local:market.db"}
+{"path": "/api/market/delta", "wall": 1792216418.366284, "mono": 252485.667, "ms": 13.2, "http": 200, "bytes": 54, "ct": "application/json", "top_rev": 0, "top_status": "full"}
+{"path": "/api/market", "wall": 1792216418.3647485, "mono": 252485.665, "ms": 35.4, "http": 200, "bytes": 6997312, "ct": "application/json", "top_rev": 0, "top_count": 5981, "top_status": "success", "meta_d_even": 20261014, "meta_h_even": 183235}
+{"path": "/api/market/delta", "wall": 1792216428.368328, "mono": 252495.667, "ms": 16.9, "http": 200, "bytes": 54, "ct": "application/json", "top_rev": 0, "top_status": "full"}
+{"path": "/api/market", "wall": 1792216428.3668044, "mono": 252495.666, "ms": 49.0, "http": 200, "bytes": 6997312, "ct": "application/json", "top_rev": 0, "top_count": 5981, "top_status": "success", "meta_d_even": 20261014, "meta_h_even": 183235}
+{"path": "/api/market/delta", "wall": 1792216438.370442, "mono": 252505.667, "ms": 21.4, "http": 200, "bytes": 54, "ct": "application/json", "top_rev": 0, "top_status": "full"}
+{"path": "/api/market", "wall": 1792216438.3691425, "mono": 252505.666, "ms": 40.3, "http": 200, "bytes": 6997312, "ct": "application/json", "top_rev": 0, "top_count": 5981, "top_status": "success", "meta_d_even": 20261014, "meta_h_even": 183235}

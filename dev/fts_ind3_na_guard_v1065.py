@@ -43,6 +43,14 @@ ck(F.ind3_na({"exempt": True, "margin_pct": None}) is True,
    "exempt=True → سنجیده نشد")
 ck(F.ind3_na({"margin_pct": None, "pass": False}) is True,
    "حاشیۀ تهی با pass=False هم سنجیده نشد است (نه رد)")
+# Task 10B2a1 I1: کارتِ تازه na_kind می‌دهد تا «N/Aِ طبقه» از «شکافِ داده»
+# جدا شود. هر دو حکمِ None دارند؛ فقط اولی پرچمِ N/Aِ ماهیت می‌گیرد.
+ck(F.ind3_na({"na": True, "na_kind": "class", "margin_pct": None}) is True,
+   "na_kind=class → N/Aِ طبقه")
+ck(F.ind3_na({"na": True, "na_kind": "data", "margin_pct": None}) is False,
+   "na_kind=data → شکافِ داده، نه N/Aِ طبقه")
+ck(F.ind3_na({"na": True, "margin_pct": None}) is True,
+   "payloadِ قدیمیِ بی‌na_kind → رفتارِ پیشین (سازگاریِ عقب‌رو)")
 ck(F.ind3_na({"margin_pct": 0.0, "pass": False, "na": False}) is False,
    "حاشیۀ صفرِ واقعی سنجیده شده — رد می‌ماند")
 ck(F.ind3_na({"margin_pct": 12.0, "pass": False, "na": False}) is False,
@@ -52,8 +60,10 @@ ck(F.ind3_na(None) is False and F.ind3_na({}) is False,
 
 # ── ۲) کپی‌کارهایِ ستونِ جدول باید از همان پرسش بپرسند ─────────────────────
 _scr = open("api/screener.py", encoding="utf-8").read()
-ck("ind3_na(_g3)" in _scr,
-   "اسکرینرِ زنده معافیتِ شاخص ۳ را به None می‌برد (ind3_na)")
+ck("fts_engine.ind3_na(" in _scr,
+   "اسکرینرِ زنده معافیتِ شاخص ۳ را از ind3_na می‌گیرد")
+ck("_overlay_i3(r, _g3, p[\"3_gross_margin\"])" in _scr,
+   "همان helper در حلقهٔ زندهٔ اسکرینر صدا زده می‌شود")
 ck('r["i3_pass"] = p["3_gross_margin"]' not in _scr,
    "نسخۀ صریحِ bool از passes[3] در اسکرینر نمانده")
 _w = open(os.path.join("dev", "codal_fts_updater.py"), encoding="utf-8").read()

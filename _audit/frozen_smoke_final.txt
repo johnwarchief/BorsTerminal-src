@@ -1,0 +1,23 @@
+started pid=14688 port=8077
+PASS frozen_http_up :: up in 4s version=1.0.89
+PASS version_is_1089 :: {"version": "1.0.89", "tauri": false, "mode": "portable", "instance": "20b27d874088"}
+PASS frozen_market_rows :: count=6021 len(data)=6021 live=3654 fossil=2367
+PASS frozen_execution_status :: dry_run=True live_enabled=False wire_hypothesis=False blocked_on=['آداپتورِ واقعی انتخاب نشده (BORS_EXECUTION_ADAPTER=easytrader)'] caps={"place": true, "list_orders": true, "order_state": true, "queue_position": true, "cancel": true, "best_bid_ask": false, "balances": false}
+PASS frozen_execution_session_route :: state=None keys=status,adapter,live,dry_run,session,token_present
+PASS frozen_funnel_warmup :: handover=14 tech_scan={"pending_symbols": 1, "running": true, "queued": 1, "done": 0, "failed": 0, "in_flight": 0, "error": null}
+PASS frozen_bot_status :: kill=ARMED mode=paper enabled=True gates_all_open=False
+PASS frozen_run_refused_when_disabled :: {"status": "refused", "message": "ربات خاموش است (enabled=false)"}
+PASS frozen_bot_enable :: errors=[] enabled=True chain=['f_roobi']
+PASS frozen_bot_run_real :: wall=0.3s status=ok session=20261014 in=14 bars=6 unpriced=8 sig=0 ms=29
+PASS frozen_bot_no_fabricated_zero :: {"symbols_in": 14, "bars": 6, "note": null}
+PASS frozen_pending_book_after_run :: pending=6 verdict_session=20261014
+PASS frozen_no_duplicate_signal :: wall=0.2s signals2=0 prev=20261014
+PASS frozen_bot_halt :: {"status": "ok", "kill": "HALTED", "reason": "frozen smoke"}
+PASS frozen_halt_visible_in_status :: kill=HALTED halted=True
+PASS frozen_run_refused_while_halted :: {"status": "halted", "message": "قفلِ توقف فعال است: frozen smoke", "kill": "HALTED"}
+PASS frozen_bot_resume :: {"status": "ok", "kill": "ARMED"}
+PASS frozen_bot_history :: runs=5 events=9
+PASS frozen_spa_served :: len=478
+PASS frozen_log_has_no_secret_words :: 
+
+SUMMARY: 20 checks, 0 fail -> none

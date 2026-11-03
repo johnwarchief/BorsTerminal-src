@@ -1,0 +1,31 @@
+$ C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python.exe dev/perf_output_equal_v1.py save --base http://127.0.0.1:8020 --tag before-perf-first-p0
+  market               200     6111ms  bytes= 6,101,215  rows=5981
+  live-stats           200        9ms  bytes=       972  rows=—
+  mstat-summary        200      792ms  bytes=     3,515  rows=10
+  mstat-histogram      200       45ms  bytes=     1,474  rows=—
+  mstat-thermometer    200       49ms  bytes=       357  rows=—
+  mstat-depth          200       41ms  bytes=       503  rows=—
+  mstat-clientsplit    200       26ms  bytes=       553  rows=—
+  mstat-phase          200       17ms  bytes=       607  rows=—
+  mstat-mainwatch      200      443ms  bytes=    72,561  rows=120
+  mstat-industries     200       40ms  bytes=    13,001  rows=46
+  mstat-smart-money    200      507ms  bytes=     2,668  rows=—
+  mstat-timeline       200       69ms  bytes=     9,713  rows=—
+  mstat-phases         200      414ms  bytes=       398  rows=—
+  mstat-treemap        200       63ms  bytes=    82,827  rows=220
+  mstat-tops           200       93ms  bytes=     7,890  rows=—
+  mstat-orderflows     200       94ms  bytes=     8,895  rows=—
+  mstat-ownership      200       52ms  bytes=    10,078  rows=—
+  mstat-indexcards     200       25ms  bytes=     1,674  rows=—
+  mstat-gold           200       68ms  bytes=    38,832  rows=19
+  mstat-series         200       17ms  bytes=     3,170  rows=3
+  mstat-board          200     2389ms  bytes=   219,487  rows=—
+  screener             200     1602ms  bytes= 1,060,269  rows=922
+  funnel-registry      200       36ms  bytes=    10,618  rows=—
+  fts-config           200        6ms  bytes=     1,020  rows=—
+  chart-foulad         200     2436ms  bytes= 1,132,444  rows=4247
+  index-tedpix         200     1777ms  bytes=   743,357  rows=4307
+  watchlist            200       19ms  bytes=        51  rows=0
+saved 'before-perf-first-p0' -> C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_golden\before-perf-first-p0.json.gz
+
+EXIT=0

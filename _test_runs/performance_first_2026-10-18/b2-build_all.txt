@@ -1,0 +1,215 @@
+$ C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\venv_build\Scripts\python.exe scripts/build_all.py
+
+> bors-terminal-frontend@1.0.86 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/regexes.js (72:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[32m✓[39m 735 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                                    [39m[1m[2m  0.48 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2mdist/[22m[32massets/indicator.worker-Bl64aN4W.js           [39m[1m[2m 42.47 kB[22m[1m[22m
+[2mdist/[22m[35massets/TechnicalPage-DB544epO.css             [39m[1m[2m  2.99 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2mdist/[22m[35massets/KLineChartWrapper-b6TxNGhU.css         [39m[1m[2m 12.16 kB[22m[1m[22m[2m │ gzip:   2.76 kB[22m
+[2mdist/[22m[35massets/index-BmP4r4Z6.css                     [39m[1m[2m139.42 kB[22m[1m[22m[2m │ gzip:  20.38 kB[22m
+[2mdist/[22m[36massets/signalBus-DvH2cNnr.js                  [39m[1m[2m  0.15 kB[22m[1m[22m[2m │ gzip:   0.13 kB[22m
+[2mdist/[22m[36massets/index-B8EzsTus.js                      [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/EmptyState-RH3zYWCC.js                 [39m[1m[2m  0.41 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/levels-DXqKsBvM.js                     [39m[1m[2m  0.64 kB[22m[1m[22m[2m │ gzip:   0.56 kB[22m
+[2mdist/[22m[36massets/tvIndicators-C2PS7Lz-.js               [39m[1m[2m  0.70 kB[22m[1m[22m[2m │ gzip:   0.44 kB[22m
+[2mdist/[22m[36massets/watchSymbolsStore-DzQhSpGF.js          [39m[1m[2m  0.75 kB[22m[1m[22m[2m │ gzip:   0.44 kB[22m
+[2mdist/[22m[36massets/useIndustries-YJFB7j-y.js              [39m[1m[2m  0.96 kB[22m[1m[22m[2m │ gzip:   0.51 kB[22m
+[2mdist/[22m[36massets/WatchlistStar-DwqpfRVl.js              [39m[1m[2m  0.97 kB[22m[1m[22m[2m │ gzip:   0.58 kB[22m
+[2mdist/[22m[36massets/tvTools-CK_pYiZ-.js                    [39m[1m[2m  1.15 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2mdist/[22m[36massets/Collapse-Deae3q_H.js                   [39m[1m[2m  1.65 kB[22m[1m[22m[2m │ gzip:   0.80 kB[22m
+[2mdist/[22m[36massets/DownloadRowsButton-xgPYkkKm.js         [39m[1m[2m  1.96 kB[22m[1m[22m[2m │ gzip:   1.19 kB[22m
+[2mdist/[22m[36massets/userWatchlist-CTYEWH2c.js              [39m[1m[2m  2.21 kB[22m[1m[22m[2m │ gzip:   1.23 kB[22m
+[2mdist/[22m[36massets/useNnData-CBqhUDsf.js                  [39m[1m[2m  2.39 kB[22m[1m[22m[2m │ gzip:   1.23 kB[22m
+[2mdist/[22m[36massets/StrategyTreeStepper-FxHo42SZ.js        [39m[1m[2m  3.16 kB[22m[1m[22m[2m │ gzip:   1.41 kB[22m
+[2mdist/[22m[36massets/ftsLabels-IRy69Xdu.js                  [39m[1m[2m  5.72 kB[22m[1m[22m[2m │ gzip:   1.79 kB[22m
+[2mdist/[22m[36massets/NotificationsPage-C3b-FDuR.js          [39m[1m[2m  7.62 kB[22m[1m[22m[2m │ gzip:   2.98 kB[22m
+[2mdist/[22m[36massets/KLineChartsEngine-9sQRCE14.js          [39m[1m[2m  9.58 kB[22m[1m[22m[2m │ gzip:   3.65 kB[22m
+[2mdist/[22m[36massets/TapeTable-DeDaoYs0.js                  [39m[1m[2m 12.93 kB[22m[1m[22m[2m │ gzip:   5.19 kB[22m
+[2mdist/[22m[36massets/EngineLabPage-CUkbVrBQ.js              [39m[1m[2m 15.10 kB[22m[1m[22m[2m │ gzip:   5.70 kB[22m
+[2mdist/[22m[36massets/mabnaIndicators-CX2XDome.js            [39m[1m[2m 16.76 kB[22m[1m[22m[2m │ gzip:   5.73 kB[22m
+[2mdist/[22m[36massets/FtsSettingsDrawer-WA50eYaI.js          [39m[1m[2m 23.48 kB[22m[1m[22m[2m │ gzip:   8.33 kB[22m
+[2mdist/[22m[36massets/WatchMarketWorkspace-D2lU7xW2.js       [39m[1m[2m 27.75 kB[22m[1m[22m[2m │ gzip:   9.16 kB[22m
+[2mdist/[22m[36massets/SymbolSelectBox-C3aL-Az9.js            [39m[1m[2m 27.88 kB[22m[1m[22m[2m │ gzip:   8.86 kB[22m
+[2mdist/[22m[36massets/chunk-QVJHXQ4A-DpWdCKsj.js             [39m[1m[2m 31.85 kB[22m[1m[22m[2m │ gzip:   9.25 kB[22m
+[2mdist/[22m[36massets/MarketPage-DgIg93Ll.js                 [39m[1m[2m 35.54 kB[22m[1m[22m[2m │ gzip:  11.10 kB[22m
+[2mdist/[22m[36massets/priceAlerts-BKBdedq-.js                [39m[1m[2m 36.23 kB[22m[1m[22m[2m │ gzip:  12.27 kB[22m
+[2mdist/[22m[36massets/StrategyTreePage-B_-Chj8p.js           [39m[1m[2m 52.34 kB[22m[1m[22m[2m │ gzip:  16.44 kB[22m
+[2mdist/[22m[36massets/PortfolioPage-DbKmktt6.js              [39m[1m[2m 57.41 kB[22m[1m[22m[2m │ gzip:  17.48 kB[22m
+[2mdist/[22m[36massets/TechnicalPage-svHGTHUg.js              [39m[1m[2m105.12 kB[22m[1m[22m[2m │ gzip:  32.53 kB[22m
+[2mdist/[22m[36massets/KLineChartWrapper-DE6J4izc.js          [39m[1m[2m106.91 kB[22m[1m[22m[2m │ gzip:  31.65 kB[22m
+[2mdist/[22m[36massets/FundamentalPage-DOyI6wYO.js            [39m[1m[2m110.64 kB[22m[1m[22m[2m │ gzip:  33.28 kB[22m
+[2mdist/[22m[36massets/MarketStatusPage-Cpb7WaEy.js           [39m[1m[2m131.39 kB[22m[1m[22m[2m │ gzip:  36.77 kB[22m
+[2mdist/[22m[36massets/MasterPage-HZulALcQ.js                 [39m[1m[2m156.64 kB[22m[1m[22m[2m │ gzip:  48.25 kB[22m
+[2mdist/[22m[36massets/useCandleFeed-CjSV2pC3.js              [39m[1m[2m240.92 kB[22m[1m[22m[2m │ gzip:  64.03 kB[22m
+[2mdist/[22m[36massets/FastFinancialChartsEngine-D2f__ad5.js  [39m[1m[2m296.64 kB[22m[1m[22m[2m │ gzip:  71.88 kB[22m
+[2mdist/[22m[36massets/index-JYkNGBQN.js                      [39m[1m[33m612.94 kB[39m[22m[2m │ gzip: 194.77 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 26.10s[39m
+1055 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.7
+1064 INFO: Python: 3.14.4
+1587 INFO: Platform: Windows-11-10.0.28000-SP0
+1587 INFO: Python environment: C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\venv_build
+1596 INFO: Removing temporary files and cleaning cache in C:\Users\Johnkallnaya\AppData\Local\pyinstaller
+1626 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf',
+ 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python314.zip',
+ 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\DLLs',
+ 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib',
+ 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314',
+ 'C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\venv_build',
+ 'C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\venv_build\\Lib\\site-packages',
+ 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages',
+ 'C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf']
+5184 INFO: Appending 'datas' from .spec
+5217 INFO: checking Analysis
+5218 INFO: Building Analysis because Analysis-00.toc is non existent
+5220 INFO: Looking for Python shared library...
+5222 INFO: Using Python shared library: C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python314.dll
+5222 INFO: Running Analysis Analysis-00.toc
+5222 INFO: Target bytecode optimization level: 0
+5222 INFO: Initializing module dependency graph...
+5236 INFO: Initializing module graph hook caches...
+5982 INFO: Analyzing modules for base_library.zip ...
+17018 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+19081 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+20130 INFO: Processing standard module hook 'hook-math.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+20663 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+20708 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+31192 INFO: Caching module dependency graph...
+31333 INFO: Analyzing C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\bors_entry.py
+31522 INFO: Processing standard module hook 'hook-webbrowser.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+31745 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+31759 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+32513 INFO: Processing standard module hook 'hook-sqlite3.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+33566 INFO: Processing standard module hook 'hook-pandas.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+37684 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+37795 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+39408 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+39412 INFO: SetuptoolsInfo: initializing cached setuptools info...
+42960 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+43469 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+57829 INFO: Processing standard module hook 'hook-charset_normalizer.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+59994 INFO: Processing standard module hook 'hook-zoneinfo.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+68143 INFO: Processing standard module hook 'hook-pandas.io.formats.style.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+79303 INFO: Processing standard module hook 'hook-pandas.plotting.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+81882 INFO: Processing standard module hook 'hook-dateutil.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+82548 INFO: Processing pre-safe-import-module hook 'hook-six.moves.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+86710 INFO: Processing standard module hook 'hook-openpyxl.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+87194 INFO: Processing standard module hook 'hook-lxml.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+88177 INFO: Processing standard module hook 'hook-lxml.etree.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+88917 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+90362 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+90851 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+92726 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+99321 INFO: Processing standard module hook 'hook-pandas.io.clipboard.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+100007 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+103571 INFO: Processing standard module hook 'hook-anyio.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+108081 INFO: Processing standard module hook 'hook-pydantic.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+117776 INFO: Processing standard module hook 'hook-uvicorn.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+121684 INFO: Processing standard module hook 'hook-urllib3.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+122462 INFO: Processing pre-safe-import-module hook 'hook-backports.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+122464 INFO: Setuptools: 'backports' appears to be a full setuptools-vendored copy - creating alias to 'setuptools._vendor.backports'!
+125483 INFO: Processing standard module hook 'hook-certifi.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+125644 INFO: Processing standard module hook 'hook-chardet.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+126606 INFO: Processing standard module hook 'hook-cryptography.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+129516 INFO: hook-cryptography: cryptography does not seem to be using dynamically linked OpenSSL.
+131067 INFO: Processing standard module hook 'hook-webview.py' from 'C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\venv_build\\Lib\\site-packages\\webview\\__pyinstaller'
+132654 INFO: Processing pre-safe-import-module hook 'hook-gi.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+133144 INFO: Processing standard module hook 'hook-clr.py' from 'C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\venv_build\\Lib\\site-packages\\pythonnet\\_pyinstaller'
+133207 INFO: Processing standard module hook 'hook-clr_loader.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+133651 INFO: Processing standard module hook 'hook-pycparser.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+134292 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+135413 INFO: Analyzing hidden import 'uvicorn.loops.auto'
+135426 INFO: Analyzing hidden import 'uvicorn.protocols.http.auto'
+135429 INFO: Analyzing hidden import 'uvicorn.protocols.websockets.auto'
+135434 INFO: Analyzing hidden import 'uvicorn.lifespan.on'
+135460 INFO: Analyzing hidden import 'codal_fetcher'
+137366 INFO: Analyzing hidden import 'app'
+137474 INFO: Processing standard module hook 'hook-orjson.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+142378 INFO: Processing standard module hook 'hook-docx.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+145361 INFO: Processing standard module hook 'hook-reportlab.lib.utils.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+145678 INFO: Processing standard module hook 'hook-reportlab.pdfbase._fontdata.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+154111 INFO: Analyzing hidden import 'packaging'
+154111 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+154114 INFO: Analyzing hidden import 'PIL.ImageDraw'
+154416 INFO: Processing module hooks (post-graph stage)...
+155850 INFO: Processing standard module hook 'hook-lxml.isoschematron.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+155912 WARNING: Hidden import "pycparser.lextab" not found!
+155912 WARNING: Hidden import "pycparser.yacctab" not found!
+156376 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+156377 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+157850 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks'
+158082 INFO: Processing standard module hook 'hook-lxml.objectify.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+158083 INFO: Processing standard module hook 'hook-tzdata.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+159527 INFO: Performing binary vs. data reclassification (789 entries)
+160142 INFO: Looking for ctypes DLLs
+160429 INFO: Analyzing run-time hooks ...
+160447 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+160453 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+160461 INFO: Including run-time hook 'pyi_rth_cryptography_openssl.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+160464 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+160618 INFO: Creating base_library.zip...
+160682 INFO: Looking for dynamic libraries
+166182 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\numpy.libs', 'C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages\\pandas.libs']
+166182 INFO: Extra DLL search directories (PATH): []
+168854 INFO: Warnings written to C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\build\fts_terminal\warn-fts_terminal.txt
+169409 INFO: Graph cross-reference written to C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\build\fts_terminal\xref-fts_terminal.html
+169687 INFO: checking PYZ
+169687 INFO: Building PYZ because PYZ-00.toc is non existent
+169687 INFO: Building PYZ (ZlibArchive) C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\build\fts_terminal\PYZ-00.pyz
+172891 INFO: Building PYZ (ZlibArchive) C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\build\fts_terminal\PYZ-00.pyz completed successfully.
+173102 INFO: checking PKG
+173102 INFO: Building PKG because PKG-00.toc is non existent
+173102 INFO: Building PKG (CArchive) BorsTerminal_Ultimate.pkg
+173225 INFO: Building PKG (CArchive) BorsTerminal_Ultimate.pkg completed successfully.
+173228 INFO: Bootloader C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+173229 INFO: checking EXE
+173229 INFO: Building EXE because EXE-00.toc is non existent
+173229 INFO: Building EXE from EXE-00.toc
+173230 INFO: Copying bootloader EXE to C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\build\fts_terminal\BorsTerminal_Ultimate.exe
+173247 INFO: Copying icon to EXE
+173259 INFO: Copying 0 resources to EXE
+173259 INFO: Embedding manifest in EXE
+173268 INFO: Appending PKG archive to EXE
+173335 INFO: Fixing EXE headers
+174036 INFO: Building EXE from EXE-00.toc completed successfully.
+174087 INFO: checking COLLECT
+174087 INFO: Building COLLECT because COLLECT-00.toc is non existent
+174088 INFO: Removing dir C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\dist\BorsTerminal_Ultimate
+175152 INFO: Building COLLECT COLLECT-00.toc
+179716 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+179899 INFO: Build complete! The results are available in: C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\dist
+
+=== frontend: npm run build ===
+[OK] frontend: npm run build done in 31s
+
+=== pyinstaller: fts_terminal.spec ===
+[OK] pyinstaller: fts_terminal.spec done in 182s
+
+=== DONE ===
+output: C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\dist\BorsTerminal_Ultimate
+size: 119.4 MB
+
+EXIT=0

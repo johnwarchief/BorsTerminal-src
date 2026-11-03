@@ -1,0 +1,136 @@
+[
+ {
+  "verb": "POST",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 714,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 64.7,
+  "cheap_during_n": 6,
+  "cheap_during_med": 33.7,
+  "cheap_during_max": 92.2,
+  "cheap_during_series": [
+   37,
+   26,
+   29,
+   30,
+   43,
+   92
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 772,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 15.6,
+  "cheap_during_n": 7,
+  "cheap_during_med": 52.6,
+  "cheap_during_max": 96.0,
+  "cheap_during_series": [
+   89,
+   26,
+   51,
+   28,
+   53,
+   70,
+   96
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 770,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 14.7,
+  "cheap_during_n": 7,
+  "cheap_during_med": 34.1,
+  "cheap_during_max": 149.0,
+  "cheap_during_series": [
+   149,
+   32,
+   34,
+   27,
+   32,
+   54,
+   83
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "POST",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 1196,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 15.9,
+  "cheap_during_n": 10,
+  "cheap_during_med": 33.5,
+  "cheap_during_max": 195.9,
+  "cheap_during_series": [
+   108,
+   33,
+   30,
+   68,
+   28,
+   29,
+   18,
+   34,
+   88,
+   196
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ }
+]

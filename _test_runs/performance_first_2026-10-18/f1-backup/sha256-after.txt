@@ -1,0 +1,10 @@
+2026-10-17 21:18:59
+c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb *frontend/src/shared/lib/feedFreshness.ts
+dca05d9162c2288fc3356949dd940fccfcee0b85116d39471c8ac54e35810569 *frontend/src/shared/components/FreshnessBadge.tsx
+4608b581e0cfd78a709fc75954be77380f3a1602eaf50b2339d84cf97596d08c *frontend/src/features/market/components/MarketStatusPanel.tsx
+082a1776c071fb9f8971813954e1b0087fcd8f12e3720cc3c76673e37748b402 *frontend/src/__tests__/m1-ux-integrity.spec.tsx
+ frontend/src/__tests__/m1-ux-integrity.spec.tsx    | 24 ++++++++++++++++++++++
+ .../market/components/MarketStatusPanel.tsx        |  3 ++-
+ frontend/src/shared/components/FreshnessBadge.tsx  | 10 +++++----
+ frontend/src/shared/lib/feedFreshness.ts           | 11 +++++++++-
+ 4 files changed, 42 insertions(+), 6 deletions(-)

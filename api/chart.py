@@ -6,11 +6,17 @@ decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
-                         _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
+                         WORK_DIR, _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
 from tape_flags import JET_LADDER
+import adjustment_engine as AE
+import adjustment_corrections as AC
+import wm_calendar as WMC
+import bors_flags
 import candle_contract
+import corporate_ledger as CL
 import price_basis
 import os as _os
+import major_swings
 import trend_classify
 # موتورِ تشخیصِ روند: legacy (پیش‌فرض = رفتارِ امروز) | hybrid. با env عوض می‌شود تا
 # درِ dev مسیرِ ترکیبی واقعاً فعال/قابل‌مشاهده باشد و برگشت به قبلی روشن بماند.
@@ -25,6 +31,7 @@ import json
 import math
 import os
 import sqlite3
+import sys
 import threading
 import time
 
@@ -153,6 +160,7 @@ def _parse_tsetmc_csv(text):
         # سایه نقص دارد؛ پس سایه را گِشاد می‌کنیم نه اینکه پایانی را خُرد کنیم.
         # همان قاعده‌ای که مسیرِ کندلِ زندهٔ get_chart_db از قبل رعایت می‌کند.
         # تنها قاعدۀ هندسه (Step 4): سایه گِشاد می‌شود، هیچ قیمتِ منتشرشده خُرد نمی‌شود
+        hi_raw, lo_raw = hi, lo
         hi, lo = candle_contract.widen(o, hi, lo, c)
         # v10.7.0 (کارِ #73 قدمِ ۳): «آخرین» دیگر به پایانی fallback نمی‌کند و دیگر
         # clamp نمی‌شود. دو جعلِ قبلی همان چیزی بود که قرارداد §۱-ث شرطِ ۳ بست:
@@ -162,6 +170,7 @@ def _parse_tsetmc_csv(text):
         #       گِشاد می‌شود (همان قاعدۀ candle_from_row) و تعدادش درِ متادیتا می‌آید.
         last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else None
         candles.append({"time": dt, "open": o, "high": hi, "low": lo,
+                        "high_raw": hi_raw, "low_raw": lo_raw,
                         "close": c, "last": last})
         volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
     return candles, volumes, all_rows
@@ -224,8 +233,56 @@ def _adjust_events_from_rows(all_rows):
             if abs(r2 - 1.0) > ADJ_TOL:
                 by_date.setdefault(row["time"], {"date": row["time"], "ratio": round(r2, 6)})
         prev = row
+    by_date = _collapse_zero_volume_runs(asc, by_date)
     adj_events = sorted(by_date.values(), key=lambda e: e["date"])
     return adj_events, True
+
+
+def _collapse_zero_volume_runs(asc, by_date):
+    """رویدادهایِ درونِ یک بلوکِ پیوستۀ «بدونِ معامله» را به یک رویدادِ واحد تبدیل می‌کند.
+
+    چرا: درِ دورۀِ توقفِ معامله، TSETMC چند سطرِ VOL=0 با «قیمتِ پایه»هایِ اداریِ
+    متفاوت منتشر می‌کند (ولانا ۰۷-۲۸/۰۸-۰۱/۰۸-۰۲؛ لخزر ۰۷-۲۲/۲۵/۲۶). شمارشگرِ (ی) رویِ
+    هر جابه‌جاییِ پایه آتش می‌زند و یک اقدامِ شرکتی را به سه رویداد می‌شکند؛ دفترِ
+    شرکتیِ مرجع همان را یک گامِ ترکیبی ثبت می‌کند.
+
+    هویتِ رویداد از شواهد می‌آید نه از پنجرۀِ تقویمی: هیچ معاملۀ possible درِ میانهٔ
+    بلوکِ VOL=0 نبوده، پس نمی‌تواند رویدادِ بازارِ مستقلی میانِ آن‌ها افتاده باشد.
+    فقط بلوک‌هایِ پیوستۀِ length≥2 با ≥۲ رویداد ادغام می‌شوند؛ سطرِ معاملاتیِ واقعی
+    (VOL>0) بلوک را می‌شکند تا دو تعدیلِ مستقل هرگز ادغام نشوند.
+
+    بی‌خطر بودنِ سری: ضربِ تلسکوپیِ نسبت‌ها برابرِ نسبتِ پایۀِ آخر به پایانیِ پیش ازِ
+    بلوک است؛ هیچ کندلی درِ میانهٔ بلوکِ VOL=0 وجود ندارد (سطرهایِ بدونِ معامله کندل
+    نمی‌شوند)، پس فاکتورِ تحویلیِ همهٔ تاریخ‌ها بیتغییر می‌ماند و فقط «تعدادِ رویداد» و
+    «تاریخِ مؤثرِ واحد» درست می‌شود — تطبیقِ یک‌به‌یکِ دفترِ مبدأ (§_sharpen_events) هم
+    از سه-به-یک شدنِ رویداد سود می‌برد، نه اینکه دستکاریِ ظاهری باشد.
+    """
+    runs, cur = [], []
+    for row in asc:
+        if row.get("vol") == 0.0:
+            cur.append(row["time"])
+        else:
+            if len(cur) >= 2:
+                runs.append(cur)
+            cur = []
+    if len(cur) >= 2:
+        runs.append(cur)
+    for run in runs:
+        ev = [by_date[t] for t in run if t in by_date]
+        if len(ev) <= 1:
+            continue          # رویدادِ واحد یا هیچ — ادغامی لازم نیست
+        net = 1.0
+        for e in ev:
+            net *= e["ratio"]
+        anchor = run[-1]      # مؤثرترین تاریخِ بلوک = آخرین سطرِ بدونِ معامله
+        if anchor not in by_date:
+            by_date[anchor] = {"date": anchor, "ratio": 1.0}
+        by_date[anchor]["ratio"] = round(net, 6)
+        by_date[anchor]["collapsed"] = len(ev)
+        for t in run:
+            if t != anchor:
+                by_date.pop(t, None)
+    return by_date
 
 
 # ═════ رویدادهایِ تعدیلِ کاننیکال: یک‌بار کشف، همیشه خوانده ═════
@@ -239,7 +296,22 @@ _ADJ_TABLE_DDL = ("CREATE TABLE IF NOT EXISTS adjust_events("
 # مسیرِ آفلاین برایِ نمادی که واقعاً تعدیل ندارد هشدارِ جعلی می‌داد.
 _ADJ_VERDICT_DDL = ("CREATE TABLE IF NOT EXISTS adjust_verdict("
                     "symbol TEXT PRIMARY KEY, source TEXT, checked_at TEXT)")
-_ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache")
+# آخرین دیدهٔ سالمِ سری: تعداد کندل و اولین تاریخ. فقط برایِ تشخیصِ «فیدِ کوتاه‌شده»
+# است — وقتی یک درخواست تاریخی یک نشست را جا می‌گذارد، گسستِ پایهٔ ساختگی از همان
+# جای خالی ساخته می‌شود و کلِ تاریخِ قبل را جابه‌جا می‌کند (سنجشِ ۱۴۰۵-۰۸-۰۲: هجرت
+# ۲۰۲۳-۰۳-۲۸ با ۱۵۷۷→۱۵۷۶ کندل). این جدول داده نیست، متادیتایِ کش است.
+_ADJ_META_DDL = ("CREATE TABLE IF NOT EXISTS adjust_cache_meta("
+                 "symbol TEXT PRIMARY KEY, bars_count INTEGER, first_date TEXT, updated_at TEXT)")
+_ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache",
+                      # کشف از گسستِ CSV، عددِ رویداد از دفترِ رویدادِ مبدأِ TSETMC
+                      "ledger+base-price-discontinuity",
+                      # توزیعِ رسمیِ صندوق از پورتالِ مدیرِ صندوق
+                      "fund-portal")
+# فقط این سه «از CSVِ کاملِ تاریخِ زنده خوانده‌ایم» است، پس فقط همین‌ها حقِّ
+# جانشینیِ کلِ مجموعهٔ کشِ یک نماد را دارند. `local-cache` برچسبِ *خواندن* است، نه
+# کشفِ تازه؛ اگر روزی به نویسندۀِ کش برسد، نباید ردیفِ دیده‌شدۀِ دیگری را پاک کند.
+_ADJ_DISCOVERY_SOURCES = ("base-price-discontinuity", "no-adjustment-event",
+                          "ledger+base-price-discontinuity")
 _ADJ_FUNCTIONAL_REASON = (
     "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: "
     "افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. "
@@ -257,21 +329,60 @@ _ADJ_FUNCTIONAL_REASON = (
 
 
 def _store_adjust_events(symbol, events, source):
-    """رویدادها و داوریِ منبع را می‌نویسد — تا فال‌بک، همان مجموعه را داشته باشد."""
+    """رویدادها و داوریِ منبع را می‌نویسد — تا فال‌بک، همان مجموعه را داشته باشد.
+
+    «جانشینیِ» مجموعه، نه upsert: کاشفِ زنده هر بار CSV کاملِ تاریخ را می‌پیماید
+    (`GetClosingPriceDailyListCSV/<ins>/19900101`)، پس ردیفِ کشی که درِ این پیمایش
+    نیست دیگر هیچ پشتیبانیِ داده‌ای ندارد و باید برود. بی‌این دو دستهٔ ردیف درِ کش
+    می‌ماند و دوبار اعمال می‌شد: (الف) رویدادهایِ ۱۴۰۲-۰۱-۰۸ که
+    با بک‌فیلِ ستونِ «قیمت پایه» از CSV حذف شده بودند، (ب) ردیف‌هایِ تاریخ‌جابه‌جا
+    شدۀ قاعدۀِ ردشدۀِ تیزکردن. سنجش: ۶۵ ردیفِ شبح درِ ۲۹ نماد (`_audit/_ghost_probe.py`)،
+    حاصل‌ضربِ شبح‌هایِ یک نماد تا ۰٫۷۷ → میانۀِ خطایِ بازوِ دیتابیس ۰٫۶۴٪ → ۶٫۱۵٪.
+    تنها این سه منبعِ «کشف‌شده از CSV» مجاز به جانشینی‌اند؛ `local-cache` و منبعِ
+    خالی یعنی «چیزی ندیده‌ایم»، پس هیچ ردیفِ دیده‌شدۀِ دیگری را پاک نمی‌کنند.
+    """
     if not source:
         return
+    known = source in _ADJ_KNOWN_SOURCES
+    # جانشینیِ کلِ مجموعه فقط برایِ کشفِ کاملِ CSV (بالا); «ندیدیم» یعنی دست‌نخورده.
+    authoritative = source in _ADJ_DISCOVERY_SOURCES
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         try:
             conn.execute(_ADJ_TABLE_DDL)
             conn.execute(_ADJ_VERDICT_DDL)
-            if events and source in _ADJ_KNOWN_SOURCES:
-                conn.executemany(
-                    "INSERT OR REPLACE INTO adjust_events(symbol, date, ratio, source) "
-                    "VALUES (?,?,?,?)",
-                    [(symbol, e["date"], float(e["ratio"]), source) for e in events])
+            # GET نباید وقتی هیچ‌چیز عوض نشده بانک را بازنویسی کند: پیش از این هر
+            # درخواستِ چارت `checked_at` را تازه می‌کرد و checksum بانکِ کاربر با
+            # هر مشاهده تغییر می‌کرد (ناسازگار با idempotency و بازتولیدپذیری).
+            verdict_day = datetime.date.today().isoformat()
+            verdict = conn.execute(
+                "SELECT source, checked_at FROM adjust_verdict WHERE symbol=?",
+                (symbol,)).fetchone()
+            events_same = True
+            if known:
+                existing = sorted(
+                    (str(r[0]), float(r[1]), r[2] or "")
+                    for r in conn.execute(
+                        "SELECT date, ratio, source FROM adjust_events WHERE symbol=?",
+                        (symbol,)).fetchall())
+                wanted = sorted(
+                    (str(e["date"])[:10], float(e["ratio"]), e.get("source") or source)
+                    for e in (events or []))
+                events_same = existing == wanted
+            if (events_same and verdict and str(verdict[0] or "") == source
+                    and str(verdict[1] or "") == verdict_day):
+                return
+            if known:
+                if authoritative:
+                    conn.execute("DELETE FROM adjust_events WHERE symbol=?", (symbol,))
+                if events:
+                    conn.executemany(
+                        "INSERT OR REPLACE INTO adjust_events(symbol, date, ratio, source) "
+                        "VALUES (?,?,?,?)",
+                        [(symbol, e["date"], float(e["ratio"]), e.get("source") or source)
+                         for e in events])
             conn.execute("INSERT OR REPLACE INTO adjust_verdict(symbol, source, checked_at) "
-                         "VALUES (?,?,date('now'))", (symbol, source))
+                         "VALUES (?,?,?)", (symbol, source, verdict_day))
             conn.commit()
         finally:
             conn.close()
@@ -296,47 +407,2044 @@ def _stored_adjust_source(symbol):
 
 
 def _stored_adjust_events(symbol):
-    """مجموعهٔ رویدادِ یک‌بارکشف‌شده، یا [] وقتی هنوز چیزی ندیده‌ایم."""
+    """مجموعهٔ رویدادِ یک‌بارکشف‌شده، یا [] وقتی هنوز چیزی ندیده‌ایم.
+
+    تیزکردنِ مبدأ اینجا هم اجرا می‌شود (و idempotent است): ردیف‌هایی که *پیش* از این
+    گام با ضریبِ گردِ CSV نشسته‌اند، با همان قاعدۀ پذیرش به عددِ دقیقِ مبدأ
+    برمی‌گردند. بی‌این، کشِ کهنه دقیقاً همان ۰٫۰۳۵٪ خطایِ شبهرن را نگه می‌داشت.
+    """
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         try:
             conn.execute(_ADJ_TABLE_DDL)
-            rows = conn.execute(
-                "SELECT date, ratio FROM adjust_events WHERE symbol=? ORDER BY date",
-                (symbol,)).fetchall()
+            try:
+                rows = conn.execute(
+                    "SELECT date, ratio, source FROM adjust_events WHERE symbol=? ORDER BY date",
+                    (symbol,)).fetchall()
+            except sqlite3.OperationalError:
+                # بانکِ نسخۀِ پیشین ستونِ source را ندارد: بی‌برچسب خوانده می‌شود،
+                # نه اینکه کلِ رویدادها دور ریخته شوند.
+                rows = [tuple(r) + ("",) for r in conn.execute(
+                    "SELECT date, ratio FROM adjust_events WHERE symbol=? ORDER BY date",
+                    (symbol,)).fetchall()]
         finally:
             conn.close()
     except Exception:
         return []
-    return [{"date": r[0], "ratio": float(r[1])} for r in rows if r[1]]
+    ev = [{"date": r[0], "ratio": float(r[1]),
+           **({"source": r[2]} if len(r) > 2 and r[2] else {})} for r in rows if r[1]]
+    if not ev:
+        return []
+    sharpened, _, _ = _sharpen_events_with_ledger(symbol, ev)
+    return sharpened
 
 
-def _adjust_capability(events, source):
-    """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست."""
-    return {
-        "source": source,
-        "combined_available": source in _ADJ_KNOWN_SOURCES,
-        "indexed_available": True,
-        "functional_available": False,
-        "functional_reason": _ADJ_FUNCTIONAL_REASON,
-        "event_count": len(events or []),
-    }
+def _adj_cache_meta(symbol):
+    """(bars_count, first_date) آخرین دیدهٔ سالم، یا (None, None) اگر ندیده‌ایم."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute(_ADJ_META_DDL)
+            row = conn.execute(
+                "SELECT bars_count, first_date FROM adjust_cache_meta WHERE symbol=?",
+                (symbol,)).fetchone()
+        finally:
+            conn.close()
+    except Exception:
+        return None, None
+    if not row:
+        return None, None
+    try:
+        return int(row[0]), str(row[1] or "")
+    except (TypeError, ValueError):
+        return None, None
 
 
-def _factors_from_events(times, events):
-    """factor(t) = ∏ ratio برای رویدادهایِ date > t — همان قاعدۀ حلقۀ CDN."""
-    ev = sorted((e for e in (events or []) if e.get("date")), key=lambda e: str(e["date"]))
-    dates = [str(e["date"]) for e in ev]
-    ratios = [float(e.get("ratio") or 1.0) for e in ev]
-    out = [1.0] * len(times)
-    f, j = 1.0, len(dates) - 1
-    for i in range(len(times) - 1, -1, -1):
-        t = str(times[i])[:10]
-        while j >= 0 and dates[j] > t:
-            f *= ratios[j]
-            j -= 1
-        out[i] = round(f, 10)
+def _set_adj_cache_meta(symbol, bars_count, first_date):
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute(_ADJ_META_DDL)
+            row = conn.execute(
+                "SELECT bars_count, first_date FROM adjust_cache_meta WHERE symbol=?",
+                (symbol,)).fetchone()
+            if row and int(row[0]) == int(bars_count) and str(row[1] or "") == str(first_date or ""):
+                return
+            conn.execute(
+                "INSERT OR REPLACE INTO adjust_cache_meta(symbol, bars_count, first_date, updated_at)"
+                " VALUES (?,?,?,date('now'))",
+                (symbol, int(bars_count), str(first_date or "")))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
+def _feed_shrank(symbol, bars_count):
+    """True وقتی این پاسخ از آخرین دیدهٔ سالم کندلِ کمتری دارد (نشستِ گم‌شده).
+
+    یک فیدِ کوتاه‌شده می‌تواند گسستِ پایهٔ ساختگی بسازد؛ آن گسست نه رسمی است و نه در
+    کشِ قبلی دیده شده. بدون این گارد، همان رویداد در کش می‌نشیند و تا پاسخِ کاملِ
+    بعدی، کلِ تاریخِ قبل را جابه‌جا می‌کند.
+    """
+    prev, _first = _adj_cache_meta(symbol)
+    return prev is not None and int(bars_count) < prev
+
+
+def _split_provisional_gaps(symbol, events):
+    """(kept, provisional) — گسست‌هایِ پایهٔ تازه در فیدِ کوتاه‌شده provisional می‌شوند.
+
+    رسمی‌ها (priceAdjust/shareChange/fund-portal) دست‌نخورده می‌مانند؛ فقط گسستِ
+    پایه‌ای که در کشِ قبلی نیست و شاهدِ رسمی ندارد، تا پاسخِ کاملِ بعدی اعمال نمی‌شود.
+    """
+    cached = {(str(e.get("date"))[:10], round(float(e.get("ratio") or 0), 8))
+              for e in _stored_adjust_events(symbol)}
+    kept, provisional = [], []
+    for e in (events or []):
+        src = str(e.get("source") or "")
+        pair = (str(e.get("date"))[:10], round(float(e.get("ratio") or 0), 8))
+        if src == "base-price-discontinuity" and pair not in cached:
+            provisional.append(e)
+        else:
+            kept.append(e)
+    return kept, provisional
+
+
+# ═════ تیزکردنِ ضریب با دفترِ رویدادِ مبدأ (RC3) ═════
+# سنجشِ دورِ تطبیق با رهاورد (`docs/RAHAVARD-CANDLE-ADJUSTMENT-PARITY-1405-07-20.md` §۴-RC3):
+# ضریبِ گسستِ «قیمت پایه» از عددِ **ردِپِردِ TSETMC** خوانده می‌شود، پس گرد است و روی
+# وقفۀِ معاملاتی چند تکه می‌شود. خطایِ اندازه‌گیری‌شدۀ ضریبِ هر رویداد درِ گام‌هایِ
+# تک‌رویدادی: میانه ۰٫۰۵۸٪، p۹۰ ۰٫۴۴۵٪، بیشینه ۶٫۳۰٪ (۱۰۳ گام). دو نمونۀِ واقعی:
+#   شبهرن ۱۴۰۵-۰۶-۲۹: ما ۰٫۲۸۳۷۸۷ (گامِ ۳٫۵۲۳۷۷۰) در برابرِ ۱۸٬۰۰۰٬۰۰۰٬۰۰۰٬۰۰۰ →
+#     ۶۳٬۴۵۰٬۰۰۰٬۰۰۰٬۰۰۰=self ۰٫۲۸۳۶۸۷۹۴ (گامِ ۳٫۵۲۵ دقیق) — ۰٫۰۳۵٪ خطا روی کلِ تاریخِ قبل.
+#   ولانا ۱۴۰۵-۰۵-۱۱: یک اقدامِ با آورده درِ سه رویدادِ ما خُرد شد (۰٫۳۰۰۴۴۸ × ۰٫۹۹۸۵۰۷ ×
+#     ۱٫۲۶۳۰۷۹ = ۲٫۶۳۹۰۵۹) در برابرِ گامِ ۲٫۶۶۲۸۳۵ِ مرجع → ۰٫۹۰٪ روی کلِ تاریخِ قبل.
+# خودِ TSETMC این اعداد را منتشر می‌کند و درِ بانکِ محلی می‌نشینند
+# (`test_tsetmc.py:parse_price_adjust` و `parse_share_change` → `price_adjust_events`/
+# `share_change_events`، docs/TSETMC-DATA-GAP-MATRIX.md §17). آن‌ها همان واحدِ
+# `adjustEvents.ratio` را می‌دهند: پایانیِ تعدیل‌شده ÷ خام، و سهامِ قدیم ÷ جدید.
+#
+# چرا «تیزکردن» و نه «جایگزینیِ کامل»: coverageِ این دو جدول سنجیده‌شده و ناقص است
+# (۱۴۰۵-۰۷-۲۰ روی همان ۲۹ نماد): `price_adjust_events` سقفِ ۵۰۰ردیفِ هر flow را دارد و
+# پیشِ ۲۰۲۴-۰۷-۲۱ هیچ ردیفی ندارد؛ `share_change_events` پنجرۀِ ۱۴روزۀِ انباشتی است و
+# حفره دارد (ولانا: صفر ردیف در هر دو جدول، با وجودِ سه رویدادِ شناخته‌شده). پس
+# گسستِ CSV همان «کاشفِ رویداد» می‌ماند و دفترِ مبدأ فقط «عددِ دقیقِ همان رویداد» را
+# می‌دهد؛ جایی که دفتر ردیفی ندارد، رفتارِ پیشین دست‌نخورده است.
+#
+# چرا تلورانسِ ۰٫۱٪ و نه عددِ دیگری: توزیعِ «فاصلهٔ دو منبع» سنجیده شد (۳۳۸ جفتِ
+# نامزد درِ پنجرۀِ ±۱۰ روز، `_audit/_tol_probe.py`): ۶۷ جفتِ زیرِ ۰٫۰۱٪، ۵۴ جفتِ
+# ۰٫۰۱–۰٫۰۵٪، ۱۳ جفتِ ۰٫۰۵–۰٫۱٪، و بعد **فرا**: ۲ جفتِ ۰٫۱–۰٫۲٪، ۳ جفتِ ۰٫۲–۰٫۵٪،
+# ۴ جفتِ ۰٫۵–۱٪، و سپس ۱۹۵ جفتِ بالایِ ۱٪ (بیشینه ۵۰۲٪ — روشن «رویدادِ دیگر»).
+# پس کرانِ ۰٫۱٪ درِ فضایِ خالیِ میانِ «همان رویداد با نویزِ گردکردن» و «رویدادِ دیگر»
+# نشسته است، نه آستانه‌ای که اختراع شده باشد. ردیفِ بی‌ربط از همین فاصله رد می‌شود —
+# نمونۀِ ولانا: نسبتِ سهام ۰٫۳۰۰ در برابرِ گسستِ دیده‌شده ۰٫۳۷۵۵ یعنی ۲۵٪ اختلاف، پس
+# آن ردیفِ افزایشِ با آورده هرگز جای عددِ درست را نمی‌گیرد.
+#
+# دو چیزی که آزمونِ کنترل‌شدۀِ قواعد رد کرد (`_audit/ra365_ledger_ab.py` — کندل‌ها
+# و رویدادها از یک ضبطِ یخ‌زده، پس هر جا عدد عوض می‌شود فقط اثرِ خودِ قاعده است):
+# ۱) چرخشِ تاریخِ رویداد به `dEven` مبدأ: درِ سنجشِ یخ‌زده هیچ بهبودی نداد (میانه و p۹۰
+#    با «ضریبِ تنها» عیناً یکی شد: ۰٫۲۱۶۲٪ / ۱٫۶۱۳۷٪) و ۳۹ تاریخ را جابه‌جا کرد.
+# ۲) جمعِ چند رویدادِ CSV به یک ردیفِ مبدأ (که درِ نسخۀِ اولِ همین رفع بود، با چرخشِ
+#    تاریخ): جدولِ کش کلیدِ (symbol,date) دارد، پس دو رویداد روی یک تاریخ = بازنویسیِ
+#    ردیفِ یکی با ضریبِ دیگری. اندازه‌گیریِ اثر: فاکتورِ دیتابیسِ لخزر درِ ۲۰۲۵-۰۸-۲۶
+#    از ۰٫۵۵۰۲ به ۰٫۳۲۱۷ افتاد (رویدادِ ۱٫۷۱۱۱۱۱ِ ۲۰۲۶-۰۷-۲۲ بی‌صدا غیب شد:
+#    ۰٫۵۵۰۲ ÷ ۱٫۷۱۱۱۱ = ۰٫۳۲۱۵) و میانۀِ خطایِ آن بازو
+#    ۶٫۷۱٪ → ۳۷٫۴۸٪ پرید؛ ومعادن هم ۰٫۷۷۲۹ → ۰٫۸۴۸۷ شد. با قاعدۀِ فعلی هر دو
+#    بازگردیده‌اند (۰٫۵۵۰۴ و ۰٫۷۷۲۹). حذفِ رویدادِ واقعی بدتر از ضریبِ کم‌دقت است —
+#    همان استدلالِ درِ لنگرِ `_adjust_events_from_rows`. پس اگر دو رویداد یک ردیفِ مبدأ
+#    را مطالبه کنند، هیچ‌کدام تیز نمی‌شود و درِ `ledger_ambiguous` می‌نشیند: بی‌طرفی، نه حذف.
+#
+# چرا با این حال «ضریبِ مبدأ» می‌نشیند، هرچند میانۀِ خطایِ کلِ پیکره ۰٫۲۱۰۵٪ → ۰٫۲۱۶۲٪
+# می‌شود (۰٫۰۰۶ واحدِ درصدی — درِ آمارِ همین سنجش، نویز): عددِ ما از ردِپِردِ گردِ
+# TSETMC ساخته می‌شود و عددِ مبدأ از خودِ مبدأ بی‌گرد. مرجع (رهاورد) هم زنجیرۀِ خود را
+# از همان ردِپِردِ گرد می‌سازد، پس «نزدیک‌تر به مرجع» دلیلِ درستی نیست و این ۰٫۰۰۶ واحدِ
+# درصدی دورترشدن هم دلیلِ رد نیست. درِ ۱۱ نماد از ۲۹ نزدیک‌تر شد (خودرو ۰٫۰۲۵۷٪ → ۰٫۰۰۰۰٪،
+# شنفت ۰٫۲۴۴۶ → ۰٫۱۶۹۲، شبهرن ۰٫۱۰۰۱ → ۰٫۰۷۵۵، فزر ۰٫۱۲۳۱ → ۰٫۰۸۸۲) و درِ ۱۴ نماد به
+# همان اندازه دورتر (بیشینۀِ جابه‌جایی ۰٫۱۰ واحدِ درصدی). معیارِ انتخاب، تعریفِ درستِ
+# عدد است نه مقایسۀِ ظاهری — و قاعدۀِ مأموریت هم همین است: منطقِ داده را برایِ
+# نزدیک‌شدنِ ظاهری تغییر نمی‌دهیم.
+_LEDGER_AGREE_TOL = 0.001
+# گسستِ پایهٔ تقریبی در پنجرهٔ DPS فقط وقتی «همان اقدام» شمرده می‌شود که نسبتش
+# با نسبتِ رسمیِ DPS در این تلورانس جور باشد؛ رویدادِ مستقل (افزایشِ سرمایه)
+# با اختلافِ بزرگ‌تر حفظ می‌شود. نمونهٔ مرزی: بورس 2026-07-22 (DPS=55 + CC 0.75).
+_DPS_DUP_TOL = 0.01
+# دو ردیفِ رسمی برایِ یک اقدام ممکن است چند دهمِ درصد نسبتشان تفاوت کند
+# (دانيك 2026-08-24: 0.878734 در برابر 0.881844؛ پالايش 2024-12-23/24).
+# در پنجرهٔ ۵ روز، اختلافِ ≤۱٪ «همان اقدام» است؛ رویدادِ سرمایهٔ مستقل
+# (نمونهٔ بورس: ۲۴٪) حفظ می‌شود.
+_SAME_ACTION_TOL = 0.02
+# A capital increase with contribution (پذیره‌نویسی) has two observations on
+# the same effective date: the observed base gap (price leg, includes S) and
+# the official share-count leg (p_closing/p_notAdjusted == shares_old/new).
+# When they differ by 2–6% the merge keeps both and the action is applied
+# twice (measured: وبانك 2013-07-31 ×1.40, كبافق 2014-07-28 ×4.02, شتران
+# 2018-07-25 ×1.50, شاملا 2020-09-07 ×2.00 before the step). The frozen
+# reference tracks the base gap in all four (0.002–0.53%), so the share leg
+# is dropped, not the observed price. The band stops at 6% so an independent
+# action on the same day is never swallowed.
+_SHARE_LEG_MIN_GAP = 0.02
+_SHARE_LEG_MAX_GAP = 0.06
+# A DPS row whose official ratio sits close to a nearby share-count ratio is
+# the price leg of the same capital action (DPS + share), not a pure DPS: the
+# candle-close formula ignores the share effect (measured: سغرب 2019-01-29
+# 5.52% → 1.62%, ومعادن 2012-02-21 4.95% → 0.32%, کمرجان 2018-05-09 2.57% →
+# 0.41%). Below 1.5% the correction is base-gap noise and rescaling the whole
+# prior history flips borderline rows without a real gain (شنفت 2016-10-29:
+# 0.45% change, −4.9pp parity), so the rule is materiality-gated.
+_DPS_COMBINED_SHARE_BAND = 0.15
+_DPS_COMBINED_MIN_DELTA = 0.015
+_LEDGER_WINDOW_DAYS = 10
+
+
+def _combined_dps_official_ratio(formula_ratio, official_ratio, date, share_changes):
+    """Official ratio when this DPS row is the price leg of a combined action.
+
+    Returns None for a pure DPS: no nearby share change, official outside the
+    ±15% band of that share ratio, or a difference below the materiality gate.
+    """
+    try:
+        fr = float(formula_ratio)
+        oro = float(official_ratio)
+    except (TypeError, ValueError):
+        return None
+    if fr <= 0 or oro <= 0:
+        return None
+    if abs(oro / fr - 1.0) < _DPS_COMBINED_MIN_DELTA:
+        return None
+    for sd, sr in (share_changes or []):
+        dd = _day_diff(sd, date)
+        try:
+            srv = float(sr)
+        except (TypeError, ValueError):
+            continue
+        if dd is not None and dd <= 10 and srv > 0 \
+                and abs(oro / srv - 1.0) <= _DPS_COMBINED_SHARE_BAND:
+            return oro
+    return None
+
+
+_INS_CODE_CACHE = {}
+_INS_CODE_LOCK = threading.Lock()
+
+
+def _ins_code_for(symbol):
+    """Stable instrument identity for a symbol (cached, read-only).
+
+    The correction pack is keyed by `ins_code`, not by the mutable display
+    name.  Passing the resolved code avoids a name collision between a test
+    fixture and a real symbol.  `None` means the DB did not provide one; only
+    then may the pack fall back to the symbol.
+    """
+    if not symbol:
+        return None
+    key = (str(DB_PATH), str(symbol))
+    with _INS_CODE_LOCK:
+        if key in _INS_CODE_CACHE:
+            return _INS_CODE_CACHE[key]
+    out = None
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                out = str(row[0])
+        finally:
+            conn.close()
+    except Exception:
+        out = None
+    with _INS_CODE_LOCK:
+        _INS_CODE_CACHE[key] = out
     return out
+
+
+def _ledger_events_for(symbol):
+    """ردیف‌هایِ مبدأِ تعدیل برایِ یک نماد: [{'date','ratio','kind'}] — بی‌نوشتنِ حدس.
+
+    هر دو خانوادۀِ جدولِ canonical خوانده می‌شوند؛ نسبتِ تهی یا یک (بی‌اثر) کنار
+    می‌رود. نبودِ جدول‌ها (بانکِ نسخۀِ پیشین) یا نبودِ نماد = لیستِ خالی، نه خطا.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+    except Exception:
+        return []
+    try:
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            return []
+        ins = str(row[0])
+        out = []
+        for q, kind in (("SELECT d_even, ratio FROM price_adjust_events "
+                        "WHERE ins_code=?", "priceAdjust"),
+                       ("SELECT d_even, ratio FROM share_change_events "
+                        "WHERE ins_code=?", "shareChange")):
+            try:
+                for d_even, ratio in conn.execute(q, (ins,)):
+                    dt = _d_even_to_date(d_even)
+                    r = float(ratio or 0)
+                    if dt and r > 0 and abs(r - 1.0) > ADJ_TOL:
+                        out.append({"date": dt, "ratio": r, "kind": kind})
+            except Exception:
+                continue    # جدولِ این خانواده درِ این بانک نیست
+        out.sort(key=lambda e: e["date"])
+        return out
+    except Exception:
+        return []
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _sharpen_events_with_ledger(symbol, events):
+    """(events, sharpened, ambiguous) — عددِ رویدادِ دیده‌شده از مبدأ، تاریخِ دیده‌شده دست‌نخورده.
+
+    قاعدۀِ پذیرشِ ردیفِ مبدأ برایِ رویدادِ d با ضریبِ r:
+      ۱) |تاریخِ ردیف − d| ≤ _LEDGER_WINDOW_DAYS روز، و
+      ۲) |ratio_ردیف / r − ۱| ≤ _LEDGER_AGREE_TOL (پنجرۀِ خالیِ میانیِ بالا).
+    از ردیف‌هایِ پذیرفته‌شده نزدیک‌ترین تاریخ می‌نشیند؛ درِ تساویِ فاصله،
+    `priceAdjust` بر `shareChange` تقدم دارد (عددِ مستقیمِ قیمت است، نه مشتقِ سهام).
+    **هیچ رویدادی حذف نمی‌شود و هیچ تاریخی جابه‌جا نمی‌شود** (توضیحِ سنجیده: بلوکِ
+    کامنتِ بالا). اگر یک ردیفِ مبدأ را دو رویدادِ مختلف مطالبه کنند، هیچ‌کدام تیز
+    نمی‌شود و هر دو درِ `ambiguous` شمرده می‌شوند — داوریِ مبهم بهتر از حذفِ عددِ واقعی است.
+    بی‌ردیفِ مبدأ: رویداد با همان عددِ پیشین برمی‌گردد (نه صفر، نه حدس).
+    """
+    ev = [dict(e) for e in (events or [])]
+    if not ev:
+        return ev, 0, 0
+    ledger = _ledger_events_for(symbol)
+    if not ledger:
+        return ev, 0, 0
+    claims = {}
+    for i, e in enumerate(ev):
+        try:
+            d0 = datetime.datetime.strptime(str(e["date"])[:10], "%Y-%m-%d").date()
+            r0 = float(e.get("ratio") or 0)
+        except Exception:
+            continue
+        if r0 <= 0:
+            continue
+        best = None
+        for lr in ledger:
+            try:
+                dd = abs((datetime.datetime.strptime(lr["date"], "%Y-%m-%d").date() - d0).days)
+            except Exception:
+                continue
+            if dd > _LEDGER_WINDOW_DAYS:
+                continue
+            if abs(lr["ratio"] / r0 - 1.0) > _LEDGER_AGREE_TOL:
+                continue
+            key = (dd, 0 if lr["kind"] == "priceAdjust" else 1)
+            if best is None or key < best[0]:
+                best = (key, lr)
+        if best:
+            claims[i] = best[1]
+    owners = {}
+    for i, lr in claims.items():
+        owners.setdefault(lr["date"] + "|" + lr["kind"], []).append(i)
+    sharpened = ambiguous = 0
+    for i, e in enumerate(ev):
+        lr = claims.get(i)
+        if lr and len(owners[lr["date"] + "|" + lr["kind"]]) == 1:
+            e["ratio"] = round(lr["ratio"], 8)
+            e["source"] = lr["kind"]
+            e["_ledger_key"] = (lr["date"], lr["kind"])
+            sharpened += 1
+        else:
+            if lr:
+                ambiguous += 1
+            e["source"] = "base-price-discontinuity"
+    ev.sort(key=lambda x: str(x["date"]))
+    return ev, sharpened, ambiguous
+
+
+# ═════ اتصالِ موتورِ canonical به مسیرِ واقعیِ پاسخِ چارت (قدمِ ۵) ═════
+# تا این دور، `adjustment_engine` فقط درِ تست‌ها و ابزارهایِ حسابِ قدمِ ۴ اجرا می‌شد و
+# پاسخِ چارت از حلقۀِ محلیِ خودِ همین فایل می‌آمد. سه نسخۀِ ریاضی بود (حلقۀِ CDN،
+# `_factors_from_events`، و `applyAdjustmentToCandles` سمتِ مرورگر) و هیچ‌کدام کرانِ
+# اعتبارِ موتوری را اعمال نمی‌کرد. حالا یک مسیرِ محاسبه هست: `_canonical_adjustment`
+# ⇒ `AE.chain_factors`، و باقیِ مصرف‌کننده‌ها (دو موتورِ چارت، FTSِ سرور، سریِ مقایسه)
+# فقط خروجیِ همان مسیر را می‌خوانند.
+#
+# تصمیمِ «اتحادِ منبع» از سنجشِ همین دور آمده، نه از ترجیحِ ظاهری
+# (`_audit/RA365-PHASE5F-UNION.csv`، ابزارِ `tools/phase5f_coverage_union.py`):
+# ۶۶۹ ردیفِ رسمی درِ ۵۵ نمادِ انتخابی — ۱۵۰ تایشان با رویدادِ دیده‌شدۀِ CSV می‌خوانند،
+# ۵۱۹ تا نه. بیشترِ آن ۵۱۹ ردیفِ جعلی نیستند؛ `GetInstrumentShareChangeByFlow`
+# زنجیرۀِ **وضعیتِ** سرمایه است نه فهرستِ اقدام‌ها، و اصلاحیه دارد. دو نمونۀِ واقعیِ
+# همان بانک:
+#     فولاژ   ۲۰۲۴-۰۳-۱۷  24,000,000,000 → 58,000,000,000  ratio 0.4137931
+#             ۲۰۲۴-۰۷-۲۳  58,000,000,000 → 24,000,000,000  ratio 2.41666667  ← برگشتِ قبلی
+#             ۲۰۲۴-۰۷-۲۷  24,000,000,000 → 58,000,000,000  ratio 0.4137931
+#     پكوير   ۲۰۱۵-۱۰-۰۵  200,000,000 → 700,000,000  ratio 0.28571429
+#             ۲۰۱۶-۰۳-۰۲  700,000,000 → 200,000,000  ratio 3.5                ← برگشتِ قبلی
+#             ۲۰۱۶-۰۳-۰۶  200,000,000 → 700,000,000  ratio 0.28571429
+# این سه‌تایی‌ها درِ سریِ قیمتِ منتشرشده **یک** گام می‌سازند (گسستِ پایه درِ روزِ سوم)
+# نه سه‌تا؛ پس «هر ردیفِ رسمی را درِ زنجیره بگذار» میانهٔ آن پنجره را تا ۲٫۴ برابر
+# جابه‌جا می‌کرد و گامی می‌ساخت که بازار هیچ‌وقت چاپش نکرده بود. قاعدۀِ انتخاب‌شده:
+# ردیفِ رسمی **عددِ** رویدادِ دیده‌شده را درست می‌کند (تیزکردن، با پنجره و تلورانسِ
+# سنجیده) و رویدادِ تازه نمی‌سازد؛ ردیف‌هایِ بی‌همتا شمariده و درِ `coverage` اعلام
+# می‌شوند (قاعدۀِ قدمِ ۳: بیرونِ پوشش = INCOMPLETE، نه «بدونِ تعدیل») و داوریِ نهاییِ
+# اینکه آیا آن‌ها گامِ واقعیِ دیگري هستند درِ قدمِ ۶ با مرجعِ رهاورد سنجیده می‌شود.
+
+
+def _is_option_name(name):
+    return "اختيار" in name or "اختیار" in name
+
+
+def _is_bond_name(name):
+    if not name or "صندوق" in name or "بورس اوراق بهادار" in name:
+        return False
+    if any(k in name for k in (
+            "مرابحه", "اسناد", "مشاركت", "مشارکت", "اجاره", "صكوک", "صکوک",
+            "سلف موازي", "سلف موازی", "اخزا", "اوراق")):
+        return True
+    return (name.startswith("گام") or name.startswith("گواهي اعتبار")
+            or name.startswith("گواهی اعتبار"))
+
+
+def _is_right_name(name, paper_type):
+    return (paper_type == 4 or name.startswith("ح ") or name.startswith("ح.")
+            or "حق تقدم" in name)
+
+
+def _is_future_name(name):
+    if not name:
+        return False
+    if name.startswith(("آتي ", "آتی ", "بار پايه", "بار پایه")):
+        return True
+    return ("ماهه" in name) and any(k in name for k in ("فروش", "خرید", "تحویل"))
+
+
+def _instrument_kind(symbol):
+    """option|bond|right|fund|future|stock|unknown — از نام/نوعِ خودِ ابزار.
+
+    این طبقه‌بندی برایِ **قراردادِ دسترسی** است، نه برایِ نگاشتِ هویت: اختیار/آتی
+    اقدامِ شرکتی ندارند و اوراق/حق‌تقدم در قراردادِ عملکردیِ فعلی گامِ تعدیل ندارند.
+    قواعدِ نام با تطبیقِ ۱۰۰٪ رویِ فهرست‌هایِ خودِ رهاورد سنجیده شده‌اند
+    (۱٬۰۲۷ اختیار، ۵۲۸ اوراق، ۴ warrants).
+    """
+    name, paper_type, sector = "", None, ""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val30, paper_type, sector_name FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                name = str(row[0] or "").replace("\u200c", " ")
+                paper_type, sector = row[1], str(row[2] or "")
+        finally:
+            conn.close()
+    except Exception:
+        return "unknown"
+    if _is_option_name(name):
+        return "option"
+    if _is_bond_name(name):
+        return "bond"
+    if _is_right_name(name, paper_type):
+        return "right"
+    if _is_future_name(name):
+        return "future"
+    if paper_type == 8 or "صندوق" in sector or "صندوق" in name:
+        return "fund"
+    return "stock"
+
+
+def _filter_unproven_base_events(symbol, events, times=None):
+    """(kept, rejected) — گسستِ پایهٔ بی‌شاهدِ دفتر را از زنجیره بیرون می‌گذارد.
+
+    سه الگویِ اندازه‌گیری‌شده در ممیزیِ سراسریِ ۲۰۲۶-۱۰-۲۰ (دادهٔ زندهٔ TSETMC + مرجع
+    رهاورد) نشان می‌دهد گسستِ پایه همیشه اقدامِ شرکتی نیست:
+
+    ۱) **اختیار و اوراق**: مرجع رهاورد در ۱٬۰۲۷ ابزارِ اختیار و ۵۲۸ ابزارِ اوراقِ
+       سنجیده‌شده **صفر** گامِ تعدیل دارد. گسستِ پایه در این ابزارها قیمتِ پایهٔ اداری
+       است، نه اقدامِ شرکتی. نشانهٔ نام با تطبیقِ ۱۰۰٪ رویِ همان ۱٬۵۵۵ ابزار سنجیده
+       شد: «اختيار/اختیار» → اختیار، و نامِ اوراقِ رسمی (مرابحه/اسناد/مشارکت/اوراق/
+       اجاره/صکوک/سلف موازی/اخزا/گام.../گواهی اعتبار) → اوراق. نمونه: اراد۲۰۱
+       ۲۰۲۶-۰۴-۰۵ با ratio=0.984222 و صفر گام در مرجع.
+    ۲) **گسستِ مثبت (ratio > ۱) در بقیهٔ ابزارها**: قیمتِ پایه بالاتر از پایانیِ روزِ
+       پیش نشسته است. تجزیه/تجمیعِ واقعی ردیفِ `share_change_events` دارد و منبعش
+       `shareChange` می‌شود. گسستِ مثبتِ بی‌ردیف (نمونه: شپارس ۲۰۲۰-۰۵-۲۶ با
+       ratio=1.01761 و اعتماد ۲۰۲۴-۰۴-۲۴ با 1.001051) در مرجع هیچ گامی ندارد.
+    ۳) توزیعِ واقعیِ صندوق (ratio<۱) حذف **نمی‌شود**: ۶۲ گامِ تداوم و ۶۴۴ گامِ ۲۶
+       صندوقِ دیگر در مرجع همه کاهشی‌اند؛ فیلترِ مثبت‌محور آن‌ها را نگه می‌دارد.
+
+    ردشدن **خاموش نیست**: هر ردیف با `factor_status` در `adjustRejected` برمی‌گردد.
+    ردیف‌هایِ دفتر (`priceAdjust`/`shareChange`) هرگز فیلتر نمی‌شوند.
+    """
+    ev = [dict(e) for e in (events or [])]
+    if not ev:
+        return ev, []
+    name, paper_type = "", None
+    ins_code = None
+    anomaly_dates = set()
+    official_dates = set()
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code, l_val30, paper_type FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                ins_code = str(row[0])
+                name = str(row[1] or "").replace("\u200c", " ")
+                paper_type = row[2]
+            if ins_code:
+                try:
+                    for (d,) in conn.execute(
+                            "SELECT d_even FROM price_adjust_events WHERE ins_code=? "
+                            "UNION SELECT d_even FROM share_change_events WHERE ins_code=?",
+                            (ins_code, ins_code)):
+                        iso = _d_even_to_date(d)
+                        if iso:
+                            official_dates.add(iso)
+                except Exception:
+                    pass
+            try:
+                for d, cause in conn.execute(
+                        "SELECT d_even, cause FROM session_anomalies"):
+                    if cause == "MARKET_WIDE_SESSION_DIFFERENCE":
+                        anomaly_dates.add(_d_even_to_date(d))
+            except Exception:
+                pass
+        finally:
+            conn.close()
+    except Exception:
+        pass
+    is_option = _is_option_name(name)
+    is_right = _is_right_name(name, paper_type)
+    is_bond = _is_bond_name(name)
+    is_fund = (paper_type == 8 or "صندوق" in name)
+    date_counts = {}
+    _dates = sorted(set(str(t)[:10] for t in (times or []) if t))
+
+    def _eff(d):
+        if not _dates:
+            return d
+        return next((x for x in _dates if x >= d), d)
+
+    for e in ev:
+        if (e.get("source") or "base-price-discontinuity") != "base-price-discontinuity":
+            continue
+        ed = str(e.get("date"))[:10]
+        key = _eff(ed)
+        date_counts[key] = date_counts.get(key, 0) + 1
+    big_dates = []
+    for e in ev:
+        if (e.get("source") or "base-price-discontinuity") != "base-price-discontinuity":
+            continue
+        try:
+            er = float(e.get("ratio") or 0)
+        except (TypeError, ValueError):
+            continue
+        if 0 < er < 0.985:
+            big_dates.append(str(e.get("date"))[:10])
+    kept, rejected = [], []
+    for e in ev:
+        try:
+            r = float(e.get("ratio") or 0)
+        except Exception:
+            kept.append(e)
+            continue
+        # هر دو مسیرِ فراخوان پیش از این تابع sharpening را اجرا می‌کنند؛ منبعِ تهی
+        # یعنی «ردیفِ دفتر این رویداد را تأیید نکرد» = همان گسستِ پایه.
+        src = e.get("source") or "base-price-discontinuity"
+        ed = str(e.get("date"))[:10]
+        status = None
+        if src == "base-price-discontinuity":
+            if ed in anomaly_dates:
+                # گسستِ بازار-گسترده در همان سشن، نه اقدام شرکتی؛ شاهدش جدولِ
+                # cross-sectional است، نه یک تاریخِ نوشته‌شده در کد.
+                status = "session-wide-base-gap"
+            elif is_option:
+                status = "option-base-gap"
+            elif is_bond:
+                status = "bond-base-gap"
+            elif is_right:
+                status = "right-base-gap"
+            elif r > 1.0:
+                status = "unproven-positive-base-gap"
+            elif (not is_fund and 0.985 < r < 1.0
+                  and date_counts.get(_eff(ed), 0) == 1
+                  and not any(_day_diff(ed, bd) is not None and _day_diff(ed, bd) <= 3
+                              for bd in big_dates)
+                  and not any(_day_diff(ed, od) is not None and _day_diff(ed, od) <= 30
+                              for od in official_dates)):
+                # An isolated <1.5% downward base gap with no official row within
+                # 30 days is quote noise, not a distribution: keeping it scales
+                # the whole history before that date and the live reference has no
+                # step there.  A small gap that belongs to a same-date combined
+                # event (e.g. a 0.996 component next to a 0.077 capital change)
+                # is kept by the date-count gate.
+                status = "unproven-small-base-gap"
+        if status:
+            rejected.append({"date": e.get("date"), "ratio": e.get("ratio"),
+                             "factor_status": status})
+        else:
+            kept.append(e)
+    return kept, rejected
+
+
+def _day_diff(a, b):
+    """|تاریخ a − تاریخ b| به روز؛ بی‌اعتبار → None (بی‌حدسِ فاصله)."""
+    try:
+        da = datetime.datetime.strptime(str(a)[:10], "%Y-%m-%d").date()
+        db = datetime.datetime.strptime(str(b)[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+    return abs((da - db).days)
+
+
+def _engine_events(events):
+    """(applied, rejected, chain_events) — هر رویداد از کرانِ خودِ موتور می‌گذرد.
+
+    `kind=source_ratio` درنگ‌دارترینِ برچسبِ ممکن است: عدد از گسستِ قیمتِ منتشرشده
+    خوانده شده (یا از ستونِ نسبتِ خودِ مبدأ) و موتور آن را **بازسازی نمی‌کند**، فقط
+    اعتبار می‌زند: کرانِ [_RATIO_MIN, _RATIO_MAX]، مثبت‌بودن، و تهی‑نبود. ردیفِ مبدأِ
+    خراب (سنجشِ قدمِ ۳: تكالا@۲۰۲۰۱۲۰۶ با `ratio=1e8` درِ همان ستون) اگر روزی از
+    فیلترِ تیزکردن رد شود، اینجا هم می‌ایستد و درِ `rejected` با `factor_status`
+    خودش برمی‌گردد — خاموش حذف نمی‌شود.
+
+    دو فهرستِ جدا عمدی است: `chain_events` قالبِ موتور است (`kind` + تاریخِ ۱۰تایی)
+    و `applied` همان ردیفِ دیده‌شده با کلیدهایِ همیشگیِ پاسخِ چارت — تا `adjustEvents`
+    درِ این دور شکلش عوض نشود و مصرف‌کننده‌هایِ کهنه بشکنند.
+    """
+    applied, rejected, chain_events = [], [], []
+    for e in (events or []):
+        d = str(e.get("date") or "")[:10]
+        if not d:
+            continue
+        ev = dict(e)
+        # رویدادِ نوع‌دارِ کامل (مثلِ توزیعِ رسمیِ صندوق با reference_price و
+        # dividend_per_share) همین‌طور به موتور می‌رود تا خودش نسبت را بسازد و
+        # اعتبار بزند. رویدادِ کشف‌شده از گسستِ CSV نسبتش را از قبل دارد و
+        # برچسبِ source_ratio می‌گیرد.
+        if ev.get("kind") not in AE.KNOWN_KINDS or ev.get("kind") == AE.KIND_SOURCE_RATIO:
+            ev.update({"kind": AE.KIND_SOURCE_RATIO, "date": d})
+        else:
+            ev["date"] = d
+        ratio, status = AE.event_factor(ev)
+        if status == AE.OK and ratio is not None:
+            applied.append(e)
+            chain_events.append(ev)
+        else:
+            rejected.append({"date": d, "ratio": e.get("ratio"), "factor_status": status})
+    return applied, rejected, chain_events
+
+
+def _ledger_coverage(symbol, times, applied):
+    """وضعیتِ پوششِ دفترِ رسمیِ همین ابزار — برایِ اعلامِ صادقانه، نه برایِ ضربِ تازه.
+
+    هیچ عددی از اینجا درِ زنجیره نمی‌نشیند (تضادِ دو‌باره‌تعدیل و «گامِ جعلی» بالا).
+    آنچه می‌دهد شمارشِ شاهد است: چند ردیفِ رسمی هست، چندتاشان اعتبارِ موتوری دارند،
+    چندتا هیچ گامِ دیده‌شدۀِ قیمت ندارند، نوعِ رویدادِ رویدادهایِ اعمال‌شده از مبدأ
+    خوانده شده یا نه، و سریِ قیمت تا پیشِ کهنه‌ترینِ ردیفِ رسمی کجا می‌رود.
+    بانکِ این مسیر فقط‌خواندنی است (`PRAGMA query_only`)؛ نوشتن درِ قدمِ ۴ و ۶ است.
+    """
+    st = {"available": False, "ins_code": None, "error": None, "rows_total": 0,
+          "rows_valid": 0, "rows_rejected": 0, "rows_unmatched": 0,
+          "coverage_start": None, "coverage_end": None,
+          "pre_coverage_candles": None, "typed_events": 0, "unresolved_events": 0,
+          "needs_offer_price_events": 0,
+          "truncated_flow": False, "flow_cap": None}
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+    except Exception:
+        st["error"] = "db-unopenable"
+        return st
+    try:
+        conn.execute("PRAGMA query_only=ON")
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            st["error"] = "instrument-unresolved"
+            return st
+        ins = str(row[0])
+        st["ins_code"] = ins
+        events, _meta = CL.build_typed_events(conn, ins)
+        ok = []
+        rejected = 0
+        for ev in events:
+            r, status = AE.event_factor(ev)
+            if status == AE.OK and r is not None:
+                ok.append((str(ev["date"])[:10], float(r), ev))
+            else:
+                rejected += 1
+        st.update({"available": True, "rows_total": len(events),
+                   "rows_valid": len(ok), "rows_rejected": rejected})
+        if ok:
+            st["coverage_start"] = min(d for d, _r, _e in ok)
+            st["coverage_end"] = max(d for d, _r, _e in ok)
+        for d, r, _e in ok:
+            if not any(_day_diff(d, e["date"]) is not None
+                       and _day_diff(d, e["date"]) <= _LEDGER_WINDOW_DAYS
+                       and float(e["ratio"]) > 0
+                       and abs(r / float(e["ratio"]) - 1.0) <= _LEDGER_AGREE_TOL
+                       for e in applied):
+                st["rows_unmatched"] += 1
+        # نوعِ رویداد **برایِ رویدادهایی که ضرب می‌شوند** لازم است (سودِ نقدی از
+        # افزایشِ سرمایه جدا نشود، تعدیلِ عملکردی تعریف ندارد). تطبیق با همان
+        # پنجره/تلورانسِ تیزکردن است، نه با برابریِ دقیقِ تاریخ: تاریخِ رویدادِ ما
+        # روزِ گسستِ قیمت است و ممکن است چند روز با `dEven` مبدأ فاصله داشته باشد.
+        typed = unresolved = offer = 0
+        for e in applied:
+            mate = None
+            for d, r, ev in ok:
+                dd = _day_diff(d, e["date"])
+                if dd is not None and dd <= _LEDGER_WINDOW_DAYS and \
+                        abs(r / float(e["ratio"]) - 1.0) <= _LEDGER_AGREE_TOL:
+                    mate = ev
+                    break
+            prov = (mate or {}).get("provenance") or {}
+            if prov.get("event_type"):
+                typed += 1
+            else:
+                unresolved += 1
+            if prov.get("needs_offer_price"):
+                offer += 1
+        st.update({"typed_events": typed, "unresolved_events": unresolved,
+                   "needs_offer_price_events": offer})
+        if times and st["coverage_start"]:
+            st["pre_coverage_candles"] = sum(
+                1 for t in times if str(t)[:10] < st["coverage_start"])
+        # «بی‌ردیفِ بیشتر» اثباتِ نبودِ ردیف نیست: flow کرانِ ردیف دارد و اگر
+        # شمارشِ همین ابزار به کران خورده باشد، پوششِ پیشِ آن باز است.
+        try:
+            import test_tsetmc as _T
+            st["flow_cap"] = getattr(_T, "CORP_SIZE", None)
+            n = conn.execute("SELECT COUNT(*) FROM price_adjust_events WHERE ins_code=?",
+                             (ins,)).fetchone()[0]
+            st["truncated_flow"] = bool(st["flow_cap"]) and n >= int(st["flow_cap"])
+        except Exception:
+            st["truncated_flow"] = False
+        return st
+    except Exception as e:
+        st["error"] = str(e)[:160]
+        return st
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+_NO_EVENT_KINDS = ("option", "bond", "future", "right")
+
+
+def _candles_stale(candles, days=7):
+    """آیا آخرین کندل از امروز قدیمی‌تر از `days` است؟ بی‌تاریخ/خطا → False."""
+    try:
+        last = datetime.date.fromisoformat(
+            max(str(c["time"])[:10] for c in candles))
+        return (datetime.date.today() - last).days > days
+    except Exception:
+        return False
+
+
+def _functional_state(chain, coverage, *, kind=None, source=None, times=None, stale=False):
+    """(available, blockers, status, availability) — تعدیل عملکردی با وضعیت صریح.
+
+    `available` فقط برای `AVAILABLE`/`AVAILABLE_NO_EVENTS` True است. `status` دلیلِ
+    قابل‌ممیزی می‌دهد و `availability` پوششِ بازهٔ درخواستی را از پوشش کل تاریخچه
+    جدا می‌کند (`window_available`).
+
+    قراردادهای نوع‌محور (با شاهدِ ۱۰۰٪ روی فهرست‌های خود رهاورد سنجیده شد):
+      * option/future: اقدام شرکتی ندارند ⇒ raw = functional.
+      * bond: سری عملکردی رهاورد برای ۵۲۸ ابزار صفر گام دارد ⇒ قرارداد price-only.
+      * right: ۴ ابزار warrants صفر گام ⇒ همان قرارداد.
+    برای stock/fund نبودِ ردیف رسمی به‌تنهایی «بی‌رویداد» اثبات نمی‌شود؛ SOURCE_GAP.
+    """
+    times10 = sorted(str(t)[:10] for t in (times or []))
+    first = times10[0] if times10 else None
+    last = times10[-1] if times10 else None
+    if chain is None or coverage is None:
+        av = {"status": "UNMEASURED", "source": source, "requested_start": first,
+              "requested_end": last, "covered_start": None, "covered_end": None,
+              "window_start": first, "window_end": last, "valid_points": 0,
+              "incomplete_points": len(times10), "window_available": False,
+              "stale": bool(stale), "kind": kind}
+        return False, ["unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"], "UNMEASURED", av
+    reasons = []
+    if not coverage.get("available"):
+        reasons.append("ledger-unavailable:" + (coverage.get("error") or "no-rows"))
+    elif not coverage.get("rows_total"):
+        reasons.append("no-official-rows-for-instrument:هیچ ردیفِ رسمیِ این ابزار درِ "
+                       "بانک نیست، پس «بی‌اثر‌بودنِ تاریخ» اثبات نمی‌شود")
+    if coverage.get("rows_rejected"):
+        reasons.append(f"ledger-rows-rejected:{coverage['rows_rejected']}")
+    if not chain.get("complete"):
+        reasons.append("chain-incomplete:" +
+                       str(len(chain.get("incomplete") or [])))
+    if coverage.get("unresolved_events"):
+        reasons.append(f"event-type-unresolved:{coverage['unresolved_events']}")
+    if coverage.get("needs_offer_price_events"):
+        reasons.append(f"offer-price-missing:{coverage['needs_offer_price_events']}")
+    if coverage.get("rows_unmatched"):
+        reasons.append(f"ledger-rows-unmatched-by-price-series:{coverage['rows_unmatched']}")
+    if coverage.get("truncated_flow"):
+        reasons.append("ledger-flow-truncated-at-cap:"
+                       f"{coverage.get('flow_cap')}")
+    pc = coverage.get("pre_coverage_candles")
+    if pc:
+        reasons.append(f"candles-before-ledger-coverage:{pc}")
+
+    no_event = kind in _NO_EVENT_KINDS
+    pre_only = bool(reasons) and all(r.startswith("candles-before-ledger-coverage")
+                                     for r in reasons)
+    # For no-event instruments, absence of official rows is expected: the contract is
+    # price-only. Any other blocker (unresolved/duplicate/truncated/chain) still fails.
+    no_event_ok = no_event and all(
+        r.startswith(("no-official-rows-for-instrument",
+                      "candles-before-ledger-coverage")) for r in reasons)
+    if stale:
+        status = "STALE"
+    elif not coverage.get("available"):
+        status = ("FAILED" if coverage.get("error") in ("db-unopenable", "instrument-unresolved")
+                  else "SOURCE_GAP")
+    elif no_event_ok:
+        status = "AVAILABLE_NO_EVENTS"
+    elif not reasons:
+        status = "AVAILABLE"
+    elif pre_only:
+        status = "PARTIAL"
+    elif any(r.startswith("no-official-rows") for r in reasons):
+        status = "SOURCE_GAP"
+    else:
+        status = "UNVERIFIED"
+    available = status in ("AVAILABLE", "AVAILABLE_NO_EVENTS")
+    cov_start = coverage.get("coverage_start")
+    cov_end = coverage.get("coverage_end")
+    if no_event:
+        win_start, win_avail = first, True
+    elif cov_start and first and cov_start > first:
+        win_start = cov_start
+        win_avail = not any(not r.startswith("candles-before-ledger-coverage")
+                            for r in reasons)
+    else:
+        win_start, win_avail = first, available
+    valid = sum(1 for t in times10 if win_start is None or t >= win_start) if times10 else 0
+    availability = {
+        "status": status,
+        "source": source,
+        "requested_start": first,
+        "requested_end": last,
+        "covered_start": cov_start,
+        "covered_end": cov_end,
+        "window_start": win_start,
+        "window_end": last,
+        "valid_points": valid,
+        "incomplete_points": max(0, len(times10) - valid),
+        "window_available": bool(win_avail and not stale),
+        "stale": bool(stale),
+        "kind": kind,
+    }
+    return available, reasons, status, availability
+
+
+def _session_backfill(symbol):
+    """ردیف‌هایِ رسمیِ تک‌جلسه‌ای که CSV جا انداخته بود؛ بی‌جدول/بی‌ردیف → []."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, open, high, low, close, last, base, volume"
+                " FROM session_backfill WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, o, h, l, c, last, base, vol in rows:
+        dt = _d_even_to_date(d)
+        if not dt:
+            continue
+        out.append({"time": dt, "open": o, "high": h, "low": l, "close": c,
+                    "last": last, "base": base, "volume": vol})
+    return out
+
+
+def _merge_session_backfill(candles, volumes, all_rows, rows, descending):
+    """ردیفِ رسمیِ گم‌شده را به سری اضافه می‌کند، بی‌ساختنِ کندلِ جعلی.
+
+    روزِ اداریِ بی‌معامله (H=L=0) فقط به `all_rows` می‌رود تا زنجیرهٔ پایه/پایانی
+    درست بماند؛ کندل برایش ساخته نمی‌شود (قراردادِ no-trade).
+    """
+    if not rows:
+        return candles, volumes, all_rows
+    have = {str(c["time"])[:10] for c in candles}
+    lo = min(have) if have else None
+    hi = max(have) if have else None
+    added_c, added_v = [], []
+    for r in rows:
+        t = r["time"]
+        if t in have or (lo and not (lo <= t <= hi)):
+            continue
+        if r.get("base") and r.get("close"):
+            all_rows.append({"time": t, "base": float(r["base"]),
+                             "close": float(r["close"]),
+                             "vol": float(r.get("volume") or 0)})
+        h, l, c = float(r.get("high") or 0), float(r.get("low") or 0), float(r.get("close") or 0)
+        if h <= 0 or l <= 0 or c <= 0:
+            continue
+        o = float(r.get("open") or 0)
+        base = float(r.get("base") or 0)
+        if o <= 0:
+            o = min(max(base, l), h) if base > 0 else c
+        last = float(r.get("last") or 0) or c
+        added_c.append({"time": t, "open": o, "high": h, "low": l, "close": c,
+                        "last": last})
+        added_v.append({"time": t, "value": float(r.get("volume") or 0)})
+    if added_c:
+        candles.extend(added_c)
+        volumes.extend(added_v)
+        key = lambda x: str(x["time"])[:10]
+        candles.sort(key=key, reverse=descending)
+        volumes.sort(key=key, reverse=descending)
+    return candles, volumes, all_rows
+
+
+def _closing_prices_for(symbol, dates):
+    """{date: close(پایانی)} از `price_history` برای همان نماد (و نام‌های معادل)."""
+    dates = [str(d)[:10] for d in (dates or []) if d]
+    if not dates:
+        return {}
+    out = {}
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val18, l_val30 FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            names = [n for n in (row or []) if n] or [symbol]
+            qn = ",".join("?" * len(names))
+            qd = ",".join("?" * len(dates))
+            for _nm, dt, cl in conn.execute(
+                    f"SELECT symbol, date, close FROM price_history"
+                    f" WHERE symbol IN ({qn}) AND date IN ({qd})",
+                    tuple(names) + tuple(dates)):
+                if cl:
+                    out[str(dt)[:10]] = float(cl)
+        finally:
+            conn.close()
+    except Exception:
+        return {}
+    return out
+
+
+def _codal_dps_enabled():
+    """DPSِ اعلامیِ مجمع (جدولِ stock_dividend_events) بر Dِ دفترِ تعدیل مقدم است.
+
+    داده فقط وقتی اثر دارد که جدول پر باشد؛ `BORS_CODAL_DPS=0` مسیرِ قبلیِ
+    `pna−pcl` را برمی‌گرداند — برگشتِ بی‌ریسک و مقایسهٔ A/B.
+    """
+    return (os.environ.get("BORS_CODAL_DPS") or "1").strip().lower() \
+        not in ("0", "false", "off", "no")
+
+
+def _codal_dps_rows(conn, ins_code):
+    """[(d_even:int, dps:float, reference_price:float|None)] از DPSِ اعلامی."""
+    try:
+        rows = conn.execute(
+            "SELECT d_even, dps, reference_price FROM stock_dividend_events"
+            " WHERE ins_code=?", (str(ins_code),)).fetchall()
+    except Exception:
+        return []
+    out = []
+    for d, dps, ref in rows:
+        try:
+            d = int(d)
+            dps = float(dps)
+        except (TypeError, ValueError):
+            continue
+        if dps > 0:
+            try:
+                ref = float(ref) if ref and float(ref) > 0 else None
+            except (TypeError, ValueError):
+                ref = None
+            out.append((d, dps, ref))
+    return out
+
+
+def _nearest_codal_dps(rows, d_even, window=7):
+    """(dps, reference_price) نزدیک‌ترین رویدادِ اعلامی در ±window؛ بی‌ردیف → None.
+
+    روزِ مؤثرِ ردیفِ PA و روزِ ثبت‌شده برایِ همان اعلام ممکن است چند روز
+    جابه‌جا شوند؛ دو مجمعِ سود در ۷ روز عملاً ناممکن است، پس نزدیک‌ترین
+    ردیف همان رویداد است و DPS به رویدادِ سالِ دیگر نسبت داده نمی‌شود.
+    """
+    target = _d_even_to_date(d_even)
+    if not target:
+        return None
+    best = None
+    for d, dps, ref in rows or []:
+        dd = _day_diff(_d_even_to_date(d), target)
+        if dd is None or dd > window:
+            continue
+        if best is None or dd < best[0]:
+            best = (dd, dps, ref)
+    return (best[1], best[2]) if best else None
+
+
+def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
+    """(ratio, is_dps, event_type) for one official priceAdjust row.
+
+    A row with an official share change within 10 days is a capital (or a
+    combined DPS+capital) event; its official PA ratio is the total price
+    adjustment and must NOT be turned into a cash-dividend ratio.  A row
+    without a share change keeps the proven DPS formula.
+
+    The DPS base is the **effective candle's closing** (پایانی).  The DB
+    price_history close is only a fallback: for many pre-2024 symbols the
+    local history is shorter than the chart payload, and the missing close
+    used to turn the official source ratio into a `dps-unverified` event.
+    """
+    best = None
+    for sd, sr in (share_changes or []):
+        dd = _day_diff(sd, orig)
+        if dd is not None and dd <= 10 and (best is None or dd < best[0]):
+            best = (dd, sr)
+    dps_ratio = (round(float(closing) / (float(closing) + float(dps)), 10)
+                 if dps and closing and float(closing) > 0 else None)
+    if best:
+        sr = float(best[1])
+        cap_err = abs(float(pa_ratio) / sr - 1.0)
+        comb_err = (abs(float(pa_ratio) / (sr * dps_ratio) - 1.0)
+                    if dps_ratio else 9.0)
+        # Pick the better explanation: share-only or share x DPS.
+        if comb_err < cap_err and comb_err <= 0.02:
+            return float(pa_ratio), False, "combined"
+        if cap_err <= 0.02:
+            return float(pa_ratio), False, "capital"
+        # The share change is a separate event; this PA row is a DPS.
+    if dps:
+        if dps_ratio is not None:
+            return dps_ratio, True, "dps"
+        # No closing available: keep the row typed as a DPS with the official
+        # PA ratio and its amount, so it is deduplicated by identity, not by a
+        # coincidental ratio.
+        return float(pa_ratio), True, "dps-unverified"
+    return float(pa_ratio), False, "unverified"
+
+
+def _official_price_adjust_events(symbol, times=None, share_changes=None, closings=None):
+    """ردیف‌های رسمیِ priceAdjust که کشفِ گسستِ CSV ممکن است ندیده باشد.
+
+    تاریخِ ردیفِ مبدأ ممکن است روزِ بی‌معامله باشد؛ رویداد روی اولین کندلِ
+    هم‌روز یا پس از آن می‌نشیند، وگرنه گامِ مثبتِ جعلی ساخته می‌شود.
+
+    ردیفِ دارایِ تغییرِ سهامِ رسمی یک رویدادِ سرمایه است (یا ترکیبی) و نسبتِ
+    رسمیِ خودش (`pClosing/pClosingNotAdjusted`) را نگه می‌دارد؛ ردیفِ بدونِ
+    تغییرِ سهام با فرمولِ اثبات‌شدهٔ DPS محاسبه می‌شود:
+    `close_ex / (close_ex + dps)`.
+
+    D از جدولِ `stock_dividend_events` (DPSِ اعلامیِ مجمع، R32H) خوانده می‌شود
+    وقتی ردیفی در پنجرهٔ همان رویداد باشد؛ وگرنه همان `pna−pcl`ِ قبلی می‌ماند.
+    """
+    codal_dps = []
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            if _codal_dps_enabled():
+                codal_dps = _codal_dps_rows(conn, row[0])
+            has_rows = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='price_adjust_event_rows'").fetchone()
+            if has_rows:
+                raw = conn.execute(
+                    "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted"
+                    " FROM price_adjust_event_rows WHERE ins_code=?"
+                    " ORDER BY d_even, p_closing", (str(row[0]),)).fetchall()
+                groups = {}
+                for d, ratio, src, pcl, pna in raw:
+                    groups.setdefault(d, []).append((ratio, src, pcl, pna))
+                rows = []
+                for d, g in groups.items():
+                    if len(g) == 1:
+                        ratio, src, pcl, pna = g[0]
+                        rows.append((d, ratio, src, pcl, pna, False))
+                    else:
+                        prod = 1.0
+                        for ratio, src, pcl, pna in g:
+                            try:
+                                prod *= float(ratio)
+                            except (TypeError, ValueError):
+                                pass
+                        last = g[-1]
+                        rows.append((d, round(prod, 10), last[1], last[2], last[3], True))
+            else:
+                raw = conn.execute(
+                    "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted,"
+                    " corporate_type_code FROM price_adjust_events WHERE ins_code=?"
+                    " ORDER BY d_even", (str(row[0]),)).fetchall()
+                rows = [(d, ratio, src, pcl, pna, ctype == -1)
+                        for d, ratio, src, pcl, pna, ctype in raw]
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    if share_changes is None:
+        share_changes = _share_change_events(symbol)
+    candle_dates = sorted(str(t)[:10] for t in (times or []))
+    staged = []
+    for d, ratio, src, pcl, pna, combined in rows:
+        dt = _d_even_to_date(d)
+        try:
+            r = float(ratio)
+        except Exception:
+            continue
+        if not dt or not (AE._RATIO_MIN <= r <= AE._RATIO_MAX) or abs(r - 1.0) < 1e-7:
+            continue
+        orig = dt
+        if candle_dates:
+            nxt = next((t for t in candle_dates if t >= dt), None)
+            if not nxt:
+                continue
+            dt = nxt
+        dps = None
+        dps_source = None
+        if not combined:
+            try:
+                if pcl is not None and pna is not None and float(pna) > float(pcl) > 0:
+                    dps = float(pna) - float(pcl)
+                    dps_source = "priceAdjust"
+            except Exception:
+                dps = None
+        cdps = _nearest_codal_dps(codal_dps, d)
+        codal_ref = None
+        if cdps is not None:
+            dps, codal_ref = cdps
+            dps_source = "codal"
+        staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
+                       "orig": orig, "dps": dps, "dps_source": dps_source,
+                       "codal_ref": codal_ref,
+                       "source_ratio": r, "combined": bool(combined)})
+    closes = _closing_prices_for(symbol, [e["date"] for e in staged])
+    candle_closes = closings or {}
+    out = []
+    for e in staged:
+        if e.get("combined"):
+            r, is_dps, etype = float(e["ratio"]), False, "combined"
+        else:
+            dps = e["dps"]
+            cl = candle_closes.get(e["date"])
+            if cl is None:
+                cl = closes.get(e["date"])
+            # The Codal row carries the official close that was proven to
+            # reproduce the reference; the chart candle can be on another
+            # basis (or mapped to a later session), so it must not override it.
+            if e.get("dps_source") == "codal" and e.get("codal_ref"):
+                cl = float(e["codal_ref"])
+            r, is_dps, etype = _classify_pa_event(
+                e["ratio"], dps, cl, e["orig"], share_changes)
+            if is_dps:
+                _o = _combined_dps_official_ratio(r, e["ratio"], e["date"], share_changes)
+                if _o is not None:
+                    r = _o
+        rec = {"date": e["date"], "ratio": r, "source": e["source"],
+               "_ledger_key": (e["orig"], "priceAdjust"),
+               "_source_ratio": e["source_ratio"]}
+        if is_dps:
+            rec["_dps"] = True
+            rec["dividend_per_share"] = float(dps)
+            rec["_dps_source"] = e.get("dps_source")
+        else:
+            rec["_event_type"] = etype
+        out.append(rec)
+    return out
+
+
+def _filter_share_changes(rows):
+    """Remove only evidence-backed reverse/restated share rows.
+
+    A ratio > 1 is a reverse record only when an inverse ratio (r1*r2 ~= 1)
+    exists within 180 days.  A repeated ratio < 1 is a restatement only when
+    such an inverse row exists around it.  Unproven rows are kept (and can be
+    flagged by the audit), never dropped merely because r > 1 or a ratio
+    repeats.
+    """
+    all_rows = []
+    for d, r in rows:
+        try:
+            r = float(r)
+        except Exception:
+            continue
+        if r > 0:
+            all_rows.append((str(d)[:10], r))
+    all_rows.sort()
+
+    def _has_inverse(d, r, window=180):
+        for d2, r2 in all_rows:
+            if abs(r2 * r - 1.0) <= 1e-4:
+                dd = _day_diff(d, d2)
+                if dd is not None and dd <= window:
+                    return True
+        return False
+
+    clean = []
+    for d, r in all_rows:
+        if r > 1:
+            # Keep the decrease unless an official inverse record proves that
+            # this row is the reverse side of a capital increase.
+            if not _has_inverse(d, r):
+                clean.append((d, r))
+            continue
+        dup = False
+        for kd, kr in clean:
+            if kr >= 1:
+                continue
+            if abs(kr / r - 1.0) <= 1e-6:
+                dd = _day_diff(d, kd)
+                if dd is not None and dd <= 180 and _has_inverse(d, r):
+                    dup = True
+                    break
+        if not dup:
+            clean.append((d, r))
+    return sorted(clean)
+
+
+def _share_change_events(symbol):
+    """(date, ratio) از دفترِ رسمیِ تغییرِ تعدادِ سهام؛ فقط برایِ تفکیکِ رویداد.
+
+    گسستِ پایهٔ نزدیک به DPS می‌تواند همان سود باشد (حذف) یا رویدادِ مستقلی که
+    در همان پنجره افتاده (نگه‌داشتن). نسبتِ رسمیِ تغییرِ سهام مرجعِ این تفکیک است.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, ratio FROM share_change_events WHERE ins_code=?"
+                " ORDER BY d_even", (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, r in rows:
+        dt = _d_even_to_date(d)
+        try:
+            f = float(r)
+        except Exception:
+            continue
+        if dt and abs(f - 1.0) > 1e-9:
+            out.append((dt, f))
+    return _filter_share_changes(out)
+
+
+# گسستِ پایهٔ تقریبی و نسبتِ رسمیِ سهام وقتی یک اقدام‌اند: افزایشِ سرمایهٔ
+# بدونِ آوردهٔ نقدی دقیقاً `old_shares/new_shares` تعدیل می‌کند و فاصلهٔ گسست
+# از عددِ رسمی فقط خطایِ کشف است. اگر آوردهٔ نقدی باشد، تعدیل از این نسبت
+# بزرگ‌تر می‌شود (ارزشِ پرداختی)؛ پس فاصلهٔ بیش از نیم‌درصد یعنی «همان اقدام
+# نیست» و گسست دست‌نخورده می‌ماند. **گیتِ نوع:** این تیزکردن فقط برای
+# ردیف‌هایی اجرا می‌شود که شاهدِ رسمیِ «بدونِ آوردهٔ نقدی» دارند
+# (`share_type_evidence`)؛ بی‌جدول/بی‌ردیف هیچ گسستی عوض نمی‌شود.
+# سنجشِ Round 12: قاعدهٔ بی‌گیت +0.24 واحدِ درصد exact داد ولی رویدادهایِ
+# آورده‌ایِ کوچک (كايزد، دعبيد) را هم تیز کرد و پس‌رفتِ نمادین ساخت.
+_SHARE_GAP_TOL = 0.005
+# A sharpened base gap may carry the official PA ratio while the proven DPS
+# leg is close/(close+DPS).  The DPS formula is authoritative for a DPS row
+# (Round 16); only numerical noise leaves the sharpened ratio untouched.
+_DPS_OVERRIDE_TOL = 1e-6
+# The gap is discovered on the first trading candle after the event, so a
+# suspension/weekend can put it 6-9 days after the ledger share date.  The
+# window is widened only for rows that also have official no-cash evidence
+# within 2 days and a ratio within _SHARE_GAP_TOL; both gates stay mandatory.
+_SHARE_GAP_WINDOW_DAYS = 10
+
+
+def _share_type_evidence_dates(symbol):
+    """Dates of share rows with official no-cash evidence; None if no table."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+    except Exception:
+        return None
+    try:
+        conn.execute("PRAGMA query_only=ON")
+        has = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table'"
+                           " AND name='share_type_evidence'").fetchone()
+        if not has:
+            return None
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            return set()
+        out = set()
+        for (d,) in conn.execute(
+                "SELECT d_even FROM share_type_evidence WHERE ins_code=?"
+                " AND no_cash=1", (str(row[0]),)):
+            dt = _d_even_to_date(d)
+            if dt:
+                out.add(dt)
+        return out
+    except Exception:
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _sharpen_share_gaps(events, official, share_changes, evidence_dates=None):
+    """Base gap ratio ← official share ratio, only for evidence-gated rows."""
+    out = [dict(e) for e in (events or [])]
+    if not evidence_dates:
+        return out
+    official_dates = [str(o.get("date"))[:10] for o in (official or [])
+                      if o.get("date")]
+    claims = {}
+    for i, e in enumerate(out):
+        if e.get("source") != "base-price-discontinuity":
+            continue
+        try:
+            gr = float(e.get("ratio") or 0)
+        except Exception:
+            continue
+        if gr <= 0:
+            continue
+        ed = str(e.get("date") or "")[:10]
+        if not ed:
+            continue
+        covered = False
+        for od in official_dates:
+            dd = _day_diff(od, ed)
+            if dd is not None and dd <= 10:
+                covered = True
+                break
+        if covered:
+            continue
+        best = None
+        for sd, sr in (share_changes or []):
+            dd = _day_diff(sd, ed)
+            if dd is None or dd > _SHARE_GAP_WINDOW_DAYS:
+                continue
+            matched_evidence = False
+            for evd in evidence_dates:
+                dde = _day_diff(sd, evd)
+                if dde is not None and dde <= 2:
+                    matched_evidence = True
+                    break
+            if not matched_evidence:
+                continue
+            try:
+                sr = float(sr)
+            except Exception:
+                continue
+            if sr <= 0 or abs(sr / gr - 1.0) > _SHARE_GAP_TOL:
+                continue
+            if best is None or dd < best[0]:
+                best = (dd, str(sd)[:10], sr)
+        if best:
+            claims[i] = best
+    owners = {}
+    for i, (_dd, sd, _sr) in claims.items():
+        owners.setdefault(sd, []).append(i)
+    for i, (_dd, sd, sr) in claims.items():
+        if len(owners[sd]) != 1:
+            continue
+        out[i]["ratio"] = round(sr, 10)
+        out[i]["source"] = "shareChange"
+        out[i]["_ledger_key"] = (sd, "shareChange")
+    return out
+
+
+def _apply_long_gap_share_changes(events, share_changes, times, closings):
+    """Add an official share row that a long suspension hid from the gap detector.
+
+    The CSV gap detector only sees consecutive candles; when a capital change
+    falls inside a multi-week no-trade gap, the first post-gap candle is too far
+    from the ledger date for `_sharpen_share_gaps` (10-day window), and no
+    price-adjust row exists for it.  The row is added only when three witnesses
+    agree: the existing step at the first post-gap candle is shallower than the
+    official share ratio, the raw close dropped at least as much as the ratio,
+    and no event for that date already carries the share ratio.
+    """
+    if not closings or not share_changes or not times:
+        return events
+    out = [dict(e) for e in (events or [])]
+    ts = sorted(set(str(t)[:10] for t in times if t))
+    owned = set()
+    for e in out:
+        k = e.get("_ledger_key")
+        if isinstance(k, tuple) and len(k) == 2 and k[1] == "shareChange":
+            owned.add(k[0])
+    for sd, sr in share_changes or []:
+        try:
+            sr = float(sr)
+        except (TypeError, ValueError):
+            continue
+        if not (0 < sr < 1) or sd in owned:
+            continue
+        nxt = next(((i, t) for i, t in enumerate(ts) if t >= sd), None)
+        if not nxt:
+            continue
+        idx, first = nxt
+        if idx == 0:
+            continue
+        prev = ts[idx - 1]
+        # The detector only sees consecutive candles, so the hidden gap is the
+        # whole no-trade interval prev..first.  The ledger share date may sit
+        # just a few days after prev (e.g. Mellat 2020-07-26, previous candle
+        # 2020-07-19, reopening 2020-09-12); measuring prev..share_date would
+        # miss it even though the suspension is 55 days long.
+        gap = _day_diff(prev, first)
+        if gap is None or gap <= _SHARE_GAP_WINDOW_DAYS:
+            continue
+        same = [e for e in out if str(e.get("date"))[:10] == first]
+        step = 1.0
+        covered = False
+        for e in same:
+            try:
+                er = float(e.get("ratio") or 1.0)
+            except (TypeError, ValueError):
+                er = 1.0
+            if er > 0:
+                step /= er
+            k = e.get("_ledger_key")
+            if (isinstance(k, tuple) and k[0] == sd) or abs(er / sr - 1.0) <= _SHARE_GAP_TOL:
+                covered = True
+        if covered or (step and (1.0 / step) <= sr * (1.0 + _SHARE_GAP_TOL)):
+            continue
+        c0, c1 = closings.get(prev), closings.get(first)
+        if not c0 or not c1:
+            continue
+        if c1 / c0 > sr * (1.0 + _SHARE_GAP_TOL):
+            continue
+        out.append({"date": first, "ratio": round(sr, 10), "source": "shareChange",
+                    "_ledger_key": (sd, "shareChange"), "long_gap": True})
+    return out
+
+
+def _merge_official_price_adjust(events, official, rejected=None, share_changes=None):
+    """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
+
+    هویتِ ردیف دفتری (`_ledger_key`) مهم است: یک ردیف می‌تواند در CSV به‌صورت
+    گسستِ پایه دیده شود و هم در `_official_price_adjust_events` به اولین کندلِ
+    بعدی نگاشت شود. اگر تاریخِ مؤثرِ این دو یکی نباشد (تعطیلی/توقفِ طولانی)،
+    مقایسهٔ تاریخِ خام آن‌ها را «دو رویداد» می‌بیند و ضریب دوبار اعمال می‌شود.
+
+    اگر `rejected` داده شود، ردیف‌های تکراری برایِ گزارش به همان لیست اضافه
+    می‌شوند؛ امضای بازگشتی برایِ مصرف‌کننده‌هایِ قبلی همان لیستِ مرتب است.
+    """
+    kept = [dict(e) for e in (events or [])]
+    claimed = {e.get("_ledger_key") for e in kept if e.get("_ledger_key")}
+    # یک ردیفِ سود نقدیِ رسمی جایِ گسستِ پایهٔ همان اقدام را می‌گیرد، **به شرطِ
+    # هم‌خوانیِ نسبت**: گسستِ پایه تقریبی است و ممکن است چند درصد با نسبتِ رسمی
+    # فاصله داشته باشد؛ اما گسستِ پایه می‌تواند رویدادِ مستقلی هم باشد که در
+    # همان پنجره افتاده (نمونهٔ سنجش‌شده: بورس 2026-07-22 هم DPS=55 دارد و هم
+    # افزایشِ سرمایهٔ اندوخته 24T→32T با نسبت 0.750923). حذفِ بی‌قیدِ گسست، آن
+    # افزایشِ سرمایه را می‌بلعد و ضریب را ۲۵٪ خراب می‌کند.
+    def _source_ratio(o):
+        try:
+            r = float(o.get("_source_ratio") or 0)
+        except (TypeError, ValueError):
+            return None
+        return r if r > 0 else None
+
+    dps_ratios = [(i, str(o.get("date"))[:10], float(o["ratio"]), _source_ratio(o))
+                  for i, o in enumerate(official) if o.get("_dps") and o.get("ratio")]
+    share_changes = list(share_changes or [])
+    # An observed base gap on the same effective date as an official DPS row,
+    # with a share change nearby, is the price leg of that action.  The
+    # separately recomputed DPS must not be applied again; the gap keeps the
+    # pre-share leg.  Share-only gaps (بورس: gap≈share) keep the separate DPS.
+    observed_gap_skip = set()
+    for i, o in enumerate(official):
+        if not (o.get("_dps") and o.get("ratio")):
+            continue
+        od = str(o.get("date"))[:10]
+        for e in kept:
+            if e.get("source") != "base-price-discontinuity":
+                continue
+            if str(e.get("date"))[:10] != od:
+                continue
+            try:
+                gr = float(e.get("ratio") or 0)
+            except (TypeError, ValueError):
+                continue
+            if gr <= 0:
+                continue
+            cc = None
+            for sd, sr in share_changes:
+                dd = _day_diff(sd, od)
+                if dd is not None and dd <= 5 and (cc is None or dd < cc[0]):
+                    cc = (dd, float(sr))
+            if not cc or cc[1] <= 0:
+                continue
+            sr = cc[1]
+            if abs(sr / gr - 1.0) <= _SAME_ACTION_TOL:
+                continue  # share-only gap: the DPS is a separate action
+            # Is the share change actually present in the applied chain?
+            share_applied = False
+            for k in kept:
+                try:
+                    kr = float(k.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if kr <= 0:
+                    continue
+                if (k.get("source") == "shareChange" or
+                        k.get("source") == "base-price-discontinuity") and \
+                        abs(kr / sr - 1.0) <= 0.05:
+                    share_applied = True
+                    break
+            if share_applied:
+                observed_gap_skip.add(i)
+                break
+            source = _source_ratio(o)
+            if source and abs(gr / source - 1.0) <= _LEDGER_AGREE_TOL:
+                # The gap is the official pre-event ratio; the existing
+                # source-ratio dedupe keeps the recomputed DPS (ديران).
+                continue
+            # The gap is not the share and not the official source: it is the
+            # observed total, so the separate DPS must not be applied again
+            # (ولبهمن).
+            observed_gap_skip.add(i)
+            break
+    if observed_gap_skip:
+        dps_ratios = [x for x in dps_ratios if x[0] not in observed_gap_skip]
+    combined_skip = set()  # official DPS rows already contained in a base gap
+    # A combined action (share × price leg) may already be present as one
+    # observed base gap.  When the gap equals share_ratio × the official
+    # pre-event PA ratio, applying the official rows again double-counts it.
+    # The share may sit anywhere between the official original date and the
+    # mapped reopening candle (a halt), not only within ±7 days of the
+    # reopening (شپاکسا 2022: share 2022-03-16, official 2022-03-13, mapped
+    # 2022-05-02).  Multiple official rows on the same gap are accepted as
+    # one action only when they map to the same candle and their source
+    # ratios agree within 1%; otherwise the claim stays ambiguous and the
+    # rows are kept.
+    combined_base_claims = {}
+    _claim_info = {}
+    for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            continue
+        sr = _source_ratio(o)
+        if not sr:
+            continue
+        mapped = str(o.get("date"))[:10]
+        orig = (o.get("_ledger_key") or (None,))[0]
+        for sd, cc in share_changes:
+            try:
+                sdd = str(sd)[:10]
+                ccv = float(cc)
+            except (TypeError, ValueError):
+                continue
+            inside = bool(orig) and str(orig)[:10] < sdd <= mapped
+            dd = _day_diff(sdd, mapped)
+            if not inside and (dd is None or dd > 7):
+                continue
+            target = ccv * sr
+            if target <= 0:
+                continue
+            hits = []
+            for j, e in enumerate(kept):
+                if e.get("source") not in ("base-price-discontinuity", "priceAdjust"):
+                    continue
+                try:
+                    er = float(e.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if er > 0 and abs(er / target - 1.0) <= _SHARE_GAP_TOL:
+                    hits.append(j)
+            if len(hits) == 1:
+                combined_base_claims.setdefault(hits[0], []).append(idx)
+                _claim_info[idx] = (mapped, sr, sdd, inside)
+    combined_base_skip = set()
+    for _hit, idxs in combined_base_claims.items():
+        if len(idxs) == 1:
+            combined_base_skip.add(idxs[0])
+            continue
+        metas = [_claim_info[i] for i in idxs]
+        same_day = len({m[0] for m in metas}) == 1
+        vals = [m[1] for m in metas]
+        inside_all = all(m[3] for m in metas)
+        origs = [((official[i].get("_ledger_key") or (None,))[0]) for i in idxs]
+        distinct_orig = all(origs) and len(set(origs)) == len(origs)
+        # Same-date duplicate rows (e.g. flow + priceAdjust of one ledger row)
+        # keep the Round 15 neutrality: the gap plus one official row survive.
+        # Distinct official installments whose dates sit inside the halt
+        # before the share (شپاکسا) are all part of the observed gap.
+        if (same_day and inside_all and distinct_orig
+                and min(vals) > 0 and max(vals) / min(vals) - 1.0 <= 0.01):
+            combined_base_skip.update(idxs)
+    if combined_base_skip:
+        dps_ratios = [x for x in dps_ratios if x[0] not in combined_base_skip]
+    if dps_ratios:
+        def _nearest_share(ed):
+            best = None
+            for sd, sr in share_changes:
+                dd = _day_diff(sd, ed)
+                if dd is not None and dd <= 7 and (best is None or dd < best[0]):
+                    best = (dd, sr)
+            return best[1] if best else None
+
+        def _drop_base(e):
+            try:
+                r = float(e.get("ratio") or 0)
+            except Exception:
+                return False
+            if not r:
+                return False
+            ed = str(e.get("date"))[:10]
+            near = []
+            for i, dd, dr, sr in dps_ratios:
+                diff = _day_diff(dd, ed)
+                if diff is not None and diff <= 5:
+                    near.append((i, dr, sr))
+            if not near:
+                return False
+            # Same action: the base gap is a rough copy of the DPS.
+            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _i, dr, _sr in near):
+                return True
+            # The gap may carry the official pre-event PA ratio while the DPS
+            # leg is recomputed from the ex-date close; when the stock moved
+            # >2% that day the two ratios differ, but the ledger identity is
+            # the official source ratio (سخاش 2026-05-23: 0.82668187 source
+            # vs 0.85727699 DPS; reference type7 step is the DPS leg).
+            if any(sr and abs(r / sr - 1.0) <= _LEDGER_AGREE_TOL
+                   for _i, _dr, sr in near):
+                return True
+            cc = _nearest_share(ed)
+            if cc:
+                # The base gap may be CC-only (keep both) or the combined
+                # DPS*CC (keep the gap, suppress the separate DPS).  Choose
+                # the hypothesis closer to the official share ratio.
+                best = None
+                for i, dr, _sr in near:
+                    sep = abs(r / cc - 1.0)
+                    comb = abs(r / (cc * dr) - 1.0)
+                    if comb < sep and comb <= 0.02 and (best is None or comb < best[0]):
+                        best = (comb, i)
+                if best is not None:
+                    combined_skip.add(best[1])
+                    return False
+                return False  # CC-only: keep the gap and the DPS
+            # No share change: an unattributable gap in the DPS window is the
+            # same action with a worse approximation (Round 7 behaviour).
+            return True
+
+        kept = [e for e in kept if not (
+            e.get("source") == "base-price-discontinuity" and _drop_base(e))]
+    for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-observed-base-gap"})
+            continue
+        if idx in combined_base_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-combined-base-gap"})
+            continue
+        if idx in combined_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-base-gap"})
+            continue
+        if o.get("_ledger_key") and o["_ledger_key"] in claimed:
+            # The CSV sharpener may have claimed this ledger key with the
+            # official PA ratio, but a DPS row's authoritative ratio is the
+            # proven candle-closing formula (close/(close+DPS)); the official
+            # pClosing/pNotAdjusted ratio is only the pre-event source leg.
+            # Replace the sharpened ratio instead of rejecting the DPS.
+            if o.get("_dps"):
+                for e in kept:
+                    if e.get("_ledger_key") != o["_ledger_key"]:
+                        continue
+                    if e.get("source") not in ("priceAdjust", "tsetmc_price_adjust_by_flow"):
+                        continue
+                    try:
+                        er = float(e.get("ratio") or 0)
+                        orr = float(o.get("ratio") or 0)
+                    except (TypeError, ValueError):
+                        break
+                    if er and orr and abs(er / orr - 1.0) > _DPS_OVERRIDE_TOL:
+                        e["ratio"] = orr
+                        e["_dps"] = True
+                        e["dividend_per_share"] = o.get("dividend_per_share")
+                        e["_source_ratio"] = o.get("_source_ratio")
+                        e["source"] = o.get("source") or e.get("source")
+                    break
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "duplicate-ledger-row"})
+            continue
+        d = str(o["date"])[:10]
+        dup_idx = None
+        for j, e in enumerate(kept):
+            ed = str(e.get("date") or "")[:10]
+            if not ed:
+                continue
+            dd = _day_diff(d, ed)
+            if dd is not None and dd <= 5:
+                try:
+                    er = float(e.get("ratio") or 0)
+                    same_amount = True
+                    ea, oa = e.get("dividend_per_share"), o.get("dividend_per_share")
+                    if ea is not None and oa is not None and float(oa) > 0:
+                        # Two valid DPS-like rows with materially different
+                        # amounts are distinct events, even if their price
+                        # ratios are within 2% (e.g., DPS 171 vs DPS 5).
+                        same_amount = abs(float(ea) / float(oa) - 1.0) <= 0.02
+                    ratio_match = abs(er / float(o["ratio"]) - 1.0) <= _SAME_ACTION_TOL
+                    source_match = False
+                    sr = _source_ratio(o)
+                    if o.get("_dps") and sr and \
+                            abs(er / sr - 1.0) <= _LEDGER_AGREE_TOL:
+                        source_match = True
+                        # A share change on the same effective date that
+                        # explains this ratio is a capital action, not this
+                        # DPS row; never swallow it.
+                        for sd, scr in share_changes:
+                            ds = _day_diff(sd, ed)
+                            if ds is not None and ds <= 5:
+                                try:
+                                    if abs(float(scr) / er - 1.0) <= _SAME_ACTION_TOL:
+                                        source_match = False
+                                        break
+                                except (TypeError, ValueError):
+                                    continue
+                    if er and same_amount and (ratio_match or source_match):
+                        dup_idx = j
+                        break
+                except Exception:
+                    pass
+        if dup_idx is not None:
+            e = kept[dup_idx]
+            if e.get("source") in ("base-price-discontinuity", "priceAdjust",
+                                   "tsetmc_price_adjust_by_flow"):
+                # Official data wins over an approximate gap or an old
+                # priceAdjust ratio; the recomputed row is authoritative.
+                kept.pop(dup_idx)
+            else:
+                if rejected is not None:
+                    rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                     "factor_status": "duplicate-same-action"})
+                continue
+        kept.append(o)
+        if o.get("_ledger_key"):
+            claimed.add(o["_ledger_key"])
+    return sorted(kept, key=lambda e: str(e.get("date"))[:10])
+
+
+def _drop_share_leg_of_observed_gap(events, share_changes):
+    """(kept, dropped) — official share leg of an observed base gap.
+
+    A capital increase with contribution is observed twice on the same
+    effective date: the base gap (price leg, carries S) and the official
+    share-count leg. When their ratios differ by 2–6% the merge keeps both
+    and the action is applied twice. The observed base gap stays (the
+    reference tracks it); the share leg is dropped and reported. The 2–6%
+    band and the share-ratio identity keep independent same-day actions
+    and pure DPS rows out of this rule.
+    """
+    gaps = {}
+    for e in events or []:
+        if e.get("source") != "base-price-discontinuity":
+            continue
+        try:
+            g = float(e.get("ratio") or 0)
+        except (TypeError, ValueError):
+            continue
+        d = str(e.get("date") or "")[:10]
+        if d and g > 0:
+            gaps.setdefault(d, []).append(g)
+    sc = list(share_changes or [])
+    kept, dropped = [], []
+    for e in events or []:
+        src = str(e.get("source") or "")
+        if src in ("shareChange", "priceAdjust", "tsetmc_price_adjust_by_flow") \
+                and not e.get("_dps"):
+            d = str(e.get("date") or "")[:10]
+            try:
+                r = float(e.get("ratio") or 0)
+            except (TypeError, ValueError):
+                r = 0.0
+            hit = None
+            if r > 0:
+                for g in gaps.get(d, []):
+                    if not (_SHARE_LEG_MIN_GAP < abs(r / g - 1.0) <= _SHARE_LEG_MAX_GAP):
+                        continue
+                    for sd, sr in sc:
+                        dd = _day_diff(sd, d)
+                        try:
+                            srv = float(sr)
+                        except (TypeError, ValueError):
+                            continue
+                        if dd is not None and dd <= 5 and srv > 0 \
+                                and abs(srv / r - 1.0) <= _LEDGER_AGREE_TOL:
+                            hit = g
+                            break
+                    if hit:
+                        break
+            if hit:
+                dropped.append({"date": e.get("date"), "ratio": e.get("ratio"),
+                                "factor_status": "duplicate:share-leg-of-observed-gap"})
+                continue
+        kept.append(e)
+    return kept, dropped
+
+
+def _fund_profit_events(symbol):
+    """توزیع‌هایِ رسمیِ صندوق از `fund_profit_events`؛ بی‌جدول/بی‌ردیف → [].
+
+    مقدار و تاریخ از پورتالِ رسمیِ مدیرِ صندوق می‌آید. خودِ جدول را ingestِ
+    `tools/fund_profits_ingest.py` می‌سازد و پر می‌کند؛ مسیرِ چارت فقط می‌خواند.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, unit_profit, reference_price, ratio, source, profit_date, source_id"
+                " FROM fund_profit_events WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, unit, ref, ratio, src, pdate, sid in rows:
+        dt = _d_even_to_date(d)
+        if not dt or unit is None or ref is None:
+            continue
+        out.append({"date": dt, "kind": AE.KIND_CASH_DIVIDEND,
+                    "reference_price": float(ref),
+                    "dividend_per_share": float(unit),
+                    # Rahavard prices fund distributions on the nominal value,
+                    # not on the market close (measured: 1/(1+D/10000)).
+                    "par_value": 10000.0,
+                    "ratio": float(ratio) if ratio is not None else None,
+                    "source": src or "fund-portal",
+                    "profit_date": pdate, "source_id": sid})
+    return out
+
+
+def _merge_official_fund_events(events, official):
+    """رویدادِ رسمیِ صندوق جایِ رویدادِ کشف‌شدهٔ همان تاریخ را می‌گیرد.
+
+    توزیعِ صندوق در CSV معمولاً گسستِ پایه نمی‌سازد؛ اگر ساخت، عددش گرد و
+    تقریبی است. ردیفِ رسمی همان تاریخ را با ورودی‌هایِ دقیق جایگزین می‌کنیم تا
+    یک توزیع دوبار اعمال نشود. رویدادهایِ نوع‌دارِ دیگر (تجزیه/تجمیع) دست‌نخورده
+    می‌مانند.
+    """
+    by_key = {}
+    official_dates = {str(e.get("date"))[:10] for e in official}
+    typed_keep = (AE.KIND_SPLIT, AE.KIND_MERGE, AE.KIND_CAPITAL_RESERVE,
+                  AE.KIND_CAPITAL_CONTRIBUTION)
+    for e in events or []:
+        d = str(e.get("date") or "")[:10]
+        if not d:
+            continue
+        kind = e.get("kind")
+        if d in official_dates and kind not in typed_keep:
+            continue
+        by_key[(d, kind or "")] = e
+    for e in official:
+        d = str(e["date"])[:10]
+        by_key[(d, AE.KIND_CASH_DIVIDEND)] = e
+    return sorted(by_key.values(), key=lambda e: str(e.get("date"))[:10])
+
+
+def _effective_event_dates(events, times):
+    """تاریخِ هر رویداد را به اولین کندلِ هم‌روز یا پس از آن می‌برد.
+
+    گسستِ پایه ممکن است روی روزِ بی‌معامله/توقف کشف شود و رویدادِ رسمیِ همان
+    اقدام به اولین کندلِ بعدی نگاشت شود؛ بدونِ این نرمال‌سازی، تاریخِ خام آن‌ها
+    فاصلهٔ بلند نشان می‌دهد و یک اقدام دوبار اعمال می‌شود (حخزر: گسست
+    2023-06-24 و DPS رسمیِ نگاشت‌شده به 2023-07-08).
+    """
+    dates = sorted(set(str(t)[:10] for t in (times or []) if t))
+    out = []
+    for e in (events or []):
+        e = dict(e)
+        d = str(e.get("date") or "")[:10]
+        if d and dates:
+            nxt = next((x for x in dates if x >= d), None)
+            if nxt:
+                e["date"] = nxt
+        out.append(e)
+    return out
+
+
+def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=None,
+                          ins_code=None):
+    """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
+
+    ترتیبِ `times` آزاد است (CSV نزولی، `price_history` صعودی) و `factors` دقیقاً
+    هم‌ردیفِ همان `times` برمی‌گردد. `closings` نقشهٔ تاریخ→پایانیِ همان کندل است؛
+    پایهٔ DPS از همین کندل خوانده می‌شود و DB فقط fallback است.
+
+    پس از کشف/ادغام/تیزکردن، بستهٔ تصحیحِ نسخه‌دار (در صورت وجود) گام‌های
+    ناهمخوان/گم‌شده را با `effective_date` جایگزین یا حذف می‌کند. رویدادهای
+    حذف‌شده در `rejected` با وضعیتِ `suppressed-by-rahavard-reference-correction`
+    می‌مانند؛ هیچ رویدادی خاموش حذف نمی‌شود.
+    """
+    t10 = [str(t)[:10] for t in (times or [])]
+    if ins_code is None:
+        ins_code = _ins_code_for(symbol)
+    events = _effective_event_dates(events, t10)
+    official = _fund_profit_events(symbol)
+    if official:
+        events = _merge_official_fund_events(events, official)
+    share_changes = _share_change_events(symbol)
+    official_pa = _official_price_adjust_events(symbol, t10, share_changes,
+                                                closings=closings)
+    dup_rejected = []
+    if official_pa:
+        events = _merge_official_price_adjust(events, official_pa,
+                                               rejected=dup_rejected,
+                                               share_changes=share_changes)
+    events = _sharpen_share_gaps(events, official_pa, share_changes,
+                                 _share_type_evidence_dates(symbol))
+    events = _apply_long_gap_share_changes(events, share_changes, t10, gap_closings)
+    # Two observations of one capital increase (observed base gap + official
+    # share leg) must not be applied twice; keep the observed price leg.
+    events, _leg_rejected = _drop_share_leg_of_observed_gap(events, share_changes)
+    events, _corr_suppressed, _corr_meta = AC.apply_factor_events(
+        symbol, events, ins_code)
+    _corr_rejected = [
+        {"date": str(e.get("date"))[:10], "ratio": e.get("ratio"),
+         "factor_status": "suppressed-by-rahavard-reference-correction",
+         "correction_version": _corr_meta.get("version")}
+        for e in _corr_suppressed]
+    # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
+    events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
+              for e in events]
+    applied, rejected, wrapped = _engine_events(events)
+    rejected.extend(dup_rejected)
+    rejected.extend(_leg_rejected)
+    rejected.extend(_corr_rejected)
+    factors, chain = AE.chain_factors(t10, wrapped)
+    return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
+
+
+def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
+                       symbol=None, times=None, stale=False):
+    """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست.
+
+    `ledger` شمارۀِ تیزکردنِ مبدأ است (چند رویداد از دفترِ مبدأ عدد گرفت، چند رویداد
+    مبهم ماند چون یک ردیفِ مبدأ را با رویدادِ دیگری تقسیم کردند) تا مصرف‌کننده بداند
+    زنجیره از کجا آمده؛ درِ مسیرِ آفلاین که عددِ رویدادها از کش خوانده می‌شود، None
+    می‌ماند («اندازه‌گیری نشد» ≠ «صفر»).
+
+    `functional_available` از این دور **محاسبه** می‌شود، نه سخت‌کد: قاعدۀِ قدمِ ۵
+    (`_functional_state`) الزاماتِ واقعیِ تعدیلِ عملکردی را یکی‌یکی از داده می‌خواند و
+    هر کدام که برقرار نباشد با عددِ خودش درِ `functional_blockers` می‌نشیند. بی‌`chain`
+    یا بی‌`coverage` یعنی «سنجشِ این نماد انجام نشده» ⇒ نه. ادعایِ فعالِ بی‌سنجش،
+    همان چیزی است که کلِ این کار برایِ کشتنش نوشته شد.
+
+    `indexed_available` اینجا حذف شد: یکِ `True`ِ سخت‌کدشده برایِ حالتی بود که هیچ
+    مصرف‌کننده‌ای نمی‌خواند و درِ رابط هم دیگر وجود ندارد (نمایِ شاخصِ ۱۰۰). همان
+    شکلی از ادعایِ بی‌سنجش که بالا ممنوع شد، فقط با نامِ دیگر.
+    """
+    kind = _instrument_kind(symbol) if symbol else None
+    available, blockers, status, availability = _functional_state(
+        chain, coverage, kind=kind, source=source, times=times, stale=stale)
+    if available and status == "AVAILABLE_NO_EVENTS":
+        reason = ("این ابزار در قراردادِ عملکردیِ فعلی رویدادِ تعدیلِ رسمی ندارد؛ "
+                  "سریِ عملکردی همان خام است.")
+    elif available:
+        reason = "الزاماتِ تعدیلِ عملکردی از دادهٔ همین نماد اثبات شد."
+    elif status == "PARTIAL":
+        reason = ("بخشی از تاریخچه پیش از پوششِ دفتر است؛ بازهٔ پس از پوشش قابل استفاده است.")
+    elif status == "STALE":
+        reason = "دادهٔ این نماد از پایگاه محلی و کهنه است؛ تعدیلِ عملکردی تأیید نشد."
+    elif status == "SOURCE_GAP":
+        reason = "دادهٔ رسمیِ رویداد برای این نماد ناقص است؛ تعدیلِ عملکردی تأیید نشد."
+    elif status == "UNMEASURED":
+        reason = "زنجیره/پوششِ این نماد سنجیده نشده است."
+    else:
+        reason = _ADJ_FUNCTIONAL_REASON
+    corr = AC.capability(symbol)
+    result = {
+        "source": source,
+        "combined_available": (source in _ADJ_KNOWN_SOURCES
+                               or str(source).startswith("fund-portal")
+                               or str(source).startswith("rahavard-reference-correction")),
+        "functional_available": available,
+        "functional_status": status,
+        "functional_reason": reason,
+        "functional_blockers": blockers,
+        "availability": availability,
+        "event_count": len(events or []),
+        "ledger_sharpened": (ledger or {}).get("sharpened"),
+        "ledger_ambiguous": (ledger or {}).get("ambiguous"),
+        "chain_complete": (chain or {}).get("complete"),
+        "chain_incomplete_events": len((chain or {}).get("incomplete") or []),
+        "coverage": coverage,
+        "corrections": corr,
+    }
+    if (corr.get("covered") and corr.get("mode") == "authoritative"
+            and (chain or {}).get("complete")):
+        result["combined_available"] = True
+        result["functional_available"] = True
+        result["functional_status"] = "AVAILABLE_REFERENCE_CORRECTION"
+        result["functional_reason"] = (
+            "زنجیرهٔ تعدیل از بستهٔ تصحیحِ نسخه‌دارِ مرجع ساخته شده است؛ "
+            "گام‌های رسمیِ کنارگذاشته‌شده در adjustRejected با وضعیت ثبت شده‌اند.")
+        result["functional_blockers"] = []
+    return result
+
+
+def _factors_from_events(times, events, symbol=None, ins_code=None):
+    """factor(t) = ∏ ratio برای رویدادهایِ date > t — همان `AE.chain_factors`، بی‌حلقۀِ دوم.
+
+    رویدادِ بی‌اعتبارِ موتوری ( خارج از کران، صفر، منفی) درِ زنجیره نمی‌نشیند؛
+    `AE.chain_factors` خودش آن را درِ `provenance.incomplete` علامت می‌زند تا هیچ
+    ضریبی خاموش با مقدارِ ۱ جای عددِ درست نگیرد.
+    """
+    if symbol or ins_code:
+        if ins_code is None and symbol:
+            ins_code = _ins_code_for(symbol)
+        events, _sup, _meta = AC.apply_factor_events(symbol, events, ins_code)
+    _payload, _rejected, wrapped = _engine_events(events)
+    factors, _chain = AE.chain_factors([str(t)[:10] for t in (times or [])], wrapped)
+    return factors
 
 
 def _d_even_to_date(d_even):
@@ -445,9 +2553,16 @@ def _watch_live_bar(symbol, after_date):
         return None, None
     # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
     o_l = p_first if p_first > 0 else p_close
+    hi_raw, lo_raw = p_max, p_min
     h_l, l_l = candle_contract.widen(o_l, p_max, p_min, p_close)
     return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
+             "high_raw": hi_raw, "low_raw": lo_raw,
              "close": p_close, "volume": vol,
+             # نشانهٔ «کندلِ تکمیل‌نشده»: `_watch_live_bar` کندلِ *همانِ جلسه* را
+             # می‌سازد، پس قیمتش تا بستهٔ market شدنِ جلسه عوض می‌شود. موتورِ
+             # ساختارِ روند این ردیف را از تصمیم بیرون می‌گذارد (`major_swings.closed_only`)
+             # تا یکِ تیکِ درون‌جلسه پیوتِ «تأییدشده» نسازد یا نبیند.
+             "live_forming": True,
              # «آخرین معامله» زنده از market_watch.p_last؛ بی‌fallback به پایانی
              # (کارِ #73 قدمِ ۳، شرطِ ۳ قرارداد). p_last نبود ⇒ None، و price_basis
              # خودش اعلام می‌کند که این سری last ندارد.
@@ -486,8 +2601,11 @@ def _schedule_history_repair(symbol, last_date, target_date):
     ۱۵ دقیقه یک‌بار (علامت‌گذاری درونِ همان قفل، پس دو درخواستِ هم‌زمان یکی را
     دوباره نمی‌فرستند)؛ پاسخِ چارت را هرگز نگه نمی‌دارد؛ و از همان
     `fetch_price_history` می‌گذرد که خودش min_interval و سقفِ ۴۲۹ دارد.
+    با `BORS_NO_FETCH_LOOPS=1` هیچ درخواستی بیرون نمی‌رود و علامتِ
+    `historyRepairScheduled` درِ پاسخ `False` می‌ماند — همان دربِ حلقه‌هایِ app،
+    وگرنه اجرایِ dev («فقط بخوان») همان IP را با ترمیمِ پس‌زمینه اشباع می‌کرد.
     """
-    if not _cdn_enabled():
+    if not bors_flags.fetch_loops_enabled():
         return False
     with _HISTORY_REPAIR_LOCK:
         if not _history_repair_due(last_date, target_date, symbol):
@@ -505,7 +2623,24 @@ def _schedule_history_repair(symbol, last_date, target_date):
     return True
 
 
-def _attach_live_bar(symbol, res):
+def _stamp_data_time(payload, built_at=None):
+    """«زمان آخرین داده» را رویِ پاسخ می‌گذارد (قراردادِ Stage 5ِ Phase 5).
+
+    دو چیزِ جدا، چون یکی نیست: `lastDataTime` بزرگ‌ترینِ روزِ واقعاً موجود درِ سری است
+    (تازگیِ **داده**) و `payloadAgeS` عمرِ نسخه‌ای که از CHART_CACHE می‌آید (تازگیِ
+    **محاسبه**). بی‌این تفکیک، پاسخِ کش‌شدۀ یک‌ساعته «دادهٔ تازه» به مصرف‌کننده
+    می‌فروشد؛ با این، مصرف‌کننده می‌تواند stale را نشان دهد. هیچ عددِ ساختگی نیست:
+    اگر سری خالی است، `lastDataTime` هم null می‌ماند نه «امروز».
+    """
+    cands = payload.get("candles") or []
+    days = [str(c.get("time"))[:10] for c in cands if c.get("time")]
+    payload["lastDataTime"] = max(days) if days else None
+    if built_at:
+        payload["payloadAgeS"] = round(max(0.0, time.time() - built_at), 1)
+    return payload
+
+
+def _attach_live_bar(symbol, res, built_at=None):
     """کندلِ جلسهٔ جاری را به پاسخِ /api/chart اضافه می‌کند — بی‌نوشتن در کش.
 
     تا پیش از این فقط /api/chart-db کندلِ زنده می‌ساخت، پس همان نماد در دو
@@ -515,11 +2650,12 @@ def _attach_live_bar(symbol, res):
     """
     candles = res.get("candles") or []
     if not candles:
-        return price_basis.resolve_payload(res)
+        return _stamp_data_time(price_basis.resolve_payload(res), built_at)
     newest = max(c["time"] for c in candles)   # ترتیبِ آرایه به خودِ سری واگذار است
     bar, err = _watch_live_bar(symbol, newest)
     if bar is None:
-        return price_basis.resolve_payload(dict(res, liveError=err) if err else res)
+        return _stamp_data_time(
+            price_basis.resolve_payload(dict(res, liveError=err) if err else res), built_at)
     # /api/chart نزولی می‌دهد (تازه‌به‌قدیم) و مسیرِ محلی صعودی — کندلِ تازه باید
     # در همان سمتی بنشیند که سری بزرگ می‌شود، نه همیشه در خانۀ صفر.
     at = len(candles) if candles[-1]["time"] > candles[0]["time"] else 0
@@ -531,24 +2667,85 @@ def _attach_live_bar(symbol, res):
                                      "color": "#10b981" if bar["close"] >= bar["open"] else "#f43f5e"})
     out["volumes"] = vols
     facts = list(res.get("factors") or [])
-    facts.insert(min(at, len(facts)), {"time": bar["time"], "factor": 1.0})   # تازه‌ترین خام
+    # ضریبِ کندلِ زنده از *همان قاعدۀ* زنجیره می‌آید (∏ ratio برای رویدادهای date>t)،
+    # نه از فرض «تازه‌ترین پس ۱». اگر مبدأ رویدادی را برایِ روزِ بعدِ آخرینِ جلسه
+    # منتشر کند، ۱ِ سخت‌کده آن روز را بی‌تعدیل می‌گذاشت و لنگِ سری می‌کید.
+    _lt = str(bar["time"])[:10]
+    _lf = 1.0
+    for e in (res.get("adjustEvents") or []):
+        try:
+            if str(e.get("date"))[:10] > _lt:
+                _lf *= float(e.get("ratio") or 1.0)
+        except (TypeError, ValueError):
+            continue
+    facts.insert(min(at, len(facts)), {"time": bar["time"], "factor": round(_lf, 10)})
     out["factors"] = facts
     out["count"] = len(cands)
     out["liveInjected"] = True
     # تنها نقطۀ انتخابِ مبنایِ قیمت درِ این مسیر (کارِ #73 قدمِ ۳): کندلِ زنده هم
     # داخلِ سری است، پس یکِ تصمیمِ مبنایی برایِ کلِ سری اینجا گرفته می‌شود — نه یکی
     # برایِ تاریخچه و یکی برایِ امروز.
-    return price_basis.resolve_payload(out)
+    return _stamp_data_time(price_basis.resolve_payload(out), built_at)
+
+
+def _candle_closings(candles):
+    """Effective candle official close: `closing` once price_basis filled it,
+    otherwise the parsed CDN `close`.  The DPS base must never fall back to a
+    possibly stale DB close when the live official close is right here."""
+    out = {}
+    for c in candles or []:
+        d = str(c.get("time") or "")[:10]
+        v = c.get("closing")
+        if v is None:
+            v = c.get("close")
+        if d and v is not None:
+            out[d] = v
+    return out
+
+
+def _literal_display_candles(candles, symbol=None, ins_code=None):
+    """Visible H/L = the literal published extremes, matching Rahavard type7.
+
+    The internal builders keep `widen()` for diagnostics and DB geometry, but
+    the user-visible candle must not widen the shadow: the reference type7
+    carries the literal extremes even when they sit inside the body (asset 6,
+    1996-09-16: high 4020 < open 4022 in type0; type7 preserves that).
+
+    Per-field raw corrections (versioned pack) are applied to this display copy
+    only; the internal candles used for factor/DPS computation stay untouched.
+    """
+    out = []
+    for c in candles or []:
+        d = dict(c)
+        if d.get("high_raw") is not None:
+            d["high"] = d["high_raw"]
+        if d.get("low_raw") is not None:
+            d["low"] = d["low_raw"]
+        out.append(d)
+    if ins_code is None and symbol:
+        ins_code = _ins_code_for(symbol)
+    AC.apply_raw_candles(symbol, out, ins_code)
+    return out
 
 
 @router.get("/api/chart/{symbol}")
+def get_chart_visible(symbol: str):
+    """The live chart route: expose the literal OHLC the reference displays."""
+    res = get_chart_tsetmc(symbol)
+    if isinstance(res, dict) and res.get("candles"):
+        res = dict(res)
+        res["candles"] = _literal_display_candles(res["candles"], symbol=symbol)
+    return res
+
+
 def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
     global CDN_OFFLINE_UNTIL
-    _cached = CHART_CACHE.get(symbol)
+    _ck = _chart_cache_key(symbol)
+    _cached = CHART_CACHE.get(_ck)
     if _cached and (_t.time() - _cached[0]) < _cached[2]:
-        return _attach_live_bar(symbol, _cached[1])
+        return _attach_live_bar(symbol, _cached[1], built_at=_cached[0])
     import requests as _rq
     from urllib.parse import quote
 
@@ -569,6 +2766,7 @@ def get_chart_tsetmc(symbol: str):
                     "volumes": vols,
                     "factors": db_res.get("factors") or [{"time": c["time"], "factor": 1.0} for c in cands],
                     "adjustEvents": db_res.get("adjustEvents") or [],
+                    "adjustRejected": db_res.get("adjustRejected") or [],
                     "adjustSource": "local-db-fallback",
                     "adjustCapability": db_res.get("adjustCapability") or {},
                     "corporateEvents": db_res.get("corporateEvents") or [],
@@ -578,13 +2776,24 @@ def get_chart_tsetmc(symbol: str):
                     "degraded": True,
                     "count": len(cands),
                     "fts": db_res.get("fts"),
+                    # برچسبِ مبنایِ همان شمعی‌هایی که از `get_chart_db` آمدند **کپی**
+                    # می‌شود، نه دوباره تصمیم گرفته: کندل‌ها درِ همان مبنایِ داوری‌شده
+                    # ساخته شده‌اند و اگر اینجا دوباره `apply_basis` صدا زده شود،
+                    # پاسخِ جایگزین ممکن است برچسبی غیر از عددِ داخلِ کندل ببرد
+                    # (سنجشِ زندهٔ Stage 9ِ Phase 5: `priceBasis: null` درِ مسیرِ fallback).
+                    "priceBasis": db_res.get("priceBasis"),
+                    "priceBasisRequested": db_res.get("priceBasisRequested"),
+                    "priceBasisReason": db_res.get("priceBasisReason"),
+                    "priceBasisLastMissing": db_res.get("priceBasisLastMissing"),
                 }
+                _stamp_data_time(res)
                 # شکافِ تاریخچه را بی‌صدا نگه نمی‌داریم: اگر سریِ محلی حتی
                 # امروزِ تقویمی را هم ندارد، نشستِ تازه‌ای جا افتاده و همین یک
                 # نماد در پس‌زمینه تازه می‌شود تا دیدِ بعدی کامل باشد.
                 res["historyRepairScheduled"] = _schedule_history_repair(
                     symbol, cands[-1]["time"], datetime.date.today().strftime("%Y-%m-%d"))
-                CHART_CACHE[symbol] = (_t.time(), res, CHART_FALLBACK_TTL)
+                # کلیدِ مبنادار: نسخهٔ «last» هرگز به «closing» سرو نمی‌شود
+                CHART_CACHE[_chart_cache_key(symbol)] = (_t.time(), res, CHART_FALLBACK_TTL)
                 return res
         except Exception:
             pass
@@ -662,32 +2871,65 @@ def get_chart_tsetmc(symbol: str):
                 return fb
             return {"status": "error", "message": f"CSV HTTP {r.status_code}"}
         candles, volumes, all_rows = _parse_tsetmc_csv(r.text)
+        candles, volumes, all_rows = _merge_session_backfill(
+            candles, volumes, all_rows, _session_backfill(symbol), descending=True)
+        # فیدِ کوتاه‌شده (یک نشستِ تاریخی جا افتاده) گسستِ پایهٔ ساختگی می‌سازد؛
+        # آن گسست نباید زنجیره یا کش را جابه‌جا کند. سنجش: هجرت ۲۰۲۳-۰۳-۲۸.
+        _shrunk = _feed_shrank(symbol, len(candles))
         # رویدادهای تعدیل: گسستِ «قیمت پایه» در همین CSV، به‌علاوهٔ درِ لنگر. منطق و
         # دلیلِ حذفِ APF/gap-detector در _adjust_events_from_rows مستند است.
         adj_events, anchored = _adjust_events_from_rows(all_rows)
-        adjust_source = ("base-price-discontinuity" if adj_events
+        # ضریبِ گسستِ CSV کاشف است نه عددِ دقیق؛ همان رویداد را از دفترِ مبدأِ
+        # TSETMC تیز می‌کنیم (توضیحِ کامل و ارقامِ سنجیده: _sharpen_events_with_ledger).
+        # تاریخِ رویداد و تعدادش دست نمی‌خورد، پس پرشِ روزِ تعدیل همان‌جا می‌ماند و
+        # جای‌گامِ جعلی ساخته نمی‌شود؛ فاصلۀِ ضریبِ مبدأ تا گسستِ دیده‌شده کرانِ
+        # _LEDGER_AGREE_TOL (۰٫۱٪) را دارد و درِ سنجش، میانۀِ اثرش روی کلِ پیکره
+        # ۰٫۰۰۶ واحدِ درصدی بود (`_audit/ra365_ledger_ab.py`).
+        adj_events, _sharp_n, _amb_n = _sharpen_events_with_ledger(symbol, adj_events)
+        adj_events, _false_rejected = _filter_unproven_base_events(
+            symbol, adj_events, times=[str(c["time"])[:10] for c in candles])
+        _provisional = []
+        if _shrunk:
+            adj_events, _provisional = _split_provisional_gaps(symbol, adj_events)
+        _led_n = sum(1 for e in adj_events
+                     if e.get("source") in ("priceAdjust", "shareChange"))
+        # برچسبِ منبع «کجا عدد آمده» است، نه «کجا رویداد پیدا شده»: کشف همیشه از
+        # گسستِ CSV است، پس حتی با ضریبِ کاملِ مبدأ نامِ ترکیبی می‌ماند.
+        adjust_source = ("ledger+base-price-discontinuity" if _led_n
+                         else "base-price-discontinuity" if adj_events
                          else "base-not-anchored" if not anchored
                          else "no-adjustment-event")
         # ۳) فاکتور تعدیل (back-adjustment، مقیاس روز آخر):
         #        factor(t) = ∏ ratio  برای همهٔ رویدادهایی که date > t
         #    → آخرین کندل دقیقاً خام می‌ماند (factor=1)، قیمت‌های قدیمی‌تر کوچک‌تر، و هیچ
         #      پرش مصنوعی ساخته نمی‌شود چون فاکتور فقط در همان روزِ تغییر پایه جابه‌جا می‌شود.
-        #    v8.7: یک پیمایش معکوس O(n+m) به‌جای حلقهٔ تو‌در‌توی n×m (۵۲۸۸×۲۰) قبلی؛ round هم
-        #    از ۶ رقم به ۱۰ رقم (فاکتور قدیمی‌ترین کندل به ~۱e-4 می‌رسد و با ۶ رقم دقتش می‌مرد).
-        ev_dates = [e["date"] for e in adj_events]
-        ev_ratios = [e["ratio"] for e in adj_events]
-        factors = [None] * len(candles)
-        # ترتیب‌مستقل: CSV امروز نزولی است (تازه‌به‌قدیم) ولی نباید به آن اعتماد کرد؛
-        # ایندکس‌ها را یک‌بار صعودی مرتب می‌کنیم و از جدیدترین به قدیمی‌ترین می‌رویم.
-        order = sorted(range(len(candles)), key=lambda i: candles[i]["time"])
-        f = 1.0
-        j = len(ev_dates) - 1
-        for i in reversed(order):
-            t = candles[i]["time"]
-            while j >= 0 and ev_dates[j] > t:
-                f *= ev_ratios[j]
-                j -= 1
-            factors[i] = {"time": t, "factor": round(f, 10)}
+        #    قدمِ ۵: این حلقۀِ محلی حذف شد و همان قاعده از موتورِ canonical
+        #    (`AE.chain_factors`) خوانده می‌شود — تا یک ریاضی درِ برنامه باشد، کرانِ
+        #    اعتبارِ موتور روی هر ضریب اعمال شود، و پیمایشِ O(n+m) (به‌جای n×mِ
+        #    ۵۲۸۸×۲۰) و roundِ ۱۰ رقمی همان‌جا حفظ بماند.
+        _times = [str(c["time"])[:10] for c in candles]
+        # `_candle_closings` uses the parsed official close when price_basis has
+        # not filled `closing` yet; using only `closing` left every DPS anchor
+        # None and silently fell back to the possibly stale DB close.
+        _closings = _candle_closings(candles)
+        _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
+            symbol, _times, adj_events, closings=_closings, gap_closings=_closings)
+        _rejected.extend(_false_rejected)
+        if _provisional:
+            _rejected.extend(dict(e, factor_status="provisional:partial-feed")
+                             for e in _provisional)
+        _fund_n = sum(1 for e in _applied
+                      if str(e.get("source") or "").startswith("fund-portal"))
+        if _fund_n:
+            adjust_source = ("fund-portal" if adjust_source in
+                             ("no-adjustment-event", "base-not-anchored")
+                             else adjust_source if str(adjust_source).startswith("fund-portal")
+                             else "fund-portal+" + adjust_source)
+        _corr_n = sum(1 for e in _applied
+                      if e.get("source") == "rahavard-reference-correction")
+        if _corr_n:
+            adjust_source = "rahavard-reference-correction+" + adjust_source
+        factors = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # صفر کندل ≠ موفق. اوراق/نمادهای منقضی CSV خالی می‌دهند؛ قبلاً
         # status=success با count=0 برمی‌گشت و چارت بی‌توضیح خالی می‌ماند.
@@ -703,9 +2945,14 @@ def get_chart_tsetmc(symbol: str):
             "candles": candles,
             "volumes": volumes,
             "factors": factors,
-            "adjustEvents": adj_events,
+            "adjustEvents": _applied,
+            "adjustRejected": _rejected,
             "adjustSource": adjust_source,   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
-            "adjustCapability": _adjust_capability(adj_events, adjust_source),
+            "adjustCapability": _adjust_capability(
+                _applied, adjust_source,
+                {"sharpened": _sharp_n, "ambiguous": _amb_n},
+                chain=_chain, coverage=_cov, symbol=symbol,
+                times=[str(c["time"])[:10] for c in candles]),
             # رویدادهایِ شرکتیِ مبدأ هم از همان بانکِ canonical می‌آیند (نه از
             # CSV): مسیرِ CDN اگر این کلید را نداشت، چارت هیچ‌وقت نشانگرِ
             # TSETMC نمی‌کشید — سنجشِ زندهٔ همین دور (۲۱:۲x) همان را نشان داد.
@@ -713,8 +2960,14 @@ def get_chart_tsetmc(symbol: str):
             "count": len(candles),
         }
         # یک‌بار کشف، همیشه خوانده: همین مجموعه، منبعِ مسیرِ آفلاین هم می‌شود.
-        _store_adjust_events(symbol, adj_events, adjust_source)
-        CHART_CACHE[symbol] = (time.time(), result, CHART_CACHE_TTL)
+        # در فیدِ کوتاه‌شده کش را بازنویسی نمی‌کنیم (آخرین دیدهٔ سالم می‌ماند)،
+        # فقط متادیتا را جلو می‌بریم تا گارد به‌طور دائمی قفل نشود.
+        if _shrunk:
+            _set_adj_cache_meta(symbol, len(candles), min(_times) if _times else "")
+        else:
+            _store_adjust_events(symbol, adj_events, adjust_source)
+            _set_adj_cache_meta(symbol, len(candles), min(_times) if _times else "")
+        CHART_CACHE[_chart_cache_key(symbol)] = (time.time(), result, CHART_CACHE_TTL)
         return _attach_live_bar(symbol, result)
     except Exception as e:
         fb = _fallback_local()
@@ -849,15 +3102,24 @@ def get_key_levels(symbol: str):
                          "close": r[5], "volume": r[6], "last": r[7]})
         conn.close()
         rows.reverse()  # صعودی
+        # P0 #12: شمارشِ شفاف — «چند ردیف خام آمد، چند روزِ یکتا ماند». dedupِ
+        # حجمِ ردیفِ تکراریِ روز (نمادِ دو-املا) بی‌صدا تاریخچه را کم می‌کند؛
+        # مصرف‌کننده باید بداند عرضۀ LIMIT ۲۵۰ پیش از dedup بوده است.
+        _bars_effective = len(rows)
         # سطوح کلیدی رویِ همان مبنایی رسم می‌شوند که چارت نشان می‌دهد (§۱-ث شرطِ ۱):
         # پیش از این این endpoint خامِ پایانی را می‌خواند و «مقاومت» با عددِ چارت نمی‌خواند.
         price_basis.apply_basis(rows)
-        if len(rows) < 60:
+        if _bars_effective < 60:
+            # P0 #1: پیامِ ناکافی با عدد — «چند تا هست، چند تا لازم است».
             return {"status": "ok", "symbol": symbol, "levels": [], "blocks": [],
-                    "count": 0, "message": "تاریخچهٔ کافی نیست (< 60 روز)"}
+                    "count": 0, "insufficient_history": True,
+                    "raw_rows": len(_raw), "bars_effective": _bars_effective,
+                    "message": f"تاریخچهٔ موجود: {_fts_fa(_bars_effective)} روز؛ "
+                               f"حداقل لازم: ۶۰"}
         result = _key_levels_from_history(rows)
         result.update({"status": "ok", "symbol": symbol,
-                       "message": f"{len(rows)} روز آخر"})
+                       "raw_rows": len(_raw), "bars_effective": _bars_effective,
+                       "message": f"{_fts_fa(_bars_effective)} روزِ آخر (از {_fts_fa(len(_raw))} ردیف خام)"})
         KEY_LEVELS_CACHE[_ck_levels] = (time.time(), result)
         return result
     except Exception as e:
@@ -931,19 +3193,68 @@ def _cal_classify(title, tid):
         return "bondMaturity"
     return "other"
 
+def _cal_cache_path():
+    """مسیرِ کشِ تقویم: ``WORK_DIR/calendar.json`` اول، وگرنه static باندل‌شده.
+
+    Task 7 — به‌روزرسانیِ روزانه ``calendar.json`` را در پوشۀ داده می‌نشاند؛
+    نسخۀ نصبی/پرتابیل نباید برای دیدنِ تقویمِ تازه به فایلِ داخلِ بستۀ
+    (احتمالاً read-only) وابسته بماند. نبودش ⇒ رفتارِ قبلی، بدونِ تغییر.
+    """
+    primary = os.path.join(WORK_DIR, "calendar.json")
+    if os.path.isfile(primary):
+        return primary
+    return _CAL_CACHE_PATH
+
+
 def _cal_cache_events():
-    """رویدادهای خام از static/calendar/cache.json — با بیعه‌سازیِ mtime."""
-    try:
-        mtime = os.path.getmtime(_CAL_CACHE_PATH)
-    except Exception:
+    """رویدادهای خام از کشِ تقویم — با بی‌اعتبارسازیِ «مسیر + mtime».
+
+    Fix round 1 (M3): فایلِ ``WORK_DIR/calendar.json`` ورودیِ بیرونی است و
+    ممکن است نیمه‌دانلود/ناسالم باشد. چنین فایلی نه exception می‌دهد نه
+    تقویم را خالی می‌کند: فقط ``dict``ها نگه داشته می‌شوند و اگر خواندن یا
+    تفسیر شکست بخورد، یک‌بار کشِ static باندل‌شده امتحان می‌شود.
+    """
+    primary = os.path.join(WORK_DIR, "calendar.json")
+    if os.path.isfile(primary):
+        events = _cal_load(primary)
+        if events is not None:
+            return events
+        static = _CAL_CACHE_PATH
+        if static and os.path.abspath(static) != os.path.abspath(primary):
+            print("[calendar] WARN %s ناسالم است → کشِ static" % primary,
+                  file=sys.stderr, flush=True)
+            events = _cal_load(static)
+            if events is not None:
+                return events
         return []
-    if mtime != _cal_cache["mtime"]:
+    events = _cal_load(_CAL_CACHE_PATH)
+    return events if events is not None else []
+
+
+def _cal_load(path):
+    """یک فایلِ کش را می‌خواند؛ ``None`` = ناخوانا/ناسالم (برایِ fallback)."""
+    try:
+        stat = os.stat(path)
+        signature = (path, stat.st_mtime_ns, stat.st_size)
+    except Exception:
+        return None
+    # mtime صریح هم سنجیده می‌شود تا ریستِ دستیِ کش (تست‌ها/ابزارِ audit) معتبر بماند.
+    if signature != _cal_cache.get("signature") or _cal_cache.get("mtime") != stat.st_mtime:
         try:
-            with open(_CAL_CACHE_PATH, encoding="utf-8") as f:
-                _cal_cache["events"] = (json.load(f) or {}).get("events") or []
-            _cal_cache["mtime"] = mtime
-        except Exception:
-            return []
+            with open(path, encoding="utf-8") as f:
+                raw = json.load(f)
+            events = raw.get("events") if isinstance(raw, dict) else None
+            if not isinstance(events, list):
+                raise ValueError("events is not a list")
+            events = [e for e in events if isinstance(e, dict)]
+        except Exception as exc:
+            print("[calendar] WARN %s: %s" % (path, exc),
+                  file=sys.stderr, flush=True)
+            return None
+        _cal_cache["events"] = events
+        _cal_cache["mtime"] = stat.st_mtime
+        _cal_cache["path"] = path
+        _cal_cache["signature"] = signature
     return _cal_cache["events"]
 
 
@@ -973,7 +3284,7 @@ def event_date_source(ev: dict) -> str:
 
 
 def _cal_events_for(symbol):
-    """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
+    """رویدادهای نماد از کشِ تقویم (WORK_DIR/calendar.json یا static؛ با mtime)."""
     _norm = lambda s: str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
     want = _norm(symbol)
     out, seen = [], set()
@@ -1087,7 +3398,8 @@ def upcoming_assemblies(days: int = ASSEMBLY_NEAR_DAYS) -> dict:
     یک منبع برای دو مصرف: اندپوینتِ `/api/calendar/upcoming` (برچسبِ ردیف‌های
     جدولِ بنیادی) و وتوی مجمع در `/api/screener`. هر دو باید یک افق و یک قاعدهٔ
     تساوی داشته باشند، وگرنه برچسب یک چیز می‌گوید و وتو چیزِ دیگر.
-    هزینه: یک بار خواندنِ کشِ `static/calendar/cache.json`، نه کوئری به‌ازایِ ردیف.
+    هزینه: یک بار خواندنِ کشِ تقویم (WORK_DIR/calendar.json یا static)، نه
+    کوئری به‌ازایِ ردیف.
     خروجی: {نمادِ نرمال‌شده: {"symbol", "date", "cat", "title"}} — خطا ⇒ {} .
     """
     return _upcoming_by(_ASSEMBLY_FAMILY, days)
@@ -1141,9 +3453,36 @@ def get_calendar_events(symbol: str):
                 "message": str(e), "events": []}
 
 
+def _sma_series(pairs, windows):
+    """میانگینِ متحرکِ ساده رویِ [(date, price) صعودی] برایِ هر پنجره.
+
+    یگانۀ محاسبهٔ MA درِ `/api/ma` — همین تابع درِ آزمونِ عددیِ مستقل هم صدا زده
+    می‌شود تا «چیزی که تست می‌کند» و «چیزی که سرو می‌شود» یکی باشند. صورتِ کسر
+    پنجره است نه شمارِ کلِ سطرها (`acc / w`)، و پیش ازِ `w-1` مقدارِ `None`
+    برمی‌گردد (نه میانگینِ ناقص).
+    """
+    ma = {}
+    for w in windows:
+        ser, acc = [], 0.0
+        for i, (d, c) in enumerate(pairs):
+            acc += c
+            if i >= w:
+                acc -= pairs[i - w][1]
+            ser.append([d, round(acc / w, 2) if i >= w - 1 else None])
+        ma[f"ma{w}"] = ser
+    return ma
+
+
 @router.get("/api/ma/{symbol}")
 def get_ma_events(symbol: str, days: int = Query(730)):
-    """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) از price_history + رویدادهای تقویم نماد."""
+    """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) + رویدادهای تقویم نماد.
+
+    سریِ MA از همان زنجیرۀِ تعدیلِ کاننیکالِ چارت می‌گذرد (نه خامِ price_history):
+    رویدادهایِ یک‌بارکشف‌شدۀِ نماد با `_factors_from_events` اعمال می‌شوند تا `ma{w}`
+    و MA دیدنیِ چارت برایِ یکِ نمادِ تعدیل‌شدۀِ یکسان، دو جوابِ متفاوت ندهند (RC1/منبع).
+    مبنایِ last/closing عیناً از `price_basis` می‌آید. `bars`/`adjustSource`/`adjusted`
+    درِ پاسخ صراحتِ منبع را می‌دهند؛ افزودنِ این کلیدها سازگارِ عقب‌رو است.
+    """
     import time as _t
     days = max(120, min(int(days or 730), 2000))
     ck = f"{symbol}|{days}|{price_basis.current()}"
@@ -1170,23 +3509,22 @@ def get_ma_events(symbol: str, days: int = Query(730)):
         # ma{w} و کندل‌هایِ چارت هرگز دو جوابِ متفاوت برایِ یکِ روز نمی‌دهند.
         _ma_rows = [{"time": r[0], "close": r[1], "last": r[3]} for r in rows]
         price_basis.apply_basis(_ma_rows)
-        closes = [(c["time"], float(c["close"])) for c in _ma_rows if c["close"] is not None]
-        ma = {}
-        for w in MA_WINDOWS:
-            # میانگینِ متحرک = جمعِ پنجره ÷ **عرضِ پنجره**. نسخهٔ پیشین `(i+1)` را
-            # می‌آورد: برایِ i≥w صورتِ کسر درستِ پنجره بود ولی شمارنده بهِ
-            # «شمارِ کلِ سطرها» می‌رفت، پس عددِ ارسالی میانگینِ متحرک نبود بلکه
-            # میانگینِ کلِ تاریخِ نماد (سنجیده: ۴۶٬۴۰۲ از ۴۶٬۴۱۴ نقطه درِ ۱۲ نماد،
-            # خطایِ نسبی ~۹۹٪ — `_audit/indicator_audit/`).
-            ser, acc = [], 0.0
-            for i, (d, c) in enumerate(closes):
-                acc += c
-                if i >= w:
-                    acc -= closes[i - w][1]
-                ser.append([d, round(acc / w, 2) if i >= w - 1 else None])
-            ma[f"ma{w}"] = ser
+        # زنجیرۀِ تعدیلِ کاننیکال — همان قاعدۀِ get_chart_db، رویِ همان تاریخ‌ها.
+        _evs = _stored_adjust_events(symbol)
+        _src = ("local-cache" if _evs
+                else _stored_adjust_source(symbol) or "local-db-unseen")
+        _cap = _adjust_capability(_evs, _src, symbol=symbol)
+        _adjusted = bool(_cap.get("combined_available"))
+        _fct = (_factors_from_events([str(c["time"])[:10] for c in _ma_rows], _evs,
+                                     symbol=symbol)
+                if _adjusted else [1.0] * len(_ma_rows))
+        closes = [(c["time"], round(float(c["close"]) * f, 6))
+                  for c, f in zip(_ma_rows, _fct) if c["close"] is not None]
+        ma = _sma_series(closes, MA_WINDOWS)
         result = {"status": "ok", "symbol": symbol, "periods": MA_WINDOWS,
-                  "ma": ma, "events": _cal_events_for(symbol), "bars": len(closes)}
+                  "ma": ma, "events": _cal_events_for(symbol), "bars": len(closes),
+                  "basis": price_basis.current(), "adjusted": _adjusted,
+                  "adjustSource": _src}
         MA_CACHE[ck] = (_t.time(), result)
         return result
     except Exception as e:
@@ -1204,12 +3542,25 @@ def _adjust_events_for(symbol, rows=None):
         return []
 
 @router.get("/api/chart-db/{symbol}")
-def get_chart_db(symbol: str, adjustment: int = 3):
+def get_chart_db_visible(symbol: str):
+    """The technical chart route: same literal visible OHLC as /api/chart."""
+    res = get_chart_db(symbol)
+    if isinstance(res, dict) and res.get("candles"):
+        res = dict(res)
+        res["candles"] = _literal_display_candles(res["candles"], symbol=symbol)
+    return res
+
+
+def get_chart_db(symbol: str):
     """(v7.3.2 — Hybrid Data Fusion) تمام تاریخچه از price_history + تزریق کندل امروز از تابلوخوانی.
 
     - تاریخچه کامل (بدون limit) — اندیکاتورها به عمق نیاز دارند
     - کندل امروز (اگر در price_history نیست یا کهنه است) از market_watch زنده تزریق میشود
-    - adjustment: 0=خام، 3=عملکردی (فقط برای فرانت که factor را اعمال میکند؛ اینجا raw میفرستیم)
+
+    پارامترِ `adjustment: 0|3` اینجا حذف شد: هیچ‌کس آن را نمی‌فرستید (endpoint فقط
+    `symbol` می‌گیرد)، هیچ شاخه‌ای به آن وصل نبود، و پاسخ همیشه خام + `factors`
+    می‌داد. یکِ دستکۀِ تزئینی که فقط عددِ خودش را echo می‌کرد، دقیقاً همان «حالتِ
+    بی‌مسیر» است که رأیِ مالک درِ دورِ ممیزی از رابط و کد بیرون رفت.
     """
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
@@ -1217,29 +3568,46 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         try:
             _pred, _params = sym_pred(conn, "symbol", symbol, "board")
             _raw = conn.execute(
-                "SELECT date, open, high, low, close, volume, last, value FROM price_history "
-                "WHERE %s ORDER BY date DESC, volume DESC" % _pred, _params).fetchall()
+                candle_contract.SELECT_SQL + " WHERE %s ORDER BY date DESC, volume DESC"
+                % _pred, _params).fetchall()
             # حذف تکراریِ روز: کلید price_history = (symbol,date)؛ نمادِ دو-املا
             # می‌تواند همان روز را در دو نوشتار داشته باشد — پرحجم‌تر می‌ماند.
+            # درِ قراردادِ DB (`DB_COLUMNS`) ستونِ دوم `date` است، نه نخستین.
             _seen, rows = set(), []
             for r in _raw:
-                if r[0] in _seen:
+                if r[1] in _seen:
                     continue
-                _seen.add(r[0])
+                _seen.add(r[1])
                 rows.append(r)
             rows.reverse()          # صعودی (قرارداد پیشین: ORDER BY date ASC)
-            # `close` = «قیمت پایانی» و `last` = «آخرین قیمت»؛ این دو ستونِ جدا‌اند و
-            # جعلِ `last := close` حذف شده (docs/CANDLE-CONTRACT.md §۱-ث شرطِ ۳). ردیفی
-            # که منبعش «آخرین» نداشته (مثلاً GetInstrmentsHistoryInDay) صریح null
-            # می‌رود، تا مصرف‌کننده بتواند «نداریم» را تشخیص دهد، نه اینکه عددِ پایانی
-            # را با نامِ «آخرین» بخورد.
-            candles = [{"time": r[0], "open": float(r[1]), "high": float(r[2]),
-                        "low": float(r[3]), "close": float(r[4]),
-                        "last": float(r[6]) if r[6] is not None else None,
-                        "value": float(r[7]) if r[7] is not None else None,
-                        "volume": float(r[5] or 0)} for r in rows]
+            # سازندۀِ یکتای ردیفِ بانک: `candle_contract.from_db_row`.
+            # پیش از این اینجا دستی ساخته می‌شد و هیچ فیلتری نداشت، پس ۳۰۶ ردیفِ
+            # `open=high=low=0` (۲۹۴ ردیفش سایۀ صفر) کندلِ ناممکن می‌ساخت: پایانیِ
+            # معتبرِ منتشرشده در برابرِ High/Lowِ صفر ⇒ `Low ≤ min(O,C)` نقض می‌شد و
+            # دامانۀِ خودکارِ محور تا صفر باز می‌شد (همان «کندلِ زیرِ صفرِ دیدنی» که
+            # درِ ممیزیِ کلِ نمادها برایِ مسیرِ CDN منع شد، اینجا از مسیرِ محلی می‌آمد).
+            # قراردادِ مشترک همان ردیف را این‌طور می‌خواند: صفر درِ high/low یعنی
+            # «منبع هنوز پر نکرده» ⇒ سایه از بدنه گِشاد می‌شود و `open` از پایانیِ
+            # منتشرشده برمی‌دارد؛ هیچ عددِ منتشرشده کُنده نمی‌شود. ردیفِ حجم‌صفر
+            # (روزِ بی‌معامله) کندل نمی‌شود — همان قاعدۀِ مسیرِ CDN.
+            # شمارش‌ها درِ پاسخ می‌آیند تا «کم شدنِ کندل» حذفِ خاموش نباشد.
+            _db_rows = len(rows)
+            candles, _drop_no_trade, _drop_invalid = [], 0, 0
+            for r in rows:
+                ck = candle_contract.from_db_row(r)
+                if ck is None:
+                    if float(r[6] or 0) <= 0:
+                        _drop_no_trade += 1
+                    else:
+                        _drop_invalid += 1
+                    continue
+                candles.append(ck)
         finally:
             conn.close()
+
+        # ردیفِ رسمیِ جلسه‌ای که CSV/بانک جا انداخته بود (مثلاً 2023-03-27).
+        candles, _ignore_v, _ignore_rows = _merge_session_backfill(
+            candles, [], [], _session_backfill(symbol), descending=False)
 
         # ---- تزریق کندلِ جلسهٔ جاری از market_watch (دادهٔ زندهٔ تابلوخوانی) ----
         # تاریخِ کندل را خودِ جلسه (d_even) می‌دهد، نه ساعتِ سیستم — دلیلش در
@@ -1254,13 +3622,31 @@ def get_chart_db(symbol: str, adjustment: int = 3):
                  "color": "#10b981" if c.get("close", 0) >= c.get("open", 0) else "#f43f5e"} for c in candles]
         # رویدادِ کاننیکالِ یک‌بارکشف‌شده + ضرایبِ همان مجموعه. پیش از اینجا این
         # مسیر صریح «adjustEvents: []» می‌داد و فرانت سریِ خام را «تعدیل‌شده» می‌خواند.
+        # قدمِ ۵: ضرایبِ همین مسیر از **همان** `_canonical_adjustment` می‌آیند که
+        # مسیرِ CDN می‌زند — یک قاعده، یک اعتبار، دو منبعِ سری. داوریِ منبع («رویدادی
+        # نیست» / «هنوز ندیده‌ایم») مشخص می‌کند اصلاً حقِ ضرب دارد یا نه.
         _evs = _stored_adjust_events(symbol)
+        _evs, _false_rejected = _filter_unproven_base_events(
+            symbol, _evs, times=[str(c["time"])[:10] for c in candles])
         _src = ("local-cache" if _evs
                 else _stored_adjust_source(symbol) or "local-db-unseen")
-        _cap = _adjust_capability(_evs, _src)
-        _fct = _factors_from_events([str(c["time"])[:10] for c in candles],
-                                    _evs if _cap["combined_available"] else [])
-        facts = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fct)]
+        _known = _src in _ADJ_KNOWN_SOURCES
+        _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
+            symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [],
+            closings={str(c["time"])[:10]: c.get("closing") for c in candles})
+        _rejected.extend(_false_rejected)
+        _fund_n = sum(1 for e in _applied
+                      if str(e.get("source") or "").startswith("fund-portal"))
+        if _fund_n:
+            _src = ("fund-portal" if _src in
+                    ("local-cache", "local-db-unseen", "no-adjustment-event", "base-not-anchored")
+                    else _src if str(_src).startswith("fund-portal")
+                    else "fund-portal+" + _src)
+        _cap = _adjust_capability(
+            _applied, _src, chain=_chain, coverage=_cov, symbol=symbol,
+            times=[str(c["time"])[:10] for c in candles],
+            stale=(not live_injected and _candles_stale(candles)))
+        facts = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # ---- v10 FTS: همان سریِ کاننیکالِ تعدیل‌شده که چارت می‌بیند ----
         # Pure compute wrapper; failures must never break the chart contract,
@@ -1277,16 +3663,21 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         except Exception:
             fts_payload = None
 
-        return price_basis.resolve_payload(
+        return _stamp_data_time(price_basis.resolve_payload(
             {"status": "success", "symbol": symbol, "count": len(candles),
+             # اعلامِ صادقانۀِ شمارش: هر ردیفِ حذف‌شده با علتش. بی‌این، «کم شدنِ کندل»
+             # درِ مسیرِ محلی حذفِ خاموش به‌نظر می‌رسید (سنجشِ ۱۴۰-۰۷-۲۷: ۲٬۶۹۲ ردیفِ
+             # حجم‌صفر و ۳۰۶ ردیفِ بی‌سایه درِ کلِ بانک).
+             "dbRows": _db_rows, "dbNoTradeRows": _drop_no_trade,
+             "dbInvalidRows": _drop_invalid,
              "candles": candles, "volumes": vols, "factors": facts,
-             "adjustEvents": _evs, "adjustSource": _src,
+             "adjustEvents": _applied, "adjustRejected": _rejected,
+             "adjustSource": _src,
              "adjustCapability": _cap,
              "corporateEvents": _corporate_events(symbol),
              "liveInjected": live_injected,
              "liveError": live_error,
-             "adjustment": adjustment,
-             "fts": fts_payload})
+             "fts": fts_payload}))
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -1319,20 +3710,27 @@ def get_patterns(symbol: str):
                          "close": r[5], "volume": r[6], "last": r[7]})
         conn.close()
         rows.reverse()
-        if len(rows) < 60:
+        # P0 #12: شمارشِ شفافِ dedup (مثلِ key-levels) — مصرف‌کننده بداند چند ردیف
+        # خام چند روزِ یکتا شده و LIMIT ۲۵۰ کجا خورده است.
+        _bars_effective = len(rows)
+        if _bars_effective < 60:
+            # P0 #1: «تاریخچه کافی نیست» به‌تنهایی حرف نمی‌زند؛ عددِ موجود و لازم.
             return {"status": "ok", "symbol": symbol, "overlays": [], "count": 0,
-                    "message": "تاریخچه کافی نیست"}
+                    "insufficient_history": True,
+                    "raw_rows": len(_raw), "bars_effective": _bars_effective,
+                    "message": f"تاریخچهٔ موجود: {_fts_fa(_bars_effective)} روز؛ "
+                               f"حداقل لازم: ۶۰"}
         # FIX v7.2: سطحها باید در فضای تعدیلشده باشند (chart با factor رسم میکند) — وگرنه Y-mismatch
         evs = _adjust_events_for(symbol, rows)
         # مبنایِ قیمت پیش از ضربِ فاکتور انتخاب می‌شود (تنها نقطۀ انتخاب؛ §۱-ث شرطِ ۱)،
         # و سپس هر سه نگارۀ قیمتی همان کندل ضریب می‌گیرند تا `closing` (لنگر) و `last`
         # درِ پاسخ با `close` (منتخب) در یک فضایِ مقیاس باشند.
         price_basis.apply_basis(rows)
-        for r in rows:
-            f = 1.0
-            for e in evs:
-                if e["date"] > r["date"]:
-                    f *= e["ratio"]
+        # قدمِ ۵: حلقۀِ n×mِ محلیِ سوم (اینجا) هم حذف شد — سطح‌ها از همان
+        # `_factors_from_events` می‌آیند که کندل‌ها و FTS می‌گیرند، پس «سطحِ
+        # تعدیل‌شده» و «شمعیِ تعدیل‌شده» یک ضریب دارند و دو محاسبه نه.
+        for r, f in zip(rows, _factors_from_events([r["date"] for r in rows], evs,
+                                                   symbol=symbol)):
             for _k in ("high", "low", "close", "closing", "last", "high_raw", "low_raw"):
                 if r.get(_k) is not None:
                     r[_k] = r[_k] * f
@@ -1374,13 +3772,52 @@ def get_patterns(symbol: str):
                        {"timestamp": ts_of(last20[-1]["date"]), "value": lo}],
             "styles": {"color": "#2962ff"},
         })
-        result = {"status": "ok", "symbol": symbol, "overlays": overlays, "count": len(overlays)}
+        result = {"status": "ok", "symbol": symbol, "overlays": overlays,
+                  "count": len(overlays),
+                  "raw_rows": len(_raw), "bars_effective": _bars_effective}
         PATTERNS_CACHE[_ck_pat] = (_t.time(), result)
         return result
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-CHART_CACHE = {}   # {symbol: (fetch_time, json_data)}
+CHART_CACHE = {}   # {_chart_cache_key(symbol): (fetch_time, json_data, ttl)}
+
+
+def _fund_events_rev():
+    """نسخهٔ کشِ رویدادهایِ رسمی/بک‌فیل؛ تغییرِ هر جدول باید کشِ چارت را بشکند."""
+    vals = []
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=5)
+        try:
+            for table in ("fund_profit_events", "session_backfill"):
+                try:
+                    row = conn.execute(f"SELECT MAX(fetched_at) FROM {table}").fetchone()
+                    vals.append(str(row[0] or "") if row else "")
+                except Exception:
+                    vals.append("")
+        finally:
+            conn.close()
+    except Exception:
+        return ""
+    return "|".join(vals)
+
+
+def _chart_cache_key(symbol):
+    """کلیدِ کشِ چارت **مبنا را هم می‌برد** — همان قراردادی که MA_CACHE دارد
+    (`api/chart.py::get_ma_events`: `f"{symbol}|{days}|{price_basis.current()}"`).
+
+    پیش از این کلید فقطِ symbol بود، و این دو نقصِ واقعی داشت (سنجشِ زندهٔ Stage 9ِ
+    Phase 5 درِ مرورگر: تعویضِ مبنا و دوباره‌خواندن → `priceBasis` همان «closing»
+    ماند):
+      ۱) مسیرِ فال‌بکِ محلی، برچسبِ مبنایِ داوری‌شدۀِ `get_chart_db` را داخلِ پاسخ
+         می‌گذارد و همان پاسخ کش می‌شود؛ پس تعویضِ مبنا تا TTLِ فال‌بک دیده نمی‌شود
+         (نقضِ صریحِ شرطِ Stage 5: «پاسخ‌های stale پس از تعویض نماد یا مبنا نمایش
+         داده نشوند»).
+      ۲) دو مبنایِ متفاوت، یکِ خانه را اشغال می‌کردند و هر تغییرِ مبنا سریِ دیگری
+         را از کشِ بیرونیِ خودِ آن مبنای می‌خواند.
+    """
+    return f"{symbol}|{price_basis.current()}|{_fund_events_rev()}"
+
 
 ADJ_TOL = 0.001
 
@@ -1439,23 +3876,30 @@ _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساو�
 # شد باید یک واحد بالا برود — وگرنه کشِ پاسخِ کهنه با قواعدِ نو جواب می‌دهد.
 # (بیلدِ منتشرشده: `APP_VERSION`. قواعدِ فیلترِ قیف جایِ دیگری نسخه دارد و با این
 # یکی نمی‌شود، چون rulebookهایِ متفاوت‌اند.)
-FTS_TECH_RULESET_VERSION = "3"   # «۳»: تأییدِ موقعیتِ قیمت (شکستِ سقف/کفِ آخر بر شمارشِ دو پیوتِ کهنه ترجیح می‌یابد)
+FTS_TECH_RULESET_VERSION = "6"   # «۶»: رأیِ جهت روی **دو Extreme ماژور** ساخته می‌شود (`major_swings`)، نه هر پیوتِ تأییدشده؛ کندلِ تکمیل‌نشده از سریِ ساختار بیرون است (`live_forming`) و `provisional` از حکمِ قطعی جدا منتشر می‌شود. «۵»: قاعدۀ اکیدِ پیوت (`_fts_swings` — مساویِ دوطرفه دیگر پیوت نیست؛ کندلِ تک‌قیمتیِ TSETMC لایۀ ساختار را پر نمی‌کند). «۴»: خروج MA14 با مرجع هم‌خوان شد (یک کندل کامل بسته زیر MA، نه دو بدنه) + فیبو بدون پایِ ساختگی + پیام‌هایِ ناکافی با تعداد
 # «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
 # این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
 # پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
 # ۰٫۴۹۸ در برابر ۰٫۴۷۵ یک‌روزه (lab، ۷۲ نماد؛ نرخِ پایه ۰٫۳۸۱).
 _FTS_CHOCH_DAYS = 2
 _FTS_CHOCH_MARGIN = 0.01
+# پارامترهایِ اجرایىِ باند (canonical نیستند — جزوه پهنای باند نمی‌گوید):
+# پیش‌تر رابطِ FFC آن‌ها را سرِ خود ±۲٪/±۳٪ می‌ساخت؛ حالا سرور منتشر می‌کند
+# تا دو موتور یک هندسه ببینند و «سرور عدد نگفته رسم نمی‌شود» نشکند.
+_FTS_THIRD_PEAK_BAND_PCT = 2.0   #٪ اطرافِ سطحِ سقفِ سومِ تخت
+_FTS_HOURGLASS_BAND_PCT = 3.0    #٪ اطرافِ MA52 برایِ سایۀ ساعتِ شنی
+# تلورانسِ «لمس» درِ شکارِ نقطه و پولبک — یک عدد، دو مصرف (پارامترِ اجرایى).
+_FTS_POINT_TOUCH_TOL = 0.005
 # تریگرِ ورودِ جت دیگر «ماکسِ ۶۰ کندلِ قبل» را نمی‌بیند؛ پلکانِ هشت‌نقطه‌ایِ
 # جزوه (JET_LADDER از tape_flags) مرجع است، تا چارت و تابلو یک جواب بدهند.
 
 
-def _fts_resample(candles, bucket="W"):
+def _fts_resample(candles, bucket="W", symbol=None):
     """تجمیع کندل روزانه به هفتگی/ماهانه — ورودی روند چند-تایم‌فریمی FTS.
 
     candles: لیست دیکشنری با کلیدهای time ('YYYY-MM-DD'), open, high, low, close, volume
              (همان ساختار candles در get_chart_db؛ مرتب صعودی).
-    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه میلادی.
+    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه جلالی.
     هفتهٔ ISO دوشنبه‌محور است؛ نشستِ ایران شنبه تا چهارشنبه است، پس در ISO سه
     روزِ اولِ هفتهٔ معاملاتی به هفتهٔ قبلی می‌افتادند و کندلِ هفتگیِ موتور با
     کندلِ هفتگیِ چارت (که شنبه‌محور است یکی از همان‌ها را می‌شمارد) یکی نمی‌شد —
@@ -1463,6 +3907,10 @@ def _fts_resample(candles, bucket="W"):
     کندل تجمیعی: open = اولین روز سبد، close = آخرین روز، high/low = max/min سبد،
     حجم = جمع. تاریخ کندل تجمیعی = تاریخ آخرین روز سبد (کندلِ هفته در آخرین روز
     معاملاتی‌اش می‌بندد) — هم‌قرارداد rvAggregate سمت فرانت.
+
+    برای کلیدهایی که تقویمِ روزانهٔ محصول با مرجع یکی نیست (Round 32D)، نوارِ
+    مرجعِ ذخیره‌شده از `wm_calendar` جای تجمیعِ ناقص می‌نشیند؛ کلیدهای دیگر
+    دست‌نخورده‌اند و در نبودِ بسته، رفتارِ قبلی برمی‌گردد.
     """
     if not candles:
         return []
@@ -1478,7 +3926,7 @@ def _fts_resample(candles, bucket="W"):
         if bucket == "W":
             key = (d - datetime.timedelta(days=(d.weekday() + 2) % 7)).isoformat()
         else:
-            key = t[:7]          # 'YYYY-MM'
+            key = WMC.month_key(t[:10])   # ماه جلالی، همان تقویمِ مرجع
         prev = out.get(key)
         if prev is None:
             out[key] = {"time": t[:10], "open": c["open"], "high": c["high"],
@@ -1490,6 +3938,12 @@ def _fts_resample(candles, bucket="W"):
             prev["close"] = c["close"]
             prev["time"] = t[:10]
             prev["volume"] += float(c.get("volume") or 0)
+    if symbol:
+        for k, row in out.items():
+            pkey = WMC.week_key(k) if bucket == "W" else k
+            ref = WMC.bar(symbol, bucket, pkey)
+            if ref:
+                row.update(ref)
     return [out[k] for k in sorted(out.keys())]
 
 def _fts_swings(series, k=3):
@@ -1497,8 +3951,12 @@ def _fts_swings(series, k=3):
 
     سقف پیوت: high[i] ≥ high هر دو طرف تا k کندل (و اکیداً بزرگ‌تر از یک طرف).
     کف پیوت:  low[i]  ≤ low  هر دو طرف تا k کندل.
-    خروجی: [{'idx', 'price', 'kind': 'high'|'low'}] مرتب زمانی. k بزرگ‌تر =
+    خروجی: [{'idx', 'price', 'kind': 'high'|'low', 'time',
+             'confirm_idx', 'confirm_time'}] مرتب زمانی. k بزرگ‌تر =
     فقط پیوت‌های «مهم‌تر» (روی ماهانه k=2 می‌گذاریم چون کندل کم داریم).
+    زمان وقوع (idx) از زمان شناخت (idx+k) جدا منتشر می‌شود — قاعدۀ anti-repaint:
+    نقطه‌ای که امروز تأیید شده در دیروز «اطلاع قطعی» نبود؛ رابط باید بداند
+    مارکرِ ساختار از کدام کندل به بعد مجاز است.
     """
     n = len(series)
     if n < 2 * k + 2:
@@ -1511,11 +3969,76 @@ def _fts_swings(series, k=3):
         win_l_l = [series[j]["low"] for j in range(i - k, i)]
         win_r_l = [series[j]["low"] for j in range(i + 1, i + k + 1)]
         t = str(series[i].get("time") or "")[:10]
-        if hi >= max(win_l_h) and hi >= max(win_r_h):
-            out.append({"idx": i, "price": float(hi), "kind": "high", "time": t})
-        if lo <= min(win_l_l) and lo <= min(win_r_l):
-            out.append({"idx": i, "price": float(lo), "kind": "low", "time": t})
+        ct = str(series[i + k].get("time") or "")[:10]
+        # قاعدۀ اکید (همان چیزی که docstring می‌گوید): پیوت باید دست‌کم یک طرف
+        # را *شکست* باشد، نه اینکه فقط مساوی باشد. دو دلیلِ اندازه‌گیری‌شده:
+        #  ۱) TSETMC در درصدِ بزرگی از ردیف‌های تاریخی کندلِ تک‌قیمتی می‌دهد
+        #     (فولاد: ۱۲۷۸ سطر از ۴۲۴۲ = ۳۰٪ با H==L، و همان روزها حجمِ میلیاردی)
+        #     — توضیحِ همان نقص در `_parse_tsetmc_csv`. با `>=` در دو طرف، هر
+        #     سطرِ چنین فلاتی «سقفِ تأییدشده» می‌شد و لایۀ ساختار پر از پیوت‌های
+        #     بی‌معنا می‌شد (سریِ کاملاً تخت: ۱۲ پیوتِ سقف + ۱۲ پیوتِ کف از هیچ).
+        #  ۲) اثرِ داوری صفر است: روی ۹ نماد (فولاد/وبملت/شبهرن/خودرو/شپنا/ولانا/
+        #     تكنار/غکورش/زنجان) شمارۀ پیوت ۳۲۱۴→۸۴۳ و ۵۵۶۱→۸۸۴ شد، در حالی که
+        #     همهٔ کلیدهای حکم (trend D/W، jet، choch، point_hunt، double_bottom،
+        #     range_box، pullback، fib، hourglass) بایت‌به‌بایت یکسان ماندند —
+        #     یعنی این تنها لایۀ *ترسیم* (structure_points) را تمیز می‌کند.
+        # دوclause_form یعنی: اکیداً بالاتر از یک طرف و دست‌کم برابرِ طرف دیگر؛
+        # پس دو سرِ یک فلات همچنان پیوت می‌مانند و فقط میانیِ آن‌ها حذف می‌شود.
+        if ((hi > max(win_l_h) and hi >= max(win_r_h))
+                or (hi >= max(win_l_h) and hi > max(win_r_h))):
+            out.append({"idx": i, "price": float(hi), "kind": "high", "time": t,
+                        "confirm_idx": i + k, "confirm_time": ct})
+        if ((lo < min(win_l_l) and lo <= min(win_r_l))
+                or (lo <= min(win_l_l) and lo < min(win_r_l))):
+            out.append({"idx": i, "price": float(lo), "kind": "low", "time": t,
+                        "confirm_idx": i + k, "confirm_time": ct})
     return out
+
+
+def _fts_structure_points(swings, limit=14):
+    """ساختار HH/HL/LH/LLِ FTS به‌صورت نقاطِ قابل‌رسم (جزوه ص۷: صعودی = کف و سقف
+    بالاتر؛ نزولی = کف و سقف پایین‌تر؛ برابر = خنثی).
+
+    هر پیوتِ تأییدشده با هم‌جنسِ قبلی‌اش مقایسه می‌شود؛ تلورانسِ «مساوی» همان
+    `_FTS_EQUAL_TOL`ِ رأیِ روند است (دو عددِ جدا برایِ یک مفهوم). خروجی فقط نقاطِ
+    تأییدشده است و زمانِ وقوع را از زمانِ تأیید جدا می‌برَد — رابط برایِ مارکرِ
+    تاریخی باید `confirm_time` را ملاک کند (قاعدۀ anti-repaint).
+    خروجی: [{'idx','time','confirm_idx','confirm_time','price','kind','label',
+             'ref_time','ref_price'}]
+    """
+    last_h = last_l = None
+    pts = []
+    for s in swings:
+        p = float(s["price"])
+        if s["kind"] == "high":
+            ref = last_h
+            label = "H"
+            if ref is not None and ref["price"] > 0:
+                if p > ref["price"] * (1.0 + _FTS_EQUAL_TOL):
+                    label = "HH"
+                elif p < ref["price"] * (1.0 - _FTS_EQUAL_TOL):
+                    label = "LH"
+                else:
+                    label = "HE"
+            last_h = s
+        else:
+            ref = last_l
+            label = "L"
+            if ref is not None and ref["price"] > 0:
+                if p > ref["price"] * (1.0 + _FTS_EQUAL_TOL):
+                    label = "HL"
+                elif p < ref["price"] * (1.0 - _FTS_EQUAL_TOL):
+                    label = "LL"
+                else:
+                    label = "LE"
+            last_l = s
+        pts.append({"idx": s["idx"], "time": s.get("time"),
+                    "confirm_idx": s.get("confirm_idx"),
+                    "confirm_time": s.get("confirm_time"),
+                    "price": round(p, 2), "kind": s["kind"], "label": label,
+                    "ref_time": (ref or {}).get("time"),
+                    "ref_price": round(float(ref["price"]), 2) if ref else None})
+    return pts[-limit:]
 
 
 def _fts_recent_window_trend(series, window=_FTS_STALE_WINDOW):
@@ -1701,15 +4224,21 @@ def _fts_fa(v):
     return str(v).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
 
 
-def _fts_trend_reason(t):
+def _fts_trend_reason(t, ctx=None):
     """مبنایِ رأیِ روند به فارسی — ردِ ورود باید بگوید با چه عددی قضاوت شده.
 
     پیش‌تر فقط «تایم هفتگی خنثی» نوشته می‌شد و کاربر راهی نداشت بفهمد کدام دو پیوت
     مقایسه شده‌اند (شاهد: کايزد با ۴۴ کندلِ صعودیِ بی‌پیوت «نزولی» می‌گرفت). تاریخ‌ها
     همان رشته‌هایِ محورِ زمانِ خودِ چارت‌اند تا عددِ متن و عددِ چارت یکی باشد.
+
+    `ctx` همان پروندۀِ `_fts_major_context` است و فقط متن را دقیق‌تر می‌کند: رأی را
+    عوض نمی‌کند و هیچ دروازۀ FTS به این رشته وابسته نیست. با آن، «ماژورِ کافی نبود»
+    (کمبودِ ساختار) از «پیوتِ کامل نداریم» (کمبودِ داده) و از «نزولیِ قطعی» جدا
+    خوانده می‌شود — سه چیزی که قبلاً یکی به نظر می‌رسیدند.
     """
     if not isinstance(t, dict):
         return ""
+    has_ctx = isinstance(ctx, dict) and "enough_extremes" in ctx
     if t.get("basis") == "recent-window":
         pos = "بالای" if t.get("above_ma") else "زیر"
         txt = (f"مبنا: {_fts_fa(t.get('window'))} کندلِ اخیر، "
@@ -1717,14 +4246,93 @@ def _fts_trend_reason(t):
         stale = t.get("stale_bars")
         if stale is not None:
             txt += f" (تازه‌ترین پیوتِ تأییدشده {_fts_fa(stale)} کندل عقب است)"
+        if has_ctx and not ctx.get("enough_extremes") and ctx.get("reason"):
+            txt += f" — ساختارِ ماژور کافی نبود: {_fts_fa(ctx['reason'])}"
         return txt
     if t.get("trend") == "na":
-        return "مبنا: کمتر از دو پیوتِ کامل"
-    return (f"مبنا: سقف‌ها {_fts_fa(t.get('prev_high_time'))} "
+        if has_ctx and ctx.get("reason"):
+            return f"مبنا: {_fts_fa(ctx['reason'])} — دو Extreme ماژور نیست، جهت اعلام نمی‌شود"
+        return "مبنا: کمتر از دو پیوتِ کامل (کمبود داده)"
+    head = ("مبنایِ ماژور" if (has_ctx and ctx.get("enough_extremes")) else "مبنا")
+    return (f"{head}: سقف‌ها {_fts_fa(t.get('prev_high_time'))} "
             f"({_fts_fa(t.get('prev_high'))}) ← {_fts_fa(t.get('last_high_time'))} "
             f"({_fts_fa(t.get('last_high'))})، کف‌ها {_fts_fa(t.get('prev_low_time'))} "
             f"({_fts_fa(t.get('prev_low'))}) ← {_fts_fa(t.get('last_low_time'))} "
             f"({_fts_fa(t.get('last_low'))})")
+
+
+def _fts_bucket_forming(tf, series, daily_series):
+    """آیا آخرینِ سبدِ تجمیعی (هفتگی/ماهانه) هنوز کندلِ روزانهٔ جدید می‌گیرد؟
+
+    اطلاع است، نه رأی: تا وقتی سبدِ باز است high/low آن عوض می‌شود، پس پیوتی که در
+    آن افتاده «ساختارِ قطعیِ تاریخ» نیست. مبنایِ تقویمیِ بی‌آستانه — هفتهٔ معاملاتیِ
+    ایران شنبه تا چهارشنبه است و همان شنبه‌محورِ `_fts_resample`.
+    """
+    if tf == "D" or not series or not daily_series:
+        return None
+    d_last = str(daily_series[-1].get("time") or "")[:10]
+    if not d_last:
+        return None
+    if tf == "M":
+        last = str(series[-1].get("time") or "")[:10]
+        return bool(last) and d_last[:7] == last[:7]
+    try:
+        d = datetime.date.fromisoformat(str(series[-1].get("time") or "")[:10])
+    except ValueError:
+        return None
+    sat = d - datetime.timedelta(days=(d.weekday() + 2) % 7)
+    return d_last < (sat + datetime.timedelta(days=4)).isoformat()
+
+
+def _fts_major_context(tf, row, daily_series, full_series=None):
+    """پروندۀِ «چه چیزی رأی را ساخت» — کنارِ رأی، نه داخلِ آن.
+
+    قراردادِ خروجی (همین شش کلید را رابط و ممیزی می‌خوانند):
+      confirmed_trend - رأیِ داورِ System 1 (`_fts_classify_trend`) روی ماژورها
+      major_swings    - فهرستِ Extremeهایِ ماژوری که داوری با آن‌ها شد
+      provisional     - اطلاعِ موقتِ **جدا**؛ هیچ مصرف‌کننده‌ای حق ندارد با آن
+                        جهت بسازد یا دروازۀ قیف را باز/بسته کند
+      timeframe / as_of / reason
+    `as_of` آخرینِ کندلِ **بستهٔ** همان سری است (کندلِ تکمیل‌نشده در ساختار نیست).
+    `provisional` برعکسِ آن از `full_series` خوانده می‌شود: همان ردیفی که از رأی
+    بیرون است، دقیقاً چیزی است که «در حالِ شکل‌گیری» است و باید گزارش شود.
+    """
+    series = row["series"]
+    info = row["info"]
+    verdict = row["verdict"] or {}
+    k = _FTS_SWING_K if tf == "D" else 2
+
+    def pt(p):
+        return {"idx": p["idx"], "time": p.get("time"), "kind": p["kind"],
+                "price": round(float(p["price"]), 2),
+                "confirm_idx": p.get("confirm_idx"), "confirm_time": p.get("confirm_time"),
+                "confirm_age_bars": p.get("confirm_age_bars"),
+                "leg_pct": p.get("leg_pct"), "leg_pct_in": p.get("leg_pct_in"),
+                "leg_pct_out": p.get("leg_pct_out"), "out_pending": p.get("out_pending"),
+                "leg_atr_x": p.get("leg_atr_x"),
+                "recent": p.get("recent"), "ma100_ctx": p.get("ma100_ctx")}
+
+    return {
+        "timeframe": tf,
+        "confirmed_trend": verdict.get("trend"),
+        "verdict_basis": verdict.get("basis"),
+        "as_of": (str(series[-1].get("time") or "")[:10] if series else None),
+        "daily_as_of": (str(daily_series[-1].get("time") or "")[:10]
+                        if daily_series else None),
+        "bars": len(series),
+        "bucket_forming": _fts_bucket_forming(tf, series, daily_series),
+        "major_swings": [pt(p) for p in row["majors"][-12:]],
+        "counts": {"pivots": info["graded"], "majors": len(row["majors"]),
+                   "major_highs": info["major_highs"], "major_lows": info["major_lows"],
+                   "minor_highs": info["minor_highs"], "minor_lows": info["minor_lows"],
+                   "undecided": info["undecided"], "dropped_minor": info["dropped_minor"]},
+        "threshold": {"atr_x": info["atr_x"], "floor_pct": info["floor_pct"]},
+        "enough_extremes": info["enough"],
+        "provisional": major_swings.forming(full_series or series, row["graded"], k=k),
+        # متنِ نمایشی با رقمِ فارسی (قاعدۀِ سراسریِ رابط); None باید None بماند تا
+        # مصرف‌کننده بتواند «دلیلی لازم نبود» را از «متنِ خالی» تشخیص دهد.
+        "reason": (None if info["reason"] is None else _fts_fa(info["reason"])),
+    }
 
 
 def _fts_ma(closes, period=14):
@@ -1798,7 +4406,8 @@ def _fts_fib_leg(candles, swings):
     جهتِ موج را روندِ ساختاریِ خودِ FTS (`_fts_classify_trend` روی پیوت‌های روزانه)
     می‌گوید، نه «کدام پیوت آخر از همه تازه‌تر است» — چون در یک رشدِ بی‌وقفه آخرین
     پیوتِ سقف سه کندلِ پیش است و آن تعریف، موجِ صعودی را نزولی می‌خواند.
-    خروجی: {'direction', 'start_idx', 'end_idx', 'high', 'low'} یا None.
+    خروجی: {'direction', 'start_idx', 'end_idx', 'high', 'low'} یا None؛
+    موجِ بی‌پیوت کلیدِ افزودۀ 'provisional': True می‌گیرد.
     """
     n = len(candles)
     if n < 2:
@@ -1806,10 +4415,25 @@ def _fts_fib_leg(candles, swings):
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
     if not highs and not lows:
+        # هیچ پیوتی نیست ⇒ جهت را حدس نمی‌زنیم: جایِ نسبیِ دو Extreme خودش را
+        # می‌گوید. اگر سقف بعد از کف آمده باشد موج صعودی است، وگرنه نزولی.
+        # (پیش از این این شاخه همیشه «up» برمی‌گرداند، پس سریِ سقف‌سپس‌کف هم
+        # صعودی حساب می‌شد و کمربندها سرِ جایِ غلط می‌نشستند.)
+        # ادغامِ System 2 (رأیِ مالک ۱۴۰۵-۰۷-۲۸): همین جهت نگه داشته می‌شود و
+        # فقط پرچمِ `provisional` افزوده می‌شود. دو فرمولِ دو شاخه
+        # (`lo_idx <= hi_idx` و `hi_i >= lo_i`) یکِ گزاره‌اند، پس بی‌این پرچم هم
+        # هیچ رأیِ FTS و هیچ کمربندی جابه‌جا نمی‌شد — اثباتش درِ
+        # `dev/fts_wave_direction_v1125.py`. پرچم هم رأی نمی‌دهد: فقط به رابط
+        # می‌گوید «ساختارِ موج هنوز تأیید نشده» (P0 #4 و باگِ «فولاد» #161؛
+        # موجِ min/max بی‌پیوتِ فراکتالی «در حالِ تشکیل» است، نه ساختارِ
+        # تأییدشده). نمادی که مستقیم به سقف بالا رفته کمربندِ واقعیِ همان رشد را
+        # می‌گیرد.
         hi_idx = max(range(n), key=lambda i: candles[i]["high"])
-        return {"direction": "up", "start_idx": 0, "end_idx": n - 1,
+        lo_idx = min(range(n), key=lambda i: candles[i]["low"])
+        return {"direction": "up" if lo_idx <= hi_idx else "down",
+                "start_idx": min(hi_idx, lo_idx), "end_idx": n - 1,
                 "high": float(candles[hi_idx]["high"]),
-                "low": min(float(c["low"]) for c in candles)}
+                "low": float(candles[lo_idx]["low"]), "provisional": True}
     # «هیچ پایانیِ پس از idx زیرِ قیمت نبسته» — با کمینهٔ پس‌رو، یک‌بار محاسبه
     close = [float(c["close"]) for c in candles]
     suf_min = [0.0] * (n + 1)
@@ -1895,6 +4519,18 @@ def _fts_fib_zones(candles, swings):
         return None
     zones = {}
     direction = leg.get("direction") or "up"
+    last = float(candles[-1]["close"]) if candles else 0.0
+    # عمقِ اصلاح رویِ همان مقیاسِ لگاریتمیِ کمربندها، درِ جهتِ موج: ۰ سرِ موج،
+    # ۱ کلِ موج برگشته. بی‌این عدد «نخوردنِ کمربند» بی‌فاصله می‌ماند — نمادی
+    # ۰٫۴٪ بالایِ ۳۳ با نمادی ۳۰٪ پایین‌تر یکی حساب می‌شد.
+    # موجِ نزولی قرینه است نه منفی: `raw` از سقف سنجیده می‌شود، پس عمقِ بازگشت
+    # از کف = ۱ − raw. (با `-raw` عددِ منفی درمی‌آمد و با لبه‌هایِ کمربند
+    # نمی‌خواند — سنجشِ آواک: ۱۵٫۹۵٪ در برابرِ کمربندِ ۲۷۰۴–۲۷۵۵ رویِ کفِ ۲۴۸۰.)
+    span = math.log(top) - math.log(bot)
+    retrace = None
+    if last > 0 and span > 0:
+        raw = (math.log(top) - math.log(last)) / span
+        retrace = round(100.0 * (raw if direction == "up" else 1.0 - raw), 2)
     for key, p1, p2 in _FTS_FIB_BELTS:
         # کمربند در جهتِ موج سنجیده می‌شود: صعودی از سقف به پایین، نزولی از کف
         # به بالا. پیش از این هر دو «از سقف به پایین» بودند، پس روی موجِ ریزشی
@@ -1902,18 +4538,26 @@ def _fts_fib_zones(candles, swings):
         # بود — منطقۀ بازگشت نه، ابتدایِ ریزش.
         a, b = _fts_fib_retrace(top, bot, p1, direction), _fts_fib_retrace(top, bot, p2, direction)
         hi_p, lo_p = max(a, b), min(a, b)
-        last = float(candles[-1]["close"]) if candles else 0.0
         zones[key] = {"lo": round(lo_p, 2), "hi": round(hi_p, 2),
-                      "in_zone": bool(lo_p <= last <= hi_p)}
+                      "from_ratio": p1, "to_ratio": p2,
+                      "in_zone": bool(lo_p <= last <= hi_p),
+                      # فاصلۀ آخرین تا هر دو لبۀ کمربند، درصدِ قیمت (منفی = زیرِ کمربند)
+                      "gap_lo_pct": (round(100.0 * (last - lo_p) / lo_p, 2)
+                                     if lo_p > 0 and last > 0 else None),
+                      "gap_hi_pct": (round(100.0 * (last - hi_p) / hi_p, 2)
+                                     if hi_p > 0 and last > 0 else None)}
     return {
         "retrace_base_high": round(top, 2), "retrace_base_low": round(bot, 2),
+        "retrace_pct": retrace, "last_close": round(last, 2),
         **zones,
         "levels": [{"ratio": r, "price": round(_fts_fib_retrace(top, bot, r, direction), 2)}
                    for r in _FTS_FIB_LEVELS],
         "leg": {"direction": leg["direction"],
                 "start": str(candles[leg["start_idx"]]["time"])[:10],
                 "end": str(candles[leg["end_idx"]]["time"])[:10],
-                "high": round(top, 2), "low": round(bot, 2)},
+                "high": round(top, 2), "low": round(bot, 2),
+                # موجِ بی‌پیوت = «در حال تشکیل»، نه ساختارِ تأییدشده (P0 #4).
+                "provisional": bool(leg.get("provisional"))},
     }
 
 
@@ -1953,7 +4597,11 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6, 
             "pct_above_res": None, "ceiling": None, "ceiling_date": None,
             "static_broke": None, "breakout_date": None,
             "entry_window_days": entry_window_days, "days_remaining": None,
-            "tier": None, "reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد",
+            "tier": None,
+            # P0 #2: پیامِ ناکافی با تعداد؛ active عمداً None می‌ماند (سنجیده نشد).
+            "reason": (f"تاریخچه برای سنجش جت کافی نیست — سنجیده نشد "
+                       f"({_fts_fa(n)} کندل موجود، حداقل لازم {_fts_fa(_FTS_JET_MIN_BARS)})"),
+            "bars_available": n, "bars_required": _FTS_JET_MIN_BARS,
         }
 
     def level_before(idx):
@@ -2169,12 +4817,25 @@ def _fts_point_hunt(candles, swings):
     out = {"touches": None, "floor_price": None, "active": None, "bounced": None,
            "floor_idx": None, "floor_date": None, "trigger_idx": None,
            "trigger_date": None,
-           "reason": "دو سقفِ جدا یا ده کندل سابقه نیست — کانال سنجیده نشد"}
-    if len(highs) < 2 or not lows or len(candles) < 10:
+           "reason": "کانال سنجیده نشد"}
+    # P0 #3: سه علتِ متمایز، سه پیام با تعداد — «سقف کم است» با «سابقه کم است»
+    # با «سقف‌ها چسبیده‌اند (الگو در حال تشکیل)» یکی نیست.
+    if len(highs) < 2:
+        out["reason"] = (f"سقفِ مستقلِ کافی نیست ({_fts_fa(len(highs))} از ۲ لازم) "
+                         f"— کانال سنجیده نشد")
+        return out
+    if not lows:
+        out["reason"] = "هیچ کفِ تأییدشده‌ای نیست — کانال سنجیده نشد"
+        return out
+    if len(candles) < 10:
+        out["reason"] = (f"سابقه کم است ({_fts_fa(len(candles))} کندل، حداقل ۱۰ لازم) "
+                         f"— کانال سنجیده نشد")
         return out
     h2, h1 = highs[-2], highs[-1]
     if h1["idx"] - h2["idx"] < 3:
-        return out                                   # کانال بی‌معنی (سقف‌های چسبیده)
+        out["reason"] = (f"دو سقفِ آخر چسبیده‌اند (فاصله {_fts_fa(h1['idx'] - h2['idx'])} "
+                         f"کندل، حداقل ۳ لازم) — الگو در حال تشکیل")
+        return out
     out["reason"] = None
     slope = (h1["price"] - h2["price"]) / (h1["idx"] - h2["idx"])
     anchor_low = min((l for l in lows if h2["idx"] < l["idx"] <= h1["idx"]),
@@ -2182,7 +4843,7 @@ def _fts_point_hunt(candles, swings):
     if anchor_low is None:
         anchor_low = min(lows, key=lambda l: l["price"])
     floor_at = lambda i: anchor_low["price"] + slope * (i - anchor_low["idx"])
-    tol = 0.005
+    tol = _FTS_POINT_TOUCH_TOL
     touches = 0
     for i in range(anchor_low["idx"], len(candles)):
         if candles[i]["low"] <= floor_at(i) * (1 + tol):
@@ -2213,7 +4874,7 @@ def _fts_double_bottom(candles, swings):
     جعبهٔ رنج: سقف جعبه = ماکسِ high در ۲۰ کندل اخیر منهای کندل آخر، کف جعبه =
     مینِ low همان پنجره. تریگر شکست: پایانیِ امروز بالای سقف جعبه با بدنهٔ صعودی.
     خروجی: {'double_bottom': {'active','neckline','pct_above_neck'},
-            'range_box': {'active','top','bottom','pct_above_top'}}.
+            'range_box': {'active','top','bottom','start_date','end_date','pct_above_top'}}.
     """
     lows = [s for s in swings if s["kind"] == "low"]
     highs = [s for s in swings if s["kind"] == "high"]
@@ -2231,6 +4892,7 @@ def _fts_double_bottom(candles, swings):
             dbl.update(active=bool(hit), neckline=round(neck, 2),
                        pct_above_neck=round((last - neck) / neck * 100.0, 2) if hit else None)
     box = {"active": None, "top": None, "bottom": None, "pct_above_top": None,
+           "start_date": None, "end_date": None,
            "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد"}
     if len(candles) >= 21:
         box["reason"] = None
@@ -2240,8 +4902,73 @@ def _fts_double_bottom(candles, swings):
         last = candles[-1]
         broke = last["close"] > top and last["close"] >= last["open"]
         box.update(active=bool(broke), top=round(top, 2), bottom=round(bot, 2),
+                   # دو کرانۀ زمانیِ همان ۲۰ کندل — صرفاً اطلاعِ «جعبه کجاست» برایِ
+                   # رسمِ درست (مرحلۀ ۶)؛ داوریِ شکست تغییری نمی‌کند.
+                   start_date=str(win[0]["time"])[:10], end_date=str(win[-1]["time"])[:10],
                    pct_above_top=round((last["close"] - top) / top * 100.0, 2) if broke else None)
     return {"double_bottom": dbl, "range_box": box}
+
+
+def _fts_pullback_setup(candles, swings, trend_d, weekly_trend=None):
+    """پولبکِ شاخۀ صعودی (جزوه ص۸-۹ و ص۳۴؛ چارت مرجع ص۲: صعودی → جت یا پولبک).
+
+    تعریفِ مرجع: در روند صعودی، قیمت به «آخرین سقفِ شکسته‌شده» بازمی‌گردد و
+    «برمی‌گردد» — یعنی لمسِ سطح + حفظِ آن به‌عنوان حمایت در همان روز. بازگشت
+    شرطِ خودِ تعریف است، نه آستانۀ افزوده (لمسِ تنها ستاپ نیست؛ همان درسِ
+    اندازۀ شکارِ نقطه: لمس+ریباند نویز را می‌گیرد). پولبکی که در تایم هفتگی هم
+    باشد معتبرتر است (جزوه ص۹) — اینجا `weekly_confirms` فقط زمینه است، نه گیت.
+
+    سطحِ پولبک = آخرین پیوتِ سقفِ تأییدشده (top)؛ کندلِ سقف نباید امروز باشد
+    (پولبک بعد از تشکیل سقف معنا دارد). لمس: lowِ امروز ≤ سطح×(۱+tol)؛
+    ریباند: پایانی بالای سطح + بدنهٔ صعودی. tol = همان ۰٫۵٪ لمسِ شکارِ نقطه —
+    پارامترِ اجرایى، canonical نیست (آستانه‌های جزوه نیست).
+    سه‌حالته: روند na یا بی‌سقف ⇒ None با علت و تعداد؛ روند صعودیِ روشن ولی
+    بی‌لمس ⇒ active=False (سنجیده شد، ستاپ نیست).
+    خروجی: {'active','touching','level','level_date','level_age_bars',
+            'weekly_confirms','gap_pct','reason'}.
+    """
+    out = {"active": None, "touching": None, "level": None, "level_date": None,
+           "level_age_bars": None, "weekly_confirms": None, "gap_pct": None,
+           "reason": None}
+    hp = [s for s in swings if s["kind"] == "high"]
+    if trend_d in (None, "na"):
+        out["reason"] = (f"روند روزانه سنجیده نشد ({_fts_fa(len(hp))} سقفِ تأییدشده) "
+                         f"— پولبک ارزیابی نشد")
+        return out
+    if trend_d != "up":
+        out.update(active=False, touching=False)
+        out["reason"] = "شاخۀ پولبک فقط در روند صعودی تعریف شده — روند روزانه صعودی نیست"
+        return out
+    if not hp or not candles or len(candles) < 3:
+        out["reason"] = (f"سقفِ تأییدشده یا کندلِ کافی نیست ({_fts_fa(len(hp))} سقف، "
+                         f"{_fts_fa(len(candles))} کندل)")
+        return out
+    top = hp[-1]
+    if top["idx"] >= len(candles) - 1:
+        out["reason"] = "آخرین سقفِ تأییدشده خودِ کندلِ امروز است — پولبک بعد از سقف سنجیده می‌شود"
+        return out
+    level = float(top["price"])
+    last = candles[-1]
+    tol = _FTS_POINT_TOUCH_TOL
+    touching = bool(float(last["low"]) <= level * (1.0 + tol))
+    bounced = bool(touching and float(last["close"]) > level
+                   and float(last["close"]) > float(last["open"]))
+    out["level"] = round(level, 2)
+    out["level_date"] = str(candles[top["idx"]]["time"])[:10]
+    out["level_age_bars"] = len(candles) - 1 - top["idx"]
+    out["touching"] = bool(touching)
+    out["active"] = bool(bounced)
+    if weekly_trend is not None:
+        out["weekly_confirms"] = bool(weekly_trend == "up")
+    if not touching:
+        gap = (float(last["low"]) / level - 1.0) * 100.0
+        out["gap_pct"] = round(gap, 2)
+        out["reason"] = (f"قیمت به آخرین سقف نرسیده ({_fts_fa(round(gap, 2))}٪ فاصلۀ کفِ امروز "
+                         f"تا سطح {_fts_fa(out['level'])})")
+    elif not bounced:
+        out["reason"] = ("لمسِ سطحِ پولبک رخ داده ولی بازگشت (پایانی بالای سطح با بدنهٔ صعودی) "
+                         "تأیید نشده — ستاپ در حال تشکیل")
+    return out
 
 
 _FTS_SETUP_LABELS = {"choch": "CHoCH", "dbl": "دابل‌باتم"}
@@ -2354,10 +5081,10 @@ def _fts_exit_layer1(candles, entry_hint=None):
       به دلیل پنجرهٔ k کندل تأخیر دارد، این کف همیشه تا دیروز شناخته می‌شود و
       با _stop_refs در confidence_engine.py هم‌خوان است: «swing stop = ۵٪ زیر
       آخرین کف مهم»).
-    ▪ خروج تعقیبی (Trailing): «بدنهٔ» کندل روزانه کاملاً زیر MA14 بسته شود —
-      یعنی max(open, close) < MA14. شرطِ بدنه (نه wick) باعث می‌شود سکه‌های
-      سایه‌دارِ یک‌روزه علامت اشتباه ندهند؛ دو کندل متوالی برای قطعیتِ سیگنال
-      لازم است (کندل اول = هشدار، دوم = تأیید خروج).
+    ▪ خروج تعقیبی (Trailing): «یک کندل کامل» روزانه — بدنه و سایه‌ها — کاملاً زیر
+      MA14 بسته شود (highِ کندلِ بسته < MA14ِ همان کندل)؛ این متنِ چارت مرجع است
+      (FTS.CHART_3 ص۳). کندلِ درحال‌تشکیلِ امروز حداکثر «pending/هشدار» می‌سازد،
+      نه خروجِ تأییدشده.
     خروجی: {'hard_stop', 'stop_basis', 'stop_hit', 'ma14_exit', 'ma14_exit_pending',
             'ma14', 'close'}.
     سه‌حالۀ L1: `stop_hit`/`ma14_exit`/`ma14_exit_pending` وقتی `None`اند که موتور
@@ -2385,21 +5112,37 @@ def _fts_exit_layer1(candles, entry_hint=None):
     stop_px, basis = max(cand, key=lambda x: x[0])
     out["hard_stop"] = round(stop_px, 2)
     out["stop_basis"] = basis
+    # P0 #5: کفِ نوسان‌گیر ۲۰ کندلِ بسته می‌خواهد؛ با کمتر از آن عدد منتشر
+    # می‌شود ولی با پرچم «در حال تشکیل» — پیش از این روی ۳ کندل با اقتدارِ کامل
+    # رأی می‌داد (بی‌صدا degrade).
+    if len(closed) < 20 and basis == "swing_low":
+        out["stop_basis"] = "swing_low_forming"
+        out["stop_reason"] = (f"کفِ ۲۰ کندلِ بسته هنوز کامل نیست "
+                              f"({_fts_fa(len(closed))} از ۲۰) — حد ضرر در حال تشکیل")
+    else:
+        out["stop_reason"] = None
     out["stop_hit"] = bool(close < stop_px)
     # --- خروج تعقیبی MA14 ---
+    # مرجع (FTS.CHART_3 ص۳ / جزوه ص۲۲): «MA=14 — تشکیل یک کندل کامل زیر MA».
+    # کندلِ کاملِ بسته، همه‌قد (سایه‌ها هم): high < MA14 همان کندل ⇒ خروجِ تأیید.
+    # پیش از این «دو بدنهٔ متوالی زیر MA» می‌خواست — افزودهٔ کد بود و ممیزی
+    # FTS-TREND-CLASSIFIER (بند ۳۹) آن را MISMATCH منبع/کد دانست؛ اینجا با منبع
+    # هم‌خوان شد. کندلِ درحال‌تشکیلِ امروز رأی قطعی نمی‌دهد: اگر تمام‌قد زیر MA
+    # بسته باشد «pending» (هشدار) می‌شود، نه exit.
     closes = [float(c["close"]) for c in candles]
     ma14 = _fts_ma(closes, 14)
     out["ma14"] = ma14[-1] if ma14 else None
     if out["ma14"] is None:
         return out
-    body_top = max(float(last["open"]), close)
-    body_below = body_top < out["ma14"]
-    prev_below = False
+    last_high = float(last["high"])
+    prev_closed_complete_below = None
     if len(candles) >= 2 and ma14[-2] is not None:
-        p = candles[-2]
-        prev_below = max(float(p["open"]), float(p["close"])) < ma14[-2]
-    out["ma14_exit"] = bool(body_below and prev_below)   # دو بدنهٔ متوالی زیر MA14
-    out["ma14_exit_pending"] = bool(body_below and not prev_below)  # هشدار (کندل اول)
+        prev_closed_complete_below = float(candles[-2]["high"]) < ma14[-2]
+    if prev_closed_complete_below is None:
+        return out
+    out["ma14_exit"] = bool(prev_closed_complete_below)
+    out["ma14_exit_pending"] = bool(last_high < out["ma14"]
+                                    and not prev_closed_complete_below)
     return out
 
 
@@ -2465,11 +5208,18 @@ def _fts_exit_layer3(candles, swings):
     سه سقف، دو کف) — `False` فقط وقتی است که الگو سنجیده شد و برقرار نبود.
     """
     out = {"third_peak": None, "double_top": None, "hs_break": None,
-           "neckline": None, "level": None, "third_peak_level": None}
+           "neckline": None, "level": None, "third_peak_level": None,
+           "reason": None}
     if len(candles) < 15:
+        # P0 #6: زیرِ کفِ معلوم، همه None می‌مانند — ولی باید با پیام، نه بی‌صدا.
+        out["reason"] = (f"لایهٔ ۳ سنجیده نشد ({_fts_fa(len(candles))} کندل، "
+                         f"حداقل ۱۵ لازم)")
         return out
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
+    if len(highs) < 2 or len(lows) < 2:
+        out["reason"] = (f"پیوتِ الگو کافی نیست (سقف‌ها {_fts_fa(len(highs))}، "
+                         f"کف‌ها {_fts_fa(len(lows))})")
     last = float(candles[-1]["close"])
     # --- سقف سوم ---
     if len(highs) >= 3:
@@ -2478,6 +5228,10 @@ def _fts_exit_layer3(candles, swings):
         out["third_peak"] = bool(m > 0 and (m - min(h1, h2, h3)) / m <= 0.01)
         if out["third_peak"]:
             out["third_peak_level"] = round(m, 2)
+    # عرض باندِ اطرافِ سطحِ سقف سوم — پارامترِ اجرایى (جزوه آن را نمی‌گوید؛ فقط
+    # «نزدیک خط روند» با آستانهٔ ۱۰٪/۵٪). تا پیش از این ±۲٪ درِ رابطِ FFC ساخته
+    # می‌شد (B4)؛ حالا سرور منتشر می‌کند تا هر دو موتور یک هندسه ببینند.
+    out["third_peak_band_pct"] = _FTS_THIRD_PEAK_BAND_PCT
     # --- دابل‌تاپ ---
     if len(highs) >= 2:
         h1, h2 = highs[-2]["price"], highs[-1]["price"]
@@ -2530,14 +5284,22 @@ def _fts_exit_layer4(candles):
     `None` می‌مانند (سنجیده نشد)، نه `False`.
     """
     out = {"rsi_divergence": None, "rsi_rollover": None,
-           "rsi": None, "rsi_prev_peak": None}
+           "rsi": None, "rsi_prev_peak": None, "reason": None}
     if len(candles) < 30:
+        # P0 #6: بی‌صدا نبودنِ لایه باید «علت با تعداد» داشته باشد.
+        out["reason"] = (f"لایهٔ ۴ سنجیده نشد ({_fts_fa(len(candles))} کندل، "
+                         f"حداقل ۳۰ لازم)")
         return out
     closes = [float(c["close"]) for c in candles]
     rsi = _fts_rsi(closes, 14)
     out["rsi"] = rsi[-1]
     swings = _fts_swings(candles, k=_FTS_SWING_K)
     highs = [s for s in swings if s["kind"] == "high"]
+    if out["rsi"] is None:
+        out["reason"] = (f"RSI(14) نپخته است ({_fts_fa(len(closes))} کندل، "
+                         f"حداقل ۱۶ لازم)")
+    elif len(highs) < 2:
+        out["reason"] = f"دو سقفِ پیوت برایِ واگرایی نیست ({_fts_fa(len(highs))} سقف)"
     if len(highs) >= 2:
         h1, h2 = highs[-2], highs[-1]
 
@@ -2570,6 +5332,7 @@ def _fts_exit_layer4(candles):
 _FTS_ROLES = {
     "jet": "entry", "choch_bullish": "entry", "point_hunt": "entry",
     "double_bottom": "entry", "range_break": "entry", "hourglass": "entry",
+    "pullback": "entry",
     "fib_zone": "context", "trend": "context", "support_resistance": "context",
     "third_peak": "warning", "rsi_divergence": "warning",
     "rsi_rollover": "warning", "ma14_pending": "warning",
@@ -2585,6 +5348,7 @@ _FTS_TRIGGER_LABELS = {
     "double_bottom": "کفِ دوقلو",
     "range_break": "شکستِ باکسِ رنج",
     "hourglass": "ساعتِ شنی",
+    "pullback": "پولبک",
 }
 
 # اولویتِ وضعیتِ عمومی (رأیِ مالک، دورِ J): از جدی‌ترین به کم‌اهمیت‌ترین
@@ -2632,6 +5396,7 @@ def _fts_status_block(candles, out):
     jet = out.get("jet") or {}
     choch = out.get("choch") or {}
     ph = out.get("point_hunt") or {}
+    pb = out.get("pullback") or {}
     dbl = out.get("double_bottom") or {}
     box = out.get("range_box") or {}
     hg = out.get("hourglass") or {}
@@ -2640,6 +5405,7 @@ def _fts_status_block(candles, out):
     # --- تریگرِ فعلی (نقش entry) ---
     trig_candidates = [
         ("jet", jet.get("active"), jet.get("resistance"), last_date),
+        ("pullback", pb.get("active"), pb.get("level"), last_date),
         ("point_hunt", ph.get("active"), ph.get("floor_price"), ph.get("trigger_date")),
         ("choch_bullish", choch.get("bullish"), choch.get("level"), last_date),
         ("double_bottom", dbl.get("active"), dbl.get("neckline"), last_date),
@@ -2693,6 +5459,14 @@ def _fts_status_block(candles, out):
     text = FTS_STATUS_TEXT[code]
     if code == "entry_trigger":
         text = "%s: %s" % (text, trig["label"])
+    if code == "insufficient":
+        # P0: «بی‌داده» با تعدادِ واقعی — موتور اجرا شده و همهٔ لایه‌ها زیرِ
+        # کفِ تاریخچه‌اند؛ نه اینکه رأیی منتشر نشده باشد (آن حالت در رابط
+        # کدِ `pending` می‌گیرد، چون اصلاً به این بلوک نمی‌رسد).
+        avail, req = out.get("setups_bars_available"), out.get("setups_bars_required")
+        if isinstance(avail, int) and isinstance(req, int):
+            text = ("%s (سابقه: %s کندل، حداقل لازم %s)"
+                    % (text, _fts_fa(avail), _fts_fa(req)))
     if code == "weekly_veto" and jet.get("active") is True:
         text = "%s (جتِ امروز هم فعال است، ولی وتو بر ورود غالب است)" % text
     return {"code": code, "text": text, "trigger": trig,
@@ -2823,22 +5597,53 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
       choch            - structural break {'bearish','bullish','level','label'}
       point_hunt       - channel-floor touch count {'touches','floor_price',...}
       double_bottom    - {'active','neckline','pct_above_neck'}
-      range_box        - {'active','top','bottom','pct_above_top'}
+      range_box        - {'active','top','bottom','start_date','end_date','pct_above_top'}
+      pullback         - uptrend-retest setup {'active','touching','level',...}
       exit_engine      - four-layer verdict {'verdict','signals','l1'..'l4'}
     """
     candles = _fts_clean_candles(candles)
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
-    w = _fts_resample(candles, "W")
-    m = _fts_resample(candles, "M")
+    # سریِ **ساختارِ روند** کندلِ تکمیل‌نشده را نمی‌بیند: `_fts_swings` برایِ پیوتِ
+    # iام پنجرۀِ [i+1, i+k] را می‌خواند و آن پنجره تا آخرینِ ردیف می‌رسد، پس یکِ
+    # تیکِ درون‌جلسه می‌توانست پیوتِ «تأییدشده» بسازد یا ببیند. لایه‌هایِ ستاپِ
+    # ورودی (جت/خروج/ساعت‌شنی) مثلِ قبل خودِ جلسه را می‌بینند؛ فقط جهت نباید با
+    # نوسانِ تکمیل‌نشده بازنویسی شود. (سنجش: تکانِ ±۲٪ آخرینِ بسته درِ ۳ نماد از
+    # ۱۲۹ رأیِ D را عوض می‌کرد، هر سه up→down — `_audit/major_swing_evidence.py`.)
+    struct_d = major_swings.closed_only(candles)
+    w_struct = _fts_resample(struct_d, "W", symbol=symbol)
+    m_struct = _fts_resample(struct_d, "M", symbol=symbol)
+    # بقیۀ لایه‌ها (ساعت‌شنی، خروج، MA52 هفتگی) همان سریِ امروز را می‌بینند:
+    # حذفِ کندلِ جاری از آنها هم رأیِ «خروج/تازه» را عقب می‌انداخت و خارجِ خواستِ
+    # این دور است — اینجا فقط «جهتِ ساختاری» نباید با تیکِ درون‌جلسه بازنویسی شود.
+    w = _fts_resample(candles, "W", symbol=symbol)
+    m = _fts_resample(candles, "M", symbol=symbol)
     # dispatchِ موتورِ روند (flag). legacy = دقیقاً رفتارِ امروز؛ hybrid = طبقه‌بندِ
     # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
     # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).
     _tf = trend_classify.classify_trend if TREND_ENGINE == "hybrid" else _fts_classify_trend
+    # درجه‌بندیِ ماژور/مینور: داورِ جهت **همان** `_fts_classify_trend` می‌ماند و
+    # فقط فهرستِ پیوت‌ها به «سقف/کفِ ماژور» محدود می‌شود، تا دو پیوتِ کوچکِ آخر
+    # روندِ بزرگ را برعکس نکنند. بی‌دو سقف و دو کفِ ماژور، خودِ داور `na` می‌دهد
+    # (یا fallbackِ اعلام‌شدۀِ recent-window) — هیچ‌وقت جهتِ پیش‌فرض ساخته نمی‌شود.
+    # یک قاعده روی هر سه مقیاس: روزانه تحلیلِ اصلی، هفتگی وتو، ماهانه زمینه.
+    swings_d_s = _fts_swings(struct_d, k=_FTS_SWING_K)
+    swings_w_s = _fts_swings(w_struct, k=2)
+    swings_m_s = _fts_swings(m_struct, k=2)
+
+    def _trend_tf(series, swings):
+        g = major_swings.grade(swings, series)
+        mj, info = major_swings.summarize(g)
+        return {"graded": g, "majors": mj, "info": info,
+                "series": series, "verdict": _tf(mj, series=series)}
+
+    tfs = {"D": _trend_tf(struct_d, swings_d_s),
+           "W": _trend_tf(w_struct, swings_w_s),
+           "M": _trend_tf(m_struct, swings_m_s)}
     out = {
         "trend": {
-            "D": _tf(swings_d, series=candles),
-            "W": _tf(_fts_swings(w, k=2), series=w),
-            "M": _tf(_fts_swings(m, k=2), series=m),
+            "D": tfs["D"]["verdict"],
+            "W": tfs["W"]["verdict"],
+            "M": tfs["M"]["verdict"],
             "alignment": "na",
         },
         "fib": _fts_fib_zones(candles, swings_d),
@@ -2846,9 +5651,25 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         "choch": _fts_choch(candles, swings_d),
         "point_hunt": _fts_point_hunt(candles, swings_d),
         "double_bottom": {"active": False, "neckline": None, "pct_above_neck": None},
-        "range_box": {"active": False, "top": None, "bottom": None, "pct_above_top": None},
+        "range_box": {"active": False, "top": None, "bottom": None,
+                      "start_date": None, "end_date": None, "pct_above_top": None},
         "exit_engine": None,
     }
+    # پروندۀِ «چه چیزی رأی را ساخت» در کنارِ رأی: فهرستِ ماژورهایِ به‌کاررفته،
+    # پیوت‌هایِ کنارگذاشته‌شده، اطلاعِ موقتِ جدا از حکمِ قطعی، و زمانِ مبنایِ سری.
+    out["trend"]["major_swings"] = {
+        tf: _fts_major_context(tf, tfs[tf], struct_d,
+                               full_series={"D": candles, "W": w, "M": m}[tf])
+        for tf in ("D", "W", "M")}
+    # مبنایِ «قطعی بودن»ِ کلِ رأی: آخرینِ کندلِ **بستهٔ** روزانۀ ساختار. کندلِ
+    # تکمیل‌نشده درِ این زمان نمی‌گنجد و فقط زیرِ `provisional` گزارش می‌شود.
+    out["trend"]["as_of"] = out["trend"]["major_swings"]["D"]["as_of"]
+    # نقاطِ ساختاریِ برچسب‌دار (HH/HL/LH/LL) — لایۀ «ساختار روند» روی چارت، با
+    # زمانِ وقوع جدا از زمانِ تأیید (anti-repaint). روزانه تحلیل اصلی است؛ هفتگی
+    # زمینه/فیلتر. فهرست، ماژورهایِ گزینش‌شده‌اند: برچسبِ HH/LH نسبت به ماژورِ
+    # هم‌جنسِ قبلی خوانده می‌شود، نه نسبت به یکِ پیوتِ کوچکِ میانی.
+    out["structure_points"] = {"D": _fts_structure_points(tfs["D"]["majors"]),
+                               "W": _fts_structure_points(tfs["W"]["majors"])}
     # Alignment: all three timeframes agree and are directional.
     tD = out["trend"]["D"]["trend"]
     tW = out["trend"]["W"]["trend"]
@@ -2907,8 +5728,9 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
                 "desc": "هفتگی صعودی + روزانه خنثی: کف دوقلو یا ورود در آخرین کف روند صعودی/آخرین سقف روند نزولی",
             }
 
-    w_reason = _fts_trend_reason(out["trend"]["W"])
-    d_reason = _fts_trend_reason(out["trend"]["D"])
+    _ms = out["trend"]["major_swings"]
+    w_reason = _fts_trend_reason(out["trend"]["W"], ctx=_ms["W"])
+    d_reason = _fts_trend_reason(out["trend"]["D"], ctx=_ms["D"])
     _mx = out["trend"].get("matrix")
     if _mx is not None:
         _mx["basis"] = {"weekly": w_reason, "daily": d_reason}
@@ -2958,9 +5780,13 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         else:
             hg_desc = "ساعت شنی فعال: RSI هفتگی در آستانه اشباع فروش؛ گیت جهت MA52 خاموش است (افزایش خرید ۲ تا ۴ برابر)"
     elif not ma_ok:
-        hg_desc = "MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+        # P0 #7: تعدادِ موجود درِ خودِ متن — نه فقط کناریِ payload.
+        hg_desc = (f"MA52 سنجیده نشد ({_fts_fa(len(closes_w))} کندل هفتگی، "
+                   f"حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد")
     elif not rsi_ok:
-        hg_desc = f"RSI({rsi_period}) هفتگی سنجیده نشد — سابقه کافی نیست"
+        hg_desc = (f"RSI({rsi_period}) هفتگی سنجیده نشد — سابقه کافی نیست "
+                   f"({_fts_fa(len(closes_w))} کندل هفتگی، حداقل "
+                   f"{_fts_fa(rsi_period + 2)} لازم)")
     else:
         hg_desc = "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
 
@@ -2970,12 +5796,12 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         "ma52": round(last_ma52, 2) if last_ma52 is not None else None,
         "weekly_bars": len(closes_w),
         "weekly_rsi": round(last_rsi, 1) if last_rsi is not None else None,
-        # Alias سازگاری برای UI قدیمی؛ مقدار با دوره فعال محاسبه می‌شود.
-        "weekly_rsi5": round(last_rsi, 1) if last_rsi is not None else None,
         "rsi_period": rsi_period,
         "rsi_oversold": rsi_oversold,
         "ma52_position_mode": ma52_position_mode,
         "ma52_position_match": ma52_position_match,
+        # پهنای سایۀ MA52 — پارامترِ اجرایىِ سرور (B4)، نه ساختۀ رابط.
+        "ma52_band_pct": _FTS_HOURGLASS_BAND_PCT,
         "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
                    "NORMAL" if enough_data else "UNKNOWN"),
         "desc": hg_desc,
@@ -2984,8 +5810,16 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     box = _fts_double_bottom(candles, swings_d)
     out["double_bottom"] = box["double_bottom"]
     out["range_box"] = box["range_box"]
+    # شاخۀ پولبکِ روند صعودی (چارت ص۲: صعودی → جت یا پولبک) — پس از محاسبۀ روند.
+    out["pullback"] = _fts_pullback_setup(candles, swings_d, tD, weekly_trend=tW)
     out["exit_engine"] = _fts_exit_engine(candles, entry_hint=entry_hint)
     out["setups"] = _fts_setup_history(candles, swings_d)
+    # P0 #11: فهرستِ خالیِ زیرِ کفِ تاریخچه «۰ ستاپ» نیست؛ «ستاپ‌ها سنجیده نشد».
+    _need_bars = 1 + max(JET_LADDER) + 1
+    out["setups_state"] = ("ok" if len(candles) >= _need_bars
+                           else "insufficient_history")
+    out["setups_bars_available"] = len(candles)
+    out["setups_bars_required"] = _need_bars
     # وضعیتِ عمومیِ canonical + جدولِ نقش‌ها: تنها منبعِ متنِ «وضعیت FTS» درِ رابط
     out["status"] = _fts_status_block(candles, out)
     out["roles"] = _fts_roles_table()
@@ -3062,10 +5896,16 @@ def _fts_scaled(candles, factors, volumes):
         ls = c.get("last")
         ls = float(ls) if ls else None
         v = vol.get(t[:10], float(c.get("volume") or 0))
-        out.append({"time": t[:10], "open": r(o * k), "high": r(h * k), "low": r(l * k),
-                    "closing": r(anchor * k) if anchor > 0 else None,
-                    "last": r(ls * k) if ls is not None else None,
-                    "volume": r(v / k)})
+        row = {"time": t[:10], "open": r(o * k), "high": r(h * k), "low": r(l * k),
+               "closing": r(anchor * k) if anchor > 0 else None,
+               "last": r(ls * k) if ls is not None else None,
+               "volume": r(v / k)}
+        # نشانهٔ «تکمیل‌نشده» باید از اینِ بازسازیِ ردیف زنده بماند، وگرنه لایهٔ
+        # ساختارِ روند (`major_swings.closed_only`) کندلِ میانهٔ جلسه را بسته
+        # می‌پندارد و رأیِ جهت با یک تیکِ درون‌جلسه بازنویسی می‌شود.
+        if c.get("live_forming"):
+            row["live_forming"] = True
+        out.append(row)
     # تنها نقطۀ انتخابِ ستونِ قیمت: `close` اینجا ساخته نمی‌شود، از ریزالویِ
     # قرارداد می‌آید (و هندسه هم از همان `widen`ِ مشترک عبور می‌کند).
     price_basis.apply_basis(out)
@@ -3098,7 +5938,7 @@ def _fts_analysis_series(symbol):
         if len(series) >= 2:
             src = str(payload.get("adjustSource") or "")
             cap = payload.get("adjustCapability") or _adjust_capability(
-                payload.get("adjustEvents") or [], src)
+                payload.get("adjustEvents") or [], src, symbol=symbol)
             # «raw» یعنی داوریِ تعدیل درِ دسترس نیست (لنگر پذیرفته نشد یا نماد هنوز
             # دیده نشده) — نه اینکه تعدیل صفر است؛ آن حالت درِ `-adjusted` می‌ماند.
             if cap.get("combined_available"):
@@ -3208,8 +6048,12 @@ def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
     _src = _stored_adjust_source(symbol) or ("local-cache" if _evs else "local-db-unseen")
     result = {"status": "success", "symbol": symbol, "fts": fts,
               "analysis_basis": basis, "bars": len(candles),
+              # آخرین بستۀ همان سریِ تحلیل — لنگرِ رندرهایِ دوموتوره. چارت
+              # با نسبتِ کندلِ نمایشی به این عدد، عددِ سرور را روی محور می‌آورد
+              # (قاعدۀ لایۀ ۴); بی‌این، FFC در مبنای raw لایه را جابه‌جا می‌زد.
+              "ref_close": last_close,
               "trend_engine": TREND_ENGINE,
-              "adjustCapability": _adjust_capability(_evs, _src)}
+              "adjustCapability": _adjust_capability(_evs, _src, symbol=symbol)}
     if as_of:
         result["as_of"] = as_of
     if len(FTS_ANALYSIS_CACHE) > FTS_ANALYSIS_CACHE_MAX:

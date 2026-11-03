@@ -1,0 +1,25 @@
+{
+ "rows": [
+  "آبنوس",
+  "آتش",
+  "آرام",
+  "آرامش",
+  "آرمان",
+  "آس",
+  "آسا",
+  "آساس"
+ ],
+ "sweep": {
+  "rows": 4,
+  "perRowMs": 120,
+  "elapsedMs": 2968,
+  "requests": []
+ },
+ "dwell": {
+  "ms": 500,
+  "requests": [
+   "/api/fts/آبنوس",
+   "/api/chart/آبنوس/key-levels"
+  ]
+ }
+}

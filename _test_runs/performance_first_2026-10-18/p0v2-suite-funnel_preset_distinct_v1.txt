@@ -1,0 +1,17 @@
+$ python dev/funnel_preset_distinct_v1.py   (api/funnel.py sha bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9)
+  ok   swing و trend زنجیرۀِ تابلوییِ متفاوت دارند
+  ok   swing با فیلترِ f_clock شروع می‌شود
+  ok   trend با فیلترِ f_roobi شروع می‌شود
+  ok   hourglass زنجیرۀِ تابلویی ندارد (تفاوتِ predicate)
+  ok   hourglass دروازۀِ تکنیکالِ متفاوتی با trend دارد
+  ok   ترکیبِ chain+gate به‌تنهایی سه preset را متمایز می‌کند
+  ok   swing و trend رویِ همین fixture خروجِ متفاوت می‌دهند (تابلو)
+  ok   hourglass با کپیِ custom[] نیست (تکنیکال)
+  ok   hourglass با کپیِ custom[] نیست (تابلو هم)
+  ok   زنجیرۀِ دستیِ custom هم خروجِ خودش را می‌سازد (رجیستریِ URL نه فقط دکمه)
+  ok   گیتِ ساعتِ شنی، وتویِ هفتگیِ داورِ روند را بازتولید نمی‌کند
+  ok   کنترلِ منفی: دو گیت رویِ همین fixture رأیِ متفاوت می‌دهند (گارد کور نیست)
+
+funnel_preset_distinct_v1: 12 passed / 0 failed
+
+EXIT=0

@@ -1,0 +1,7 @@
+board_day 1.9s = 20261014
+_bars 0.6s rows=129613 syms=6018 days=35
+ordering: first 6 (sym,date) = [('پر ر 60', '20260929'), ('آلا4', '20260929'), ('پر ر 1', '20260929'), ('پر ه 3', '20260929'), ('پر ر 3', '20260929'), ('اراد275', '20260929')]
+is date-major sorted? False
+first 400 on_bar calls: 4.5s => 11.2 ms/bar => projected 129613 bars = 1457 s
+judge calls so far=156 [('20260929', 0.61), ('20261007', 0.0), ('20261010', 0.0)]
+execution_event rows now=13

@@ -78,7 +78,7 @@ export function LoginScreen() {
           <p className="mt-1 text-xs text-text-muted">
             سامانه جامع داوری نخبگان بازار سرمایه بر پایه متدولوژی FTS
           </p>
-          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-accent-green/30 bg-accent-green/10 px-3 py-0.5 text-[10px] font-bold text-accent-green">
+          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-accent-green/30 bg-accent-green/10 px-3 py-0.5 text-3xs font-bold text-accent-green">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-green" />
             ایستگاه کاری امن و ایزوله
           </div>
@@ -118,7 +118,7 @@ export function LoginScreen() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-[11px] text-text-muted hover:text-text-primary"
+                className="text-3xs text-text-muted hover:text-text-primary"
               >
                 {showPassword ? 'پنهان‌سازی' : 'نمایش رمز'}
               </button>
@@ -146,11 +146,11 @@ export function LoginScreen() {
           )}
 
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[11px] text-text-muted flex items-center gap-1">
+            <span className="text-3xs text-text-muted flex items-center gap-1">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-blue" />
               ورود با احراز هویت محلی امن
             </span>
-            <span className="text-[10px] text-text-muted">
+            <span className="text-3xs text-text-muted">
               حداکثر ۵ تلاش مجاز
             </span>
           </div>
@@ -164,7 +164,7 @@ export function LoginScreen() {
           </button>
         </form>
 
-        <div className="mt-6 border-t border-[var(--hairline)] pt-4 text-center text-[10px] text-text-muted">
+        <div className="mt-6 border-t border-[var(--hairline)] pt-4 text-center text-3xs text-text-muted">
           BorsTerminal Ultimate · FTS Elite Architecture
         </div>
       </div>

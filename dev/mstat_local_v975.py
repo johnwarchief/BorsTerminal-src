@@ -757,7 +757,15 @@ if os.path.exists("market.db"):
     ls = ME.summary(conn)
     ck(len(ls["rows"]) == 10, "روی دادهٔ واقعی هم ۱۰ سطر")
     ck(ls["rows"][0]["value_b_toman"] > 1000, "ارزشِ کلِ بازارِ واقعی معنادار است")
-    ck(ls["health"]["state"] in ("good", "mid", "bad"), "برچسب سلامت ساخته می‌شود")
+    # چهار حالتِ صادق: good/mid/bad رأی‌اند و nodata یعنی موتور عددِ نهایی را نداده
+    # (مثل آخرین نشستِ بانک وقتی p_last ساخته نشده). گارد «برچسب ساخته می‌شود» را
+    # بی‌رأی نمی‌گذرد: اگر nodata است، حتماً برچسب و علت دارد — نه دیکشنریِ تهی.
+    _h = ls["health"]
+    ck(_h.get("state") in ("good", "mid", "bad", "nodata"),
+       "برچسب سلامت ساخته می‌شود (state=%s)" % _h.get("state"))
+    if _h.get("state") == "nodata":
+        ck(bool(_h.get("label")) and len(_h.get("why") or []) > 0,
+           "nodata بی‌صدا نیست: برچسب و علت دارد (%d علت)" % len(_h.get("why") or []))
     ld = ME.depth(conn)
     ck(ld["depth_available"] is True,
        "همگام‌سازیِ تازه عمق را ذخیره کرده (%d نماد با عمق)" % ld["symbols_with_depth"])

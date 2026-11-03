@@ -1,0 +1,158 @@
+{
+ "symbol": "سپيدار",
+ "t0": "2026-10-22T18:45:47.768Z",
+ "calls": [
+  {
+   "t": 169,
+   "method": "GET",
+   "url": "/api/selection/portfolio",
+   "body": null
+  },
+  {
+   "t": 173,
+   "method": "GET",
+   "url": "/api/watchlist",
+   "body": null
+  },
+  {
+   "t": 174,
+   "method": "GET",
+   "url": "/api/market",
+   "body": null
+  },
+  {
+   "t": 174,
+   "method": "GET",
+   "url": "/api/fts/سپيدار",
+   "body": null
+  },
+  {
+   "t": 174,
+   "method": "GET",
+   "url": "/api/chart/سپيدار/key-levels",
+   "body": null
+  },
+  {
+   "t": 175,
+   "method": "GET",
+   "url": "/api/fundamental/سپيدار",
+   "body": null
+  },
+  {
+   "t": 175,
+   "method": "GET",
+   "url": "/api/calendar/upcoming?days=14",
+   "body": null
+  },
+  {
+   "t": 175,
+   "method": "GET",
+   "url": "/api/screener",
+   "body": null
+  },
+  {
+   "t": 175,
+   "method": "GET",
+   "url": "/api/fts/سپيدار",
+   "body": null
+  },
+  {
+   "t": 175,
+   "method": "GET",
+   "url": "/api/funnel/trace?symbol=سپيدار&preset=trend&chain=&fund_mode=standard&exceptions={}&drop_suffix=true",
+   "body": null
+  },
+  {
+   "t": 176,
+   "method": "GET",
+   "url": "/api/calendar/سپيدار",
+   "body": null
+  },
+  {
+   "t": 1336,
+   "method": "GET",
+   "url": "/api/tape-history?codes=29590002988360984&days=5",
+   "body": null
+  }
+ ],
+ "responses": [
+  {
+   "t": 299,
+   "status": 200,
+   "url": "/api/watchlist",
+   "reqMs": -1
+  },
+  {
+   "t": 583,
+   "status": 200,
+   "url": "/api/market",
+   "reqMs": -1
+  },
+  {
+   "t": 586,
+   "status": 200,
+   "url": "/api/selection/portfolio",
+   "reqMs": -1
+  },
+  {
+   "t": 591,
+   "status": 200,
+   "url": "/api/calendar/upcoming?days=14",
+   "reqMs": -1
+  },
+  {
+   "t": 2921,
+   "status": 200,
+   "url": "/api/fts/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 2921,
+   "status": 200,
+   "url": "/api/chart/سپيدار/key-levels",
+   "reqMs": -1
+  },
+  {
+   "t": 2969,
+   "status": 200,
+   "url": "/api/calendar/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 3119,
+   "status": 200,
+   "url": "/api/fundamental/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 3188,
+   "status": 200,
+   "url": "/api/tape-history?codes=29590002988360984&days=5",
+   "reqMs": -1
+  },
+  {
+   "t": 4170,
+   "status": 200,
+   "url": "/api/funnel/trace?symbol=سپيدار&preset=trend&chain=&fund_mode=standard&exceptions={}&drop_suffix=true",
+   "reqMs": -1
+  },
+  {
+   "t": 4557,
+   "status": 200,
+   "url": "/api/screener",
+   "reqMs": -1
+  },
+  {
+   "t": 4773,
+   "status": 200,
+   "url": "/api/funnel",
+   "reqMs": -1
+  },
+  {
+   "t": 5180,
+   "status": 200,
+   "url": "/api/fts/سپيدار",
+   "reqMs": -1
+  }
+ ]
+}

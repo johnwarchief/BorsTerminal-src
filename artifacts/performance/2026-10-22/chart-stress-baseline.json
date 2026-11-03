@@ -1,0 +1,72 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "requested": 60,
+ "symbols": 60,
+ "samples": [
+  {
+   "label": "baseline",
+   "i": 0,
+   "heapMB": 16.7,
+   "nodes": 1364,
+   "listeners": 490,
+   "apiResources": 10
+  },
+  {
+   "label": "after-10",
+   "i": 10,
+   "heapMB": 27.8,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 50
+  },
+  {
+   "label": "after-20",
+   "i": 20,
+   "heapMB": 27.9,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 90
+  },
+  {
+   "label": "after-30",
+   "i": 30,
+   "heapMB": 28,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 130
+  },
+  {
+   "label": "after-40",
+   "i": 40,
+   "heapMB": 28.1,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 170
+  },
+  {
+   "label": "after-50",
+   "i": 50,
+   "heapMB": 28.2,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 206
+  },
+  {
+   "label": "after-60",
+   "i": 60,
+   "heapMB": 28.2,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 206
+  },
+  {
+   "label": "settled",
+   "i": 60,
+   "heapMB": 28.2,
+   "nodes": 1367,
+   "listeners": 490,
+   "apiResources": 206
+  }
+ ],
+ "errors": []
+}

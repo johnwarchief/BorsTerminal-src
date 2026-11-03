@@ -1,5 +1,6 @@
 {
   "version": "2.1",
+  "reject_insurance": true,
   "f01_sales_growth": {
     "min_borderline_percent": 40.0,
     "full_score_percent": 60.0,
@@ -32,7 +33,6 @@
     "mandatory_pricing_sectors": [
       "خودرو و ساخت قطعات",
       "عرضه برق، گاز، بخار و آب گرم",
-      "محصولات شوینده و بهداشتی",
       "لاستیک و پلاستیک"
     ],
     "exceptions": {

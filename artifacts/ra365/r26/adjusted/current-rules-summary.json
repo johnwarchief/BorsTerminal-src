@@ -1,0 +1,17 @@
+{
+ "assets": 2595,
+ "rows": 1192071,
+ "ok": 374178,
+ "adjusted_ok_pct": 31.3889,
+ "steps": {
+  "RATIO_DIFF": 3814,
+  "REF_ONLY": 709,
+  "EXTRA": 122
+ },
+ "error_rows": {
+  "RATIO_DIFF": 743019,
+  "REF_ONLY": 48145,
+  "RAW_OR_BASIS": 8411,
+  "EXTRA": 18318
+ }
+}

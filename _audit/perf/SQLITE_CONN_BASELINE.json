@@ -1,0 +1,150 @@
+{
+ "iters": 15,
+ "db_mb": 233.20576,
+ "ladder": {
+  "sqlite3.connect": {
+   "med_ms": 0.2375999974901788,
+   "p95_ms": 0.29910000012023374,
+   "max_ms": 0.33680000342428684,
+   "min_ms": 0.21330000163288787,
+   "err": null
+  },
+  "row_factory": {
+   "med_ms": 0.006400005077011883,
+   "p95_ms": 0.014599994756281376,
+   "max_ms": 0.018100006855092943,
+   "min_ms": 0.005699999746866524,
+   "err": "AttributeError: 'NoneType' object has no attribute 'row_factory' and no __dict__ for setting new attributes"
+  },
+  "PRAGMA journal_mode=WAL": {
+   "med_ms": 0.0035000048228539526,
+   "p95_ms": 0.004800000169780105,
+   "max_ms": 0.006200003554113209,
+   "min_ms": 0.0033000032999552786,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "PRAGMA synchronous=NORMAL": {
+   "med_ms": 0.0029000002541579306,
+   "p95_ms": 0.0033000032999552786,
+   "max_ms": 0.0037999998312443495,
+   "min_ms": 0.0026999987312592566,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "PRAGMA cache_size=-64000": {
+   "med_ms": 0.0027999994927085936,
+   "p95_ms": 0.0030000010156072676,
+   "max_ms": 0.0034000040614046156,
+   "min_ms": 0.0025999979698099196,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "PRAGMA temp_store=MEMORY": {
+   "med_ms": 0.0026999987312592566,
+   "p95_ms": 0.0032000025385059416,
+   "max_ms": 0.0032000025385059416,
+   "min_ms": 0.0025999979698099196,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "PRAGMA mmap_size=256MB": {
+   "med_ms": 0.0027999994927085936,
+   "p95_ms": 0.0030000010156072676,
+   "max_ms": 0.0033999967854470015,
+   "min_ms": 0.0025999979698099196,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "import fts_engine + register_sql": {
+   "med_ms": 0.008200004231184721,
+   "p95_ms": 0.013500000932253897,
+   "max_ms": 0.015199999324977398,
+   "min_ms": 0.007499998901039362,
+   "err": null
+  },
+  "2x CREATE INDEX IF NOT EXISTS": {
+   "med_ms": 0.0032000025385059416,
+   "p95_ms": 0.0041000021155923605,
+   "max_ms": 0.009900002623908222,
+   "min_ms": 0.0030000010156072676,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "ensure_market_schema": {
+   "med_ms": 0.0023999964469112456,
+   "p95_ms": 0.0034999975468963385,
+   "max_ms": 0.0039000005926936865,
+   "min_ms": 0.0021999949240125716,
+   "err": null
+  },
+  "ensure_selection_schema": {
+   "med_ms": 0.0026999987312592566,
+   "p95_ms": 0.00429999636253342,
+   "max_ms": 0.0044000043999403715,
+   "min_ms": 0.0024999972083605826,
+   "err": null
+  },
+  "watchlist_store.ensure_table": {
+   "med_ms": 0.0034999975468963385,
+   "p95_ms": 0.004399997123982757,
+   "max_ms": 0.004800000169780105,
+   "min_ms": 0.0032000025385059416,
+   "err": "AttributeError: 'NoneType' object has no attribute 'execute'"
+  },
+  "mstat_engine.ensure_schema": {
+   "med_ms": 0.020600004063453525,
+   "p95_ms": 0.02849999873433262,
+   "max_ms": 1.0705000022426248,
+   "min_ms": 0.01990000600926578,
+   "err": null
+  }
+ },
+ "ladder_sum_med_ms": 0.29930000891909003,
+ "get_db": {
+  "med_ms": 3.5747000001720153,
+  "p95_ms": 4.59699999919394,
+  "min_ms": 3.224000000045635,
+  "max_ms": 7.497899998270441
+ },
+ "get_user_db": {
+  "med_ms": 5.33999999606749,
+  "p95_ms": 6.536999993841164,
+  "min_ms": 4.362400002719369,
+  "max_ms": 7.270299996889662
+ },
+ "both": {
+  "med_ms": 7.836099997803103,
+  "p95_ms": 12.721999999484979,
+  "min_ms": 6.401099999493454,
+  "max_ms": 13.497399995685555
+ },
+ "conn_memory": {
+  "1": {
+   "n": 1,
+   "base_ws_kb": 0,
+   "after_ws_kb": 0,
+   "query_ws_kb": 0,
+   "base_priv_kb": 0,
+   "after_priv_kb": 0
+  },
+  "2": {
+   "n": 2,
+   "base_ws_kb": 0,
+   "after_ws_kb": 0,
+   "query_ws_kb": 0,
+   "base_priv_kb": 0,
+   "after_priv_kb": 0
+  },
+  "4": {
+   "n": 4,
+   "base_ws_kb": 0,
+   "after_ws_kb": 0,
+   "query_ws_kb": 0,
+   "base_priv_kb": 0,
+   "after_priv_kb": 0
+  },
+  "8": {
+   "n": 8,
+   "base_ws_kb": 0,
+   "after_ws_kb": 0,
+   "query_ws_kb": 0,
+   "base_priv_kb": 0,
+   "after_priv_kb": 0
+  }
+ }
+}

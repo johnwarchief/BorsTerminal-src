@@ -1,0 +1,132 @@
+[
+ {
+  "verb": "POST",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 712,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 63.0,
+  "cheap_during_n": 6,
+  "cheap_during_med": 36.5,
+  "cheap_during_max": 87.6,
+  "cheap_during_series": [
+   37,
+   36,
+   31,
+   43,
+   35,
+   88
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 836,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 14.6,
+  "cheap_during_n": 7,
+  "cheap_during_med": 62.3,
+  "cheap_during_max": 106.5,
+  "cheap_during_series": [
+   107,
+   44,
+   62,
+   32,
+   36,
+   77,
+   106
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 590,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 14.8,
+  "cheap_during_n": 6,
+  "cheap_during_med": 31.1,
+  "cheap_during_max": 89.8,
+  "cheap_during_series": [
+   73,
+   32,
+   21,
+   30,
+   30,
+   90
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "POST",
+  "cheap": "/api/mstat/phase",
+  "rig": "switchinterval=0.5ms",
+  "build_ms": 796,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 13.9,
+  "cheap_during_n": 7,
+  "cheap_during_med": 49.2,
+  "cheap_during_max": 102.1,
+  "cheap_during_series": [
+   79,
+   102,
+   35,
+   49,
+   30,
+   23,
+   99
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ }
+]

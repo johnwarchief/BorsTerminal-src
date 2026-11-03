@@ -1,0 +1,26 @@
+{
+ "schema": "ra365-wm-calendar-summary/1",
+ "generated_at": "2026-10-25T20:20:00+00:00",
+ "captures": "D:\\BorsTerminal-tmp\\ra365_round32\\calendar\\captures",
+ "capture_sha256": [
+  "58bfae7aafe0c954a3758df3e2bb325ef4b9ba0eba620db31caa416031a380a6",
+  "6c1f95a01196ec50131bff8e8ea8c405947157f85f2d64e5647d879ad28ec37b",
+  "7ab8c2334ded3e671d5b150ee8ce4b73425aedeac66063d488e7cae9d2a3a061",
+  "edce97cce4268fa3223dae820755da95a6308c78fc0eeac7705c806f130d11c5"
+ ],
+ "noncomparable_csv": "D:\\BorsTerminal-tmp\\ra365_round32\\wt32b\\artifacts\\ra365\\r32b\\measure\\noncomparable_wm.csv",
+ "assets_with_bars": 1628,
+ "keys": 5635,
+ "keys_per_timeframe": {
+  "W": 2858,
+  "M": 2777
+ },
+ "built_per_timeframe": {
+  "W": 2858,
+  "M": 2777
+ },
+ "unavailable": {},
+ "bars_file": "wm_calendar_bars.ndjson.gz",
+ "bars_sha256": "ef3029d5c063035c7f6708619e3ef73317357f417dc6ec0312aaca48cf1aa829",
+ "rows": 5635
+}

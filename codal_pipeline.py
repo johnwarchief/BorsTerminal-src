@@ -1481,9 +1481,12 @@ def status_payload(conn, now=None):
     except sqlite3.Error:
         h["incomplete_extractions"] = 0
     try:
-        h["undated_notices"] = len(CF.CP.undated_counts(conn))
+        # `len(undated_counts())` تعدادِ *کلیدهای* دیکشنری را می‌داد (۳)، نه شمارِ
+        # ردیف‌ها؛ شمارِ canonical همان ستونِ `total` است. خطا ⇒ None، نه صفر:
+        # صفر یعنی «بی‌دوره‌ای نیست» و آن رأیِ قطعی رویِ بی‌شاهد است.
+        h["undated_notices"] = int(CF.CP.undated_counts(conn)["total"])
     except Exception:
-        h["undated_notices"] = 0
+        h["undated_notices"] = None
     h["offline_gate"] = offline_gate()
     return h
 

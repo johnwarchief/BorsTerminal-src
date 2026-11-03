@@ -557,21 +557,37 @@ def _daily_setups(closes, highs, lows, vols, c: dict) -> dict:
     `dev/ce_weekly_bucket_guard.py` همان همتایی را قفل می‌کند.
     """
     s, n = {}, len(closes)
+    # P0 #9: هر هفت کلید همیشه منتشر می‌شوند، سه‌حالته — زیرِ کف، `None` با
+    # علتِ شمارشی، نه ناپدیدِ بی‌صدا (کلیدِ نبودن ≠ «نیست»؛ مصرف‌کننده باید
+    # «سنجیده نشد» را از «False» جدا ببیند).
+    for _k in ("breakout", "heavy_volume", "pullback", "fibonacci",
+               "choch", "bearish_div"):
+        s[_k] = None
+    missing = []
     if n >= 21:
         s["breakout"] = bool(closes[0] > max(highs[1:21]))
         base = _mean(vols[1:21])
         s["heavy_volume"] = bool(
             base and base > 0 and vols[0] / base >= _f(c["tech_heavy_vol_mult"], 2.0))
-    ma20 = _sma(closes, 20)
-    if ma20 and closes[0]:
-        s["pullback"] = bool(ma20 < closes[0] <= ma20 * (1.0 + _f(c["tech_pullback_band"], 0.03)))
+        ma20 = _sma(closes, 20)
+        if ma20 and closes[0]:
+            s["pullback"] = bool(ma20 < closes[0] <= ma20 * (1.0 + _f(c["tech_pullback_band"], 0.03)))
+        else:
+            missing.append("pullback:MA20 نپخته")
+    else:
+        missing.append("breakout/heavy_volume/pullback: %d کندل، حداقل ۲۱ لازم" % n)
     if n >= 60:
         hi, lo = max(highs[:60]), min(lows[:60])
         if hi > lo > 0:
             retr = (hi - closes[0]) / (hi - lo)
             s["fibonacci"] = bool(_f(c["tech_fib_lo"], 0.5) <= retr <= _f(c["tech_fib_hi"], 0.68))
+        else:
+            missing.append("fibonacci: دامنهٔ ۶۰ روزهٔ دو-قطبی نیست")
+    else:
+        missing.append("fibonacci: %d کندل، حداقل ۶۰ لازم" % n)
     s["choch"] = _choch(highs, closes)
     s["bearish_div"] = _bearish_div(closes, highs, c)
+    s["setups_reason"] = "؛ ".join(missing) if missing else None
     return s
 
 

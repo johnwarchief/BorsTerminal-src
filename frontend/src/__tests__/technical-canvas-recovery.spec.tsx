@@ -99,3 +99,19 @@ describe('بازطراحی استایل و ساختار دیالوگ تنظیم�
     expect(onClose).toHaveBeenCalled();
   });
 });
+
+describe('رَهِ ورودِ «نمایش محورها» درِ دیالوگ تنظیمات', () => {
+  it('دو سطرِ محور درِ تبِ مقیاس هست و کلیکشان store را عوض می‌کند', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} initialTab="scales" />);
+    expect(screen.getByText('نمایش محورِ زمان')).toBeInTheDocument();
+    expect(screen.getByText('نمایش محورِ قیمت')).toBeInTheDocument();
+    const xBtn = screen.getByRole('button', { name: /محورِ زمان/ });
+    const yBtn = screen.getByRole('button', { name: /محورِ قیمت/ });
+    const v0 = useFtsConfigStore.getState().view;
+    fireEvent.click(xBtn);
+    expect(useFtsConfigStore.getState().view.showXAxis).toBe(!(v0.showXAxis !== false));
+    const v1 = useFtsConfigStore.getState().view;
+    fireEvent.click(yBtn);
+    expect(useFtsConfigStore.getState().view.showYAxis).toBe(!(v1.showYAxis !== false));
+  });
+});

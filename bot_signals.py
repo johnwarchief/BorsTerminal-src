@@ -56,17 +56,37 @@ class FunnelMembership:
         """موقعیت‌هایِ بازِ حساب — برایِ آنکه «فروشِ بی‌موقعیت» ساخته نشود."""
         self._held = set(held)
 
+    def seed(self, prev_session: str | None, prev_map: Mapping[str, str],
+             cur_session: str | None = None,
+             cur_map: Mapping[str, str] | None = None) -> None:
+        """«دیروز» (و اگر رأیِ «امروز» را داری، همان را هم) ازِ ردِّپا بگذار.
+
+        `api/funnel._run` بی‌`as_of` است و فقط تابلویِ جاری را می‌سنجد؛ پس رأیِ
+        یکِ نشستِ گذشته بازسازی‌شدنی نیست و داوریِ دوباره یعنی نشتِ آینده.
+        آنچه درِ آن نشست واقعاً دیده شد ذخیره شده و همین‌جا مصرف می‌شود.
+
+        `cur_session` + `cur_map` داده شوند ⇒ داور برایِ همین نشست دوباره صدا
+        زده نمی‌شود: یکِ فشارِ دکمه = یکِ داوری.
+        """
+        self._prev_session = str(prev_session) if prev_session else None
+        self._prev = self._norm(prev_map)
+        self._cur_session = str(cur_session) if cur_session else None
+        self._cur_map = self._norm(cur_map or {})
+
+    @staticmethod
+    def _norm(mapping: Mapping[str, str]) -> dict[str, str]:
+        out: dict[str, str] = {}
+        for sym, state in (mapping or {}).items():
+            s = str(state or "").strip().lower()
+            # «نیست» با «نمی‌دانیم» یکی نیست: هر چیزِ دیگری unknown می‌ماند.
+            out[str(sym)] = s if s in ("in", "out") else "unknown"
+        return out
+
     def _membership(self, session: str) -> dict[str, str]:
         got = self.judge(session) or {}
         if not isinstance(got, Mapping):
             raise TypeError("judge باید نگاشتِ symbol→in/out برگرداند")
-        out: dict[str, str] = {}
-        for sym, state in got.items():
-            s = str(state or "").strip().lower()
-            # «نیست» با «نمی‌دانیم» یکی نیست: هر مقدارِ دیگری بی‌اقدام است،
-            # نه «خارج‌شدن» — و بی‌دلیل فروشی نمی‌سازد.
-            out[str(sym)] = s if s in ("in", "out") else "unknown"
-        return out
+        return self._norm(got)
 
     def on_bar(self, view: BarView) -> Signal | None:
         session = view.cursor.date

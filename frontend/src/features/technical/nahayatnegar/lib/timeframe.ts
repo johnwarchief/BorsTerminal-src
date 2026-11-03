@@ -62,10 +62,16 @@ export function timeframePeriod(tf: Timeframe): { span: number; type: 'day' | 'w
   return tf === 'W' ? { span: 1, type: 'week' } : tf === 'M' ? { span: 1, type: 'month' } : { span: 1, type: 'day' };
 }
 
-/** کلیدِ سطلِ تقویمی؛ هفته از شنبه (تعطیلات ایران) شروع می‌شود */
+/** کلیدِ سطلِ تقویمی؛ هفته از شنبه (تعطیلات ایران) و ماه از تقویمِ جلالی —
+ *  مرجعِ رهاورد کندلِ ماهانه را با ماهِ جلالی می‌سازد (e.g. 2014-03-21 = 1 Farvardin). */
 function bucketKey(ts: number, tf: Timeframe): number {
   const day = Math.floor(ts / DAY_MS);
   if (tf === 'W') return Math.floor((day - 2) / 7);
+  if (tf === 'M') {
+    const j = epochToJalali(ts);
+    const [jy, jm] = j.split('/').map((x) => Number(x));
+    if (jy > 0 && jm > 0) return jy * 12 + (jm - 1);
+  }
   const d = new Date(ts);
   return d.getUTCFullYear() * 12 + d.getUTCMonth();
 }

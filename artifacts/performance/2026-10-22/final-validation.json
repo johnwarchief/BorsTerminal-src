@@ -1,0 +1,61 @@
+{
+ "date": "2026-10-22",
+ "python_full_runner": {
+  "command": "BORS_NO_FETCH_LOOPS=1 python dev/run_all_tests.py",
+  "status": "NOT_COMPLETED",
+  "reason": "170 suites, stopped at the session's 10-minute background cap at dev/test_fts_asof_cutoff.py; runner stdout buffered, no pass/fail summary exists",
+  "targeted_guards_passed": [
+   "mstat_snapshot_cache_v1 10/10",
+   "mstat_snapshot_singleflight_v1 4/4",
+   "notifications_sources_cache_v1 6/6",
+   "test_notifications_v1 30/30",
+   "market_index_etag_v1 8/8",
+   "stale_wiring_v1073 19/19",
+   "market_closes_v1 5/5",
+   "get_db_schema_once_v1 6/6",
+   "mstat_cache_durability_v1 4/4",
+   "persian_glyph_guard 4/4"
+  ]
+ },
+ "vitest_full": {
+  "command": "npx vitest run (frontend)",
+  "status": "NOT_COMPLETED",
+  "files_seen": 122,
+  "test_files_total": 201,
+  "failures_observed_in_emitted_output": 0,
+  "reason": "stopped after ~20+ minutes to keep the session within its validation budget"
+ },
+ "vitest_targeted": {
+  "status": "PASS",
+  "files": [
+   "fts-pipeline-bar.spec.tsx",
+   "m1-ux-integrity.spec.tsx",
+   "http-conditional.spec.ts",
+   "http-conditional-lru.spec.ts",
+   "market-status-page.spec.tsx"
+  ],
+  "tests": "39/39"
+ },
+ "tsc": {
+  "command": "npx tsc -b",
+  "status": "PASS",
+  "errors": 0
+ },
+ "build": {
+  "command": "npm run build",
+  "status": "PASS"
+ },
+ "version_anchor": {
+  "command": "python dev/version_anchor_guard.py",
+  "status": "PASS",
+  "checks": "6/6"
+ },
+ "struct_check": {
+  "command": "python dev/struct_check.py",
+  "status": "PASS"
+ },
+ "pre_existing": {
+  "mstat_status_panels_contract_v1": "201/203; free_float vs official_impact on HEAD since ef92c89c",
+  "chart_pageerror_bar": "seen in some full tab cycles; not reproduced in isolated technical/market-status/fundamental probes"
+ }
+}

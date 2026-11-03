@@ -1,5 +1,6 @@
 import type { KLineData } from 'klinecharts';
 import { parseCandleTimestamp } from '../../lib/jalaliDate';
+import { toFaDigits } from '@shared/lib/fmt';
 
 /**
  * رویداد تعدیل. سرور (api/chart.py) برای هر رویداد فقط یک عدد می‌دهد:
@@ -14,25 +15,82 @@ export interface CorporateAction {
 }
 
 /**
- * سه مفهومِ جدا — یکی نکن، جای یکی را به دیگری ندِه:
- *   none        — قیمتِ خامِ تابلو (محور ریال)
- *   combined    — ضریبِ تجمعیِ گسستِ «قیمت پایه» روی کندل‌هایِ ماقبلِ رویداد (محور ریال)
- *   performance — **نمایِ بازدهی (شاخصِ ۱۰۰)**: همان سریِ combined تقسیم بر نخستین
- *                 پایانی × ۱۰۰. مقدارِ `performance` درِ این فایل و درِ stateِ ذخیره‌شده
- *                 فقط نامِ سیمِ رابط است (نمایه‌هایِ چارت با همین رشته ذخیره شده‌اند)؛
- *                 معنایش شاخصِ بازدهی است، **نه** Functional Adjustment.
+ * دو حالتِ سریِ قیمت — و فقط همین دو (رأیِ مالک، دورِ ممیزیِ کلِ نمادها):
+ *   none      — قیمتِ خامِ تابلو (محور ریال)
+ *   combined  — عملکردی: ضریبِ تجمعیِ گسستِ «قیمت پایه» روی کندل‌هایِ ماقبلِ رویداد (ریال)
+ *
+ * «نمایِ بازدهی (شاخصِ ۱۰۰)» که با نامِ `performance` درِ این فایل و درِ stateِ
+ * ذخیره‌شده بود حذف شد. آن حالت *نوعِ سریِ قیمت نبود*: یک مقیاس‌کردنِ نمایشی رویِ
+ * همان سریِ combined (÷ نخستینِ پایانی × ۱۰۰) بود، و نامش دقیقاً همان چیزی است که
+ * درِ رأیِ ۲۰۲۶-۰۹-۲۴ از UI و کد بیرون رفت — چون کاربر آن را «تعدیلِ عملکردی» می‌خواند
+ * و چارت را با محورِ ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ برای فولادی باز می‌کرد که آخرین کندلش ۴٬۴۱۰ است.
+ * امروز آن مقیاسِ نمایشی همان «محور درصدی» درِ تنظیماتِ مقیاس‌ها است (نوعِ نمایش، نه
+ * نوعِ سری) و همان‌جا می‌ماند.
  *
  * «تعدیل عملکردیِ واقعی» (ره‌آورد/نهایات‌نگر) سودِ نقدی را **سرمایه‌گذاریِ دوباره**
  * می‌کند (history را تا ده برابر پایین‌تر می‌کشند — docs/CHART-PARITY-REFERENCE.md §۸)
  * و به DPSِ تفکیکیِ هر رویداد، آورده/حق‌تقدم، افزایشِ سرمایه و تاریخِ معافیت نیاز دارد.
- * هیچ‌یک از این‌ها درِ فیدِ TSETMC و درِ هیچ جدولِ این بانک نیست؛ پس این حالت اینجا
- * ساخته نمی‌شود و در `capability.functionalAvailable` صریح `false` می‌ماند.
- * هیچ عددِ حدسی به‌جایِ آن نمی‌نشیند.
+ * سرور از این دور همان الزامات را از داده می‌خواند (`_functional_state` درِ
+ * api/chart.py) و `functionalAvailable` را **محاسبه** می‌کند؛ هر مانع هم با عددِ
+ * همان نماد درِ `functionalBlockers` می‌آید. مرورگر دیگر خودش تصمیم نمی‌گیرد که
+ * تعدیلِ عملکردی هست یا نه، و هیچ عددِ حدسی جای ضریبِ سرور نمی‌نشیند.
  */
-export type AdjustmentMode = 'none' | 'combined' | 'performance';
+export type AdjustmentMode = 'none' | 'combined';
 
-/** پایهٔ نمایِ بازدهی — همان چیزی که رویِ محورِ عمودی خوانده می‌شود */
-export const PERFORMANCE_BASE = 100;
+/** هر حالتِ دیگری که درِ تنظیمِ قدیمی پیدا شود، به این دو کوچکت می‌شود */
+const LEGACY_MODE_TARGETS: Record<string, AdjustmentMode> = {
+  none: 'none',
+  combined: 'combined',
+  // نمایِ بازدهی رویِ سریِ تعدیل‌شده می‌نشست، پس نزدیک‌ترین معنایِ ریالیِ همان عدد
+  performance: 'combined',
+  // دو حالتی که هرگز دادهٔ پشتیبان نداشتند و درِ UI غیرفعال بودند
+  capital: 'combined',
+  cash: 'combined',
+};
+
+/**
+ * خواندنِ یکِ مبنایِ ذخیره‌شده — از قالبِ چارت یا stateِ کهنه.
+ * سازگاریِ داخلی، نه یکِ حالتِ سومِ رابط: رشته‌ای که نمی‌شناسیم `null` می‌ماند تا
+ * فراخوانِ خودش پیش‌فرضِ جاری را نگه دارد (بی‌ساختنِ حالت از رویِ حدس).
+ */
+export function migrateAdjustmentMode(stored: unknown): AdjustmentMode | null {
+  if (typeof stored !== 'string') return null;
+  return LEGACY_MODE_TARGETS[stored] ?? null;
+}
+
+/**
+ * مبنایِ پیش‌فرضِ چارت. «عملکردی» درِ رهاورد محورِ **ریالی** را نگه می‌دارد
+ * (برچسبِ همان صفحه: O 4,410 H 4,410 …)، پس پیش‌فرضِ چارتِ خودی هم باید سریِ
+ * ریالیِ تعدیل‌شده باشد، نه شاخصِ ۱۰۰.
+ *
+ * پیش از این، `KLineChartWrapper` با همان نیتِ مالک («تعدیل عملکردی») رویِ
+ * `performance` باز می‌شد و محورِ فولاد ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ نشان می‌داد در حالی که
+ * آخرین کندلِ همان پاسخِ API ۴٬۴۱۰ بود (سنجشِ ۱۴۰۵-۰۷-۲۷، `_audit/chart_axis_stages.json`:
+ * `axisValues.candle = {topValue: 166820.57, bottomValue: 65106.08}` در برابرِ
+ * `api.lastClose = 4410`). سرجایش همین‌جا بسته می‌شود تا دو حالتِ واگرا نسازد.
+ */
+export const DEFAULT_ADJUSTMENT_MODE: AdjustmentMode = 'combined';
+
+/**
+ * موتورِ دوم (FFC) کرکرۀ «نوع تعدیل قیمت» را ندارد — آن کرکره درِ نوارِ ابزارِ
+ * KLineCharts است. سریِ این موتور همیشه همین مبنای واحد است، و برچسبِ رویِ صحنه
+ * از همین دو ثابت ساخته می‌شود: اعلامِ UI و داده‌ای که رسم می‌شود یک منبع دارند،
+ * پس «موتورِ دوم خام نشان می‌دهد در حالی که عملکردی می‌گوید» ممکن نیست.
+ */
+export const FFC_ADJUSTMENT_MODE: AdjustmentMode = 'combined';
+export const FFC_ADJUSTMENT_BASIS_LABEL = 'عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد';
+
+/**
+ * ضریبِ هر کندل آن‌طور که سرور محاسبه کرده است (`factors=[{time,factor}]`).
+ * از این دور این آرایه **تنها** ورودیِ مقیاسِ قیمت درِ مرورگر است: حلقۀِ محلیِ
+ * «دوباره ضرب‌کردنِ رویدادها» حذف شد، چون سنجشِ قدمِ ۵ نشان داد دو مسیر یکی نیستند —
+ * مرورگر نسبتِ بیرونِ بازۀِ باورپذیر را دور می‌انداخت (فیلترِ ۰٫۰۲ تا ۵۰ درِ
+ * `mapBackendAdjustEvents`) در حالی که حلقۀِ CDN همان را می‌ضرب کرد.
+ */
+export interface AdjustFactor {
+  time: string;
+  factor: number;
+}
 
 /** آنچه سرور دربارهٔ تواناییِ تعدیل اعلام می‌کند (api/chart.py::_adjust_capability) */
 export interface AdjustmentCapability {
@@ -41,17 +99,32 @@ export interface AdjustmentCapability {
   source: string;
   /** مجموعهٔ رویدادِ کاننیکال در دسترس است ⇒ `combined` معنایِ واقعی دارد */
   combinedAvailable: boolean;
-  /** تعدیلِ عملکردیِ واقعی (DPSِ سرمایه‌گذاری‌شده) — با دادهٔ این برنامه هیچ‌گاه true نیست */
+  /** تعدیلِ عملکردیِ واقعی (DPSِ سرمایه‌گذاری‌شده) — محاسبه‌شده از الزاماتِ همین نماد */
   functionalAvailable: boolean;
+  /** AVAILABLE | AVAILABLE_NO_EVENTS | PARTIAL | SOURCE_GAP | STALE | UNVERIFIED | UNMEASURED | FAILED */
+  functionalStatus: string;
+  /** پوششِ بازهٔ درخواستی در برابر پوششِ کلِ تاریخچه (api/chart.py::_functional_state) */
+  availability: Record<string, unknown> | null;
   /** دلیلِ human-readableِ نبودِ تعدیلِ عملکردی (متنِ سرور، بی‌بازنویسی) */
   functionalReason: string;
+  /** موانعِ شمارشیِ همین نماد، هر کدام با عددِ خودش (بی‌سکوت درِ پاسخ) */
+  functionalBlockers: string[];
+  /** `false` = رویدادِ ناقص درِ زنجیره، `null` = سرور اعلام نکرده است */
+  chainComplete: boolean | null;
+  /** پوششِ دفترِ رسمیِ همین ابزار (ردیف‌ها، بی‌همتاها، کندل‌هایِ پیشِ پوشش) */
+  coverage: Record<string, unknown> | null;
 }
 
 const UNKNOWN_CAPABILITY: AdjustmentCapability = {
   source: 'unreported',
   combinedAvailable: false,
   functionalAvailable: false,
+  functionalStatus: 'UNREPORTED',
+  availability: null,
   functionalReason: 'پاسخِ سرور بلوکِ تواناییِ تعدیل ندارد؛ تعدیلِ رویداد تأیید نشده است.',
+  functionalBlockers: ['unreported:سرور بلوکِ توانایی را نفرستاد'],
+  chainComplete: null,
+  coverage: null,
 };
 
 /**
@@ -67,26 +140,168 @@ export function readAdjustmentCapability(raw: unknown): AdjustmentCapability {
     source: String(c.source ?? 'unreported'),
     combinedAvailable: c.combined_available === true,
     functionalAvailable: c.functional_available === true,
+    functionalStatus: String(c.functional_status ?? 'UNREPORTED'),
+    availability: (c.availability && typeof c.availability === 'object')
+      ? (c.availability as Record<string, unknown>) : null,
     functionalReason: String(c.functional_reason ?? UNKNOWN_CAPABILITY.functionalReason),
+    functionalBlockers: Array.isArray(c.functional_blockers)
+      ? (c.functional_blockers as unknown[]).map(String) : [],
+    chainComplete: typeof c.chain_complete === 'boolean' ? c.chain_complete : null,
+    coverage: (c.coverage && typeof c.coverage === 'object')
+      ? (c.coverage as Record<string, unknown>) : null,
   };
 }
 
 /**
  * هشدارِ صادقِ همان حالت — نه «داده نیست» کلی، بلکه علتِ همان محور.
  * فقط وقتی آتش می‌زند که مجموعهٔ رویداد در دسترس نباشد؛ آن‌وقت هر عددی که
- * `combined` یا «نمایِ بازدهی» خوانده می‌شود در واقع ریالِ خام است.
+ * درِ حالتِ «عملکردی» خوانده می‌شود در واقع ریالِ خام است.
  */
 export function adjustmentGapNote(mode: AdjustmentMode, cap: AdjustmentCapability): string | null {
   if (mode === 'none') return null;
   if (cap.combinedAvailable) return null;
-  return mode === 'performance'
-    ? `نمایِ بازدهی رویِ قیمتِ خام (تعدیلِ رویداد در دسترس نیست — منبع: ${cap.source}).`
-    : `تعدیلِ ترکیبی در دسترس نیست (منبع: ${cap.source})؛ اعدادِ محور خام‌اند.`;
+  return `تعدیلِ رویداد در دسترس نیست (منبع: ${cap.source})؛ اعدادِ محور خام‌اند.`;
 }
 
-/** ده‌دقیقه‌ایِ ممیز برای عددِ بازدهی؛ قیمتِ ریالی گردِ صحیح می‌ماند */
-function round2(v: number): number {
-  return Math.round(v * 100) / 100;
+/**
+ * آنچه سرور دربارهٔ تعدیلِ عملکردیِ واقعی می‌گوید، به زبانِ همان نماد.
+ * «عملکردی» درِ رهاورد یعنی سرمایه‌گذاریِ دوبلۀِ سود و با «تعدیلِ ترکیبی» یکی
+ * نیست؛ تا پیش از این، رابط هیچ‌جا این تفاوت را به کاربر نمی‌گفت (متنِ سرور
+ * خوانده می‌شد ولی هیچ‌جا نمایش داده نمی‌شد). نبودِ ادعایِ فعال = نمایشِ مانع،
+ * با همان شمارۀِ اعلام‌شدۀِ سرور — نه یک «داده نیست» کلی.
+ */
+export function functionalGapNote(cap: AdjustmentCapability): string | null {
+  if (cap.functionalAvailable) return null;
+  const first = (cap.functionalBlockers ?? []).slice(0, 2).join('، ');
+  return `تعدیلِ عملکردیِ واقعی با دادهٔ همین نماد اثبات نشده‌است${first ? ` (${first})` : ''} — `
+    + 'محور، سریِ تعدیلِ ترکیبی است.';
+}
+
+export interface FunctionalStatusNote {
+  summary: string;
+  details: string[];
+}
+
+/** متنِ کوتاهِ فارسی برای هشدارِ عملکردی + جزئیاتِ بازشونده.
+ *
+ * همهٔ عددها از `functionalBlockers` همان پاسخ می‌آیند؛ هیچ عددی در این فایل
+ * hard-code نیست. اگر وضعیت کامل باشد (functionalAvailable) هشدار برمی‌گردد null.
+ * کدهایِ خامِ انگلیسی فقط در جزئیات می‌مانند تا کاربر متنِ فارسی کوتاه ببیند.
+ */
+const FUNCTIONAL_STATUS_LABEL: Record<string, string> = {
+  AVAILABLE: 'کامل تأییدشده',
+  AVAILABLE_NO_EVENTS: 'بدون رویداد — خام همان عملکردی است',
+  PARTIAL: 'بخشی از تاریخچه',
+  SOURCE_GAP: 'کمبود دادهٔ منبع',
+  STALE: 'دادهٔ کهنه',
+  UNVERIFIED: 'تأییدنشده',
+  UNMEASURED: 'سنجیده‌نشده',
+  FAILED: 'ناموفق',
+  UNREPORTED: 'گزارش‌نشده',
+};
+
+export function functionalStatusNote(cap: AdjustmentCapability): FunctionalStatusNote | null {
+  if (cap.functionalAvailable) return null;
+  const status = cap.functionalStatus || 'UNREPORTED';
+  const av = cap.availability || {};
+  const parse = (raw: string): { key: string; n: number | null } => {
+    const i = raw.indexOf(':');
+    if (i <= 0) return { key: raw, n: null };
+    const tail = raw.slice(i + 1);
+    return /^\d+$/.test(tail)
+      ? { key: raw.slice(0, i), n: Number(tail) }
+      : { key: raw.slice(0, i), n: null };
+  };
+  const blockers = (cap.functionalBlockers ?? []).map(parse);
+  const count = (key: string): number | null => {
+    const hit = blockers.find(b => b.key === key);
+    return hit ? hit.n : null;
+  };
+  const label = (b: { key: string; n: number | null }): string => {
+    const n = b.n;
+    switch (b.key) {
+      case 'event-type-unresolved': return `${toFaDigits(n ?? 0)} رویداد با نوعِ حل‌نشده`;
+      case 'candles-before-ledger-coverage': return `${toFaDigits(n ?? 0)} کندل پیش از پوشش دفتر رسمی`;
+      case 'ledger-rows-unmatched-by-price-series': return `${toFaDigits(n ?? 0)} ردیف دفتر بی‌تطبیق با سری قیمت`;
+      case 'offer-price-missing': return `${toFaDigits(n ?? 0)} رویداد بدون قیمت پذیره`;
+      case 'ledger-rows-rejected': return `${toFaDigits(n ?? 0)} ردیف دفتر ردشده`;
+      case 'chain-incomplete': return `${toFaDigits(n ?? 0)} رویداد با زنجیرهٔ ناقص`;
+      case 'ledger-flow-truncated-at-cap': return `دفتر تعدیل در سقف ${toFaDigits(n ?? 0)} ردیف بریده شده است`;
+      case 'no-official-rows-for-instrument': return 'هیچ ردیف رسمیِ تعدیل در بانک نیست';
+      case 'ledger-unavailable': return 'دفتر تعدیل در دسترس نیست';
+      case 'unmeasured': return 'وضعیت تعدیل سنجیده نشده است';
+      case 'unreported': return 'سرور وضعیت تعدیل را نفرستاد';
+      default: return b.key;
+    }
+  };
+  const dt = (v: unknown): string => (v ? toFaDigits(String(v).slice(0, 10)) : '');
+  const statusLine = status !== 'UNREPORTED'
+    ? `وضعیت: ${FUNCTIONAL_STATUS_LABEL[status] ?? status}` : null;
+  const avLines: string[] = [];
+  const rs = dt(av.requested_start), re = dt(av.requested_end);
+  if (rs || re) avLines.push(`بازهٔ درخواستی: ${rs || '—'} تا ${re || '—'}`);
+  const cs = dt(av.covered_start), ce = dt(av.covered_end);
+  if (cs || ce) avLines.push(`پوشش دفتر رسمی: ${cs || '—'} تا ${ce || '—'}`);
+  if (av.valid_points !== undefined) {
+    const valid = Number(av.valid_points);
+    const incomplete = Number(av.incomplete_points ?? 0);
+    avLines.push(`نقاط معتبر: ${toFaDigits(valid)} از ${toFaDigits(valid + incomplete)}`);
+  }
+  if (av.source) avLines.push(`منبع: ${String(av.source)}`);
+  if (av.stale === true) avLines.push('داده کهنه است.');
+  const baseDetails = [
+    ...(statusLine ? [statusLine] : []),
+    ...(blockers.length ? blockers.map(label) : ['سرور دلیلی برای تأییدنشدن اعلام نکرده است.']),
+    ...avLines,
+  ];
+
+  if (status === 'PARTIAL') {
+    const win = dt(av.window_start);
+    return {
+      summary: win
+        ? `تعدیل عملکردی برای بخشی از تاریخچه تأیید شده است؛ بازهٔ پوشش‌داده‌شده از ${win} آغاز می‌شود.`
+        : 'تعدیل عملکردی برای بخشی از تاریخچه تأیید شده است.',
+      details: baseDetails,
+    };
+  }
+  if (status === 'STALE') {
+    return {
+      summary: 'دادهٔ تعدیل این نماد از پایگاه محلی و کهنه است؛ تعدیل عملکردی تأیید نشده است.',
+      details: baseDetails,
+    };
+  }
+
+  const nEvent = count('event-type-unresolved');
+  const nPre = count('candles-before-ledger-coverage');
+  const nUnmatched = count('ledger-rows-unmatched-by-price-series');
+  const short: string[] = [];
+  if (nEvent) short.push(`${toFaDigits(nEvent)} رویداد حل‌نشده`);
+  if (nPre) short.push(`${toFaDigits(nPre)} کندل پیش از پوشش مرجع`);
+  if (!short.length && nUnmatched) short.push(`${toFaDigits(nUnmatched)} ردیف دفتر بی‌تطبیق`);
+  if (!short.length) {
+    const has = (key: string) => blockers.some(b => b.key === key);
+    if (has('no-official-rows-for-instrument')) short.push('هیچ ردیف رسمیِ تعدیل در بانک نیست');
+    else if (has('ledger-unavailable')) short.push('دفتر تعدیل در دسترس نیست');
+    else if (has('unmeasured') || status === 'UNMEASURED') short.push('وضعیت تعدیل سنجیده نشده است');
+    else if (status === 'FAILED') short.push('سنجش تعدیل این نماد ناموفق بود');
+    else if (has('unreported')) short.push('سرور وضعیت تعدیل را نفرستاد');
+    else short.push('دلیلِ دقیق در جزئیات آمده است');
+  }
+  return {
+    summary: `تعدیل عملکردی این نماد کامل تأیید نشده است؛ ${short.join(' و ')}.`,
+    details: baseDetails,
+  };
+}
+
+/**
+ * گردکردنِ قیمتِ تعدیل‌شده. صحیح‌گردانیِ بی‌قید اینجا خطایِ بزرگی می‌سازد: ضریبِ تجمعیِ فولاد در
+ * ۲۰۰۷-۰۳-۱۱ برابر ۰٫۰۰۱۶۷۴۸۹۷۸ است و پایانیِ خام ۱٬۹۰۰ ⇒ ۳٫۱۸۲۳. صحیح‌گردانی آن را
+ * به ۳ می‌اندازد (۵٫۷٪ خطا) و آن خطا به ارتفاعِ همهٔ کندل‌هایِ کهنه و به هر عددی که
+ * از همان سری حساب می‌شود سرایت می‌کند. پس چهار رقمِ ممیز می‌ماند؛ خوانا‌بودنِ محور
+ * تنظیمِ جدا است (`pricePrecision` درِ ftsConfigStore) — نه تحریفِ داده.
+ */
+function roundAdjustedPrice(v: number): number {
+  return Math.round(v * 1e4) / 1e4;
 }
 
 export function getAdjustmentFactor(action: CorporateAction): number {
@@ -94,76 +309,63 @@ export function getAdjustmentFactor(action: CorporateAction): number {
 }
 
 /**
- * تبدیلِ سریِ قیمت به شاخصِ بازدهی: هر کندل ÷ پایانیِ نخستین کندل × ۱۰۰.
- * این **فقط یک مقیاس‌کردن است** — هیچ رویدادِ شرکتی در آن لحاظ نمی‌شود، پس
- * «تعدیل» نامیده نمی‌شود مگر رویِ سریِ از پیش `combined`.
+ * تنها نقطۀ ضربِ ضریبِ تعدیل درِ کلِ مرورگر. هیچ مصرف‌کننده‌ای (چارت، تجمیعِ
+ * هفتگی/ماهانه، FFC، موتورِ دوم، سریِ مقایسه) نباید دوباره این را بنویسد یا
+ * خروجیِ این را یک‌بارِ دیگر ضرب کند — «تعدیلِ دوباره» تاریخِ گذشته را دو‌بار
+ * مقیاس می‌کند.
  *
- * حجم و گردشِ ارزش **دست‌نخورده** می‌مانند — آن‌ها قیمت نیستند که مقیاس شوند.
- * سریِ بی‌پایه (نخستین close صفر یا تهی) بدونِ تغییر برمی‌گردد: تقسیمِ بر صفر
- * یعنی بی‌نهایتِ سبزِ جعلی رویِ محور، نه «۰٪».
- */
-export function toIndexedSeries(candles: KLineData[]): KLineData[] {
-  const base = candles.length ? Number(candles[0].close) : 0;
-  if (!(base > 0)) return candles.map(c => ({ ...c }));
-  return candles.map(c => ({
-    ...c,
-    open: round2(Number(c.open) / base * PERFORMANCE_BASE),
-    high: round2(Number(c.high) / base * PERFORMANCE_BASE),
-    low: round2(Number(c.low) / base * PERFORMANCE_BASE),
-    close: round2(Number(c.close) / base * PERFORMANCE_BASE),
-  }));
-}
-
-/** دقتِ محورِ قیمت برای هر حالت — نمایِ بازدهی بدونِ دو رقمِ ممیز خوانده نمی‌شود */
-export function pricePrecisionFor(mode: AdjustmentMode): number {
-  return mode === 'performance' ? 2 : 0;
-}
-
-/**
- * تنها نسخهٔ ضربِ ضریبِ تعدیل در کل مرورگر. هیچ مصرف‌کننده‌ای (چارت، تجمیعِ
- * هفتگی/ماهانه، FFC، موتورِ دوم) نباید دوباره این را بنویسد یا خروجیِ این را
- * یک‌بارِ دیگر ضرب کند — «تعدیلِ دوباره» تاریخِ گذشته را دو‌بار مقیاس می‌کند.
+ * ضریب‌ها از سرور می‌آیند (`api/chart.py::_canonical_adjustment` ⇒ `AE.chain_factors`).
+ * پیش از این دور همین فایل از `adjustEvents` یک زنجیرۀِ *دوم* می‌ساخت و با سریِ سرور
+ * واگرا می‌شد: فیلترِ نسبتِ بیرونِ (۰٫۰۲،۵۰) درِ `mapBackendAdjustEvents` رویدادها را کم
+ * می‌کرد، در حالی که حلقۀِ سرور همان‌ها را نگه می‌داشت — دو مقیاسِ متفاوت برایِ یک
+ * نماد درِ یک صفحه. حالا یک محاسبه هست و مرورگر فقط همان را اعمال می‌کند.
  *
- * اعمال ضرایب تعدیل بر روی سری زمانی کندل‌ها (KLineData v10)
+ * اعمالِ ضریب: فقط قیمت‌ها ×k. حجم و گردشِ ارزش دست‌نخورده می‌مانند — مرجعِ ره‌آورد
+ * هم درِ هر دو_seriesِ خام و تعدیل‌شده همان حجم را می‌رسمد (سنجشِ بالا)، و تقسیمِ حجم
+ * بر ضریبِ کهنه (۰٫۰۰۱۶) محورِ حجم را تا صدبرابرِ منبع بالا می‌برد.
+ * کندلی که سرور برایش ضریبی نفرستاده (سریِ محلیِ بی‌factors، کندلِ تزریق‌شدۀِ محلی)
+ * ضریبِ ۱ می‌گیرد — «بی‌اثر»، نه حذفِ کندل و نه عددِ ساخته‌شده.
  */
 export function applyAdjustmentToCandles(
   rawCandles: KLineData[],
-  actions: CorporateAction[],
+  factors: AdjustFactor[],
   mode: AdjustmentMode
 ): KLineData[] {
-  if (mode === 'none' || !actions || actions.length === 0 || !rawCandles || rawCandles.length === 0) {
-    return mode === 'performance' ? toIndexedSeries(rawCandles.map(c => ({ ...c })))
-                                  : rawCandles.map(c => ({ ...c }));
+  if (mode === 'none' || !rawCandles || rawCandles.length === 0) {
+    return rawCandles ? rawCandles.map(c => ({ ...c })) : [];
   }
 
-  // مرتب‌سازی زمانی رویدادها از قدیم به جدید
-  const sortedActions = [...actions].sort((a, b) => a.timestamp - b.timestamp);
+  const byDate = new Map<string, number>();
+  for (const f of factors ?? []) {
+    const d = String(f?.time ?? '').slice(0, 10);
+    const v = Number(f?.factor ?? NaN);
+    if (d && Number.isFinite(v) && v > 0) byDate.set(d, v);
+  }
 
   const scaled = rawCandles.map(candle => {
-    let cumulativeFactor = 1.0;
-
-    // کندل‌های ماقبل هر مجمع، در ضریب آن مجمع ضرب می‌شوند
-    for (const act of sortedActions) {
-      if (candle.timestamp < act.timestamp) {
-        cumulativeFactor *= getAdjustmentFactor(act);
-      }
-    }
-
-    // قیمت‌ها ضرب و حجم معاملات بر ضریب تقسیم می‌شود تا ارزش معامله ثابت بماند
-    const factor = cumulativeFactor;
+    // سرور ضریب را با کلیدِ تاریخِ ISO می‌فرستد و کندل‌ها از همان تاریخِ UTC-نیمه‌شب
+    // ساخته شده‌اند (`Date.parse(time + 'T00:00:00Z')` / `Date.UTC(...)` درِ
+    // `parseCandleTimestamp`)، پس این بازگشتِ روز بی‌جابه‌جایی است.
+    const key = new Date(candle.timestamp).toISOString().slice(0, 10);
+    const factor = byDate.get(key) ?? 1.0;
     return {
       timestamp: candle.timestamp,
-      open: Math.round(candle.open * factor),
-      high: Math.round(candle.high * factor),
-      low: Math.round(candle.low * factor),
-      close: Math.round(candle.close * factor),
-      volume: candle.volume !== undefined ? Math.round(candle.volume / factor) : undefined,
+      open: roundAdjustedPrice(candle.open * factor),
+      high: roundAdjustedPrice(candle.high * factor),
+      low: roundAdjustedPrice(candle.low * factor),
+      close: roundAdjustedPrice(candle.close * factor),
+      // حجم دست‌نخورده می‌ماند. تقسیمِ حجم بر ضریب («تا ارزشِ ثابت بماند») با
+      // مرجعِ measured نمی‌خواند: درِ سنجشِ ۱۴۰۵-۰۷-۲۷ از ۶۰۱ تاریخِ مشترکِ فولاد،
+      // سریِ حجمِ خام (type0) و سریِ حجمِ تعدیل‌شدهٔ رهاورد (type7) در ۶۰۱ از ۶۰۱
+      // تاریخ *یکسان* بودند (`_audit/ra365_ref_bars.json`). تقسیم، محورِ حجم را در
+      // نمایِ کاملِ تاریخچه ۱۷۶ برابرِ منبع می‌کرد (۲٫۲۹e۱۲ به‌جای ۱٫۳e۱۰،
+      // `_audit/chart_axis_stages.json`).
+      volume: candle.volume,
       turnover: candle.turnover
     };
   });
 
-  // نمایِ بازدهی رویِ همان سریِ تعدیل‌شده می‌نشیند؛ بی‌ضریبِ قیمتی، درصدِ بازدهی
-  return mode === 'performance' ? toIndexedSeries(scaled) : scaled;
+  return scaled;
 }
 
 /**

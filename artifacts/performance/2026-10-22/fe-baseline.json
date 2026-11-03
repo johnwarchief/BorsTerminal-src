@@ -1,0 +1,4153 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "label": "baseline",
+ "ranAt": "2026-10-22T00:44:53.591Z",
+ "runs": 3,
+ "marketState": {
+  "/api/market/sync-state": {
+   "status": "success",
+   "running": false,
+   "last": {}
+  },
+  "/api/live-stats": {
+   "status": "success",
+   "data": {
+    "cycles": 0,
+    "rows_seen": 0,
+    "rows_written": 0,
+    "nochange_cycles": 0,
+    "last_cycle_s": 0,
+    "last_changed": 0,
+    "started_at": 1792629874.8256001,
+    "revision": 0,
+    "sync_count": 0,
+    "session_day": 0,
+    "symbols": 0,
+    "full_rows": 0,
+    "patched": 0,
+    "journal": 0,
+    "subscribed": [],
+    "last_cycle_at": "",
+    "board_cache": true,
+    "board_rows": 6018,
+    "delta_mirror_rows": 6018,
+    "window": {
+     "market_open": false,
+     "sync_window": false,
+     "tick_writes": false,
+     "source": "backend"
+    },
+    "tick": {
+     "cooldown_remaining_s": 0,
+     "cooldown_level": 0,
+     "listening": false,
+     "since_change_s": null,
+     "since_probe_s": null,
+     "quiet_limit_s": 600,
+     "listen_poll_s": 60,
+     "after_hours": false,
+     "requests_open": false,
+     "cycle": {
+      "ok": 0,
+      "empty": 0,
+      "slow_over_10s": 0,
+      "last_s": 0,
+      "max_s": 0
+     },
+     "timeout_s": [
+      4,
+      12
+     ]
+    },
+    "universe": {
+     "at": 1792629879.1391766,
+     "counts": {
+      "total": 6015,
+      "eligible": 0,
+      "trading": 0,
+      "quote": 0,
+      "no_trade": 0,
+      "stale": 0,
+      "suspended": 0,
+      "unknown": 0,
+      "duplicate_rows": 3,
+      "market_closed": 6015
+     },
+     "observed_rows": 6015,
+     "market_open": false,
+     "revision": 0
+    }
+   }
+  },
+  "__hash": "#/master"
+ },
+ "phases": {
+  "cold": [
+   {
+    "firstPaint": 172,
+    "firstContentfulPaint": 692,
+    "domContentLoaded": 126.59999990463257,
+    "loadEnd": 132.59999990463257,
+    "ttfb": 41.5,
+    "longtasks": 7,
+    "tbt": 626,
+    "worst": 463,
+    "longtaskList": [
+     {
+      "t": 74,
+      "d": 71
+     },
+     {
+      "t": 235,
+      "d": 64
+     },
+     {
+      "t": 791,
+      "d": 61
+     },
+     {
+      "t": 853,
+      "d": 99
+     },
+     {
+      "t": 1059,
+      "d": 158
+     },
+     {
+      "t": 1218,
+      "d": 463
+     },
+     {
+      "t": 1694,
+      "d": 60
+     }
+    ],
+    "frames": {
+     "n": 51,
+     "med": 18,
+     "p95": 432,
+     "max": 468,
+     "over32": 8,
+     "over100": 3
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/market",
+      "n": 1,
+      "avgMs": 802,
+      "maxMs": 802,
+      "encoded": 1220692,
+      "transfer": 1220992
+     },
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "avgMs": 467,
+      "maxMs": 467,
+      "encoded": 388078,
+      "transfer": 388378
+     },
+     {
+      "url": "/api/funnel/registry",
+      "n": 1,
+      "avgMs": 180,
+      "maxMs": 180,
+      "encoded": 7688,
+      "transfer": 7988
+     },
+     {
+      "url": "/api/notifications/feed?limit=60",
+      "n": 1,
+      "avgMs": 2227,
+      "maxMs": 2227,
+      "encoded": 4820,
+      "transfer": 5120
+     },
+     {
+      "url": "/api/selection/portfolio",
+      "n": 1,
+      "avgMs": 1777,
+      "maxMs": 1777,
+      "encoded": 374,
+      "transfer": 674
+     },
+     {
+      "url": "/api/update/version",
+      "n": 1,
+      "avgMs": 293,
+      "maxMs": 293,
+      "encoded": 73,
+      "transfer": 373
+     }
+    ],
+    "requestTotal": 6,
+    "apiBytesEncoded": 1621725,
+    "apiBytesTransfer": 1623525,
+    "heapMB": 43.2,
+    "domNodes": 462,
+    "resIndexAfter": 24,
+    "readyMs": 2493,
+    "loginGate": false,
+    "landingHash": "#/master",
+    "landingRoute": "/master",
+    "wallFromGoto": 2503
+   },
+   {
+    "firstPaint": 128,
+    "firstContentfulPaint": 200,
+    "domContentLoaded": 107.80000019073486,
+    "loadEnd": 111.10000038146973,
+    "ttfb": 22.600000381469727,
+    "longtasks": 6,
+    "tbt": 507,
+    "worst": 427,
+    "longtaskList": [
+     {
+      "t": 50,
+      "d": 62
+     },
+     {
+      "t": 172,
+      "d": 58
+     },
+     {
+      "t": 666,
+      "d": 57
+     },
+     {
+      "t": 725,
+      "d": 148
+     },
+     {
+      "t": 877,
+      "d": 427
+     },
+     {
+      "t": 1309,
+      "d": 55
+     }
+    ],
+    "frames": {
+     "n": 19,
+     "med": 36,
+     "p95": 432,
+     "max": 432,
+     "over32": 11,
+     "over100": 4
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/market",
+      "n": 1,
+      "avgMs": 531,
+      "maxMs": 531,
+      "encoded": 1220692,
+      "transfer": 1220992
+     },
+     {
+      "url": "/api/funnel/registry",
+      "n": 1,
+      "avgMs": 335,
+      "maxMs": 335,
+      "encoded": 7688,
+      "transfer": 7988
+     },
+     {
+      "url": "/api/selection/portfolio",
+      "n": 1,
+      "avgMs": 916,
+      "maxMs": 916,
+      "encoded": 374,
+      "transfer": 674
+     },
+     {
+      "url": "/api/update/version",
+      "n": 1,
+      "avgMs": 27,
+      "maxMs": 27,
+      "encoded": 73,
+      "transfer": 373
+     }
+    ],
+    "requestTotal": 4,
+    "apiBytesEncoded": 1228827,
+    "apiBytesTransfer": 1230027,
+    "heapMB": 72.9,
+    "domNodes": 459,
+    "resIndexAfter": 22,
+    "readyMs": 1382,
+    "loginGate": false,
+    "landingHash": "#/master",
+    "landingRoute": "/master",
+    "wallFromGoto": 1555
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 8,
+    "worst": 57,
+    "longtaskList": [
+     {
+      "t": 450,
+      "d": 57
+     },
+     {
+      "t": 575,
+      "d": 51
+     }
+    ],
+    "frames": {
+     "n": 45,
+     "med": 18,
+     "p95": 72,
+     "max": 180,
+     "over32": 3,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/update/version",
+      "n": 1,
+      "avgMs": 758,
+      "maxMs": 758,
+      "encoded": 73,
+      "transfer": 373
+     }
+    ],
+    "requestTotal": 1,
+    "apiBytesEncoded": 73,
+    "apiBytesTransfer": 373,
+    "heapMB": 81.5,
+    "domNodes": 459,
+    "resIndexAfter": 17,
+    "readyMs": 1593,
+    "loginGate": false,
+    "landingHash": "#/master",
+    "landingRoute": "/master",
+    "wallFromGoto": 1609
+   }
+  ],
+  "tabs": [
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 7,
+    "tbt": 791,
+    "worst": 406,
+    "longtaskList": [
+     {
+      "t": 1811,
+      "d": 159
+     },
+     {
+      "t": 1987,
+      "d": 406
+     },
+     {
+      "t": 2432,
+      "d": 54
+     },
+     {
+      "t": 2498,
+      "d": 105
+     },
+     {
+      "t": 2608,
+      "d": 62
+     },
+     {
+      "t": 3281,
+      "d": 185
+     },
+     {
+      "t": 3466,
+      "d": 170
+     }
+    ],
+    "frames": {
+     "n": 97,
+     "med": 18,
+     "p95": 126,
+     "max": 432,
+     "over32": 11,
+     "over100": 5
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "avgMs": 1694,
+      "maxMs": 1694,
+      "encoded": 388100,
+      "transfer": 388400
+     },
+     {
+      "url": "/api/funnel/registry",
+      "n": 1,
+      "avgMs": 934,
+      "maxMs": 934,
+      "encoded": 7688,
+      "transfer": 7988
+     },
+     {
+      "url": "/api/watchlist",
+      "n": 1,
+      "avgMs": 54,
+      "maxMs": 54,
+      "encoded": 51,
+      "transfer": 351
+     }
+    ],
+    "requestTotal": 3,
+    "apiBytesEncoded": 395839,
+    "apiBytesTransfer": 396739,
+    "heapMB": 27.3,
+    "domNodes": 1497,
+    "resIndexAfter": 29,
+    "clickToReady": 2621,
+    "tab": "تابلوخوانی",
+    "route": "/market",
+    "pass": 0,
+    "hash": "#/market"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 9,
+    "tbt": 270,
+    "worst": 159,
+    "longtaskList": [
+     {
+      "t": 5111,
+      "d": 76
+     },
+     {
+      "t": 5456,
+      "d": 108
+     },
+     {
+      "t": 8398,
+      "d": 64
+     },
+     {
+      "t": 10297,
+      "d": 159
+     },
+     {
+      "t": 11761,
+      "d": 51
+     },
+     {
+      "t": 13688,
+      "d": 64
+     },
+     {
+      "t": 14085,
+      "d": 57
+     },
+     {
+      "t": 14209,
+      "d": 63
+     },
+     {
+      "t": 14752,
+      "d": 78
+     }
+    ],
+    "frames": {
+     "n": 528,
+     "med": 18,
+     "p95": 25,
+     "max": 180,
+     "over32": 26,
+     "over100": 6
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/index/tedpix?limit=0",
+      "n": 1,
+      "avgMs": 6645,
+      "maxMs": 6645,
+      "encoded": 136052,
+      "transfer": 136352
+     },
+     {
+      "url": "/api/mstat/treemap?group=eq_all&industry=&metric=value",
+      "n": 1,
+      "avgMs": 8221,
+      "maxMs": 8221,
+      "encoded": 21053,
+      "transfer": 21353
+     },
+     {
+      "url": "/api/mstat/mainwatch?group=all&industry=",
+      "n": 1,
+      "avgMs": 7464,
+      "maxMs": 7464,
+      "encoded": 17463,
+      "transfer": 17763
+     },
+     {
+      "url": "/api/mstat/mainwatch?group=eq_all&industry=",
+      "n": 1,
+      "avgMs": 5034,
+      "maxMs": 5034,
+      "encoded": 17376,
+      "transfer": 17676
+     },
+     {
+      "url": "/api/mstat/gold?history_days=60",
+      "n": 1,
+      "avgMs": 6518,
+      "maxMs": 6518,
+      "encoded": 10513,
+      "transfer": 10813
+     },
+     {
+      "url": "/api/mstat/series?symbols=%D8%B9%D9%8A%D8%A7%D8%B1%2C%D9%",
+      "n": 1,
+      "avgMs": 483,
+      "maxMs": 483,
+      "encoded": 5640,
+      "transfer": 5940
+     },
+     {
+      "url": "/api/mstat/industries",
+      "n": 1,
+      "avgMs": 3182,
+      "maxMs": 3182,
+      "encoded": 3858,
+      "transfer": 4158
+     },
+     {
+      "url": "/api/mstat/ownership?group=all",
+      "n": 1,
+      "avgMs": 8864,
+      "maxMs": 8864,
+      "encoded": 3291,
+      "transfer": 3591
+     },
+     {
+      "url": "/api/mstat/timeline?mode=cum",
+      "n": 1,
+      "avgMs": 1824,
+      "maxMs": 1824,
+      "encoded": 3167,
+      "transfer": 3467
+     },
+     {
+      "url": "/api/mstat/orderflows?group=all",
+      "n": 1,
+      "avgMs": 8986,
+      "maxMs": 8986,
+      "encoded": 3043,
+      "transfer": 3343
+     },
+     {
+      "url": "/api/mstat/tops?group=eq_all",
+      "n": 1,
+      "avgMs": 8461,
+      "maxMs": 8461,
+      "encoded": 2970,
+      "transfer": 3270
+     },
+     {
+      "url": "/api/mstat/smart-money",
+      "n": 1,
+      "avgMs": 9531,
+      "maxMs": 9531,
+      "encoded": 2056,
+      "transfer": 2356
+     },
+     {
+      "url": "/api/mstat/summary",
+      "n": 1,
+      "avgMs": 6959,
+      "maxMs": 6959,
+      "encoded": 1442,
+      "transfer": 1742
+     },
+     {
+      "url": "/api/mstat/indexcards?days=30",
+      "n": 1,
+      "avgMs": 7639,
+      "maxMs": 7639,
+      "encoded": 1197,
+      "transfer": 1497
+     },
+     {
+      "url": "/api/live-stats",
+      "n": 1,
+      "avgMs": 80,
+      "maxMs": 80,
+      "encoded": 973,
+      "transfer": 1273
+     },
+     {
+      "url": "/api/mstat/clientsplit?tab=all",
+      "n": 1,
+      "avgMs": 7876,
+      "maxMs": 7876,
+      "encoded": 585,
+      "transfer": 885
+     },
+     {
+      "url": "/api/mstat/histogram?group=all",
+      "n": 1,
+      "avgMs": 3501,
+      "maxMs": 3501,
+      "encoded": 579,
+      "transfer": 879
+     },
+     {
+      "url": "/api/mstat/depth?group=eq_all",
+      "n": 1,
+      "avgMs": 7151,
+      "maxMs": 7151,
+      "encoded": 536,
+      "transfer": 836
+     },
+     {
+      "url": "/api/mstat/phases",
+      "n": 1,
+      "avgMs": 9435,
+      "maxMs": 9435,
+      "encoded": 474,
+      "transfer": 774
+     },
+     {
+      "url": "/api/mstat/thermometer?group=eq_all",
+      "n": 1,
+      "avgMs": 7877,
+      "maxMs": 7877,
+      "encoded": 394,
+      "transfer": 694
+     }
+    ],
+    "requestTotal": 20,
+    "apiBytesEncoded": 232662,
+    "apiBytesTransfer": 238662,
+    "heapMB": 43.7,
+    "domNodes": 7419,
+    "resIndexAfter": 62,
+    "clickToReady": 10795,
+    "tab": "وضعیت بازار",
+    "route": "/market-status",
+    "pass": 0,
+    "hash": "#/market-status"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 3,
+    "tbt": 79,
+    "worst": 91,
+    "longtaskList": [
+     {
+      "t": 15940,
+      "d": 91
+     },
+     {
+      "t": 16033,
+      "d": 88
+     },
+     {
+      "t": 16342,
+      "d": 50
+     }
+    ],
+    "frames": {
+     "n": 133,
+     "med": 18,
+     "p95": 36,
+     "max": 180,
+     "over32": 7,
+     "over100": 2
+    },
+    "inputEvents": [
+     {
+      "name": "pointerover",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "pointerenter",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     },
+     {
+      "name": "mouseover",
+      "t": 16033,
+      "d": 168,
+      "proc": 31,
+      "delay": 31
+     }
+    ],
+    "requests": [
+     {
+      "url": "/api/index/tedpix?limit=0",
+      "n": 1,
+      "avgMs": 476,
+      "maxMs": 476,
+      "encoded": 136060,
+      "transfer": 136360
+     },
+     {
+      "url": "/api/fts/config",
+      "n": 1,
+      "avgMs": 181,
+      "maxMs": 181,
+      "encoded": 620,
+      "transfer": 920
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 1,
+      "avgMs": 469,
+      "maxMs": 469,
+      "encoded": 158,
+      "transfer": 458
+     }
+    ],
+    "requestTotal": 3,
+    "apiBytesEncoded": 136838,
+    "apiBytesTransfer": 137738,
+    "heapMB": 52.5,
+    "domNodes": 515,
+    "resIndexAfter": 70,
+    "clickToReady": 2852,
+    "tab": "تکنیکال",
+    "route": "/technical",
+    "pass": 0,
+    "hash": "#/technical"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 119,
+    "worst": 155,
+    "longtaskList": [
+     {
+      "t": 22738,
+      "d": 64
+     },
+     {
+      "t": 25236,
+      "d": 155
+     }
+    ],
+    "frames": {
+     "n": 402,
+     "med": 18,
+     "p95": 18,
+     "max": 180,
+     "over32": 7,
+     "over100": 3
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 8440,
+      "maxMs": 8440,
+      "encoded": 201578,
+      "transfer": 201878
+     },
+     {
+      "url": "/api/index/tedpix?limit=0",
+      "n": 1,
+      "avgMs": 476,
+      "maxMs": 476,
+      "encoded": 136060,
+      "transfer": 136360
+     },
+     {
+      "url": "/api/screener",
+      "n": 1,
+      "avgMs": 1144,
+      "maxMs": 1144,
+      "encoded": 122610,
+      "transfer": 122910
+     },
+     {
+      "url": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 2495,
+      "maxMs": 2495,
+      "encoded": 7100,
+      "transfer": 7400
+     },
+     {
+      "url": "/api/fts/config",
+      "n": 1,
+      "avgMs": 181,
+      "maxMs": 181,
+      "encoded": 620,
+      "transfer": 920
+     },
+     {
+      "url": "/api/sync/codal/pipeline",
+      "n": 1,
+      "avgMs": 1131,
+      "maxMs": 1131,
+      "encoded": 492,
+      "transfer": 792
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 1,
+      "avgMs": 146,
+      "maxMs": 146,
+      "encoded": 158,
+      "transfer": 458
+     },
+     {
+      "url": "/api/sync/codal/db-status",
+      "n": 1,
+      "avgMs": 142,
+      "maxMs": 142,
+      "encoded": 103,
+      "transfer": 403
+     },
+     {
+      "url": "/api/calendar/upcoming?days=14",
+      "n": 1,
+      "avgMs": 143,
+      "maxMs": 143,
+      "encoded": 77,
+      "transfer": 377
+     },
+     {
+      "url": "/api/update/version",
+      "n": 1,
+      "avgMs": 329,
+      "maxMs": 329,
+      "encoded": 73,
+      "transfer": 373
+     },
+     {
+      "url": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 7611,
+      "maxMs": 7611,
+      "encoded": 0,
+      "transfer": 0
+     }
+    ],
+    "requestTotal": 11,
+    "apiBytesEncoded": 468871,
+    "apiBytesTransfer": 471871,
+    "heapMB": 53.8,
+    "domNodes": 1771,
+    "resIndexAfter": 85,
+    "clickToReady": 7693,
+    "tab": "بنیادی",
+    "route": "/fundamental",
+    "pass": 0,
+    "hash": "#/fundamental"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 3,
+    "tbt": 101,
+    "worst": 107,
+    "longtaskList": [
+     {
+      "t": 26628,
+      "d": 107
+     },
+     {
+      "t": 26736,
+      "d": 78
+     },
+     {
+      "t": 26815,
+      "d": 66
+     }
+    ],
+    "frames": {
+     "n": 68,
+     "med": 18,
+     "p95": 36,
+     "max": 108,
+     "over32": 5,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "avgMs": 287,
+      "maxMs": 287,
+      "encoded": 388096,
+      "transfer": 388396
+     }
+    ],
+    "requestTotal": 1,
+    "apiBytesEncoded": 388096,
+    "apiBytesTransfer": 388396,
+    "heapMB": 68.2,
+    "domNodes": 485,
+    "resIndexAfter": 87,
+    "clickToReady": 1422,
+    "tab": "استراتژی FTS",
+    "route": "/master",
+    "pass": 0,
+    "hash": "#/master"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 80,
+    "worst": 119,
+    "longtaskList": [
+     {
+      "t": 27688,
+      "d": 119
+     },
+     {
+      "t": 27808,
+      "d": 61
+     }
+    ],
+    "frames": {
+     "n": 33,
+     "med": 18,
+     "p95": 72,
+     "max": 180,
+     "over32": 6,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [],
+    "requestTotal": 0,
+    "apiBytesEncoded": 0,
+    "apiBytesTransfer": 0,
+    "heapMB": 38.3,
+    "domNodes": 1517,
+    "resIndexAfter": 88,
+    "clickToReady": 924,
+    "tab": "تابلوخوانی",
+    "route": "/market",
+    "pass": 1,
+    "hash": "#/market"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 330,
+    "worst": 334,
+    "longtaskList": [
+     {
+      "t": 28631,
+      "d": 334
+     },
+     {
+      "t": 28966,
+      "d": 96
+     }
+    ],
+    "frames": {
+     "n": 46,
+     "med": 18,
+     "p95": 18,
+     "max": 431,
+     "over32": 2,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/live-stats",
+      "n": 1,
+      "avgMs": 5,
+      "maxMs": 5,
+      "encoded": 973,
+      "transfer": 1273
+     }
+    ],
+    "requestTotal": 1,
+    "apiBytesEncoded": 973,
+    "apiBytesTransfer": 1273,
+    "heapMB": 48.8,
+    "domNodes": 7426,
+    "resIndexAfter": 90,
+    "clickToReady": 1297,
+    "tab": "وضعیت بازار",
+    "route": "/market-status",
+    "pass": 1,
+    "hash": "#/market-status"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 3,
+    "tbt": 108,
+    "worst": 145,
+    "longtaskList": [
+     {
+      "t": 30085,
+      "d": 59
+     },
+     {
+      "t": 30170,
+      "d": 54
+     },
+     {
+      "t": 30273,
+      "d": 145
+     }
+    ],
+    "frames": {
+     "n": 58,
+     "med": 18,
+     "p95": 54,
+     "max": 144,
+     "over32": 6,
+     "over100": 2
+    },
+    "inputEvents": [
+     {
+      "name": "pointerover",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "pointerenter",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     },
+     {
+      "name": "mouseover",
+      "t": 30170,
+      "d": 128,
+      "proc": 0,
+      "delay": 0
+     }
+    ],
+    "requests": [
+     {
+      "url": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 1238,
+      "maxMs": 1238,
+      "encoded": 201578,
+      "transfer": 201878
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 1,
+      "avgMs": 111,
+      "maxMs": 111,
+      "encoded": 158,
+      "transfer": 458
+     }
+    ],
+    "requestTotal": 2,
+    "apiBytesEncoded": 201736,
+    "apiBytesTransfer": 202336,
+    "heapMB": 69.3,
+    "domNodes": 931,
+    "resIndexAfter": 93,
+    "clickToReady": 1347,
+    "tab": "تکنیکال",
+    "route": "/technical",
+    "pass": 1,
+    "hash": "#/technical"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 1,
+    "tbt": 84,
+    "worst": 134,
+    "longtaskList": [
+     {
+      "t": 36334,
+      "d": 134
+     }
+    ],
+    "frames": {
+     "n": 320,
+     "med": 18,
+     "p95": 18,
+     "max": 161,
+     "over32": 5,
+     "over100": 2
+    },
+    "inputEvents": [
+     {
+      "name": "pointerout",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerover",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "mouseout",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "mouseover",
+      "t": 36291,
+      "d": 128,
+      "proc": 1,
+      "delay": 1
+     }
+    ],
+    "requests": [
+     {
+      "url": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 1146,
+      "maxMs": 1146,
+      "encoded": 7768,
+      "transfer": 8068
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 2,
+      "avgMs": 62,
+      "maxMs": 111,
+      "encoded": 316,
+      "transfer": 916
+     },
+     {
+      "url": "/api/sync/codal/db-status",
+      "n": 1,
+      "avgMs": 13,
+      "maxMs": 13,
+      "encoded": 103,
+      "transfer": 403
+     },
+     {
+      "url": "/api/update/version",
+      "n": 1,
+      "avgMs": 34,
+      "maxMs": 34,
+      "encoded": 73,
+      "transfer": 373
+     },
+     {
+      "url": "/api/watchlist",
+      "n": 1,
+      "avgMs": 88,
+      "maxMs": 88,
+      "encoded": 51,
+      "transfer": 351
+     }
+    ],
+    "requestTotal": 6,
+    "apiBytesEncoded": 8311,
+    "apiBytesTransfer": 10111,
+    "heapMB": 69.5,
+    "domNodes": 1771,
+    "resIndexAfter": 100,
+    "clickToReady": 6017,
+    "tab": "بنیادی",
+    "route": "/fundamental",
+    "pass": 1,
+    "hash": "#/fundamental"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 75,
+    "worst": 109,
+    "longtaskList": [
+     {
+      "t": 38016,
+      "d": 109
+     },
+     {
+      "t": 38126,
+      "d": 66
+     }
+    ],
+    "frames": {
+     "n": 44,
+     "med": 18,
+     "p95": 54,
+     "max": 143,
+     "over32": 5,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "avgMs": 604,
+      "maxMs": 604,
+      "encoded": 388085,
+      "transfer": 388385
+     }
+    ],
+    "requestTotal": 1,
+    "apiBytesEncoded": 388085,
+    "apiBytesTransfer": 388385,
+    "heapMB": 54.2,
+    "domNodes": 486,
+    "resIndexAfter": 102,
+    "clickToReady": 987,
+    "tab": "استراتژی FTS",
+    "route": "/master",
+    "pass": 1,
+    "hash": "#/master"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 74,
+    "worst": 110,
+    "longtaskList": [
+     {
+      "t": 38335,
+      "d": 110
+     },
+     {
+      "t": 38445,
+      "d": 64
+     }
+    ],
+    "frames": {
+     "n": 42,
+     "med": 18,
+     "p95": 18,
+     "max": 180,
+     "over32": 1,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [],
+    "requestTotal": 0,
+    "apiBytesEncoded": 0,
+    "apiBytesTransfer": 0,
+    "heapMB": 90.8,
+    "domNodes": 1517,
+    "resIndexAfter": 103,
+    "clickToReady": 907,
+    "tab": "تابلوخوانی",
+    "route": "/market",
+    "pass": 2,
+    "hash": "#/market"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 2,
+    "tbt": 333,
+    "worst": 341,
+    "longtaskList": [
+     {
+      "t": 39250,
+      "d": 341
+     },
+     {
+      "t": 39591,
+      "d": 92
+     }
+    ],
+    "frames": {
+     "n": 42,
+     "med": 18,
+     "p95": 36,
+     "max": 432,
+     "over32": 4,
+     "over100": 1
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/live-stats",
+      "n": 1,
+      "avgMs": 6,
+      "maxMs": 6,
+      "encoded": 973,
+      "transfer": 1273
+     }
+    ],
+    "requestTotal": 1,
+    "apiBytesEncoded": 973,
+    "apiBytesTransfer": 1273,
+    "heapMB": 80,
+    "domNodes": 7426,
+    "resIndexAfter": 105,
+    "clickToReady": 1265,
+    "tab": "وضعیت بازار",
+    "route": "/market-status",
+    "pass": 2,
+    "hash": "#/market-status"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 3,
+    "tbt": 141,
+    "worst": 141,
+    "longtaskList": [
+     {
+      "t": 40786,
+      "d": 66
+     },
+     {
+      "t": 40852,
+      "d": 84
+     },
+     {
+      "t": 40986,
+      "d": 141
+     }
+    ],
+    "frames": {
+     "n": 64,
+     "med": 18,
+     "p95": 18,
+     "max": 162,
+     "over32": 3,
+     "over100": 2
+    },
+    "inputEvents": [
+     {
+      "name": "pointerover",
+      "t": 40852,
+      "d": 152,
+      "proc": 29,
+      "delay": 29
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "pointerenter",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     },
+     {
+      "name": "mouseover",
+      "t": 40852,
+      "d": 152,
+      "proc": 30,
+      "delay": 30
+     }
+    ],
+    "requests": [
+     {
+      "url": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 1621,
+      "maxMs": 1621,
+      "encoded": 201578,
+      "transfer": 201878
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 1,
+      "avgMs": 118,
+      "maxMs": 118,
+      "encoded": 158,
+      "transfer": 458
+     }
+    ],
+    "requestTotal": 2,
+    "apiBytesEncoded": 201736,
+    "apiBytesTransfer": 202336,
+    "heapMB": 63.8,
+    "domNodes": 967,
+    "resIndexAfter": 108,
+    "clickToReady": 1378,
+    "tab": "تکنیکال",
+    "route": "/technical",
+    "pass": 2,
+    "hash": "#/technical"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 1,
+    "tbt": 98,
+    "worst": 148,
+    "longtaskList": [
+     {
+      "t": 47016,
+      "d": 148
+     }
+    ],
+    "frames": {
+     "n": 320,
+     "med": 18,
+     "p95": 18,
+     "max": 162,
+     "over32": 6,
+     "over100": 1
+    },
+    "inputEvents": [
+     {
+      "name": "pointerout",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerleave",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerover",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "pointerenter",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "mouseout",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     },
+     {
+      "name": "mouseover",
+      "t": 46982,
+      "d": 112,
+      "proc": 1,
+      "delay": 1
+     }
+    ],
+    "requests": [
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 2,
+      "avgMs": 140,
+      "maxMs": 162,
+      "encoded": 316,
+      "transfer": 916
+     },
+     {
+      "url": "/api/sync/codal/db-status",
+      "n": 1,
+      "avgMs": 150,
+      "maxMs": 150,
+      "encoded": 103,
+      "transfer": 403
+     },
+     {
+      "url": "/api/update/version",
+      "n": 1,
+      "avgMs": 29,
+      "maxMs": 29,
+      "encoded": 73,
+      "transfer": 373
+     }
+    ],
+    "requestTotal": 4,
+    "apiBytesEncoded": 492,
+    "apiBytesTransfer": 1692,
+    "heapMB": 61.5,
+    "domNodes": 1771,
+    "resIndexAfter": 113,
+    "clickToReady": 6041,
+    "tab": "بنیادی",
+    "route": "/fundamental",
+    "pass": 2,
+    "hash": "#/fundamental"
+   },
+   {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 1,
+    "tbt": 16,
+    "worst": 66,
+    "longtaskList": [
+     {
+      "t": 48729,
+      "d": 66
+     }
+    ],
+    "frames": {
+     "n": 40,
+     "med": 18,
+     "p95": 72,
+     "max": 90,
+     "over32": 5,
+     "over100": 0
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "avgMs": 646,
+      "maxMs": 646,
+      "encoded": 388088,
+      "transfer": 388388
+     }
+    ],
+    "requestTotal": 1,
+    "apiBytesEncoded": 388088,
+    "apiBytesTransfer": 388388,
+    "heapMB": 64,
+    "domNodes": 486,
+    "resIndexAfter": 115,
+    "clickToReady": 902,
+    "tab": "استراتژی FTS",
+    "route": "/master",
+    "pass": 2,
+    "hash": "#/master"
+   }
+  ],
+  "chart": {
+   "symbols": [
+    {
+     "firstPaint": 640,
+     "firstContentfulPaint": 640,
+     "domContentLoaded": 502.69999980926514,
+     "loadEnd": 505.7999997138977,
+     "ttfb": 382.59999990463257,
+     "longtasks": 1,
+     "tbt": 1,
+     "worst": 51,
+     "longtaskList": [
+      {
+       "t": 49015,
+       "d": 51
+      }
+     ],
+     "frames": {
+      "n": 524,
+      "med": 18,
+      "p95": 18,
+      "max": 108,
+      "over32": 5,
+      "over100": 1
+     },
+     "inputEvents": [],
+     "requests": [
+      {
+       "url": "/api/chart/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+       "n": 2,
+       "avgMs": 4836,
+       "maxMs": 5035,
+       "encoded": 118083,
+       "transfer": 118683
+      },
+      {
+       "url": "/api/fts/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+       "n": 1,
+       "avgMs": 4832,
+       "maxMs": 4832,
+       "encoded": 7317,
+       "transfer": 7617
+      },
+      {
+       "url": "/api/fundamental/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+       "n": 1,
+       "avgMs": 1324,
+       "maxMs": 1324,
+       "encoded": 7001,
+       "transfer": 7301
+      }
+     ],
+     "requestTotal": 4,
+     "apiBytesEncoded": 132401,
+     "apiBytesTransfer": 133601,
+     "heapMB": 98,
+     "domNodes": 979,
+     "resIndexAfter": 123,
+     "symbol": "سپيدار",
+     "historyMs": 4697,
+     "chartRequests": [
+      {
+       "url": "/api/chart/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+       "n": 2,
+       "avgMs": 4836,
+       "maxMs": 5035,
+       "encoded": 118083,
+       "transfer": 118683
+      }
+     ]
+    },
+    {
+     "firstPaint": 640,
+     "firstContentfulPaint": 640,
+     "domContentLoaded": 502.69999980926514,
+     "loadEnd": 505.7999997138977,
+     "ttfb": 382.59999990463257,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "longtaskList": [],
+     "frames": {
+      "n": 293,
+      "med": 18,
+      "p95": 18,
+      "max": 36,
+      "over32": 3,
+      "over100": 0
+     },
+     "inputEvents": [],
+     "requests": [
+      {
+       "url": "/api/chart/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+       "n": 2,
+       "avgMs": 3541,
+       "maxMs": 3839,
+       "encoded": 380506,
+       "transfer": 381106
+      },
+      {
+       "url": "/api/fundamental/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+       "n": 1,
+       "avgMs": 1158,
+       "maxMs": 1158,
+       "encoded": 6784,
+       "transfer": 7084
+      }
+     ],
+     "requestTotal": 3,
+     "apiBytesEncoded": 387290,
+     "apiBytesTransfer": 388190,
+     "heapMB": 102.8,
+     "domNodes": 935,
+     "resIndexAfter": 127,
+     "symbol": "دزهراوي",
+     "historyMs": 3294,
+     "chartRequests": [
+      {
+       "url": "/api/chart/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+       "n": 2,
+       "avgMs": 3541,
+       "maxMs": 3839,
+       "encoded": 380506,
+       "transfer": 381106
+      }
+     ]
+    },
+    {
+     "firstPaint": 640,
+     "firstContentfulPaint": 640,
+     "domContentLoaded": 502.69999980926514,
+     "loadEnd": 505.7999997138977,
+     "ttfb": 382.59999990463257,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "longtaskList": [],
+     "frames": {
+      "n": 374,
+      "med": 18,
+      "p95": 18,
+      "max": 54,
+      "over32": 5,
+      "over100": 0
+     },
+     "inputEvents": [],
+     "requests": [
+      {
+       "url": "/api/chart/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+       "n": 2,
+       "avgMs": 5105,
+       "maxMs": 5431,
+       "encoded": 68740,
+       "transfer": 69340
+      },
+      {
+       "url": "/api/fundamental/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+       "n": 1,
+       "avgMs": 1660,
+       "maxMs": 1660,
+       "encoded": 7248,
+       "transfer": 7548
+      },
+      {
+       "url": "/api/fts/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+       "n": 1,
+       "avgMs": 5461,
+       "maxMs": 5461,
+       "encoded": 6869,
+       "transfer": 7169
+      }
+     ],
+     "requestTotal": 4,
+     "apiBytesEncoded": 82857,
+     "apiBytesTransfer": 84057,
+     "heapMB": 119.7,
+     "domNodes": 981,
+     "resIndexAfter": 133,
+     "symbol": "البرز",
+     "historyMs": 4836,
+     "chartRequests": [
+      {
+       "url": "/api/chart/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+       "n": 2,
+       "avgMs": 5105,
+       "maxMs": 5431,
+       "encoded": 68740,
+       "transfer": 69340
+      }
+     ]
+    },
+    {
+     "firstPaint": 640,
+     "firstContentfulPaint": 640,
+     "domContentLoaded": 502.69999980926514,
+     "loadEnd": 505.7999997138977,
+     "ttfb": 382.59999990463257,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "longtaskList": [],
+     "frames": {
+      "n": 313,
+      "med": 18,
+      "p95": 18,
+      "max": 90,
+      "over32": 3,
+      "over100": 0
+     },
+     "inputEvents": [],
+     "requests": [
+      {
+       "url": "/api/chart/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+       "n": 2,
+       "avgMs": 3949,
+       "maxMs": 4191,
+       "encoded": 65276,
+       "transfer": 65876
+      },
+      {
+       "url": "/api/fundamental/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+       "n": 1,
+       "avgMs": 1251,
+       "maxMs": 1251,
+       "encoded": 7028,
+       "transfer": 7328
+      },
+      {
+       "url": "/api/fts/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+       "n": 1,
+       "avgMs": 4138,
+       "maxMs": 4138,
+       "encoded": 6719,
+       "transfer": 7019
+      }
+     ],
+     "requestTotal": 4,
+     "apiBytesEncoded": 79023,
+     "apiBytesTransfer": 80223,
+     "heapMB": 55.1,
+     "domNodes": 978,
+     "resIndexAfter": 138,
+     "symbol": "زگلدشت",
+     "historyMs": 3762,
+     "chartRequests": [
+      {
+       "url": "/api/chart/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+       "n": 2,
+       "avgMs": 3949,
+       "maxMs": 4191,
+       "encoded": 65276,
+       "transfer": 65876
+      }
+     ]
+    },
+    {
+     "firstPaint": 640,
+     "firstContentfulPaint": 640,
+     "domContentLoaded": 502.69999980926514,
+     "loadEnd": 505.7999997138977,
+     "ttfb": 382.59999990463257,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "longtaskList": [],
+     "frames": {
+      "n": 300,
+      "med": 18,
+      "p95": 18,
+      "max": 144,
+      "over32": 6,
+      "over100": 1
+     },
+     "inputEvents": [],
+     "requests": [
+      {
+       "url": "/api/chart/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+       "n": 2,
+       "avgMs": 3935,
+       "maxMs": 4283,
+       "encoded": 66347,
+       "transfer": 66947
+      },
+      {
+       "url": "/api/fundamental/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+       "n": 1,
+       "avgMs": 1300,
+       "maxMs": 1300,
+       "encoded": 7322,
+       "transfer": 7622
+      },
+      {
+       "url": "/api/fts/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+       "n": 1,
+       "avgMs": 4130,
+       "maxMs": 4130,
+       "encoded": 6802,
+       "transfer": 7102
+      }
+     ],
+     "requestTotal": 4,
+     "apiBytesEncoded": 80471,
+     "apiBytesTransfer": 81671,
+     "heapMB": 45.4,
+     "domNodes": 986,
+     "resIndexAfter": 143,
+     "symbol": "وتعاون",
+     "historyMs": 3672,
+     "chartRequests": [
+      {
+       "url": "/api/chart/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+       "n": 2,
+       "avgMs": 3935,
+       "maxMs": 4283,
+       "encoded": 66347,
+       "transfer": 66947
+      }
+     ]
+    }
+   ],
+   "zoom": {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 1,
+    "tbt": 9,
+    "worst": 59,
+    "longtaskList": [
+     {
+      "t": 82104,
+      "d": 59
+     }
+    ],
+    "frames": {
+     "n": 28,
+     "med": 18,
+     "p95": 53,
+     "max": 54,
+     "over32": 2,
+     "over100": 0
+    },
+    "inputEvents": [
+     {
+      "name": "pointerout",
+      "t": 82092,
+      "d": 152,
+      "proc": 12,
+      "delay": 12
+     },
+     {
+      "name": "pointerleave",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerleave",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerleave",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerleave",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerleave",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerleave",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerover",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "pointerenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "mouseout",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "mouseover",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     },
+     {
+      "name": "mouseenter",
+      "t": 82092,
+      "d": 152,
+      "proc": 13,
+      "delay": 13
+     }
+    ],
+    "requests": [
+     {
+      "url": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 8,
+      "avgMs": 4538,
+      "maxMs": 15798,
+      "encoded": 1612608,
+      "transfer": 1615008
+     },
+     {
+      "url": "/api/funnel",
+      "n": 4,
+      "avgMs": 808,
+      "maxMs": 1694,
+      "encoded": 1552369,
+      "transfer": 1553569
+     },
+     {
+      "url": "/api/market",
+      "n": 1,
+      "avgMs": 1183,
+      "maxMs": 1183,
+      "encoded": 1220692,
+      "transfer": 1220992
+     },
+     {
+      "url": "/api/chart/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+      "n": 2,
+      "avgMs": 3541,
+      "maxMs": 3839,
+      "encoded": 380506,
+      "transfer": 381106
+     },
+     {
+      "url": "/api/index/tedpix?limit=0",
+      "n": 2,
+      "avgMs": 3561,
+      "maxMs": 6645,
+      "encoded": 272112,
+      "transfer": 272712
+     },
+     {
+      "url": "/api/screener",
+      "n": 1,
+      "avgMs": 1144,
+      "maxMs": 1144,
+      "encoded": 122610,
+      "transfer": 122910
+     },
+     {
+      "url": "/api/chart/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+      "n": 2,
+      "avgMs": 4836,
+      "maxMs": 5035,
+      "encoded": 118083,
+      "transfer": 118683
+     },
+     {
+      "url": "/api/chart/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+      "n": 2,
+      "avgMs": 5105,
+      "maxMs": 5431,
+      "encoded": 68740,
+      "transfer": 69340
+     },
+     {
+      "url": "/api/chart/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+      "n": 2,
+      "avgMs": 3935,
+      "maxMs": 4283,
+      "encoded": 66347,
+      "transfer": 66947
+     },
+     {
+      "url": "/api/chart/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+      "n": 2,
+      "avgMs": 3949,
+      "maxMs": 4191,
+      "encoded": 65276,
+      "transfer": 65876
+     },
+     {
+      "url": "/api/mstat/mainwatch?group=eq_all&industry=",
+      "n": 2,
+      "avgMs": 2536,
+      "maxMs": 5034,
+      "encoded": 34752,
+      "transfer": 35352
+     },
+     {
+      "url": "/api/mstat/treemap?group=eq_all&industry=&metric=value",
+      "n": 1,
+      "avgMs": 8221,
+      "maxMs": 8221,
+      "encoded": 21053,
+      "transfer": 21353
+     },
+     {
+      "url": "/api/mstat/mainwatch?group=all&industry=",
+      "n": 1,
+      "avgMs": 7464,
+      "maxMs": 7464,
+      "encoded": 17463,
+      "transfer": 17763
+     },
+     {
+      "url": "/api/mstat/gold?history_days=60",
+      "n": 1,
+      "avgMs": 6518,
+      "maxMs": 6518,
+      "encoded": 10513,
+      "transfer": 10813
+     },
+     {
+      "url": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 2,
+      "avgMs": 4379,
+      "maxMs": 7611,
+      "encoded": 7768,
+      "transfer": 8068
+     },
+     {
+      "url": "/api/funnel/registry",
+      "n": 1,
+      "avgMs": 934,
+      "maxMs": 934,
+      "encoded": 7688,
+      "transfer": 7988
+     },
+     {
+      "url": "/api/fundamental/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+      "n": 1,
+      "avgMs": 1300,
+      "maxMs": 1300,
+      "encoded": 7322,
+      "transfer": 7622
+     },
+     {
+      "url": "/api/fts/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+      "n": 1,
+      "avgMs": 4832,
+      "maxMs": 4832,
+      "encoded": 7317,
+      "transfer": 7617
+     },
+     {
+      "url": "/api/fundamental/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+      "n": 1,
+      "avgMs": 1660,
+      "maxMs": 1660,
+      "encoded": 7248,
+      "transfer": 7548
+     },
+     {
+      "url": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 2495,
+      "maxMs": 2495,
+      "encoded": 7100,
+      "transfer": 7400
+     },
+     {
+      "url": "/api/fundamental/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+      "n": 1,
+      "avgMs": 1251,
+      "maxMs": 1251,
+      "encoded": 7028,
+      "transfer": 7328
+     },
+     {
+      "url": "/api/fundamental/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+      "n": 1,
+      "avgMs": 1324,
+      "maxMs": 1324,
+      "encoded": 7001,
+      "transfer": 7301
+     },
+     {
+      "url": "/api/fts/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+      "n": 1,
+      "avgMs": 5461,
+      "maxMs": 5461,
+      "encoded": 6869,
+      "transfer": 7169
+     },
+     {
+      "url": "/api/fts/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+      "n": 1,
+      "avgMs": 4130,
+      "maxMs": 4130,
+      "encoded": 6802,
+      "transfer": 7102
+     },
+     {
+      "url": "/api/fundamental/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+      "n": 1,
+      "avgMs": 1158,
+      "maxMs": 1158,
+      "encoded": 6784,
+      "transfer": 7084
+     },
+     {
+      "url": "/api/fts/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+      "n": 1,
+      "avgMs": 4138,
+      "maxMs": 4138,
+      "encoded": 6719,
+      "transfer": 7019
+     },
+     {
+      "url": "/api/mstat/series?symbols=%D8%B9%D9%8A%D8%A7%D8%B1%2C%D9%",
+      "n": 1,
+      "avgMs": 483,
+      "maxMs": 483,
+      "encoded": 5640,
+      "transfer": 5940
+     },
+     {
+      "url": "/api/notifications/feed?limit=60",
+      "n": 1,
+      "avgMs": 3426,
+      "maxMs": 3426,
+      "encoded": 4820,
+      "transfer": 5120
+     },
+     {
+      "url": "/api/mstat/industries",
+      "n": 1,
+      "avgMs": 3182,
+      "maxMs": 3182,
+      "encoded": 3858,
+      "transfer": 4158
+     },
+     {
+      "url": "/api/mstat/ownership?group=all",
+      "n": 1,
+      "avgMs": 8864,
+      "maxMs": 8864,
+      "encoded": 3291,
+      "transfer": 3591
+     },
+     {
+      "url": "/api/live-stats",
+      "n": 3,
+      "avgMs": 30,
+      "maxMs": 80,
+      "encoded": 2919,
+      "transfer": 3819
+     },
+     {
+      "url": "/api/mstat/timeline?mode=cum",
+      "n": 1,
+      "avgMs": 1824,
+      "maxMs": 1824,
+      "encoded": 3167,
+      "transfer": 3467
+     },
+     {
+      "url": "/api/mstat/orderflows?group=all",
+      "n": 1,
+      "avgMs": 8986,
+      "maxMs": 8986,
+      "encoded": 3043,
+      "transfer": 3343
+     },
+     {
+      "url": "/api/mstat/tops?group=eq_all",
+      "n": 1,
+      "avgMs": 8461,
+      "maxMs": 8461,
+      "encoded": 2970,
+      "transfer": 3270
+     },
+     {
+      "url": "/api/mstat/smart-money",
+      "n": 1,
+      "avgMs": 9531,
+      "maxMs": 9531,
+      "encoded": 2056,
+      "transfer": 2356
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 6,
+      "avgMs": 170,
+      "maxMs": 469,
+      "encoded": 948,
+      "transfer": 2748
+     },
+     {
+      "url": "/api/mstat/summary",
+      "n": 1,
+      "avgMs": 6959,
+      "maxMs": 6959,
+      "encoded": 1442,
+      "transfer": 1742
+     },
+     {
+      "url": "/api/mstat/indexcards?days=30",
+      "n": 1,
+      "avgMs": 7639,
+      "maxMs": 7639,
+      "encoded": 1197,
+      "transfer": 1497
+     },
+     {
+      "url": "/api/update/version",
+      "n": 4,
+      "avgMs": 287,
+      "maxMs": 758,
+      "encoded": 292,
+      "transfer": 1492
+     },
+     {
+      "url": "/api/fts/config",
+      "n": 1,
+      "avgMs": 181,
+      "maxMs": 181,
+      "encoded": 620,
+      "transfer": 920
+     },
+     {
+      "url": "/api/sync/codal/db-status",
+      "n": 3,
+      "avgMs": 102,
+      "maxMs": 150,
+      "encoded": 309,
+      "transfer": 1209
+     },
+     {
+      "url": "/api/mstat/clientsplit?tab=all",
+      "n": 1,
+      "avgMs": 7876,
+      "maxMs": 7876,
+      "encoded": 585,
+      "transfer": 885
+     },
+     {
+      "url": "/api/mstat/histogram?group=all",
+      "n": 1,
+      "avgMs": 3501,
+      "maxMs": 3501,
+      "encoded": 579,
+      "transfer": 879
+     },
+     {
+      "url": "/api/mstat/depth?group=eq_all",
+      "n": 1,
+      "avgMs": 7151,
+      "maxMs": 7151,
+      "encoded": 536,
+      "transfer": 836
+     },
+     {
+      "url": "/api/sync/codal/pipeline",
+      "n": 1,
+      "avgMs": 1131,
+      "maxMs": 1131,
+      "encoded": 492,
+      "transfer": 792
+     },
+     {
+      "url": "/api/mstat/phases",
+      "n": 1,
+      "avgMs": 9435,
+      "maxMs": 9435,
+      "encoded": 474,
+      "transfer": 774
+     },
+     {
+      "url": "/api/mstat/thermometer?group=eq_all",
+      "n": 1,
+      "avgMs": 7877,
+      "maxMs": 7877,
+      "encoded": 394,
+      "transfer": 694
+     },
+     {
+      "url": "/api/selection/portfolio",
+      "n": 1,
+      "avgMs": 1770,
+      "maxMs": 1770,
+      "encoded": 374,
+      "transfer": 674
+     },
+     {
+      "url": "/api/watchlist",
+      "n": 2,
+      "avgMs": 71,
+      "maxMs": 88,
+      "encoded": 102,
+      "transfer": 702
+     },
+     {
+      "url": "/api/calendar/upcoming?days=14",
+      "n": 1,
+      "avgMs": 143,
+      "maxMs": 143,
+      "encoded": 77,
+      "transfer": 377
+     },
+     {
+      "url": "/api/fts/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+      "n": 1,
+      "avgMs": 5310,
+      "maxMs": 5310,
+      "encoded": 0,
+      "transfer": 0
+     }
+    ],
+    "requestTotal": 82,
+    "apiBytesEncoded": 5688955,
+    "apiBytesTransfer": 5712955,
+    "heapMB": 46.9,
+    "domNodes": 986,
+    "resIndexAfter": 143,
+    "label": "wheel-zoom"
+   },
+   "pan": {
+    "firstPaint": 640,
+    "firstContentfulPaint": 640,
+    "domContentLoaded": 502.69999980926514,
+    "loadEnd": 505.7999997138977,
+    "ttfb": 382.59999990463257,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "longtaskList": [],
+    "frames": {
+     "n": 73,
+     "med": 18,
+     "p95": 18,
+     "max": 19,
+     "over32": 0,
+     "over100": 0
+    },
+    "inputEvents": [],
+    "requests": [
+     {
+      "url": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 8,
+      "avgMs": 4538,
+      "maxMs": 15798,
+      "encoded": 1612608,
+      "transfer": 1615008
+     },
+     {
+      "url": "/api/funnel",
+      "n": 4,
+      "avgMs": 808,
+      "maxMs": 1694,
+      "encoded": 1552369,
+      "transfer": 1553569
+     },
+     {
+      "url": "/api/market",
+      "n": 1,
+      "avgMs": 1183,
+      "maxMs": 1183,
+      "encoded": 1220692,
+      "transfer": 1220992
+     },
+     {
+      "url": "/api/chart/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+      "n": 2,
+      "avgMs": 3541,
+      "maxMs": 3839,
+      "encoded": 380506,
+      "transfer": 381106
+     },
+     {
+      "url": "/api/index/tedpix?limit=0",
+      "n": 2,
+      "avgMs": 3561,
+      "maxMs": 6645,
+      "encoded": 272112,
+      "transfer": 272712
+     },
+     {
+      "url": "/api/screener",
+      "n": 1,
+      "avgMs": 1144,
+      "maxMs": 1144,
+      "encoded": 122610,
+      "transfer": 122910
+     },
+     {
+      "url": "/api/chart/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+      "n": 2,
+      "avgMs": 4836,
+      "maxMs": 5035,
+      "encoded": 118083,
+      "transfer": 118683
+     },
+     {
+      "url": "/api/chart/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+      "n": 2,
+      "avgMs": 5105,
+      "maxMs": 5431,
+      "encoded": 68740,
+      "transfer": 69340
+     },
+     {
+      "url": "/api/chart/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+      "n": 2,
+      "avgMs": 3935,
+      "maxMs": 4283,
+      "encoded": 66347,
+      "transfer": 66947
+     },
+     {
+      "url": "/api/chart/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+      "n": 2,
+      "avgMs": 3949,
+      "maxMs": 4191,
+      "encoded": 65276,
+      "transfer": 65876
+     },
+     {
+      "url": "/api/mstat/mainwatch?group=eq_all&industry=",
+      "n": 2,
+      "avgMs": 2536,
+      "maxMs": 5034,
+      "encoded": 34752,
+      "transfer": 35352
+     },
+     {
+      "url": "/api/mstat/treemap?group=eq_all&industry=&metric=value",
+      "n": 1,
+      "avgMs": 8221,
+      "maxMs": 8221,
+      "encoded": 21053,
+      "transfer": 21353
+     },
+     {
+      "url": "/api/mstat/mainwatch?group=all&industry=",
+      "n": 1,
+      "avgMs": 7464,
+      "maxMs": 7464,
+      "encoded": 17463,
+      "transfer": 17763
+     },
+     {
+      "url": "/api/mstat/gold?history_days=60",
+      "n": 1,
+      "avgMs": 6518,
+      "maxMs": 6518,
+      "encoded": 10513,
+      "transfer": 10813
+     },
+     {
+      "url": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 2,
+      "avgMs": 4379,
+      "maxMs": 7611,
+      "encoded": 7768,
+      "transfer": 8068
+     },
+     {
+      "url": "/api/funnel/registry",
+      "n": 1,
+      "avgMs": 934,
+      "maxMs": 934,
+      "encoded": 7688,
+      "transfer": 7988
+     },
+     {
+      "url": "/api/fundamental/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+      "n": 1,
+      "avgMs": 1300,
+      "maxMs": 1300,
+      "encoded": 7322,
+      "transfer": 7622
+     },
+     {
+      "url": "/api/fts/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+      "n": 1,
+      "avgMs": 4832,
+      "maxMs": 4832,
+      "encoded": 7317,
+      "transfer": 7617
+     },
+     {
+      "url": "/api/fundamental/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+      "n": 1,
+      "avgMs": 1660,
+      "maxMs": 1660,
+      "encoded": 7248,
+      "transfer": 7548
+     },
+     {
+      "url": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "n": 1,
+      "avgMs": 2495,
+      "maxMs": 2495,
+      "encoded": 7100,
+      "transfer": 7400
+     },
+     {
+      "url": "/api/fundamental/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+      "n": 1,
+      "avgMs": 1251,
+      "maxMs": 1251,
+      "encoded": 7028,
+      "transfer": 7328
+     },
+     {
+      "url": "/api/fundamental/%D8%B3%D9%BE%D9%8A%D8%AF%D8%A7%D8%B1",
+      "n": 1,
+      "avgMs": 1324,
+      "maxMs": 1324,
+      "encoded": 7001,
+      "transfer": 7301
+     },
+     {
+      "url": "/api/fts/%D8%A7%D9%84%D8%A8%D8%B1%D8%B2",
+      "n": 1,
+      "avgMs": 5461,
+      "maxMs": 5461,
+      "encoded": 6869,
+      "transfer": 7169
+     },
+     {
+      "url": "/api/fts/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86",
+      "n": 1,
+      "avgMs": 4130,
+      "maxMs": 4130,
+      "encoded": 6802,
+      "transfer": 7102
+     },
+     {
+      "url": "/api/fundamental/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+      "n": 1,
+      "avgMs": 1158,
+      "maxMs": 1158,
+      "encoded": 6784,
+      "transfer": 7084
+     },
+     {
+      "url": "/api/fts/%D8%B2%DA%AF%D9%84%D8%AF%D8%B4%D8%AA",
+      "n": 1,
+      "avgMs": 4138,
+      "maxMs": 4138,
+      "encoded": 6719,
+      "transfer": 7019
+     },
+     {
+      "url": "/api/mstat/series?symbols=%D8%B9%D9%8A%D8%A7%D8%B1%2C%D9%",
+      "n": 1,
+      "avgMs": 483,
+      "maxMs": 483,
+      "encoded": 5640,
+      "transfer": 5940
+     },
+     {
+      "url": "/api/notifications/feed?limit=60",
+      "n": 1,
+      "avgMs": 3426,
+      "maxMs": 3426,
+      "encoded": 4820,
+      "transfer": 5120
+     },
+     {
+      "url": "/api/mstat/industries",
+      "n": 1,
+      "avgMs": 3182,
+      "maxMs": 3182,
+      "encoded": 3858,
+      "transfer": 4158
+     },
+     {
+      "url": "/api/mstat/ownership?group=all",
+      "n": 1,
+      "avgMs": 8864,
+      "maxMs": 8864,
+      "encoded": 3291,
+      "transfer": 3591
+     },
+     {
+      "url": "/api/live-stats",
+      "n": 3,
+      "avgMs": 30,
+      "maxMs": 80,
+      "encoded": 2919,
+      "transfer": 3819
+     },
+     {
+      "url": "/api/mstat/timeline?mode=cum",
+      "n": 1,
+      "avgMs": 1824,
+      "maxMs": 1824,
+      "encoded": 3167,
+      "transfer": 3467
+     },
+     {
+      "url": "/api/mstat/orderflows?group=all",
+      "n": 1,
+      "avgMs": 8986,
+      "maxMs": 8986,
+      "encoded": 3043,
+      "transfer": 3343
+     },
+     {
+      "url": "/api/mstat/tops?group=eq_all",
+      "n": 1,
+      "avgMs": 8461,
+      "maxMs": 8461,
+      "encoded": 2970,
+      "transfer": 3270
+     },
+     {
+      "url": "/api/mstat/smart-money",
+      "n": 1,
+      "avgMs": 9531,
+      "maxMs": 9531,
+      "encoded": 2056,
+      "transfer": 2356
+     },
+     {
+      "url": "/api/market/delta?since=0",
+      "n": 6,
+      "avgMs": 170,
+      "maxMs": 469,
+      "encoded": 948,
+      "transfer": 2748
+     },
+     {
+      "url": "/api/mstat/summary",
+      "n": 1,
+      "avgMs": 6959,
+      "maxMs": 6959,
+      "encoded": 1442,
+      "transfer": 1742
+     },
+     {
+      "url": "/api/mstat/indexcards?days=30",
+      "n": 1,
+      "avgMs": 7639,
+      "maxMs": 7639,
+      "encoded": 1197,
+      "transfer": 1497
+     },
+     {
+      "url": "/api/update/version",
+      "n": 4,
+      "avgMs": 287,
+      "maxMs": 758,
+      "encoded": 292,
+      "transfer": 1492
+     },
+     {
+      "url": "/api/fts/config",
+      "n": 1,
+      "avgMs": 181,
+      "maxMs": 181,
+      "encoded": 620,
+      "transfer": 920
+     },
+     {
+      "url": "/api/sync/codal/db-status",
+      "n": 3,
+      "avgMs": 102,
+      "maxMs": 150,
+      "encoded": 309,
+      "transfer": 1209
+     },
+     {
+      "url": "/api/mstat/clientsplit?tab=all",
+      "n": 1,
+      "avgMs": 7876,
+      "maxMs": 7876,
+      "encoded": 585,
+      "transfer": 885
+     },
+     {
+      "url": "/api/mstat/histogram?group=all",
+      "n": 1,
+      "avgMs": 3501,
+      "maxMs": 3501,
+      "encoded": 579,
+      "transfer": 879
+     },
+     {
+      "url": "/api/mstat/depth?group=eq_all",
+      "n": 1,
+      "avgMs": 7151,
+      "maxMs": 7151,
+      "encoded": 536,
+      "transfer": 836
+     },
+     {
+      "url": "/api/sync/codal/pipeline",
+      "n": 1,
+      "avgMs": 1131,
+      "maxMs": 1131,
+      "encoded": 492,
+      "transfer": 792
+     },
+     {
+      "url": "/api/mstat/phases",
+      "n": 1,
+      "avgMs": 9435,
+      "maxMs": 9435,
+      "encoded": 474,
+      "transfer": 774
+     },
+     {
+      "url": "/api/mstat/thermometer?group=eq_all",
+      "n": 1,
+      "avgMs": 7877,
+      "maxMs": 7877,
+      "encoded": 394,
+      "transfer": 694
+     },
+     {
+      "url": "/api/selection/portfolio",
+      "n": 1,
+      "avgMs": 1770,
+      "maxMs": 1770,
+      "encoded": 374,
+      "transfer": 674
+     },
+     {
+      "url": "/api/watchlist",
+      "n": 2,
+      "avgMs": 71,
+      "maxMs": 88,
+      "encoded": 102,
+      "transfer": 702
+     },
+     {
+      "url": "/api/calendar/upcoming?days=14",
+      "n": 1,
+      "avgMs": 143,
+      "maxMs": 143,
+      "encoded": 77,
+      "transfer": 377
+     },
+     {
+      "url": "/api/fts/%D8%AF%D8%B2%D9%87%D8%B1%D8%A7%D9%88%D9%8A",
+      "n": 1,
+      "avgMs": 5310,
+      "maxMs": 5310,
+      "encoded": 0,
+      "transfer": 0
+     }
+    ],
+    "requestTotal": 82,
+    "apiBytesEncoded": 5688955,
+    "apiBytesTransfer": 5712955,
+    "heapMB": 43.9,
+    "domNodes": 986,
+    "resIndexAfter": 143,
+    "label": "drag-pan"
+   },
+   "wheelMs": 508,
+   "panMs": 481
+  }
+ },
+ "notes": [
+  "ورود انجام شد تا مسیرِ واقعیِ کاربر سنجیده شود (هیچ دادهٔ کاربری نوشته نشد)",
+  "تب وضعیت بازار برای سناریوی سنگین پیدا نشد"
+ ],
+ "consoleErrors": [],
+ "netErrors": [],
+ "phaseLogin": {
+  "firstPaint": 1172,
+  "firstContentfulPaint": 2816,
+  "domContentLoaded": 1156.1999998092651,
+  "loadEnd": 2810.699999809265,
+  "ttfb": 493,
+  "longtasks": 12,
+  "tbt": 2513,
+  "worst": 1134,
+  "longtaskList": [
+   {
+    "t": 607,
+    "d": 434
+   },
+   {
+    "t": 1044,
+    "d": 112
+   },
+   {
+    "t": 1181,
+    "d": 1134
+   },
+   {
+    "t": 3741,
+    "d": 93
+   },
+   {
+    "t": 3840,
+    "d": 401
+   },
+   {
+    "t": 4931,
+    "d": 169
+   },
+   {
+    "t": 5101,
+    "d": 404
+   },
+   {
+    "t": 5513,
+    "d": 58
+   },
+   {
+    "t": 5931,
+    "d": 67
+   },
+   {
+    "t": 7482,
+    "d": 107
+   },
+   {
+    "t": 7592,
+    "d": 58
+   },
+   {
+    "t": 7650,
+    "d": 76
+   }
+  ],
+  "frames": {
+   "n": 366,
+   "med": 18,
+   "p95": 57,
+   "max": 1151,
+   "over32": 20,
+   "over100": 14
+  },
+  "inputEvents": [
+   {
+    "name": "pointerover",
+    "t": 4242,
+    "d": 392,
+    "proc": 0,
+    "delay": 0
+   },
+   {
+    "name": "pointerenter",
+    "t": 4242,
+    "d": 392,
+    "proc": 0,
+    "delay": 0
+   },
+   {
+    "name": "pointerenter",
+    "t": 4242,
+    "d": 392,
+    "proc": 0,
+    "delay": 0
+   },
+   {
+    "name": "pointerenter",
+    "t": 4242,
+    "d": 392,
+    "proc": 0,
+    "delay": 0
+   },
+   {
+    "name": "pointerenter",
+    "t": 4242,
+    "d": 392,
+    "proc": 0,
+    "delay": 0
+   },
+   {
+    "name": "mouseover",
+    "t": 4242,
+    "d": 392,
+    "proc": 0,
+    "delay": 0
+   },
+   {
+    "name": "pointerout",
+    "t": 5999,
+    "d": 200,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerover",
+    "t": 5999,
+    "d": 200,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerenter",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "mouseout",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "mouseover",
+    "t": 5999,
+    "d": 200,
+    "proc": 2,
+    "delay": 2
+   },
+   {
+    "name": "pointerout",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerleave",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerleave",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerleave",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerleave",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "pointerover",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "mouseout",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   },
+   {
+    "name": "mouseover",
+    "t": 6026,
+    "d": 192,
+    "proc": 1,
+    "delay": 1
+   }
+  ],
+  "requests": [
+   {
+    "url": "/api/market",
+    "n": 1,
+    "avgMs": 1112,
+    "maxMs": 1112,
+    "encoded": 1220692,
+    "transfer": 1220992
+   },
+   {
+    "url": "/api/funnel",
+    "n": 1,
+    "avgMs": 1464,
+    "maxMs": 1464,
+    "encoded": 388064,
+    "transfer": 388364
+   },
+   {
+    "url": "/api/funnel/registry",
+    "n": 1,
+    "avgMs": 261,
+    "maxMs": 261,
+    "encoded": 7688,
+    "transfer": 7988
+   },
+   {
+    "url": "/api/notifications/feed?limit=60",
+    "n": 1,
+    "avgMs": 2590,
+    "maxMs": 2590,
+    "encoded": 4820,
+    "transfer": 5120
+   },
+   {
+    "url": "/api/live-stats",
+    "n": 1,
+    "avgMs": 5,
+    "maxMs": 5,
+    "encoded": 973,
+    "transfer": 1273
+   },
+   {
+    "url": "/api/selection/portfolio",
+    "n": 1,
+    "avgMs": 1025,
+    "maxMs": 1025,
+    "encoded": 374,
+    "transfer": 674
+   },
+   {
+    "url": "/api/update/version",
+    "n": 1,
+    "avgMs": 533,
+    "maxMs": 533,
+    "encoded": 73,
+    "transfer": 373
+   },
+   {
+    "url": "/api/market/sync-state",
+    "n": 1,
+    "avgMs": 3240,
+    "maxMs": 3240,
+    "encoded": 46,
+    "transfer": 346
+   }
+  ],
+  "requestTotal": 8,
+  "apiBytesEncoded": 1622730,
+  "apiBytesTransfer": 1625130,
+  "heapMB": 23.9,
+  "domNodes": 463,
+  "resIndexAfter": 26
+ },
+ "heapEnd": 44295703,
+ "allRequests": [
+  {
+   "u": "/api/update/version",
+   "ms": 758,
+   "enc": 73,
+   "tr": 373
+  },
+  {
+   "u": "/api/notifications/feed?limit=60",
+   "ms": 3426,
+   "enc": 4820,
+   "tr": 5120
+  },
+  {
+   "u": "/api/selection/portfolio",
+   "ms": 1770,
+   "enc": 374,
+   "tr": 674
+  },
+  {
+   "u": "/api/market",
+   "ms": 1183,
+   "enc": 1220692,
+   "tr": 1220992
+  },
+  {
+   "u": "/api/funnel",
+   "ms": 1694,
+   "enc": 388100,
+   "tr": 388400
+  },
+  {
+   "u": "/api/funnel/registry",
+   "ms": 934,
+   "enc": 7688,
+   "tr": 7988
+  },
+  {
+   "u": "/api/watchlist",
+   "ms": 54,
+   "enc": 51,
+   "tr": 351
+  },
+  {
+   "u": "/api/mstat/histogram?group=all",
+   "ms": 3501,
+   "enc": 579,
+   "tr": 879
+  },
+  {
+   "u": "/api/live-stats",
+   "ms": 80,
+   "enc": 973,
+   "tr": 1273
+  },
+  {
+   "u": "/api/mstat/timeline?mode=cum",
+   "ms": 1824,
+   "enc": 3167,
+   "tr": 3467
+  },
+  {
+   "u": "/api/mstat/treemap?group=eq_all&industry=&metric=value",
+   "ms": 8221,
+   "enc": 21053,
+   "tr": 21353
+  },
+  {
+   "u": "/api/mstat/gold?history_days=60",
+   "ms": 6518,
+   "enc": 10513,
+   "tr": 10813
+  },
+  {
+   "u": "/api/mstat/series?symbols=عيار,فولاد&days=365",
+   "ms": 483,
+   "enc": 5640,
+   "tr": 5940
+  },
+  {
+   "u": "/api/index/tedpix?limit=0",
+   "ms": 6645,
+   "enc": 136052,
+   "tr": 136352
+  },
+  {
+   "u": "/api/mstat/mainwatch?group=all&industry=",
+   "ms": 7464,
+   "enc": 17463,
+   "tr": 17763
+  },
+  {
+   "u": "/api/mstat/industries",
+   "ms": 3182,
+   "enc": 3858,
+   "tr": 4158
+  },
+  {
+   "u": "/api/mstat/mainwatch?group=eq_all&industry=",
+   "ms": 5034,
+   "enc": 17376,
+   "tr": 17676
+  },
+  {
+   "u": "/api/mstat/smart-money",
+   "ms": 9531,
+   "enc": 2056,
+   "tr": 2356
+  },
+  {
+   "u": "/api/mstat/summary",
+   "ms": 6959,
+   "enc": 1442,
+   "tr": 1742
+  },
+  {
+   "u": "/api/mstat/depth?group=eq_all",
+   "ms": 7151,
+   "enc": 536,
+   "tr": 836
+  },
+  {
+   "u": "/api/mstat/thermometer?group=eq_all",
+   "ms": 7877,
+   "enc": 394,
+   "tr": 694
+  },
+  {
+   "u": "/api/mstat/clientsplit?tab=all",
+   "ms": 7876,
+   "enc": 585,
+   "tr": 885
+  },
+  {
+   "u": "/api/mstat/phases",
+   "ms": 9435,
+   "enc": 474,
+   "tr": 774
+  },
+  {
+   "u": "/api/mstat/indexcards?days=30",
+   "ms": 7639,
+   "enc": 1197,
+   "tr": 1497
+  },
+  {
+   "u": "/api/mstat/tops?group=eq_all",
+   "ms": 8461,
+   "enc": 2970,
+   "tr": 3270
+  },
+  {
+   "u": "/api/mstat/orderflows?group=all",
+   "ms": 8986,
+   "enc": 3043,
+   "tr": 3343
+  },
+  {
+   "u": "/api/mstat/ownership?group=all",
+   "ms": 8864,
+   "enc": 3291,
+   "tr": 3591
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 15798,
+   "enc": 201562,
+   "tr": 201862
+  },
+  {
+   "u": "/api/market/delta?since=0",
+   "ms": 469,
+   "enc": 158,
+   "tr": 458
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 6202,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/index/tedpix?limit=0",
+   "ms": 476,
+   "enc": 136060,
+   "tr": 136360
+  },
+  {
+   "u": "/api/fts/فولاد",
+   "ms": 7611,
+   "enc": 0,
+   "tr": 0
+  },
+  {
+   "u": "/api/fundamental/فولاد",
+   "ms": 2495,
+   "enc": 7100,
+   "tr": 7400
+  },
+  {
+   "u": "/api/fts/config",
+   "ms": 181,
+   "enc": 620,
+   "tr": 920
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 8440,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/update/version",
+   "ms": 329,
+   "enc": 73,
+   "tr": 373
+  },
+  {
+   "u": "/api/sync/codal/pipeline",
+   "ms": 1131,
+   "enc": 492,
+   "tr": 792
+  },
+  {
+   "u": "/api/screener",
+   "ms": 1144,
+   "enc": 122610,
+   "tr": 122910
+  },
+  {
+   "u": "/api/calendar/upcoming?days=14",
+   "ms": 143,
+   "enc": 77,
+   "tr": 377
+  },
+  {
+   "u": "/api/sync/codal/db-status",
+   "ms": 142,
+   "enc": 103,
+   "tr": 403
+  },
+  {
+   "u": "/api/market/delta?since=0",
+   "ms": 146,
+   "enc": 158,
+   "tr": 458
+  },
+  {
+   "u": "/api/funnel",
+   "ms": 287,
+   "enc": 388096,
+   "tr": 388396
+  },
+  {
+   "u": "/api/live-stats",
+   "ms": 5,
+   "enc": 973,
+   "tr": 1273
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 1238,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 1218,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/market/delta?since=0",
+   "ms": 111,
+   "enc": 158,
+   "tr": 458
+  },
+  {
+   "u": "/api/fts/فولاد",
+   "ms": 1146,
+   "enc": 7768,
+   "tr": 8068
+  },
+  {
+   "u": "/api/update/version",
+   "ms": 34,
+   "enc": 73,
+   "tr": 373
+  },
+  {
+   "u": "/api/watchlist",
+   "ms": 88,
+   "enc": 51,
+   "tr": 351
+  },
+  {
+   "u": "/api/sync/codal/db-status",
+   "ms": 13,
+   "enc": 103,
+   "tr": 403
+  },
+  {
+   "u": "/api/market/delta?since=0",
+   "ms": 14,
+   "enc": 158,
+   "tr": 458
+  },
+  {
+   "u": "/api/funnel",
+   "ms": 604,
+   "enc": 388085,
+   "tr": 388385
+  },
+  {
+   "u": "/api/live-stats",
+   "ms": 6,
+   "enc": 973,
+   "tr": 1273
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 1621,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 1194,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/market/delta?since=0",
+   "ms": 118,
+   "enc": 158,
+   "tr": 458
+  },
+  {
+   "u": "/api/update/version",
+   "ms": 29,
+   "enc": 73,
+   "tr": 373
+  },
+  {
+   "u": "/api/sync/codal/db-status",
+   "ms": 150,
+   "enc": 103,
+   "tr": 403
+  },
+  {
+   "u": "/api/market/delta?since=0",
+   "ms": 162,
+   "enc": 158,
+   "tr": 458
+  },
+  {
+   "u": "/api/funnel",
+   "ms": 646,
+   "enc": 388088,
+   "tr": 388388
+  },
+  {
+   "u": "/api/chart/فولاد",
+   "ms": 593,
+   "enc": 201578,
+   "tr": 201878
+  },
+  {
+   "u": "/api/mstat/mainwatch?group=eq_all&industry=",
+   "ms": 39,
+   "enc": 17376,
+   "tr": 17676
+  },
+  {
+   "u": "/api/chart/سپيدار",
+   "ms": 4636,
+   "enc": 59032,
+   "tr": 59332
+  },
+  {
+   "u": "/api/fts/سپيدار",
+   "ms": 4832,
+   "enc": 7317,
+   "tr": 7617
+  },
+  {
+   "u": "/api/fundamental/سپيدار",
+   "ms": 1324,
+   "enc": 7001,
+   "tr": 7301
+  },
+  {
+   "u": "/api/chart/سپيدار",
+   "ms": 5035,
+   "enc": 59051,
+   "tr": 59351
+  },
+  {
+   "u": "/api/chart/دزهراوي",
+   "ms": 3243,
+   "enc": 190246,
+   "tr": 190546
+  },
+  {
+   "u": "/api/fts/دزهراوي",
+   "ms": 5310,
+   "enc": 0,
+   "tr": 0
+  },
+  {
+   "u": "/api/fundamental/دزهراوي",
+   "ms": 1158,
+   "enc": 6784,
+   "tr": 7084
+  },
+  {
+   "u": "/api/chart/دزهراوي",
+   "ms": 3839,
+   "enc": 190260,
+   "tr": 190560
+  },
+  {
+   "u": "/api/chart/البرز",
+   "ms": 4779,
+   "enc": 34363,
+   "tr": 34663
+  },
+  {
+   "u": "/api/fts/البرز",
+   "ms": 5461,
+   "enc": 6869,
+   "tr": 7169
+  },
+  {
+   "u": "/api/fundamental/البرز",
+   "ms": 1660,
+   "enc": 7248,
+   "tr": 7548
+  },
+  {
+   "u": "/api/chart/البرز",
+   "ms": 5431,
+   "enc": 34377,
+   "tr": 34677
+  },
+  {
+   "u": "/api/chart/زگلدشت",
+   "ms": 3707,
+   "enc": 32631,
+   "tr": 32931
+  },
+  {
+   "u": "/api/fts/زگلدشت",
+   "ms": 4138,
+   "enc": 6719,
+   "tr": 7019
+  },
+  {
+   "u": "/api/fundamental/زگلدشت",
+   "ms": 1251,
+   "enc": 7028,
+   "tr": 7328
+  },
+  {
+   "u": "/api/chart/زگلدشت",
+   "ms": 4191,
+   "enc": 32645,
+   "tr": 32945
+  },
+  {
+   "u": "/api/chart/وتعاون",
+   "ms": 3587,
+   "enc": 33167,
+   "tr": 33467
+  },
+  {
+   "u": "/api/fts/وتعاون",
+   "ms": 4130,
+   "enc": 6802,
+   "tr": 7102
+  },
+  {
+   "u": "/api/fundamental/وتعاون",
+   "ms": 1300,
+   "enc": 7322,
+   "tr": 7622
+  },
+  {
+   "u": "/api/chart/وتعاون",
+   "ms": 4283,
+   "enc": 33180,
+   "tr": 33480
+  }
+ ],
+ "summary": {
+  "cold": [
+   {
+    "fcp": 692,
+    "ready": 2493,
+    "tbt": 626,
+    "worst": 463,
+    "requests": 6,
+    "encodedKB": 1584,
+    "heapMB": 43.2
+   },
+   {
+    "fcp": 200,
+    "ready": 1382,
+    "tbt": 507,
+    "worst": 427,
+    "requests": 4,
+    "encodedKB": 1200,
+    "heapMB": 72.9
+   },
+   {
+    "fcp": 640,
+    "ready": 1593,
+    "tbt": 8,
+    "worst": 57,
+    "requests": 1,
+    "encodedKB": 0,
+    "heapMB": 81.5
+   }
+  ],
+  "heapTraceMB": [
+   43.2,
+   72.9,
+   81.5
+  ],
+  "consoleErrors": 0,
+  "netErrors": 0
+ }
+}

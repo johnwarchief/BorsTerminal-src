@@ -17,7 +17,7 @@ const FEED = {
     trend: { D: { trend: 'up' }, W: { trend: 'up' }, matrix: { decision: 'PERMITTED', setup: 'JET', desc: 'هفتگی صعودی + روزانه صعودی' } },
     jet: { active: true, resistance: 13720, close: 13740, ath: false },
     exit_engine: { verdict: 'hold', l1: { hard_stop: 11134, ma14: 12936, stop_basis: 'swing_low' } },
-    hourglass: { active: null, action: 'UNKNOWN', ma52: null, weekly_rsi5: null, desc: 'سابقه هفتگی کمتر از حد نصاب' },
+    hourglass: { active: null, action: 'UNKNOWN', ma52: null, weekly_rsi: null, rsi_period: null, desc: 'سابقه هفتگی کمتر از حد نصاب' },
   },
 } as never;
 

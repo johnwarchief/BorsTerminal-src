@@ -1,0 +1,12 @@
+C:\Program Files\Labcenter Electronics\Proteus 9 Professional\Tools\Python\PYPROC.EXE | Proteus9 Design Suite (PyProc) | dir=Inbound action=Allow enabled=True profile=Any
+C:\Program Files\Labcenter Electronics\Proteus 9 Professional\Tools\Python\PYPROC.EXE | Proteus9 Design Suite (PyProc) | dir=Outbound action=Allow enabled=True profile=Any
+C:\Program Files\Labcenter Electronics\Proteus 9 Professional\Tools\Python\PYPROC.EXE | Proteus9 Design Suite (PyProc) | dir=Inbound action=Allow enabled=True profile=Any
+C:\Program Files\Labcenter Electronics\Proteus 9 Professional\Tools\Python\PYPROC.EXE | Proteus9 Design Suite (PyProc) | dir=Outbound action=Allow enabled=True profile=Any
+C:\users\johnkallnaya\appdata\local\programs\python\python314\python.exe | python.exe | dir=Inbound action=Allow enabled=True profile=Private
+C:\users\johnkallnaya\appdata\local\programs\python\python314\python.exe | python.exe | dir=Inbound action=Allow enabled=True profile=Private
+C:\users\johnkallnaya\appdata\local\programs\python\python314\python.exe | python.exe | dir=Inbound action=Allow enabled=True profile=Public
+C:\users\johnkallnaya\appdata\local\programs\python\python314\python.exe | python.exe | dir=Inbound action=Allow enabled=True profile=Public
+C:\users\johnkallnaya\appdata\roaming\uv\python\cpython-3.11.16-windows-x86_64-none\python.exe | python.exe | dir=Inbound action=Allow enabled=True profile=Public
+C:\users\johnkallnaya\appdata\roaming\uv\python\cpython-3.11.16-windows-x86_64-none\python.exe | python.exe | dir=Inbound action=Allow enabled=True profile=Public
+C:\Program Files\AutoClaw\resources\python\python.exe | AutoClaw Bundled Python | dir=Inbound action=Allow enabled=True profile=Any
+2026-10-17 21:09:46 +0330

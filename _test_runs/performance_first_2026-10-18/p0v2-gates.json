@@ -1,0 +1,83 @@
+{
+ "pre": {
+  "2026-10-17 23:38:13": {
+   "port_8020_open": false,
+   "port_8123_open": false,
+   "port_8000_open": true,
+   "port_8010_open": true,
+   "app_processes": [
+    "13660|10/15/2026 04:02:45|C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -u app.py",
+    "8028|10/16/2026 01:59:11|C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning",
+    "2676|10/16/2026 01:59:11|C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning"
+   ]
+  }
+ },
+ "fixture_sha_backup": "4539b6cfea91827e84ea878d0be95cd1678ff591eb9e6dd8135fc781f32f3bee",
+ "market_db_sha_before": "05b15c1c890b6fba637689e9dec398a6f36803aa1903037cff2badb6f5f628cd",
+ "src_sha256": {
+  "api/funnel.py": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+  "app.py": "bcdc793e1f377378ab206f0aa0bd59edcedca7bf9f9c024a03cafd4d9f6c790d",
+  "dev/run_all_tests.py": "06059b878d6bed97b1e61074374578c909f33f9d0c8fbaaef3c5290d1d475730",
+  "dev/test_funnel_warm_deadlock_v1.py": "914ad17a722d307c1ada1675f86db233d009cfc9db5bcdce5bce8bef84100381",
+  "dev/funnel_body_cache_v1.py": "7794e816b8e817e738b49defcd6d9988657c3b5974666a1fcacd8edaa58f753c",
+  "frontend/src/shared/lib/feedFreshness.ts": "c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb",
+  "frontend/src/shared/components/FreshnessBadge.tsx": "dca05d9162c2288fc3356949dd940fccfcee0b85116d39471c8ac54e35810569",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx": "4608b581e0cfd78a709fc75954be77380f3a1602eaf50b2339d84cf97596d08c"
+ },
+ "steps": {
+  "run_all_tests": {
+   "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/run_all_tests.py",
+   "cwd": ".",
+   "rc": 0,
+   "start": "2026-10-17 23:38:18",
+   "dur_s": 1677.8,
+   "log": "p0v2-run_all_tests.txt"
+  },
+  "version_anchor_guard": {
+   "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/version_anchor_guard.py",
+   "cwd": ".",
+   "rc": 0,
+   "start": "2026-10-18 00:06:16",
+   "dur_s": 0.1,
+   "log": "p0v2-version_anchor_guard.txt"
+  },
+  "npm-ci": {
+   "cmd": "npm.cmd ci",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-18 00:06:16",
+   "dur_s": 98.3,
+   "log": "p0v2-npm-ci.txt"
+  },
+  "tsc": {
+   "cmd": "npx.cmd tsc -b",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-18 00:07:55",
+   "dur_s": 83.1,
+   "log": "p0v2-tsc.txt"
+  },
+  "vitest": {
+   "cmd": "npx.cmd vitest run",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-18 00:09:18",
+   "dur_s": 364.7,
+   "log": "p0v2-vitest.txt"
+  },
+  "build": {
+   "cmd": "npm.cmd run build",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-18 00:15:22",
+   "dur_s": 25.5,
+   "log": "p0v2-build.txt"
+  }
+ },
+ "fixture_sha_after_gates": "230b8193a81a0b9f84015d659e934c82f1f6e2e8b63fe27f80e42753d2c5ae77",
+ "fixture_sha_after_restore": "4539b6cfea91827e84ea878d0be95cd1678ff591eb9e6dd8135fc781f32f3bee",
+ "fixture_restored_ok": true,
+ "market_db_sha_after_gates": "1bbfbc95ed94a788eb51afeb56056c5ab0a6ec0b7057642b3b302fe199628e79",
+ "market_db_sha_after_restore": "05b15c1c890b6fba637689e9dec398a6f36803aa1903037cff2badb6f5f628cd",
+ "market_db_restored_ok": true
+}

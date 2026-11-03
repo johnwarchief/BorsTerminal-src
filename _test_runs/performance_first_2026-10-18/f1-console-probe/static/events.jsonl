@@ -1,0 +1,7 @@
+{"tn":1792267549731,"k":"start","base":"http://127.0.0.1:8123","port":8123,"pid_self":13684,"journey":[{"route":"/probe.html","sec":8}],"other_clients":[],"tz_offset_min":210,"node":"v22.23.2","pw":"C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\frontend\\index.js","clock_pin":null,"clock_offset_ms":0}
+{"tn":1792267551428,"k":"phase","name":"cold-0","route":"/probe.html","t":1792267551428}
+{"tn":1792267551710,"k":"console","level":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)"}
+{"tn":1792267611781,"k":"load","name":"cold-0","route":"/probe.html","t_nav":1792267551428,"err":null,"ready":{"rows":0,"t":null},"nav":{"origin":1792267551469.6,"dcl":56,"load":59,"fcp":340,"transfer":924}}
+{"tn":1792267611896,"k":"lcp","size":10404,"t":1792267551809.6}
+{"tn":1792267611897,"k":"smp","t":1792267611890.7002,"drift_ms":1,"route":"#//probe.html","vis":"visible","rows":0,"dom":26,"heap_mb":1.1,"fresh":null,"conn":null,"data_age_ms":null,"label":null}
+{"tn":1792267611897,"k":"end","reason":"until/duration"}

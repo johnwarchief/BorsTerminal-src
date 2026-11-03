@@ -1,0 +1,121 @@
+{
+ "at": "2026-10-17 23:02:04",
+ "fix_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+ "bug_sha": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+ "head_sha": "0867f8814f578a24ca67dff2e0b6af7e8d91bded61236553526f6197997e54fb",
+ "variants": [
+  "head",
+  "fixed"
+ ],
+ "post_timeout_s": 340.0,
+ "env": {
+  "BORS_NO_FETCH_LOOPS": "1",
+  "PYTHONUNBUFFERED": "1"
+ },
+ "screener_cache_orig_sha": "9d2b7a2367b8e0ece8d860c17937085cf2c51743c4a82bf7199aec78723247d1",
+ "head": {
+  "tag": "head",
+  "funnel_sha": "0867f8814f578a24ca67dff2e0b6af7e8d91bded61236553526f6197997e54fb",
+  "db_pristine": true,
+  "screener_disk_cache_absent": true,
+  "ready_s": 3.745975971221924,
+  "post_sent_at_s": 3.75,
+  "post_first": {
+   "http": 200,
+   "x_cache": "MISS",
+   "status": "success",
+   "bytes": 7488719,
+   "ms": 118055
+  },
+  "post_first_done_at_s": 121.82,
+  "post_second": {
+   "http": 200,
+   "x_cache": "HIT",
+   "status": "success",
+   "bytes": 7488719,
+   "ms": 277
+  },
+  "screener": {
+   "http": 200,
+   "bytes": 1139059,
+   "ms": 1117
+  },
+  "log_events": [
+   [
+    3.42,
+    "[startup] screener warm thread spawned"
+   ],
+   [
+    4.42,
+    "[screener] cache miss, running heavy bulk scan..."
+   ],
+   [
+    7.99,
+    "[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10"
+   ],
+   [
+    119.08,
+    "[screener] saved to disk cache"
+   ],
+   [
+    121.09,
+    "[screener] cache warmed"
+   ]
+  ],
+  "log": "rig-p0-head.out"
+ },
+ "fixed": {
+  "tag": "fixed",
+  "funnel_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+  "db_pristine": true,
+  "screener_disk_cache_absent": true,
+  "ready_s": 4.138344764709473,
+  "post_sent_at_s": 4.14,
+  "post_first": {
+   "http": 200,
+   "x_cache": "HIT",
+   "status": "success",
+   "bytes": 7488740,
+   "ms": 115557
+  },
+  "post_first_done_at_s": 119.71,
+  "post_second": {
+   "http": 200,
+   "x_cache": "HIT",
+   "status": "success",
+   "bytes": 7488740,
+   "ms": 297
+  },
+  "screener": {
+   "http": 200,
+   "bytes": 1139059,
+   "ms": 348
+  },
+  "log_events": [
+   [
+    3.82,
+    "[startup] screener warm thread spawned"
+   ],
+   [
+    4.83,
+    "[screener] cache miss, running heavy bulk scan..."
+   ],
+   [
+    7.98,
+    "[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10"
+   ],
+   [
+    116.7,
+    "[screener] saved to disk cache"
+   ],
+   [
+    119.39,
+    "[screener] cache warmed"
+   ]
+  ],
+  "log": "rig-p0-fixed.out"
+ },
+ "final_funnel_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+ "db_restored_after": true,
+ "screener_cache_restored": true
+}

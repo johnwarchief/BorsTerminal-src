@@ -319,8 +319,8 @@ annual = {"annual_sales_mrl": 1e7, "annual_sales_bt": 100.0, "months_used": 12,
           "scale_factor": 1.0, "basis": "test", "reconciled": True}
 gm = {"margin_pct": 40.0, "na": False}
 v0 = FD.ind4_valuation(annual, gm, None)
-ck(v0["available"] is False and v0["pass"] is False,
-   "ind4 with market_cap=None → not available, no ZeroDivisionError")
+ck(v0["available"] is False and v0.get("pass") in (False, None),
+   "ind4 with market_cap=None → not available (no fake pass), no ZeroDivisionError")
 v1 = FD.ind4_valuation(annual, gm, 2.0e13)
 ck(v1["available"] and abs(v1["sales_to_mcap"] - 0.5) < 1e-9,
    "ind4 math unchanged for a valid cap (1e7 MRL = 1e13 Rial / 2e13 = %s)" % v1["sales_to_mcap"])

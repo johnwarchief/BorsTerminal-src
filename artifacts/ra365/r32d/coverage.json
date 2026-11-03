@@ -1,0 +1,74 @@
+{
+ "schema": "ra365-wm-calendar-coverage/1",
+ "generated_at": "2026-10-25T20:20:00+00:00",
+ "source_pack": "D:/BorsTerminal-tmp/ra365_round32/calendar/pack",
+ "pack_bars_sha256": "ef3029d5c063035c7f6708619e3ef73317357f417dc6ec0312aaca48cf1aa829",
+ "capture_sha256": [
+  "58bfae7aafe0c954a3758df3e2bb325ef4b9ba0eba620db31caa416031a380a6",
+  "6c1f95a01196ec50131bff8e8ea8c405947157f85f2d64e5647d879ad28ec37b",
+  "7ab8c2334ded3e671d5b150ee8ce4b73425aedeac66063d488e7cae9d2a3a061",
+  "edce97cce4268fa3223dae820755da95a6308c78fc0eeac7705c806f130d11c5"
+ ],
+ "assets_with_bars": 1628,
+ "noncomparable": {
+  "W": {
+   "keys": 2858,
+   "built": 2858,
+   "unavailable": 0
+  },
+  "M": {
+   "keys": 2777,
+   "built": 2777,
+   "unavailable": 0
+  }
+ },
+ "canonical_sensor": {
+  "W": {
+   "total": 275776,
+   "pass": 273217,
+   "pct": 99.0721
+  },
+  "M": {
+   "total": 69268,
+   "pass": 66825,
+   "pct": 96.4731
+  },
+  "note": "product daily aggregate over every product date; unchanged by this round"
+ },
+ "reference_calendar_sensor": {
+  "W": {
+   "total": 275776,
+   "comparable_pass": 272915,
+   "noncomparable_covered": 2858,
+   "covered": 275773,
+   "reference_internal_excluded": 3,
+   "pct": 99.9989
+  },
+  "M": {
+   "total": 69268,
+   "comparable_pass": 66491,
+   "noncomparable_covered": 2777,
+   "covered": 69268,
+   "reference_internal_excluded": 0,
+   "pct": 100.0
+  },
+  "all": {
+   "total": 345044,
+   "covered": 345041,
+   "pct": 99.9991,
+   "reference_internal_excluded": 3
+  }
+ },
+ "validation": {
+  "sample_assets": 24,
+  "keys_compared": 78,
+  "mismatch": 0,
+  "worst_abs_diff": 0.0,
+  "method": "random 24-asset sample; pack bar vs live reference W/M type7 bar"
+ },
+ "notes": [
+  "noncomparable_covered means the reference W/M bar is used for a key the product cannot build from its own incomplete calendar",
+  "the 3 reference-internal W keys are the reference W bar disagreeing with its own daily aggregation; documented in R32B",
+  "no raw capture is committed; the W/M bar pack stays on D: and is identified by sha256"
+ ]
+}
