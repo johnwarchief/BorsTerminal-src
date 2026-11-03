@@ -1,0 +1,131 @@
+{
+  "when": "2026-11-03T00:36:05.861Z",
+  "base": "http://localhost:5180/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+  "backendRunning": true,
+  "failedRequests": {},
+  "pass": 16,
+  "fail": 0,
+  "results": [
+    {
+      "name": "indicators panel rendered",
+      "pass": true
+    },
+    {
+      "name": "catalog mounted inside it",
+      "pass": true
+    },
+    {
+      "name": "64 rows in the DOM",
+      "pass": true,
+      "detail": {
+        "rowCount": 64
+      }
+    },
+    {
+      "name": "lazy: only the visible band is decoded at first paint",
+      "pass": true,
+      "detail": {
+        "beforeScroll": 23
+      }
+    },
+    {
+      "name": "all 64 photos really bundled (decoded after scroll)",
+      "pass": true,
+      "detail": {
+        "scrollHeight": 3583,
+        "clientHeight": 418,
+        "broken": []
+      }
+    },
+    {
+      "name": "lightbox shows the full-size photo",
+      "pass": true,
+      "detail": {
+        "w": 900,
+        "h": 459
+      }
+    },
+    {
+      "name": "focus moved into the dialog",
+      "pass": true,
+      "detail": {
+        "active": "بستنِ تصویر"
+      }
+    },
+    {
+      "name": "lightbox paints above the toolbar strip",
+      "pass": true,
+      "detail": {
+        "overToolbar": [
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox",
+          "telegram-lightbox"
+        ]
+      }
+    },
+    {
+      "name": "Escape closes and returns focus to the thumb",
+      "pass": true,
+      "detail": {
+        "lightboxGone": true,
+        "focusOnThumb": "telegram-thumb-p12"
+      }
+    },
+    {
+      "name": "search narrows the list, count in Persian digits",
+      "pass": true,
+      "detail": {
+        "filtered": 3,
+        "countText": "۳ سطر"
+      }
+    },
+    {
+      "name": "attachment-name search finds p14",
+      "pass": true
+    },
+    {
+      "name": "empty-result state renders",
+      "pass": true
+    },
+    {
+      "name": "toggle flips and writes the store",
+      "pass": true,
+      "detail": {
+        "before": "خاموش",
+        "after": "روشن"
+      }
+    },
+    {
+      "name": "exactly 9 toggles and 55 not-implemented",
+      "pass": true,
+      "detail": {
+        "toggles": 9,
+        "notImpl": 55
+      }
+    },
+    {
+      "name": "dims render LTR as 1280×608",
+      "pass": true,
+      "detail": {
+        "dimsText": "1280×608"
+      }
+    },
+    {
+      "name": "caption-less rows fall back, never invent text",
+      "pass": true,
+      "detail": {
+        "p08": "p08بدون کپشن800×600پیاده‌سازی نشده",
+        "p10": "Gold Snap  v1.0.mq5بدون کپشن903×465پیاده‌سازی نشده"
+      }
+    }
+  ]
+}
