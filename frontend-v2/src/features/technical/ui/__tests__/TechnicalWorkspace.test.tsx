@@ -56,6 +56,7 @@ describe('TechnicalWorkspace', () => {
     render(<TechnicalWorkspace symbol="FOOLAD" />);
 
     expect(screen.getByTestId('drawing-toolbar')).toBeDefined();
+    fireEvent.click(screen.getByTitle('باز کردن سایدبار لبه آماری'));
     expect(screen.getByTestId('candle-edge-card')).toBeDefined();
   });
 
@@ -70,6 +71,8 @@ describe('TechnicalWorkspace', () => {
   it('toggles candle edge sidebar visibility on button click', () => {
     render(<TechnicalWorkspace symbol="FOOLAD" />);
 
+    // کشو پیش‌فرض بسته است؛ اول بازش می‌کنیم.
+    fireEvent.click(screen.getByTitle('باز کردن سایدبار لبه آماری'));
     const toggleBtn = screen.getByTitle('بستن سایدبار لبه آماری');
     expect(toggleBtn).toBeDefined();
 

@@ -51,9 +51,10 @@ const INITIAL_STATE = {
 
   channelMode: 'regression' as ChannelMode,
   rsiVariant: 'smooth_ma' as RsiVariant,
+  doubleTapProfile: 'precision' as 'precision' | 'source',
   indicatorParams: {} as Record<string, Record<string, number>>,
-  maxDrawnPatterns: 3,
-  isLeftDrawerOpen: true,
+  maxDrawnPatterns: 1,
+  isLeftDrawerOpen: false,
   leftDrawerWidth: 460,
   activeDrawerTab: 'top50' as DrawerTab,
   detectedDoubleTapPatterns: [] as DoubleTapPattern[],
@@ -136,6 +137,8 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
   setChannelMode: (mode: ChannelMode) => set({ channelMode: mode }),
 
   setRsiVariant: (variant: RsiVariant) => set({ rsiVariant: variant }),
+
+  setDoubleTapProfile: (profile) => set({ doubleTapProfile: profile }),
 
   setIndicatorParam: (indicatorId, key, value) =>
     set((state) => ({

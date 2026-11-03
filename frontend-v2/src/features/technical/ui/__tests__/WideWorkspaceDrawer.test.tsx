@@ -139,6 +139,7 @@ describe('WideWorkspaceDrawer Component', () => {
         target2: 800,
         stopLoss: 1250,
         score: 92,
+        quality: 92,
         height: 150,
         status: 'active',
       },

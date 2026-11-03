@@ -34,7 +34,7 @@ import { registerAllUserIndicators } from '../overlays/userIndicators';
 import { registerCorporateEventsOverlay } from '../overlays/corporateEventsOverlay';
 import { registerAllAdvancedIndicators } from '../overlays/advancedTradingIndicators';
 import { OSCILLATOR_NAMES, oscillatorPaneId, registerOscillatorIndicators } from '../indicators/oscillatorIndicators';
-import { AnimatedPatternOverlay } from './AnimatedPatternOverlay';
+import { PatternStoryOverlay } from './PatternStoryOverlay';
 import type { Candle } from '../model/types';
 
 // ----------------------------------------------------------------------------
@@ -278,8 +278,6 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<Chart | null>(null);
   const [activeChartInstance, setActiveChartInstance] = useState<Chart | null>(null);
-  const pulseBadgeRef = useRef<HTMLDivElement>(null);
-  const prevPriceRef = useRef<number | null>(null);
 
   // استیت‌های استور تکنیکال
   const activeTool = useTechnicalStore((s) => s.activeDrawingTool);
@@ -438,22 +436,6 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     chart.resetData();
   }, [bars]);
 
-  // ۳. پالس زنده تیک قیمت با CSS شتاب‌یافته و احترام به prefers-reduced-motion
-  useEffect(() => {
-    if (!lastCandle) return;
-    const currentPrice = lastCandle.close;
-
-    if (prevPriceRef.current !== null && prevPriceRef.current !== currentPrice) {
-      const badgeEl = pulseBadgeRef.current;
-      if (badgeEl) {
-        badgeEl.classList.remove('kline-price-pulse-active');
-        // بازخوانی reflow بدون ری‌رندر ری‌اکت
-        void badgeEl.offsetWidth;
-        badgeEl.classList.add('kline-price-pulse-active');
-      }
-    }
-    prevPriceRef.current = currentPrice;
-  }, [lastCandle?.close]);
 
   // ۴. مدیریت ابزار رسم فعال (Drawing Tool Activation)
   useEffect(() => {
@@ -603,6 +585,13 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     }
   }, [activeUserIndicators, channelMode, rsiVariant]);
 
+  // وقتی Double Tap خاموش است، الگوهای ذخیره‌شده هم پاک می‌شوند تا اسکنر کهنه نماند.
+  useEffect(() => {
+    if (!activeUserIndicators.includes('DoubleTap3D')) {
+      useTechnicalStore.getState().setDetectedDoubleTapPatterns([]);
+    }
+  }, [activeUserIndicators]);
+
   // ۸. همگام‌سازی و مدیریت رویدادهای تعدیلی و شرکتی رهاورد ۳۶۵ (M مجمع، D سود نقدی، E افزایش سرمایه)
   useEffect(() => {
     if (chartQuery.data?.corporateEvents) {
@@ -645,7 +634,6 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
       {/* پالس زنده نشانگر آخرین قیمت با CSS شتاب‌یافته سخت‌افزاری */}
       {lastCandle && (
         <div
-          ref={pulseBadgeRef}
           data-testid="live-price-pulse"
           className={`absolute top-3 left-4 z-10 flex items-center gap-2 px-2.5 py-1 rounded border text-xs shadow-md pointer-events-none ${
             isLight
@@ -654,7 +642,7 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
           }`}
           style={{ willChange: 'transform' }}
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="font-semibold text-text-primary text-[11px] font-mono">
             {toFaDigits(lastCandle.close.toLocaleString('en-US'))}
           </span>
@@ -662,81 +650,8 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
         </div>
       )}
 
-      {/* استایل‌های شتاب‌یافته CSS برای انیمیشن پالس زنده و الگوهای W و M */}
       <style>{`
-        @keyframes klinePriceTickPulse {
-          0% { transform: scale(1) translateZ(0); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-          50% { transform: scale(1.05) translateZ(0); filter: brightness(1.15); box-shadow: 0 0 12px 2px rgba(234, 179, 8, 0.35); }
-          100% { transform: scale(1) translateZ(0); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-        }
-        .kline-price-pulse-active {
-          animation: klinePriceTickPulse 320ms cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes doubleTapNecklinePulse {
-          0%, 100% {
-            stroke-opacity: 0.55;
-            filter: drop-shadow(0 0 2px #bc13fe);
-          }
-          50% {
-            stroke-opacity: 1;
-            filter: drop-shadow(0 0 10px #bc13fe) drop-shadow(0 0 16px rgba(188, 19, 254, 0.7));
-          }
-        }
-        @keyframes doubleTapHalo {
-          0% {
-            r: 3px;
-            opacity: 0.9;
-          }
-          50% {
-            r: 9px;
-            opacity: 0.25;
-          }
-          100% {
-            r: 13px;
-            opacity: 0;
-          }
-        }
-        @keyframes doubleTapLegFlow {
-          from {
-            stroke-dashoffset: 40;
-          }
-          to {
-            stroke-dashoffset: 0;
-          }
-        }
-        @keyframes doubleTapBadgeFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-        }
-        .double-tap-neckline-animated {
-          animation: doubleTapNecklinePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        .double-tap-halo-animated {
-          animation: doubleTapHalo 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-        }
-        .double-tap-leg-animated {
-          stroke-dasharray: 6 3;
-          animation: doubleTapLegFlow 1.8s linear infinite;
-        }
-        .double-tap-badge-animated {
-          animation: doubleTapBadgeFloat 3s ease-in-out infinite;
-        }
-        .kline-drawings-hidden .klinecharts-overlay {
-          display: none !important;
-          opacity: 0 !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .kline-price-pulse-active,
-          .double-tap-neckline-animated,
-          .double-tap-halo-animated,
-          .double-tap-leg-animated,
-          .double-tap-badge-animated {
-            animation: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-            filter: none !important;
-          }
-        }
+        .kline-drawings-hidden .klinecharts-overlay { display: none !important; opacity: 0 !important; }
       `}</style>
 
       {/* دکمه‌های مقیاس لگاریتمی (log) و تنظیم خودکار (auto) به سبک Quantower و TradingView */}
@@ -788,7 +703,7 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
       </div>
 
       {/* لایه انیمیشن وب برای الگوهای سقف و کف دوقلو W و M */}
-      <AnimatedPatternOverlay
+      <PatternStoryOverlay
         chart={activeChartInstance || chartRef.current}
         patterns={detectedDoubleTapPatterns}
         active={activeUserIndicators.includes('DoubleTap3D')}

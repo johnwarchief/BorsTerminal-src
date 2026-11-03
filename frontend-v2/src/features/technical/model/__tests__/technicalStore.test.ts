@@ -133,6 +133,7 @@ describe('useTechnicalStore', () => {
         target2: 700,
         stopLoss: 1050,
         score: 85,
+        quality: 85,
         height: 100,
         status: 'active',
       },
@@ -182,9 +183,10 @@ describe('useTechnicalStore', () => {
     useTechnicalStore.getState().setActiveDrawerTab('scanner');
     expect(useTechnicalStore.getState().activeDrawerTab).toBe('scanner');
 
-    expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(true);
-    useTechnicalStore.getState().toggleLeftDrawer();
+    // کشو پیش‌فرض بسته است تا چارت قهرمان بماند.
     expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(false);
+    useTechnicalStore.getState().toggleLeftDrawer();
+    expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(true);
   });
 
   it('resets state back to initial values', () => {

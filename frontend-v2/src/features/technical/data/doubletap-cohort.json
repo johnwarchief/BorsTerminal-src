@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-11-03T12:18:09.125Z",
+  "source": "ref_bars_v2.jsonl",
+  "horizon": 10,
+  "params": {
+    "pivLeft": 5,
+    "pivRight": 4,
+    "tolAtr": 0.45,
+    "minSpan": 5,
+    "maxSpan": 80,
+    "minHeightAtr": 1,
+    "requireTrendContext": true,
+    "nonOverlapBars": 10,
+    "atrPeriod": 14,
+    "profile": "precision"
+  },
+  "records": 10388,
+  "used": 5098,
+  "skipped": 5290,
+  "market": {
+    "1D": {
+      "successes": 90,
+      "failures": 12,
+      "resolved": 102,
+      "patterns": 189,
+      "assets": 1440
+    },
+    "1W": {
+      "successes": 24,
+      "failures": 6,
+      "resolved": 30,
+      "patterns": 53,
+      "assets": 1105
+    }
+  },
+  "qualityBands": {
+    "1D": [
+      {
+        "min": 0,
+        "max": 59,
+        "successes": 3,
+        "failures": 6,
+        "resolved": 9,
+        "patterns": 9
+      },
+      {
+        "min": 60,
+        "max": 79,
+        "successes": 40,
+        "failures": 4,
+        "resolved": 44,
+        "patterns": 44
+      },
+      {
+        "min": 80,
+        "max": 100,
+        "successes": 47,
+        "failures": 2,
+        "resolved": 49,
+        "patterns": 49
+      }
+    ],
+    "1W": [
+      {
+        "min": 0,
+        "max": 59,
+        "successes": 3,
+        "failures": 0,
+        "resolved": 3,
+        "patterns": 3
+      },
+      {
+        "min": 60,
+        "max": 79,
+        "successes": 7,
+        "failures": 5,
+        "resolved": 12,
+        "patterns": 12
+      },
+      {
+        "min": 80,
+        "max": 100,
+        "successes": 14,
+        "failures": 1,
+        "resolved": 15,
+        "patterns": 15
+      }
+    ]
+  }
+}

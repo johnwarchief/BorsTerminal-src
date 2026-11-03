@@ -207,6 +207,47 @@ export function getSymbolSignal(
   };
 }
 
+function IndicatorRow({
+  name,
+  description,
+  enabled,
+  onToggle,
+  testId,
+  children,
+}: {
+  name: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+  testId: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-[var(--radius-xs)] border border-line/60 bg-panel-2/40">
+      <div className="flex min-h-9 items-center justify-between gap-2 px-2 py-1">
+        <div className="min-w-0 flex-1">
+          <div className="truncate t-10 font-medium text-text" title={name}>{name}</div>
+          <div className="truncate t-85 text-text-3" title={description}>{description}</div>
+        </div>
+        <button
+          type="button"
+          data-testid={testId}
+          aria-pressed={enabled}
+          onClick={onToggle}
+          className={`shrink-0 h-5 px-2 rounded-[var(--radius-xs)] t-85 border transition-colors ${
+            enabled
+              ? 'bg-accent/15 text-accent border-accent/40 font-semibold'
+              : 'bg-panel text-text-3 border-line hover:text-text'
+          }`}
+        >
+          {enabled ? 'روشن' : 'خاموش'}
+        </button>
+      </div>
+      {children ? <div className="border-t border-line/50 px-2 py-1.5">{children}</div> : null}
+    </div>
+  );
+}
+
 export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
   activeSymbol,
   isOpen,
@@ -229,6 +270,10 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
   const detectedDoubleTapPatterns = useTechnicalStore((s) => s.detectedDoubleTapPatterns);
   const detectedPullbackSignals = useTechnicalStore((s) => s.detectedPullbackSignals);
   const detectedCHoCHSignals = useTechnicalStore((s) => s.detectedCHoCHSignals);
+  const doubleTapProfile = useTechnicalStore((s) => s.doubleTapProfile);
+  const setDoubleTapProfile = useTechnicalStore((s) => s.setDoubleTapProfile);
+  const formationHorizon = useTechnicalStore((s) => s.indicatorParams.DoubleTap3D?.formationHorizon ?? 10);
+  const setIndicatorParam = useTechnicalStore((s) => s.setIndicatorParam);
 
   const [symbolSearchQuery, setSymbolSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<AssetCategoryFilter>('all');
@@ -327,7 +372,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
       <header className="flex flex-col border-b border-line bg-panel-2/60 shrink-0">
         <div className="flex items-center justify-between px-3 py-2 border-b border-line/60">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-accent" />
             <h2 className="t-11 font-bold text-accent">میزکار جامع تحلیل و کشف فرصت</h2>
           </div>
 
@@ -537,95 +582,106 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
           <div data-testid="indicators-panel" className="p-3 flex flex-col gap-3">
             {/* بخش ۱: اندیکاتورهای جدید تلگرام (@IndicatorsforTV) */}
             <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="rounded-[var(--radius-xs)] border border-line bg-panel-2/50 px-2 py-1.5">
+                  <div className="t-8 text-text-3 mb-1">پروفایل تشخیص</div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setDoubleTapProfile('precision')}
+                      aria-pressed={doubleTapProfile === 'precision'}
+                      className={`flex-1 h-6 rounded-[var(--radius-xs)] t-85 transition-colors ${
+                        doubleTapProfile === 'precision'
+                          ? 'bg-accent/15 text-accent border border-accent/40'
+                          : 'bg-panel text-text-3 border border-line hover:text-text'
+                      }`}
+                    >
+                      دقت بالا
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDoubleTapProfile('source')}
+                      aria-pressed={doubleTapProfile === 'source'}
+                      className={`flex-1 h-6 rounded-[var(--radius-xs)] t-85 transition-colors ${
+                        doubleTapProfile === 'source'
+                          ? 'bg-accent/15 text-accent border border-accent/40'
+                          : 'bg-panel text-text-3 border border-line hover:text-text'
+                      }`}
+                    >
+                      منبع
+                    </button>
+                  </div>
+                </div>
+                <div className="rounded-[var(--radius-xs)] border border-line bg-panel-2/50 px-2 py-1.5">
+                  <div className="t-8 text-text-3 mb-1">افق احتمال (کندل)</div>
+                  <input
+                    type="number"
+                    min={5}
+                    max={30}
+                    value={formationHorizon}
+                    onChange={(e) => setIndicatorParam('DoubleTap3D', 'formationHorizon', Number(e.target.value))}
+                    className="w-full h-6 bg-panel border border-line rounded-[var(--radius-xs)] px-1 t-85 font-mono text-text text-center focus:outline-none"
+                  />
+                </div>
+              </div>
               <span className="t-10 font-bold text-accent">اندیکاتورهای هوشمند پرایس‌اکشن و الگو</span>
 
               {ADVANCED_INDICATORS_REGISTRY.map((ind) => {
                 const isEnabled = activeUserIndicators.includes(ind.id);
-
                 return (
-                  <div
+                  <IndicatorRow
                     key={ind.id}
-                    className="p-2.5 rounded-[var(--radius-sm)] bg-panel-2 border border-line flex flex-col gap-1.5 transition-colors"
+                    name={ind.nameFa}
+                    description={ind.descriptionFa}
+                    enabled={isEnabled}
+                    testId={`toggle-indicator-${ind.id}`}
+                    onToggle={() => toggleUserIndicator(ind.id)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold t-10">{ind.nameFa}</span>
-                        {ind.isDefault && (
-                          <span className="t-8 px-1 py-0.2 rounded bg-accent/20 text-accent font-semibold">
-                            پیش‌فرض
-                          </span>
-                        )}
-                      </div>
-
-                      {/* سوئیچ روشن/خاموش اندیکاتور */}
-                      <button
-                        type="button"
-                        data-testid={`toggle-indicator-${ind.id}`}
-                        onClick={() => toggleUserIndicator(ind.id)}
-                        className={`h-5 px-2 rounded-[var(--radius-xs)] t-9 font-medium border transition-colors flex items-center gap-1 ${
-                          isEnabled
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-bold'
-                            : 'bg-panel text-text-3 border-line hover:text-text'
-                        }`}
-                      >
-                        <span>{isEnabled ? 'روشن' : 'خاموش'}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isEnabled ? 'bg-emerald-400' : 'bg-gray-500'}`} />
-                      </button>
-                    </div>
-
-                    <p className="t-85 text-text-3 leading-snug">{ind.descriptionFa}</p>
-
-                    {/* تنظیمات مد ویژه برای اندیکاتور کانال چندحالته */}
                     {ind.id === 'MultiModeChannel' && isEnabled && (
-                      <div className="mt-1 pt-1.5 border-t border-line/60 flex flex-col gap-1">
-                        <span className="t-85 font-semibold text-text-2">حالت کانال (Channel Mode):</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="t-8 text-text-3">حالت کانال</span>
                         <div className="grid grid-cols-3 gap-1">
                           {(
                             [
-                              ['regression', 'رگرسیون خطی'],
+                              ['regression', 'رگرسیون'],
                               ['retest_channel', 'شکست و پولبک'],
-                              ['donchian', 'دانچیان و نوسان'],
+                              ['donchian', 'دانچیان'],
                             ] as Array<[ChannelMode, string]>
-                          ).map(([m, label]) => {
-                            const isModeActive = channelMode === m;
-                            return (
-                              <button
-                                key={m}
-                                type="button"
-                                data-testid={`channel-mode-btn-${m}`}
-                                onClick={() => setChannelMode(m)}
-                                className={`h-6 px-1 rounded-[var(--radius-xs)] t-85 font-medium transition-colors ${
-                                  isModeActive
-                                    ? 'bg-accent/20 text-accent border border-accent/40 font-bold'
-                                    : 'bg-panel text-text-3 border border-line hover:text-text'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            );
-                          })}
+                          ).map(([m, label]) => (
+                            <button
+                              key={m}
+                              type="button"
+                              data-testid={`channel-mode-btn-${m}`}
+                              onClick={() => setChannelMode(m)}
+                              className={`h-6 px-1 rounded-[var(--radius-xs)] t-85 transition-colors ${
+                                channelMode === m
+                                  ? 'bg-accent/15 text-accent border border-accent/40'
+                                  : 'bg-panel text-text-3 border border-line hover:text-text'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}
-
-                    {/* تنظیمات انتخاب‌گر دراپ‌داون ویژه برای خانواده RSI */}
                     {ind.id === 'MultiVariantRSI' && isEnabled && (
-                      <div className="mt-1 pt-1.5 border-t border-line/60 flex items-center justify-between">
-                        <span className="t-85 font-semibold text-text-2">فرمول RSI:</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="t-8 text-text-3">فرمول RSI</span>
                         <select
                           data-testid="rsi-variant-select"
                           value={rsiVariant}
                           onChange={(e) => setRsiVariant(e.target.value as RsiVariant)}
-                          className="bg-panel text-text border border-line rounded px-2 py-0.5 t-85 focus:outline-none cursor-pointer"
+                          className="bg-panel text-text border border-line rounded px-1.5 py-0.5 t-85 focus:outline-none cursor-pointer"
                         >
-                          <option value="standard">استاندارد (RSI 14)</option>
-                          <option value="fibo">فیبوناچی (FiboRSI 8 تک‌شلیک)</option>
-                          <option value="bb">باندهای بولینگر (BandsRSI)</option>
-                          <option value="smooth_ma">آراس‌آی هموار با واگرایی</option>
+                          <option value="standard">استاندارد ۱۴</option>
+                          <option value="fibo">فیبوناچی ۸</option>
+                          <option value="bb">باند بولینگر</option>
+                          <option value="smooth_ma">هموار با واگرایی</option>
                         </select>
                       </div>
                     )}
-                  </div>
+                  </IndicatorRow>
                 );
               })}
             </div>
@@ -634,37 +690,16 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
             <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-line/60">
               <span className="t-10 font-bold text-accent">اندیکاتورهای تکمیلی و سفارشی</span>
 
-              {USER_INDICATORS_REGISTRY.map((ind) => {
-                const isEnabled = activeUserIndicators.includes(ind.id);
-
-                return (
-                  <div
-                    key={ind.id}
-                    className="p-2.5 rounded-[var(--radius-sm)] bg-panel-2 border border-line flex flex-col gap-1.5 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold t-10">{ind.nameFa}</span>
-
-                      {/* سوئیچ روشن/خاموش اندیکاتور */}
-                      <button
-                        type="button"
-                        data-testid={`toggle-indicator-${ind.id}`}
-                        onClick={() => toggleUserIndicator(ind.id)}
-                        className={`h-5 px-2 rounded-[var(--radius-xs)] t-9 font-medium border transition-colors flex items-center gap-1 ${
-                          isEnabled
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-bold'
-                            : 'bg-panel text-text-3 border-line hover:text-text'
-                        }`}
-                      >
-                        <span>{isEnabled ? 'روشن' : 'خاموش'}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isEnabled ? 'bg-emerald-400' : 'bg-gray-500'}`} />
-                      </button>
-                    </div>
-
-                    <p className="t-85 text-text-3 leading-snug">{ind.descriptionFa}</p>
-                  </div>
-                );
-              })}
+              {USER_INDICATORS_REGISTRY.map((ind) => (
+                <IndicatorRow
+                  key={ind.id}
+                  name={ind.nameFa}
+                  description={ind.descriptionFa}
+                  enabled={activeUserIndicators.includes(ind.id)}
+                  testId={`toggle-indicator-${ind.id}`}
+                  onToggle={() => toggleUserIndicator(ind.id)}
+                />
+              ))}
             </div>
 
             {/* بخش ۳: کاتالوگ مرجع ۶۴ اندیکاتورِ گروه indicators در تلگرام */}
@@ -881,9 +916,15 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
 
   return (
     <>
+      <div
+        data-testid="drawer-backdrop"
+        aria-hidden="true"
+        onClick={onToggleOpen}
+        className="absolute inset-0 z-20 bg-black/30"
+      />
       <aside
         style={{ width: `${drawerWidth}px` }}
-        className={`relative h-full border-r border-line bg-panel flex flex-row shrink-0 select-none z-15 transition-[width] duration-75 ${
+        className={`absolute left-0 top-0 h-full border-e border-line bg-panel flex flex-row select-none z-30 ${
           isResizing ? 'cursor-col-resize select-none' : ''
         } ${className}`}
         dir="rtl"

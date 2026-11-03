@@ -151,6 +151,21 @@ export type RsiVariant = 'standard' | 'fibo' | 'bb' | 'smooth_ma';
 
 export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
 
+export type FormationConfidence = 'none' | 'low' | 'medium' | 'high';
+
+export interface FormationEstimate {
+  probability: number | null;
+  successes: number;
+  failures: number;
+  resolved: number;
+  confidence: FormationConfidence;
+  horizon: number;
+  method: 'same-symbol' | 'market-cohort';
+  qualityBucket?: number;
+  intervalLow?: number;
+  intervalHigh?: number;
+}
+
 export interface DoubleTapPattern {
   id: string;
   type: 'DOUBLE_TOP' | 'DOUBLE_BOTTOM';
@@ -164,9 +179,15 @@ export interface DoubleTapPattern {
   target1: number;
   target2: number;
   stopLoss: number;
+  /** شباهت هندسی قدیمی؛ برای سازگاری نمایش حفظ شده است. */
   score: number;
+  /** کیفیت ساختار ۰–۱۰۰؛ احتمال نیست. */
+  quality: number;
   height: number;
   status: 'forming' | 'active' | 'tp1_hit' | 'tp2_hit' | 'invalidated';
+  trendContext?: boolean;
+  profile?: 'source' | 'precision';
+  formation?: FormationEstimate;
 }
 
 export interface PullbackSignal {
@@ -227,6 +248,7 @@ export interface TechnicalState {
   // تنظیمات جدید کانال چندحالته، خانواده RSI و سایدبار عریض
   channelMode: ChannelMode;
   rsiVariant: RsiVariant;
+  doubleTapProfile: 'precision' | 'source';
   /**
    * overrideهای پنل تنظیماتِ هر اندیکاتور. خالی یعنی از مقادیرِ رجیستری
    * (DOUBLE_TAP_DEFAULTS و هم‌خانواده‌ها) استفاده شود.
@@ -265,6 +287,7 @@ export interface TechnicalState {
 
   setChannelMode: (mode: ChannelMode) => void;
   setRsiVariant: (variant: RsiVariant) => void;
+  setDoubleTapProfile: (profile: 'precision' | 'source') => void;
   setIndicatorParam: (indicatorId: string, key: string, value: number) => void;
   resetIndicatorParams: (indicatorId: string) => void;
   setMaxDrawnPatterns: (count: number) => void;
