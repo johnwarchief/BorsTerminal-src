@@ -12,6 +12,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   ADVANCED_INDICATORS_REGISTRY,
+  DOUBLE_TAP_DEFAULTS,
+  TRENDLINE_DEFAULTS,
   registerAllAdvancedIndicators,
   registerDoubleTap3DOverlay,
   registerSuperTrendPullbackOverlay,
@@ -29,32 +31,47 @@ vi.mock('klinecharts', () => ({
   }),
 }));
 
-function createMockParams(overlayName: string, extendData: any = null, coordinates: any[] = []) {
-  // ساخت ۲۵ کندل تست حاوی الگوی سقف دوقلو
-  const testCandles = [
-    { timestamp: 1730000000000, open: 1000, high: 1020, low: 990, close: 1010, volume: 50000 },
-    { timestamp: 1730086400000, open: 1010, high: 1060, low: 1005, close: 1050, volume: 60000 },
-    { timestamp: 1730172800000, open: 1050, high: 1120, low: 1040, close: 1110, volume: 80000 },
-    { timestamp: 1730259200000, open: 1110, high: 1200, low: 1100, close: 1190, volume: 120000 }, // Peak 1
-    { timestamp: 1730345600000, open: 1190, high: 1195, low: 1140, close: 1150, volume: 70000 },
-    { timestamp: 1730432000000, open: 1150, high: 1160, low: 1080, close: 1090, volume: 90000 },
-    { timestamp: 1730518400000, open: 1090, high: 1100, low: 1040, close: 1050, volume: 95000 }, // Neckline Low
-    { timestamp: 1730604800000, open: 1050, high: 1110, low: 1045, close: 1100, volume: 65000 },
-    { timestamp: 1730691200000, open: 1100, high: 1160, low: 1090, close: 1150, volume: 75000 },
-    { timestamp: 1730777600000, open: 1150, high: 1205, low: 1140, close: 1195, volume: 110000 }, // Peak 2
-    { timestamp: 1730864000000, open: 1195, high: 1198, low: 1130, close: 1140, volume: 85000 },
-    { timestamp: 1730950400000, open: 1140, high: 1145, low: 1070, close: 1080, volume: 95000 },
-    { timestamp: 1731036800000, open: 1080, high: 1085, low: 1020, close: 1030, volume: 140000 }, // Breakout below Neckline
-    { timestamp: 1731123200000, open: 1030, high: 1040, low: 980, close: 990, volume: 160000 },
-    { timestamp: 1731209600000, open: 990, high: 1010, low: 940, close: 950, volume: 180000 },
-    { timestamp: 1731296000000, open: 950, high: 970, low: 920, close: 930, volume: 150000 },
-    { timestamp: 1731382400000, open: 930, high: 960, low: 910, close: 940, volume: 130000 },
-    { timestamp: 1731468800000, open: 940, high: 980, low: 935, close: 970, volume: 125000 },
-    { timestamp: 1731555200000, open: 970, high: 1010, low: 960, close: 1000, volume: 110000 },
-    { timestamp: 1731641600000, open: 1000, high: 1030, low: 990, close: 1020, volume: 95000 },
-    { timestamp: 1731728000000, open: 1020, high: 1050, low: 1010, close: 1040, volume: 90000 },
-    { timestamp: 1731814400000, open: 1040, high: 1070, low: 1030, close: 1060, volume: 85000 },
+/**
+ * سریِ کندلِ آزمون. پیش از این ۲۲ کندل با قله در ایندکس ۳ و ۹ بود؛ با پنجرۀ
+ * واقعیِ اورلی (pivLeft=6 ⇒ حلقه از ایندکس ۶ شروع می‌شود، swingLeft=5) آن قله‌ها
+ * هرگز بررسی نمی‌شدند و تست فقط با پنجرۀ شلِ باگ‌دار سبز می‌شد.
+ *
+ * اینجا قله‌ها در ۱۰ و ۲ و کف‌ها در ۴ و ۶ نشسته‌اند، بیرونِ حاشیۀ پنجره‌ها،
+ * و تستِ self-check پایین همین را اثبات می‌کند.
+ */
+function buildTestCandles() {
+  // high, low به‌ازای هر میله — open از closeِ قبلی و close در میانه ساخته می‌شود
+  const hl: Array<[number, number]> = [
+    [965, 915], [990, 940], [1015, 965], [1005, 950], [985, 900], // 0-4  کفِ سوینگ در ۴
+    [1030, 955], [1080, 1010], [1120, 1060], [1155, 1100], [1185, 1130], // 5-9  صعود
+    [1200, 1140], [1170, 1120], [1140, 1095], [1120, 1075], [1100, 1065], // 10 قلهٔ اولِ M
+    [1090, 1070], [1080, 1060], [1085, 1062], [1110, 1070], [1140, 1100], // 16 خط‌گردنِ M
+    [1170, 1130], [1195, 1155], [1220, 1160], [1190, 1140], [1160, 1110], // 22 قلهٔ دومِ M
+    [1120, 1070], [1080, 1030], [1050, 1010], // 23-27 شکستِ خط‌گردن
+    [1010, 970], [980, 940], [950, 910], [930, 890], [920, 880], [910, 885], // 28-33 فرود
+    [905, 860], [930, 880], [960, 910], [990, 945], [965, 920], // 34 کفِ اولِ W، 37 قلهٔ خط‌گردن
+    [935, 895], [920, 870], [940, 885], [970, 910], [1000, 940], // 40 کفِ دومِ W (۶ میله بعد از ۳۴)
+    [1030, 970], [1060, 1000], [1080, 1020], [1060, 1000], [1040, 980], // 41-45
+    [1060, 1000], [1090, 1030], [1120, 1060], // 46-51 بازگشت
   ];
+  let prevClose = 940;
+  return hl.map(([high, low], i) => {
+    const open = prevClose;
+    const close = low + (high - low) * (i % 2 === 0 ? 0.7 : 0.35);
+    prevClose = close;
+    return {
+      timestamp: 1730000000000 + i * 86400000,
+      open,
+      high,
+      low,
+      close,
+      volume: 50000 + i * 1000,
+    };
+  });
+}
+
+function createMockParams(overlayName: string, extendData: any = null, coordinates: any[] = []) {
+  const testCandles = buildTestCandles();
 
   return {
     chart: {
@@ -118,6 +135,32 @@ describe('Advanced Trading Indicators Registry & Overlays', () => {
     expect(() => registerAllAdvancedIndicators()).not.toThrow();
   });
 
+  it('fixture carries real pivots under the ACTUAL windows, not the old loose ones', () => {
+    // این self-check نگهبانِ خودِ fixture است: اگر کسی سری را کوتاه یا قله‌ها را
+    // به حاشیه برگرداند، پنجرۀ واقعیِ اورلی دیگر پیوتی نمی‌بیند و این قرمز می‌شود.
+    const c = buildTestCandles();
+    const n = c.length;
+    const pivots = (left: number, right: number, kind: 'high' | 'low') => {
+      const out: number[] = [];
+      for (let i = left; i < n - right; i++) {
+        let ok = true;
+        for (let j = i - left; j <= i + right; j++) {
+          if (j === i) continue;
+          if (kind === 'high' && c[j].high > c[i].high) ok = false;
+          if (kind === 'low' && c[j].low < c[i].low) ok = false;
+        }
+        if (ok) out.push(i);
+      }
+      return out;
+    };
+    const highs = pivots(DOUBLE_TAP_DEFAULTS.pivLeft, DOUBLE_TAP_DEFAULTS.pivRight, 'high');
+    const swingHighs = pivots(TRENDLINE_DEFAULTS.swingLeft, TRENDLINE_DEFAULTS.swingRight, 'high');
+    const swingLows = pivots(TRENDLINE_DEFAULTS.swingLeft, TRENDLINE_DEFAULTS.swingRight, 'low');
+    expect(highs.length).toBeGreaterThanOrEqual(2);
+    expect(swingHighs.length).toBeGreaterThanOrEqual(2);
+    expect(swingLows.length).toBeGreaterThanOrEqual(2);
+  });
+
   it('DoubleTap3D creates 3D extruded lines, glowing neckline and targets', () => {
     registerDoubleTap3DOverlay();
     const template = registeredTemplates.get('DoubleTap3D');
@@ -144,6 +187,37 @@ describe('Advanced Trading Indicators Registry & Overlays', () => {
     expect(storedPatterns[0].score).toBeGreaterThan(50);
     expect(storedPatterns[0].origin).toBeDefined();
     expect(storedPatterns[0].retest).toBeDefined();
+  });
+
+  it('the drawn-pattern cap changes what is drawn but not what is detected', () => {
+    // اثبات اثرِ دو کنترل روی مرزِ تصمیم، با هم:
+    // ۱) indicatorParams واقعاً به حلقۀ تشخیص می‌رسد (شل‌کردن ⇒ الگوی بیشتر)
+    // ۲) maxDrawnPatterns فقط رسم را کم می‌کند، نه تشخیص را
+    registerDoubleTap3DOverlay();
+    const template = registeredTemplates.get('DoubleTap3D');
+
+    useTechnicalStore.getState().setIndicatorParam('DoubleTap3D', 'pivLeft', 3);
+    useTechnicalStore.getState().setIndicatorParam('DoubleTap3D', 'pivRight', 2);
+    useTechnicalStore.getState().setMaxDrawnPatterns(20);
+
+    const all = template.createPointFigures(createMockParams('DoubleTap3D'));
+    const detectedAll = useTechnicalStore.getState().detectedDoubleTapPatterns.length;
+    expect(detectedAll).toBe(2);
+
+    useTechnicalStore.getState().setMaxDrawnPatterns(1);
+    const capped = template.createPointFigures(createMockParams('DoubleTap3D'));
+    const detectedCapped = useTechnicalStore.getState().detectedDoubleTapPatterns.length;
+
+    expect(capped.length).toBeLessThan(all.length);
+    expect(capped.length).toBeGreaterThan(0);
+    expect(detectedCapped).toBe(detectedAll);
+
+    // و پارامترِ شل واقعاً بیشتر از پیش‌فرضِ درست الگو می‌سازد
+    useTechnicalStore.getState().resetIndicatorParams('DoubleTap3D');
+    useTechnicalStore.getState().setMaxDrawnPatterns(20);
+    const strict = template.createPointFigures(createMockParams('DoubleTap3D'));
+    expect(useTechnicalStore.getState().detectedDoubleTapPatterns.length).toBeLessThan(detectedAll);
+    expect(strict.length).toBeLessThan(all.length);
   });
 
   it('SuperTrendPullback creates supertrend line, value zones and pullback arrows', () => {

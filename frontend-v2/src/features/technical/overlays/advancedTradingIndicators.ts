@@ -36,6 +36,38 @@ function getIsLight(): boolean {
   }
 }
 
+/**
+ * یگانه سرچشمۀ مقادیر پیش‌فرضِ هر اورلی. پیش از این، عددِ داخلِ تابعِ رسم و
+ * عددِ داخلِ defaultParamsِ رجیستری دو نسخه بودند و واگرا شده بودند:
+ * رجیستری pivLeft:6 می‌گفت و اورلی pivLeft=3 را هاردکد کرده بود. روی ۲۸ نمادِ
+ * اصلی سنجیده شد که همان اختلاف، میانگین شکلِ رسم‌شده را از ۷٫۱ به ۱۷٫۷ و
+ * بدترین نماد را به ۱۱۰ شکل می‌برد. رجیستری و اورلی هر دو همین ثابت را می‌خوانند،
+ * و تستِ overlays/__tests__/indicatorDefaultsDrift.test.ts واگرایی را می‌گیرد.
+ */
+export const DOUBLE_TAP_DEFAULTS = {
+  pivLeft: 6,
+  pivRight: 4,
+  tolAtr: 0.85,
+  minSpan: 3,
+  maxSpan: 120,
+  minHeightAtr: 1.0,
+};
+
+export const TRENDLINE_DEFAULTS = {
+  swingLeft: 5,
+  swingRight: 3,
+};
+
+export const SUPER_TREND_PULLBACK_DEFAULTS = {
+  atrPeriod: 10,
+  multiplier: 3.0,
+  pullbackAtr: 1.0,
+};
+
+function num(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
 // ----------------------------------------------------------------------------
 // توابع محاسباتی پایه (Pure & No-Repainting)
 // ----------------------------------------------------------------------------
@@ -162,16 +194,23 @@ export function registerDoubleTap3DOverlay(): void {
       if (n < 20) return [];
 
       const isLight = getIsLight();
-      const pivLeft = 3;
-      const pivRight = 2;
-      const tolAtr = 0.95;
-      const minSpan = 3;
-      const maxSpan = 120;
-      const minHeightAtr = 0.8;
+      const stored = useTechnicalStore.getState().indicatorParams.DoubleTap3D ?? {};
+      const pivLeft = num(stored.pivLeft, DOUBLE_TAP_DEFAULTS.pivLeft);
+      const pivRight = num(stored.pivRight, DOUBLE_TAP_DEFAULTS.pivRight);
+      const tolAtr = num(stored.tolAtr, DOUBLE_TAP_DEFAULTS.tolAtr);
+      const minSpan = DOUBLE_TAP_DEFAULTS.minSpan;
+      const maxSpan = DOUBLE_TAP_DEFAULTS.maxSpan;
+      const minHeightAtr = num(stored.minHeightAtr, DOUBLE_TAP_DEFAULTS.minHeightAtr);
 
       const atr = calculateATR(dataList, 14);
       const figures: OverlayFigure[] = [];
       const detectedPatterns: DoubleTapPattern[] = [];
+      /**
+       * ایندکسِ اولین شکلِ هر الگو در آرایۀ figures. چون همه figures.pushها داخل
+       * بلوکِ یک الگو رخ می‌دهند، این نشانگر اجازه می‌دهد رسمِ الگوهای قدیمی‌تر
+       * دور ریخته شود بی‌آنکه ساختار تابع عوض شود.
+       */
+      const patternFigureStarts: number[] = [];
 
       // شناسایی پیوت‌های سقف و کف
       const isPivotHigh = (idx: number): boolean => {
@@ -280,6 +319,7 @@ export function registerDoubleTap3DOverlay(): void {
               const y3 = getY(params, p3Price);
 
               const patternStatus = breakoutIdx !== -1 ? 'active' : 'forming';
+              patternFigureStarts.push(figures.length);
               detectedPatterns.push({
                 id: `double-top-${p1.index}`,
                 type: 'DOUBLE_TOP',
@@ -487,6 +527,7 @@ export function registerDoubleTap3DOverlay(): void {
               const y3 = getY(params, t3Price);
 
               const patternStatus = breakoutIdx !== -1 ? 'active' : 'forming';
+              patternFigureStarts.push(figures.length);
               detectedPatterns.push({
                 id: `double-bottom-${t1.index}`,
                 type: 'DOUBLE_BOTTOM',
@@ -632,6 +673,17 @@ export function registerDoubleTap3DOverlay(): void {
         useTechnicalStore.getState().setDetectedDoubleTapPatterns(detectedPatterns);
       }
 
+      /**
+       * سقفِ رسم، نه سقفِ تشخیص. استور همه را نگه می‌دارد تا تب «اسکنر الگوها»
+       * واقعی بماند؛ فقط روی چارت آخرین N الگو می‌ماند. بدونِ این، سپيد با
+       * پارامترهای درست هم ۹ الگو × ۶ شکل = ۵۴ شکل می‌کشید.
+       */
+      const cap = useTechnicalStore.getState().maxDrawnPatterns;
+      if (patternFigureStarts.length > cap) {
+        const keepFrom = patternFigureStarts[patternFigureStarts.length - cap];
+        figures.splice(0, keepFrom);
+      }
+
       return figures;
     },
   };
@@ -661,9 +713,10 @@ export function registerSuperTrendPullbackOverlay(): void {
       if (n < 15) return [];
 
       const isLight = getIsLight();
-      const atrPeriod = 10;
-      const multiplier = 3.0;
-      const pullbackAtr = 1.0;
+      const storedPull = useTechnicalStore.getState().indicatorParams.SuperTrendPullback ?? {};
+      const atrPeriod = num(storedPull.atrPeriod, SUPER_TREND_PULLBACK_DEFAULTS.atrPeriod);
+      const multiplier = num(storedPull.multiplier, SUPER_TREND_PULLBACK_DEFAULTS.multiplier);
+      const pullbackAtr = num(storedPull.pullbackAtr, SUPER_TREND_PULLBACK_DEFAULTS.pullbackAtr);
 
       const atr = calculateATR(dataList, atrPeriod);
       const superTrend: number[] = new Array(n).fill(0);
@@ -882,8 +935,9 @@ export function registerAutoTrendlineCHoCHOverlay(): void {
       if (n < 20) return [];
 
       const isLight = getIsLight();
-      const swingLeft = 2;
-      const swingRight = 2;
+      const storedTrend = useTechnicalStore.getState().indicatorParams.AutoTrendlineCHoCH ?? {};
+      const swingLeft = num(storedTrend.swingLeft, TRENDLINE_DEFAULTS.swingLeft);
+      const swingRight = num(storedTrend.swingRight, TRENDLINE_DEFAULTS.swingRight);
       const figures: OverlayFigure[] = [];
       const chochSignals: CHoCHSignal[] = [];
 
@@ -1569,12 +1623,7 @@ export const ADVANCED_INDICATORS_REGISTRY: AdvancedIndicatorMeta[] = [
     descriptionFa: 'شناسایی دقیق سقف دوقلو (M) و کف دوقلو (W) با خط‌گردن درخشان، تارگت‌های فیبوناچی و انیمیشن',
     category: 'overlay',
     isDefault: true,
-    defaultParams: {
-      pivLeft: 6,
-      pivRight: 4,
-      tolAtr: 0.85,
-      minHeightAtr: 1.0,
-    },
+    defaultParams: { ...DOUBLE_TAP_DEFAULTS },
     registerFn: registerDoubleTap3DOverlay,
   },
   {
@@ -1584,11 +1633,7 @@ export const ADVANCED_INDICATORS_REGISTRY: AdvancedIndicatorMeta[] = [
     descriptionFa: 'سیگنال‌های ادامه روند و ورود در پولبک با زون ارزش دینامیک و فیلتر کیفیت نوسان ATR',
     category: 'overlay',
     isDefault: true,
-    defaultParams: {
-      atrPeriod: 10,
-      multiplier: 3.0,
-      pullbackAtr: 1.0,
-    },
+    defaultParams: { ...SUPER_TREND_PULLBACK_DEFAULTS },
     registerFn: registerSuperTrendPullbackOverlay,
   },
   {
@@ -1598,10 +1643,7 @@ export const ADVANCED_INDICATORS_REGISTRY: AdvancedIndicatorMeta[] = [
     descriptionFa: 'ترسیم خودکار خطوط روند حمایت و مقاومت به همراه شناسایی تغییر ماهیت ساختار بازار (CHoCH)',
     category: 'overlay',
     isDefault: true,
-    defaultParams: {
-      swingLeft: 5,
-      swingRight: 3,
-    },
+    defaultParams: { ...TRENDLINE_DEFAULTS },
     registerFn: registerAutoTrendlineCHoCHOverlay,
   },
   {

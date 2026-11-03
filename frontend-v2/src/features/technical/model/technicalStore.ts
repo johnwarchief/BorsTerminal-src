@@ -51,6 +51,8 @@ const INITIAL_STATE = {
 
   channelMode: 'regression' as ChannelMode,
   rsiVariant: 'smooth_ma' as RsiVariant,
+  indicatorParams: {} as Record<string, Record<string, number>>,
+  maxDrawnPatterns: 3,
   isLeftDrawerOpen: true,
   leftDrawerWidth: 460,
   activeDrawerTab: 'top50' as DrawerTab,
@@ -134,6 +136,23 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
   setChannelMode: (mode: ChannelMode) => set({ channelMode: mode }),
 
   setRsiVariant: (variant: RsiVariant) => set({ rsiVariant: variant }),
+
+  setIndicatorParam: (indicatorId, key, value) =>
+    set((state) => ({
+      indicatorParams: {
+        ...state.indicatorParams,
+        [indicatorId]: { ...(state.indicatorParams[indicatorId] ?? {}), [key]: value },
+      },
+    })),
+
+  resetIndicatorParams: (indicatorId) =>
+    set((state) => {
+      const next = { ...state.indicatorParams };
+      delete next[indicatorId];
+      return { indicatorParams: next };
+    }),
+
+  setMaxDrawnPatterns: (count) => set({ maxDrawnPatterns: Math.max(1, Math.min(20, Math.round(count))) }),
 
   setIsLeftDrawerOpen: (open: boolean) => set({ isLeftDrawerOpen: open }),
 

@@ -227,6 +227,13 @@ export interface TechnicalState {
   // تنظیمات جدید کانال چندحالته، خانواده RSI و سایدبار عریض
   channelMode: ChannelMode;
   rsiVariant: RsiVariant;
+  /**
+   * overrideهای پنل تنظیماتِ هر اندیکاتور. خالی یعنی از مقادیرِ رجیستری
+   * (DOUBLE_TAP_DEFAULTS و هم‌خانواده‌ها) استفاده شود.
+   */
+  indicatorParams: Record<string, Record<string, number>>;
+  /** سقفِ شکل‌های رسم‌شده به‌ازای هر اندیکاتور؛ الگوهای قدیمی‌تر حذف می‌شوند */
+  maxDrawnPatterns: number;
   isLeftDrawerOpen: boolean;
   leftDrawerWidth: number;
   activeDrawerTab: DrawerTab;
@@ -258,6 +265,9 @@ export interface TechnicalState {
 
   setChannelMode: (mode: ChannelMode) => void;
   setRsiVariant: (variant: RsiVariant) => void;
+  setIndicatorParam: (indicatorId: string, key: string, value: number) => void;
+  resetIndicatorParams: (indicatorId: string) => void;
+  setMaxDrawnPatterns: (count: number) => void;
   setIsLeftDrawerOpen: (open: boolean) => void;
   toggleLeftDrawer: () => void;
   setLeftDrawerWidth: (width: number) => void;
