@@ -20,6 +20,7 @@ import type { ChannelMode, RsiVariant, DrawerTab } from '../model/types';
 import { ADVANCED_INDICATORS_REGISTRY } from '../overlays/advancedTradingIndicators';
 import { USER_INDICATORS_REGISTRY } from '../overlays/userIndicators';
 import { CandleEdgeCard } from './CandleEdgeCard';
+import { TelegramCatalogList } from './TelegramCatalogList';
 import { classifyAssetType } from '@features/market/lib/assetType';
 import { useUiStore } from '@shared/stores/uiStore';
 
@@ -664,6 +665,11 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
                   </div>
                 );
               })}
+            </div>
+
+            {/* بخش ۳: کاتالوگ مرجع ۶۴ اندیکاتورِ گروه indicators در تلگرام */}
+            <div className="mt-2 flex flex-col gap-2 border-t border-line/60 pt-2">
+              <TelegramCatalogList />
             </div>
           </div>
         )}

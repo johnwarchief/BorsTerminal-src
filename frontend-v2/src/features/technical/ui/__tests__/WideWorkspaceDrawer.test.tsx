@@ -98,6 +98,20 @@ describe('WideWorkspaceDrawer Component', () => {
     expect(screen.getByTestId('toggle-indicator-MultiModeChannel')).toBeDefined();
   });
 
+  it('shows the telegram catalog as the third block of the indicators tab', () => {
+    renderDrawer();
+    fireEvent.click(screen.getByTestId('drawer-tab-indicators'));
+
+    expect(screen.getByTestId('indicators-panel')).toBeDefined();
+    expect(screen.getByTestId('telegram-catalog-list')).toBeDefined();
+    expect(screen.getAllByTestId(/telegram-row-p\d{2}/).length).toBe(64);
+
+    // بلوک سوم: پس از دو بخشِ موجود و درون خودِ پنل
+    const blocks = Array.from(screen.getByTestId('indicators-panel').children);
+    expect(blocks.length).toBe(3);
+    expect(blocks[2].contains(screen.getByTestId('telegram-catalog-list'))).toBe(true);
+  });
+
   it('toggles channel modes on button click in indicators panel', () => {
     renderDrawer();
 
