@@ -3,9 +3,9 @@
  "symbol": "متنوع01",
  "sector": "سایر",
  "pricing_mode": "neutral",
- "score": 1,
- "verdict": "REJECT",
- "applicable": true,
+ "score": null,
+ "verdict": "FTS ندارد",
+ "applicable": false,
  "excluded": false,
  "exclusion_reasons": [],
  "passes": {
@@ -50,6 +50,7 @@
  },
  "profile": {
   "kind": "production",
+  "margin_class": "production",
   "label": "تولیدی / صادراتی",
   "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
   "volume_applicable": true,
@@ -60,40 +61,7 @@
   "1": {
    "monetary": {
     "monetary_pct": 33.3,
-    "series": [
-     {
-      "year": 1404,
-      "month": 6,
-      "monthly_revenue": 116.66666666666667,
-      "ytd_revenue": 700.0,
-      "ytd_revenue_prev": 525.0,
-      "period_end": "1404/06/31"
-     },
-     {
-      "year": 1404,
-      "month": 5,
-      "monthly_revenue": 93.33333333333333,
-      "ytd_revenue": 560.0,
-      "ytd_revenue_prev": 420.0,
-      "period_end": "1404/05/31"
-     },
-     {
-      "year": 1404,
-      "month": 4,
-      "monthly_revenue": 66.66666666666667,
-      "ytd_revenue": 400.0,
-      "ytd_revenue_prev": 300.0,
-      "period_end": "۱۴۰۴/۰۴/۳۱"
-     },
-     {
-      "year": 1403,
-      "month": 6,
-      "monthly_revenue": 83.33333333333333,
-      "ytd_revenue": 500.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/06/31"
-     }
-    ],
+    "basis": null,
     "ytd_now_bt": 0.1,
     "ytd_prev_bt": 0.1,
     "ytd_now_mrl": 700.0,
@@ -139,7 +107,8 @@
     "reason": "رشد اسمی +33.3٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته).",
     "rule_ref": "F-01b"
    },
-   "pass": false
+   "pass": false,
+   "reason": "رشد ریالی زیر کف است."
   },
   "2": {
    "eps_series": null,
@@ -153,6 +122,7 @@
    "consolidated_used": false,
    "low_quality_track": false,
    "soft_gap": false,
+   "evidence_label": "دادهٔ ناکافی",
    "reason": "هیچ صورت مالیِ معتبری با EPS ثبت نشده.",
    "partial": false,
    "available_periods": 0,
@@ -186,6 +156,8 @@
    "threshold": 20.0,
    "ideal_threshold": 30.0,
    "optimal": false,
+   "na_kind": "data",
+   "margin_tier": null,
    "data_gap": true,
    "reason": "صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.",
    "remediation": "با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.",
@@ -195,12 +167,15 @@
    "available": false,
    "na": true,
    "gap_cause": "market_cap",
-   "pass": false,
+   "pass": null,
    "potential_pass": false,
    "sales_pass": false,
    "mcap_ht": 0.0,
    "potential_threshold": 40.0,
    "sales_threshold": 0.33,
+   "acceptance_path": null,
+   "annualize_months": 0,
+   "annualize_label": "",
    "reason": "ارزش بازار از اسنپ‌شاتِ رسمیِ TSETMC خوانده نشد (symbol_not_on_board)؛ فروش÷ارزش و پتانسیل سود محاسبه نمیشوند — پیش از «گزارش ماهانه»، تابلوخوانیِ این نماد باید تازه شود.",
    "annual": {
     "annual_sales_mrl": 1400.0,
@@ -531,10 +506,7 @@
   "mandatory_sectors": [
    "خودرو",
    "نیروگاه",
-   "قند و شکر",
-   "لاستیک",
-   "شوینده",
-   "بیمه"
+   "لاستیک"
   ],
   "free_sectors": [
    "سیمان",
@@ -550,6 +522,7 @@
    "نفت",
    "محصولات فلزی"
   ],
+  "reject_insurance": true,
   "watchlist_max": 50,
   "mcap_min_hmt": 0.0,
   "holdings_sales_na": true,

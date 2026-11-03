@@ -11,7 +11,7 @@
   "قیمت‌گذاری دستوری — حذف خودکار"
  ],
  "passes": {
-  "1_growth": false,
+  "1_growth": null,
   "2_eps_trend": false,
   "3_gross_margin": false,
   "4_sales_to_mcap": false,
@@ -52,6 +52,7 @@
  },
  "profile": {
   "kind": "production",
+  "margin_class": "production",
   "label": "تولیدی / صادراتی",
   "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
   "volume_applicable": true,
@@ -62,9 +63,9 @@
   "1": {
    "monetary": {
     "monetary_pct": null,
+    "basis": null,
     "pass": false,
     "data_gap": true,
-    "series": [],
     "threshold": 40.0,
     "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
     "reason": "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.",
@@ -92,7 +93,8 @@
     "reason": "رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست.",
     "rule_ref": "F-01b"
    },
-   "pass": false
+   "pass": null,
+   "reason": "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است."
   },
   "2": {
    "eps_series": null,
@@ -106,6 +108,7 @@
    "consolidated_used": false,
    "low_quality_track": false,
    "soft_gap": false,
+   "evidence_label": "دادهٔ ناکافی",
    "reason": "هیچ صورت مالیِ معتبری با EPS ثبت نشده.",
    "partial": false,
    "available_periods": 0,
@@ -131,6 +134,8 @@
    "threshold": 20.0,
    "ideal_threshold": 30.0,
    "optimal": false,
+   "na_kind": "data",
+   "margin_tier": null,
    "data_gap": true,
    "reason": "صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.",
    "remediation": "با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.",
@@ -140,12 +145,15 @@
    "available": false,
    "na": true,
    "gap_cause": "annual_sales",
-   "pass": false,
+   "pass": null,
    "potential_pass": false,
    "sales_pass": false,
    "mcap_ht": 0.0,
    "potential_threshold": 40.0,
    "sales_threshold": 0.33,
+   "acceptance_path": null,
+   "annualize_months": 0,
+   "annualize_label": "",
    "reason": "ارزش بازار از اسنپ‌شاتِ رسمیِ TSETMC خوانده نشد (market_cap_missing_value)؛ فروش÷ارزش و پتانسیل سود محاسبه نمیشوند — پیش از «گزارش ماهانه»، تابلوخوانیِ این نماد باید تازه شود.",
    "annual": null,
    "market_cap_source": null,
@@ -450,10 +458,7 @@
   "mandatory_sectors": [
    "خودرو",
    "نیروگاه",
-   "قند و شکر",
-   "لاستیک",
-   "شوینده",
-   "بیمه"
+   "لاستیک"
   ],
   "free_sectors": [
    "سیمان",
@@ -469,6 +474,7 @@
    "نفت",
    "محصولات فلزی"
   ],
+  "reject_insurance": true,
   "watchlist_max": 50,
   "mcap_min_hmt": 0.0,
   "holdings_sales_na": true,

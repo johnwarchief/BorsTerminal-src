@@ -2,11 +2,35 @@ package prediction_test
 
 import (
 	"math"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"borsterminal/backend/internal/prediction"
 )
+
+// kronosWeightsPresent: وزن‌های Kronos در مخزن فروخته نمی‌شوند (models/kronos).
+// بی‌آن‌ها مسیرِ شبکه اجرا نمی‌شود و موتور باید fallbackِ اعلام‌شده را برگرداند؛
+// پس برچسبِ درست به حضورِ وزن‌ها بسته است، نه به انتظارِ ثابت.
+func kronosWeightsPresent() bool {
+	dir, err := os.Getwd()
+	if err != nil {
+		return false
+	}
+	for i := 0; i < 6; i++ {
+		p := filepath.Join(dir, "models", "kronos", "Kronos-mini", "config.json")
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			return true
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return false
+}
 
 func makeDummyCandles(count int, startPrice, trend float64) ([]float64, []int64) {
 	closes := make([]float64, count)
@@ -184,6 +208,10 @@ func TestPredictHorizon_EdgeCases(t *testing.T) {
 
 func TestPredictHorizonWithModel_Models(t *testing.T) {
 	closes, timestamps := makeDummyCandles(50, 4000.0, 5.0)
+	haveWeights := kronosWeightsPresent()
+	if !haveWeights {
+		t.Log("وزن‌های Kronos در این مخزن نیست؛ مسیرِ شبکه راستی‌آزمایی نشد و برچسبِ fallback سنجیده می‌شود")
+	}
 
 	for _, model := range []string{"mini", "small", "base"} {
 		resp := prediction.PredictHorizonWithModel("TEST_"+model, closes, timestamps, 10_000_000_000.0, 5, model)
@@ -193,9 +221,13 @@ func TestPredictHorizonWithModel_Models(t *testing.T) {
 		if len(resp.ForecastSteps) != 5 {
 			t.Errorf("model %s: expected 5 steps, got %d", model, len(resp.ForecastSteps))
 		}
-		expectedModelPrefix := "Kronos-" + model
-		if resp.ModelUsed != expectedModelPrefix {
-			t.Errorf("model %s: expected ModelUsed=%s, got %s", model, expectedModelPrefix, resp.ModelUsed)
+		if haveWeights {
+			expectedModelPrefix := "Kronos-" + model
+			if resp.ModelUsed != expectedModelPrefix {
+				t.Errorf("model %s: expected ModelUsed=%s, got %s", model, expectedModelPrefix, resp.ModelUsed)
+			}
+		} else if resp.ModelUsed != "Autoregressive-MonteCarlo" {
+			t.Errorf("model %s: بی وزن، پاسخ باید fallbackِ اعلام‌شده باشد؛ got %s", model, resp.ModelUsed)
 		}
 		if resp.HistoricalEnd <= 0 {
 			t.Errorf("model %s: expected HistoricalEnd > 0, got %d", model, resp.HistoricalEnd)

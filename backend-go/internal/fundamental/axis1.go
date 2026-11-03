@@ -51,7 +51,7 @@ const (
 	ax1ReasonNoSeries = "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است."
 	ax1ReasonBadYtd   = "تجمیعیِ آخرین گزارش ماهانه صفر یا نامعتبر است."
 	ax1ReasonNoPrev   = "فروش تجمیعیِ همان دورۀ سال قبل در کدال ثبت نشده؛ " +
-		"مقایسۀ سال‌به‌سال ممکن نیست."
+		"مقایسهٔ سال‌به‌سال ممکن نیست."
 
 	// جدولِ `monthly_sales` ستونِ واحدِ پول **ندارد**؛ این صراحتاً اعلام می‌شود،
 	// نه اینکه میلیون‌ریال فرض شود.
@@ -252,9 +252,9 @@ func (s *Service) Ind1aMonetaryGrowth(ctx context.Context, symbol string,
 	nodata := func(reason string, extra map[string]any) map[string]any {
 		gap := map[string]any{
 			"monetary_pct":  nil,
+			"basis":         nil,
 			"pass":          false,
 			"data_gap":      true,
-			"series":        ax1MsSeries(series),
 			"threshold":     th["monetary_growth_min"],
 			"revenue_basis": prof["revenue_basis"],
 			"reason":        reason,
