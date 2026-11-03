@@ -66,6 +66,44 @@ function bollingerRaw(values: number[], period: number, mult: number) {
 
 const line = (key: string, title: string) => ({ key, title, type: 'line' });
 
+/**
+ * زبانِ بصریِ پنل‌ها، از تصویرِ مرجع و از TradingView:
+ * خطِ اصلیِ قرمز، خطِ هموارِ آبی، ترازها خاکستریِ خط‌چین.
+ *
+ * پیش از این هیچ stylesی ست نبود، پس klinecharts پالتِ پیش‌فرضِ خودش را به ترتیبِ
+ * figure می‌داد (زرد/بنفش/آبی/فیروزه‌ای) و ترازهای ۳۰ و ۰ هم مثل داده رنگِ پرشدت
+ * می‌گرفتند؛ نتیجه همان چیزی است که «شبیه TradingView نیست» گفته شد.
+ */
+const INK = { rsi: '#ef5350', smooth: '#2962ff', level: '#787b86' };
+
+const levelLine = { color: INK.level, size: 1, style: 'dashed' as const, dashedValue: [4, 4] };
+const dataLine = (color: string) => ({ color, size: 1.5, style: 'solid' as const, smooth: true });
+
+const paneStyles = (order: Array<'rsi' | 'smooth' | 'level'>) => ({
+  lines: order.map((k) => (k === 'level' ? levelLine : dataLine(INK[k === 'smooth' ? 'smooth' : 'rsi']))),
+  lastValueMark: { show: true },
+});
+
+/**
+ * TradingView در legendِ پنل فقط سری‌های داده را می‌شمارد، نه ترازها را.
+ * figures برای رسم لازم‌اند، پس ترازها را از legend بیرون می‌کشم.
+ */
+function legendWithoutLevels(labels: Array<{ key: string; title: string }>) {
+  return (params: { indicator: { result: RsiRow[]; calcParams: number[] }; crosshair: { dataIndex?: number } }) => {
+    const i = params.crosshair?.dataIndex ?? params.indicator.result.length - 1;
+    const row = params.indicator.result[i] ?? {};
+    return {
+      name: '',
+      calcParamsText: `(${params.indicator.calcParams[0]})`,
+      features: [],
+      legends: labels.map((l) => ({
+        title: { text: l.title, color: INK.level },
+        value: { text: row[l.key] === undefined ? '——' : String(Number(row[l.key]).toFixed(2)), color: l.title === 'هموار' ? INK.smooth : INK.rsi },
+      })),
+    };
+  };
+}
+
 /** فیبو تک‌شلیک: RSI(8) با دو ترازِ ۲۳٫۶ و ۷۸٫۶ */
 const fiboRsi8: IndicatorTemplate<RsiRow, number> = {
   name: 'FiboRSI8',
@@ -75,7 +113,9 @@ const fiboRsi8: IndicatorTemplate<RsiRow, number> = {
   shouldOhlc: false,
   minValue: 0,
   maxValue: 100,
-  figures: [line('rsi', 'RSI: '), line('lo', 'کف: '), line('hi', 'سقف: ')],
+  figures: [line('rsi', 'RSI'), line('lo', 'کف'), line('hi', 'سقف')],
+  styles: paneStyles(['rsi', 'level', 'level']),
+  createTooltipDataSource: legendWithoutLevels([{ key: 'rsi', title: 'RSI' }]) as never,
   calc: (dataList, indicator) => {
     const [period, lo, hi] = indicator.calcParams;
     const closes = dataList.map((d) => d.close);
@@ -93,7 +133,12 @@ const rsiMaSmooth: IndicatorTemplate<RsiRow, number> = {
   shouldOhlc: false,
   minValue: 0,
   maxValue: 100,
-  figures: [line('rsi', 'RSI: '), line('ma', 'هموار: '), line('lo', '۳۰: '), line('hi', '۷۰: ')],
+  figures: [line('rsi', 'RSI'), line('ma', 'هموار'), line('lo', '۳۰'), line('hi', '۷۰')],
+  styles: paneStyles(['rsi', 'smooth', 'level', 'level']),
+  createTooltipDataSource: legendWithoutLevels([
+    { key: 'rsi', title: 'RSI' },
+    { key: 'ma', title: 'هموار' },
+  ]) as never,
   calc: (dataList, indicator) => {
     const [period, maPeriod, lo, hi] = indicator.calcParams;
     const closes = dataList.map((d) => d.close);
@@ -118,7 +163,12 @@ const multiVariantRsi: IndicatorTemplate<RsiRow, number> = {
   shouldOhlc: false,
   minValue: 0,
   maxValue: 100,
-  figures: [line('rsi', 'RSI: '), line('mid', 'میانه: '), line('lo', 'پایین: '), line('hi', 'بالا: ')],
+  figures: [line('rsi', 'RSI'), line('mid', 'میانه'), line('lo', 'پایین'), line('hi', 'بالا')],
+  styles: paneStyles(['rsi', 'smooth', 'level', 'level']),
+  createTooltipDataSource: legendWithoutLevels([
+    { key: 'rsi', title: 'RSI' },
+    { key: 'mid', title: 'هموار' },
+  ]) as never,
   calc: (dataList) => {
     const variant = useTechnicalStore.getState().rsiVariant;
     const closes = dataList.map((d) => d.close);

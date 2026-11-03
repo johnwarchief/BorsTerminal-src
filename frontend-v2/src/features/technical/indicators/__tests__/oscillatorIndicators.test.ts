@@ -156,4 +156,34 @@ describe('oscillator indicators (the missing hybrid half)', () => {
     for (let j = 0; j < 9; j++) sum += raw[40 - j];
     expect(sm[40].mid).toBeCloseTo(sum / 9, 10);
   });
+
+  it('the panes speak the TradingView palette, not klinecharts defaults', () => {
+    // بی‌styles، klinecharts پالتِ پیش‌فرضش را به ترتیبِ figure می‌دهد
+    // (#FF9600 #935EBD #1677FF #E11D74 #01C5C4) و پنل به همان رنگی می‌شد که
+    // «شبیه TradingView نیست» گفته شد. این نگهبانِ همان است.
+    const KL_DEFAULTS = ['#ff9600', '#935ebd', '#1677ff', '#e11d74', '#01c5c4'];
+    for (const name of OSCILLATOR_NAMES) {
+      const lines = (OSCILLATOR_TEMPLATES[name].styles as any)?.lines ?? [];
+      expect(lines.length, `${name} هیچ styles.lines ندارد`).toBeGreaterThan(0);
+      const colors = lines.map((l: any) => String(l.color).toLowerCase());
+      for (const c of colors) expect(KL_DEFAULTS).not.toContain(c);
+      expect(colors).toContain('#ef5350');
+      expect(colors).toContain('#787b86');
+    }
+  });
+
+  it('the legend lists data series only, never the threshold levels', () => {
+    for (const name of OSCILLATOR_NAMES) {
+      const source = OSCILLATOR_TEMPLATES[name].createTooltipDataSource as any;
+      expect(typeof source, `${name} createTooltipDataSource ندارد`).toBe('function');
+      const rows = runCalc(name);
+      const data = source({
+        indicator: { result: rows, calcParams: OSCILLATOR_TEMPLATES[name].calcParams },
+        crosshair: { dataIndex: 60 },
+      });
+      const titles = data.legends.map((l: any) => l.title.text);
+      expect(titles).toContain('RSI');
+      for (const t of titles) expect(['۳۰', '۷۰', 'کف', 'سقف', 'پایین', 'بالا']).not.toContain(t);
+    }
+  });
 });
