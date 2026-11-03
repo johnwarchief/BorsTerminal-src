@@ -779,14 +779,15 @@ _LEDGER_QUEUE_COLS = [
     ("updated_at", "TEXT"),
     ("finished_at", "TEXT"),
 ]
-LEDGER_DONE_STATES = ("done", "empty", "unresolved")
+LEDGER_DONE_STATES = ("done", "empty", "unresolved", "quarantined")
 # `state IS NULL` = ردیفهایِ پیش از این مهاجرت: همان‌ها که `ok` دارند پایان‌یافته
 # شمرده می‌شوند (رفتارِ دیروز، بی‌بازگشتِ بی‌دلیل به صف).
 # تنها تعریفِ «این اطلاعیه تمام شد» — `derived_state`، `pending_notices`،
 # `codal_pipeline` و گاردها همه همین را می‌خوانند؛ شرطِ دوم نوشته نمی‌شود.
 def ledger_terminal_sql(alias=None):
     col = f"{alias}.state" if alias else "state"
-    return ("(%s IS NULL OR %s IN ('done','empty','unresolved'))" % (col, col))
+    return ("(%s IS NULL OR %s IN ('done','empty','unresolved','quarantined'))"
+            % (col, col))
 
 
 LEDGER_TERMINAL_SQL = ledger_terminal_sql()

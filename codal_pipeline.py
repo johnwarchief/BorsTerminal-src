@@ -21,7 +21,7 @@
 (`pipeline_cursor` / `pipeline_runs` / `pipeline_dirty` / `pipeline_lock`).
 
 قاعده‌هایِ که این‌جا نگه داشته می‌شوند:
-  1. «تمام شد» فقط `done` / `empty` / `unresolved` است
+  1. «تمام شد» فقط `done` / `empty` / `unresolved` / `quarantined` است
      (`codal_fetcher.ledger_terminal_sql`) — صف هرگز «پردازش‌شده» شمرده نمی‌شود.
   2. checkpoint **فقط** جلو می‌رود وقتی کارهایِ آن پنجره به حالتِ پایان‌یافته
      رسیده‌اند؛ خطای شبکه یا استخرِ ناتمام یعنی همان‌جا بماند تا اجرایِ بعدی
@@ -52,6 +52,7 @@ if ROOT not in sys.path:
 
 import codal_fetcher as CF                    # noqa: E402
 import codal_cadence as CAD                   # noqa: E402
+from codal_row_gate import validate_extracted_row   # noqa: E402
 
 __all__ = [
     "now_s", "ensure_schema", "cursor_get", "cursor_set", "enqueue", "claim",
@@ -286,7 +287,7 @@ def counts(conn):
     """شمارشِ حالت‌ها — از خودِ جدول، نه از شمارندهٔ حافظه (بندِ ۹: «چرخۀ
     شکست‌خورده نباید موفق نمایش داده شود»)."""
     out = {"queued": 0, "running": 0, "done": 0, "empty": 0, "failed": 0,
-           "unresolved": 0, "total": 0}
+           "unresolved": 0, "quarantined": 0, "total": 0}
     try:
         rows = conn.execute(
             "SELECT COALESCE(state,'legacy'), COUNT(*) FROM codal_extracted"
@@ -994,7 +995,7 @@ def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
 
 # ─── یکِ چرخۀ کامل ───────────────────────────────────────────────────────── #
 
-def process_claimed(conn, rows, scrape, now=None):
+def process_claimed(conn, rows, scrape, now=None, validate=None):
     """پردازشِ ردیفهایِ claim‌شده. `scrape(notice_row)` → (kind,row,status).
 
     نوشتنِ نتیجه از **همان** UPSERTهایِ `codal_fetcher` می‌گذرد (FS_UPSERT /
@@ -1002,7 +1003,8 @@ def process_claimed(conn, rows, scrape, now=None):
     تعیین می‌شود (`mark_done` / `mark_failed`)، پس «نتیجه» و «صف» یکی‌اند.
     """
     now = now or now_s()
-    tally = {"done": 0, "empty": 0, "failed": 0, "rejected": 0, "symbols": set()}
+    tally = {"done": 0, "empty": 0, "failed": 0, "rejected": 0,
+             "quarantined": 0, "symbols": set()}
     for tn, kind, n in rows:
         if not n:
             # اطلاعیه‌ای که درِ `codal_notices` نیست (claimِ یتیم) — بی‌منبع
@@ -1027,6 +1029,17 @@ def process_claimed(conn, rows, scrape, now=None):
             mark_failed(conn, tn, error_kind="extract", last_error="no derived row")
             tally["failed"] += 1
             continue
+        if validate:
+            ok_row, code = validate(k, derived)
+            if not ok_row:
+                conn.execute(
+                    "UPDATE codal_extracted SET state='quarantined', error_kind='validation',"
+                    " last_error=?, updated_at=?, finished_at=?, claim_owner=NULL,"
+                    " claimed_at=NULL, next_attempt_at=NULL WHERE tracing_no=?",
+                    (str(code)[:300], now, now, int(tn)))
+                conn.commit()
+                tally["quarantined"] += 1
+                continue
         if k == "ms":
             conn.execute(CF.MS_UPSERT, derived)
             source, sym = "monthly_sales", n[1]
@@ -1108,11 +1121,12 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             by_tn = {int(r[0]): r for r in CF.notice_rows_by_tracing(conn, tns)}
             rows = [(c[0], c[1], by_tn.get(int(c[0]))) for c in claimed]
             tally = process_claimed(conn, rows, scrape or (lambda n: (None, None, "failed")),
-                                    now=now)
+                                    now=now, validate=validate_extracted_row)
             out["done"] += tally["done"]
             out["empty"] += tally["empty"]
             out["failed"] += tally["failed"]
             out["rejected"] += tally["rejected"]
+            out["quarantined"] = int(out.get("quarantined") or 0) + tally["quarantined"]
             touched.update(tally.get("symbols") or [])
             out["processed"] += len(rows)
             processed += len(rows)

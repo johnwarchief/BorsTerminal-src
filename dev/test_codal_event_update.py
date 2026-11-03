@@ -150,3 +150,43 @@ ck(calls == [["فولاد"]], "باطل‌سازیِ فوری با همان نم
 ck(PL.dirty_count(c) == 1, "نماد در pipeline_dirty می‌ماند برای محاسبهٔ بعدی")
 ck(out.get("recalc_invalidate_only") is True,
    "حالتِ invalidate-only اعلام شد", out)
+
+# ── ۴) گیتِ ردیفی: ردیف خراب هرگز در canonical نمی‌نشیند ─────────────────
+section("validation: row gate + quarantine")
+from codal_row_gate import validate_extracted_row  # noqa: E402
+
+
+def fs_row(tn, sym, rev=1000.0, gross=300.0, url="https://codal.ir/PDF/x",
+           pe="1405/06/31"):
+    row = [tn, sym, sym, "صورت‌های مالی سالانه حسابرسی‌شده", "FS", 12, pe,
+           "1405/07/20 10:00:00"]
+    row += [rev, gross, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    row += ["میلیون ریال", url, "2026-11-03 10:00:00", 1, 0, "1404", "mrl"]
+    return tuple(row)
+
+
+ok, code = validate_extracted_row("fs", fs_row(1, "فولاد"))
+ck(ok and code == "", "ردیفِ سالم پذیرفته می‌شود", code)
+ok, code = validate_extracted_row("fs", fs_row(2, "فولاد", rev=-1))
+ck(not ok and code == "negative_revenue:revenue", "درآمد منفی رد می‌شود", code)
+ok, code = validate_extracted_row("fs", fs_row(3, "فولاد", rev=100, gross=101))
+ck(not ok and code == "gross_gt_revenue", "سود ناخالص > درآمد رد می‌شود", code)
+ok, code = validate_extracted_row("fs", fs_row(4, "فولاد", url=""))
+ck(not ok and code == "missing_provenance", "بی‌منبع رد می‌شود", code)
+ok, code = validate_extracted_row("fs", fs_row(5, "فولاد", pe="1406/12/29"),
+                                  today=datetime.date(2026, 11, 3))
+ck(not ok and code == "future_period", "دورهٔ آینده رد می‌شود", code)
+
+c = fresh_db()
+add_notice(c, 4001, "فولاد")
+PL.enqueue(c, [(4001, "fs")])
+out = PL.run_cycle(
+    c, "test", discover=None,
+    scrape=lambda n: ("fs", fs_row(4001, "فولاد", rev=-5), "ok"),
+    now="2026-11-03 20:00:00", instruments=lambda conn: {})
+state = c.execute("SELECT state, last_error FROM codal_extracted WHERE tracing_no=4001").fetchone()
+ck(tuple(state) == ("quarantined", "negative_revenue:revenue"),
+   "ردیفِ خراب قرنطینه شد و نوشته نشد", tuple(state))
+rows = c.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+ck(rows == 0, "هیچ ردیفِ خرابی در canonical نیست", rows)
+ck(out.get("quarantined") == 1, "شمارشِ چرخه قرنطینه را گزارش می‌کند", out)
