@@ -95,7 +95,7 @@ function calculateATR(dataList: KLineData[], period = 14): number[] {
   return atr;
 }
 
-function calculateRSI(closes: number[], period = 14): number[] {
+export function calculateRSI(closes: number[], period = 14): number[] {
   const n = closes.length;
   const rsi: number[] = new Array(n).fill(50);
   if (n <= period) return rsi;
@@ -137,7 +137,7 @@ function calculateRSI(closes: number[], period = 14): number[] {
   return rsi;
 }
 
-function calculateEMA(values: number[], period: number): number[] {
+export function calculateEMA(values: number[], period: number): number[] {
   const n = values.length;
   const ema: number[] = new Array(n).fill(0);
   if (n === 0) return ema;

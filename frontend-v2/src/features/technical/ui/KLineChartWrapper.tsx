@@ -33,11 +33,12 @@ import { registerSMCOverlays } from '../overlays/smcOverlays';
 import { registerAllUserIndicators } from '../overlays/userIndicators';
 import { registerCorporateEventsOverlay } from '../overlays/corporateEventsOverlay';
 import { registerAllAdvancedIndicators } from '../overlays/advancedTradingIndicators';
+import { OSCILLATOR_NAMES, oscillatorPaneId, registerOscillatorIndicators } from '../indicators/oscillatorIndicators';
 import { AnimatedPatternOverlay } from './AnimatedPatternOverlay';
 import type { Candle } from '../model/types';
 
 // ----------------------------------------------------------------------------
-// ثبت یک‌باره کلیه اورلی‌های بومی
+// ثبت یک‌باره کلیه اورلی‌ها و اندیکاتورهای بومی
 // ----------------------------------------------------------------------------
 
 let overlaysRegistered = false;
@@ -49,6 +50,7 @@ export function ensureAllOverlaysRegistered(): void {
   registerAllUserIndicators();
   registerCorporateEventsOverlay();
   registerAllAdvancedIndicators();
+  registerOscillatorIndicators();
   overlaysRegistered = true;
 }
 
@@ -584,6 +586,17 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
           lock: true,
           zLevel: 3,
         });
+      }
+
+      // نوسان‌گرها در پنلِ اختصاصیِ خودشون؛ اورلیِ سیگنال روی چارتِ قیمت می‌مونه
+      for (const name of OSCILLATOR_NAMES) {
+        chart.removeIndicator({ name });
+      }
+      for (const ind of activeUserIndicators) {
+        if (!(OSCILLATOR_NAMES as readonly string[]).includes(ind)) continue;
+        const paneId = oscillatorPaneId(ind);
+        chart.createIndicator({ name: ind, paneId });
+        chart.setPaneOptions({ id: paneId, height: 100, minHeight: 60, dragEnabled: true });
       }
     } catch {
       // ایمنی
