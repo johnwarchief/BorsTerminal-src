@@ -58,6 +58,29 @@ func orDash(v any) string {
 	return pyStr(v)
 }
 
+// cardAcceptancePath عینِ `fts_engine.i4_acceptance_path` (2128-2142): فقط نامِ
+// مسیری که حکم را ساخت — ۰٫۳۳× فروش÷ارزش بازار مقدم است و ۴۰٪ پتانسیل مسیرِ
+// دوم. nil یعنی هیچ‌کدام (یا معاف/بی‌داده)؛ دروازهٔ تازه‌ای اینجا ساخته نمی‌شود.
+func cardAcceptancePath(salesPass, potentialPass bool) any {
+	if salesPass {
+		return "sales_to_mcap"
+	}
+	if potentialPass {
+		return "profit_potential"
+	}
+	return nil
+}
+
+// cardAnnualizeLabel عینِ `fts_engine.annualize_label` (2117-2125): صفر/None
+// یعنی دوره‌ای برایِ سالانه‌سازی نیست ⇒ رشتهٔ خالی، نه «دورهٔ ۰ ماهه». «12» رقمِ
+// لاتین است (همان `%d`ِ پایتون) و «سالانه‌شده» با نیم‌فاصله.
+func cardAnnualizeLabel(months int64) string {
+	if months == 0 {
+		return ""
+	}
+	return fmt.Sprintf("سالانه‌شده از دورهٔ %d ماهه", months)
+}
+
 // v10DataGaps هر لایه‌ای که «قابل محاسبه نبود» شد + راه‌حلِ عملیِ بستنِ شکاف
 // (عینِ v10_data_gaps در api/fundamental.py:1796-1863).
 func v10DataGaps(res map[string]any) []map[string]any {
@@ -274,6 +297,29 @@ func (s *Service) CardBody(ctx context.Context, symbol string, months int) (map[
 		annual = map[string]any{}
 	}
 
+	// شکلِ کارتِ شاخص ۱ عینِ `evaluate_v10` (1547-1548): {monetary, volume,
+	// pass, reason} — `series`ِ خامِ سری ماهانه درِ اندیکاتور نمی‌نشیند (دادهٔ
+	// خامِ جدول است، نه حکم) و `pass` همان سه‌حالِ `axis1_state` است، پس برایِ
+	// شکافِ داده null می‌ماند نه false (طلاییِ card_thin). `passes.1_growth`
+	// هم از همان سه‌حال می‌آید تا کارت و `states` یک حرف بزنند.
+	delete(g, "series")
+	axis1State, axis1Reason := Axis1State(g, v)
+	ind1 := ind["1"].(map[string]any)
+	ind1["pass"] = axis1State
+	ind1["reason"] = axis1Reason
+	if p, ok := res["passes"].(map[string]any); ok {
+		p["1_growth"] = axis1State
+	}
+
+	// سه فیلدِ نمایشیِ شاخص ۴ (Task 7) — از خودِ حکمِ موجود ساخته می‌شوند، نه
+	// دروازهٔ تازه: مسیرِ پذیرش، تعدادِ ماهِ سالانه‌سازی و برچسبش. کارت پیش از
+	// این آن‌ها را نداشت ولی طلایی/اوراکل دارند (`ind4_valuation` 1230-1234).
+	annualizeMonths := ax1IntOf(annual["months_used"])
+	val["acceptance_path"] = cardAcceptancePath(truthy(val["sales_pass"]),
+		truthy(val["potential_pass"]))
+	val["annualize_months"] = annualizeMonths
+	val["annualize_label"] = cardAnnualizeLabel(annualizeMonths)
+
 	var refSymbol any = nil
 	if normSymbol != symbol {
 		refSymbol = normSymbol
@@ -343,6 +389,19 @@ func (s *Service) CardBody(ctx context.Context, symbol string, months int) (map[
 
 	var roePct any = nil
 	prof := res["profile"].(map[string]any)
+	// `margin_class` (fts_engine.company_profile:2014-2024) فقط متنِ N/Aِ شاخص ۳
+	// را دقیق می‌کند: بانک زیرِ kind=holding می‌افتد ولی «هلدینگ/سرمایه‌گذاری»
+	// خواندنش غلط است. پروفایلِ موتور این کلید را ندارد (axis45.go)، پس کارت
+	// همان کلید را با همان قاعده کنارِ label می‌گذارد — حکم/امتیاز دست‌نخورده.
+	if _, ok := prof["margin_class"]; !ok {
+		marginClass := strOr(prof["kind"])
+		if marginClass == "holding" &&
+			a45AnyTokenIn(a45BankTokens, normFa(sector)+" "+normFa(companyName)) {
+			marginClass = "bank"
+			prof["label"] = "بانک / مؤسسهٔ اعتباری"
+		}
+		prof["margin_class"] = marginClass
+	}
 	qtyVerifiedStr := "خیر — کمیتِ گزارش‌شدۀ همان دوره در دسترس نبود؛ تعدیل تورمی مصرف شد"
 	if truthy(v["quantity_verified"]) {
 		qtyVerifiedStr = "بله"
@@ -501,7 +560,7 @@ func (s *Service) CardBody(ctx context.Context, symbol string, months int) (map[
 		"data_gaps":         v10DataGaps(res),
 		"secondary":         secondary,
 		"history":           history,
-		"thresholds":        cfg,
+		"thresholds":        cardThresholds(cfg),
 		"ref_symbol":        refSymbol,
 		"ref_reason":        refReason,
 		"fs_count":          len(history),

@@ -1315,6 +1315,7 @@
  "ind1a": [
   {
    "out": {
+    "basis": null,
     "data_gap": false,
     "denominator_basis": "ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارش",
     "monetary_pct": 50.0,
@@ -1534,6 +1535,7 @@
   },
   {
    "out": {
+    "basis": null,
     "data_gap": false,
     "denominator_basis": "تجمیعی 12/1403 از گزارش فعالیت ماهانه (نه ماه قبل)",
     "monetary_pct": 0.0,
@@ -1753,6 +1755,7 @@
   },
   {
    "out": {
+    "basis": null,
     "data_gap": false,
     "denominator_basis": "تجمیعی 12/1403 از گزارش فعالیت ماهانه (نه ماه قبل)",
     "monetary_pct": 41.9,
@@ -1994,6 +1997,7 @@
   },
   {
    "out": {
+    "basis": null,
     "data_gap": false,
     "denominator_basis": "ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارش",
     "monetary_pct": 33.3,

@@ -297,8 +297,12 @@ func (s *Service) Ind1aMonetaryGrowth(ctx context.Context, symbol string,
 	growth := ax1Pct(ytdNow, ytdPrev)
 	return map[string]any{
 		"monetary_pct": growth,
-		"series":       ax1MsSeries(series),
-		"ytd_now_bt":   ax1Bt(ytdNow), "ytd_prev_bt": ax1Bt(ytdPrev),
+		// `basis` عینِ اوراکل است (`ind1a_monetary_growth`ِ 542-607): این شاخص
+		// مبنایِ دومی ندارد، پس کلیدِ صریحِ nil می‌ماند — نه حذف‌شده — تا شکلِ
+		// موفق و `_nodata` یک کلیدِ یکسان داشته باشند (رأیِ Task 1، ۱۴۰۵-۰۷-۲۳).
+		"basis":      nil,
+		"series":     ax1MsSeries(series),
+		"ytd_now_bt": ax1Bt(ytdNow), "ytd_prev_bt": ax1Bt(ytdPrev),
 		"ytd_now_mrl": ytdNow, "ytd_prev_mrl": ytdPrev,
 		"period":            ax1Period(month, year),
 		"months":            month,
@@ -524,20 +528,56 @@ func (s *Service) Ind1bVolumeGrowth(ctx context.Context, symbol string,
 //  لایۀ ۱ — رأیِ مجموعِ «الف» و «ب»، و سه‌حالۀ پنجِ محور
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Axis1Pass پورتِ api/fundamental.axis1_pass (732-751).
+// Axis1State پورتِ api/fundamental.axis1_state (841-866): رأیِ لایۀ ۱ به‌صورتِ
+// سه‌حال + دلیل — تک‌مرجعِ کارت، `scan_symbol` و `bulk_scan`.
 //
-// رأیِ لایۀ ۱ = رشدِ ریالی، و «تأییدِ حجم» فقط آن‌جا که برایِ ماهیتِ شرکت
-// **قابل‌اعمال** است: `applicable is False` ⇒ رأیِ محورِ ب وتو نمی‌شمارد (همان
-// چیزی که برایِ شاخص ۳ و ۴ با رأیِ ۱۶ ممنوع شده است). `passes` عمداً bool می‌ماند؛
-// «بی‌داده ≠ رد» را مصرف‌کننده از `data_gap` می‌پرسد.
+// (true, "") پاس؛ (false, دلیل) رد؛ (nil, دلیل) «قابل محاسبه نبود» (شکافِ داده).
+// شکافِ داده در ۱الف بر همه‌چیز مقدم است: اگر رشدِ ریالی ساخته نشود، ۱ب هم
+// داوری نمی‌شود و رأی nil است (نه false — «رد» و «نسنجیده» یکی نیستند). محورِ
+// «ب» فقط وقتی وتو می‌شمارد که برایِ ماهیتِ شرکت **قابل‌اعمال** باشد؛
+// `applicable is False` (و نه `None`) ⇒ پاس (رأیِ ۱۶).
+//
+// کلیدِ `pass`ِ کارت عیناً همین سه‌حال است (طلاییِ card_thin برایِ شکافِ ۱الف
+// `pass: null` دارد)؛ `Axis1Pass` همان boolِ مصرف‌کننده‌هایِ قدیمی است.
+func Axis1State(monetary, volume map[string]any) (any, string) {
+	m := monetary
+	if m == nil {
+		m = map[string]any{}
+	}
+	if truthy(m["data_gap"]) || m["monetary_pct"] == nil {
+		reason := strOr(m["reason"])
+		if reason == "" {
+			reason = "رشد ریالی قابل محاسبه نیست."
+		}
+		return nil, reason
+	}
+	if isFalsy(m["pass"]) {
+		return false, "رشد ریالی زیر کف است."
+	}
+	v := volume
+	if v == nil {
+		v = map[string]any{}
+	}
+	// `v.get("applicable") is False` — کلیدِ غایب/None پاسِ ۱ب را وتو نمی‌کند.
+	if applicable, ok := v["applicable"]; ok && applicable == false {
+		return true, ""
+	}
+	if truthy(v["pass"]) {
+		return true, ""
+	}
+	reason := strOr(v["reason"])
+	if reason == "" {
+		reason = "رشد تولیدی/تناژ تأیید نشد."
+	}
+	return false, reason
+}
+
+// Axis1Pass پورتِ api/fundamental.axis1_pass (869-872): پوششِ مصرف‌کننده‌هایِ
+// دوحالهِ قدیمی رویِ همان `Axis1State` (`bool(state)`) — تصمیمِ دوم اینجا ساخته
+// نمی‌شود. «بی‌داده ≠ رد» را مصرف‌کننده از `data_gap`/`states` می‌پرسد.
 func Axis1Pass(monetary, volume map[string]any) bool {
-	if isFalsy(monetary["pass"]) {
-		return false
-	}
-	if v, ok := volume["applicable"]; ok && v == false {
-		return true
-	}
-	return !isFalsy(volume["pass"])
+	state, _ := Axis1State(monetary, volume)
+	return truthy(state)
 }
 
 // V10AxisStates پورتِ api/fundamental.v10_axis_states (701-729): سه‌حالۀ هر پنجِ

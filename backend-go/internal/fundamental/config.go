@@ -41,6 +41,9 @@ var listKeys = []string{"mandatory_sectors", "free_sectors", "include_industries
 // ftsDefaults پیش‌فرض‌های مشترکِ موتور/پنل. مقدارها عین‌اند؛ نوع هم عینِ پایتون
 // (float/int/bool/string/[]string) چون `load_fts_config` بر پایه‌یِ نوعِ همین
 // dictionary تصمیم می‌گیرد (`isinstance(FTS_DEFAULTS[k], bool)`).
+//
+// `mandatory_sectors` عمداً هنوز شش‌عضویِ قدیمی است؛ قفلِ سه‌صنعتیِ حکمِ Task 8
+// درِ `cardMandatorySectors` (پایین‌تر) با دلیلش آمده است.
 func ftsDefaults() map[string]any {
 	return map[string]any{
 		"growth_min":                   40.0,
@@ -53,6 +56,7 @@ func ftsDefaults() map[string]any {
 		"industry_mode":                "Exclude_Mandatory_Pricing",
 		"mandatory_sectors":            []string{"خودرو", "نیروگاه", "قند و شکر", "لاستیک", "شوینده", "بیمه"},
 		"free_sectors":                 []string{"سیمان", "پتروشیمی", "شیمیایی", "فلزات", "کانی", "کاشی", "سرامیک", "شیشه", "کانه", "معادن", "نفت", "محصولات فلزی"},
+		"reject_insurance":             true,
 		"watchlist_max":                50,
 		"mcap_min_hmt":                 0.0,
 		"holdings_sales_na":            true,
@@ -90,6 +94,50 @@ var ftsLegacyLists = map[string]string{
 }
 
 const inflationFallback = 60.0
+
+// cardMandatorySectors عینِ سه صنعتِ الزامیِ جزوه پس از حکمِ مالک Task 8
+// (`bors_config.py:818-826`): خودرو/قطعات، نیروگاه، لاستیک. قند و شکر، شوینده
+// و بیمه الزامی نیستند؛ بیمه وتویِ سختِ جداگانه است (`reject_insurance`).
+//
+// چرا درِ `ftsDefaults` عوض نشد: وکتورهایِ کامیت‌شدۀ `config.json` پیش از همان
+// حکم ساخته شده‌اند و حتی نرمال‌سازیِ `_normalise_mandatory_sectors`
+// (api/market.py:36-46) را نمی‌شناسند (`body13` هنوز `["الف"]` است)؛ عوض‌کردنِ
+// پیش‌فرض بدونِ تولیدِ دوبارۀ آن وکتورها `TestFtsConfigVectors` را قرمز می‌کند.
+// تا آن بازتولید، کارت — که طلاییِ تازه‌اش همین سه را دارد — خروجیِ
+// `thresholds` را با همان قفلِ اوراکل می‌دهد. TODO: پس از بازتولیدِ config.json
+// این قفل به `ftsDefaults`/`LoadFtsConfig` منتقل و این تابع حذف شود.
+var cardMandatorySectors = []string{"خودرو", "نیروگاه", "لاستیک"}
+
+// cardThresholds نسخۀ کارت از پنلِ آستانه‌ها — عینِ `load_fts_config()`ِ اوراکل
+// که `mandatory_sectors` را با `kept or allowed` به سه صنعتِ جزوه قفل می‌کند
+// (ترتیبِ ورودی حفظ می‌شود و فهرستِ تهی ⇒ پیش‌فرض). سایرِ کلیدها دست‌نخورده‌اند.
+func cardThresholds(cfg map[string]any) map[string]any {
+	out := make(map[string]any, len(cfg))
+	for k, v := range cfg {
+		out[k] = v
+	}
+	kept := make([]string, 0, len(cardMandatorySectors))
+	switch list := cfg["mandatory_sectors"].(type) {
+	case []string:
+		for _, s := range list {
+			if s = pyTrimStr(s); contains(cardMandatorySectors, s) {
+				kept = append(kept, s)
+			}
+		}
+	case []any:
+		for _, item := range list {
+			s := pyTrimStr(pyStr(item))
+			if contains(cardMandatorySectors, s) {
+				kept = append(kept, s)
+			}
+		}
+	}
+	if len(kept) == 0 {
+		kept = append(kept, cardMandatorySectors...)
+	}
+	out["mandatory_sectors"] = kept
+	return out
+}
 
 // LoadFtsConfig عینِ api/market.load_fts_config: فایل را می‌خواند (نبود/خرابی ⇒
 // {})، کلیدهایِ شناخته‌شده را نگه می‌دارد، کلیدهایِ نسل‌قدیم را مهاجرت می‌دهد،
@@ -169,6 +217,16 @@ func LoadFtsConfig(dataDir string) map[string]any {
 			continue
 		}
 		if isBool(defaults[k]) {
+			if k == "reject_insurance" {
+				// وتویِ سختِ بیمه فقط با بولِ واقعی خاموش می‌شود؛ JSON `null`
+				// یا رشتهٔ "false" نباید بی‌صدا وتو را بردارد (api/market.py:93-95).
+				if b, ok := v.(bool); ok {
+					cfg[k] = b
+				} else {
+					cfg[k] = defaults[k]
+				}
+				continue
+			}
 			cfg[k] = truthy(v)
 			continue
 		}

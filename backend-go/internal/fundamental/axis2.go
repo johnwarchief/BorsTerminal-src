@@ -75,6 +75,16 @@ const (
 	// جدولِ `eps_basis` درِ ind2_eps_track (api/fundamental:871-884) + پیش‌فرضش.
 	ax2BasisUnknown = "شاهدِ کافی برای مسیر EPS موجود نیست"
 
+	// برچسبِ شاهد (Task 5) — عینِ `_EVIDENCE_LABEL` (fts_engine:1469-1475) و
+	// `eps_evidence_label` (1478-1480): «تلفیقی — نمایشی» عمداً واژهٔ «نمایشی»
+	// دارد (آن سری دیده می‌شود ولی حکم نمی‌گیرد) و هر tierِ ناشناخته — از جمله
+	// `insurance` که در جدول نیست — «دادهٔ ناکافی» می‌شود، نه برچسبِ تازه.
+	ax2EvidenceAudited      = "سالانهٔ حسابرسی‌شده"
+	ax2EvidenceUnaudited    = "سالانهٔ حسابرسی‌نشده"
+	ax2EvidenceInterim      = "برآورد میان‌دوره"
+	ax2EvidenceConsolidated = "تلفیقی — نمایشی"
+	ax2EvidenceInsufficient = "دادهٔ ناکافی"
+
 	// پسوندِ `eps_basis` — پیوسته به tier، با فاصله (api/fundamental:884-886).
 	ax2BasisWithInterim = " + راستی‌آزمایی میاندوره‌ای"
 	ax2BasisNoInterim   = " (میاندورهٔ مستقلِ راستی‌آزمایی موجود نیست)"
@@ -106,6 +116,26 @@ var ax2BasisTier = map[string]string{
 	"year_end_plus_interim":  "سال‌پایان + میاندورهٔ سال‌سازی‌شده × ۱۲÷م",
 	"insurance":              "صنعت بیمه — لایهٔ EPS اجرا نمی‌شود",
 	"insufficient":           ax2BasisUnknown,
+}
+
+// ax2EvidenceTier برچسبِ فارسیِ شاهد به‌ازایِ هر tier داوری — همان کلیدهایِ
+// `_EVIDENCE_LABEL` (نه بیشتر): `unaudited_year_end`/`consolidated_audited`/
+// `consolidated_unaudited` سطحِ نردبان‌اند، نه tierِ داوری، پس برچسبِ جدا ندارند.
+var ax2EvidenceTier = map[string]string{
+	"audited_year_end":      ax2EvidenceAudited,
+	"year_end_unaudited":    ax2EvidenceUnaudited,
+	"year_end_plus_interim": ax2EvidenceInterim,
+	"consolidated_year_end": ax2EvidenceConsolidated,
+	"insufficient":          ax2EvidenceInsufficient,
+}
+
+// ax2EvidenceLabelOf عینِ `fts_engine.eps_evidence_label`: tierِ ناشناخته یا تهی
+// ⇒ «دادهٔ ناکافی» (نه پنیک، نه برچسبِ حدسی).
+func ax2EvidenceLabelOf(tier string) string {
+	if label, ok := ax2EvidenceTier[tier]; ok {
+		return label
+	}
+	return ax2EvidenceInsufficient
 }
 
 // ax2EpsQuality عینِ `_EPS_QUALITY` (fts_engine:1281-1282) — برچسبِ شاهدِ هر
@@ -1007,6 +1037,11 @@ func (s *Service) Ind2EpsTrack(ctx context.Context, symbol string, th map[string
 	tier := strOr(ax2GetOr(base, "evidence_tier", "insufficient"))
 	if tier == "" {
 		tier = "insufficient"
+	}
+	// برچسبِ شاهد (Task 5) از خودِ داوری می‌آید — کارت/اسکرینر/دریل‌دان نباید
+	// سه برچسبِ متفاوت بدهند (api/fundamental.py:970-973).
+	if !truthy(base["evidence_label"]) {
+		base["evidence_label"] = ax2EvidenceLabelOf(tier)
 	}
 	// حالتِ «ناقص»: دوره‌هایِ موجود نشان داده می‌شوند و جایِ غایب خالی می‌ماند.
 	ser := ax2SliceOrEmpty(base["eps_series"])
