@@ -42,7 +42,7 @@ __all__ = [
     "CANON_RE", "VALID_GLOB", "DATED_SQL", "UNDATED_SQL", "dated_sql", "undated_sql",
     "latest_order_sql", "order_expr",
     "canonicalize", "from_title", "derive", "is_canonical", "is_undated",
-    "g2j_tuple", "j2g_date",
+    "g2j_tuple", "j2g_date", "j_month_len",
     "ym", "fiscal_year", "desc_sort_key", "latest",
     "undated_counts", "tables",
     "pub_canon_sql", "pub_order_expr", "pub_key",
@@ -183,19 +183,44 @@ def _j2g(jy, jm, jd):
     return gy, gm + 1, gd
 
 
+def j_month_len(jy, jm):
+    """طولِ ماهِ شمسی (۲۹..۳۱) — همان قاعدهٔ `dev/calendar_fetcher.py`.
+
+    ماه‌های ۱..۶ = ۳۱، ۷..۱۱ = ۳۰، و اسفند فقط با رفت‌وبرگشتِ `_j2g`/`_g2j`
+    سنجیده می‌شود: اگر ۳۰ اسفند پس از تبدیل رفت‌وبرگشت همان ۳۰ اسفند بماند،
+    سال کبیسه است؛ وگرنه ۲۹. هیچ جدولِ کبیسهٔ جداگانه‌ای نگه داشته نمی‌شود.
+    """
+    if jm <= 6:
+        return 31
+    if jm <= 11:
+        return 30
+    gy, gm, gd = _j2g(jy, 12, 30)
+    j2 = _g2j(gy, gm, gd)
+    return 30 if (j2[1] == 12 and j2[2] == 30) else 29
+
+
 def g2j_tuple(gy, gm, gd):
     """میلادی ⇒ شمسی؛ برای مقایسهٔ دورهٔ آینده."""
     return _g2j(int(gy), int(gm), int(gd))
 
 
 def j2g_date(raw):
-    """'1405/06/31[ 12:10:00]' ⇒ '2026-09-22[ 12:10:00]'؛ نامعتبر ⇒ None."""
+    """'1405/06/31[ 12:10:00]' ⇒ '2026-09-22[ 12:10:00]'؛ نامعتبر ⇒ None.
+
+    سخت‌گیریِ تقویمی: سال بیرونِ ۱۳۰۰..۱۵۰۰ و روزِ بزرگ‌تر از طولِ ماهِ شمسی
+    (`j_month_len`) رد می‌شود — «1405/07/31» و «2026-11-03» هر دو Noneاند،
+    نه تاریخی خیالی.
+    """
     s = str(raw or "").translate(_DIGITS)
     m = _LOOSE.search(s)
     if not m:
         return None
     jy, jm, jd = int(m.group(1)), int(m.group(2)), int(m.group(3))
     if not 1 <= jm <= 12 or not 1 <= jd <= 31:
+        return None
+    if not 1300 <= jy <= 1500:
+        return None
+    if jd > j_month_len(jy, jm):
         return None
     gy, gm, gd = _j2g(jy, jm, jd)
     out = "%04d-%02d-%02d" % (gy, gm, gd)

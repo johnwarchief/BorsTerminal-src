@@ -19,10 +19,15 @@ def validate_extracted_row(kind, row, today=None):
 
     شاخص‌ها از قراردادِ tupleِ `codal_fetcher.scrape_notice_row` می‌آیند:
     MS: 3=period_end، 6=monthly_revenue، 7=ytd_revenue، 13/14=provenance
-    FS: 6=period_end، 8=revenue، 9=gross_profit، 19=url
+    FS: 6=period_end، 7=publish_date، 8=revenue، 9=gross_profit، 19=url
+
+    پیش از هر شاخص‌خوانی، طولِ tuple سنجیده می‌شود؛ ردیفِ بریده (مثلاً از
+    پارسرِ نیمه‌کاره) `bad_shape` می‌گیرد، نه `IndexError` که کلِ batch را
+    بیندازد.
     """
-    if not row:
-        return False, "empty_row"
+    required = 15 if kind == "ms" else 25
+    if not row or len(row) < required:
+        return False, "bad_shape"
     if kind == "ms":
         for idx, name in ((6, "monthly_revenue"), (7, "ytd_revenue")):
             v = _to_float(row[idx])
@@ -38,7 +43,7 @@ def validate_extracted_row(kind, row, today=None):
             return False, "negative_revenue:revenue"
         if revenue is not None and gross is not None and gross > revenue:
             return False, "gross_gt_revenue"
-        if not str(row[19] or "").strip():
+        if not str(row[7] or "").strip() or not str(row[19] or "").strip():
             return False, "missing_provenance"
         period = row[6]
     parsed = CP.canonicalize(period)

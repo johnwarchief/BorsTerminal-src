@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.join(ROOT, "dev"))
 
 import codal_cadence as CAD          # noqa: E402
 import codal_fetcher as CF           # noqa: E402
+import codal_periods as CP           # noqa: E402
 import codal_pipeline as PL          # noqa: E402
 
 CHECKS = []
@@ -157,12 +158,18 @@ from codal_row_gate import validate_extracted_row  # noqa: E402
 
 
 def fs_row(tn, sym, rev=1000.0, gross=300.0, url="https://codal.ir/PDF/x",
-           pe="1405/06/31"):
-    row = [tn, sym, sym, "صورت‌های مالی سالانه حسابرسی‌شده", "FS", 12, pe,
-           "1405/07/20 10:00:00"]
+           pe="1405/06/31", pub="1405/07/20 10:00:00"):
+    row = [tn, sym, sym, "صورت‌های مالی سالانه حسابرسی‌شده", "FS", 12, pe, pub]
     row += [rev, gross, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     row += ["میلیون ریال", url, "2026-11-03 10:00:00", 1, 0, "1404", "mrl"]
     return tuple(row)
+
+
+def ms_tuple(tn=10, sym="فولاد", pe="1405/06/31", monthly=1000.0, ytd=6000.0,
+             pdf="https://codal.ir/PDF/m", excel=""):
+    """همان ۱۵ عنصرِ `codal_fetcher.scrape_notice_row` برایِ گزارشِ ماهانه."""
+    return (tn, sym, "گزارش فعالیت ماهانه", pe, 1405, 6, monthly, ytd,
+            900.0, 5400.0, 10.0, 60.0, "عدد", pdf, excel)
 
 
 ok, code = validate_extracted_row("fs", fs_row(1, "فولاد"))
@@ -176,6 +183,39 @@ ck(not ok and code == "missing_provenance", "بی‌منبع رد می‌شود"
 ok, code = validate_extracted_row("fs", fs_row(5, "فولاد", pe="1406/12/29"),
                                   today=datetime.date(2026, 11, 3))
 ck(not ok and code == "future_period", "دورهٔ آینده رد می‌شود", code)
+ok, code = validate_extracted_row("fs", fs_row(6, "فولاد", pub=""))
+ck(not ok and code == "missing_provenance",
+   "FS بی publish_date هم بی‌منبع است", code)
+ok, code = validate_extracted_row("fs", fs_row(7, "فولاد")[:24])
+ck(not ok and code == "bad_shape", "FS بریده ⇒ bad_shape (نه IndexError)", code)
+
+ok, code = validate_extracted_row("ms", ms_tuple()[:14])
+ck(not ok and code == "bad_shape", "MS بریده ⇒ bad_shape (نه IndexError)", code)
+
+TODAY = datetime.date(2026, 11, 3)
+ok, code = validate_extracted_row("ms", ms_tuple(excel=""), today=TODAY)
+ck(ok and code == "", "MS فقط pdf_url پذیرفته می‌شود", code)
+ok, code = validate_extracted_row("ms", ms_tuple(pdf="", excel="https://codal.ir/X/m"),
+                                  today=TODAY)
+ck(ok and code == "", "MS فقط excel_url پذیرفته می‌شود", code)
+ok, code = validate_extracted_row("ms", ms_tuple(pdf="", excel=""), today=TODAY)
+ck(not ok and code == "missing_provenance", "MS بی هیچ پیوندی رد می‌شود", code)
+ok, code = validate_extracted_row("ms", ms_tuple(ytd=-1), today=TODAY)
+ck(not ok and code == "negative_revenue:ytd_revenue",
+   "ytd_revenue منفی رد می‌شود", code)
+ok, code = validate_extracted_row("ms", ms_tuple(pe="1406/12/29"), today=TODAY)
+ck(not ok and code == "future_period", "MS با دورهٔ آینده رد می‌شود", code)
+
+ck(CP.j2g_date("1405/06/31 12:10:00") == "2026-09-22 12:10:00",
+   "تبدیلِ معتبرِ موجود تغییر نکرد", CP.j2g_date("1405/06/31 12:10:00"))
+ck(CP.j2g_date("1405/07/31") is None,
+   "روزِ ۳۱ در ماهِ ۳۰روزه ⇒ None", CP.j2g_date("1405/07/31"))
+ck(CP.j2g_date("2026-11-03") is None,
+   "سالِ بیرونِ ۱۳۰۰..۱۵۰۰ ⇒ None", CP.j2g_date("2026-11-03"))
+ck(CP.j2g_date("1403/12/30") == "2025-03-20",
+   "اسفندِ کبیسه هنوز تبدیل می‌شود", CP.j2g_date("1403/12/30"))
+ck(CP.j2g_date("1404/12/30") is None,
+   "اسفندِ غیرکبیسه ۳۰ ندارد", CP.j2g_date("1404/12/30"))
 
 c = fresh_db()
 add_notice(c, 4001, "فولاد")
