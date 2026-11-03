@@ -2,6 +2,8 @@
 """dev/test_codal_event_update.py — گارد آفلاین به‌روزرسانی رویدادمحور ۵ شاخص.
 
 Run: PYTHONIOENCODING=utf-8 BORS_CODAL_OFFLINE=1 python dev/test_codal_event_update.py
+
+`--live` (opt-in، هرگز در CI): فقط یک صفحهٔ خواندنیِ CODAL با پروفایلِ POLITE.
 """
 import datetime
 import json
@@ -12,10 +14,10 @@ import sys
 import tempfile
 import time
 
-# گیتِ زندهٔ opt-in: فقط با `--live` و تأییدِ مالک، بیِ اجبارِ آفلاین اجرا می‌شود.
+# گاردِ آفلاین همیشه برقرار است؛ `--live` فقط پروبِ صریح را مستثنا می‌کند،
+# نه خودِ گاردها را.
 LIVE = "--live" in sys.argv
-if not LIVE:
-    os.environ["BORS_CODAL_OFFLINE"] = "1"
+os.environ["BORS_CODAL_OFFLINE"] = "1"
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -765,20 +767,35 @@ ck(r11.get("skipped") == "budget-exhausted"
 # ── ۸) گیتِ زندهٔ اختیاری (فقط با --live و تأییدِ مالک؛ نه بخشی از CI) ──────
 if LIVE:
     section("live: read-only CODAL page (no writes)")
+    saved_polite = CF.POLITE
+    saved_rotate = CF.rotate_ip_via_adb
+    saved_progress = CF.write_progress
+    CF.set_polite(True)                            # بدونِ ADB: فقط مکثِ امن
+    # حتی مسیرِ 429/بنِ WAF هم نباید ADB را توگل یا sync_status را بنویسد؛
+    # `_trigger_backoff` مستقل از POLITE چرخش می‌زند و شاخهٔ بنِ پایدار
+    # write_progress را بی‌توجه به quiet صدا می‌زند.
+    CF.rotate_ip_via_adb = lambda *a, **k: False
+    CF.write_progress = lambda *a, **k: None
     try:
-        sess = CF.make_session()
         try:
-            letters = CF.fetch_page(sess, 1, CF.feed_query("3", 1, "1405/01/01"))
-        finally:
-            sess.close()
-    except Exception as exc:
-        print("  SKIP live probe: %s" % exc)
-    else:
-        if letters is None:
-            print("  SKIP live probe: blocked/no response")
+            sess = CF.make_session()
+            try:
+                letters = CF.fetch_page(
+                    sess, 1, CF.feed_query("3", 1, "1405/01/01"), quiet=True)
+            finally:
+                sess.close()
+        except Exception as exc:
+            print("  SKIP live probe: %s" % exc)
         else:
-            ck(isinstance(letters, list) and len(letters) > 0,
-               "فید کدال یک صفحهٔ غیرخالی برگرداند (بی‌نوشتن)")
+            if letters is None:
+                print("  SKIP live probe: blocked/no response")
+            else:
+                ck(isinstance(letters, list) and len(letters) > 0,
+                   "فید کدال یک صفحهٔ غیرخالی برگرداند (بی‌نوشتن)")
+    finally:
+        CF.set_polite(saved_polite)
+        CF.rotate_ip_via_adb = saved_rotate
+        CF.write_progress = saved_progress
 
 failed = CHECKS.count(False)
 print("\n%d passed / %d failed" % (CHECKS.count(True), failed))

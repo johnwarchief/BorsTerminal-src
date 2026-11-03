@@ -862,11 +862,11 @@ SUITES = [
     # پرچم هیچ کمربند و هیچ رأیی را جابه‌جا نمی‌کند (و دو فرمول هم یکی بودند).
     ('dev/fts_wave_direction_v1125.py',
                                      'wave direction: extremes rule kept, provisional flag moves no fib zone'),
-    # PHASE 2 (auto-update, no ADB): eight offline guards — 26-col schema,
-    # staging validation gates, dry-run orchestrator, snapshot meta, publish
-    # dry-run/last-good, scheduler + startup catch-up, Cat6 calendar merge,
-    # client meta compare. None of them call CODAL; the owner-authorized live
-    # dry-run is recorded separately.
+    # PHASE 2 (auto-update, no ADB): nine offline guards — 26-col schema,
+    # staging validation gates, dry-run orchestrator, event-driven 5-axis,
+    # snapshot meta, publish dry-run/last-good, scheduler + startup catch-up,
+    # Cat6 calendar merge, client meta compare. None of them call CODAL; the
+    # owner-authorized live dry-run is recorded separately.
     ('dev/test_fts_updater_schema_v11.py',   'codal updater 26-col schema'),
     ('dev/test_codal_validation_v11.py',     'codal staging validation gates'),
     ('dev/test_codal_auto_update_v11.py',    'codal no-ADB orchestrator dry-run'),
