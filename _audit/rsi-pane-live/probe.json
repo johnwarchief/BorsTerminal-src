@@ -1,0 +1,179 @@
+{
+  "symbol": "فولاد",
+  "viewport": "1440x900",
+  "method": "canvas layer rows + per-row ink measured against the pane background",
+  "before": {
+    "canvasCount": 6,
+    "rows": [
+      {
+        "w": 670,
+        "h": 794,
+        "top": 0,
+        "kind": "main"
+      }
+    ],
+    "width": 730,
+    "height": 820
+  },
+  "after": {
+    "canvasCount": 10,
+    "rows": [
+      {
+        "w": 670,
+        "h": 693,
+        "top": 0,
+        "kind": "main"
+      },
+      {
+        "w": 670,
+        "h": 100,
+        "top": 694,
+        "kind": "main"
+      }
+    ],
+    "lowerInk": {
+      "rowsWithInk": 87,
+      "peak": 587,
+      "total": 6332
+    }
+  },
+  "off": {
+    "canvasCount": 6,
+    "rows": [
+      {
+        "w": 670,
+        "h": 794,
+        "top": 0,
+        "kind": "main"
+      }
+    ]
+  },
+  "positiveControls": {
+    "dropdown": {
+      "regionTop": 593,
+      "selectedValue": "fibo",
+      "inkBefore": 14141,
+      "inkAfter": 13271,
+      "diffPixels": 3470
+    }
+  },
+  "failedRequests": {
+    "404 /vendor/fonts/vazirmatn.css": 1
+  },
+  "results": [
+    {
+      "name": "chart renders and the probe can read it",
+      "pass": true,
+      "detail": {
+        "error": null,
+        "canvasCount": 6,
+        "contentRows": 1
+      }
+    },
+    {
+      "name": "RsiMaSmooth toggle exists in the indicators panel",
+      "pass": true,
+      "detail": {
+        "count": 1
+      }
+    },
+    {
+      "name": "a second content pane is mounted below the price pane",
+      "pass": true,
+      "detail": {
+        "before": [
+          [
+            0,
+            794
+          ]
+        ],
+        "after": [
+          [
+            0,
+            693
+          ],
+          [
+            694,
+            100
+          ]
+        ]
+      }
+    },
+    {
+      "name": "the new pane is the oscillator pane, about 100px tall",
+      "pass": true,
+      "detail": {
+        "height": 100
+      }
+    },
+    {
+      "name": "pixels are actually drawn inside the new pane",
+      "pass": true,
+      "detail": {
+        "rowsWithInk": 87,
+        "peak": 587,
+        "total": 6332
+      }
+    },
+    {
+      "name": "MultiVariantRSI toggle exists",
+      "pass": true,
+      "detail": {
+        "count": 1
+      }
+    },
+    {
+      "name": "each oscillator gets its own pane (two rows below the price now)",
+      "pass": true,
+      "detail": {
+        "rows": [
+          [
+            0,
+            592
+          ],
+          [
+            593,
+            100
+          ],
+          [
+            694,
+            100
+          ]
+        ]
+      }
+    },
+    {
+      "name": "POSITIVE CONTROL 1: the dropdown visibly redraws a pane",
+      "pass": true,
+      "detail": {
+        "regionTop": 593,
+        "selectedValue": "fibo",
+        "inkBefore": 14141,
+        "inkAfter": 13271,
+        "diffPixels": 3470
+      }
+    },
+    {
+      "name": "POSITIVE CONTROL 2: switching off removes the pane",
+      "pass": true,
+      "detail": {
+        "rowsOff": [
+          [
+            0,
+            794
+          ]
+        ],
+        "canvasCount": 6
+      }
+    },
+    {
+      "name": "no failed network requests",
+      "pass": false,
+      "detail": {
+        "404 /vendor/fonts/vazirmatn.css": 1
+      }
+    }
+  ],
+  "passed": 9,
+  "total": 10
+}
