@@ -40,7 +40,9 @@ stdlib-only است تا هیچ چرخۀ import نسازد (الگو: `codal_peri
 from __future__ import annotations
 
 import datetime
+import json
 import os
+import random
 import sqlite3
 import sys
 
@@ -49,6 +51,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 import codal_fetcher as CF                    # noqa: E402
+import codal_cadence as CAD                   # noqa: E402
 
 __all__ = [
     "now_s", "ensure_schema", "cursor_get", "cursor_set", "enqueue", "claim",
@@ -65,6 +68,9 @@ __all__ = [
     "CADENCE_IDLE_S", "CADENCE_BACKLOG_S", "DISCOVERY_MIN_GAP_S",
     "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
+    "publication_windows", "current_network_gap",
+    "PUB_WINDOWS_CURSOR", "DAILY_REQUEST_CURSOR", "DAILY_REQUEST_CAP",
+    "FAST_GAP_S", "SLOW_GAP_S",
 ]
 
 # بودجۀ تلاش و backoffِ نمایی (ثانیه). بی‌این، یکِ اطلاعیهٔ بد‌نشانی هر چرخه
@@ -600,6 +606,71 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     return res
 
 
+def publication_windows(conn, now=None):
+    """پنجره‌های انتشار از هیستوگرامِ ساعتِ اطلاعیه‌های اخیر.
+
+    کش روزانه در `pipeline_cursor`؛ خطای DB/ستون ⇒ پیش‌فرض، نه استثنا.
+    """
+    today = str(now or now_s())[:10]
+    try:
+        cached = json.loads(cursor_get(conn, PUB_WINDOWS_CURSOR) or "{}")
+    except (TypeError, ValueError, sqlite3.Error):
+        cached = {}
+    if isinstance(cached, dict) and cached.get("day") == today \
+            and cached.get("windows"):
+        return cached
+    counts = {h: 0 for h in range(24)}
+    samples = 0
+    try:
+        sql = (
+            "SELECT %s, %s FROM codal_notices"
+            " ORDER BY rowid DESC LIMIT ?"
+            % (CF.CP.pub_canon_sql("publish_date"),
+               CF.CP.pub_canon_sql("sent_date")))
+        rows = conn.execute(sql, (PUB_WINDOWS_LOOKBACK_ROWS,)).fetchall()
+    except sqlite3.Error:
+        rows = []
+    for pub, sent in rows:
+        stamp = pub if len(pub or "") >= 16 else (sent or "")
+        if len(stamp) >= 13 and stamp[11:13].isdigit():
+            h = int(stamp[11:13])
+            if 0 <= h < 24:
+                counts[h] += 1
+                samples += 1
+    windows = CAD.windows_from_hour_counts(counts,
+                                           min_samples=PUB_WINDOWS_MIN_SAMPLES)
+    out = {
+        "day": today,
+        "windows": [list(w) for w in windows],
+        "source": "learned" if samples >= PUB_WINDOWS_MIN_SAMPLES else "default",
+        "samples": samples,
+    }
+    try:
+        cursor_set(conn, PUB_WINDOWS_CURSOR, json.dumps(out, ensure_ascii=False),
+                   note="publication windows")
+    except sqlite3.Error:
+        pass
+    return out
+
+
+def current_network_gap(conn, now=None, jitter=True):
+    """فاصلهٔ مجازِ پاسِ شبکه + توصیفِ پنجره برای status."""
+    at = _to_dt(now) or datetime.datetime.now()
+    pub = publication_windows(conn, now=now)
+    enabled = str(os.environ.get("BORS_CODAL_FAST_WINDOW", "1")).strip().lower() \
+        not in ("0", "false", "no", "off")
+    jitter_s = random.uniform(-60.0, 60.0) if jitter and enabled else 0.0
+    hour = at.hour + at.minute / 60.0
+    gap = CAD.gap_seconds(hour, pub["windows"], enabled=enabled,
+                          fast=FAST_GAP_S, slow=SLOW_GAP_S, jitter_s=jitter_s)
+    info = dict(pub)
+    info["inside_window"] = CAD.inside_window(hour, pub["windows"])
+    info["labels"] = CAD.window_labels(pub["windows"])
+    info["network_gap_s"] = gap
+    info["enabled"] = enabled
+    return gap, info
+
+
 # ─── کشفِ ابزارِ تازه/تغییرکرده (بندِ ۳ مأموریت) ──────────────────────────── #
 
 # دفترِ عضویت، نه خزندۀ دوم: `test_tsetmc.py` تابلو را درِ `instruments` و
@@ -1029,6 +1100,11 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
                                  [r[0] for r in conn.execute(
                                      "SELECT DISTINCT symbol FROM pipeline_dirty")]})
         out["dirty"] = dirty_count(conn)
+        if recalc == "invalidate":
+            # حالتِ invalidate-only: صفِ `pipeline_dirty` دست‌نخورده می‌ماند و
+            # محاسبۀ سنگین به چرخۀ بعد موکول می‌شود (گاردِ زمان‌بندی: «نمادِ
+            # علامت‌خورده درِ صف می‌ماند»)؛ پیاده‌سازیِ کاملِ باطل‌سازی Task 3.
+            recalc = None
         if recalc == "auto":
             recalc = recompute_dirty
         if recalc and out["dirty"]:
@@ -1092,6 +1168,13 @@ CADENCE_IDLE_S = 6 * 3600          # صف تهی ⇒ روزی دو پاس کاف
 CADENCE_BACKLOG_S = 300            # کارِ بازیابی‌شدنی ⇒ هر پنج دقیقه
 CADENCE_MIN_S = 60                 # سقفِ بیدارباشِ پی‌درپی
 DISCOVERY_MIN_GAP_S = 3 * 3600     # حداقل فاصلۀ دو پاسِ شبکه‌ای
+PUB_WINDOWS_CURSOR = "pub_windows_v1"
+PUB_WINDOWS_LOOKBACK_ROWS = 20000
+PUB_WINDOWS_MIN_SAMPLES = 200
+FAST_GAP_S = CAD.FAST_GAP_S
+SLOW_GAP_S = CAD.SLOW_GAP_S
+DAILY_REQUEST_CURSOR = "codal_daily_requests"
+DAILY_REQUEST_CAP = 200
 CURSOR_LAST_NETWORK = "notice_last_network_pass_at"
 CODAL_BUSY_PHASES = ("codal_sync", "codal_backoff", "codal_paused", "codal_stopped")
 _WORKER: dict = {"thread": None, "stop": None, "owner": None, "started_at": None,
@@ -1274,8 +1357,9 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
     try:
         if busy is None:
             busy = crawler_busy(status_path=status_path)
+        network_gap_s, publication = current_network_gap(conn, now=now, jitter=True)
         age_net = _age_s(cursor_get(conn, CURSOR_LAST_NETWORK), _to_dt(now))
-        want = age_net is None or age_net >= DISCOVERY_MIN_GAP_S
+        want = age_net is None or age_net >= int(network_gap_s)
         want = want and not busy["busy"]
         use_network = want if network is None else bool(network)
         if offline_gate():
@@ -1290,7 +1374,7 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
             conn, owner or "worker-%d" % os.getpid(),
             discover=discover_auto if use_network else None,
             scrape=_offline_scrape if offline_gate() else CF.scrape_notice_row,
-            recalc=(None if defer_recalc and recalc is None
+            recalc=("invalidate" if defer_recalc and recalc is None
                     else (recalc or "auto")),
             budget=budget, now=now)
         if use_network and res.get("run_id"):
@@ -1298,10 +1382,12 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
                        note="cycle=%s skipped=%s" % (res.get("run_id"),
                                                      res.get("skipped")))
         res["network"] = use_network
+        res["publication"] = publication
+        res["network_gap_s"] = int(network_gap_s)
         res["recalc_deferred"] = bool(defer_recalc and recalc is None)
         # چراغِ بیدارباش از همان اتصال می‌آید؛ رشتۀ زمان‌بند برایِ «چند
         # ثانیه بخوابم» اتصالِ دوم به بانکِ کاری باز نمی‌کند.
-        res["wakeup"] = next_wakeup(conn, now=now)
+        res["wakeup"] = next_wakeup(conn, now=now, network_gap_s=network_gap_s)
         return res
     finally:
         if own:

@@ -68,3 +68,55 @@ ck(CAD.gap_seconds(9.5, w, enabled=True, jitter_s=-100000) == 60,
    "jitter هرگز زیرِ کفِ ۶۰ ثانیه نمی‌رود")
 ck(CAD.window_labels(w)[0] == "08:30-12:30",
    "برچسبِ پنجره برای status", CAD.window_labels(w))
+
+# ── ۲) پنجره از دادهٔ واقعیِ codal_notices ────────────────────────────────
+section("pipeline: publication windows from DB")
+
+
+def fresh_db():
+    c = sqlite3.connect(":memory:", timeout=60, isolation_level=None)
+    c.row_factory = sqlite3.Row
+    CF.create_schema(c)
+    CF.migrate_schema(c)
+    PL.ensure_schema(c)
+    c.execute("CREATE TABLE IF NOT EXISTS instruments (ins_code TEXT PRIMARY KEY,"
+              " l_val18 TEXT, l_val30 TEXT, paper_type INTEGER)")
+    return c
+
+
+def add_notice(c, tn, sym, pub="1405/07/20 10:00:00",
+               title="گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به ۱۴۰۵/۰۷/۳۰"):
+    c.execute("INSERT OR REPLACE INTO codal_notices (tracing_no, symbol,"
+              " company_name, title, letter_code, publish_date, sent_date, url,"
+              " fetched_at, pdf_url, excel_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+              (tn, sym, sym, title, "1", pub, pub,
+               "https://codal.ir/L/Detail/%d" % tn, "2026-11-03 00:00:00", "", ""))
+
+
+c = fresh_db()
+for i in range(240):
+    add_notice(c, 1000 + i, "نماد%d" % i,
+               pub="1405/07/20 %02d:10:00" % (9 + (i % 3)))
+pub = PL.publication_windows(c, now="2026-11-03 10:00:00")
+ck(pub["source"] == "learned" and pub["samples"] >= 200,
+   "نمونهٔ کافی ⇒ پنجره از داده یاد گرفته می‌شود", pub)
+ck(any(a <= 9 and b >= 12 for a, b in pub["windows"]),
+   "پنجرهٔ صبح درست ساخته شد", pub["windows"])
+cache = PL.publication_windows(c, now="2026-11-03 18:00:00")
+ck(cache.get("day") == pub.get("day") and cache["windows"] == pub["windows"],
+   "کشِ روزانه دوباره SQL نمی‌زند")
+
+c2 = fresh_db()
+for i in range(3):
+    add_notice(c2, 2000 + i, "کم%d" % i, pub="1405/07/20 10:00:00")
+low = PL.publication_windows(c2, now="2026-11-03 10:00:00")
+ck(low["source"] == "default"
+   and low["windows"] == [list(x) for x in CAD.DEFAULT_WINDOWS],
+   "نمونهٔ کم ⇒ پیش‌فرضِ ۸ تا ۲۰", low)
+
+gap_in, pub_in = PL.current_network_gap(c, now="2026-11-03 10:00:00", jitter=False)
+gap_out, _ = PL.current_network_gap(c, now="2026-11-03 14:00:00", jitter=False)
+ck(gap_in == 600, "داخلِ پنجرهٔ یادگرفته ⇒ ۶۰۰ ثانیه", gap_in)
+ck(gap_out == 10800, "بیرون ⇒ ۳ ساعت", gap_out)
+ck("windows" in pub_in and "samples" in pub_in,
+   "خروجیِ publication برای status کامل است", pub_in)
