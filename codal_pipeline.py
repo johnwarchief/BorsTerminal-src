@@ -390,8 +390,17 @@ def dirty_mark(conn, symbol, source, reason=""):
 
 
 def dirty_count(conn):
+    """چند **نماد** در انتظارِ تازه‌سازی‌اند — نه چند سطر.
+
+    کلیدِ `pipeline_dirty` مرکب است (`symbol, axis`)؛ یکِ نماد با دو شاخصِ
+    وابسته دو سطر می‌سازد ولی «یک نمادِ کثیف» است. ستونِ
+    `pipeline_runs.symbols_dirty` و کلیدِ `dirty_symbols` در `health()` هم
+    همین معنا را دارند، پس `COUNT(DISTINCT symbol)` همان عددی است که گزارش
+    می‌شود (پیش‌ازاین `COUNT(*)` بود و یکِ نمادِ ماهانه «۲» شمرده می‌شد).
+    """
     try:
-        return int(conn.execute("SELECT COUNT(*) FROM pipeline_dirty").fetchone()[0])
+        return int(conn.execute("SELECT COUNT(DISTINCT symbol) FROM pipeline_dirty")
+                   .fetchone()[0])
     except sqlite3.Error:
         return 0
 
@@ -1041,6 +1050,11 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
     همه‌چیز تزریق‌پذیر است (`discover`، `scrape`، `recalc`، `instruments`) تا
     گاردِ آفلاین همان مسیرِ تولید را با scraperِ فیک بزند، نه یک مسیرِ دومِ
     نمایشی. `instruments="auto"` یعنی مقایسۀ Universe از خودِ بانک (بی‌شبکه).
+
+    `recalc="invalidate"` = invalidate-only: ردیفِ `fts_results` همان نمادهایی
+    که این چرخه نوشت **فوراً** باطل می‌شود (`out["touched"]` /
+    `out["invalidated_symbols"]`)، ولی محاسبۀ سنگین اجرا نمی‌شود و
+    `pipeline_dirty` دست‌نخورده می‌ماند (`out["recalc_invalidate_only"]`).
     """
     now = now or now_s()
     out = {"skipped": None, "recovered": 0, "found": 0, "enqueued": 0,
@@ -1048,7 +1062,11 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
            "processed": 0, "symbols": [], "dirty": 0, "recomputed": 0,
            "cache_invalidated": 0, "checkpoint_before": cursor_get(conn, "discovery_day"),
            "checkpoint_after": None, "run_id": None, "error": None,
-           "instruments": {}, "events": []}
+           "instruments": {}, "events": [],
+           # نمادهایی که همین چرخه دادهٔ تازه نوشتند و ردیفِ مادی‌شده‌شان فوراً
+           # باطل شد؛ `recalc_invalidate_only` یعنی محاسبۀ سنگین موکول است.
+           "touched": [], "invalidated_symbols": 0,
+           "recalc_invalidate_only": False}
     if not lock_acquire(conn, "codal_pipeline", owner, now=now):
         out["skipped"] = "locked"
         return out
@@ -1080,6 +1098,7 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
         run_update(conn, run_id, found=out["found"], enqueued=out["enqueued"],
                    phase="processing")
         processed = 0
+        touched = set()
         while processed < max(1, int(budget)):
             claimed = claim(conn, owner, limit=min(8, max(1, int(budget) - processed)),
                             kinds=kinds, now=now)
@@ -1094,17 +1113,32 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             out["empty"] += tally["empty"]
             out["failed"] += tally["failed"]
             out["rejected"] += tally["rejected"]
+            touched.update(tally.get("symbols") or [])
             out["processed"] += len(rows)
             processed += len(rows)
+        # باطل‌سازیِ فوری، مستقل از `recalc`: ردیفِ `fts_results` همان نمادهایی
+        # که تازه نوشته شدند همین‌جا می‌رود، پس کهنه پیش از چرخۀ بعد هم دیده
+        # نمی‌شود. `pipeline_dirty` دست‌نخورده می‌ماند تا محاسبۀ کامل بعداً
+        # انجام شود (invalidate-only).
+        if touched:
+            out["touched"] = sorted(touched)
+            out["invalidated_symbols"] = _invalidate_materialized(conn, sorted(touched))
+            # کشِ payload اسکرینر سراسری است؛ یک‌بار در هر چرخه، نه per-symbol.
+            try:
+                from api.screener import invalidate_screener_cache
+                invalidate_screener_cache(drop_materialized=False)
+            except Exception:
+                pass
         out["symbols"] = sorted({s for s in
                                  [r[0] for r in conn.execute(
                                      "SELECT DISTINCT symbol FROM pipeline_dirty")]})
         out["dirty"] = dirty_count(conn)
         if recalc == "invalidate":
-            # حالتِ invalidate-only: صفِ `pipeline_dirty` دست‌نخورده می‌ماند و
-            # محاسبۀ سنگین به چرخۀ بعد موکول می‌شود (گاردِ زمان‌بندی: «نمادِ
-            # علامت‌خورده درِ صف می‌ماند»)؛ پیاده‌سازیِ کاملِ باطل‌سازی Task 3.
+            # حالتِ invalidate-only: باطل‌سازیِ فوری بالاتر انجام شد؛ محاسبۀ
+            # سنگین موکول است و صفِ `pipeline_dirty` **دست‌نخورده** می‌ماند
+            # (گاردِ زمان‌بندی: «نمادِ علامت‌خورده درِ صف می‌ماند»).
             recalc = None
+            out["recalc_invalidate_only"] = True
         if recalc == "auto":
             recalc = recompute_dirty
         if recalc and out["dirty"]:
@@ -1341,10 +1375,12 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
     """یکِ چرخه، آماده برایِ threadِ بک‌اند یا Task Scheduler.
 
     `network=None` یعنی خودِ زمان‌بند تصمیم بگیرد: اگر خزندۀ دستی در کار است،
-    یا پاسِ شبکه‌ای زودتر از `DISCOVERY_MIN_GAP_S` از این است، فقط صفِ
+    یا پاسِ شبکه‌ای زودتر از فاصلۀ تطبیقیِ `current_network_gap` از این است
+    (پنجرۀ انتشارِ یادگرفته: ۶۰۰ ثانیه داخلِ پنجره، ۳ ساعت بیرون)، فقط صفِ
     محلی/کارهایِ بازیابی‌شدنی زده می‌شود (بی‌درخواستِ تازه). `recalc=None` هنگامِ
-    بازارِ باز یعنی محاسبۀ سنگین به چرخۀ بعد موکول می‌شود — نمادها درِ
-    `pipeline_dirty` می‌مانند و چیزی گم نمی‌شود.
+    بازارِ باز یعنی حالتِ invalidate-only: ردیفِ `fts_results` نمادهایِ
+    نوشته‌شده **همان‌جا** باطل می‌شود ولی محاسبۀ سنگین به چرخۀ بعد موکول
+    است — نمادها درِ `pipeline_dirty` می‌مانند و چیزی گم نمی‌شود.
     """
     now = now or now_s()
     own = conn is None

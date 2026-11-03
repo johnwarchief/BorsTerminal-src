@@ -120,3 +120,33 @@ ck(gap_in == 600, "داخلِ پنجرهٔ یادگرفته ⇒ ۶۰۰ ثانی�
 ck(gap_out == 10800, "بیرون ⇒ ۳ ساعت", gap_out)
 ck("windows" in pub_in and "samples" in pub_in,
    "خروجیِ publication برای status کامل است", pub_in)
+
+# ── ۳) نوشتنِ تازه ⇒ باطل‌سازیِ فوری، حتی در بازارِ باز ──────────────────
+section("pipeline: immediate invalidation")
+
+
+def ms_row(tn, sym, pe="1405/06/31", pub="1405/07/20 10:00:00"):
+    return ("ms", (tn, sym, "گزارش فعالیت ماهانه", pe, 1405, 6,
+                   1000.0, 6000.0, 900.0, 5400.0, 10.0, 60.0, "عدد",
+                   "https://codal.ir/PDF/%d" % tn, ""), "ok")
+
+
+c = fresh_db()
+add_notice(c, 3001, "فولاد")
+PL.enqueue(c, [(3001, "ms")])
+calls = []
+real_invalidate = PL._invalidate_materialized
+PL._invalidate_materialized = lambda conn, symbols: (calls.append(list(symbols)),
+                                                     len(symbols))[1]
+try:
+    out = PL.run_cycle(c, "test", discover=None,
+                       scrape=lambda n: ms_row(3001, "فولاد"),
+                       recalc="invalidate", now="2026-11-03 10:30:00",
+                       instruments=lambda conn: {})
+finally:
+    PL._invalidate_materialized = real_invalidate
+ck(out.get("touched") == ["فولاد"], "نمادِ نوشته‌شده در touched ثبت شد", out)
+ck(calls == [["فولاد"]], "باطل‌سازیِ فوری با همان نماد صدا زده شد", calls)
+ck(PL.dirty_count(c) == 1, "نماد در pipeline_dirty می‌ماند برای محاسبهٔ بعدی")
+ck(out.get("recalc_invalidate_only") is True,
+   "حالتِ invalidate-only اعلام شد", out)
