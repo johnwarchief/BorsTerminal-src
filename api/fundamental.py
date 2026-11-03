@@ -2253,23 +2253,42 @@ def freshness_of(conn, symbol, now=None):
     """تازگیِ هر یک از ۵ محور از canonical — بدونِ جدولِ تازه.
 
     `as_of` تاریخِ منبع است (میلادی)، نه زمانِ اجرای برنامه. ترتیبِ وضعیت:
-    quarantined > stale > missing > fresh.
+    quarantined > stale > missing > fresh. هر خواندنِ canonical گارد دارد؛ رویِ
+    بانکی که جدولش را هنوز ندارد محور `missing` می‌شود، نه خطای ۵۰۰.
     """
-    ms_where, ms_params = _sym_where(conn, "ms.symbol", symbol)
-    ms = conn.execute(
-        "SELECT ms.tracing_no, ms.period_end, n.publish_date"
-        " FROM monthly_sales ms"
-        " LEFT JOIN codal_notices n ON n.tracing_no = ms.tracing_no"
-        " WHERE " + ms_where + " ORDER BY " + CP.order_expr("ms")
-        + ", ms.tracing_no DESC LIMIT 1", ms_params).fetchone()
-    fs_where, fs_params = _sym_where(conn, "fs.symbol", symbol)
-    fs = conn.execute(
-        "SELECT fs.tracing_no, fs.period_end, fs.publish_date"
-        " FROM financial_statements fs"
-        " WHERE " + fs_where + " AND COALESCE(fs.is_audited,0)=1"
-        " AND COALESCE(fs.is_consolidated,0)=0"
-        " ORDER BY " + CP.order_expr("fs") + ", fs.tracing_no DESC LIMIT 1",
-        fs_params).fetchone()
+    ms = None
+    try:
+        ms_where, ms_params = _sym_where(conn, "ms.symbol", symbol)
+        ms = conn.execute(
+            "SELECT ms.tracing_no, ms.period_end, n.publish_date"
+            " FROM monthly_sales ms"
+            " LEFT JOIN codal_notices n ON n.tracing_no = ms.tracing_no"
+            " WHERE " + ms_where + " ORDER BY " + CP.order_expr("ms")
+            + ", ms.tracing_no DESC LIMIT 1", ms_params).fetchone()
+    except sqlite3.Error:
+        ms = None
+    # مرجعِ FS همان انتخابِ خودِ کارت است: `annual_statements` (بی‌گیتِ
+    # حسابرسی/تلفیقی) + `pick_reference`. گیتِ «فقط حسابرسی‌شده» اینجا ساخته
+    # نمی‌شود؛ وگرنه کارت عددی از ردیفِ تنزل‌یافته نشان می‌داد و تازگی همان
+    # ردیف را «missing» می‌خواند.
+    fs = None
+    try:
+        fs_rows = fts_engine.annual_statements(conn, symbol, require_audit=False,
+                                               exclude_consolidated=False,
+                                               limit=6)
+        fs_ref = fts_engine.pick_reference(fs_rows)
+    except Exception:
+        fs_ref = None
+    if fs_ref:
+        fs_pub = None
+        try:
+            pub_row = conn.execute(
+                "SELECT publish_date FROM financial_statements WHERE tracing_no=?",
+                (fs_ref.get("tracing_no"),)).fetchone()
+            fs_pub = pub_row[0] if pub_row else None
+        except sqlite3.Error:
+            fs_pub = None
+        fs = (fs_ref.get("tracing_no"), fs_ref.get("period_end"), fs_pub)
     board = None
     try:
         b_where, b_params = _sym_where(conn, "i.l_val18", symbol, "board")
@@ -2279,50 +2298,83 @@ def freshness_of(conn, symbol, now=None):
             " WHERE " + b_where, b_params).fetchone()[0]
     except sqlite3.Error:
         board = None
-    variants = {symbol, fts_engine.norm_fa(symbol)}
-    q = "SELECT axis FROM pipeline_dirty WHERE symbol IN (%s)" % ",".join("?" * len(variants))
+    # `pipeline_dirty` کلیدِ خام را نگه می‌دارد، پس نامزدها باید از خودِ بانک
+    # بیایند (`symbol_identity`) نه از یک نرمال‌سازیِ درجا: نمادی که با نوشتارِ
+    # عربی (`كگل`) dirty شده با ورودیِ فارسی (`کگل`) هم دیده شود.
     try:
-        dirty = {r[0] for r in conn.execute(q, tuple(variants))}
+        variants = set(fts_engine.symbol_variants(conn, symbol)) | {symbol}
+    except Exception:
+        variants = {symbol}
+    q = ("SELECT axis, reason FROM pipeline_dirty WHERE symbol IN (%s)"
+         % ",".join("?" * len(variants)))
+    try:
+        dirty = {}
+        for ax, reason in conn.execute(q, tuple(variants)):
+            if ax not in dirty:
+                dirty[ax] = reason or ""
     except sqlite3.Error:
-        dirty = set()
+        dirty = {}
     q_where, q_params = _sym_where(conn, "n.symbol", symbol)
+    # فقط **آخرین** قرنطینهٔ هر نوع (به ترتیبِ تاریخِ انتشارِ canonical) دیده
+    # می‌شود؛ قرنطینهٔ تاریخیِ کهنه نباید محور را تا ابد آلوده کند.
     try:
         qrows = conn.execute(
-            "SELECT e.kind, e.last_error FROM codal_extracted e"
+            "SELECT e.kind, e.last_error, n.publish_date FROM codal_extracted e"
             " JOIN codal_notices n ON n.tracing_no = e.tracing_no"
-            " WHERE e.state='quarantined' AND " + q_where, q_params).fetchall()
+            " WHERE e.state='quarantined' AND " + q_where
+            + " ORDER BY e.kind, " + CP.pub_order_expr("n.publish_date"),
+            q_params).fetchall()
     except sqlite3.Error:
         qrows = []
+    q_latest = {}
+    for kind, err, q_pub in qrows:
+        if kind in ("ms", "fs") and kind not in q_latest:
+            q_latest[kind] = (err, q_pub)
+    # نگاشتِ نوع ⇒ محور: ردِ ماهانه فقط ۱ و ۴، ردِ صورتِ مالی فقط ۲ و ۳.
+    q_map = {"ms": ("1_growth", "4_sales_to_mcap"),
+             "fs": ("2_eps_trend", "3_gross_margin")}
+    canon_pub = {"ms": CP.pub_key(ms[2]) if ms and ms[2] else None,
+                 "fs": CP.pub_key(fs[2]) if fs and fs[2] else None}
     q_axes = {}
-    for kind, err in qrows:
-        for ax in (("1_growth", "4_sales_to_mcap") if kind == "ms"
-                   else ("2_eps_trend", "3_gross_margin", "1_growth",
-                         "4_sales_to_mcap")):
+    for kind, axes_for_kind in q_map.items():
+        if kind not in q_latest:
+            continue
+        err, q_pub = q_latest[kind]
+        c_pub = canon_pub.get(kind)
+        q_key = CP.pub_key(q_pub)
+        # canonical معلوم است: قرنطینه فقط اگر تازه‌تر-یا-هم‌روز باشد می‌برد؛
+        # تاریخِ نامفهومِ قرنطینه بردِ canonicalِ معلوم را باطل نمی‌کند. بیِ
+        # canonical، همان قرنطینه تنها شاهد است ⇒ علامت می‌خورد.
+        if c_pub is not None and (q_key is None or q_key < c_pub):
+            continue
+        for ax in axes_for_kind:
             q_axes.setdefault(ax, err or "validation")
     board_iso = str(board) if board else None
     if board_iso and len(board_iso) == 8:
         board_iso = "%s-%s-%s" % (board_iso[:4], board_iso[4:6], board_iso[6:])
-    ms_asof = CP.j2g_date(ms[2]) if ms and ms[2] else (
-        CP.j2g_date(ms[1]) if ms else None)
-    fs_asof = CP.j2g_date(fs[2]) if fs and fs[2] else (
-        CP.j2g_date(fs[1]) if fs else None)
+    # publish_date اگر بود ولی تبدیل نشد (`j2g_date` ⇒ None)، دوره جای آن را
+    # می‌گیرد؛ `as_of` هرگز «None به‌خاطرِ تاریخِ خراب» نمی‌شود.
+    ms_asof = (CP.j2g_date(ms[2]) or CP.j2g_date(ms[1])) if ms else None
+    fs_asof = (CP.j2g_date(fs[2]) or CP.j2g_date(fs[1])) if fs else None
 
     def axis(name, source, as_of, tracing_no=None, period_end=None,
              present=True):
         state = "missing"
-        if not present:
-            state = "missing"
-        elif name in dirty:
-            state = "stale"
-        else:
-            state = "fresh"
+        reason = ""
+        if present:
+            state = "stale" if name in dirty else "fresh"
         if name in q_axes:
             state = "quarantined"
+            reason = q_axes[name]
+        elif state == "stale":
+            # دلیلِ dirty تا UI «در انتظارِ بازمحاسبه» را از «ردِ اعتبارسنجی»
+            # جدا کند؛ هر دو `stale` نیستند ولی هر دو دلیل دارند.
+            reason = dirty.get(name) or ""
         return {"as_of": as_of, "source": source,
                 "tracing_no": tracing_no,
                 "period_end": CP.canonicalize(period_end) if period_end else None,
                 "state": state,
-                "reason": q_axes.get(name, "")}
+                "reason": reason}
 
     axes = {
         "1_growth": axis("1_growth", "monthly_sales", ms_asof,

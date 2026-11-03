@@ -387,9 +387,10 @@ c.execute("INSERT INTO monthly_sales (tracing_no, symbol, title, period_end,"
 c.execute("INSERT INTO codal_notices (tracing_no, symbol, title, publish_date,"
           " sent_date, fetched_at) VALUES (9200,'فولاد','صورت‌های مالی',"
           " '1405/05/10 09:00:00','1405/05/10 09:00:00','2026-10-14 00:00:00')")
-c.execute("INSERT INTO financial_statements (tracing_no, symbol, title, period_end,"
-          " publish_date, revenue, gross_profit, is_audited, is_consolidated)"
-          " VALUES (9200,'فولاد','صورت‌ها','1404/12/29','1405/05/10 09:00:00',"
+c.execute("INSERT INTO financial_statements (tracing_no, symbol, title,"
+          " period_months, period_end, publish_date, revenue, gross_profit,"
+          " is_audited, is_consolidated)"
+          " VALUES (9200,'فولاد','صورت‌ها', 12,'1404/12/29','1405/05/10 09:00:00',"
           " 1000, 300, 1, 0)")
 PL.dirty_mark(c, "فولاد", "monthly_sales", reason="test")
 
@@ -407,6 +408,100 @@ ck(fr["axes"]["2_eps_trend"]["state"] == "fresh"
 ck(fr["axes"]["5_industry"]["as_of"] == "2026-11-03",
    "شاخص ۵ از روزِ تابلو", fr["axes"]["5_industry"])
 ck(fr["as_of"] == "2026-11-03", "as_of کارت بیشینهٔ محورهاست", fr["as_of"])
+ck(fr["axes"]["1_growth"]["reason"] == "test",
+   "دلیلِ stale از pipeline_dirty در محور می‌آید", fr["axes"]["1_growth"])
+
+# ── ۶ب) اصلاحاتِ بازبینی: کلیدِ عربیِ dirty، قدمتِ قرنطینه، مرجعِ FS ────────
+section("freshness: Arabic dirty key / quarantine recency / FS reference")
+
+
+def add_monthly(c, tn, sym, pe="1405/06/31"):
+    c.execute("INSERT INTO monthly_sales (tracing_no, symbol, title, period_end,"
+              " year, month, monthly_revenue, ytd_revenue) VALUES"
+              " (?,?,'گزارش',?, 1405, 6, 1000, 6000)", (tn, sym, pe))
+
+
+def add_quarantine(c, tn, kind, code):
+    c.execute("INSERT INTO codal_extracted (tracing_no, kind, ok, tried_at,"
+              " state, last_error) VALUES (?,?,0,'2026-10-14 00:00:00',"
+              " 'quarantined',?)", (tn, kind, code))
+
+
+c_ar = fresh_db()
+add_notice(c_ar, 9300, "كگل")            # نوشتارِ عربی (ك) در بانک
+add_monthly(c_ar, 9300, "كگل")
+PL.dirty_mark(c_ar, "كگل", "monthly_sales", reason="awaiting_recompute")
+fr_ar = freshness_of(c_ar, "کگل")        # ورودیِ فارسی (ک)
+ck(fr_ar["axes"]["1_growth"]["state"] == "stale",
+   "کلیدِ عربیِ dirty با ورودیِ فارسی دیده می‌شود", fr_ar["axes"]["1_growth"])
+ck(fr_ar["axes"]["1_growth"]["reason"] == "awaiting_recompute",
+   "دلیلِ dirty روی محورِ stale می‌نشیند", fr_ar["axes"]["1_growth"])
+
+c_old = fresh_db()
+add_notice(c_old, 9400, "خساپا", pub="1405/06/31 09:00:00")
+add_monthly(c_old, 9400, "خساپا")
+add_notice(c_old, 9401, "خساپا", pub="1405/04/10 09:00:00")
+add_quarantine(c_old, 9401, "ms", "negative_revenue:ytd_revenue")
+fr_old = freshness_of(c_old, "خساپا")
+ck(fr_old["axes"]["1_growth"]["state"] == "fresh",
+   "قرنطینهٔ قدیمیِ MS شاخصِ ۱ را آلوده نمی‌کند", fr_old["axes"]["1_growth"])
+ck(fr_old["axes"]["4_sales_to_mcap"]["state"] != "quarantined",
+   "قرنطینهٔ قدیمیِ MS شاخصِ ۴ را آلوده نمی‌کند",
+   fr_old["axes"]["4_sales_to_mcap"])
+
+c_new = fresh_db()
+add_notice(c_new, 9410, "وبملت", pub="1405/06/31 09:00:00")
+add_monthly(c_new, 9410, "وبملت")
+add_notice(c_new, 9411, "وبملت", pub="1405/07/15 10:00:00")
+add_quarantine(c_new, 9411, "ms", "negative_revenue:ytd_revenue")
+fr_new = freshness_of(c_new, "وبملت")
+ck(fr_new["axes"]["1_growth"]["state"] == "quarantined"
+   and fr_new["axes"]["4_sales_to_mcap"]["state"] == "quarantined"
+   and fr_new["axes"]["1_growth"]["reason"] == "negative_revenue:ytd_revenue",
+   "قرنطینهٔ تازه‌تر از انتشارِ canonical ⇒ quarantined",
+   {k: fr_new["axes"][k] for k in ("1_growth", "4_sales_to_mcap")})
+
+c_fs = fresh_db()
+add_notice(c_fs, 9420, "فولاژ", pub="1405/06/31 09:00:00")
+add_monthly(c_fs, 9420, "فولاژ")
+add_notice(c_fs, 9421, "فولاژ", pub="1405/07/15 10:00:00")
+add_quarantine(c_fs, 9421, "fs", "gross_gt_revenue")
+fr_fsq = freshness_of(c_fs, "فولاژ")
+ck(fr_fsq["axes"]["1_growth"]["state"] == "fresh"
+   and fr_fsq["axes"]["4_sales_to_mcap"]["state"] != "quarantined",
+   "ردِ FS شاخص‌های ۱ و ۴ را علامت نمی‌زند",
+   {k: fr_fsq["axes"][k] for k in ("1_growth", "4_sales_to_mcap")})
+ck(fr_fsq["axes"]["2_eps_trend"]["state"] == "quarantined",
+   "FS بیِ canonical ⇒ شاخصِ ۲ قرنطینه", fr_fsq["axes"]["2_eps_trend"])
+
+c_ua = fresh_db()
+add_notice(c_ua, 9500, "کحافظ")
+c_ua.execute("INSERT INTO financial_statements (tracing_no, symbol, title,"
+             " period_months, period_end, publish_date, revenue, gross_profit,"
+             " is_audited, is_consolidated)"
+             " VALUES (9500,'کحافظ','صورت‌های مالی سالانه', 12,"
+             " '1404/12/29','1405/05/10 09:00:00', 1000, 300, 0, 0)")
+fr_ua = freshness_of(c_ua, "کحافظ")
+ck(fr_ua["axes"]["2_eps_trend"]["state"] == "fresh"
+   and fr_ua["axes"]["2_eps_trend"]["tracing_no"] == 9500,
+   "FS حسابرسی‌نشدهٔ غیرتلفیقی هم مرجعِ کارت است",
+   fr_ua["axes"]["2_eps_trend"])
+ck(fr_ua["axes"]["3_gross_margin"]["state"] == "fresh",
+   "شاخصِ ۳ هم از همان مرجعِ تنزل‌یافته fresh است", fr_ua["axes"]["3_gross_margin"])
+
+c_fb = fresh_db()
+add_monthly(c_fb, 9600, "شپنا")
+fr_fb = freshness_of(c_fb, "شپنا")
+ck(fr_fb["axes"]["1_growth"]["as_of"] == "2026-09-22",
+   "بیِ publish_date، as_of از period_end می‌آید", fr_fb["axes"]["1_growth"])
+
+bare = sqlite3.connect(":memory:")
+bare.row_factory = sqlite3.Row
+fr_bare = freshness_of(bare, "فولاد")
+ck(len(fr_bare["axes"]) == 5
+   and all(a["state"] == "missing" for a in fr_bare["axes"].values())
+   and fr_bare["as_of"] is None,
+   "بانکِ بیِ monthly_sales/FS ⇒ همه missing، بیِ استثنا", fr_bare)
 
 from api.fundamental import router as FR  # noqa: E402
 paths = [r.path for r in FR.routes]
