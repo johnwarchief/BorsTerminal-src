@@ -2912,7 +2912,9 @@ def discover_notices(conn, watermarks=None, cats=DISCOVERY_FEED_CATS,
     تولید را با فیدِ ساختگی بزند (الگوی `run_cycle`)، نه یکِ پیادۀ دوم.
 
     خروجی: `found, new, pages, items=[(tn,'fs'|'ms')], floors={cat: tn},
-    max_tn, newest, blocked, incomplete, error_kind`.
+    max_tn, newest, blocked, incomplete, budget_exhausted, error_kind`.
+    `budget_exhausted` یعنی ناقص‌بودن از تمام‌شدنِ سقفِ صفحه است، نه بلاکِ
+    شبکه (`blocked`).
     """
     now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     real_fetch = fetch is None
@@ -3007,6 +3009,12 @@ def discover_notices(conn, watermarks=None, cats=DISCOVERY_FEED_CATS,
         conn.executemany(NOTICE_UPSERT, rows_new)
         conn.commit()
     out["items"] = pend
+    # «بودجهٔ صفحه تمام شد» را از «شبکه بلاک شد» جدا می‌کند: در حالتِ اول
+    # ادامه‌دادنِ کشف (با پاسِ عمیق) بی‌خطر است و breaker نباید latch شود؛ در
+    # حالتِ دوم منبع پاسخ نداده و شکاف واقعی است.
+    out["budget_exhausted"] = bool(
+        any(not v.get("done") for v in out["per_cat"].values())
+        and not out["blocked"])
     if real_fetch and session is not None:
         try:
             session.close()

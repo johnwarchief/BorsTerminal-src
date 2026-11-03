@@ -713,12 +713,17 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
         # پاسِ بعدی عمیق (۳ صفحه/دسته) اجرا می‌شود تا شکافِ میانِ صفحات
         # جبران شود؛ پاسِ کامل همین پرچم را پاک می‌کند.
         cursor_set(conn, CURSOR_DEEP_PASS, "1", note="discovery incomplete")
-        try:
-            streak = int(cursor_get(conn, "notice_incomplete_streak", "0") or 0) + 1
-        except (TypeError, ValueError):
-            streak = 1
-        cursor_set(conn, "notice_incomplete_streak", str(streak),
-                   note="discovery incomplete")
+        # شکافِ «بودجهٔ صفحه» (نه بلاکِ شبکه) شمارندهٔ breaker را بالا نمی‌برد:
+        # در بستِ آخرِ ماه checkpoint باید هر ۶۰۰ثانیه جلو برود؛ وگرنه پاس‌هایِ
+        # پیاپیِ ناقص gap را رویِ ۳ ساعت latch می‌کنند و SLA را می‌شکنند.
+        if not res.get("budget_exhausted"):
+            try:
+                streak = int(cursor_get(conn, "notice_incomplete_streak",
+                                        "0") or 0) + 1
+            except (TypeError, ValueError):
+                streak = 1
+            cursor_set(conn, "notice_incomplete_streak", str(streak),
+                       note="discovery incomplete")
     return res
 
 

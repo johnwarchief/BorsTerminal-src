@@ -553,6 +553,9 @@ blocked = PL.discover_auto(c2, fetch=lambda *a, **k: None,
                            now="2026-11-03 20:00:00")
 ck(blocked.get("complete") is False and blocked.get("blocked") is True,
    "فیدِ بی‌پاسخ ⇒ پاسِ ناقص/بلاک اعلام می‌شود", blocked)
+ck(blocked.get("budget_exhausted") is False,
+   "بلاکِ شبکه با «بودجهٔ صفحه» قاطی نمی‌شود",
+   blocked.get("budget_exhausted"))
 ck(PL.cursor_get(c2, "notice_gap_flag") == "1",
    "پاسِ ناقص ⇒ پرچم شکاف روشن")
 ck(int(PL.cursor_get(c2, "notice_incomplete_streak", "0") or 0) >= 1,
@@ -820,6 +823,10 @@ r_quiet = PL.discover_auto(c_b, fetch=_PagedFeed(feed_pages),
                            now="2026-11-03 20:00:00")
 ck(r_quiet["pages"] == 4,
    "پاسِ آرام ۲ صفحه/دسته = ۴ صفحه (نه ۶)", r_quiet["pages"])
+ck(r_quiet.get("budget_exhausted") is True
+   and r_quiet.get("blocked") is False,
+   "فیدِ ۵صفحه‌ای با بودجهٔ ۲ ⇒ ناقص از نوعِ «بودجهٔ صفحه»، نه بلاک",
+   {k: r_quiet.get(k) for k in ("budget_exhausted", "blocked", "complete")})
 ck(PL.cursor_get(c_b, "notice_deep_pass") == "1",
    "بودجهٔ صفحه پیش از مرزِ کهنه ⇒ پرچمِ پاسِ عمیق روشن",
    PL.cursor_get(c_b, "notice_deep_pass"))
@@ -873,6 +880,58 @@ ck(PL.cursor_get(c_br, "notice_incomplete_streak") == "0"
    and gap_after == 600,
    "پاسِ کامل شمارنده و breaker را صفر می‌کند (بازگشت به ۶۰۰ثانیه)",
    (PL.cursor_get(c_br, "notice_incomplete_streak"), gap_after))
+
+# بودجهٔ صفحه ≠ بلاکِ شبکه: پاسِ ناقصِ بودجه‌ای نباید شمارندهٔ breaker را
+# بالا ببرد (وگرنه در بستِ آخرِ ماه gap روی ۳ ساعت latch می‌شود).
+section("fix-wave: budget-exhausted pass does not latch the breaker")
+c_bx = fresh_db()
+real_cfx = CF.discover_notices
+
+
+def _fake_discover(**over):
+    base = {"found": 0, "items": [], "floors": {}, "complete": False,
+            "blocked": False, "budget_exhausted": False, "pages": 4,
+            "newest": None}
+    base.update(over)
+    return lambda *a, **k: dict(base)
+
+
+try:
+    CF.discover_notices = _fake_discover(complete=False, blocked=False,
+                                         budget_exhausted=True)
+    rb1 = PL.discover_auto(c_bx, now="2026-11-03 10:00:00")
+    rb2 = PL.discover_auto(c_bx, now="2026-11-03 10:10:00")
+    streak_bud = PL.cursor_get(c_bx, "notice_incomplete_streak", "0")
+    flag_bud = PL.cursor_get(c_bx, "notice_gap_flag")
+    deep_bud = PL.cursor_get(c_bx, "notice_deep_pass")
+    gap_bud, info_bud = PL.current_network_gap(
+        c_bx, now="2026-11-03 10:00:00", jitter=False)
+    CF.discover_notices = _fake_discover(complete=False, blocked=True)
+    PL.discover_auto(c_bx, now="2026-11-03 10:20:00")
+    streak_blk = PL.cursor_get(c_bx, "notice_incomplete_streak")
+    CF.discover_notices = _fake_discover(complete=True)
+    PL.discover_auto(c_bx, now="2026-11-03 10:30:00")
+    streak_done = PL.cursor_get(c_bx, "notice_incomplete_streak", "0")
+    flag_done = PL.cursor_get(c_bx, "notice_gap_flag")
+    deep_done = PL.cursor_get(c_bx, "notice_deep_pass")
+finally:
+    CF.discover_notices = real_cfx
+ck(rb1.get("budget_exhausted") is True
+   and rb2.get("budget_exhausted") is True,
+   "دو پاسِ پیاپیِ ناقصِ بودجه‌ای هر دو budget_exhausted برمی‌گردانند",
+   (rb1.get("budget_exhausted"), rb2.get("budget_exhausted")))
+ck(streak_bud == "0",
+   "پاسِ ناقصِ بودجه‌ای شمارندهٔ breaker را بالا نمی‌برد", streak_bud)
+ck(flag_bud == "1" and deep_bud == "1",
+   "پرچمِ شکاف و پاسِ عمیق رویِ ناقصِ بودجه‌ای روشن می‌مانند",
+   (flag_bud, deep_bud))
+ck(gap_bud == 600 and info_bud.get("breaker") is False,
+   "gap زیرِ breaker می‌ماند (۶۰۰ثانیه) و latch نمی‌شود", gap_bud)
+ck(streak_blk == "1",
+   "پاسِ بلاکِ شبکه شمارندهٔ breaker را یکی بالا می‌برد", streak_blk)
+ck(streak_done == "0" and flag_done == "0" and deep_done == "0",
+   "پاسِ کامل هر دو شمارنده و پرچمِ عمیق را صفر می‌کند",
+   (streak_done, flag_done, deep_done))
 
 # ── ۸ب) آزادسازیِ قرنطینه (تابع + CLI، بی‌شبکه) ─────────────────────────────
 section("fix-wave: quarantine release + CLI")
@@ -982,6 +1041,20 @@ ck(len(calls_fo) == 4 and p2 is p1 and p3 is not p1,
 ck(p1.get("count") == 2
    and [x["symbol"] for x in p1["items"]] == ["الف", "ب"],
    "payload و ترتیبِ درخواست حفظ می‌شود", p1)
+
+calls_fo.clear()
+AF.freshness_of = lambda conn, s, now=None: (calls_fo.append(s),
+                                             {"symbol": s})[1]
+try:
+    for _i in range(AF.FRESHNESS_CACHE_MAX + 1):
+        AF.freshness_bulk(c_m2, ["نماد%d" % _i], now=2000.0 + _i)
+    size_cap = len(AF._FRESHNESS_CACHE)
+finally:
+    AF.freshness_of = real_fo
+    AF._FRESHNESS_CACHE.clear()
+ck(size_cap == 1,
+   "کشِ freshness پس از عبور از سقفِ ۳۲ symbol-set تخلیه می‌شود",
+   size_cap)
 
 # ── ۸هـ) debounceِ ۳۰۰ثانیه‌ایِ dropِ payload اسکرینر ───────────────────────
 section("fix-wave: screener payload drop debounce (300s)")

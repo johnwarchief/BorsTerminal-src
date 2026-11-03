@@ -2268,9 +2268,11 @@ def _asof_iso(value):
 
 
 FRESHNESS_CACHE_TTL_S = 60
+FRESHNESS_CACHE_MAX = 32
 # کشِ process-local: کلید = تاپلِ مرتب‌شدهٔ نمادها، مقدار = (stamp, payload).
 # بدونِ schema و بدونِ اشتراک بینِ پروسه‌ها؛ route دسته‌ای ~۷ کوئری/نماد می‌زند
-# و ۶۰ ثانیه کش کافی است که پنل/کارت یک محاسبه را دوباره نسازند.
+# و ۶۰ ثانیه کش کافی است که پنل/کارت یک محاسبه را دوباره نسازند. سقفِ ۳۲
+# symbol-set جلوی رشدِ بی‌کرانِ کلیدهایِ درخواستی را می‌گیرد (سرریز ⇒ clear).
 _FRESHNESS_CACHE: dict = {}
 
 
@@ -2451,6 +2453,10 @@ def freshness_bulk(conn, syms, now=None):
     payload = {"status": "success", "count": len(syms),
                "items": [freshness_of(conn, s) for s in syms]}
     _FRESHNESS_CACHE[key] = (stamp, payload)
+    if len(_FRESHNESS_CACHE) > FRESHNESS_CACHE_MAX:
+        # سقفِ ساده: بدونِ LRU؛ کلیدهایِ زیاد ⇒ تخلیه و نگه‌داشتنِ همین پاسخ.
+        _FRESHNESS_CACHE.clear()
+        _FRESHNESS_CACHE[key] = (stamp, payload)
     return payload
 
 
