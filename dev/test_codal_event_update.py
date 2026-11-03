@@ -357,3 +357,58 @@ ck(not os.path.exists(wait_staging),
 ck(wait_status.get("stage") == "pipeline_busy",
    "status همان stage ترمینالِ pipeline_busy را ثبت کرد", wait_status)
 ck(not os.path.exists(wait_lock), "قفلِ orchestrator آزاد شد")
+
+# ── ۶) تازگی و منشأ ───────────────────────────────────────────────────────
+section("freshness: as_of / source / state")
+import codal_periods as CP  # noqa: E402
+
+ck(CP.j2g_date("1405/01/01") == "2026-03-21", "نوروز ۱۴۰۵ ⇒ 2026-03-21",
+   CP.j2g_date("1405/01/01"))
+ck(CP.j2g_date("1405/06/31 12:10:00") == "2026-09-22 12:10:00",
+   "تاریخ+ساعت حفظ می‌شود", CP.j2g_date("1405/06/31 12:10:00"))
+ck(CP.j2g_date("") is None, "تاریخ خالی ⇒ None")
+
+from api.fundamental import freshness_of  # noqa: E402
+
+c = fresh_db()
+c.execute("INSERT INTO instruments (ins_code, l_val18, l_val30, paper_type)"
+          " VALUES ('1','فولاد','فولاد مبارکه',1)")
+c.execute("CREATE TABLE market_watch (ins_code TEXT, d_even INTEGER, pcl REAL,"
+          " pmn REAL, pmx REAL, py REAL, pf REAL, qtj REAL, qtc REAL, ztt REAL,"
+          " pc REAL, eps REAL, pe REAL, ztd REAL, h_even INTEGER,"
+          " PRIMARY KEY (ins_code, d_even))")
+c.execute("INSERT INTO market_watch (ins_code, d_even) VALUES ('1', 20261103)")
+c.execute("INSERT INTO codal_notices (tracing_no, symbol, title, publish_date,"
+          " sent_date, fetched_at) VALUES (9100,'فولاد','گزارش فعالیت ماهانه',"
+          " '1405/06/31 09:00:00','1405/06/31 09:00:00','2026-10-14 00:00:00')")
+c.execute("INSERT INTO monthly_sales (tracing_no, symbol, title, period_end,"
+          " year, month, monthly_revenue, ytd_revenue) VALUES"
+          " (9100,'فولاد','گزارش', '1405/06/31', 1405, 6, 1000, 6000)")
+c.execute("INSERT INTO codal_notices (tracing_no, symbol, title, publish_date,"
+          " sent_date, fetched_at) VALUES (9200,'فولاد','صورت‌های مالی',"
+          " '1405/05/10 09:00:00','1405/05/10 09:00:00','2026-10-14 00:00:00')")
+c.execute("INSERT INTO financial_statements (tracing_no, symbol, title, period_end,"
+          " publish_date, revenue, gross_profit, is_audited, is_consolidated)"
+          " VALUES (9200,'فولاد','صورت‌ها','1404/12/29','1405/05/10 09:00:00',"
+          " 1000, 300, 1, 0)")
+PL.dirty_mark(c, "فولاد", "monthly_sales", reason="test")
+
+fr = freshness_of(c, "فولاد")
+ck(fr["axes"]["1_growth"]["state"] == "stale",
+   "شاخص ۱ dirty ⇒ stale", fr["axes"]["1_growth"])
+ck(fr["axes"]["1_growth"]["as_of"] == "2026-09-22 09:00:00",
+   "as_of از publish_date شمسی به میلادی تبدیل شد", fr["axes"]["1_growth"])
+ck(fr["axes"]["1_growth"]["source"] == "monthly_sales"
+   and fr["axes"]["1_growth"]["tracing_no"] == 9100,
+   "منبع و tracing_no درست است", fr["axes"]["1_growth"])
+ck(fr["axes"]["2_eps_trend"]["state"] == "fresh"
+   and fr["axes"]["2_eps_trend"]["period_end"] == "1404/12/29",
+   "شاخص ۲ از FS حسابرسی‌شده و fresh است", fr["axes"]["2_eps_trend"])
+ck(fr["axes"]["5_industry"]["as_of"] == "2026-11-03",
+   "شاخص ۵ از روزِ تابلو", fr["axes"]["5_industry"])
+ck(fr["as_of"] == "2026-11-03", "as_of کارت بیشینهٔ محورهاست", fr["as_of"])
+
+from api.fundamental import router as FR  # noqa: E402
+paths = [r.path for r in FR.routes]
+ck(paths.index("/api/fundamental/freshness") < paths.index("/api/fundamental/{symbol}"),
+   "route تازگی پیش از مسیرِ پویا ثبت شده است", paths)

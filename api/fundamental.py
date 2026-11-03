@@ -2245,6 +2245,125 @@ def api_fundamental_sectors():
         conn.close()
 
 
+def _sym_where(conn, column, symbol, domain=None):
+    return fts_engine.sym_in(conn, column, symbol, domain)
+
+
+def freshness_of(conn, symbol, now=None):
+    """تازگیِ هر یک از ۵ محور از canonical — بدونِ جدولِ تازه.
+
+    `as_of` تاریخِ منبع است (میلادی)، نه زمانِ اجرای برنامه. ترتیبِ وضعیت:
+    quarantined > stale > missing > fresh.
+    """
+    ms_where, ms_params = _sym_where(conn, "ms.symbol", symbol)
+    ms = conn.execute(
+        "SELECT ms.tracing_no, ms.period_end, n.publish_date"
+        " FROM monthly_sales ms"
+        " LEFT JOIN codal_notices n ON n.tracing_no = ms.tracing_no"
+        " WHERE " + ms_where + " ORDER BY " + CP.order_expr("ms")
+        + ", ms.tracing_no DESC LIMIT 1", ms_params).fetchone()
+    fs_where, fs_params = _sym_where(conn, "fs.symbol", symbol)
+    fs = conn.execute(
+        "SELECT fs.tracing_no, fs.period_end, fs.publish_date"
+        " FROM financial_statements fs"
+        " WHERE " + fs_where + " AND COALESCE(fs.is_audited,0)=1"
+        " AND COALESCE(fs.is_consolidated,0)=0"
+        " ORDER BY " + CP.order_expr("fs") + ", fs.tracing_no DESC LIMIT 1",
+        fs_params).fetchone()
+    board = None
+    try:
+        b_where, b_params = _sym_where(conn, "i.l_val18", symbol, "board")
+        board = conn.execute(
+            "SELECT MAX(m.d_even) FROM instruments i"
+            " JOIN market_watch m ON m.ins_code = i.ins_code"
+            " WHERE " + b_where, b_params).fetchone()[0]
+    except sqlite3.Error:
+        board = None
+    variants = {symbol, fts_engine.norm_fa(symbol)}
+    q = "SELECT axis FROM pipeline_dirty WHERE symbol IN (%s)" % ",".join("?" * len(variants))
+    try:
+        dirty = {r[0] for r in conn.execute(q, tuple(variants))}
+    except sqlite3.Error:
+        dirty = set()
+    q_where, q_params = _sym_where(conn, "n.symbol", symbol)
+    try:
+        qrows = conn.execute(
+            "SELECT e.kind, e.last_error FROM codal_extracted e"
+            " JOIN codal_notices n ON n.tracing_no = e.tracing_no"
+            " WHERE e.state='quarantined' AND " + q_where, q_params).fetchall()
+    except sqlite3.Error:
+        qrows = []
+    q_axes = {}
+    for kind, err in qrows:
+        for ax in (("1_growth", "4_sales_to_mcap") if kind == "ms"
+                   else ("2_eps_trend", "3_gross_margin", "1_growth",
+                         "4_sales_to_mcap")):
+            q_axes.setdefault(ax, err or "validation")
+    board_iso = str(board) if board else None
+    if board_iso and len(board_iso) == 8:
+        board_iso = "%s-%s-%s" % (board_iso[:4], board_iso[4:6], board_iso[6:])
+    ms_asof = CP.j2g_date(ms[2]) if ms and ms[2] else (
+        CP.j2g_date(ms[1]) if ms else None)
+    fs_asof = CP.j2g_date(fs[2]) if fs and fs[2] else (
+        CP.j2g_date(fs[1]) if fs else None)
+
+    def axis(name, source, as_of, tracing_no=None, period_end=None,
+             present=True):
+        state = "missing"
+        if not present:
+            state = "missing"
+        elif name in dirty:
+            state = "stale"
+        else:
+            state = "fresh"
+        if name in q_axes:
+            state = "quarantined"
+        return {"as_of": as_of, "source": source,
+                "tracing_no": tracing_no,
+                "period_end": CP.canonicalize(period_end) if period_end else None,
+                "state": state,
+                "reason": q_axes.get(name, "")}
+
+    axes = {
+        "1_growth": axis("1_growth", "monthly_sales", ms_asof,
+                         ms[0] if ms else None, ms[1] if ms else None,
+                         present=bool(ms)),
+        "2_eps_trend": axis("2_eps_trend", "financial_statements", fs_asof,
+                            fs[0] if fs else None, fs[1] if fs else None,
+                            present=bool(fs)),
+        "3_gross_margin": axis("3_gross_margin", "financial_statements", fs_asof,
+                               fs[0] if fs else None, fs[1] if fs else None,
+                               present=bool(fs)),
+        "4_sales_to_mcap": axis("4_sales_to_mcap", "monthly_sales+market_watch",
+                                max([x for x in (ms_asof, board_iso) if x],
+                                    default=None),
+                                ms[0] if ms else None, ms[1] if ms else None,
+                                present=bool(ms and board_iso)),
+        "5_industry": axis("5_industry", "instruments", board_iso,
+                           present=bool(board_iso)),
+    }
+    stamps = [a["as_of"] for a in axes.values() if a.get("as_of")]
+    return {"symbol": symbol, "as_of": max(stamps) if stamps else None,
+            "axes": axes}
+
+
+@router.get("/api/fundamental/freshness")
+def api_fundamental_freshness(symbols: str = ""):
+    """تازگیِ ۵ محور برای فهرستِ نمادها (حداکثر ۲۰۰)."""
+    conn = get_db()
+    try:
+        syms = [s.strip() for s in symbols.split(",") if s.strip()]
+        if not syms:
+            syms = [r[0] for r in conn.execute(
+                "SELECT l_val18 FROM instruments WHERE COALESCE(paper_type,1)=1"
+                " ORDER BY l_val18 LIMIT 200").fetchall()]
+        syms = syms[:200]
+        return {"status": "success", "count": len(syms),
+                "items": [freshness_of(conn, s) for s in syms]}
+    finally:
+        conn.close()
+
+
 @router.get("/api/fundamental/{symbol}")
 def get_fundamental(symbol: str, months: int = 0):
     """کارت بنیادی پنج‌لایهٔ FTS v10 — درآمد (ریالی+حجمی)، سودسازی، حاشیه، پتانسیل، صنعت.
@@ -2464,6 +2583,7 @@ def get_fundamental(symbol: str, months: int = 0):
                 "data_gaps": v10_data_gaps(res),
                 "secondary": secondary, "history": history, "thresholds": cfg,
                 "ref_symbol": ref_symbol, "ref_reason": ref_reason,
+                "freshness": freshness_of(conn, norm_symbol),
                 "fs_count": len(history)}
     finally:
         conn.close()
