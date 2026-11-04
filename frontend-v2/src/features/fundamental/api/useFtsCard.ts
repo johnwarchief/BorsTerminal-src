@@ -5,6 +5,8 @@ import { getJson } from '@shared/api/http';
 const Num = z.number().nullish();
 const Str = z.string().nullish();
 const Bool = z.boolean().nullish();
+// R82: در payloadِ زنده شواهدِ محور ۲ گاه رشته است و گاه آرایهٔ رشته‌ها.
+const StrOrStrArray = z.union([z.string(), z.array(z.string())]).nullish();
 
 const Axis1Schema = z.looseObject({
   monetary: z.looseObject({ monetary_pct: Num, threshold: Num, data_gap: Bool, reason: Str }).nullish(),
@@ -17,7 +19,7 @@ const Axis2Schema = z.looseObject({
   period_ends: z.array(Str).nullish(),
   years_available: Num,
   years_required: Num,
-  evidence: Str,
+  evidence: StrOrStrArray,
   consolidated_used: Bool,
   audited_only: Bool,
 }).nullish();

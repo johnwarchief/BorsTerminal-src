@@ -11,6 +11,11 @@ export function EpsPanel({ card }: { card: FtsCard }) {
   const last = series.length ? series[series.length - 1] : null;
   // رأی R50: غیبتِ سابقه «—» است، نه صفرِ ساختگی.
   const years = eps?.years_available == null ? '—/۳' : `${toFaDigits(eps.years_available)}/۳`;
+  // R82: شواهد می‌تواند رشته یا آرایهٔ رشته باشد؛ آرایه با «، » پیوند می‌خورد.
+  const evidence = eps?.evidence;
+  const evidenceText = Array.isArray(evidence)
+    ? (evidence.length ? evidence.join('، ') : '—')
+    : (evidence ?? '—');
   return (
     <AxisPanel
       testId="panel-eps"
@@ -24,7 +29,7 @@ export function EpsPanel({ card }: { card: FtsCard }) {
       rows={[
         ['آخرین EPS', last == null ? '—' : faInt(last)],
         ['نیاز گیت', eps?.years_required == null ? '۳ سال متوالی' : `${toFaDigits(eps.years_required)} سال متوالی`],
-        ['شواهد', eps?.evidence ?? '—'],
+        ['شواهد', evidenceText],
         ['تلفیقی', eps?.consolidated_used ? 'بله' : '—'],
       ]}
       details={card.details?.['۲']}

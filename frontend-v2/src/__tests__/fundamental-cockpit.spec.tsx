@@ -163,6 +163,22 @@ describe('fundamental cockpit', () => {
     expect(epsQuintet?.textContent).not.toContain('۰/۳');
   });
 
+  it('joins array evidence with «، » in the EPS panel (R82)', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '2': {
+          ...baseIndicators['2'],
+          evidence: ['audited_year_end', 'audited_year_end', 'annualized_interim_short'],
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const epsPanel = screen.getByTestId('panel-eps');
+    expect(epsPanel.textContent).toContain('شواهد');
+    expect(epsPanel.textContent).toContain('audited_year_end، audited_year_end، annualized_interim_short');
+  });
+
   it('renders history dates in Persian digits (R58)', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
     const history = screen.getByTestId('panel-history');
