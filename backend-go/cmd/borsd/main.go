@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -17,13 +18,14 @@ import (
 	"borsterminal/backend/internal/fundamental"
 	"borsterminal/backend/internal/funnel"
 	"borsterminal/backend/internal/httpapi"
+	"borsterminal/backend/internal/live"
 	"borsterminal/backend/internal/market"
 	"borsterminal/backend/internal/marketindex"
 	"borsterminal/backend/internal/mstat"
 	"borsterminal/backend/internal/notifications"
-	borssync "borsterminal/backend/internal/sync"
 	"borsterminal/backend/internal/screener"
 	"borsterminal/backend/internal/selection"
+	borssync "borsterminal/backend/internal/sync"
 	"borsterminal/backend/internal/watchlist"
 )
 
@@ -40,6 +42,19 @@ func main() {
 	defer handles.Close()
 
 	mkt := market.New(handles, cfg.DataDir)
+	// Only one TSE live loop may exist at a time (owner decision §9). The Go
+	// feed is opt-in so a Python live loop can stay the sole owner until the
+	// operator flips BORS_GO_LIVE=1 and stops it.
+	if v := os.Getenv("BORS_GO_LIVE"); v == "1" || v == "true" || v == "yes" {
+		interval := 1500 * time.Millisecond
+		if ms, err := strconv.Atoi(os.Getenv("BORS_GO_LIVE_MS")); err == nil && ms >= 500 {
+			interval = time.Duration(ms) * time.Millisecond
+		}
+		feed := live.New(interval)
+		mkt.Live = feed
+		go feed.Start(context.Background())
+		slog.Info("live TSE feed enabled", "interval", interval.String())
+	}
 	ms := mstat.New(handles.Market, cfg.DataDir, mkt)
 	ch := chart.New(chart.Config{Market: handles.Market, User: handles.User,
 		DataDir: cfg.DataDir, CalendarPath: cfg.CalendarPath})

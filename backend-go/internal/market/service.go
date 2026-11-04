@@ -21,6 +21,7 @@ import (
 	"borsterminal/backend/internal/datatoken"
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/httpapi"
+	"borsterminal/backend/internal/live"
 	"borsterminal/backend/internal/screening"
 	"borsterminal/backend/internal/store"
 	"borsterminal/backend/internal/tapeflags"
@@ -85,6 +86,11 @@ type Service struct {
 	frame        *store.Frame
 	frameNumeric map[string]bool
 	frameToken   string
+
+	// Live is the optional TSE in-memory overlay; nil keeps the static DB path
+	// byte-identical for tests and for deployments without a live loop.
+	Live    *live.Feed
+	liveGen int64
 }
 
 func New(h *db.Handles, dataDir string) *Service {
@@ -231,12 +237,23 @@ func (s *Service) cached() ([]byte, string, string, error) {
 	// پس بدنهٔ تازه‌ساخته هم اگر داده زیرش عوض شده باشد نباید HIT بگیرد. رفتار
 	// همان مسیرِ STALE است: بدنهٔ فعلی می‌رود و یک بازسازیِ ناهمگام شروع می‌شود.
 	age := time.Since(builtAt)
-	if age < ttl {
+	ttlNow := ttl
+	if s.Live != nil {
+		ttlNow = time.Second
+	}
+	if age < ttlNow {
 		if dataToken(s.dataDir) == builtToken {
 			return body, etag, "HIT", nil
 		}
 		s.rebuildAsync()
 		return body, etag, "STALE", nil
+	}
+	if s.Live != nil {
+		b, e, err := s.build(true, true)
+		if err != nil {
+			return nil, "", "", err
+		}
+		return b, e, "MISS", nil
 	}
 	if age > staleCeiling {
 		b, e, err := s.build(true, true)
@@ -279,12 +296,24 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+	if s.Live != nil {
+		fr = s.Live.Apply(fr)
+	}
 	d := board.Derive(fr)
 	fl := tapeflags.Apply(fr, d)
 	recs := assemble(fr, d, fl, numeric)
 	meta, err := boardMeta(s.market)
 	if err != nil {
 		return nil, "", err
+	}
+	if s.Live != nil {
+		snap := s.Live.Latest()
+		if snap.HEven > 0 {
+			meta["h_even"] = snap.HEven
+		}
+		if !snap.Updated.IsZero() {
+			meta["last_sync"] = snap.Updated.Format("2006-01-02 15:04:05")
+		}
 	}
 	// روزِ نشست را پایتون از market_state (تیکِ زنده) می‌گیرد، نه از d_evenِ متا.
 	// در پروسۀ فازِ الف هیچ تیکی اجرا نمی‌شود، پس همان صفر است — و این در بدنۀ
@@ -369,6 +398,9 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 		s.byCode = indexByCode(recs)
 		s.meta, s.counts, s.rev = meta, counts, rev
 		s.builtToken = token
+		if s.Live != nil {
+			s.liveGen = s.Live.Generation()
+		}
 		s.builds++
 		s.cacheSeq++
 		s.mu.Unlock()
@@ -451,6 +483,15 @@ func (s *Service) Delta(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) delta(since int64) map[string]any {
+	if s.Live != nil {
+		g := s.Live.Generation()
+		s.mu.Lock()
+		lg := s.liveGen
+		s.mu.Unlock()
+		if g != lg {
+			s.rebuildAsync()
+		}
+	}
 	s.mu.Lock()
 	ready, mirrorRev, meta, counts, byCode, journal := s.ready, s.rev, s.meta, s.counts, s.byCode, s.journal
 	builtToken := s.builtToken

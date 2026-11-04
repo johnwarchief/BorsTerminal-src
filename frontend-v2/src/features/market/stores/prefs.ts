@@ -71,7 +71,7 @@ export const useMarketPrefs = create<MarketPrefs>()(
       assetTypes: [...DEFAULT_ASSET_TYPES],
       visibleColumns: defaultColumns('general'),
       filters: { ...DEFAULT_BOARD_FILTER_VALUES },
-      pollMs: 5_000,
+      pollMs: 1_000,
       savedViews: [],
       setProfile: (profile) => set({ profile, visibleColumns: defaultColumns(profile) }),
       setDensity: (density) => set({ density }),
