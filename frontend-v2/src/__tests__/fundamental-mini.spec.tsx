@@ -77,6 +77,15 @@ describe('mini charts', () => {
     const flat = document.querySelector('.fd-delta-bar.is-flat') as HTMLElement;
     expect(flat.style.height).toBe('0%');
   });
+  it('fills the plot so the largest growth uses full height and small growth stays visible (R-P1-12)', () => {
+    render(<div className="h-[44px]"><DeltaBars values={[null, 44.3, 3.5]} labels={['۱۴۰', '۱۴۰۴', '۱۴۰۵']} /></div>);
+    const up = Array.from(document.querySelectorAll('.fd-delta-bar.is-up')) as HTMLElement[];
+    expect(up).toHaveLength(2);
+    expect(up[0].style.height).toBe('100%');
+    const small = parseFloat(up[1].style.height);
+    expect(small).toBeGreaterThanOrEqual(10);
+    expect(small).toBeLessThan(100);
+  });
   it('renders an empty state when every history value is absent (R-P1-8)', () => {
     render(<HistoryBars values={[null, null]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);
     expect(screen.queryByRole('img')).toBeNull();

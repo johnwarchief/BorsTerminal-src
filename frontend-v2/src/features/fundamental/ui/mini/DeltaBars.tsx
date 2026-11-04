@@ -1,26 +1,25 @@
 import { fmtPct } from '@shared/lib/fa';
 
 /** R-P1-3/R-P1-5: میله‌های رشد دوره‌ای EPS — مثبت/منفی با رنگ، برچسبِ دوره زیرِ هر میله. */
-export function DeltaBars({ values, labels, height = 30 }: {
+export function DeltaBars({ values, labels }: {
   values: Array<number | null>;
   labels: string[];
-  height?: number;
 }) {
   const max = Math.max(1, ...values.map((v) => Math.abs(v ?? 0)));
   return (
-    <div className="flex h-full items-end gap-1" style={{ height }} role="img" aria-label="رشد دوره‌ای EPS">
+    <div className="flex h-full items-end gap-1" role="img" aria-label="رشد دوره‌ای EPS">
       {values.map((v, i) => {
-        const magnitude = v == null ? 0 : (Math.abs(v) / max) * 48;
+        // R-P1-12: میله‌ها ارتفاعِ کاملِ ناحیه را پر می‌کنند؛ مقدارِ کوچکِ غیرصفر حداقل ۱۰٪ می‌گیرد.
+        const barHeight = v == null || v === 0 ? 0 : Math.max(10, (Math.abs(v) / max) * 100);
         // مقدارِ گم‌شده میلهٔ صفرِ ساختگی و رنگِ جهت نمی‌گیرد؛ صفرِ واقعی «بی‌تغییر» است.
         const tone = v == null ? 'is-empty' : v < 0 ? 'is-down' : v > 0 ? 'is-up' : 'is-flat';
-        // صفر میلهٔ رشد ندارد؛ فقط مقدارِ ناصفر حداقلِ ۳٪ ارتفاع می‌گیرد.
-        const barHeight = v == null || v === 0 ? 0 : Math.max(3, magnitude);
         return (
-          <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end" title={`${labels[i]} — ${v == null ? '—' : fmtPct(v, 1)}`}>
-            <div className="flex h-full w-full flex-col justify-center">
-              <span className={`fd-delta-bar ${tone}`} style={{ height: `${barHeight}%` }} />
-            </div>
-            <span className="truncate text-[8px] text-[var(--fd-text-3)]">{labels[i]}</span>
+          <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center gap-1" title={`${labels[i]} — ${v == null ? '—' : fmtPct(v, 1)}`}>
+            {/* R93: ناحیهٔ میله ارتفاع قطعی می‌گیرد تا درصدِ ارتفاع حل شود. */}
+            <span className="flex min-h-0 w-full flex-1 items-end">
+              <span className={`fd-delta-bar ${tone} w-full rounded-t-sm`} style={{ height: `${barHeight}%` }} />
+            </span>
+            <span className="w-full truncate text-center text-[8px] text-[var(--fd-text-3)]">{labels[i]}</span>
           </div>
         );
       })}

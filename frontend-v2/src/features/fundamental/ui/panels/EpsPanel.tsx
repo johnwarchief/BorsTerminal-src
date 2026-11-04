@@ -82,7 +82,7 @@ export function EpsPanel({ card }: { card: FtsCard }) {
     >
       <div className="flex flex-col gap-1">
         {hasSeries ? (
-          <div className="h-[30px]" data-testid="eps-growth-chart">
+          <div className="h-[44px]" data-testid="eps-growth-chart">
             <DeltaBars values={changes} labels={labels} />
           </div>
         ) : (
