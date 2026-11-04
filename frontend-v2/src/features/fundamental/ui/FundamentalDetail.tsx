@@ -5,6 +5,7 @@ import { useQuarters } from '../api/useQuarters';
 import { useSectorPe } from '../api/useSectorPe';
 import { AxisDrilldown } from './AxisDrilldown';
 import { CodalHealthStrip } from './CodalHealthStrip';
+import { CorporateCalendar } from './CorporateCalendar';
 import { FundamentalCards } from './FundamentalCards';
 import { FundamentalSummary } from './FundamentalSummary';
 import { QuarterlyTrend } from './QuarterlyTrend';
@@ -50,6 +51,8 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
           <FundamentalCards symbol={symbol} />
 
           <AxisDrilldown card={card} />
+
+          <CorporateCalendar symbol={symbol} />
 
           <div className="grid gap-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(220px,1fr)]">
             <section data-testid="quarterly-panel" className="rounded-[var(--radius-sm)] border border-line bg-panel p-2">

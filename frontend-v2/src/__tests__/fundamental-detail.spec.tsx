@@ -10,6 +10,9 @@ vi.mock('@features/fundamental/api/useFtsCard', () => ({ useFtsCard: vi.fn() }))
 vi.mock('@features/fundamental/api/useQuarters', () => ({ useQuarters: vi.fn() }));
 vi.mock('@features/fundamental/api/useSectorPe', () => ({ useSectorPe: vi.fn() }));
 vi.mock('@features/fundamental/api/useCodalHealth', () => ({ useCodalHealth: vi.fn() }));
+vi.mock('@features/fundamental/api/useCalendar', () => ({
+  useSymbolCalendar: () => ({ data: { status: 'ok', events: [] }, isLoading: false, isError: false }),
+}));
 
 const mockedCard = vi.mocked(useFtsCard);
 const mockedQuarters = vi.mocked(useQuarters);
