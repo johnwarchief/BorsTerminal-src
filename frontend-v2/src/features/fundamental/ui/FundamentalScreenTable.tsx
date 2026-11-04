@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { faNum, fmtInt } from '@shared/lib/fa';
 import { downloadCsvWithMeta } from '@shared/lib/tableExport';
@@ -38,9 +38,10 @@ interface Props {
   rows: readonly ScreenerCoreRow[];
   onSelect: (symbol: string) => void;
   asOf?: string | null;
+  settingsSlot?: ReactNode;
 }
 
-export function FundamentalScreenTable({ rows, onSelect, asOf }: Props) {
+export function FundamentalScreenTable({ rows, onSelect, asOf, settingsSlot }: Props) {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState('');
   const parentRef = useRef<HTMLDivElement>(null);
@@ -175,6 +176,7 @@ export function FundamentalScreenTable({ rows, onSelect, asOf }: Props) {
             </span>
           ))}
         </span>
+        {settingsSlot ?? <span />}
       </div>
 
       <div className="grid h-[27px] flex-none grid-cols-[minmax(110px,1.2fr)_minmax(100px,1fr)_150px_70px_minmax(120px,1fr)] items-center gap-2 border-b border-line-strong bg-panel-2 px-2 t-9 font-bold text-text-3">

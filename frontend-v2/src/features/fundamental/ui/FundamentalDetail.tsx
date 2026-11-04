@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { faNum } from '@shared/lib/fa';
 import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard } from '../api/useFtsCard';
@@ -8,6 +9,7 @@ import { CodalHealthStrip } from './CodalHealthStrip';
 import { CorporateCalendar } from './CorporateCalendar';
 import { FundamentalCards } from './FundamentalCards';
 import { FundamentalSummary } from './FundamentalSummary';
+import { FtsSettingsTrigger } from './FtsSettingsDrawer';
 import { QuarterlyTrend } from './QuarterlyTrend';
 
 interface Props {
@@ -20,6 +22,7 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
   const quarters = useQuarters(symbol);
   const sectorPe = useSectorPe(symbol);
   const health = useCodalHealth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const card = query.data;
 
   return (
@@ -37,6 +40,9 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
         {card?.sector ? <span className="t-9 text-text-3">{card.sector}</span> : null}
         {card?.verdict ? <span className="rounded-[3px] border border-line px-1 t-85 text-text-2">{card.verdict}</span> : null}
         {card?.score != null ? <span className="num t-9 text-text-3">امتیاز {card.score}</span> : null}
+        <span className="ms-auto">
+          <FtsSettingsTrigger open={settingsOpen} onToggle={() => setSettingsOpen((value) => !value)} />
+        </span>
       </header>
 
       {query.isLoading ? (

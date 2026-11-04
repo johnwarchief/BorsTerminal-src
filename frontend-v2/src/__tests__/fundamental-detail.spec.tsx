@@ -84,5 +84,6 @@ describe('fundamental detail', () => {
     expect(screen.getByTestId('sector-pe-median').textContent).toContain('۷٫۵');
     expect(screen.getByTestId('codal-health-queued').textContent).toContain('۳');
     expect(screen.getByTestId('codal-health').textContent).toContain('شکاف فید');
+    expect(screen.getByTestId('fts-settings-btn')).toBeTruthy();
   });
 });

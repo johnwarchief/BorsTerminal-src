@@ -108,4 +108,9 @@ describe('fundamental page', () => {
     expect(screen.getByTestId('fundamental-row-خساپا')).toBeTruthy();
     expect(screen.queryByTestId('fundamental-row-فولاد')).toBeNull();
   });
+
+  it('shows the settings trigger in the table toolbar', () => {
+    render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
+    expect(screen.getByTestId('fts-settings-btn')).toBeTruthy();
+  });
 });

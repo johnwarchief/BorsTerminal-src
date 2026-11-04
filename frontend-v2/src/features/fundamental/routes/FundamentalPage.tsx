@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { jalaliFromYmd } from '@shared/lib/jalali';
 import { useScreenerCore } from '../api/useScreenerCore';
 import { FundamentalDetail } from '../ui/FundamentalDetail';
 import { FundamentalScreenTable } from '../ui/FundamentalScreenTable';
+import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
 
 export function FundamentalPage() {
   const { symbol } = useParams<{ symbol?: string }>();
   const navigate = useNavigate();
   const screener = useScreenerCore();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const asOfYmd = screener.data?.as_of ? Number(screener.data.as_of.replace(/-/g, '')) : null;
 
   if (symbol) {
@@ -38,6 +41,7 @@ export function FundamentalPage() {
           rows={screener.data.data}
           asOf={screener.data.as_of}
           onSelect={(next) => navigate(`/fundamental/${next}`)}
+          settingsSlot={<FtsSettingsTrigger open={settingsOpen} onToggle={() => setSettingsOpen((value) => !value)} />}
         />
       )}
     </section>
