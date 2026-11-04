@@ -133,8 +133,9 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
       && typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     panel.scrollIntoView?.({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
-    // پنل‌ها tabIndex={-1} دارند؛ فوکوس بدون اسکرولِ دوباره منتقل می‌شود.
-    panel.focus({ preventScroll: true });
+    // R79: فوکوس روی سرصفحهٔ پنل است تا AT عنوان را بخواند؛ ریشه fallback است.
+    const title = document.getElementById(`panel-${axis}-title`) ?? panel;
+    title.focus({ preventScroll: true });
   };
 
   return (
@@ -182,20 +183,21 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
           <Quintet card={card} onFocus={focusAxis} />
           <ScoreRibbon card={card} />
-          {/* R77: fd-in روی فرزندانِ شبکه است تا nth-child stagger کار کند؛
-              ردیف‌های جدول و AxisCell هرگز انیمیشنِ ورود نمی‌گیرند. */}
+          {/* R80: fd-enter روی ۹ فرزندِ شبکه است تا stagger تا فرزند نهم کار کند؛
+              fd-in فقط روی ریشهٔ Quintet/ScoreRibbon می‌ماند و ردیف‌های جدول
+              و AxisCell هرگز انیمیشنِ ورود نمی‌گیرند. */}
           <div className="grid grid-cols-12 gap-2">
-            <div className="fd-in col-span-7 max-[1050px]:col-span-12"><GrowthPanel card={card} /></div>
-            <div className="fd-in col-span-5 max-[1050px]:col-span-12"><EpsPanel card={card} /></div>
-            <div className="fd-in col-span-5 max-[1050px]:col-span-12"><MarginPanel card={card} /></div>
-            <div className="fd-in col-span-7 max-[1050px]:col-span-12"><SalesPanel card={card} /></div>
-            <div className="fd-in col-span-7 max-[1050px]:col-span-12">
+            <div className="fd-enter col-span-7 max-[1050px]:col-span-12"><GrowthPanel card={card} /></div>
+            <div className="fd-enter col-span-5 max-[1050px]:col-span-12"><EpsPanel card={card} /></div>
+            <div className="fd-enter col-span-5 max-[1050px]:col-span-12"><MarginPanel card={card} /></div>
+            <div className="fd-enter col-span-7 max-[1050px]:col-span-12"><SalesPanel card={card} /></div>
+            <div className="fd-enter col-span-7 max-[1050px]:col-span-12">
               {holding ? <HoldingNavPanel bankLike={bank} /> : <IndustryPanel card={card} sectorPe={sectorPe.data} />}
             </div>
-            <div className="fd-in col-span-5 max-[1050px]:col-span-12"><HistoryPanel card={card} /></div>
-            <div className="fd-in col-span-12"><EvidencePanel card={card} /></div>
-            <div className="fd-in col-span-12"><CorporateCalendar symbol={symbol} /></div>
-            <div className="fd-in col-span-12"><CodalHealthStrip health={health.data} loading={health.isLoading} /></div>
+            <div className="fd-enter col-span-5 max-[1050px]:col-span-12"><HistoryPanel card={card} /></div>
+            <div className="fd-enter col-span-12"><EvidencePanel card={card} /></div>
+            <div className="fd-enter col-span-12"><CorporateCalendar symbol={symbol} /></div>
+            <div className="fd-enter col-span-12"><CodalHealthStrip health={health.data} loading={health.isLoading} /></div>
           </div>
         </div>
       )}

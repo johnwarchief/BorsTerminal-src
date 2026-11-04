@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { fmtInt, toFaDigits } from '@shared/lib/fa';
 import { downloadCsvWithMeta } from '@shared/lib/tableExport';
-import { useFundamentalPrefs, type SortKey } from '../stores/prefs';
+import { useFundamentalPrefs, type Density, type SortKey, type Surface } from '../stores/prefs';
 import {
   AXES,
   formatAxisValue,
@@ -90,6 +90,7 @@ interface Props {
 
 export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, settingsSlot }: Props) {
   const density = useFundamentalPrefs((state) => state.density);
+  const surface = useFundamentalPrefs((state) => state.surface);
   const setDensity = useFundamentalPrefs((state) => state.setDensity);
   const sortKey = useFundamentalPrefs((state) => state.sortKey);
   const sortDir = useFundamentalPrefs((state) => state.sortDir);
@@ -97,6 +98,8 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
   const excludeAxes = useExcludeAxes();
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState('');
+  const [fading, setFading] = useState(false);
+  const appearanceRef = useRef<{ density: Density; surface: Surface } | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const excluded = useMemo(() => applyExcludeFilter(rows, excludeAxes), [rows, excludeAxes]);
 
@@ -121,6 +124,21 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
   useEffect(() => {
     if (virtual && parentRef.current) virtualizer.measure();
   }, [density, virtual, virtualizer]);
+
+  // R78: تغییر density یا سطح یک‌بار محوِ ۱۶۰ms روی بدنهٔ جدول می‌زند؛
+  // نصب اولیه و حالت کاهش حرکت از این dip مستثنا هستند و تایمر پاک می‌شود.
+  useEffect(() => {
+    const previous = appearanceRef.current;
+    appearanceRef.current = { density, surface };
+    if (!previous || (previous.density === density && previous.surface === surface)) return;
+    const reduceMotion = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    setFading(true);
+    const timer = window.setTimeout(() => setFading(false), 160);
+    return () => window.clearTimeout(timer);
+  }, [density, surface]);
 
   const sectors = useMemo(() => [...new Set(
     rows.map((row) => row.sector_name).filter((value): value is string => Boolean(value)),
@@ -297,7 +315,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           <span role="columnheader" className="text-center">وضعیت</span>
         </div>
 
-        <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">
+        <div ref={parentRef} className={`fd-scroll min-h-0 flex-1 overflow-auto${fading ? ' is-fading' : ''}`}>
           {filtered.length === 0 ? (
             <p data-testid="fundamental-empty" className="p-3 text-[11px] text-[var(--fd-text-3)]">ردیفی با این فیلتر نیست.</p>
           ) : virtual ? (

@@ -48,7 +48,8 @@ export function AxisPanel({
       tabIndex={-1}
       className="fd-panel flex h-full flex-col gap-1.5 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2.5"
     >
-      <header className="flex items-baseline gap-1.5">
+      {/* R79: هدفِ فوکوسِ quintet سرصفحه است، نه ریشهٔ پنل. */}
+      <header id={`${testId}-title`} tabIndex={-1} className="flex items-baseline gap-1.5">
         <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line-strong)] text-[9px] text-[var(--fd-text-3)]">{meta.num}</span>
         <h3 className="text-[11.5px] font-medium text-[var(--fd-text)]">{title}</h3>
         <span className={`ms-auto text-[9.5px] fd-status--${status}`}>{statusFa(status)}</span>

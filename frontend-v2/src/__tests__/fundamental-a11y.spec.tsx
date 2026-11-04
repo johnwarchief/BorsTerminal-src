@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCodalHealth } from '@features/fundamental/api/useCodalHealth';
 import { useFtsCard } from '@features/fundamental/api/useFtsCard';
@@ -22,6 +22,20 @@ const mockedHealth = vi.mocked(useCodalHealth);
 
 const originalScrollIntoView = Element.prototype.scrollIntoView;
 const scrollSpy = vi.fn();
+
+/** R81: jsdom هیچ matchMedia ندارد؛ برای هر دو حالت حرکت، stub صریح می‌سازیم. */
+function stubMatchMedia(reduceMotion: boolean) {
+  vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+    matches: reduceMotion && query.includes('prefers-reduced-motion'),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })));
+}
 
 const rows: ScreenerCoreRow[] = [
   { symbol: 'رنيك', name: 'جنرال مکانیک', sector_name: 'خدمات فنی', score: 3, verdict: 'WATCH',
@@ -117,6 +131,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
   Element.prototype.scrollIntoView = originalScrollIntoView;
 });
 
@@ -133,6 +148,40 @@ describe('fundamental accessibility and motion', () => {
     expect(document.querySelector('.fd-in, .fd-draw')).toBeNull();
   });
 
+  it('dips the table body once per density or surface change (R78)', () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+      const scroll = () => container.querySelector('.fd-scroll')!;
+      // نصب اولیه هیچ dipی نمی‌گیرد.
+      expect(scroll().className).not.toContain('is-fading');
+      act(() => useFundamentalPrefs.setState({ density: 'compact' }));
+      expect(scroll().className).toContain('is-fading');
+      act(() => { vi.advanceTimersByTime(159); });
+      expect(scroll().className).toContain('is-fading');
+      act(() => { vi.advanceTimersByTime(1); });
+      expect(scroll().className).not.toContain('is-fading');
+      act(() => useFundamentalPrefs.setState({ surface: 'ink' }));
+      expect(scroll().className).toContain('is-fading');
+      act(() => { vi.advanceTimersByTime(160); });
+      expect(scroll().className).not.toContain('is-fading');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('skips the density/surface dip when reduced motion is requested (R78)', () => {
+    stubMatchMedia(true);
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+      act(() => useFundamentalPrefs.setState({ density: 'compact' }));
+      expect(container.querySelector('.fd-scroll')!.className).not.toContain('is-fading');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('marks the surface on the detail root (R76)', () => {
     useFundamentalPrefs.setState({ surface: 'ink' });
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
@@ -140,17 +189,31 @@ describe('fundamental accessibility and motion', () => {
     expect(screen.getByTestId('fundamental-detail').className).toContain('fundamental-surface');
   });
 
-  it('scrolls to and focuses the matching panel after a quintet click (R75)', () => {
+  it('scrolls smoothly to and focuses the panel header after a quintet click (R75/R79/R81)', () => {
+    stubMatchMedia(false);
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
     const tile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="margin"]')!;
     fireEvent.click(tile);
     expect(scrollSpy).toHaveBeenCalledTimes(1);
-    expect(scrollSpy.mock.calls[0]![0]).toMatchObject({ block: 'start' });
-    expect(document.activeElement?.id).toBe('panel-margin');
+    expect(scrollSpy.mock.calls[0]![0]).toMatchObject({ block: 'start', behavior: 'smooth' });
+    // R79: فوکوس روی سرصفحهٔ پنل است، نه ریشه.
+    expect(document.activeElement?.id).toBe('panel-margin-title');
+    expect(document.activeElement?.tagName).toBe('HEADER');
     expect(screen.getByTestId('panel-margin').getAttribute('tabindex')).toBe('-1');
+    expect(document.getElementById('panel-margin-title')?.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('labels all five ribbon bars with the axis and the Persian status (R72)', () => {
+  it('jumps with behavior auto instead of smooth under reduced motion (R76/R81)', () => {
+    stubMatchMedia(true);
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const tile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="margin"]')!;
+    fireEvent.click(tile);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy.mock.calls[0]![0]).toMatchObject({ block: 'start', behavior: 'auto' });
+    expect(document.activeElement?.id).toBe('panel-margin-title');
+  });
+
+  it('labels all five ribbon bars with the axis and the Persian status (R72/R81)', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
     const bars = Array.from(screen.getByTestId('fundamental-score-ribbon').querySelectorAll('[data-status]'));
     expect(bars.length).toBe(5);
@@ -163,8 +226,11 @@ describe('fundamental accessibility and motion', () => {
       expect(bar.getAttribute('aria-hidden')).toBeNull();
       expect(bar.className).not.toContain('fd-status--');
     }
-    expect(labels.some((label) => label.includes('رشد فروش'))).toBe(true);
-    expect(labels.some((label) => label.includes('سودآوری ۳ساله'))).toBe(true);
+    // R81: ترتیب میله‌ها = ترتیب محورها (رشد، سودآوری، حاشیه، فروش، صنعت) و
+    // data-status هر میله از همان وضعیتِ محورِ متناظر می‌آید.
+    expect(bars.map((bar) => bar.getAttribute('data-status'))).toEqual(['fail', 'pass', 'fail', 'pass', 'pass']);
+    const axisLabels = ['رشد فروش', 'سودآوری ۳ساله', 'حاشیهٔ ناخالص', 'فروش / ارزش', 'نرخ‌گذاری صنعت'];
+    for (const [index, axisLabel] of axisLabels.entries()) expect(labels[index]).toContain(axisLabel);
   });
 
   it('keeps panel roots focusable and staggers only detail wrappers (R73/R77)', () => {
@@ -177,11 +243,10 @@ describe('fundamental accessibility and motion', () => {
     }
     expect(screen.getByTestId('fundamental-quintet').className).toContain('fd-in');
     expect(screen.getByTestId('fundamental-score-ribbon').className).toContain('fd-in');
-    const grids = container.querySelectorAll('.grid-cols-12');
-    expect(grids.length).toBe(1);
-    const wrappers = Array.from(grids[0]!.children);
+    // R80: دقیقاً ۹ wrapper جزئیات کلاس اختصاصی fd-enter دارند (نه fd-in).
+    const wrappers = Array.from(container.querySelectorAll('.fd-enter'));
     expect(wrappers.length).toBe(9);
-    for (const wrapper of wrappers) expect(wrapper.className).toContain('fd-in');
+    for (const wrapper of wrappers) expect(wrapper.className).not.toContain('fd-in');
     // R73: نمودارِ پنل‌های جزئیات fd-draw دارد؛ ریشهٔ پنل انیمیشنِ ورود نمی‌گیرد.
     expect(screen.getByTestId('panel-margin').querySelector('.fd-draw')).toBeTruthy();
     expect(screen.getByTestId('panel-margin').className).not.toContain('fd-draw');

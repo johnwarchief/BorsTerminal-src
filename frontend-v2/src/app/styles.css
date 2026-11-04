@@ -162,17 +162,27 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-glyph span.is-na { background: var(--fd-flat); }
 .fundamental-surface .fd-glyph span.is-unknown { background: var(--fd-warn); }
 
-/* ===== حرکتِ مهارشده و فوکوسِ سطح بنیادی (R73/R74/R76) =====
+/* ===== حرکتِ مهارشده و فوکوسِ سطح بنیادی (R73/R76/R77/R78/R80) =====
    فقط opacity/transform؛ هیچ height/top/margin/left انیمیت نمی‌شود تا layout
-   جدولِ ۷۸۳ ردیفی تکان نخورد. ورودِ ردیف‌ها عمداً بی‌انیمیشن است. */
-.fundamental-surface .fd-in {
+   جدولِ ۷۸۳ ردیفی تکان نخورد. ورودِ ردیف‌ها عمداً بی‌انیمیشن است.
+   fd-in فقط روی ریشهٔ Quintet/ScoreRibbon؛ fd-enter روی ۹ wrapper جزئیات. */
+.fundamental-surface .fd-in,
+.fundamental-surface .fd-enter {
   animation: fdIn 220ms ease-out both;
 }
-.fundamental-surface .fd-in:nth-child(2) { animation-delay: 40ms; }
-.fundamental-surface .fd-in:nth-child(3) { animation-delay: 80ms; }
-.fundamental-surface .fd-in:nth-child(4) { animation-delay: 120ms; }
-.fundamental-surface .fd-in:nth-child(5) { animation-delay: 160ms; }
-.fundamental-surface .fd-in:nth-child(6) { animation-delay: 200ms; }
+.fundamental-surface .fd-in:nth-child(2),
+.fundamental-surface .fd-enter:nth-child(2) { animation-delay: 40ms; }
+.fundamental-surface .fd-in:nth-child(3),
+.fundamental-surface .fd-enter:nth-child(3) { animation-delay: 80ms; }
+.fundamental-surface .fd-in:nth-child(4),
+.fundamental-surface .fd-enter:nth-child(4) { animation-delay: 120ms; }
+.fundamental-surface .fd-in:nth-child(5),
+.fundamental-surface .fd-enter:nth-child(5) { animation-delay: 160ms; }
+.fundamental-surface .fd-in:nth-child(6),
+.fundamental-surface .fd-enter:nth-child(6) { animation-delay: 200ms; }
+.fundamental-surface .fd-enter:nth-child(7) { animation-delay: 240ms; }
+.fundamental-surface .fd-enter:nth-child(8) { animation-delay: 280ms; }
+.fundamental-surface .fd-enter:nth-child(9) { animation-delay: 320ms; }
 
 @keyframes fdIn {
   from {
@@ -202,10 +212,13 @@ html[data-theme='cool'] {
   }
 }
 
-/* R74: تغییر density/سطح فقط crossfade می‌شود؛ ردیف remount یا ارتفاعِ
-   انیمیشنی ندارد. */
-.fundamental-surface .fd-axis-chart {
+/* R78: تغییر density یا سطح، یک‌بار بدنهٔ جدول را ۱۶۰ms محو می‌کند؛ خودِ
+   ردیف‌ها و نمودارها نه remount می‌شوند نه transition دارند. */
+.fundamental-surface .fd-scroll {
   transition: opacity 160ms ease-out;
+}
+.fundamental-surface .fd-scroll.is-fading {
+  opacity: .65;
 }
 
 /* R76: فوکوسِ ردیف و ریشهٔ پنل با توکنِ سطح، فقط برای :focus-visible. */
@@ -219,11 +232,13 @@ html[data-theme='cool'] {
    transform و stagger حذف می‌شوند. قاعدهٔ سراسریِ بالا هم مدت‌ها را کوتاه می‌کند. */
 @media (prefers-reduced-motion: reduce) {
   .fundamental-surface .fd-in,
-  .fundamental-surface .fd-draw {
+  .fundamental-surface .fd-draw,
+  .fundamental-surface .fd-enter {
     animation: fdFadeOnly 120ms ease-out both;
     animation-delay: 0ms !important;
   }
-  .fundamental-surface .fd-axis-chart {
+  /* R78: کاهش حرکت، crossfade جدول را هم خاموش می‌کند. */
+  .fundamental-surface .fd-scroll {
     transition: none;
   }
 }
