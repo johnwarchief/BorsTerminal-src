@@ -18,6 +18,7 @@ describe('fts config payload', () => {
     const draft = {
       ...draftFromConfig(base),
       growth_min: 60,
+      margin_min: 35,
       volumeGate: false,
       epsGate: false,
       pricingGate: 'all' as const,
@@ -28,6 +29,8 @@ describe('fts config payload', () => {
     };
     const payload = buildFtsPayload(base, draft);
     expect(payload.growth_min).toBe(60);
+    expect(payload.v10_margin_min).toBe(35);
+    expect(payload.v10_margin_ideal).toBe(35);
     expect(payload.hourglass_rsi_period).toBe(9);
     expect(payload.hourglass_rsi_oversold).toBe(25);
     expect(payload.hourglass_ma52_position).toBe('above');
@@ -47,6 +50,8 @@ describe('fts config payload', () => {
     const payload = buildResetPayload(base);
     expect(payload.growth_min).toBe(40);
     expect(payload.margin_min).toBe(20);
+    expect(payload.v10_margin_min).toBe(20);
+    expect(payload.v10_margin_ideal).toBe(30);
     expect(payload.v10_sales_to_mcap_min).toBe(0.33);
     expect(payload.industry_mode).toBe('Exclude_Mandatory_Pricing');
     expect(payload.hourglass_rsi_period).toBe(9);

@@ -141,6 +141,10 @@ export function buildFtsPayload(base: Partial<FtsConfig>, draft: FtsSettingsDraf
     v10_volume_growth_min: 0,
     v10_volume_breadth_min: volumeGate ? 0.6 : 0,
     margin_optimal: Math.max(draft.margin_min, 30),
+    // v10_thresholds اول v10_margin_min را probe می‌کند؛ اگر همگام نشود،
+    // مقدار کهنهٔ فایل بر اسلایدر کاربر مقدم می‌شود.
+    v10_margin_min: draft.margin_min,
+    v10_margin_ideal: Math.max(draft.margin_min, 30),
     v10_potential_min: draft.profit_potential_min,
     holdings_sales_na: holdingsNa,
     pharma_margin_exempt_min: pharmaExempt ? 50 : 0,
