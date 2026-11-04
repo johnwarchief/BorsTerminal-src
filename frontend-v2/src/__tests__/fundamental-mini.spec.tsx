@@ -6,6 +6,7 @@ import { RegimeGlyph } from '@features/fundamental/ui/mini/RegimeGlyph';
 import { AxisGlyph } from '@features/fundamental/ui/mini/AxisGlyph';
 import { PeDots } from '@features/fundamental/ui/mini/PeDots';
 import { HistoryBars } from '@features/fundamental/ui/mini/HistoryBars';
+import { DeltaBars } from '@features/fundamental/ui/mini/DeltaBars';
 
 afterEach(cleanup);
 
@@ -53,6 +54,21 @@ describe('mini charts', () => {
     const img = screen.getByRole('img', { name: 'فروش دورهٔ جاری و قبل' });
     expect(img.getAttribute('aria-label')).not.toContain('قبول');
     expect(img.querySelectorAll('.fd-history-bar.is-evidence').length).toBe(2);
+  });
+  it('renders delta bars with direction classes', () => {
+    render(<DeltaBars values={[null, 44.3, 3.5]} labels={['۱۴۰۳', '۱۴۰۴', '۱۴۰۵']} />);
+    expect(screen.getByRole('img', { name: /رشد دوره‌ای/ })).toBeTruthy();
+    expect(document.querySelectorAll('.fd-delta-bar.is-up').length).toBe(2);
+    expect(document.querySelectorAll('.fd-delta-bar.is-down').length).toBe(0);
+    expect(screen.getByText('۱۴۰۴')).toBeTruthy();
+  });
+  it('renders negative delta bars with the down class and no fake zero bar', () => {
+    render(<DeltaBars values={[null, -12.5]} labels={['۱۴۰۳', '۱۴۰۴']} />);
+    expect(document.querySelectorAll('.fd-delta-bar.is-down').length).toBe(1);
+    expect(document.querySelectorAll('.fd-delta-bar.is-up').length).toBe(0);
+    const empty = document.querySelector('.fd-delta-bar.is-empty') as HTMLElement | null;
+    expect(empty).toBeTruthy();
+    expect(empty?.style.height).toBe('0%');
   });
   it('renders an empty state when every history value is absent (R-P1-8)', () => {
     render(<HistoryBars values={[null, null]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);

@@ -1,7 +1,14 @@
 import { toFaDigits } from '@shared/lib/fa';
 import type { FtsCard } from '../../api/useFtsCard';
-import { formatEpsTrend, lastSeriesValue } from '../../lib/axisMeta';
+import {
+  epsChangeText,
+  epsChanges,
+  epsDeltaText,
+  formatEpsTrend,
+  lastSeriesValue,
+} from '../../lib/axisMeta';
 import { cardStatus } from '../../lib/cardStatus';
+import { DeltaBars } from '../mini/DeltaBars';
 import { EpsBars } from '../mini/EpsBars';
 import { AxisPanel, faInt } from './AxisPanel';
 
@@ -50,6 +57,14 @@ export function EpsPanel({ card }: { card: FtsCard }) {
     ['تلفیقی', eps?.consolidated_used ? 'بله' : '—'],
   ];
   if (reason) rows.push(['دلیل', reason]);
+  // R-P1-3: رشدِ هر دوره — از پاسخِ بک‌اند اگر هم‌طول باشد، وگرنه از سری؛ دورهٔ اول رشد ندارد.
+  const changes = epsChanges(series, eps?.eps_yoy_pct);
+  // R-P1-3: برچسبِ دوره از period_ends با ارقامِ فارسی؛ نبودش «دوره ۱..».
+  const rawPeriods = eps?.period_ends ?? [];
+  const labels = series.map((_, index) => {
+    const period = rawPeriods[index];
+    return period == null || period === '' ? `دوره ${toFaDigits(index + 1)}` : toFaDigits(period);
+  });
   return (
     <AxisPanel
       testId="panel-eps"
@@ -62,6 +77,38 @@ export function EpsPanel({ card }: { card: FtsCard }) {
       chart={<EpsBars series={series} status={status} label="سری EPS" />}
       rows={rows}
       details={card.details?.['۲']}
-    />
+    >
+      <div className="flex flex-col gap-1">
+        <div className="h-[30px]" data-testid="eps-growth-chart">
+          <DeltaBars values={changes} labels={labels} />
+        </div>
+        <div className="grid grid-cols-1 gap-0.5">
+          {series.map((value, index) => {
+            const change = changes[index] ?? null;
+            const changeTone = change == null
+              ? 'text-[var(--fd-text-3)]'
+              : change < 0
+                ? 'text-[var(--fd-down)]'
+                : change > 0
+                  ? 'text-[var(--fd-up)]'
+                  : 'text-[var(--fd-flat)]';
+            return (
+              <div
+                key={index}
+                data-testid={`eps-period-${index}`}
+                className="flex items-center justify-between gap-2 border-b border-[var(--fd-line)] py-0.5 text-[9.5px]"
+              >
+                <span className="text-[var(--fd-text-3)]">{labels[index]}</span>
+                <b className="text-[var(--fd-text)]">{faInt(value)}</b>
+                <span className="text-[var(--fd-text-2)]">
+                  {index === 0 ? '—' : epsDeltaText(series[index - 1], value)}
+                </span>
+                <span className={changeTone}>{epsChangeText(change)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </AxisPanel>
   );
 }

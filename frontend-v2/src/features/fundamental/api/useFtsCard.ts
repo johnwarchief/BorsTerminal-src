@@ -38,6 +38,8 @@ const Axis1Schema = z.looseObject({
 const Axis2Schema = z.looseObject({
   eps_series: z.array(z.number().nullable()).nullish(),
   net_profit_series: z.array(z.number().nullable()).nullish(),
+  // R-P1-3: رشدِ دوره‌به‌دورهٔ EPS از پاسخ؛ فقط وقتی هم‌طولِ سری است ملاک می‌شود.
+  eps_yoy_pct: z.array(z.number().nullable()).nullish(),
   period_ends: z.array(Str).nullish(),
   years_available: Num,
   years_required: Num,

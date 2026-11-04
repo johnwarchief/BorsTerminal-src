@@ -1,4 +1,4 @@
-import { toFaDigits } from '@shared/lib/fa';
+import { fmtPct, toFaDigits } from '@shared/lib/fa';
 import type { ScreenerCoreRow } from '../api/useScreenerCore';
 
 export type AxisKey = 'growth' | 'eps' | 'margin' | 'sales' | 'industry';
@@ -182,6 +182,39 @@ export function formatEpsTrend(series: readonly (number | null | undefined)[] | 
   const arrow = trendArrow(trendOf(series));
   const value = toFaDigits(Math.round(last)).replace(/^-/, '−');
   return arrow ? `${value} ${arrow}` : value;
+}
+
+/**
+ * R-P1-3: رشدِ دوره‌به‌دورهٔ EPS — دورهٔ اول رشد ندارد؛ مخرجِ صفر/منفی رشد نمی‌سازد؛
+ * مقدارِ گم‌شده «—» می‌ماند. اگر پاسخِ بک‌اند هم‌طولِ سری باشد، همان ملاک است.
+ */
+export function epsChanges(
+  series: readonly (number | null | undefined)[] | null | undefined,
+  fromBackend?: readonly (number | null | undefined)[] | null | undefined,
+): (number | null)[] {
+  if (!Array.isArray(series)) return [];
+  if (Array.isArray(fromBackend) && fromBackend.length === series.length) {
+    return fromBackend.map((value) => value == null || !Number.isFinite(Number(value)) ? null : Number(value));
+  }
+  return series.map((value, index) => {
+    if (index === 0) return null;
+    const prev = series[index - 1];
+    if (prev == null || value == null || !Number.isFinite(Number(prev)) || !Number.isFinite(Number(value)) || Number(prev) <= 0) return null;
+    return ((Number(value) - Number(prev)) / Number(prev)) * 100;
+  });
+}
+
+export function epsChangeText(pct: number | null | undefined): string {
+  if (pct == null || !Number.isFinite(pct)) return '—';
+  return fmtPct(pct, 1);
+}
+
+/** R-P1-3: دلتای دوره — یک علامتِ «+»/«−» و قدرِ مطلق؛ هرگز «+-» یا صفرِ ساختگی. */
+export function epsDeltaText(prev: number | null | undefined, cur: number | null | undefined): string {
+  if (prev == null || cur == null || !Number.isFinite(prev) || !Number.isFinite(cur)) return '—';
+  const delta = cur - prev;
+  const sign = delta > 0 ? '+' : delta < 0 ? '−' : '';
+  return `${sign}${toFaDigits(Math.abs(Math.round(delta)))}`;
 }
 
 export function verdictFa(verdict: string | null | undefined): string {

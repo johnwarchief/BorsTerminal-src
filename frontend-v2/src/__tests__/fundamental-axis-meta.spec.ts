@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   AXES,
+  epsChangeText,
+  epsChanges,
+  epsDeltaText,
   epsYearsRequired,
   formatAxisValue,
   formatEpsTrend,
@@ -111,5 +114,39 @@ describe('axis meta', () => {
     expect(epsYearsRequired({}, thresholds)).toBe(3);
     expect(epsYearsRequired({}, { v10_eps_years: 1 })).toBe(1);
     expect(epsYearsRequired({}, null)).toBeNull();
+  });
+  it('computes EPS period deltas and growth percentages (R-P1-3)', () => {
+    const changes = epsChanges([1119, 1615, 1672]);
+    expect(changes).toHaveLength(3);
+    expect(changes[0]).toBeNull();
+    expect(changes[1]).toBeCloseTo(44.325, 3);
+    expect(changes[2]).toBeCloseTo(3.529, 3);
+    expect(epsChangeText(changes[1])).toBe('+۴۴٫۳٪');
+    expect(epsChangeText(changes[2])).toBe('+۳٫۵٪');
+    expect(epsDeltaText(1119, 1615)).toBe('+۴۹۶');
+    expect(epsDeltaText(1615, 1672)).toBe('+۵۷');
+  });
+  it('signs EPS deltas with a single Persian minus and never fakes a value (R-P1-3)', () => {
+    expect(epsChanges([100, 90])[1]).toBeCloseTo(-10, 6);
+    expect(epsChangeText(-10)).toBe('−۱۰٪');
+    expect(epsChangeText(0)).toBe('۰٪');
+    expect(epsChangeText(null)).toBe('—');
+    expect(epsDeltaText(100, 90)).toBe('−۱۰');
+    expect(epsDeltaText(90, 100)).toBe('+۱۰');
+    // بدون تغییر علامت ندارد؛ نه `+-` و نه صفرِ ساختگی.
+    expect(epsDeltaText(100, 100)).toBe('۰');
+    expect(epsDeltaText(null, 100)).toBe('—');
+    expect(epsDeltaText(100, null)).toBe('—');
+    // مخرجِ صفر/منفی رشد نمی‌سازد؛ مقدارِ گم‌شده گم‌شده می‌ماند.
+    expect(epsChanges([0, 10, 20])).toEqual([null, null, 100]);
+    expect(epsChanges([-5, 10])).toEqual([null, null]);
+    expect(epsChanges([100, null, 120, 150])).toEqual([null, null, null, 25]);
+    expect(epsChanges(null)).toEqual([]);
+  });
+  it('prefers backend EPS growth only when it matches the series length (R-P1-3)', () => {
+    expect(epsChanges([1, 2, 3], [null, 50, -2.5])).toEqual([null, 50, -2.5]);
+    const computed = epsChanges([1119, 1615], [50]);
+    expect(computed[0]).toBeNull();
+    expect(computed[1]).toBeCloseTo(44.325, 3);
   });
 });

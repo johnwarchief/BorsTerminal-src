@@ -248,6 +248,51 @@ describe('fundamental cockpit', () => {
     expect(epsTile?.textContent).toContain('۳ سال');
   });
 
+  it('shows each EPS period delta and growth with a chart (R-P1-3/R-P1-5)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const panel = screen.getByTestId('panel-eps');
+    expect(screen.getByTestId('eps-period-1').textContent).toContain('+۴۹۶');
+    expect(screen.getByTestId('eps-period-1').textContent).toContain('+۴۴٫۳٪');
+    expect(screen.getByTestId('eps-period-2').textContent).toContain('+۵۷');
+    expect(panel.querySelector('[data-testid="eps-growth-chart"]')).toBeTruthy();
+    // نمودارِ EPS در ستونِ جدول دست‌نخورده می‌ماند؛ نمودارِ رشد هم‌زمان اضافه می‌شود.
+    expect(panel.querySelector('[data-testid="eps-growth-chart"] [role="img"]')?.getAttribute('aria-label'))
+      .toBe('رشد دوره‌ای EPS');
+  });
+
+  it('lists every EPS period with its value and a fallback label, first period without growth (R-P1-3)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const panel = screen.getByTestId('panel-eps');
+    const first = panel.querySelector('[data-testid="eps-period-0"]');
+    expect(first?.textContent).toContain('دوره ۱');
+    expect(first?.textContent).toContain('۱۱۱۹');
+    expect(first?.textContent).not.toContain('+');
+    expect(panel.querySelector('[data-testid="eps-period-1"]')?.textContent).toContain('دوره ۲');
+    expect(panel.querySelector('[data-testid="eps-period-2"]')?.textContent).toContain('۱۶۷۲');
+  });
+
+  it('uses period ends and EPS growth from the backend and colors negative growth (R-P1-3)', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '2': {
+          ...baseIndicators['2'],
+          period_ends: ['1401/12/29', '1402/12/29', '1403/12/29'],
+          eps_yoy_pct: [null, 50, -10],
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const panel = screen.getByTestId('panel-eps');
+    expect(panel.querySelector('[data-testid="eps-period-0"]')?.textContent).toContain('۱۴۰۱/۱۲/۲۹');
+    expect(panel.querySelector('[data-testid="eps-period-1"]')?.textContent).toContain('+۵۰٪');
+    const negative = panel.querySelector('[data-testid="eps-period-2"]');
+    expect(negative?.textContent).toContain('−۱۰٪');
+    const percent = Array.from(negative?.querySelectorAll('span') ?? [])
+      .find((element) => element.textContent === '−۱۰٪');
+    expect(percent?.className).toContain('--fd-down');
+  });
+
   it('does not turn missing EPS years into ۰/۳ (R30/R50)', () => {
     mockCard({
       indicators: { ...baseIndicators, '2': { ...baseIndicators['2'], years_available: null } },
