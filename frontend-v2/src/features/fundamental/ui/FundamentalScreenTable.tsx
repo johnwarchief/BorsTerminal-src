@@ -90,6 +90,7 @@ interface Props {
 
 export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, settingsSlot }: Props) {
   const density = useFundamentalPrefs((state) => state.density);
+  const setDensity = useFundamentalPrefs((state) => state.setDensity);
   const sortKey = useFundamentalPrefs((state) => state.sortKey);
   const sortDir = useFundamentalPrefs((state) => state.sortDir);
   const setSort = useFundamentalPrefs((state) => state.setSort);
@@ -233,6 +234,28 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           className="tape-btn" title="خروجی CSV از ردیف‌های همین فیلتر">
           خروجی CSV
         </button>
+        <div role="group" aria-label="تراکم جدول" className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            data-testid="fundamental-density-compact"
+            aria-pressed={density === 'compact'}
+            onClick={() => setDensity('compact')}
+            className="tape-btn"
+            title="ردیف‌های فشرده، بدون نمودار"
+          >
+            فشرده
+          </button>
+          <button
+            type="button"
+            data-testid="fundamental-density-comfortable"
+            aria-pressed={density === 'comfortable'}
+            onClick={() => setDensity('comfortable')}
+            className="tape-btn"
+            title="ردیف‌های راحت با نمودار محورها"
+          >
+            راحت
+          </button>
+        </div>
         {settingsSlot ?? <span />}
         <span data-testid="fundamental-count" className="num t-9 text-[var(--fd-text-3)]">
           {fmtInt(filtered.length)} از {fmtInt(rows.length)}
