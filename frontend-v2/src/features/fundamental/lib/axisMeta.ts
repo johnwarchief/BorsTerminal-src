@@ -63,9 +63,17 @@ export function verdictFa(verdict: string | null | undefined): string {
   return ({ STRONG: 'قوی', WATCH: 'تحت نظر', REJECT: 'رد', EXCLUDED: 'خارج از غربال' } as Record<string, string>)[verdict ?? ''] ?? '—';
 }
 
+export function statusFa(status: AxisStatus): string {
+  return ({ pass: 'قبول', fail: 'رد', na: 'بی‌نظر', unknown: 'نامشخص' } as Record<AxisStatus, string>)[status];
+}
+
+export function regimeFa(value: string | null | undefined): string {
+  return ({ free: 'آزاد', neutral: 'خنثی', mandatory: 'دستوری' } as Record<string, string>)[value ?? ''] ?? '—';
+}
+
 export function formatAxisValue(value: number | string | null, axis: AxisKey): string {
   if (value == null) return '—';
-  if (axis === 'industry') return ({ free: 'آزاد', neutral: 'خنثی', mandatory: 'دستوری' } as Record<string, string>)[String(value)] ?? '—';
+  if (axis === 'industry') return regimeFa(String(value));
   if (axis === 'eps') return toFaDigits(Math.round(Number(value)));
   if (axis === 'sales') return toFaDigits(Number(value).toFixed(2)).replace('.', '٫');
   const n = Number(value);

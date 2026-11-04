@@ -19,7 +19,7 @@ describe('mini charts', () => {
   });
   it('renders three EPS bars', () => {
     render(<EpsBars series={[1119, 1615, 1672]} status="pass" label="سری EPS" />);
-    expect(screen.getByRole('img', { name: 'سری EPS' }).querySelectorAll('rect').length).toBe(3);
+    expect(screen.getByRole('img', { name: /سری EPS/ }).querySelectorAll('rect').length).toBe(3);
   });
   it('renders three regime dots with the active one', () => {
     render(<RegimeGlyph regime="neutral" status="pass" />);
@@ -37,11 +37,13 @@ describe('mini charts', () => {
     expect(img).toBeTruthy();
     expect(img.querySelector('.fd-th-line')).toBeTruthy();
     expect(img.querySelector('circle')).toBeTruthy();
+    expect(screen.getByText('۱۲ همتا')).toBeTruthy();
   });
   it('renders one labelled bar per history value (R13)', () => {
     render(<HistoryBars values={[1, 2, 3]} labels={['۱۴۰۲', '۱۴۰۳', '۱۴۰۴']} status="pass" />);
     const img = screen.getByRole('img', { name: /تاریخچه/ });
-    expect(img.children.length).toBe(3);
-    expect(Array.from(img.children).every((bar) => bar.querySelector('span.is-pass'))).toBe(true);
+    const bars = img.querySelectorAll('.fd-history-bar.is-pass');
+    expect(bars.length).toBe(3);
+    expect(Array.from(bars).every((bar) => !(bar as HTMLElement).style.background)).toBe(true);
   });
 });

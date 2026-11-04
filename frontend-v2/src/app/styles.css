@@ -143,10 +143,15 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-chart-bar.is-fail { fill: var(--fd-down); }
 .fundamental-surface .fd-chart-bar.is-na { fill: var(--fd-flat); }
 .fundamental-surface .fd-chart-bar.is-unknown { fill: var(--fd-warn); }
+.fundamental-surface .fd-history-bar.is-pass { background: var(--fd-up); }
+.fundamental-surface .fd-history-bar.is-fail { background: var(--fd-down); }
+.fundamental-surface .fd-history-bar.is-na { background: var(--fd-flat); }
+.fundamental-surface .fd-history-bar.is-unknown { background: var(--fd-warn); }
 .fundamental-surface .fd-th-line { stroke: var(--fd-accent); stroke-width: 1; stroke-dasharray: 2 2; opacity: .9; }
 .fundamental-surface .fd-chart-tick { stroke: var(--fd-line-strong); stroke-width: .8; }
 .fundamental-surface .fd-chart-text { fill: var(--fd-text-3); font-family: inherit; font-variant-numeric: tabular-nums; }
 .fundamental-surface .fd-regime-dot { background: var(--fd-line-strong); }
+.fundamental-surface .fd-regime-dot.is-active { outline: 1px solid var(--fd-text-2); outline-offset: 1px; }
 .fundamental-surface .fd-regime-dot.is-active.is-pass { background: var(--fd-up); }
 .fundamental-surface .fd-regime-dot.is-active.is-fail { background: var(--fd-down); }
 .fundamental-surface .fd-regime-dot.is-active.is-na { background: var(--fd-flat); }
