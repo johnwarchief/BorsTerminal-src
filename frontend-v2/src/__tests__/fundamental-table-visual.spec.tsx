@@ -24,7 +24,7 @@ const rows: ScreenerCoreRow[] = [
     i4_pass: null, i4_na: true, i4_reason: 'معاف: بانک و مؤسسهٔ اعتباری',
     i5_pass: true, i5_na: false,
     rev_growth: 83.5, eps_series: [1425, 454, 456], eps_years_available: 3,
-    gross_margin: null, sales_to_mcap: null, profit_potential_pct: null, pricing_mode: 'free' },
+    gross_margin: null, sales_to_mcap: null, profit_potential_pct: 0, pricing_mode: 'free' },
 ];
 
 // R30/R31: eps_years_available عمداً حذف شده و verdict بیرون از enum است.
@@ -48,11 +48,33 @@ describe('fundamental table visual', () => {
   it('renders five axis headers and values', () => {
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf="۱۴۰۵/۰۸/۱۳" />);
     expect(screen.getByRole('table', { name: 'جدول بنیادی' })).toBeTruthy();
-    for (const name of ['رشد فروش', 'سودآوری ۳ساله', 'حاشیهٔ ناخالص', 'فروش / ارزش', 'نرخ‌گذاری صنعت']) expect(screen.getByText(name)).toBeTruthy();
+    for (const name of ['رشد فروش', 'سودآوری ۳ساله', 'حاشیهٔ ناخالص', 'پتانسیل سود تا آخر سال', 'نرخ‌گذاری صنعت']) expect(screen.getByText(name)).toBeTruthy();
     expect(screen.getByText('+۴۵٫۹٪')).toBeTruthy();
-    expect(screen.getByText('۱٫۱۵')).toBeTruthy();
+    expect(screen.getByTestId('fundamental-cell-رنيك-sales').textContent).toContain('۱٫۱۵');
     // R33: زمان اسکن فقط در هدر صفحه؛ جدول نسخهٔ تکراری ندارد.
     expect(screen.queryByText(/زمان اسکن/)).toBeNull();
+  });
+  it('shows potential profit as the axis-4 headline with the sales path', () => {
+    render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    expect(screen.getByText('پتانسیل سود تا آخر سال')).toBeTruthy();
+    // خطِ آستانهٔ سرستون: کفِ پتانسیل + شاهدِ فروش/ارزش.
+    expect(screen.getByRole('columnheader', { name: /پتانسیل سود/ }).textContent).toContain('≥ ۴۰٪ · ۰٫۳۳');
+    const cell = screen.getByTestId('fundamental-cell-رنيك-sales');
+    expect(cell.textContent).toContain('+۱۳٫۲٪');
+    expect(cell.textContent).toContain('۱٫۱۵');
+    expect(cell.getAttribute('data-path')).toBe('sales');
+    expect(cell.textContent).toContain('مسیر فروش/ارزش');
+    // وضعیتِ ترکیبیِ سلول قبول است، ولی نمودار فقط زیرگیتِ پتانسیل را می‌سنجد.
+    expect(cell.getAttribute('data-state')).toBe('pass');
+    expect(cell.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toContain('رد');
+  });
+  it('sorts axis 4 by the potential percentage', () => {
+    const onSelect = vi.fn();
+    render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={onSelect} asOf={null} />);
+    fireEvent.click(screen.getByRole('button', { name: /مرتب‌سازی پتانسیل سود/ }));
+    const order = [...document.querySelectorAll('[data-testid^="fundamental-row-"]')].map((el) => el.getAttribute('data-testid'));
+    // کلیکِ اول روی ستونِ جدید، نزولی است: پتانسیل ۱۳٫۲ (رنيك) بالاتر از ۰ (وبملت) است.
+    expect(order[0]).toBe('fundamental-row-رنيك');
   });
   it('shows charts only in comfortable mode', () => {
     const { container, rerender } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);

@@ -33,6 +33,11 @@ function lastEps(row: ScreenerCoreRow): number | null {
   return lastSeriesValue(row.eps_series);
 }
 
+/** شاهدِ فروش/ارزش نسبت است، نه درصد؛ دو رقم اعشار با جداکنندهٔ فارسی. */
+function formatRatio(value: number | null): string {
+  return value == null ? '—' : toFaDigits(value.toFixed(2)).replace('.', '٫');
+}
+
 function sortValue(row: ScreenerCoreRow, key: SortKey): number | string | null {
   switch (key) {
     case 'symbol': return row.symbol;
@@ -41,8 +46,8 @@ function sortValue(row: ScreenerCoreRow, key: SortKey): number | string | null {
     // R98: محور ۲ با همان مقدارِ نمایشی (آخرین EPS) مرتب می‌شود، نه شمارشِ سال.
     case 'eps': return lastEps(row);
     case 'margin': return row.gross_margin ?? null;
-    // R16: محور ۴ فقط sales_to_mcap؛ هرگز profit_potential_pct.
-    case 'sales': return row.sales_to_mcap ?? null;
+    // R-P0-1: محور ۴ با درصدِ نهاییِ پتانسیل سود مرتب می‌شود؛ فروش/ارزش فقط شاهد/مسیر است.
+    case 'sales': return row.profit_potential_pct ?? null;
     case 'industry': return REGIME_RANK[row.pricing_mode ?? ''] ?? null;
   }
 }
@@ -71,7 +76,12 @@ function axisThresholdLabel(thresholds: AxisThresholds | null | undefined, axis:
   if (axis === 'industry') return 'رژیم';
   const threshold = thresholdOf(thresholds, axis);
   if (threshold == null) return '—';
-  if (axis === 'sales') return `≥ ${toFaDigits(threshold.toFixed(2)).replace('.', '٫')}`;
+  if (axis === 'sales') {
+    // تیترِ پتانسیل + شاهدِ فروش/ارزش (از همان تنظیمِ ریشه، بدون آستانهٔ تازه).
+    const ratioFloor = thresholds?.v10_sales_to_mcap_min;
+    const ratioLabel = ratioFloor == null ? '—' : toFaDigits(ratioFloor.toFixed(2)).replace('.', '٫');
+    return `≥ ${toFaDigits(threshold)}٪ · ${ratioLabel}`;
+  }
   return `≥ ${toFaDigits(threshold)}٪`;
 }
 
@@ -162,7 +172,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
   );
 
   function exportCsv() {
-    const columns = ['نماد', 'نام', 'صنعت شرکت', 'رشد', 'سودآوری', 'حاشیه', 'فروش/ارزش', 'صنعت', 'امتیاز', 'وضعیت'];
+    const columns = ['نماد', 'نام', 'صنعت شرکت', 'رشد', 'سودآوری', 'حاشیه', 'پتانسیل سود', 'فروش/ارزش (شاهد)', 'صنعت', 'امتیاز', 'وضعیت'];
     const csvRows = filtered.map((row) => [
       row.symbol,
       row.name ?? '',
@@ -171,7 +181,9 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       // R98: ستونِ EPS همان مقدارِ نمایشی (آخرین EPS + روند) را در CSV هم می‌نویسد.
       formatEpsTrend(row.eps_series),
       formatAxisValue(row.gross_margin ?? null, 'margin'),
-      formatAxisValue(row.sales_to_mcap ?? null, 'sales'),
+      // R-P0-1: تیترِ محور ۴ پتانسیل سود است؛ فروش/ارزش ستونِ شاهد می‌ماند.
+      formatAxisValue(row.profit_potential_pct ?? null, 'sales'),
+      formatRatio(row.sales_to_mcap ?? null),
       formatAxisValue(row.pricing_mode ?? null, 'industry'),
       row.score ?? '',
       verdictFa(row.verdict),
@@ -181,6 +193,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       // R107: گیتِ EPS در متادیتا می‌ماند تا ستون نمایشی (آخرین EPS + فلش) گیت را پنهان نکند.
       ['آستانه EPS', String(thresholds?.v10_eps_years ?? '—')],
       ['آستانه حاشیه', String(thresholds?.margin_min ?? '—')],
+      ['آستانه پتانسیل', String(thresholds?.profit_potential_min ?? '—')],
       ['آستانه فروش/ارزش', String(thresholds?.v10_sales_to_mcap_min ?? '—')],
       ['زمان اسکن', asOf ?? '—'],
     ];
@@ -213,7 +226,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           // R100: i4_na معافیت است (هلدینگ/بانک/صنعتِ معاف)، نه همیشه «بانک».
           <span
             data-testid={`fundamental-bank-${row.symbol}`}
-            title={row.i4_reason ?? 'محور فروش/ارزش برای این نماد معاف است'}
+            title={row.i4_reason ?? 'محور پتانسیل سود برای این نماد معاف است'}
             className="mt-0.5 inline-block rounded border border-[var(--fd-line-strong)] px-1 text-[9px] text-[var(--fd-text-3)]"
           >
             معاف / N/A

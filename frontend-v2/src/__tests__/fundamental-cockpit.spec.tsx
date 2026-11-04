@@ -121,6 +121,25 @@ function rowText(panel: HTMLElement, label: string): string {
 }
 
 describe('fundamental cockpit', () => {
+  it('leads axis 4 with potential profit while the combined status keeps the sales path (R-P0-1)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const tile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="sales"]');
+    expect(tile?.textContent).toContain('پتانسیل سود تا آخر سال');
+    expect(tile?.textContent).toContain('+۱۳٫۲٪');
+    expect(tile?.textContent).toContain('کف ۴۰٪');
+    expect(tile?.textContent).toContain('قبول');
+    const panel = screen.getByTestId('panel-sales');
+    expect(panel.querySelector('header')?.textContent).toContain('پتانسیل سود تا آخر سال');
+    // وضعیت هدر ترکیبی است: مسیر فروش/ارزش قبول است، هرچند نمودار پتانسیل زیر آستانه است.
+    expect(panel.querySelector('header')?.textContent).toContain('قبول');
+    expect(panel.textContent).toContain('۱۳٫۲٪');
+    expect(panel.textContent).toContain('کف ۴۰٪');
+    expect(panel.textContent).toContain('فروش/ارزش (شاهد)');
+    expect(panel.textContent).toContain('۱٫۱۵');
+    expect(panel.textContent).toContain('مسیر قبولی');
+    expect(panel.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toContain('رد');
+  });
+
   it('renders quintet, five panels, history and evidence', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
 
@@ -380,7 +399,7 @@ describe('fundamental cockpit', () => {
     expect(attention.textContent).toContain('۳ محور نیازمند بررسی');
     expect(attention.getAttribute('title')).toContain('رشد فروش');
     expect(attention.getAttribute('title')).toContain('حاشیهٔ ناخالص');
-    expect(attention.getAttribute('title')).toContain('فروش / ارزش');
+    expect(attention.getAttribute('title')).toContain('پتانسیل سود تا آخر سال');
     expect(attention.getAttribute('title')).not.toContain('سودآوری');
   });
 

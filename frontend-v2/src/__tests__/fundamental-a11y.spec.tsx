@@ -226,10 +226,10 @@ describe('fundamental accessibility and motion', () => {
       expect(bar.getAttribute('aria-hidden')).toBeNull();
       expect(bar.className).not.toContain('fd-status--');
     }
-    // R81: ترتیب میله‌ها = ترتیب محورها (رشد، سودآوری، حاشیه، فروش، صنعت) و
+    // R81: ترتیب میله‌ها = ترتیب محورها (رشد، سودآوری، حاشیه، پتانسیل، صنعت) و
     // data-status هر میله از همان وضعیتِ محورِ متناظر می‌آید.
     expect(bars.map((bar) => bar.getAttribute('data-status'))).toEqual(['fail', 'pass', 'fail', 'pass', 'pass']);
-    const axisLabels = ['رشد فروش', 'سودآوری ۳ساله', 'حاشیهٔ ناخالص', 'فروش / ارزش', 'نرخ‌گذاری صنعت'];
+    const axisLabels = ['رشد فروش', 'سودآوری ۳ساله', 'حاشیهٔ ناخالص', 'پتانسیل سود تا آخر سال', 'نرخ‌گذاری صنعت'];
     for (const [index, axisLabel] of axisLabels.entries()) expect(labels[index]).toContain(axisLabel);
   });
 

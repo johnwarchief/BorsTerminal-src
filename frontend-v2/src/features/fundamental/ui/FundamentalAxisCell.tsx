@@ -6,6 +6,8 @@ import {
   epsYearsRequired,
   formatAxisValue,
   formatEpsTrend,
+  potentialPath,
+  potentialStatusOf,
   reasonOf,
   statusFa,
   statusOf,
@@ -34,7 +36,6 @@ const STATUS_TITLE: Record<AxisStatus, string> = {
 function thresholdLabel(thresholds: AxisThresholds | null | undefined, axis: AxisKey): string {
   const threshold = thresholdOf(thresholds, axis);
   if (threshold == null) return '—';
-  if (axis === 'sales') return `≥ ${toFaDigits(threshold.toFixed(2)).replace('.', '٫')}`;
   return `≥ ${toFaDigits(threshold)}٪`;
 }
 
@@ -59,11 +60,21 @@ function AxisCell({ row, axis, thresholds }: Props) {
     : formatAxisValue(valueOf(row, axis), axis);
   const threshold = thresholdOf(thresholds, axis);
   const reason = reasonOf(row, axis);
+  // R-P0-1: زیرگیتِ پتانسیل و مسیرِ OR فقط برای محور ۴؛ وضعیتِ سلول همچنان ترکیبی است.
+  const potential = axis === 'sales' ? potentialStatusOf(row, thresholds) : null;
+  const path = axis === 'sales' ? potentialPath(row, thresholds) : null;
+  const salesRatio = axis === 'sales'
+    ? (row.sales_to_mcap == null ? '—' : toFaDigits(row.sales_to_mcap.toFixed(2)).replace('.', '٫'))
+    : null;
   const subtitle = axis === 'eps'
     ? epsThresholdLabel(epsYears)
     : axis === 'industry'
       ? row.sector_name ?? '—'
-      : thresholdLabel(thresholds, axis);
+      : axis === 'sales'
+        ? (threshold == null
+            ? '—'
+            : `≥ ${toFaDigits(threshold)}٪ · ${path === 'sales' ? 'مسیر فروش/ارزش' : 'فروش/ارزش'} ${salesRatio}`)
+        : thresholdLabel(thresholds, axis);
   const epsTrend = axis === 'eps' ? trendFa(trendOf(row.eps_series)) : null;
 
   return (
@@ -71,6 +82,7 @@ function AxisCell({ row, axis, thresholds }: Props) {
       role="cell"
       data-testid={`fundamental-cell-${row.symbol}-${axis}`}
       data-state={status}
+      data-path={axis === 'sales' ? path ?? 'none' : undefined}
       className={`fd-axis-cell flex min-w-0 flex-col justify-center px-1.5 ${density === 'comfortable' ? 'gap-1 py-1' : 'gap-0 py-0.5'}`}
     >
       <div className="flex items-baseline gap-1.5">
@@ -86,6 +98,14 @@ function AxisCell({ row, axis, thresholds }: Props) {
         >
           <span aria-hidden>{STATUS_ICON[status]}</span> {statusFa(status)}
         </span>
+        {axis === 'sales' ? (
+          <span
+            className="rounded border border-[var(--fd-line-strong)] px-1 text-[8.5px] text-[var(--fd-text-3)]"
+            title={path === 'potential' ? 'قبول از مسیر پتانسیل سود' : path === 'sales' ? 'قبول از مسیر فروش/ارزش' : 'مسیر قبولی مشخص نیست'}
+          >
+            {path === 'potential' ? '۴ب' : path === 'sales' ? '۴الف' : '—'}
+          </span>
+        ) : null}
       </div>
       {density === 'comfortable' ? (
         <div className="fd-axis-chart h-[24px]">
@@ -99,7 +119,13 @@ function AxisCell({ row, axis, thresholds }: Props) {
             <Bullet value={row.gross_margin ?? null} max={60} threshold={threshold} status={status} label={`${meta.label} ${value}`} />
           ) : null}
           {axis === 'sales' ? (
-            <Bullet value={row.sales_to_mcap ?? null} max={2} threshold={threshold} status={status} label={`${meta.label} ${value}`} />
+            <Bullet
+              value={row.profit_potential_pct ?? null}
+              max={100}
+              threshold={threshold}
+              status={potential ?? 'unknown'}
+              label={`پتانسیل سود ${value}`}
+            />
           ) : null}
           {axis === 'industry' ? <RegimeGlyph regime={row.pricing_mode ?? null} status={status} /> : null}
         </div>

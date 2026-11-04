@@ -70,10 +70,21 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
     },
     {
       axis: 'sales',
-      value: sales?.sales_to_mcap == null ? '—' : toFaDigits(sales.sales_to_mcap.toFixed(2)).replace('.', '٫').replace(/^-/, '−'),
-      threshold: `کف ${thresholdLabel(sales?.sales_threshold, '')}`,
+      // R-P0-1: تیترِ محور ۴ درصدِ نهاییِ پتانسیل سود است؛ فروش/ارزش فقط مسیر/شاهد است.
+      value: formatAxisValue(sales?.potential_pct ?? null, 'sales'),
+      threshold: `کف ${thresholdLabel(sales?.potential_threshold, '٪')}`,
       status: cardStatus(card, 'sales'),
-      chart: <Bullet value={sales?.sales_to_mcap ?? null} max={2} threshold={sales?.sales_threshold ?? null} status={cardStatus(card, 'sales')} label="فروش/ارزش" />,
+      chart: (
+        <Bullet
+          value={sales?.potential_pct ?? null}
+          max={100}
+          threshold={sales?.potential_threshold ?? null}
+          status={sales?.potential_pct != null && sales?.potential_threshold != null
+            ? sales.potential_pct >= sales.potential_threshold ? 'pass' : 'fail'
+            : 'unknown'}
+          label="پتانسیل سود"
+        />
+      ),
     },
     {
       axis: 'industry',

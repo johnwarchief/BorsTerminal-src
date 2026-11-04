@@ -3,6 +3,8 @@ import type { ScreenerCoreRow } from '../api/useScreenerCore';
 
 export type AxisKey = 'growth' | 'eps' | 'margin' | 'sales' | 'industry';
 export type AxisStatus = 'pass' | 'fail' | 'na' | 'unknown';
+// R-P0-1: مسیرِ قبولیِ محور ۴ — پتانسیل سود، وگرنه شاهدِ فروش/ارزش، وگرنه هیچ.
+export type PotentialPath = 'potential' | 'sales' | null;
 export type ScreenerRowLike = Pick<ScreenerCoreRow,
   'symbol' | 'score' | 'verdict' | 'i1_pass' | 'i1_na' | 'i2_pass' | 'i2_na' |
   'i3_pass' | 'i3_na' | 'i4_pass' | 'i4_na' | 'i5_pass' | 'i5_na' |
@@ -19,7 +21,8 @@ export const AXES = [
   { key: 'growth', num: '۱', label: 'رشد فروش', short: 'رشد', thresholdKey: 'growth_min' },
   { key: 'eps', num: '۲', label: 'سودآوری ۳ساله', short: 'سودآوری', thresholdKey: 'v10_eps_years' },
   { key: 'margin', num: '۳', label: 'حاشیهٔ ناخالص', short: 'حاشیه', thresholdKey: 'margin_min' },
-  { key: 'sales', num: '۴', label: 'فروش / ارزش', short: 'فروش/ارزش', thresholdKey: 'v10_sales_to_mcap_min' },
+  // R-P0-1: تیترِ محور ۴ پتانسیل سود است؛ کلیدِ داخلیِ `sales` برای سازگاریِ sortKey می‌ماند.
+  { key: 'sales', num: '۴', label: 'پتانسیل سود تا آخر سال', short: 'پتانسیل', thresholdKey: 'profit_potential_min' },
   { key: 'industry', num: '۵', label: 'نرخ‌گذاری صنعت', short: 'صنعت', thresholdKey: null },
 ] as const;
 export type AxisMeta = (typeof AXES)[number];
@@ -43,7 +46,8 @@ export function valueOf(row: ScreenerRowLike, axis: AxisKey): number | string | 
     case 'growth': return row.rev_growth ?? null;
     case 'eps': return Array.isArray(row.eps_series) && row.eps_series.length ? row.eps_series[row.eps_series.length - 1] ?? null : null;
     case 'margin': return row.gross_margin ?? null;
-    case 'sales': return row.sales_to_mcap ?? null;
+    // R-P0-1: مقدارِ محور ۴ درصدِ نهاییِ پتانسیل سود است، نه نسبتِ فروش/ارزش.
+    case 'sales': return row.profit_potential_pct ?? null;
     case 'industry': return row.pricing_mode ?? null;
   }
 }
@@ -54,9 +58,33 @@ export function thresholdOf(thresholds: AxisThresholds | null | undefined, axis:
     case 'growth': return thresholds.growth_min ?? null;
     case 'eps': return thresholds.v10_eps_years ?? null;
     case 'margin': return thresholds.margin_min ?? null;
-    case 'sales': return thresholds.v10_sales_to_mcap_min ?? null;
+    // R-P0-1: آستانهٔ محور ۴ همان کفِ پتانسیل سود است؛ فروش/ارزش فقط مسیر/شاهد است.
+    case 'sales': return thresholds.profit_potential_min ?? null;
     case 'industry': return null;
   }
+}
+
+/** وضعیتِ زیرگیتِ پتانسیل سود برای نمودار/تیترِ محور ۴ — نه وضعیتِ ترکیبیِ کارت. */
+export function potentialStatusOf(
+  row: Pick<ScreenerRowLike, 'profit_potential_pct'>,
+  thresholds: AxisThresholds | null | undefined,
+): AxisStatus {
+  const value = row.profit_potential_pct;
+  const threshold = thresholds?.profit_potential_min;
+  if (value == null || threshold == null || !Number.isFinite(value) || !Number.isFinite(threshold)) return 'unknown';
+  return value >= threshold ? 'pass' : 'fail';
+}
+
+/** مسیرِ قبولیِ محور ۴: پتانسیل، وگرنه شاهدِ فروش/ارزش، وگرنه هیچ. */
+export function potentialPath(
+  row: Pick<ScreenerRowLike, 'profit_potential_pct' | 'sales_to_mcap'>,
+  thresholds: AxisThresholds | null | undefined,
+): PotentialPath {
+  if (potentialStatusOf(row, thresholds) === 'pass') return 'potential';
+  const ratio = row.sales_to_mcap;
+  const floor = thresholds?.v10_sales_to_mcap_min;
+  if (ratio != null && floor != null && Number.isFinite(ratio) && Number.isFinite(floor) && ratio >= floor) return 'sales';
+  return null;
 }
 
 type ReasonField = 'i1_reason' | 'i2_reason' | 'i3_reason' | 'i4_reason' | 'i5_reason';
@@ -146,8 +174,8 @@ export function formatAxisValue(value: number | string | null, axis: AxisKey): s
   if (value == null) return '—';
   if (axis === 'industry') return regimeFa(String(value));
   if (axis === 'eps') return toFaDigits(Math.round(Number(value)));
-  if (axis === 'sales') return toFaDigits(Number(value).toFixed(2)).replace('.', '٫');
   const n = Number(value);
-  const prefix = axis === 'growth' && n > 0 ? '+' : n < 0 ? '−' : '';
+  // R-P0-1: محور ۴ هم درصدِ علامت‌دار است («+۱۳٫۲٪»).
+  const prefix = (axis === 'growth' || axis === 'sales') && n > 0 ? '+' : n < 0 ? '−' : '';
   return `${prefix}${toFaDigits(Math.abs(n).toFixed(1)).replace('.', '٫')}٪`;
 }

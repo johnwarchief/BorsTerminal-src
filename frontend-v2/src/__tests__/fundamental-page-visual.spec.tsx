@@ -105,13 +105,16 @@ describe('fundamental page visual', () => {
     expect(mockedDownload).toHaveBeenCalledTimes(1);
     const [base, table, meta] = mockedDownload.mock.calls[0]!;
     expect(base).toBe('غربالگری-بنیادی');
-    expect(table.columns).toEqual(expect.arrayContaining(['نماد', 'رشد', 'سودآوری', 'حاشیه', 'فروش/ارزش', 'صنعت', 'امتیاز', 'وضعیت']));
+    expect(table.columns).toEqual(expect.arrayContaining([
+      'نماد', 'رشد', 'سودآوری', 'حاشیه', 'پتانسیل سود', 'فروش/ارزش (شاهد)', 'صنعت', 'امتیاز', 'وضعیت',
+    ]));
     expect(table.columns).toContain('صنعت شرکت');
     expect(meta).toEqual(expect.arrayContaining([
       ['آستانه رشد', '60'],
       // R107: گیتِ EPS در متادیتا می‌ماند، هرچند ستون نمایشی آخرین EPS + فلش است.
       ['آستانه EPS', '3'],
       ['آستانه حاشیه', '40'],
+      ['آستانه پتانسیل', '40'],
       ['آستانه فروش/ارزش', '0.33'],
     ]));
     // R38: همان آستانه‌ها در هدر جدول هم دیده می‌شوند.
@@ -169,13 +172,14 @@ describe('fundamental page visual', () => {
   it('falls back to — for axis thresholds and CSV meta when thresholds are null (R45)', () => {
     mockScreener({ data: { status: 'success', count: 1, data: rows, as_of: 1793789441, thresholds: null } });
     renderPage();
-    for (const name of [/رشد فروش/, /حاشیهٔ ناخالص/, /فروش \/ ارزش/]) {
+    for (const name of [/رشد فروش/, /حاشیهٔ ناخالص/, /پتانسیل سود تا آخر سال/]) {
       const header = screen.getByRole('columnheader', { name });
       expect(within(header).getByText('—')).toBeTruthy();
     }
     for (const axis of ['growth', 'margin', 'sales']) {
       const cell = screen.getByTestId(`fundamental-cell-رنيك-${axis}`);
-      expect(within(cell).getByText('—')).toBeTruthy();
+      // محورِ بی‌آستانه «—» را در خطِ آستانه/نشانِ مسیر نگه می‌دارد، نه مقدارِ ساختگی.
+      expect(within(cell).getAllByText('—').length).toBeGreaterThan(0);
     }
     fireEvent.click(screen.getByTestId('fundamental-export'));
     const [, , meta] = mockedDownload.mock.calls[0]!;
@@ -183,6 +187,7 @@ describe('fundamental page visual', () => {
       ['آستانه رشد', '—'],
       ['آستانه EPS', '—'],
       ['آستانه حاشیه', '—'],
+      ['آستانه پتانسیل', '—'],
       ['آستانه فروش/ارزش', '—'],
     ]));
   });

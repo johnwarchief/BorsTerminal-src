@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   AXES,
   epsYearsRequired,
+  formatAxisValue,
   formatEpsTrend,
+  potentialPath,
+  potentialStatusOf,
   statusOf,
   thresholdOf,
   trendArrow,
@@ -41,14 +44,32 @@ describe('axis meta', () => {
     expect(valueOf(row, 'eps')).toBe(1672);
     expect(valueOf(row, 'industry')).toBe('neutral');
     expect(thresholdOf(thresholds, 'growth')).toBe(60);
-    expect(thresholdOf(thresholds, 'sales')).toBe(0.33);
+    expect(thresholdOf(thresholds, 'sales')).toBe(40);
   });
-  it('uses only sales_to_mcap for axis 4, never profit potential', () => {
-    expect(valueOf(row, 'sales')).toBe(1.15);
-    expect(valueOf({ ...row, sales_to_mcap: null, profit_potential_pct: 13.2 }, 'sales')).toBeNull();
+  it('reads potential profit as axis 4 and keeps the sales path as evidence', () => {
+    expect(AXES.find((axis) => axis.key === 'sales')?.label).toBe('پتانسیل سود تا آخر سال');
+    expect(valueOf({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 1.15 }, 'sales')).toBe(13.2);
+    expect(thresholdOf(thresholds, 'sales')).toBe(40);
+    expect(formatAxisValue(13.2, 'sales')).toBe('+۱۳٫۲٪');
+    expect(potentialPath({ ...row, profit_potential_pct: 45, sales_to_mcap: 0.1 }, thresholds)).toBe('potential');
+    expect(potentialPath({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 1.15 }, thresholds)).toBe('sales');
+    expect(potentialPath({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 0.1 }, thresholds)).toBeNull();
+    expect(potentialStatusOf({ ...row, profit_potential_pct: 13.2 }, thresholds)).toBe('fail');
+  });
+  it('signs the axis-4 percentage and keeps unknown values honest', () => {
+    expect(formatAxisValue(-3.2, 'sales')).toBe('−۳٫۲٪');
+    expect(formatAxisValue(0, 'sales')).toBe('۰٫۰٪');
+    expect(formatAxisValue(null, 'sales')).toBe('—');
+    expect(potentialStatusOf({ ...row, profit_potential_pct: 40 }, thresholds)).toBe('pass');
+    expect(potentialStatusOf({ ...row, profit_potential_pct: null }, thresholds)).toBe('unknown');
+    expect(potentialStatusOf({ ...row, profit_potential_pct: 45 }, null)).toBe('unknown');
+    // ردیفِ بی‌مقدار/بی‌آستانه هیچ مسیرِ ساختگی نمی‌گیرد.
+    expect(potentialPath({ ...row, profit_potential_pct: null, sales_to_mcap: null }, thresholds)).toBeNull();
+    expect(potentialPath({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 0.1 }, null)).toBeNull();
   });
   it('does not invent fallback thresholds', () => {
     expect(thresholdOf({}, 'growth')).toBeNull();
+    expect(thresholdOf({}, 'sales')).toBeNull();
     expect(thresholdOf(null, 'sales')).toBeNull();
     expect(thresholdOf({ margin_min: 40 }, 'growth')).toBeNull();
   });
