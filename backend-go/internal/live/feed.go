@@ -33,6 +33,26 @@ const DefaultURL = "https://cdn.tsetmc.com/api/ClosingPrice/GetMarketWatch" +
 
 const failureBackoff = 30 * time.Second
 
+// bookPersistEvery keeps the five-level depth table fresh without rewriting
+// ~3k rows on every 5s market_watch persist. The drawer polls every 30s.
+const bookPersistEvery = 30 * time.Second
+
+type Book struct {
+	Txt      string
+	BuyVol   float64
+	BuyVal   float64
+	BuyCnt   float64
+	SellVol  float64
+	SellVal  float64
+	SellCnt  float64
+	Buy1Vol  float64
+	Buy1Px   float64
+	Sell1Vol float64
+	Sell1Px  float64
+	Buy1Cnt  float64
+	OK       bool
+}
+
 type Row struct {
 	Symbol  string
 	Closing float64
@@ -48,6 +68,7 @@ type Row struct {
 	PE      float64
 	DEven   int64
 	HEven   int64
+	Book    Book
 }
 
 type Snapshot struct {
@@ -75,6 +96,7 @@ type Feed struct {
 	db           *sql.DB
 	insCodes     map[string]string
 	dEven        int64
+	lastBook     time.Time
 	started      time.Time
 }
 
@@ -272,6 +294,17 @@ func (f *Feed) persist(ctx context.Context, rows map[string]Row) error {
 		price_first=COALESCE(NULLIF(?,0), price_first),
 		q_tot_tran=?, q_tot_cap=?, z_tot_tran=?, price_change=?,
 		pe=COALESCE(NULLIF(?,0), pe),
+		buy_q_vol=COALESCE(NULLIF(?,0), buy_q_vol),
+		buy_q_val=COALESCE(NULLIF(?,0), buy_q_val),
+		buy_q_cnt=COALESCE(NULLIF(?,0), buy_q_cnt),
+		sell_q_vol=COALESCE(NULLIF(?,0), sell_q_vol),
+		sell_q_val=COALESCE(NULLIF(?,0), sell_q_val),
+		sell_q_cnt=COALESCE(NULLIF(?,0), sell_q_cnt),
+		buy_q1_vol=COALESCE(NULLIF(?,0), buy_q1_vol),
+		buy_q1_px=COALESCE(NULLIF(?,0), buy_q1_px),
+		sell_q1_vol=COALESCE(NULLIF(?,0), sell_q1_vol),
+		sell_q1_px=COALESCE(NULLIF(?,0), sell_q1_px),
+		buy_q1_cnt=COALESCE(NULLIF(?,0), buy_q1_cnt),
 		fetched_at=?
 		WHERE ins_code=?`)
 	if err != nil {
@@ -279,8 +312,29 @@ func (f *Feed) persist(ctx context.Context, rows map[string]Row) error {
 		return err
 	}
 	defer stmt.Close()
+
+	f.mu.Lock()
+	writeBook := time.Since(f.lastBook) >= bookPersistEvery
+	f.mu.Unlock()
+	var bookStmt *sql.Stmt
+	if writeBook {
+		if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS order_book (
+			ins_code TEXT PRIMARY KEY, d_even INTEGER, h_even INTEGER,
+			book_txt TEXT, updated_at TEXT)`); err != nil {
+			tx.Rollback()
+			return err
+		}
+		bookStmt, err = tx.PrepareContext(ctx, `INSERT OR REPLACE INTO order_book
+			(ins_code, d_even, h_even, book_txt, updated_at) VALUES (?,?,?,?,?)`)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		defer bookStmt.Close()
+	}
+
 	now := time.Now().Format("2006-01-02 15:04:05")
-	n := 0
+	n, books := 0, 0
 	for sym, row := range rows {
 		code := insCodes[norm(sym)]
 		if code == "" {
@@ -292,14 +346,34 @@ func (f *Feed) persist(ctx context.Context, rows map[string]Row) error {
 		}
 		if _, err := stmt.ExecContext(ctx, de, row.HEven, row.HEven,
 			row.Closing, row.Last, row.Min, row.Max, row.Prev, row.First,
-			row.Volume, row.Value, row.Trades, row.Change, row.PE, now, code); err != nil {
+			row.Volume, row.Value, row.Trades, row.Change, row.PE,
+			row.Book.BuyVol, row.Book.BuyVal, row.Book.BuyCnt,
+			row.Book.SellVol, row.Book.SellVal, row.Book.SellCnt,
+			row.Book.Buy1Vol, row.Book.Buy1Px, row.Book.Sell1Vol,
+			row.Book.Sell1Px, row.Book.Buy1Cnt, now, code); err != nil {
 			tx.Rollback()
 			return err
+		}
+		if writeBook && row.Book.OK {
+			if _, err := bookStmt.ExecContext(ctx, code, de, row.HEven,
+				row.Book.Txt, now); err != nil {
+				tx.Rollback()
+				return err
+			}
+			books++
 		}
 		n++
 	}
 	if err := tx.Commit(); err != nil {
 		return err
+	}
+	if writeBook {
+		f.mu.Lock()
+		f.lastBook = time.Now()
+		f.mu.Unlock()
+	}
+	if books > 0 {
+		log.Printf("[live] persisted %d market rows and %d depth books", n, books)
 	}
 	f.writeSyncStatus(n, time.Now())
 	return nil
@@ -423,6 +497,52 @@ func norm(s string) string {
 	return strings.TrimSpace(strings.NewReplacer("ي", "ی", "ى", "ی", "ك", "ک").Replace(s))
 }
 
+// bookOf mirrors Python's queue_agg + book_lines: five compact [bpx,bvol,bcnt,
+// spx,svol,scnt] lines plus the five-level aggregates used by the board filters.
+func bookOf(v any) Book {
+	arr, ok := v.([]any)
+	if !ok || len(arr) == 0 {
+		return Book{}
+	}
+	lines := make([][6]float64, 0, 5)
+	var b Book
+	for _, item := range arr {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		bpx, bvol, bcnt := num(m["pmd"]), num(m["qmd"]), num(m["zmd"])
+		spx, svol, scnt := num(m["pmo"]), num(m["qmo"]), num(m["zmo"])
+		if bpx == 0 && spx == 0 {
+			continue
+		}
+		if len(lines) == 0 {
+			b.Buy1Vol, b.Buy1Px, b.Buy1Cnt = bvol, bpx, bcnt
+			b.Sell1Vol, b.Sell1Px = svol, spx
+		}
+		b.BuyVol += bvol
+		b.BuyVal += bvol * bpx
+		b.BuyCnt += bcnt
+		b.SellVol += svol
+		b.SellVal += svol * spx
+		b.SellCnt += scnt
+		lines = append(lines, [6]float64{bpx, bvol, bcnt, spx, svol, scnt})
+		if len(lines) == 5 {
+			break
+		}
+	}
+	if len(lines) == 0 {
+		return Book{}
+	}
+	raw, err := json.Marshal(lines)
+	if err != nil {
+		return Book{}
+	}
+	b.Txt = string(raw)
+	b.OK = true
+	return b
+}
+
 func parseRows(raw []map[string]any) (map[string]Row, int64) {
 	rows := make(map[string]Row, len(raw))
 	var maxHEven int64
@@ -437,6 +557,7 @@ func parseRows(raw []map[string]any) (map[string]Row, int64) {
 			Min: num(m["pmn"]), First: num(m["pf"]), Volume: num(m["qtj"]),
 			Value: num(m["qtc"]), Trades: num(m["ztt"]), PE: num(m["pe"]),
 			DEven: int64(num(m["dEven"])), HEven: int64(num(m["hEven"])),
+			Book: bookOf(m["blDs"]),
 		}
 		rows[norm(sym)] = r
 		if r.HEven > maxHEven {
