@@ -126,6 +126,9 @@ func (s *Service) GetScreener(ctx context.Context, symbolsStr, preset, chainStr 
 	}
 	res["data"] = filteredRows
 	res["count"] = len(filteredRows)
+	// as_of از کش هم بازنویسی می‌شود: کشِ ۱۲ساعته ممکن است as_ofِ قدیمی (یا
+	// epochِ پایتون) داشته باشد و روزِ نشست باید با تابلو هم‌قدم بماند.
+	res["as_of"] = s.boardAsOf(ctx)
 	if askedCount > 0 {
 		res["requested_symbols"] = askedCount
 	}

@@ -192,11 +192,13 @@ func TestGetScreenerAsOf(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 	svc := NewService(db, t.TempDir())
-	res, err := svc.GetScreener(context.Background(), "", "trend", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res["as_of"] != "2026-11-03" {
-		t.Fatalf("as_of=%v want 2026-11-03", res["as_of"])
+	for i := 0; i < 2; i++ { // بارِ دوم از کش می‌آید و as_of باید همان بماند
+		res, err := svc.GetScreener(context.Background(), "", "trend", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res["as_of"] != "2026-11-03" {
+			t.Fatalf("call %d as_of=%v want 2026-11-03", i+1, res["as_of"])
+		}
 	}
 }
