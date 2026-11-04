@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { jalaliFromYmd } from '@shared/lib/jalali';
 import { useScreenerCore } from '../api/useScreenerCore';
-import { useFundamentalPrefs } from '../stores/prefs';
 import { FundamentalDetail } from '../ui/FundamentalDetail';
 import { FundamentalScreenTable } from '../ui/FundamentalScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
@@ -31,8 +30,6 @@ export function FundamentalPage() {
   const navigate = useNavigate();
   const screener = useScreenerCore();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const surface = useFundamentalPrefs((state) => state.surface);
-  const setSurface = useFundamentalPrefs((state) => state.setSurface);
   const scanLabel = scanTimeLabel(screener.data?.as_of);
 
   if (symbol) {
@@ -42,7 +39,6 @@ export function FundamentalPage() {
   return (
     <section
       data-testid="fundamental-page"
-      data-fund-surface={surface}
       className="fundamental-surface flex min-h-0 flex-1 flex-col bg-[var(--fd-bg)] text-[var(--fd-text)]"
     >
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
@@ -55,26 +51,6 @@ export function FundamentalPage() {
             </span>
           ) : null}
         </span>
-        <div role="group" aria-label="سطح داده" className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            data-testid="fundamental-surface-paper"
-            aria-pressed={surface === 'paper'}
-            onClick={() => setSurface('paper')}
-            className="tape-btn"
-          >
-            کاغذی
-          </button>
-          <button
-            type="button"
-            data-testid="fundamental-surface-ink"
-            aria-pressed={surface === 'ink'}
-            onClick={() => setSurface('ink')}
-            className="tape-btn"
-          >
-            تیره
-          </button>
-        </div>
         {screener.isFetching && !screener.isLoading ? (
           <span data-testid="fundamental-refetching" className="t-85 text-[var(--fd-warn)]">جدول در حال بازسازی…</span>
         ) : null}

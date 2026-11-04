@@ -117,18 +117,14 @@ html[data-theme='cool'] {
   --down-soft: rgba(176, 44, 55, 0.08);
 }
 
-/* ===== fundamental data surfaces (paper/ink) ===== */
-.fundamental-surface[data-fund-surface='paper'] {
-  --fd-bg: #efece4; --fd-panel: #fbf9f5; --fd-panel-2: #f4f1e9; --fd-panel-3: #eae5da;
-  --fd-line: #ddd6c8; --fd-line-strong: #c7bead; --fd-text: #1c1a16; --fd-text-2: #57524a; --fd-text-3: #6f695d;
-  --fd-accent: #94651a; --fd-up: #0d7a45; --fd-down: #b02c37; --fd-warn: #8a5a08; --fd-flat: #6d675c;
-  --fd-grid: rgba(109,103,92,.16);
-}
-.fundamental-surface[data-fund-surface='ink'] {
-  --fd-bg: #101215; --fd-panel: #15181c; --fd-panel-2: #1a1e23; --fd-panel-3: #20252b;
-  --fd-line: #2a2f36; --fd-line-strong: #363d46; --fd-text: #e2ddd2; --fd-text-2: #a9a396; --fd-text-3: #908a7e;
-  --fd-accent: #c9a45c; --fd-up: #4fbd8c; --fd-down: #e07480; --fd-warn: #d3a04a; --fd-flat: #8f8a80;
-  --fd-grid: rgba(154,160,168,.14);
+/* ===== سطح داده از تم برنامه ارث می‌برد؛ هیچ تم مستقل/سوییچی وجود ندارد. ===== */
+.fundamental-surface {
+  --fd-bg: var(--bg); --fd-panel: var(--panel); --fd-panel-2: var(--panel-2); --fd-panel-3: var(--panel-3);
+  --fd-line: var(--line); --fd-line-strong: var(--line-strong);
+  --fd-text: var(--text); --fd-text-2: var(--text-2); --fd-text-3: var(--text-3);
+  --fd-accent: var(--accent); --fd-up: var(--up); --fd-down: var(--down);
+  --fd-warn: var(--warn); --fd-flat: var(--flat);
+  --fd-grid: color-mix(in srgb, var(--text-3) 16%, transparent);
 }
 .fundamental-surface .fd-status--pass { color: var(--fd-up); }
 .fundamental-surface .fd-status--fail { color: var(--fd-down); }
@@ -212,7 +208,7 @@ html[data-theme='cool'] {
   }
 }
 
-/* R78: تغییر density یا سطح، یک‌بار بدنهٔ جدول را ۱۶۰ms محو می‌کند؛ خودِ
+/* R78: تغییر density، یک‌بار بدنهٔ جدول را ۱۶۰ms محو می‌کند؛ خودِ
    ردیف‌ها و نمودارها نه remount می‌شوند نه transition دارند. */
 .fundamental-surface .fd-scroll {
   transition: opacity 160ms ease-out;
@@ -221,7 +217,7 @@ html[data-theme='cool'] {
   opacity: .65;
 }
 
-/* R76: فوکوسِ ردیف و ریشهٔ پنل با توکنِ سطح، فقط برای :focus-visible. */
+/* R76: فوکوسِ ردیف و ریشهٔ پنل با توکنِ fd، فقط برای :focus-visible. */
 .fundamental-surface .fd-row:focus-visible,
 .fundamental-surface .fd-panel:focus-visible {
   outline: 2px solid var(--fd-accent);
@@ -408,8 +404,8 @@ body {
 .tape-btn.is-all[aria-pressed='true'] {
   border-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
 }
-/* R42 — tape-btn داخل سطح دادهٔ بنیادی از توکن‌های --fd-* رنگ می‌گیرد،
-   نه از --line/--text-3/--accent-2 تمِ پوسته (کنتراست کاغذ و تیره). */
+/* R42 — tape-btn داخل سطح بنیادی از توکن‌های --fd-* رنگ می‌گیرد؛
+   این توکن‌ها alias تم برنامه‌اند و سطح مستقل ندارند. */
 .fundamental-surface .tape-btn {
   border-color: var(--fd-line-strong);
   background: var(--fd-panel);

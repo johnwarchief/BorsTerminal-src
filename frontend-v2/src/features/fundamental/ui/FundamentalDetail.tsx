@@ -6,7 +6,6 @@ import { useSectorPe } from '../api/useSectorPe';
 import { isBankCard, isHoldingCard } from '../lib/assetScope';
 import { statusFa, verdictFa, AXES, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
-import { useFundamentalPrefs } from '../stores/prefs';
 import { CodalHealthStrip } from './CodalHealthStrip';
 import { CorporateCalendar } from './CorporateCalendar';
 import { FtsSettingsTrigger } from './FtsSettingsDrawer';
@@ -83,13 +82,12 @@ function attentionAxes(card: FtsCard): string[] {
 }
 
 /**
- * R102: قالبِ بارگذاری/خطا همان سطحِ دادهٔ نمای نماد است — پس‌زمینهٔ fd،
+ * R102: قالبِ بارگذاری/خطا همان تمِ نمای نماد است — پس‌زمینهٔ fd،
  * بازگشت به جدول، عنوانِ نماد و دکمهٔ تنظیمات در هر دو حالت می‌مانند.
  */
-function DetailFrame({ testId, symbol, surface, onBack, settingsOpen, onToggleSettings, children }: {
+function DetailFrame({ testId, symbol, onBack, settingsOpen, onToggleSettings, children }: {
   testId: string;
   symbol: string;
-  surface: string;
   onBack: () => void;
   settingsOpen: boolean;
   onToggleSettings: () => void;
@@ -98,7 +96,6 @@ function DetailFrame({ testId, symbol, surface, onBack, settingsOpen, onToggleSe
   return (
     <section
       data-testid={testId}
-      data-fund-surface={surface}
       className="fundamental-surface flex min-h-0 flex-1 flex-col bg-[var(--fd-bg)] text-[var(--fd-text)]"
     >
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
@@ -159,7 +156,6 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
   const query = useFtsCard(symbol);
   const sectorPe = useSectorPe(symbol);
   const health = useCodalHealth();
-  const surface = useFundamentalPrefs((state) => state.surface);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const card = query.data;
 
@@ -168,7 +164,6 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
       <DetailFrame
         testId="fundamental-detail-loading"
         symbol={symbol}
-        surface={surface}
         onBack={onBack}
         settingsOpen={settingsOpen}
         onToggleSettings={() => setSettingsOpen((value) => !value)}
@@ -182,7 +177,6 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
       <DetailFrame
         testId="fundamental-detail-error"
         symbol={symbol}
-        surface={surface}
         onBack={onBack}
         settingsOpen={settingsOpen}
         onToggleSettings={() => setSettingsOpen((value) => !value)}
@@ -214,7 +208,6 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
   return (
     <section
       data-testid="fundamental-detail"
-      data-fund-surface={surface}
       className="fundamental-surface flex min-h-0 flex-1 flex-col bg-[var(--fd-bg)] text-[var(--fd-text)]"
     >
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">

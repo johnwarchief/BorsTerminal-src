@@ -84,7 +84,7 @@ function summaryBar(axis: string): HTMLElement {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useFundamentalPrefs.setState({ density: 'comfortable', surface: 'paper' });
+  useFundamentalPrefs.setState({ density: 'comfortable' });
   serve(card);
 });
 
@@ -102,7 +102,7 @@ describe('FundamentalCards (dock variant)', () => {
     expect(root.querySelectorAll('svg')).toHaveLength(0);
     expect(root.textContent).toContain('رشد');
     expect(root.textContent).toContain('صنعت');
-    expect(root.getAttribute('data-fund-surface')).toBe('paper');
+    expect(root.dataset.fundSurface).toBeUndefined();
     expect(root.className).toContain('fundamental-surface');
   });
 
@@ -152,11 +152,10 @@ describe('FundamentalCards (dock variant)', () => {
     expect(summaryBar('eps').getAttribute('aria-label')).toContain('نامشخص');
   });
 
-  it('follows the surface preference on the cards root', () => {
-    useFundamentalPrefs.setState({ surface: 'ink' });
+  it('keeps the app theme class without a separate data surface', () => {
     render(<FundamentalCards symbol="رنيك" />);
     const root = screen.getByTestId('fundamental-cards');
-    expect(root.getAttribute('data-fund-surface')).toBe('ink');
+    expect(root.dataset.fundSurface).toBeUndefined();
     expect(root.className).toContain('fundamental-surface');
   });
 
@@ -165,7 +164,7 @@ describe('FundamentalCards (dock variant)', () => {
     render(<FundamentalCards symbol="رنيك" />);
     const loading = screen.getByTestId('fundamental-cards-loading');
     expect(loading.textContent).toContain('در حال خواندن');
-    expect(loading.getAttribute('data-fund-surface')).toBe('paper');
+    expect(loading.dataset.fundSurface).toBeUndefined();
     expect(loading.className).toContain('fundamental-surface');
     expect(loading.className).toContain('bg-[var(--fd-bg)]');
     cleanup();
@@ -254,11 +253,10 @@ describe('FundamentalSummary (sidebar variant)', () => {
     expect(screen.queryByTestId('fund-summary-count')).toBeNull();
   });
 
-  it('carries the data surface and never fabricates a weakest axis or ranking', () => {
-    useFundamentalPrefs.setState({ surface: 'ink' });
+  it('carries the app theme class and never fabricates a weakest axis or ranking', () => {
     render(<FundamentalSummary symbol="رنيك" />);
     const summary = screen.getByTestId('symbol-fund-summary');
-    expect(summary.getAttribute('data-fund-surface')).toBe('ink');
+    expect(summary.dataset.fundSurface).toBeUndefined();
     expect(summary.className).toContain('fundamental-surface');
     expect(summary.textContent).not.toContain('ضعیف‌ترین');
     expect(summary.textContent).not.toContain('رتبه');

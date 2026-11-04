@@ -515,7 +515,7 @@ describe('fundamental cockpit', () => {
     expect(loading.className).toContain('fundamental-surface');
     expect(loading.className).toContain('bg-[var(--fd-bg)]');
     expect(loading.className).toContain('text-[var(--fd-text)]');
-    expect(loading.getAttribute('data-fund-surface')).toBe('paper');
+    expect(loading.dataset.fundSurface).toBeUndefined();
     expect(screen.getByTestId('fundamental-back')).toBeTruthy();
     expect(screen.getByTestId('fundamental-title').textContent).toBe('رنيك');
     expect(screen.getByTestId('fts-settings-trigger')).toBeTruthy();
@@ -534,7 +534,7 @@ describe('fundamental cockpit', () => {
     const error = screen.getByTestId('fundamental-detail-error');
     expect(error.className).toContain('fundamental-surface');
     expect(error.className).toContain('bg-[var(--fd-bg)]');
-    expect(error.getAttribute('data-fund-surface')).toBe('paper');
+    expect(error.dataset.fundSurface).toBeUndefined();
     expect(screen.getByTestId('fundamental-back')).toBeTruthy();
     expect(screen.getByTestId('fundamental-title').textContent).toBe('رنيك');
     expect(screen.getByTestId('fts-settings-trigger')).toBeTruthy();

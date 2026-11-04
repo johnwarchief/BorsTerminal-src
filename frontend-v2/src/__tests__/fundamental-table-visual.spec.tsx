@@ -40,7 +40,7 @@ const thresholds = { growth_min: 60, margin_min: 40, v10_sales_to_mcap_min: 0.33
 beforeEach(() => {
   resetExcludeAxes();
   vi.clearAllMocks();
-  useFundamentalPrefs.setState({ density: 'comfortable', surface: 'paper', sortKey: 'score', sortDir: 'desc' });
+  useFundamentalPrefs.setState({ density: 'comfortable', sortKey: 'score', sortDir: 'desc' });
 });
 afterEach(cleanup);
 

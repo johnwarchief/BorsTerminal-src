@@ -1,7 +1,6 @@
 import { useFtsCard } from '../api/useFtsCard';
 import { AXES, statusFa } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
-import { useFundamentalPrefs } from '../stores/prefs';
 
 // R69: پیام‌های بارگذاری/خطا متنِ fd دارند، پس باید پس‌زمینهٔ fd هم داشته باشند.
 const MESSAGE = 'bg-[var(--fd-bg)] p-2 text-[10px] leading-relaxed text-[var(--fd-text-3)]';
@@ -12,11 +11,10 @@ const MESSAGE = 'bg-[var(--fd-bg)] p-2 text-[10px] leading-relaxed text-[var(--f
  */
 export function FundamentalCards({ symbol }: { symbol: string }) {
   const query = useFtsCard(symbol);
-  const surface = useFundamentalPrefs((state) => state.surface);
 
   if (query.isLoading) {
     return (
-      <p data-testid="fundamental-cards-loading" data-fund-surface={surface}
+      <p data-testid="fundamental-cards-loading"
         className={`fundamental-surface ${MESSAGE}`}>
         پنج محورِ بنیادی در حال خواندن…
       </p>
@@ -24,7 +22,7 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
   }
   if (query.isError || !query.data) {
     return (
-      <p data-testid="fundamental-cards-error" data-fund-surface={surface}
+      <p data-testid="fundamental-cards-error"
         className={`fundamental-surface ${MESSAGE}`}>
         کارت بنیادی این نماد در دسترس نیست؛ چارت و تابلو دست‌نخورده‌اند.
       </p>
@@ -33,7 +31,7 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
 
   const card = query.data;
   return (
-    <div data-testid="fundamental-cards" data-fund-surface={surface}
+    <div data-testid="fundamental-cards"
       className="fundamental-surface grid grid-cols-5 gap-1 p-1 max-[900px]:grid-cols-2">
       {AXES.map((meta) => {
         const status = cardStatus(card, meta.key);

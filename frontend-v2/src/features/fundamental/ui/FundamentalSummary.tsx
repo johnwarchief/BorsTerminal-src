@@ -3,7 +3,6 @@ import { toFaDigits } from '@shared/lib/fa';
 import { useFtsCard } from '../api/useFtsCard';
 import { AXES, statusFa, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
-import { useFundamentalPrefs } from '../stores/prefs';
 
 /** گذرِ وضعیت به توکنِ رنگ؛ na=flat و unknown=warn طبق R66. */
 const BAR_COLOR: Record<AxisStatus, string> = {
@@ -21,7 +20,6 @@ interface Props {
 
 export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
   const query = useFtsCard(symbol);
-  const surface = useFundamentalPrefs((state) => state.surface);
   const card = query.data;
   const statuses = card ? AXES.map((meta) => cardStatus(card, meta.key)) : [];
   const passed = statuses.filter((status) => status === 'pass').length;
@@ -86,13 +84,13 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
   const className = 'fundamental-surface flex w-full flex-col gap-0.5 border-y border-[var(--fd-line)] bg-[var(--fd-bg)] px-2 py-1 text-start';
   if (!onToggle) {
     return (
-      <div data-testid="symbol-fund-summary" data-fund-surface={surface} className={className}>
+      <div data-testid="symbol-fund-summary" className={className}>
         {body}
       </div>
     );
   }
   return (
-    <button type="button" data-testid="symbol-fund-summary" data-fund-surface={surface}
+    <button type="button" data-testid="symbol-fund-summary"
       aria-expanded={Boolean(expanded)} onClick={onToggle}
       className={`${className} hover:bg-[var(--fd-panel-2)]`}>
       {body}

@@ -43,39 +43,25 @@ function renderPage() {
 beforeEach(() => {
   resetExcludeAxes();
   vi.clearAllMocks();
-  useFundamentalPrefs.setState({ density: 'comfortable', surface: 'paper', sortKey: 'score', sortDir: 'desc' });
+  useFundamentalPrefs.setState({ density: 'comfortable', sortKey: 'score', sortDir: 'desc' });
   mockScreener();
 });
 afterEach(cleanup);
 
 describe('fundamental page visual', () => {
-  it('sets paper surface by default and switches to ink (R35/R37/R39)', () => {
+  it('uses the app theme and has no separate data-surface control', () => {
     renderPage();
     const page = screen.getByTestId('fundamental-page');
-    // R35: ریشهٔ صفحه هم توکن‌های سطح را می‌گیرد و هم صفت سطح را.
-    expect(page.getAttribute('data-fund-surface')).toBe('paper');
+    // R-P0-3: هیچ صفت data-* مرتبط با سطح و هیچ کنترل سطحی روی صفحه نیست.
+    const surfaceAttrs = Array.from(page.attributes).filter((attr) => attr.name.includes('surface'));
+    expect(surfaceAttrs).toEqual([]);
+    expect(screen.queryByRole('group', { name: 'سطح داده' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'کاغذی' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'تیره' })).toBeNull();
+    // ریشهٔ صفحه همان کلاس سطح را نگه می‌دارد تا توکن‌های fd از تم برنامه ارث ببرند.
     expect(page.className).toContain('fundamental-surface');
     expect(page.className).toContain('bg-[var(--fd-bg)]');
     expect(page.className).toContain('text-[var(--fd-text)]');
-    expect(screen.getByTestId('fundamental-surface-paper').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByTestId('fundamental-surface-paper').textContent).toBe('کاغذی');
-    expect(screen.getByTestId('fundamental-surface-ink').getAttribute('aria-pressed')).toBe('false');
-    expect(screen.getByTestId('fundamental-surface-ink').textContent).toBe('تیره');
-    // R42: هر دو دکمه در گروه «سطح داده»اند و کلاس tape-btn را حفظ می‌کنند؛
-    // قاعدهٔ سطح‌محور styles.css دقیقاً با همین دو انتخابگر رنگ می‌دهد.
-    const surfaceGroup = screen.getByRole('group', { name: 'سطح داده' });
-    expect(within(surfaceGroup).getByTestId('fundamental-surface-paper').className).toBe('tape-btn');
-    expect(within(surfaceGroup).getByTestId('fundamental-surface-ink').className).toBe('tape-btn');
-
-    fireEvent.click(screen.getByTestId('fundamental-surface-ink'));
-    expect(useFundamentalPrefs.getState().surface).toBe('ink');
-    expect(screen.getByTestId('fundamental-page').getAttribute('data-fund-surface')).toBe('ink');
-    expect(screen.getByTestId('fundamental-surface-ink').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByTestId('fundamental-surface-paper').getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(screen.getByTestId('fundamental-surface-paper'));
-    expect(useFundamentalPrefs.getState().surface).toBe('paper');
-    expect(screen.getByTestId('fundamental-page').getAttribute('data-fund-surface')).toBe('paper');
   });
 
   it('density buttons drive the measured chart effect, not just presence (R40/R41)', () => {
@@ -142,9 +128,7 @@ describe('fundamental page visual', () => {
     expect(screen.queryByTestId('fundamental-as-of')).toBeNull();
     expect(screen.queryByText(/زمان اسکن/)).toBeNull();
     const page = screen.getByTestId('fundamental-page');
-    expect(within(page).getByRole('group', { name: 'سطح داده' })).toBeTruthy();
-    expect(within(page).getByTestId('fundamental-surface-paper').getAttribute('aria-pressed')).toBe('true');
-    expect(within(page).getByTestId('fundamental-surface-ink')).toBeTruthy();
+    expect(within(page).queryByRole('group', { name: 'سطح داده' })).toBeNull();
     expect(within(page).getByRole('group', { name: 'تراکم جدول' })).toBeTruthy();
     expect(within(page).getByTestId('fundamental-density-compact')).toBeTruthy();
     expect(within(page).getByTestId('fundamental-density-comfortable').getAttribute('aria-pressed')).toBe('true');
@@ -156,7 +140,7 @@ describe('fundamental page visual', () => {
     const page = screen.getByTestId('fundamental-page');
     const loading = within(page).getByTestId('fundamental-table-loading');
     expect(loading.className).toBe('p-3 t-95 text-[var(--fd-text-3)]');
-    expect(page.getAttribute('data-fund-surface')).toBe('paper');
+    expect(Object.keys(page.dataset)).not.toContain('fundSurface');
     cleanup();
 
     mockScreener({ data: undefined, isError: true });
@@ -164,8 +148,8 @@ describe('fundamental page visual', () => {
     const errorPage = screen.getByTestId('fundamental-page');
     const error = within(errorPage).getByTestId('fundamental-table-error');
     expect(error.className).toBe('t-10 text-[var(--fd-text-2)]');
-    expect(errorPage.getAttribute('data-fund-surface')).toBe('paper');
-    // R42: دکمهٔ تلاش دوباره هم داخل سطح می‌ماند و همان کلاس هدفِ استایل سطح را دارد.
+    expect(Object.keys(errorPage.dataset)).not.toContain('fundSurface');
+    // R42: دکمهٔ تلاش دوباره هم داخل تم می‌ماند و همان کلاس هدفِ استایل fd را دارد.
     expect(within(errorPage).getByRole('button', { name: 'تلاش دوباره' }).className).toBe('tape-btn');
   });
 

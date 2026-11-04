@@ -102,7 +102,7 @@ function fixtureCard() {
 
 beforeEach(() => {
   resetExcludeAxes();
-  useFundamentalPrefs.setState({ density: 'comfortable', surface: 'paper', sortKey: 'score', sortDir: 'desc' });
+  useFundamentalPrefs.setState({ density: 'comfortable', sortKey: 'score', sortDir: 'desc' });
   Element.prototype.scrollIntoView = scrollSpy;
   mockedCard.mockReturnValue({
     data: fixtureCard(),
@@ -148,7 +148,7 @@ describe('fundamental accessibility and motion', () => {
     expect(document.querySelector('.fd-in, .fd-draw')).toBeNull();
   });
 
-  it('dips the table body once per density or surface change (R78)', () => {
+  it('dips the table body once per density change (R78)', () => {
     vi.useFakeTimers();
     try {
       const { container } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
@@ -161,7 +161,7 @@ describe('fundamental accessibility and motion', () => {
       expect(scroll().className).toContain('is-fading');
       act(() => { vi.advanceTimersByTime(1); });
       expect(scroll().className).not.toContain('is-fading');
-      act(() => useFundamentalPrefs.setState({ surface: 'ink' }));
+      act(() => useFundamentalPrefs.setState({ density: 'comfortable' }));
       expect(scroll().className).toContain('is-fading');
       act(() => { vi.advanceTimersByTime(160); });
       expect(scroll().className).not.toContain('is-fading');
@@ -170,7 +170,7 @@ describe('fundamental accessibility and motion', () => {
     }
   });
 
-  it('skips the density/surface dip when reduced motion is requested (R78)', () => {
+  it('skips the density dip when reduced motion is requested (R78)', () => {
     stubMatchMedia(true);
     vi.useFakeTimers();
     try {
@@ -182,11 +182,11 @@ describe('fundamental accessibility and motion', () => {
     }
   });
 
-  it('marks the surface on the detail root (R76)', () => {
-    useFundamentalPrefs.setState({ surface: 'ink' });
+  it('marks the app-theme surface on the detail root (R76)', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
-    expect(screen.getByTestId('fundamental-detail').getAttribute('data-fund-surface')).toBe('ink');
-    expect(screen.getByTestId('fundamental-detail').className).toContain('fundamental-surface');
+    const detail = screen.getByTestId('fundamental-detail');
+    expect(detail.dataset.fundSurface).toBeUndefined();
+    expect(detail.className).toContain('fundamental-surface');
   });
 
   it('scrolls smoothly to and focuses the panel header after a quintet click (R75/R79/R81)', () => {
