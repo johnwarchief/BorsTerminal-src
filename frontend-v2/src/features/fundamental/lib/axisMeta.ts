@@ -35,6 +35,13 @@ const PASS_KEYS: Record<AxisKey, [keyof ScreenerRowLike, keyof ScreenerRowLike]>
 };
 
 export function statusOf(row: ScreenerRowLike, axis: AxisKey): AxisStatus {
+  // R-P1-9: در محور رشد، بی‌نظری و شکافِ دادهٔ ۱ب و بی‌نظریِ ۱الف بر حکمِ ترکیبی مقدم‌اند؛
+  // شکافِ داده هرگز «رد» دیده نمی‌شود.
+  if (axis === 'growth') {
+    if (row.i1b_applicable === false) return 'na';
+    if (row.i1b_data_gap === true) return 'unknown';
+    if (row.i1_na === true) return 'na';
+  }
   const [passKey, naKey] = PASS_KEYS[axis];
   const pass = row[passKey];
   if (pass === true) return 'pass';
@@ -78,17 +85,22 @@ export function potentialStatusOf(
 }
 
 /**
- * R-P1-2: ۱الف و ۱ب جدا گزارش می‌شوند — ۱ب فقط برای تولیدی‌ها applicable است و
- * شکافِ داده «نامشخص» است، نه «رد».
+ * R-P1-2/R-P1-9: ۱الف و ۱ب جدا گزارش می‌شوند — ۱ب فقط برای تولیدی‌ها applicable است و
+ * شکافِ داده «نامشخص» است، نه «رد». تقدم: ۱الف بی‌نظری → na، سپس pass/fail؛
+ * ۱ب بی‌نظری → na، شکافِ داده → unknown، سپس pass/fail.
  */
 export function growthSubStatuses(
-  row: Pick<ScreenerRowLike, 'i1a_pass' | 'i1b_pass' | 'i1b_applicable' | 'i1b_data_gap'>,
+  row: Pick<ScreenerRowLike, 'i1_na' | 'i1a_pass' | 'i1b_pass' | 'i1b_applicable' | 'i1b_data_gap'>,
 ): { a: AxisStatus; b: AxisStatus } {
-  const a: AxisStatus = row.i1a_pass === true ? 'pass' : row.i1a_pass === false ? 'fail' : 'unknown';
+  const a: AxisStatus = row.i1_na === true ? 'na'
+    : row.i1a_pass === true ? 'pass'
+      : row.i1a_pass === false ? 'fail'
+        : 'unknown';
   const b: AxisStatus = row.i1b_applicable === false ? 'na'
-    : row.i1b_pass === true ? 'pass'
-      : row.i1b_pass === false ? 'fail'
-        : row.i1b_data_gap ? 'unknown' : 'unknown';
+    : row.i1b_data_gap === true ? 'unknown'
+      : row.i1b_pass === true ? 'pass'
+        : row.i1b_pass === false ? 'fail'
+          : 'unknown';
   return { a, b };
 }
 

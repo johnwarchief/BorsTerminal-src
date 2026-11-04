@@ -34,6 +34,13 @@ afterEach(() => {
 });
 
 describe('fts settings drawer', () => {
+  it('uses the exact gross-margin name in the exclusion and pharma labels (R-P1-6)', () => {
+    render(<FtsSettingsDrawer open onClose={vi.fn()} />);
+    expect(screen.getByTestId('fts-pharma-exempt').textContent).toContain('حاشیه سود ناخالص');
+    expect(screen.getByTestId('fts-pharma-exempt').textContent).not.toContain('حاشیهٔ ناخالص');
+    expect(screen.getByTestId('fts-exclude-3').textContent).toContain('حاشیه سود ناخالص (شاخص ۳)');
+  });
+
   it('saves a full payload and keeps hourglass keys', () => {
     render(<FtsSettingsDrawer open onClose={vi.fn()} />);
     fireEvent.change(screen.getByTestId('fts-growth-min'), { target: { value: '60' } });

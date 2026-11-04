@@ -163,8 +163,20 @@ describe('fundamental page visual', () => {
     for (const axis of ['growth', 'margin', 'sales']) {
       const cell = screen.getByTestId(`fundamental-cell-رنيك-${axis}`);
       // محورِ بی‌آستانه «—» را در خطِ آستانه/نشانِ مسیر نگه می‌دارد، نه مقدارِ ساختگی.
-      // R-P1-2: خطِ آستانهٔ رشد وضعیتِ ۱الف/۱ب را هم دارد، پس متنِ کاملِ سلول سنجیده می‌شود.
-      expect(cell.textContent).toContain('—');
+      const subtitle = cell.querySelector('.fd-axis-threshold');
+      expect(subtitle).toBeTruthy();
+      if (axis === 'margin') {
+        // حاشیه تک‌مقدار است: خطِ آستانه دقیقاً «—» می‌ماند.
+        expect(subtitle!.textContent).toBe('—');
+      } else if (axis === 'sales') {
+        expect(subtitle!.textContent).toContain('≥ —٪');
+        expect(subtitle!.textContent).toContain('فروش/ارزش ۱٫۱۵');
+      } else {
+        // R-P1-2: خطِ آستانهٔ رشد وضعیتِ ۱الف/۱ب را هم دارد.
+        expect(subtitle!.textContent).toContain('—');
+        expect(subtitle!.textContent).toContain('۱الف');
+        expect(subtitle!.textContent).toContain('۱ب');
+      }
     }
     fireEvent.click(screen.getByTestId('fundamental-export'));
     const [, , meta] = mockedDownload.mock.calls[0]!;

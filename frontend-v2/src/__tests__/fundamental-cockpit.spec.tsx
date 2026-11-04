@@ -331,7 +331,37 @@ describe('fundamental cockpit', () => {
     expect(panel.textContent).toContain('۱۶۰٬۸۷۳');
     expect(panel.textContent).toContain('−۲٫۵٪');
     expect(panel.querySelectorAll('svg[role="img"]').length).toBeGreaterThanOrEqual(2);
-    expect(panel.querySelector('[data-testid="growth-sales-pair"]')).toBeTruthy();
+    const pair = panel.querySelector('[data-testid="growth-sales-pair"]');
+    expect(pair).toBeTruthy();
+    // R-P1-8: نمودارِ جفتِ فروش شاهد است؛ برچسبِ خودش را دارد و «قبول» اعلام نمی‌کند.
+    const pairChart = pair!.querySelector('[role="img"]');
+    expect(pairChart?.getAttribute('aria-label')).toBe('فروش دورهٔ جاری و قبل');
+    expect(pairChart?.getAttribute('aria-label')).not.toContain('قبول');
+  });
+
+  it('shows an honest empty state for the sales pair when both periods are absent (R-P1-8)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const pair = screen.getByTestId('growth-sales-pair');
+    expect(pair.textContent).toContain('ثبت نشده');
+    expect(pair.textContent).not.toContain('قبول');
+    expect(pair.querySelector('[role="img"]')).toBeNull();
+  });
+
+  it('derives the margin floor and standard from the card thresholds (R-P1-7)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const margin = screen.getByTestId('panel-margin');
+    expect(margin.textContent).toContain('کف ۴۰٪');
+    expect(margin.textContent).toContain('استاندارد ۳۰٪');
+    expect(margin.textContent).not.toContain('کف ۲۰٪');
+    cleanup();
+    mockCard({
+      indicators: { ...baseIndicators, '3': { ...baseIndicators['3'], threshold: 25, optimal_threshold: 35 } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const configured = screen.getByTestId('panel-margin');
+    expect(configured.textContent).toContain('کف ۲۵٪');
+    expect(configured.textContent).toContain('استاندارد ۳۵٪');
+    expect(configured.textContent).not.toContain('کف ۲۰٪');
   });
 
   it('omits the target label when it equals the floor (R-P1-1)', () => {

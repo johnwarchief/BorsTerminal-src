@@ -32,12 +32,14 @@ export function MarginPanel({ card }: { card: FtsCard }) {
   ];
   // R101: دلیلِ آشکار برای محورهای بی‌نظر/نامشخص.
   if (margin?.reason) rows.push(['دلیل', margin.reason]);
+  // R-P1-7: کف/استاندارد از تنظیمِ کارت می‌آید، نه عددِ سخت‌کدِ ۲۰/۳۰.
+  const subtitle = `سود ناخالص ÷ درآمد عملیاتی × ۱۰۰؛ کف ${faThreshold(margin?.threshold, '٪')} · استاندارد ${faThreshold(margin?.optimal_threshold, '٪')}`;
   return (
     <AxisPanel
       testId="panel-margin"
       axis="margin"
       title="حاشیه سود ناخالص"
-      subtitle="سود ناخالص ÷ درآمد عملیاتی × ۱۰۰؛ کف ۲۰٪ · استاندارد ۳۰٪"
+      subtitle={subtitle}
       status={status}
       value={faFixed(margin?.margin_pct, 1, '٪')}
       threshold={`کف ${faThreshold(margin?.threshold, '٪')}`}

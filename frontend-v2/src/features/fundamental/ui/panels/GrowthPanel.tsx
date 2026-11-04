@@ -84,10 +84,12 @@ export function GrowthPanel({ card }: { card: FtsCard }) {
         <div data-testid="growth-sales-pair" className="flex flex-col gap-0.5">
           <span className="text-[9px] text-[var(--fd-text-3)]">فروش جاری / دورهٔ قبل</span>
           <div className="h-[24px]">
+            {/* R-P1-8: جفتِ فروش شاهد است، نه گیت؛ تُنِ خنثی و برچسبِ خودش. */}
             <HistoryBars
               values={[monetary?.ytd_prev_bt ?? null, monetary?.ytd_now_bt ?? null]}
               labels={['دوره قبل', 'دوره جاری']}
-              status="pass"
+              status="evidence"
+              label="فروش دورهٔ جاری و قبل"
             />
           </div>
         </div>

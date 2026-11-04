@@ -92,6 +92,47 @@ describe('fundamental table visual', () => {
     expect(cell.textContent).toContain('۱الف');
     expect(cell.textContent).toContain('۱ب');
   });
+  it('applies the 1a/1b data-gap precedence in the growth column (R-P1-9)', () => {
+    const growthRows: ScreenerCoreRow[] = [
+      // هر دو زیرگیت پاس.
+      { ...rows[0]!, symbol: 'پاس', i1_pass: true, i1a_pass: true, i1b_applicable: true, i1b_pass: true, i1b_data_gap: false },
+      // هر دو زیرگیت رد.
+      { ...rows[0]!, symbol: 'ردي', i1_pass: false, i1a_pass: false, i1b_applicable: true, i1b_pass: false, i1b_data_gap: false },
+      // ۱ب برای غیرتولیدی applicable نیست → بی‌نظر، هرچند pass دارد.
+      { ...rows[0]!, symbol: 'ناظر', i1_pass: true, i1a_pass: true, i1b_applicable: false, i1b_pass: true, i1b_data_gap: false },
+      // شکافِ داده بر pass=false مقدم است → نامشخص، نه رد.
+      { ...rows[0]!, symbol: 'شکاف', i1_pass: true, i1a_pass: true, i1b_applicable: true, i1b_pass: false, i1b_data_gap: true },
+      // بی‌نظریِ ۱الف بر حکمِ زیرگیت مقدم است.
+      { ...rows[0]!, symbol: 'نابل', i1_pass: null, i1_na: true, i1a_pass: false, i1b_applicable: true, i1b_pass: true, i1b_data_gap: false },
+    ];
+    render(<FundamentalScreenTable rows={growthRows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    const cell = (symbol: string) => screen.getByTestId(`fundamental-cell-${symbol}-growth`);
+    expect(cell('پاس').textContent).toContain('۱الف قبول');
+    expect(cell('پاس').textContent).toContain('۱ب قبول');
+    expect(cell('پاس').getAttribute('data-state')).toBe('pass');
+    expect(cell('ردي').textContent).toContain('۱الف رد');
+    expect(cell('ردي').textContent).toContain('۱ب رد');
+    expect(cell('ردي').getAttribute('data-state')).toBe('fail');
+    expect(cell('ناظر').textContent).toContain('۱ب بی‌نظر');
+    expect(cell('ناظر').getAttribute('data-state')).toBe('na');
+    expect(cell('شکاف').textContent).toContain('۱ب نامشخص');
+    expect(cell('شکاف').textContent).not.toContain('۱ب رد');
+    expect(cell('شکاف').getAttribute('data-state')).toBe('unknown');
+    expect(cell('نابل').textContent).toContain('۱الف بی‌نظر');
+    expect(cell('نابل').getAttribute('data-state')).toBe('na');
+  });
+  it('hides the 1a/1b sub-status line in compact density (R-P1-2)', () => {
+    const growthRow: ScreenerCoreRow[] = [
+      { ...rows[0]!, symbol: 'پاس', i1_pass: true, i1a_pass: true, i1b_applicable: true, i1b_pass: true, i1b_data_gap: false },
+    ];
+    const { container, rerender } = render(<FundamentalScreenTable rows={growthRow} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    expect(screen.getByTestId('fundamental-cell-پاس-growth').textContent).toContain('۱الف قبول');
+    act(() => useFundamentalPrefs.setState({ density: 'compact' }));
+    rerender(<FundamentalScreenTable rows={growthRow} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    expect(container.querySelectorAll('.fd-axis-threshold').length).toBe(0);
+    expect(screen.getByTestId('fundamental-cell-پاس-growth').textContent).not.toContain('۱الف');
+    expect(screen.getByTestId('fundamental-cell-پاس-growth').textContent).not.toContain('۱ب');
+  });
   it('sorts axis 4 by the potential percentage', () => {
     const onSelect = vi.fn();
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={onSelect} asOf={null} />);

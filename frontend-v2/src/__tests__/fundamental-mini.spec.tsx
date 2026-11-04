@@ -48,4 +48,15 @@ describe('mini charts', () => {
     // R93: ارتفاعِ درصدیِ هر میله inline است تا در ستونِ flex ارتفاع قطعی بگیرد.
     expect(Array.from(bars).every((bar) => (bar as HTMLElement).style.height !== '')).toBe(true);
   });
+  it('labels evidence bars by their own name and never announces a gate pass (R-P1-8)', () => {
+    render(<HistoryBars values={[160873, 250942]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);
+    const img = screen.getByRole('img', { name: 'فروش دورهٔ جاری و قبل' });
+    expect(img.getAttribute('aria-label')).not.toContain('قبول');
+    expect(img.querySelectorAll('.fd-history-bar.is-evidence').length).toBe(2);
+  });
+  it('renders an empty state when every history value is absent (R-P1-8)', () => {
+    render(<HistoryBars values={[null, null]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText(/ثبت نشده/)).toBeTruthy();
+  });
 });

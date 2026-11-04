@@ -143,7 +143,8 @@ function AxisCell({ row, axis, thresholds }: Props) {
       {/* R92: در حالت فشرده فقط مقدار و وضعیت می‌ماند تا محتوا بریده نشود؛
           خط آستانه در سرستون و راهنمای جدول هم‌چنان دیده می‌شود. */}
       {density === 'comfortable' ? (
-        <span className="fd-axis-threshold truncate text-[9.5px] text-[var(--fd-text-3)]">{subtitle}</span>
+        // R-P1-2: زیرنویسِ رشد ممکن است در ستونِ باریک بریده شود؛ متنِ کامل در title می‌ماند.
+        <span className="fd-axis-threshold truncate text-[9.5px] text-[var(--fd-text-3)]" title={subtitle}>{subtitle}</span>
       ) : null}
     </div>
   );

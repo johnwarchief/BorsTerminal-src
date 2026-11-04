@@ -1,10 +1,29 @@
 import { toFaDigits } from '@shared/lib/fa';
 import { statusFa, type AxisStatus } from '../../lib/axisMeta';
 
-export function HistoryBars({ values, labels, status }: { values: Array<number | null>; labels: string[]; status: AxisStatus }) {
+/** R-P1-8: «شاهد» تُنِ خنثی است و هرگز «قبول/رد» اعلام نمی‌کند. */
+export type HistoryBarTone = AxisStatus | 'evidence';
+
+export function HistoryBars({ values, labels, status, label }: {
+  values: Array<number | null>;
+  labels: string[];
+  status: HistoryBarTone;
+  label?: string;
+}) {
+  // R-P1-8: نبودِ هر دو مقدار → وضعیتِ خالیِ صادق، نه میله‌های حداقلی.
+  if (!values.some((value) => value != null)) {
+    return (
+      <p className="flex h-full items-center justify-center text-[9px] text-[var(--fd-text-3)]">
+        {label ? `${label} — داده‌ای ثبت نشده` : 'داده‌ای برای نمایش ثبت نشده'}
+      </p>
+    );
+  }
   const max = Math.max(1, ...values.map((v) => Math.abs(v ?? 0)));
+  const ariaLabel = status === 'evidence'
+    ? label ?? 'نمودار شاهد'
+    : label ? `${label} — ${statusFa(status)}` : `تاریخچهٔ گزارش‌ها — ${statusFa(status)}`;
   return (
-    <div className="flex h-full gap-1" role="img" aria-label={`تاریخچهٔ گزارش‌ها — ${statusFa(status)}`}>
+    <div className="flex h-full gap-1" role="img" aria-label={ariaLabel}>
       {values.map((v, i) => (
         <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center gap-1" title={`${labels[i]} — ${v == null ? '—' : toFaDigits(String(v))}`}>
           {/* R93: ناحیهٔ میله ارتفاع قطعی می‌گیرد تا ارتفاعِ درصدیِ میله حل شود

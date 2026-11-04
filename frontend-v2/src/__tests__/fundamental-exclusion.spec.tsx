@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useScreenerCore, type ScreenerCoreRow } from '@features/fundamental/api/useScreenerCore';
 import { FundamentalPage } from '@features/fundamental/routes/FundamentalPage';
-import { resetExcludeAxes, setExcludeAxes } from '@features/fundamental/lib/exclusionFilter';
+import { resetExcludeAxes, setExcludeAxes, EXCLUDE_LABEL } from '@features/fundamental/lib/exclusionFilter';
 
 vi.mock('@features/fundamental/api/useScreenerCore', () => ({ useScreenerCore: vi.fn() }));
 
@@ -43,6 +43,10 @@ afterEach(() => {
 });
 
 describe('exclusion filter', () => {
+  it('names axis 3 with the exact gross-margin label (R-P1-6)', () => {
+    expect(EXCLUDE_LABEL['3']).toBe('حاشیه سود ناخالص (شاخص ۳)');
+  });
+
   it('hides only rows rejected by an active axis', () => {
     setExcludeAxes(['1a']);
     render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);

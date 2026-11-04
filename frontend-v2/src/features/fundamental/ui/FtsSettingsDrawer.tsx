@@ -274,7 +274,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                 <Toggle testId="fts-suspended" label="حذف نمادهای مشمول تعلیق" checked={draft.suspended_max_stale_sessions > 0} onChange={(value) => update('suspended_max_stale_sessions', value ? 3 : 0)} />
                 <Toggle testId="fts-insurance-gate" label="حذف کامل نمادهای صنعت بیمه" checked={draft.insuranceGate} onChange={(value) => update('insuranceGate', value)} />
                 <Toggle testId="fts-holdings-na" label="عدم اعمال نسبت فروش بر هلدینگ‌ها و سرمایه‌گذاری‌ها (N/A)" checked={draft.holdingsNa} onChange={(value) => update('holdingsNa', value)} />
-                <Toggle testId="fts-pharma-exempt" label="آزادسازی دارویی‌های با حاشیهٔ ناخالص بالای ۵۰٪" checked={draft.pharmaExempt} onChange={(value) => update('pharmaExempt', value)} />
+                <Toggle testId="fts-pharma-exempt" label="آزادسازی دارویی‌های با حاشیه سود ناخالص بالای ۵۰٪" checked={draft.pharmaExempt} onChange={(value) => update('pharmaExempt', value)} />
                 <Toggle testId="fts-base-market" label="حذف نمادهای بازار پایه فرابورس" checked={draft.baseMarketGate} onChange={(value) => update('baseMarketGate', value)} />
               </section>
 
