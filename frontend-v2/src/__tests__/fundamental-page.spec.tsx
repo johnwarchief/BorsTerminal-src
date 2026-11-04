@@ -54,7 +54,7 @@ describe('fundamental page', () => {
       expect(screen.getByTestId(`fundamental-chip-فولاد-${i}`).getAttribute('data-pass')).toBe('true');
     }
     expect(screen.getByTestId('fundamental-excluded-خساپا')).toBeTruthy();
-    expect(screen.getByTestId('fundamental-as-of').textContent).toContain('2026-11-03');
+    expect(screen.getByTestId('fundamental-as-of').textContent).toContain('۱۴۰۵');
   });
 
   it('navigates to the symbol route on row click', () => {

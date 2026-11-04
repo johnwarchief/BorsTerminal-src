@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { jalaliFromYmd } from '@shared/lib/jalali';
 import { useScreenerCore } from '../api/useScreenerCore';
 import { FundamentalDetail } from '../ui/FundamentalDetail';
 import { FundamentalScreenTable } from '../ui/FundamentalScreenTable';
@@ -7,6 +8,7 @@ export function FundamentalPage() {
   const { symbol } = useParams<{ symbol?: string }>();
   const navigate = useNavigate();
   const screener = useScreenerCore();
+  const asOfYmd = screener.data?.as_of ? Number(screener.data.as_of.replace(/-/g, '')) : null;
 
   if (symbol) {
     return <FundamentalDetail symbol={symbol} onBack={() => navigate('/fundamental')} />;
@@ -19,7 +21,7 @@ export function FundamentalPage() {
         <span className="t-9 text-text-3">غربالگری پنج‌شاخص FTS — از جدول به کارت نماد</span>
         {screener.data?.as_of ? (
           <span data-testid="fundamental-as-of" className="num ms-auto t-85 text-text-3">
-            روز تابلو: {screener.data.as_of}
+            روز تابلو: {jalaliFromYmd(asOfYmd)}
           </span>
         ) : null}
       </header>
