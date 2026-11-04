@@ -5,7 +5,10 @@ import { downloadCsvWithMeta } from '@shared/lib/tableExport';
 import { useFundamentalPrefs, type Density, type SortKey, type Surface } from '../stores/prefs';
 import {
   AXES,
+  epsYearsRequired,
   formatAxisValue,
+  formatEpsTrend,
+  lastSeriesValue,
   statusFa,
   statusOf,
   thresholdOf,
@@ -27,9 +30,7 @@ const STATUSES: readonly AxisStatus[] = ['pass', 'fail', 'na', 'unknown'];
 const REGIME_RANK: Record<string, number> = { free: 0, neutral: 1, mandatory: 2 };
 
 function lastEps(row: ScreenerCoreRow): number | null {
-  return Array.isArray(row.eps_series) && row.eps_series.length
-    ? row.eps_series[row.eps_series.length - 1] ?? null
-    : null;
+  return lastSeriesValue(row.eps_series);
 }
 
 function sortValue(row: ScreenerCoreRow, key: SortKey): number | string | null {
@@ -37,17 +38,13 @@ function sortValue(row: ScreenerCoreRow, key: SortKey): number | string | null {
     case 'symbol': return row.symbol;
     case 'score': return row.score ?? null;
     case 'growth': return row.rev_growth ?? null;
-    // R29: محور ۲ با سال‌های موجود مرتب می‌شود، همان چیزی که ستون نشان می‌دهد.
-    case 'eps': return row.eps_years_available ?? null;
+    // R98: محور ۲ با همان مقدارِ نمایشی (آخرین EPS) مرتب می‌شود، نه شمارشِ سال.
+    case 'eps': return lastEps(row);
     case 'margin': return row.gross_margin ?? null;
     // R16: محور ۴ فقط sales_to_mcap؛ هرگز profit_potential_pct.
     case 'sales': return row.sales_to_mcap ?? null;
     case 'industry': return REGIME_RANK[row.pricing_mode ?? ''] ?? null;
   }
-}
-
-function tiebreakValue(row: ScreenerCoreRow, key: SortKey): number | null {
-  return key === 'eps' ? lastEps(row) : null;
 }
 
 function compareRows(a: ScreenerCoreRow, b: ScreenerCoreRow, key: SortKey, dir: 'asc' | 'desc'): number {
@@ -62,17 +59,15 @@ function compareRows(a: ScreenerCoreRow, b: ScreenerCoreRow, key: SortKey, dir: 
     ? String(av).localeCompare(String(bv), 'fa')
     : Number(av) - Number(bv);
   if (raw !== 0) return dir === 'asc' ? raw : -raw;
-  const at = tiebreakValue(a, key);
-  const bt = tiebreakValue(b, key);
-  if (at == null || bt == null) {
-    if (at == null && bt == null) return 0;
-    return at == null ? 1 : -1;
-  }
-  return dir === 'asc' ? at - bt : bt - at;
+  return 0;
 }
 
 function axisThresholdLabel(thresholds: AxisThresholds | null | undefined, axis: AxisKey): string {
-  if (axis === 'eps') return '۳ سال';
+  if (axis === 'eps') {
+    // R99: سال‌های گیت از تنظیمِ ریشه (v10_eps_years)؛ نبودِ تنظیم «—» است، نه ۳.
+    const years = epsYearsRequired(null, thresholds);
+    return years == null ? '—' : `${toFaDigits(years)} سال`;
+  }
   if (axis === 'industry') return 'رژیم';
   const threshold = thresholdOf(thresholds, axis);
   if (threshold == null) return '—';
@@ -173,7 +168,8 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       row.name ?? '',
       row.sector_name ?? '',
       formatAxisValue(row.rev_growth ?? null, 'growth'),
-      row.eps_years_available == null ? '—/۳' : `${toFaDigits(row.eps_years_available)}/۳`,
+      // R98: ستونِ EPS همان مقدارِ نمایشی (آخرین EPS + روند) را در CSV هم می‌نویسد.
+      formatEpsTrend(row.eps_series),
       formatAxisValue(row.gross_margin ?? null, 'margin'),
       formatAxisValue(row.sales_to_mcap ?? null, 'sales'),
       formatAxisValue(row.pricing_mode ?? null, 'industry'),
@@ -212,7 +208,14 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
         <b className="block truncate text-[12px] font-medium text-[var(--fd-text)]">{row.symbol}</b>
         <span className="block truncate text-[9.5px] text-[var(--fd-text-3)]">{row.name ?? '—'} · {row.sector_name ?? '—'}</span>
         {row.i4_na ? (
-          <span data-testid={`fundamental-bank-${row.symbol}`} className="mt-0.5 inline-block rounded border border-[var(--fd-line-strong)] px-1 text-[9px] text-[var(--fd-text-3)]">بانک / N/A</span>
+          // R100: i4_na معافیت است (هلدینگ/بانک/صنعتِ معاف)، نه همیشه «بانک».
+          <span
+            data-testid={`fundamental-bank-${row.symbol}`}
+            title={row.i4_reason ?? 'محور فروش/ارزش برای این نماد معاف است'}
+            className="mt-0.5 inline-block rounded border border-[var(--fd-line-strong)] px-1 text-[9px] text-[var(--fd-text-3)]"
+          >
+            معاف / N/A
+          </span>
         ) : null}
         {row.excluded ? (
           <span data-testid={`fundamental-excluded-${row.symbol}`} className="mt-0.5 inline-block rounded border border-[var(--fd-warn)] px-1 text-[9px] text-[var(--fd-warn)]">خارج از غربال</span>

@@ -74,6 +74,56 @@ export function reasonOf(row: ScreenerReasonRow, axis: AxisKey): string | null {
   return null;
 }
 
+/** R98: روندِ سری (دو مقدارِ آخر) — گیتِ محور ۲ روند است، نه شمارشِ سال. */
+export type Trend = 'up' | 'down' | 'flat' | null;
+
+function finiteValues(series: readonly (number | null | undefined)[] | null | undefined): number[] {
+  if (!Array.isArray(series)) return [];
+  return series.filter((value): value is number => value != null && Number.isFinite(Number(value))).map(Number);
+}
+
+/** آخرین مقدارِ متناهیِ سری؛ سری خالی/نامعلوم null است. */
+export function lastSeriesValue(series: readonly (number | null | undefined)[] | null | undefined): number | null {
+  const values = finiteValues(series);
+  return values.length ? values[values.length - 1]! : null;
+}
+
+/** روند از دو مقدارِ آخر؛ کمتر از دو مقدار = نامشخص، نه «ثابت». */
+export function trendOf(series: readonly (number | null | undefined)[] | null | undefined): Trend {
+  const values = finiteValues(series);
+  if (values.length < 2) return null;
+  const last = values[values.length - 1]!;
+  const previous = values[values.length - 2]!;
+  if (last > previous) return 'up';
+  if (last < previous) return 'down';
+  return 'flat';
+}
+
+export function trendArrow(trend: Trend): string {
+  return trend === 'up' ? '↑' : trend === 'down' ? '↓' : trend === 'flat' ? '→' : '';
+}
+
+export function trendFa(trend: Trend): string {
+  return trend === 'up' ? 'صعودی' : trend === 'down' ? 'نزولی' : trend === 'flat' ? 'بی‌تغییر' : 'نامشخص';
+}
+
+/** سال‌های گیتِ EPS: تنظیمِ ردیف، وگرنه تنظیمِ ریشه؛ نبودِ تنظیم «نامعلوم» است، نه ۳. */
+export function epsYearsRequired(
+  row: { eps_years_required?: number | null } | null | undefined,
+  thresholds: AxisThresholds | null | undefined,
+): number | null {
+  return row?.eps_years_required ?? thresholds?.v10_eps_years ?? null;
+}
+
+/** مقدارِ نمایشیِ محور ۲: آخرین EPS با ارقامِ فارسی + فلشِ روند. */
+export function formatEpsTrend(series: readonly (number | null | undefined)[] | null | undefined): string {
+  const last = lastSeriesValue(series);
+  if (last == null) return '—';
+  const arrow = trendArrow(trendOf(series));
+  const value = toFaDigits(Math.round(last)).replace(/^-/, '−');
+  return arrow ? `${value} ${arrow}` : value;
+}
+
 export function verdictFa(verdict: string | null | undefined): string {
   const map: Record<string, string> = { STRONG: 'قوی', WATCH: 'تحت نظر', REJECT: 'رد', EXCLUDED: 'خارج از غربال' };
   // R31: حکمِ خارج از enum (مثل «FTS ندارد») باید عیناً دیده شود، نه '—'.

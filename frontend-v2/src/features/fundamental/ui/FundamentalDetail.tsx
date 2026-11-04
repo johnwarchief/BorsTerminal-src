@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard, type FtsCard } from '../api/useFtsCard';
@@ -62,6 +62,57 @@ function scoreLabel(score: number | null | undefined): string {
   return score == null ? '—' : toFaDigits(score);
 }
 
+const ATTENTION_STATES = new Set(['stale', 'missing', 'quarantined']);
+
+/** R101: برچسبِ فارسیِ کلیدِ محورِ تازگی؛ کلیدِ ناشناخته عیناً می‌ماند. */
+const FRESHNESS_AXIS_FA: Record<string, string> = {
+  '1_growth': 'رشد فروش',
+  '2_eps_trend': 'سودآوری ۳ساله',
+  '3_gross_margin': 'حاشیهٔ ناخالص',
+  '4_sales_to_mcap': 'فروش / ارزش',
+  '5_industry': 'نرخ‌گذاری صنعت',
+};
+
+/** محورهایی که تازگیِ آن‌ها stale/missing/quarantined است. */
+function attentionAxes(card: FtsCard): string[] {
+  const axes = card.freshness?.axes ?? {};
+  return Object.entries(axes)
+    .filter(([, axis]) => Boolean(axis?.state && ATTENTION_STATES.has(axis.state)))
+    .map(([key]) => FRESHNESS_AXIS_FA[key] ?? key);
+}
+
+/**
+ * R102: قالبِ بارگذاری/خطا همان سطحِ دادهٔ نمای نماد است — پس‌زمینهٔ fd،
+ * بازگشت به جدول، عنوانِ نماد و دکمهٔ تنظیمات در هر دو حالت می‌مانند.
+ */
+function DetailFrame({ testId, symbol, surface, onBack, settingsOpen, onToggleSettings, children }: {
+  testId: string;
+  symbol: string;
+  surface: string;
+  onBack: () => void;
+  settingsOpen: boolean;
+  onToggleSettings: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      data-testid={testId}
+      data-fund-surface={surface}
+      className="fundamental-surface flex min-h-0 flex-1 flex-col bg-[var(--fd-bg)] text-[var(--fd-text)]"
+    >
+      <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
+        <button type="button" data-testid="fundamental-back" onClick={onBack} className="tape-btn">
+          ← جدول بنیادی
+        </button>
+        <b data-testid="fundamental-title" className="t-125 font-extrabold">{symbol}</b>
+        <span className="ms-auto" />
+        <FtsSettingsTrigger open={settingsOpen} onToggle={onToggleSettings} />
+      </header>
+      <div className="p-3 text-[11px] text-[var(--fd-text-3)]">{children}</div>
+    </section>
+  );
+}
+
 /**
  * روبانِ امتیاز: شمارشِ همان پنج وضعیتِ `cardStatus`، بدونِ منطقِ دوم.
  * R57: هیچ برچسبِ «قوی‌ترین/ضعیف‌ترین» ساخته نمی‌شود؛ فقط شمارش‌ها، حکم و امتیاز.
@@ -113,31 +164,38 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
 
   if (query.isLoading) {
     return (
-      <section
-        data-testid="fundamental-detail-loading"
-        data-fund-surface={surface}
-        className="fundamental-surface p-3 text-[11px] text-[var(--fd-text-3)]"
+      <DetailFrame
+        testId="fundamental-detail-loading"
+        symbol={symbol}
+        surface={surface}
+        onBack={onBack}
+        settingsOpen={settingsOpen}
+        onToggleSettings={() => setSettingsOpen((value) => !value)}
       >
         کارت پنج‌محور در حال خواندن…
-      </section>
+      </DetailFrame>
     );
   }
   if (query.isError || !card) {
     return (
-      <section
-        data-testid="fundamental-detail-error"
-        data-fund-surface={surface}
-        className="fundamental-surface p-3 text-[11px] text-[var(--fd-text-3)]"
+      <DetailFrame
+        testId="fundamental-detail-error"
+        symbol={symbol}
+        surface={surface}
+        onBack={onBack}
+        settingsOpen={settingsOpen}
+        onToggleSettings={() => setSettingsOpen((value) => !value)}
       >
         کارت بنیادی در دسترس نیست.{' '}
         <button type="button" onClick={() => void query.refetch()} className="tape-btn">تلاش دوباره</button>
-      </section>
+      </DetailFrame>
     );
   }
 
   const holding = isHoldingCard(card);
   const bank = isBankCard(card);
   const notApplicable = card.applicable === false;
+  const attention = attentionAxes(card);
   const focusAxis = (axis: string) => {
     const panel = document.getElementById(`panel-${axis}`);
     if (!panel) return;
@@ -176,8 +234,17 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
           {verdictFa(card.verdict)}
         </span>
         <span className="num t-9">امتیاز {scoreLabel(card.score)}/۵</span>
-        <span data-testid="fundamental-freshness" className="ms-auto text-[10px] text-[var(--fd-text-3)]">
-          {freshnessLabel(card.freshness?.as_of)}
+        <span className="ms-auto flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] text-[var(--fd-text-3)]">
+          <span data-testid="fundamental-freshness">{freshnessLabel(card.freshness?.as_of)}</span>
+          {attention.length ? (
+            <span
+              data-testid="fundamental-freshness-attention"
+              title={attention.join(' · ')}
+              className="text-[var(--fd-warn)]"
+            >
+              · {toFaDigits(attention.length)} محور نیازمند بررسی
+            </span>
+          ) : null}
         </span>
         <FtsSettingsTrigger open={settingsOpen} onToggle={() => setSettingsOpen((value) => !value)} />
       </header>

@@ -9,8 +9,25 @@ const Bool = z.boolean().nullish();
 const StrOrStrArray = z.union([z.string(), z.array(z.string())]).nullish();
 
 const Axis1Schema = z.looseObject({
-  monetary: z.looseObject({ monetary_pct: Num, threshold: Num, data_gap: Bool, reason: Str }).nullish(),
-  volume: z.looseObject({ applicable: Bool }).nullish(),
+  monetary: z.looseObject({
+    monetary_pct: Num,
+    threshold: Num,
+    // R97: آستانهٔ هدفِ گیتِ S4b (۶۰ در پاسخِ زنده) جدا از threshold آمده است.
+    target_threshold: Num,
+    pass: Bool,
+    data_gap: Bool,
+    reason: Str,
+  }).nullish(),
+  volume: z.looseObject({
+    applicable: Bool,
+    real_pct: Num,
+    volume_pct: Num,
+    pass: Bool,
+    threshold: Num,
+    note: Str,
+    data_gap: Bool,
+    basis: Str,
+  }).nullish(),
 }).nullish();
 
 const Axis2Schema = z.looseObject({
@@ -22,6 +39,9 @@ const Axis2Schema = z.looseObject({
   evidence: StrOrStrArray,
   consolidated_used: Bool,
   audited_only: Bool,
+  // R101: دلیل/شکافِ دادهٔ محور ۲ برای نمایشِ آشکار در پنل.
+  reason: Str,
+  data_gap: Bool,
 }).nullish();
 
 const Axis3Schema = z.looseObject({
@@ -127,6 +147,12 @@ export const FtsCardSchema = z.looseObject({
   score: Num,
   verdict: Str,
   applicable: Bool,
+  // R99: تنظیمِ گیتِ EPS از ریشهٔ کارت (loose) خوانده می‌شود تا آستانهٔ ۳سال سخت‌کد نشود.
+  thresholds: z.looseObject({
+    growth_min: Num,
+    margin_min: Num,
+    v10_eps_years: Num,
+  }).nullish(),
   history: z.array(HistoryRowSchema).nullish(),
   metrics: MetricsSchema.nullish(),
   details: z.record(z.string(), DetailSchema).nullish(),

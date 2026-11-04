@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { AXES, statusOf, thresholdOf, valueOf, verdictFa, type ScreenerRowLike } from '@features/fundamental/lib/axisMeta';
+import {
+  AXES,
+  epsYearsRequired,
+  formatEpsTrend,
+  statusOf,
+  thresholdOf,
+  trendArrow,
+  trendFa,
+  trendOf,
+  valueOf,
+  verdictFa,
+  type ScreenerRowLike,
+} from '@features/fundamental/lib/axisMeta';
 
 const row = {
   symbol: 'رنيك', score: 3, verdict: 'WATCH',
@@ -46,5 +58,31 @@ describe('axis meta', () => {
     expect(verdictFa('REJECT')).toBe('رد');
     expect(verdictFa('EXCLUDED')).toBe('خارج از غربال');
     expect(verdictFa('FTS ندارد')).toBe('FTS ندارد');
+  });
+  it('derives the EPS trend from the last two finite points (R98)', () => {
+    expect(trendOf([1119, 1615, 1672])).toBe('up');
+    expect(trendOf([1425, 454, 456])).toBe('up');
+    expect(trendOf([1672, 1615])).toBe('down');
+    expect(trendOf([500, 500])).toBe('flat');
+    expect(trendOf([1672])).toBeNull();
+    expect(trendOf(null)).toBeNull();
+    expect(trendOf([null, null])).toBeNull();
+    // نقطهٔ null نادیده گرفته می‌شود و دو مقدارِ متناهیِ آخر ملاک است.
+    expect(trendOf([100, null, 90])).toBe('down');
+  });
+  it('renders trend arrows and Persian words (R98)', () => {
+    expect([trendArrow('up'), trendArrow('down'), trendArrow('flat'), trendArrow(null)])
+      .toEqual(['↑', '↓', '→', '']);
+    expect([trendFa('up'), trendFa('down'), trendFa('flat'), trendFa(null)])
+      .toEqual(['صعودی', 'نزولی', 'بی‌تغییر', 'نامشخص']);
+    expect(formatEpsTrend([1119, 1615, 1672])).toBe('۱۶۷۲ ↑');
+    expect(formatEpsTrend([1672, 1615])).toBe('۱۶۱۵ ↓');
+    expect(formatEpsTrend(null)).toBe('—');
+  });
+  it('reads the EPS years gate from the row and then the root thresholds (R99)', () => {
+    expect(epsYearsRequired({ eps_years_required: 2 }, thresholds)).toBe(2);
+    expect(epsYearsRequired({}, thresholds)).toBe(3);
+    expect(epsYearsRequired({}, { v10_eps_years: 1 })).toBe(1);
+    expect(epsYearsRequired({}, null)).toBeNull();
   });
 });

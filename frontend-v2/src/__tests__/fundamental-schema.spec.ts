@@ -76,4 +76,57 @@ describe('fts card schema (R82)', () => {
     });
     expect(asNull.indicators?.['2']?.evidence).toBeNull();
   });
+
+  it('parses the live growth indicator: target threshold and the 1b volume block (R97)', () => {
+    const parsed = FtsCardSchema.parse({
+      status: 'success',
+      symbol: 'رنيك',
+      indicators: {
+        '1': {
+          monetary: {
+            monetary_pct: 45.9,
+            threshold: 60,
+            target_threshold: 60,
+            pass: false,
+            data_gap: false,
+            reason: '',
+          },
+          volume: {
+            applicable: false,
+            volume_pct: null,
+            real_pct: -8.8,
+            pass: false,
+            threshold: 0,
+            data_gap: false,
+            basis: 'price_effect_decomposition',
+            note: 'این شرکت کالای وزن‌شدنی تولید نمی‌کند.',
+          },
+          pass: false,
+          reason: 'رشد ریالی زیر کف است.',
+        },
+      },
+    });
+    const growth = parsed.indicators?.['1'];
+    expect(growth?.monetary?.target_threshold).toBe(60);
+    expect(growth?.monetary?.pass).toBe(false);
+    expect(growth?.volume?.real_pct).toBe(-8.8);
+    expect(growth?.volume?.volume_pct).toBeNull();
+    expect(growth?.volume?.applicable).toBe(false);
+    expect(growth?.volume?.pass).toBe(false);
+    expect(growth?.volume?.basis).toBe('price_effect_decomposition');
+    expect(growth?.volume?.note).toContain('وزن‌شدنی');
+  });
+
+  it('parses the EPS reason/data-gap and the root thresholds block (R99/R101)', () => {
+    const parsed = FtsCardSchema.parse({
+      status: 'success',
+      symbol: 'رنيك',
+      thresholds: { growth_min: 60, margin_min: 40, v10_eps_years: 1 },
+      indicators: { '2': { ...liveEpsIndicator, reason: 'روند نزولی', data_gap: true } },
+    });
+    expect(parsed.thresholds?.v10_eps_years).toBe(1);
+    expect(parsed.thresholds?.growth_min).toBe(60);
+    expect(parsed.indicators?.['2']?.reason).toBe('روند نزولی');
+    expect(parsed.indicators?.['2']?.data_gap).toBe(true);
+  });
 });

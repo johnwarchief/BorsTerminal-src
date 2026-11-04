@@ -21,7 +21,8 @@ const rows: ScreenerCoreRow[] = [
     gross_margin: 11.5, sales_to_mcap: 1.15, profit_potential_pct: 13.2, pricing_mode: 'neutral' },
   { symbol: 'وبملت', name: 'بانک ملت', sector_name: 'بانک‌ها', score: 2, verdict: 'REJECT',
     i1_pass: true, i1_na: false, i2_pass: false, i2_na: false, i3_pass: null, i3_na: true,
-    i4_pass: null, i4_na: true, i5_pass: true, i5_na: false,
+    i4_pass: null, i4_na: true, i4_reason: 'معاف: بانک و مؤسسهٔ اعتباری',
+    i5_pass: true, i5_na: false,
     rev_growth: 83.5, eps_series: [1425, 454, 456], eps_years_available: 3,
     gross_margin: null, sales_to_mcap: null, profit_potential_pct: null, pricing_mode: 'free' },
 ];
@@ -69,9 +70,12 @@ describe('fundamental table visual', () => {
     rerender(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
     expect(container.querySelectorAll('.fd-axis-threshold').length).toBe(0);
   });
-  it('distinguishes N/A/unknown and bank badges', () => {
+  it('labels the i4_na badge as exempt, not a bank, and keeps the reason as title (R100)', () => {
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
-    expect(screen.getByTestId('fundamental-bank-وبملت')).toBeTruthy();
+    const badge = screen.getByTestId('fundamental-bank-وبملت');
+    expect(badge.textContent).toBe('معاف / N/A');
+    expect(badge.getAttribute('title')).toContain('معاف: بانک');
+    expect(badge.textContent).not.toContain('بانک');
     expect(document.querySelectorAll('.fd-status--na').length).toBeGreaterThan(0);
     expect(screen.getByTestId('fundamental-cell-وبملت-margin').getAttribute('data-state')).toBe('na');
   });
@@ -97,15 +101,53 @@ describe('fundamental table visual', () => {
     expect(screen.getByRole('columnheader', { name: 'وضعیت' }).hasAttribute('aria-sort')).toBe(false);
     expect(screen.getByTestId('fundamental-cell-رنيك-growth').getAttribute('role')).toBe('cell');
   });
-  it('renders absent EPS years as —/۳ in the cell and the CSV (R30)', () => {
+  it('renders the EPS cell as the last EPS plus a trend arrow, never N/N (R98)', () => {
+    render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    const epsCell = screen.getByTestId('fundamental-cell-رنيك-eps');
+    expect(epsCell.textContent).toContain('۱۶۷۲ ↑');
+    expect(epsCell.textContent).not.toContain('۳/۳');
+    // خطِ آستانه = سال‌های تنظیم‌شده، نه ۳ سخت‌کد.
+    expect(epsCell.textContent).toContain('≥ ۳ سال');
+    expect(screen.getByRole('button', { name: 'مرتب‌سازی سودآوری ۳ساله' })).toBeTruthy();
+  });
+  it('sorts the EPS column by the displayed last EPS (R98)', () => {
+    const { container } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    const rowOrder = () => Array.from(container.querySelectorAll('[data-testid^="fundamental-row-"]'))
+      .map((element) => element.getAttribute('data-testid'));
+    fireEvent.click(screen.getByRole('button', { name: 'مرتب‌سازی سودآوری ۳ساله' }));
+    expect(rowOrder()).toEqual(['fundamental-row-رنيك', 'fundamental-row-وبملت']);
+    fireEvent.click(screen.getByRole('button', { name: 'مرتب‌سازی سودآوری ۳ساله' }));
+    expect(rowOrder()).toEqual(['fundamental-row-وبملت', 'fundamental-row-رنيك']);
+  });
+  it('honors the EPS years setting in the header and the cell (R99)', () => {
+    const oneYear = { ...thresholds, v10_eps_years: 1 };
+    render(<FundamentalScreenTable rows={rows} thresholds={oneYear} onSelect={vi.fn()} asOf={null} />);
+    const header = screen.getByRole('columnheader', { name: /سودآوری ۳ساله/ });
+    expect(header.textContent).toContain('۱ سال');
+    expect(header.textContent).not.toContain('۳ سال');
+    expect(screen.getByTestId('fundamental-cell-رنيك-eps').textContent).toContain('≥ ۱ سال');
+    // تنظیمِ ردیف بر ریشه مقدم است.
+    cleanup();
+    const overridden = rows.map((row) => (row.symbol === 'رنيك' ? { ...row, eps_years_required: 2 } : row));
+    render(<FundamentalScreenTable rows={overridden} thresholds={oneYear} onSelect={vi.fn()} asOf={null} />);
+    expect(screen.getByTestId('fundamental-cell-رنيك-eps').textContent).toContain('≥ ۲ سال');
+  });
+  it('keeps the EPS trend arrow in compact mode while dropping the threshold line (R92/R98)', () => {
+    const { container } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    act(() => useFundamentalPrefs.setState({ density: 'compact' }));
+    expect(container.querySelectorAll('.fd-axis-threshold').length).toBe(0);
+    expect(screen.getByTestId('fundamental-cell-رنيك-eps').textContent).toContain('↑');
+  });
+  it('renders absent EPS years as — in the cell and the CSV (R30/R98)', () => {
     render(<FundamentalScreenTable rows={fallbackRows} thresholds={thresholds} onSelect={vi.fn()} asOf="۱۴۰۵/۰۸/۱۳" />);
     const epsCell = screen.getByTestId('fundamental-cell-شپنا-eps');
-    expect(epsCell.textContent).toContain('—/۳');
+    expect(epsCell.textContent).toContain('—');
     expect(epsCell.textContent).not.toContain('۰/۳');
+    expect(epsCell.textContent).not.toContain('—/۳');
     fireEvent.click(screen.getByTestId('fundamental-export'));
     expect(mockedDownload).toHaveBeenCalledTimes(1);
     const [, table, meta] = mockedDownload.mock.calls[0]!;
-    expect(table.rows[0]![4]).toBe('—/۳');
+    expect(table.rows[0]![4]).toBe('—');
     expect(meta).toContainEqual(['زمان اسکن', '۱۴۰۵/۰۸/۱۳']);
   });
   it('shows a verdict outside the enum verbatim (R31)', () => {

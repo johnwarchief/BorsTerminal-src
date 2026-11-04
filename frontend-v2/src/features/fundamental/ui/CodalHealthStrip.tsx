@@ -1,4 +1,4 @@
-import { faNum } from '@shared/lib/fa';
+import { faNum, toFaDigits } from '@shared/lib/fa';
 import type { CodalHealth } from '../api/useCodalHealth';
 
 interface Props {
@@ -8,6 +8,11 @@ interface Props {
 
 function num(v: number | null | undefined): string {
   return typeof v === 'number' && Number.isFinite(v) ? faNum(v, 0) : '—';
+}
+
+/** R103: مهرهای زمانی بدونِ رقمِ لاتین در سطحِ فارسی. */
+function faText(value: string | null | undefined): string {
+  return value ? toFaDigits(value) : '—';
 }
 
 export function CodalHealthStrip({ health, loading }: Props) {
@@ -42,11 +47,11 @@ export function CodalHealthStrip({ health, loading }: Props) {
         <span className="rounded-[3px] border border-[var(--fd-warn)] px-1 text-[var(--fd-warn)]">شکاف فید</span>
       ) : null}
       {health.last_successful_sync?.at ? (
-        <span>آخرین sync موفق: {health.last_successful_sync.at}</span>
+        <span>آخرین همگام‌سازی موفق: {faText(health.last_successful_sync.at)}</span>
       ) : (
-        <span>sync موفقی ثبت نشده</span>
+        <span>همگام‌سازی موفقی ثبت نشده</span>
       )}
-      {health.last_data_update ? <span>آخرین داده: {health.last_data_update}</span> : null}
+      {health.last_data_update ? <span>آخرین داده: {faText(health.last_data_update)}</span> : null}
     </div>
   );
 }

@@ -11,6 +11,12 @@ export interface SectorPeLike {
   sector?: string | null;
 }
 
+/** R103: سهم بازارِ کوچک‌تر از ۱٪ با سه رقمِ اعشار تا «۰٫۰٪» نشود (زنده: ۰٫۰۲۵٪). */
+function shareFixed(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return Math.abs(value) < 1 ? faFixed(value, 3, '٪') : faFixed(value, 2, '٪');
+}
+
 export function IndustryPanel({ card, sectorPe }: { card: FtsCard; sectorPe?: SectorPeLike | null }) {
   const industry = card.indicators?.['5'];
   const status = cardStatus(card, 'industry');
@@ -29,7 +35,7 @@ export function IndustryPanel({ card, sectorPe }: { card: FtsCard; sectorPe?: Se
         ['P/E این نماد', faFixed(sectorPe?.pe, 1)],
         ['میانهٔ صنعت', faFixed(sectorPe?.median, 1)],
         ['همتاها', faInt(sectorPe?.peers)],
-        ['سهم بازار', faFixed(industry?.market_share_pct, 1, '٪')],
+        ['سهم بازار', shareFixed(industry?.market_share_pct)],
         ['چشم‌انداز', industry?.outlook ?? '—'],
         ['رژیم', regimeFa(industry?.verdict)],
       ]}

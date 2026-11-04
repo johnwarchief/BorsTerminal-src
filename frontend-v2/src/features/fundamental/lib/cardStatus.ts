@@ -23,6 +23,11 @@ export function cardStatus(card: FtsCard, axis: AxisKey): AxisStatus {
   const indicator = card.indicators?.[CARD_NUM[axis]] as unknown as CardIndicator | undefined;
   if (indicator?.na === true) return 'na';
   if (indicator?.available === false || indicator?.data_gap === true) return 'unknown';
+  // R97: شکافِ دادهٔ ۱الف/۱ب پیش از حکمِ رشد، محور را «نامشخص» می‌کند.
+  if (axis === 'growth') {
+    const growth = card.indicators?.['1'];
+    if (growth?.monetary?.data_gap === true || growth?.volume?.data_gap === true) return 'unknown';
+  }
   if (pass === true) return 'pass';
   if (pass === false) return 'fail';
   return 'unknown';

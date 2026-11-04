@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import type { FtsCard } from '../api/useFtsCard';
-import { AXES, formatAxisValue, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
+import { AXES, formatAxisValue, formatEpsTrend, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { Bullet } from './mini/Bullet';
 import { EpsBars } from './mini/EpsBars';
@@ -21,13 +21,13 @@ function pct(value: number | null | undefined): string {
     : `${toFaDigits(value.toFixed(1)).replace('.', '٫').replace(/^-/, '−')}٪`;
 }
 
-function yearsLabel(years: number | null | undefined): string {
-  // رأی R50: نبودِ سابقه «—/۳» است، نه «۰/۳».
-  return years == null ? '—/۳' : `${toFaDigits(years)}/۳`;
-}
-
 function thresholdLabel(value: number | null | undefined, suffix = '٪'): string {
   return value == null ? '—' : `${toFaDigits(String(value)).replace('.', '٫')}${suffix}`;
+}
+
+/** R99: سال‌های گیتِ EPS از تنظیمِ ردیف، وگرنه ریشهٔ کارت؛ نبودِ تنظیم «—» است. */
+function requiredYears(card: FtsCard): number | null {
+  return card.indicators?.['2']?.years_required ?? card.thresholds?.v10_eps_years ?? null;
 }
 
 /**
@@ -40,20 +40,24 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
   const margin = card.indicators?.['3'];
   const sales = card.indicators?.['4'];
   const industry = card.indicators?.['5'];
+  // R97: کاشیِ رشد همان آستانهٔ گیتِ S4b را نشان می‌دهد (target، وگرنه threshold).
+  const growthThreshold = monetary?.target_threshold ?? monetary?.threshold ?? null;
+  const epsRequired = requiredYears(card);
 
   const items: QuintetItem[] = [
     {
       axis: 'growth',
       // R91: رشد مثل ستون جدول علامتِ +/− دارد («+۴۵٫۹٪»).
       value: formatAxisValue(monetary?.monetary_pct ?? null, 'growth'),
-      threshold: `کف ${thresholdLabel(monetary?.threshold)}`,
+      threshold: `کف ${thresholdLabel(growthThreshold)}`,
       status: cardStatus(card, 'growth'),
-      chart: <Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={monetary?.threshold ?? null} status={cardStatus(card, 'growth')} label="رشد" />,
+      chart: <Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={growthThreshold} status={cardStatus(card, 'growth')} label="رشد" />,
     },
     {
       axis: 'eps',
-      value: yearsLabel(eps?.years_available),
-      threshold: 'سال',
+      // R98: مقدارِ محور ۲ آخرین EPS + فلشِ روند است، نه «سال‌های موجود/نیاز».
+      value: formatEpsTrend(eps?.eps_series),
+      threshold: epsRequired == null ? '—' : `${toFaDigits(epsRequired)} سال`,
       status: cardStatus(card, 'eps'),
       chart: <EpsBars series={eps?.eps_series} status={cardStatus(card, 'eps')} label="EPS" />,
     },

@@ -3,11 +3,15 @@ import { toFaDigits } from '@shared/lib/fa';
 import { useFundamentalPrefs } from '../stores/prefs';
 import {
   AXES,
+  epsYearsRequired,
   formatAxisValue,
+  formatEpsTrend,
   reasonOf,
   statusFa,
   statusOf,
   thresholdOf,
+  trendFa,
+  trendOf,
   valueOf,
   type AxisKey,
   type AxisStatus,
@@ -34,6 +38,10 @@ function thresholdLabel(thresholds: AxisThresholds | null | undefined, axis: Axi
   return `≥ ${toFaDigits(threshold)}٪`;
 }
 
+function epsThresholdLabel(years: number | null): string {
+  return years == null ? '—' : `≥ ${toFaDigits(years)} سال`;
+}
+
 interface Props {
   row: ScreenerCoreRow;
   axis: AxisKey;
@@ -44,17 +52,19 @@ function AxisCell({ row, axis, thresholds }: Props) {
   const density = useFundamentalPrefs((state) => state.density);
   const meta = AXES.find((item) => item.key === axis)!;
   const status = statusOf(row, axis);
+  // R98: محور ۲ روندِ EPS است، نه «N/N»؛ فلش در حالتِ فشرده هم می‌ماند.
+  const epsYears = axis === 'eps' ? epsYearsRequired(row, thresholds) : null;
   const value = axis === 'eps'
-    // R30: سالِ غایب «نامعلوم» است، نه صفر.
-    ? row.eps_years_available == null ? '—/۳' : `${toFaDigits(row.eps_years_available)}/۳`
+    ? formatEpsTrend(row.eps_series)
     : formatAxisValue(valueOf(row, axis), axis);
   const threshold = thresholdOf(thresholds, axis);
   const reason = reasonOf(row, axis);
   const subtitle = axis === 'eps'
-    ? '۳ سال'
+    ? epsThresholdLabel(epsYears)
     : axis === 'industry'
       ? row.sector_name ?? '—'
       : thresholdLabel(thresholds, axis);
+  const epsTrend = axis === 'eps' ? trendFa(trendOf(row.eps_series)) : null;
 
   return (
     <div
@@ -64,7 +74,12 @@ function AxisCell({ row, axis, thresholds }: Props) {
       className={`fd-axis-cell flex min-w-0 flex-col justify-center px-1.5 ${density === 'comfortable' ? 'gap-1 py-1' : 'gap-0 py-0.5'}`}
     >
       <div className="flex items-baseline gap-1.5">
-        <b className="fd-axis-value text-[12px] font-medium tabular-nums text-[var(--fd-text)]">{value}</b>
+        <b
+          className="fd-axis-value text-[12px] font-medium tabular-nums text-[var(--fd-text)]"
+          title={epsTrend ? `روند ${epsTrend}` : undefined}
+        >
+          {value}
+        </b>
         <span
           className={`fd-status fd-status--${status} inline-flex items-center gap-0.5 text-[10px]`}
           title={reason ?? STATUS_TITLE[status]}
