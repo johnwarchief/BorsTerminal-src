@@ -124,7 +124,15 @@ func (s *Service) EvaluateV10(ctx context.Context, symbol string,
 		return nil, err
 	}
 
-	growth, err := s.Ind1aMonetaryGrowth(ctx, symbol, series, th, prof)
+	// شاخص ۱ برایِ خدماتی/مالی/هلدینگ که سریِ ماهانه ندارند از صورتِ مالی
+	// می‌آید (api/fundamental.py:1440-1445)؛ تولیدی و هر نمادی که گزارشِ
+	// ماهانه دارد همان مسیرِ YTD را می‌رود.
+	var growth map[string]any
+	if ax1FSGrowthKind(strOr(prof["kind"])) && len(series) == 0 {
+		growth, err = s.Ind1aFSGrowth(ctx, symbol, th, prof)
+	} else {
+		growth, err = s.Ind1aMonetaryGrowth(ctx, symbol, series, th, prof)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -192,11 +200,11 @@ func (s *Service) EvaluateV10(ctx context.Context, symbol string,
 	axis4 := truthy(val["pass"])
 	axis5 := truthy(sec["pass"])
 	passes := map[string]any{
-		"1_growth":         axis1,
-		"2_eps_trend":      axis2,
-		"3_gross_margin":   axis3,
-		"4_sales_to_mcap":  axis4,
-		"5_industry":       axis5,
+		"1_growth":            axis1,
+		"2_eps_trend":         axis2,
+		"3_gross_margin":      axis3,
+		"4_sales_to_mcap":     axis4,
+		"5_industry":          axis5,
 		"1a_monetary_growth":  truthy(growth["pass"]),
 		"1b_volume_growth":    truthy(volume["pass"]),
 		"4a_sales_to_mcap":    truthy(val["sales_pass"]),

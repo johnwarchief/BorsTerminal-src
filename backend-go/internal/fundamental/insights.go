@@ -39,13 +39,13 @@ var insBasisFa = map[string]string{
 
 // insEvShort عینِ `_EV_SHORT` — برچسبِ کوتاهِ شاهدِ EPS در سطرِ جزئیات.
 var insEvShort = map[string]string{
-	"audited_year_end":          "حسابرسی‌شده",
-	"unaudited_year_end":        "حسابرسی‌نشده",
-	"consolidated_audited":      "تلفیقیِ حسابرسی‌شده",
-	"consolidated_unaudited":    "تلفیقیِ حسابرسی‌نشده",
-	"annualized_interim":        "میاندوره × \u06F1\u06F2÷م",
-	"annualized_interim_short":  "میاندورهٔ کوتاه × \u06F1\u06F2÷م",
-	"missing":                   "بدون داده",
+	"audited_year_end":         "حسابرسی‌شده",
+	"unaudited_year_end":       "حسابرسی‌نشده",
+	"consolidated_audited":     "تلفیقیِ حسابرسی‌شده",
+	"consolidated_unaudited":   "تلفیقیِ حسابرسی‌نشده",
+	"annualized_interim":       "میاندوره × \u06F1\u06F2÷م",
+	"annualized_interim_short": "میاندورهٔ کوتاه × \u06F1\u06F2÷م",
+	"missing":                  "بدون داده",
 }
 
 // insEvFa عینِ `_EV_FA` — مبنایِ امروزیِ سابقهٔ EPS.
@@ -401,20 +401,35 @@ func BuildInsights(res map[string]any) ([]map[string]any, map[string]any) {
 	// ── لایهٔ \u06F1: درآمد/فروش (\u06F1الف ریالی + \u06F1ب فیزیکی) ─────────────────────
 	axis1 := Axis1Pass(g, v)
 
+	// مبنایِ \u06F1الف: برایِ خدماتی/مالی/هلدینگ از صورتِ مالی می‌آید، نه گزارشِ
+	// ماهانه؛ متن و منبع باید همین را بگویند (api/fundamental.py:1655-1720).
+	basis1 := strOr(g["basis"])
+	fsInterim := basis1 == "fs_interim"
+	fsAnnual := basis1 == "fs_annual"
+	fsUnavailable := basis1 == "fs_unavailable"
+	label1a := "\u06F1الف رشد ریالی"
+	if fsInterim {
+		label1a = "\u06F1الف رشد ریالی (صورت مالی میاندوره)"
+	} else if fsAnnual {
+		label1a = "\u06F1الف رشد ریالی (صورت مالی سالانه)"
+	} else if fsUnavailable {
+		label1a = "\u06F1الف رشد ریالی (صورت مالی)"
+	}
+
 	var txt1 string
 	switch {
 	case truthy(g["data_gap"]):
-		txt1 = fmt.Sprintf("⚠️ \u06F1الف رشد ریالی: داده موجود نیست (%s)",
+		txt1 = fmt.Sprintf("⚠️ %s: داده موجود نیست (%s)", label1a,
 			insOrStr(g["reason"], "مخرج YoY غایب"))
 	case truthy(g["pass"]):
 		strong := ""
 		if truthy(g["strong"]) {
 			strong = fmt.Sprintf(" · هدف %s٪ هم پوشش شد", insG(th["monetary_growth_target"]))
 		}
-		txt1 = fmt.Sprintf("✅ \u06F1الف رشد ریالی: %s (کف %s٪ احراز شد%s)",
+		txt1 = fmt.Sprintf("✅ %s: %s (کف %s٪ احراز شد%s)", label1a,
 			pctText(g["monetary_pct"], true), insG(th["monetary_growth_min"]), strong)
 	default:
-		txt1 = fmt.Sprintf("⚠️ \u06F1الف رشد ریالی: %s (زیر کف %s٪)",
+		txt1 = fmt.Sprintf("⚠️ %s: %s (زیر کف %s٪)", label1a,
 			pctText(g["monetary_pct"], true), insG(th["monetary_growth_min"]))
 	}
 
@@ -464,20 +479,48 @@ func BuildInsights(res map[string]any) ([]map[string]any, map[string]any) {
 		volValue = v["volume_pct"]
 	}
 
+	formula1a := "\u06F1الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × \u06F1\u06F0\u06F0 − \u06F1\u06F0\u06F0"
+	if fsInterim {
+		formula1a = "\u06F1الف = (درآمد صورت مالی میاندوره ÷ همان دورهٔ سال قبل) × \u06F1\u06F0\u06F0 − \u06F1\u06F0\u06F0"
+	} else if fsAnnual || fsUnavailable {
+		formula1a = "\u06F1الف = (درآمد صورت مالی سالانه ÷ سال قبل) × \u06F1\u06F0\u06F0 − \u06F1\u06F0\u06F0"
+	}
+	src1 := fmt.Sprintf(
+		"کدال — گزارش فعالیت ماهانهٔ منتهی به %s | مخرج: %s | طبقهٔ شرکت: %s",
+		insOrStr(g["period"], "—"), insOrStr(g["denominator_basis"], "—"),
+		pyStr(prof["label"]))
+	detail1a := fmt.Sprintf("تجمیعی %s ÷ %s میلیارد تومان (%s)",
+		insN(g["ytd_now_bt"], 0), insN(g["ytd_prev_bt"], 0),
+		insOrStr(g["period"], "—"))
+	if fsInterim {
+		src1 = fmt.Sprintf(
+			"کدال — صورت مالی میاندورهٔ منتهی به %s (غیرتلفیقی) | "+
+				"مخرج: صورت مالی همان دورهٔ سال قبل | طبقهٔ شرکت: %s",
+			insOrStr(g["period"], "—"), pyStr(prof["label"]))
+		detail1a = fmt.Sprintf("صورت مالی میاندوره — دورهٔ %s", insOrStr(g["period"], "—"))
+	} else if fsAnnual {
+		src1 = fmt.Sprintf(
+			"کدال — صورت مالی سالانهٔ منتهی به %s (غیرتلفیقی) | "+
+				"مخرج: صورت مالی سال قبل | طبقهٔ شرکت: %s",
+			insOrStr(g["period"], "—"), pyStr(prof["label"]))
+		detail1a = fmt.Sprintf("صورت مالی سالانه — دورهٔ %s", insOrStr(g["period"], "—"))
+	} else if fsUnavailable {
+		src1 = fmt.Sprintf(
+			"کدال — صورت مالی (میاندوره/سالانه)؛ دورهٔ مشابهٔ سال قبل ثبت "+
+				"نشده | مخرج: — | طبقهٔ شرکت: %s", pyStr(prof["label"]))
+		detail1a = fmt.Sprintf("صورت مالی موجود نیست — دورهٔ %s", insOrStr(g["period"], "—"))
+	}
 	details["\u06F1"] = map[string]any{
 		"title": "درآمد/فروش — رشد ریالی (\u06F1الف) + تأیید حجم (\u06F1ب)",
 		"formula": fmt.Sprintf(
-			"\u06F1الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × \u06F1\u06F0\u06F0 − \u06F1\u06F0\u06F0 · "+
-				"پاس ≥ %s٪ · \u06F1ب = رشد کمیت ≥ %s٪ یا رشد واقعیِ پس از تورم ≥ %s٪ · "+
+			"%s · پاس ≥ %s٪ · \u06F1ب = رشد کمیت ≥ %s٪ یا رشد واقعیِ پس از تورم ≥ %s٪ · "+
 				"پهنای رشد (%s/%s ماه) فقط نمایشی است، دروازۀ امتیاز نیست",
+			formula1a,
 			insG(th["monetary_growth_min"]), insG(th["volume_growth_min"]),
 			insG(th["volume_growth_min"]),
 			insD(insOr(breadth["improved_months"], int64(0))),
 			insD(insOr(breadth["compared_months"], int64(0)))),
-		"source": fmt.Sprintf(
-			"کدال — گزارش فعالیت ماهانهٔ منتهی به %s | مخرج: %s | طبقهٔ شرکت: %s",
-			insOrStr(g["period"], "—"), insOrStr(g["denominator_basis"], "—"),
-			pyStr(prof["label"])),
+		"source": src1,
 		"calc": fmt.Sprintf(
 			"%s ÷ %s میلیارد تومان = %s | \u06F1ب: مبنای %s → رشد واقعی %s (مبنای نرخ %s٪)",
 			insN(g["ytd_now_bt"], 0), insN(g["ytd_prev_bt"], 0),
@@ -492,18 +535,16 @@ func BuildInsights(res map[string]any) ([]map[string]any, map[string]any) {
 				"state":     state(truthy(g["pass"]), false, truthy(g["data_gap"])),
 				"value":     pctText(g["monetary_pct"], true),
 				"threshold": fmt.Sprintf("≥ %s٪", insG(th["monetary_growth_min"])),
-				"detail": fmt.Sprintf("تجمیعی %s ÷ %s میلیارد تومان (%s)",
-					insN(g["ytd_now_bt"], 0), insN(g["ytd_prev_bt"], 0),
-					insOrStr(g["period"], "—")),
+				"detail":    detail1a,
 			},
 			{
 				"key": "1b", "label": "رشد تولیدی / تناژ",
-				"state":     state(truthy(v["pass"]), false, truthy(v["data_gap"])),
-				"value":     pctText(volValue, true),
-				"threshold": fmt.Sprintf("≥ %s٪", insG(th["volume_growth_min"])),
-				"verified":  truthy(v["quantity_verified"]),
+				"state":      state(truthy(v["pass"]), false, truthy(v["data_gap"])),
+				"value":      pctText(volValue, true),
+				"threshold":  fmt.Sprintf("≥ %s٪", insG(th["volume_growth_min"])),
+				"verified":   truthy(v["quantity_verified"]),
 				"confidence": confRaw,
-				"detail": fmt.Sprintf("%s (اطمینان %s)", basisStr, confFa),
+				"detail":     fmt.Sprintf("%s (اطمینان %s)", basisStr, confFa),
 			},
 		},
 	}
@@ -569,7 +610,7 @@ func BuildInsights(res map[string]any) ([]map[string]any, map[string]any) {
 		// غایب، و عنوان/سلول‌ها قرمز با ذکرِ تعدادِ دوره‌های موجود.
 		insights = append(insights, map[string]any{
 			"step": "\u06F2", "title": title2, "type": "danger", "partial": true,
-			"row":  row["markdown"],
+			"row": row["markdown"],
 			"text": fmt.Sprintf(
 				"🚫 شاخص \u06F2 (تنها %s دوره موجود است) — سابقه EPS: %s ریال · %s",
 				faInt(avail), strings.Join(cells, " ← "),
@@ -580,7 +621,7 @@ func BuildInsights(res map[string]any) ([]map[string]any, map[string]any) {
 		// است — نه مردود و نه سبز (N/A ≠ Reject).
 		insights = append(insights, map[string]any{
 			"step": "\u06F2", "title": title2, "type": "info", "na": true,
-			"row":  row["markdown"],
+			"row": row["markdown"],
 			"text": fmt.Sprintf("ℹ️ شاخص \u06F2 داوری نمی‌شود (N/A) — %s",
 				insOrStr(e["reason"], "مبنایِ غیرتلفیقیِ سه‌سالهٔ کامل موجود نیست")),
 		})
@@ -744,7 +785,7 @@ func BuildInsights(res map[string]any) ([]map[string]any, map[string]any) {
 		"subchecks": []map[string]any{
 			{
 				"key": "3", "label": "حاشیهٔ ناخالص", "state": state3,
-				"value":     pctUnsigned(gm["margin_pct"]),
+				"value": pctUnsigned(gm["margin_pct"]),
 				"threshold": fmt.Sprintf("≥ %s٪ (ایده‌آل %s٪)",
 					insG(th["margin_min"]), insG(th["margin_ideal"])),
 				"detail": fmt.Sprintf("باند: %s", insOrStr(gm["band"], "—")),

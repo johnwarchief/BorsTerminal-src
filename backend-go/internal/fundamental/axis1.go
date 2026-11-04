@@ -28,6 +28,8 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
+	"strings"
 
 	"borsterminal/backend/internal/pyround"
 	"borsterminal/backend/internal/symbolid"
@@ -327,6 +329,165 @@ func (s *Service) Ind1aMonetaryGrowth(ctx context.Context, symbol string,
 // ═══════════════════════════════════════════════════════════════════════════
 //  لایۀ ۱ب — رشدِ تولیدی/تناژ (ردِ سودِ صرفاً تورمی)
 // ═══════════════════════════════════════════════════════════════════════════
+
+const (
+	ax1FSGrowthNoRows  = "هیچ صورت مالی غیرتلفیقی با درآمد ثبت نشده است."
+	ax1FSGrowthNoPrior = "دورهٔ مشابهٔ سال قبل برای جدیدترین صورت مالی موجود نیست؛ " +
+		"از دورهٔ قدیمی‌تر استفاده نمی‌شود."
+)
+
+// ax1FSGrowthKind عینِ `prof["kind"] in fts_engine.FS_GROWTH_KINDS`.
+func ax1FSGrowthKind(kind string) bool {
+	return kind == "service" || kind == "financial" || kind == "holding"
+}
+
+// ax1IsConsolidatedTitle عینِ `_is_consolidated_title` (fts_engine.py): عنوانی
+// که «تلفیقی» دارد و «غیرتلفیقی» ندارد، تلفیقی است.
+func ax1IsConsolidatedTitle(title string) bool {
+	t := normFa(title)
+	return strings.Contains(t, "تلفیقی") && !strings.Contains(t, "غیرتلفیقی")
+}
+
+// ax1FSGrowthGap عینِ `fts_engine._fs_growth_gap` — شکلِ ثابتِ «قابل محاسبه نبود».
+func ax1FSGrowthGap(reason, revenueBasis string, threshold any) map[string]any {
+	return map[string]any{
+		"monetary_pct": nil, "basis": "fs_unavailable", "period": "",
+		"months": int64(0), "year": nil, "pass": false, "data_gap": true,
+		"reason": reason, "revenue_basis": revenueBasis, "threshold": threshold,
+	}
+}
+
+type ax1FSKey struct {
+	periodEnd string
+	months    int64
+}
+
+// Ind1aFSGrowth پورتِ `api.fundamental.ind1a_fs_growth` + `fts_engine.fs_growth_from_rows`:
+// رشد درآمد برایِ خدماتی/مالی/هلدینگ که سریِ ماهانه ندارند — میاندوره ÷ همان
+// دورهٔ سال قبل، و در نبودِ جفتِ میاندوره سالانه ÷ سالانه. فقط جدیدترین دورهٔ
+// هر مبنا داوری می‌شود؛ عددِ دورهٔ قدیمی‌تر جای «امسال» نمی‌نشیند.
+func (s *Service) Ind1aFSGrowth(ctx context.Context, symbol string,
+	th, profile map[string]any) (map[string]any, error) {
+	th = ax1Thresholds(th)
+	prof := ax1ProfileOr(profile)
+	floor := th["monetary_growth_min"]
+	revenueBasis := strOr(prof["revenue_basis"])
+
+	pred, args := s.a45Pred(ctx, "symbol", symbol)
+	consFilter := ""
+	if cols, err := s.msQuery(ctx, "PRAGMA table_info(financial_statements)", nil); err == nil {
+		for _, r := range cols {
+			if len(r) > 1 && strOr(r[1]) == "is_consolidated" {
+				consFilter = " AND is_consolidated=0"
+				break
+			}
+		}
+	}
+	rows, err := s.msQuery(ctx, "SELECT period_end, period_months, revenue, title "+
+		"FROM financial_statements WHERE "+pred+" AND revenue>0 AND period_months>0"+
+		consFilter+" ORDER BY period_end DESC", args)
+	if err != nil {
+		return nil, err
+	}
+	byKey := map[ax1FSKey]float64{}
+	for _, r := range rows {
+		if len(r) < 4 {
+			continue
+		}
+		if ax1IsConsolidatedTitle(strOr(r[3])) {
+			continue
+		}
+		pe := evalCanonicalOrEmpty(r[0])
+		m, _ := toI(r[1])
+		rev := toF(r[2])
+		if pe == "" || m <= 0 || rev <= 0 {
+			continue
+		}
+		k := ax1FSKey{periodEnd: pe, months: m}
+		if _, exists := byKey[k]; !exists {
+			byKey[k] = rev
+		}
+	}
+	if len(byKey) == 0 {
+		return ax1FSGrowthGap(ax1FSGrowthNoRows, revenueBasis, floor), nil
+	}
+	interims := make([]ax1FSKey, 0, len(byKey))
+	annuals := make([]ax1FSKey, 0, len(byKey))
+	for k := range byKey {
+		if k.months > 0 && k.months < 12 {
+			interims = append(interims, k)
+		} else if k.months >= 12 {
+			annuals = append(annuals, k)
+		}
+	}
+	sort.Slice(interims, func(i, j int) bool { return interims[i].periodEnd > interims[j].periodEnd })
+	sort.Slice(annuals, func(i, j int) bool { return annuals[i].periodEnd > annuals[j].periodEnd })
+
+	if len(interims) > 0 {
+		k := interims[0]
+		parts := strings.Split(k.periodEnd, "/")
+		if len(parts) >= 3 {
+			if y, ok := parseIntStrict(parts[0]); ok {
+				prev := ax1FSKey{periodEnd: fmt.Sprintf("%d/%s/%s", y-1, parts[1], parts[2]),
+					months: k.months}
+				if prevVal, has := byKey[prev]; has {
+					growth := (byKey[k]/prevVal - 1.0) * 100.0
+					return map[string]any{
+						"monetary_pct": growth, "basis": "fs_interim",
+						"period": k.periodEnd, "months": k.months, "year": y,
+						"pass": growth >= toF(floor), "data_gap": false, "reason": "",
+						"revenue_basis": revenueBasis, "threshold": floor,
+					}, nil
+				}
+			}
+		}
+	}
+	if len(annuals) > 0 {
+		k := annuals[0]
+		parts := strings.Split(k.periodEnd, "/")
+		if len(parts) >= 3 {
+			if y, ok := parseIntStrict(parts[0]); ok {
+				var prevVal float64
+				found := false
+				for _, ak := range annuals {
+					ap := strings.Split(ak.periodEnd, "/")
+					if len(ap) < 3 || ak.months != k.months || ap[1] != parts[1] {
+						continue
+					}
+					if ay, ok := parseIntStrict(ap[0]); ok && ay == y-1 {
+						prevVal, found = byKey[ak], true
+						break
+					}
+				}
+				if found {
+					growth := (byKey[k]/prevVal - 1.0) * 100.0
+					return map[string]any{
+						"monetary_pct": growth, "basis": "fs_annual",
+						"period": k.periodEnd, "months": k.months, "year": y,
+						"pass": growth >= toF(floor), "data_gap": false, "reason": "",
+						"revenue_basis": revenueBasis, "threshold": floor,
+					}, nil
+				}
+			}
+		}
+	}
+	return ax1FSGrowthGap(ax1FSGrowthNoPrior, revenueBasis, floor), nil
+}
+
+// parseIntStrict معادلِ `int(y)` برایِ سالِ canonical؛ ورودیِ غیرعددی ⇒ false.
+func parseIntStrict(s string) (int64, bool) {
+	var v int64
+	if s == "" {
+		return 0, false
+	}
+	for _, ch := range s {
+		if ch < '0' || ch > '9' {
+			return 0, false
+		}
+		v = v*10 + int64(ch-'0')
+	}
+	return v, true
+}
 
 // ax1PhysicalPair پورتِ `_physical_pair` (477-514): (کمیتِ تجمیعیِ دوره، کمیتِ
 // تجمیعیِ همان دورۀ سالِ قبل، نامِ ستون).

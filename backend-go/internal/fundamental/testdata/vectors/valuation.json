@@ -38,14 +38,17 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -56,12 +59,15 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -72,14 +78,17 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -90,12 +99,15 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -106,14 +118,17 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -124,12 +139,15 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -140,14 +158,17 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -158,12 +179,15 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -174,14 +198,17 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -192,12 +219,15 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -208,14 +238,17 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -226,12 +259,15 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -242,14 +278,17 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -260,12 +299,15 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -276,14 +318,17 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -294,12 +339,15 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -310,14 +358,17 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -328,12 +379,15 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -344,14 +398,17 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -362,12 +419,15 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -378,14 +438,17 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -396,12 +459,15 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -412,14 +478,17 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -430,12 +499,15 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -446,14 +518,17 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -464,12 +539,15 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -480,14 +558,17 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -498,12 +579,15 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -514,14 +598,17 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -532,12 +619,15 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -548,14 +638,17 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -566,12 +659,15 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -582,14 +678,17 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -600,12 +699,15 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -616,14 +718,17 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -634,12 +739,15 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -650,14 +758,17 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -668,12 +779,15 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -684,14 +798,17 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -702,12 +819,15 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -718,14 +838,17 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -736,12 +859,15 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -752,14 +878,17 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -770,12 +899,15 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -786,14 +918,17 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -804,12 +939,15 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -820,14 +958,17 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -838,12 +979,15 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -854,14 +998,17 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -872,12 +1019,15 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -888,14 +1038,17 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -906,12 +1059,15 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -922,14 +1078,17 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -940,12 +1099,15 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -956,14 +1118,17 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -974,12 +1139,15 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -990,14 +1158,17 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1008,12 +1179,15 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1024,14 +1198,17 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1042,12 +1219,15 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1058,14 +1238,17 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1076,12 +1259,15 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1092,14 +1278,17 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1110,12 +1299,15 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1126,14 +1318,17 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1144,12 +1339,15 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1160,14 +1358,17 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1178,12 +1379,15 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1194,14 +1398,17 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1212,12 +1419,15 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1228,14 +1438,17 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1246,12 +1459,15 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1262,14 +1478,17 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1280,12 +1499,15 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1296,14 +1518,17 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1314,12 +1539,15 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1330,14 +1558,17 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1348,12 +1579,15 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1364,14 +1598,17 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1382,12 +1619,15 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1398,14 +1638,17 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1416,12 +1659,15 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1432,14 +1678,17 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1450,12 +1699,15 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1466,14 +1718,17 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1484,12 +1739,15 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1500,14 +1758,17 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1518,12 +1779,15 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1534,14 +1798,17 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1552,12 +1819,15 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1568,14 +1838,17 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1586,12 +1859,15 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1602,14 +1878,17 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1620,12 +1899,15 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1636,14 +1918,17 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1654,12 +1939,15 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1670,14 +1958,17 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1688,12 +1979,15 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1704,14 +1998,17 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1722,12 +2019,15 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1738,14 +2038,17 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1756,12 +2059,15 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1772,14 +2078,17 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1790,12 +2099,15 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1806,14 +2118,17 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1824,12 +2139,15 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1840,14 +2158,17 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1858,12 +2179,15 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1874,14 +2198,17 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1892,12 +2219,15 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1908,14 +2238,17 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1926,12 +2259,15 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1942,14 +2278,17 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1960,12 +2299,15 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -1976,14 +2318,17 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -1994,12 +2339,15 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2010,14 +2358,17 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2028,12 +2379,15 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2044,14 +2398,17 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2062,12 +2419,15 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2078,14 +2438,17 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2096,12 +2459,15 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2112,14 +2478,17 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2130,12 +2499,15 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2146,14 +2518,17 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2164,12 +2539,15 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2180,14 +2558,17 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2198,12 +2579,15 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2214,14 +2598,17 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2232,12 +2619,15 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2248,14 +2638,17 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2266,12 +2659,15 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2282,14 +2678,17 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2300,12 +2699,15 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2316,14 +2718,17 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2334,12 +2739,15 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2350,14 +2758,17 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2368,12 +2779,15 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2384,14 +2798,17 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2402,12 +2819,15 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2418,14 +2838,17 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2436,12 +2859,15 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2452,14 +2878,17 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2470,12 +2899,15 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2486,14 +2918,17 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2504,12 +2939,15 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2520,14 +2958,17 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2538,12 +2979,15 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2554,14 +2998,17 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2572,12 +3019,15 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2588,14 +3038,17 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2606,12 +3059,15 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2622,14 +3078,17 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2640,12 +3099,15 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2656,14 +3118,17 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2674,12 +3139,15 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2690,14 +3158,17 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2708,12 +3179,15 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2724,14 +3198,17 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2742,12 +3219,15 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2758,14 +3238,17 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2776,12 +3259,15 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2792,14 +3278,17 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.1,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2810,12 +3299,15 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2826,14 +3318,17 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 0.75,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2844,12 +3339,15 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2860,14 +3358,17 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "annual_sales",
     "mcap_ht": 40.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
-    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
     "sales_pass": false,
     "sales_threshold": 0.33
    }
@@ -2878,12 +3379,15 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2894,11 +3398,14 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -2912,12 +3419,15 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2928,8 +3438,11 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -2960,12 +3473,15 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -2976,8 +3492,11 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3008,12 +3527,15 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3024,8 +3546,11 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3056,12 +3581,15 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3072,11 +3600,14 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -3090,12 +3621,15 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3106,8 +3640,11 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3138,12 +3675,15 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3154,8 +3694,11 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3186,12 +3729,15 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3202,8 +3748,11 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3234,12 +3783,15 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3250,11 +3802,14 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -3268,12 +3823,15 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3284,8 +3842,11 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3316,12 +3877,15 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3332,8 +3896,11 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3364,12 +3931,15 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3380,8 +3950,11 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -3412,12 +3985,15 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3428,11 +4004,14 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -3446,12 +4025,15 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3462,8 +4044,11 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 75.6,
     "fs_unit": "mrl",
@@ -3494,12 +4079,15 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3510,8 +4098,11 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 75.6,
     "fs_unit": "mrl",
@@ -3542,12 +4133,15 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3558,8 +4152,11 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 75.6,
     "fs_unit": "mrl",
@@ -3590,12 +4187,15 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3606,11 +4206,14 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -3624,12 +4227,15 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3640,8 +4246,11 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 46.2,
     "fs_unit": "mrl",
@@ -3672,12 +4281,15 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3688,8 +4300,11 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 46.2,
     "fs_unit": "mrl",
@@ -3720,12 +4335,15 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3736,8 +4354,11 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 46.2,
     "fs_unit": "mrl",
@@ -3768,12 +4389,15 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3784,11 +4408,14 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -3802,12 +4429,15 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3818,8 +4448,11 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 204.8,
     "fs_unit": "mrl",
@@ -3850,12 +4483,15 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3866,8 +4502,11 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 204.8,
     "fs_unit": "mrl",
@@ -3898,12 +4537,15 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3914,8 +4556,11 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": 204.8,
     "fs_unit": "mrl",
@@ -3946,12 +4591,15 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3962,11 +4610,14 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -3980,12 +4631,15 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -3996,8 +4650,11 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -4028,12 +4685,15 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4044,8 +4704,11 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -4076,12 +4739,15 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4092,8 +4758,11 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": " Annualized",
+    "annualize_label": "سالانه‌شده از دورهٔ 9 ماهه",
+    "annualize_months": 9,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": "mrl",
@@ -4124,12 +4793,15 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4140,11 +4812,14 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -4158,12 +4833,15 @@
    "gm": 0,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4174,8 +4852,11 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4206,12 +4887,15 @@
    "gm": 0,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4222,8 +4906,11 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4254,12 +4941,15 @@
    "gm": 0,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4270,8 +4960,11 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4302,12 +4995,15 @@
    "gm": 0,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4318,11 +5014,14 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -4336,12 +5035,15 @@
    "gm": 1,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4352,8 +5054,11 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4384,12 +5089,15 @@
    "gm": 1,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4400,8 +5108,11 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4432,12 +5143,15 @@
    "gm": 1,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4448,8 +5162,11 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4480,12 +5197,15 @@
    "gm": 1,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4496,11 +5216,14 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -4514,12 +5237,15 @@
    "gm": 2,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4530,8 +5256,11 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4562,12 +5291,15 @@
    "gm": 2,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4578,8 +5310,11 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4610,12 +5345,15 @@
    "gm": 2,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4626,8 +5364,11 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -4658,12 +5399,15 @@
    "gm": 2,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4674,11 +5418,14 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -4692,12 +5439,15 @@
    "gm": 3,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4708,8 +5458,11 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 75.6,
     "fs_unit": null,
@@ -4740,12 +5493,15 @@
    "gm": 3,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4756,8 +5512,11 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 75.6,
     "fs_unit": null,
@@ -4788,12 +5547,15 @@
    "gm": 3,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4804,8 +5566,11 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 75.6,
     "fs_unit": null,
@@ -4836,12 +5601,15 @@
    "gm": 3,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4852,11 +5620,14 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -4870,12 +5641,15 @@
    "gm": 4,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4886,8 +5660,11 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 46.2,
     "fs_unit": null,
@@ -4918,12 +5695,15 @@
    "gm": 4,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4934,8 +5714,11 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 46.2,
     "fs_unit": null,
@@ -4966,12 +5749,15 @@
    "gm": 4,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -4982,8 +5768,11 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 46.2,
     "fs_unit": null,
@@ -5014,12 +5803,15 @@
    "gm": 4,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5030,11 +5822,14 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -5048,12 +5843,15 @@
    "gm": 5,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5064,8 +5862,11 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 204.8,
     "fs_unit": null,
@@ -5096,12 +5897,15 @@
    "gm": 5,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5112,8 +5916,11 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 204.8,
     "fs_unit": null,
@@ -5144,12 +5951,15 @@
    "gm": 5,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5160,8 +5970,11 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": 204.8,
     "fs_unit": null,
@@ -5192,12 +6005,15 @@
    "gm": 5,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5208,11 +6024,14 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "gap_cause": "market_cap",
     "mcap_ht": 0.0,
     "na": true,
-    "pass": false,
+    "pass": null,
     "potential_pass": false,
     "potential_threshold": 40.0,
     "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
@@ -5226,12 +6045,15 @@
    "gm": 6,
    "mcap": 0.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5242,8 +6064,11 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -5274,12 +6099,15 @@
    "gm": 6,
    "mcap": 1000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5290,8 +6118,11 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": "sales_to_mcap",
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -5322,12 +6153,15 @@
    "gm": 6,
    "mcap": 7500000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
@@ -5338,8 +6172,11 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
     "annual_sales_bt": 420.0,
     "annualize_basis": "کدال",
+    "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
+    "annualize_months": 12,
     "available": true,
     "est_gross_profit_bt": null,
     "fs_unit": null,
@@ -5370,12 +6207,15 @@
    "gm": 6,
    "mcap": 400000000000000.0,
    "out": {
+    "acceptance_path": null,
+    "annualize_label": "",
+    "annualize_months": 0,
     "available": false,
     "exempt": true,
     "na": true,
     "pass": false,
     "potential_pass": false,
-    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "reason": "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است (طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).",
     "rule_ref": "F-04",
     "sales_pass": false
    }
