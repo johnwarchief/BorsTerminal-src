@@ -31,6 +31,15 @@ describe('axis meta', () => {
     expect(thresholdOf(thresholds, 'growth')).toBe(60);
     expect(thresholdOf(thresholds, 'sales')).toBe(0.33);
   });
+  it('uses only sales_to_mcap for axis 4, never profit potential', () => {
+    expect(valueOf(row, 'sales')).toBe(1.15);
+    expect(valueOf({ ...row, sales_to_mcap: null, profit_potential_pct: 13.2 }, 'sales')).toBeNull();
+  });
+  it('does not invent fallback thresholds', () => {
+    expect(thresholdOf({}, 'growth')).toBeNull();
+    expect(thresholdOf(null, 'sales')).toBeNull();
+    expect(thresholdOf({ margin_min: 40 }, 'growth')).toBeNull();
+  });
   it('localizes verdicts', () => {
     expect(verdictFa('STRONG')).toBe('قوی');
     expect(verdictFa('WATCH')).toBe('تحت نظر');

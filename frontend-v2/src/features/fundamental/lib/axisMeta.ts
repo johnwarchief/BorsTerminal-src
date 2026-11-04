@@ -43,7 +43,7 @@ export function valueOf(row: ScreenerRowLike, axis: AxisKey): number | string | 
     case 'growth': return row.rev_growth ?? null;
     case 'eps': return Array.isArray(row.eps_series) && row.eps_series.length ? row.eps_series[row.eps_series.length - 1] ?? null : null;
     case 'margin': return row.gross_margin ?? null;
-    case 'sales': return row.sales_to_mcap ?? row.profit_potential_pct ?? null;
+    case 'sales': return row.sales_to_mcap ?? null;
     case 'industry': return row.pricing_mode ?? null;
   }
 }
