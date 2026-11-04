@@ -30,10 +30,11 @@ describe('Sidebar', () => {
 
   it('marks unbuilt destinations as next-stage and built destinations as live', () => {
     mount();
-    const fundamental = screen.getByText('بنیادی').closest('[aria-disabled]');
-    expect(fundamental?.getAttribute('title')).toContain('بعدی');
-    expect(screen.getByRole('link', { name: /^بازار$/ })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /^تکنیکال$/ })).toBeTruthy();
+    const watch = screen.getByText('دیده‌بان').closest('[aria-disabled]');
+    expect(watch?.getAttribute('title')).toContain('بعدی');
+    for (const name of [/^بازار$/, /^تکنیکال$/, /^بنیادی$/, /^وضعیت بازار$/]) {
+      expect(screen.getByRole('link', { name })).toBeTruthy();
+    }
   });
 
   it('shows the unread badge', () => {
