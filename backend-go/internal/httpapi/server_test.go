@@ -507,8 +507,8 @@ func TestUnprocessableShape(t *testing.T) {
 
 func TestRoutesInventoryIsExactAndSorted(t *testing.T) {
 	routes := Routes()
-	if len(routes) != 103 {
-		t.Fatalf("routes = %d, want 103 (tools/parity/gen_routes.py must print routes: 103)", len(routes))
+	if len(routes) != 104 {
+		t.Fatalf("routes = %d, want 104 (this curated inventory adds fundamental/freshness)", len(routes))
 	}
 	if !sort.StringsAreSorted(routes) {
 		for i := 1; i < len(routes); i++ {

@@ -549,5 +549,51 @@
  },
  "ref_symbol": null,
  "ref_reason": null,
+ "freshness": {
+  "symbol": "متنوع01",
+  "as_of": "2025-09-22",
+  "axes": {
+   "1_growth": {
+    "as_of": "2025-09-22",
+    "source": "monthly_sales",
+    "tracing_no": 91001,
+    "period_end": "1404/06/31",
+    "state": "fresh",
+    "reason": ""
+   },
+   "2_eps_trend": {
+    "as_of": null,
+    "source": "financial_statements",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   },
+   "3_gross_margin": {
+    "as_of": null,
+    "source": "financial_statements",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   },
+   "4_sales_to_mcap": {
+    "as_of": "2025-09-22",
+    "source": "monthly_sales+market_watch",
+    "tracing_no": 91001,
+    "period_end": "1404/06/31",
+    "state": "missing",
+    "reason": ""
+   },
+   "5_industry": {
+    "as_of": null,
+    "source": "instruments",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   }
+  }
+ },
  "fs_count": 0
 }

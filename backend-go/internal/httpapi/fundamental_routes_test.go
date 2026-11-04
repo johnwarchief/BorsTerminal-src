@@ -17,9 +17,10 @@ func (f *fakeFundamental) hit(name string, w http.ResponseWriter) {
 	WriteJSON(w, http.StatusOK, map[string]any{"handler": name})
 }
 
-func (f *fakeFundamental) Sectors(w http.ResponseWriter, _ *http.Request)  { f.hit("sectors", w) }
-func (f *fakeFundamental) Quarters(w http.ResponseWriter, _ *http.Request) { f.hit("quarters", w) }
-func (f *fakeFundamental) Card(w http.ResponseWriter, _ *http.Request)     { f.hit("card", w) }
+func (f *fakeFundamental) Sectors(w http.ResponseWriter, _ *http.Request)   { f.hit("sectors", w) }
+func (f *fakeFundamental) Quarters(w http.ResponseWriter, _ *http.Request)  { f.hit("quarters", w) }
+func (f *fakeFundamental) Card(w http.ResponseWriter, _ *http.Request)      { f.hit("card", w) }
+func (f *fakeFundamental) Freshness(w http.ResponseWriter, _ *http.Request) { f.hit("freshness", w) }
 
 func newFundSrv(t *testing.T, fd Fundamental) http.Handler {
 	t.Helper()
@@ -34,6 +35,7 @@ func TestFundamentalRoutesReachTheirHandlers(t *testing.T) {
 		path, want string
 	}{
 		{"/api/fundamental/sectors", "sectors"},
+		{"/api/fundamental/freshness", "freshness"},
 		{"/api/fundamental/عادی01/quarters", "quarters"},
 		{"/api/fundamental/عادی01", "card"},
 	} {

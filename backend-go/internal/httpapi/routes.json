@@ -19,6 +19,7 @@
  "GET /api/fts",
  "GET /api/fts/config",
  "GET /api/fts/{symbol}",
+ "GET /api/fundamental/freshness",
  "GET /api/fundamental/screen",
  "GET /api/fundamental/sectors",
  "GET /api/fundamental/{symbol}",

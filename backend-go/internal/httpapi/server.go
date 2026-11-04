@@ -81,6 +81,7 @@ type Fundamental interface {
 	Sectors(http.ResponseWriter, *http.Request)
 	Quarters(http.ResponseWriter, *http.Request)
 	Card(http.ResponseWriter, *http.Request)
+	Freshness(http.ResponseWriter, *http.Request)
 }
 
 // Watchlist سه مسیرِ CRUD واچ‌لیست در B5؛ nil یعنی پورت نشده.
@@ -225,6 +226,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		// پایتون هم متنیِ `/api/fundamental/sectors` پیش از `/api/fundamental/{symbol}`
 		// تعریف شده است.
 		mux.HandleFunc("GET /api/fundamental/sectors", srv.Fundamental.Sectors)
+		mux.HandleFunc("GET /api/fundamental/freshness", srv.Fundamental.Freshness)
 		mux.HandleFunc("GET /api/fundamental/screen", s.notPortedRoute)
 		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", srv.Fundamental.Quarters)
 		mux.HandleFunc("GET /api/fundamental/{symbol}", srv.Fundamental.Card)

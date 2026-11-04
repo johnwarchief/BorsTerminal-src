@@ -169,7 +169,7 @@ func v10DataGaps(res map[string]any) []map[string]any {
 			"available_periods": avail,
 			"required_periods":  req,
 			"partial":           truthy(e["partial"]),
-			"fix": "با گرفتنِ دیتابیس تازهٔ کدال، صورت‌های ۱۲ماههٔ سال‌های قدیمی‌ترِ همین نماد اضافه می‌شود.",
+			"fix":               "با گرفتنِ دیتابیس تازهٔ کدال، صورت‌های ۱۲ماههٔ سال‌های قدیمی‌ترِ همین نماد اضافه می‌شود.",
 		})
 	} else if truthy(e["soft_gap"]) {
 		gaps = append(gaps, map[string]any{
@@ -568,6 +568,7 @@ func (s *Service) CardBody(ctx context.Context, symbol string, months int) (map[
 		"thresholds":        cardThresholds(cfg),
 		"ref_symbol":        refSymbol,
 		"ref_reason":        refReason,
+		"freshness":         s.freshnessOf(ctx, normSymbol),
 		"fs_count":          len(history),
 	}, 200, nil
 }
