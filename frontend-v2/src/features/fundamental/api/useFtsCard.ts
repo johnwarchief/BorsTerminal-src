@@ -13,8 +13,13 @@ const Axis1Schema = z.looseObject({
 
 const Axis2Schema = z.looseObject({
   eps_series: z.array(z.number().nullable()).nullish(),
+  net_profit_series: z.array(z.number().nullable()).nullish(),
+  period_ends: z.array(Str).nullish(),
   years_available: Num,
   years_required: Num,
+  evidence: Str,
+  consolidated_used: Bool,
+  audited_only: Bool,
 }).nullish();
 
 const Axis3Schema = z.looseObject({
@@ -24,6 +29,10 @@ const Axis3Schema = z.looseObject({
   optimal: Bool,
   na: Bool,
   margin_class: Str,
+  gross_profit_bt: Num,
+  revenue_bt: Num,
+  optimal_threshold: Num,
+  reason: Str,
 }).nullish();
 
 const Axis4Schema = z.looseObject({
@@ -35,12 +44,22 @@ const Axis4Schema = z.looseObject({
   reason: Str,
   na: Bool,
   exempt: Bool,
+  potential_pct: Num,
+  potential_threshold: Num,
+  annual_sales_bt: Num,
+  months_used: Num,
+  annualize_basis: Str,
 }).nullish();
 
 const Axis5Schema = z.looseObject({
   label: Str,
   regime_label: Str,
   sector: Str,
+  verdict: Str,
+  market_share_pct: Num,
+  outlook: Str,
+  rule_ref: Str,
+  pass: Bool,
 }).nullish();
 
 const FreshnessAxisSchema = z.looseObject({
@@ -77,6 +96,28 @@ const DetailSchema = z.looseObject({
   subchecks: z.array(DetailSubcheckSchema).nullish(),
 });
 
+const HistoryRowSchema = z.looseObject({
+  period_end: Str,
+  fiscal_year: Str,
+  revenue: Num,
+  gross_profit: Num,
+  net_profit: Num,
+  eps: Num,
+  audited: Bool,
+  consolidated: Bool,
+});
+
+const MetricsSchema = z.looseObject({
+  mcap: Num,
+  annual_sales_bt: Num,
+  revenue: Num,
+  sales_to_mcap: Num,
+  ps: Num,
+  gross_margin: Num,
+  net_margin: Num,
+  growth_pct: Num,
+});
+
 export const FtsCardSchema = z.looseObject({
   status: z.literal('success'),
   symbol: z.string(),
@@ -84,6 +125,8 @@ export const FtsCardSchema = z.looseObject({
   score: Num,
   verdict: Str,
   applicable: Bool,
+  history: z.array(HistoryRowSchema).nullish(),
+  metrics: MetricsSchema.nullish(),
   details: z.record(z.string(), DetailSchema).nullish(),
   freshness: FreshnessSchema.nullish(),
   message: Str,

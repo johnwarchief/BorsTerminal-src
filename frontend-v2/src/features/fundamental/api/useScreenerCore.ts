@@ -6,6 +6,15 @@ const Str = z.string().nullish();
 const Bool = z.boolean().nullish();
 const Num = z.number().nullish();
 
+const Thresholds = z.looseObject({
+  growth_min: Num,
+  margin_min: Num,
+  margin_optimal: Num,
+  v10_sales_to_mcap_min: Num,
+  profit_potential_min: Num,
+  v10_eps_years: Num,
+}).nullish();
+
 export const ScreenerCoreRowSchema = z.looseObject({
   symbol: z.string(),
   symbol_norm: Str,
@@ -38,15 +47,20 @@ export const ScreenerCoreRowSchema = z.looseObject({
   profit_potential_pct: Num,
   sales_to_mcap: Num,
   pricing_mode: Str,
+  margin_tier: Str,
   i1a_pass: Bool,
   i1b_applicable: Bool,
+  i1b_pass: Bool,
   i1b_data_gap: Bool,
+  i4a_pass: Bool,
+  i4b_pass: Bool,
 });
 
 export const ScreenerCoreSchema = z.looseObject({
   status: z.string(),
   count: z.number(),
   data: z.array(ScreenerCoreRowSchema),
+  thresholds: Thresholds,
   as_of: z.union([z.string(), z.number()]).nullish(),
 });
 

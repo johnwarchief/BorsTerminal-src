@@ -117,6 +117,46 @@ html[data-theme='cool'] {
   --down-soft: rgba(176, 44, 55, 0.08);
 }
 
+/* ===== fundamental data surfaces (paper/ink) ===== */
+.fundamental-surface[data-fund-surface='paper'] {
+  --fd-bg: #efece4; --fd-panel: #fbf9f5; --fd-panel-2: #f4f1e9; --fd-panel-3: #eae5da;
+  --fd-line: #ddd6c8; --fd-line-strong: #c7bead; --fd-text: #1c1a16; --fd-text-2: #57524a; --fd-text-3: #6f695d;
+  --fd-accent: #94651a; --fd-up: #0d7a45; --fd-down: #b02c37; --fd-warn: #8a5a08; --fd-flat: #6d675c;
+  --fd-grid: rgba(109,103,92,.16);
+}
+.fundamental-surface[data-fund-surface='ink'] {
+  --fd-bg: #101215; --fd-panel: #15181c; --fd-panel-2: #1a1e23; --fd-panel-3: #20252b;
+  --fd-line: #2a2f36; --fd-line-strong: #363d46; --fd-text: #e2ddd2; --fd-text-2: #a9a396; --fd-text-3: #908a7e;
+  --fd-accent: #c9a45c; --fd-up: #4fbd8c; --fd-down: #e07480; --fd-warn: #d3a04a; --fd-flat: #8f8a80;
+  --fd-grid: rgba(154,160,168,.14);
+}
+.fundamental-surface .fd-status--pass { color: var(--fd-up); }
+.fundamental-surface .fd-status--fail { color: var(--fd-down); }
+.fundamental-surface .fd-status--na { color: var(--fd-flat); }
+.fundamental-surface .fd-status--unknown { color: var(--fd-warn); }
+.fundamental-surface .fd-chart-track { fill: color-mix(in srgb, var(--fd-text-3) 16%, transparent); }
+.fundamental-surface .fd-chart-fill { fill: var(--fd-up); }
+.fundamental-surface .fd-chart-fill.is-fail { fill: var(--fd-down); }
+.fundamental-surface .fd-chart-fill.is-na { fill: var(--fd-flat); }
+.fundamental-surface .fd-chart-fill.is-unknown { fill: var(--fd-warn); }
+.fundamental-surface .fd-chart-bar { fill: var(--fd-up); }
+.fundamental-surface .fd-chart-bar.is-fail { fill: var(--fd-down); }
+.fundamental-surface .fd-chart-bar.is-na { fill: var(--fd-flat); }
+.fundamental-surface .fd-chart-bar.is-unknown { fill: var(--fd-warn); }
+.fundamental-surface .fd-th-line { stroke: var(--fd-accent); stroke-width: 1; stroke-dasharray: 2 2; opacity: .9; }
+.fundamental-surface .fd-chart-tick { stroke: var(--fd-line-strong); stroke-width: .8; }
+.fundamental-surface .fd-chart-text { fill: var(--fd-text-3); font-family: inherit; font-variant-numeric: tabular-nums; }
+.fundamental-surface .fd-regime-dot { background: var(--fd-line-strong); }
+.fundamental-surface .fd-regime-dot.is-active.is-pass { background: var(--fd-up); }
+.fundamental-surface .fd-regime-dot.is-active.is-fail { background: var(--fd-down); }
+.fundamental-surface .fd-regime-dot.is-active.is-na { background: var(--fd-flat); }
+.fundamental-surface .fd-regime-dot.is-active.is-unknown { background: var(--fd-warn); }
+.fundamental-surface .fd-glyph span { background: var(--fd-line-strong); }
+.fundamental-surface .fd-glyph span.is-pass { background: var(--fd-up); }
+.fundamental-surface .fd-glyph span.is-fail { background: var(--fd-down); }
+.fundamental-surface .fd-glyph span.is-na { background: var(--fd-flat); }
+.fundamental-surface .fd-glyph span.is-unknown { background: var(--fd-warn); }
+
 /* ===== geometry tokens ===== */
 :root {
   --rail-w: 208px;
