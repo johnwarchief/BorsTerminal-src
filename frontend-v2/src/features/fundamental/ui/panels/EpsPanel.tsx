@@ -4,6 +4,19 @@ import { cardStatus } from '../../lib/cardStatus';
 import { EpsBars } from '../mini/EpsBars';
 import { AxisPanel, faInt } from './AxisPanel';
 
+// R88: توکن‌های انگلیسیِ شواهد به واژهٔ فارسی نگاشت می‌شوند؛ ناشناخته عیناً می‌ماند.
+const EVIDENCE_FA: Record<string, string> = {
+  audited_year_end: 'سال‌پایانِ حسابرسی‌شده',
+  annualized_interim_short: 'سال‌سازیِ میاندورهٔ کوتاه',
+  interim_annualized: 'سال‌سازیِ میاندوره',
+  consolidated: 'تلفیقی',
+  audited: 'حسابرسی‌شده',
+};
+
+function evidenceFa(token: string): string {
+  return EVIDENCE_FA[token] ?? token;
+}
+
 export function EpsPanel({ card }: { card: FtsCard }) {
   const eps = card.indicators?.['2'];
   const status = cardStatus(card, 'eps');
@@ -11,10 +24,11 @@ export function EpsPanel({ card }: { card: FtsCard }) {
   const last = series.length ? series[series.length - 1] : null;
   // رأی R50: غیبتِ سابقه «—» است، نه صفرِ ساختگی.
   const years = eps?.years_available == null ? '—/۳' : `${toFaDigits(eps.years_available)}/۳`;
-  // R82: شواهد می‌تواند رشته یا آرایهٔ رشته باشد؛ آرایه با «، » پیوند می‌خورد.
+  // R82/R88: شواهد می‌تواند رشته یا آرایهٔ رشته باشد؛ آرایه پس از نگاشتِ
+  // توکن‌ها با «، » پیوند می‌خورد و رشتهٔ ساده دست‌نخورده می‌ماند.
   const evidence = eps?.evidence;
   const evidenceText = Array.isArray(evidence)
-    ? (evidence.length ? evidence.join('، ') : '—')
+    ? (evidence.length ? evidence.map(evidenceFa).join('، ') : '—')
     : (evidence ?? '—');
   return (
     <AxisPanel

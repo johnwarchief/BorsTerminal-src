@@ -301,7 +301,8 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           className="grid flex-none items-center border-b border-[var(--fd-line-strong)] bg-[var(--fd-panel-2)] px-1.5 text-[10px] text-[var(--fd-text-3)]"
           style={{ gridTemplateColumns: COLUMNS, minHeight: 55 }}
         >
-          <span role="columnheader" aria-label="نمای پنج‌محور" className="text-center" />
+          {/* R87: نشانهٔ ستونِ گلیف؛ aria-label نامِ دسترس‌پذیر را تعیین می‌کند. */}
+          <span role="columnheader" aria-label="نمای پنج‌محور" className="text-center">#</span>
           <span role="columnheader" aria-sort={ariaSort('symbol')} className="min-w-0 px-1.5">
             {sortButton('symbol', 'نماد')}
             <span className="block truncate text-[9px]">نام · صنعت</span>

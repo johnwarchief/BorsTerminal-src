@@ -62,6 +62,13 @@ describe('fundamental table visual', () => {
     expect(container.querySelectorAll('.fd-axis-chart').length).toBe(0);
     expect(container.querySelectorAll('svg[role="img"]').length).toBe(0);
   });
+  it('drops the axis threshold line in compact rows and keeps it comfortable (R92)', () => {
+    const { container, rerender } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    expect(container.querySelectorAll('.fd-axis-threshold').length).toBeGreaterThan(0);
+    act(() => useFundamentalPrefs.setState({ density: 'compact' }));
+    rerender(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    expect(container.querySelectorAll('.fd-axis-threshold').length).toBe(0);
+  });
   it('distinguishes N/A/unknown and bank badges', () => {
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
     expect(screen.getByTestId('fundamental-bank-وبملت')).toBeTruthy();
@@ -81,9 +88,12 @@ describe('fundamental table visual', () => {
     expect(growthHeader().getAttribute('aria-sort')).toBe('ascending');
     expect(rowOrder()).toEqual(['fundamental-row-رنيك', 'fundamental-row-وبملت']);
   });
-  it('conforms table ARIA: cells, sortable headers and the glyph column label (R32)', () => {
+  it('conforms table ARIA: cells, sortable headers and the glyph column label (R32/R87)', () => {
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
-    expect(screen.getByRole('columnheader', { name: 'نمای پنج‌محور' })).toBeTruthy();
+    const glyphHeader = screen.getByRole('columnheader', { name: 'نمای پنج‌محور' });
+    expect(glyphHeader).toBeTruthy();
+    // R87: ستونِ ۳۸px خالی نیست و «#» دیده می‌شود.
+    expect(glyphHeader.textContent).toContain('#');
     expect(screen.getByRole('columnheader', { name: 'وضعیت' }).hasAttribute('aria-sort')).toBe(false);
     expect(screen.getByTestId('fundamental-cell-رنيك-growth').getAttribute('role')).toBe('cell');
   });

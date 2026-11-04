@@ -3,10 +3,15 @@ import { cardStatus } from '../../lib/cardStatus';
 import { Bullet } from '../mini/Bullet';
 import { AxisPanel, faFixed, faThreshold } from './AxisPanel';
 
+// R89: طبقهٔ حاشیه از توکن‌های واقعیِ پاسخ به فارسی نگاشت می‌شود؛
+// توکنِ ناشناخته عیناً می‌ماند (نه «—» و نه واژهٔ ساختگی).
 const TIER_FA: Record<string, string> = {
+  below_floor: 'زیر کف',
+  acceptable: 'قابل قبول',
   ideal: 'ایده‌آل',
-  ok: 'قبول',
+  // سازگاری با پاسخ‌های قدیمی‌ترِ همین فیلد.
   below: 'زیر کف',
+  ok: 'قبول',
   na: 'بی‌نظر',
 };
 

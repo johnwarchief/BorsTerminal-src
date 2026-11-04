@@ -89,7 +89,11 @@ function AxisCell({ row, axis, thresholds }: Props) {
           {axis === 'industry' ? <RegimeGlyph regime={row.pricing_mode ?? null} status={status} /> : null}
         </div>
       ) : null}
-      <span className="fd-axis-threshold truncate text-[9.5px] text-[var(--fd-text-3)]">{subtitle}</span>
+      {/* R92: در حالت فشرده فقط مقدار و وضعیت می‌ماند تا محتوا بریده نشود؛
+          خط آستانه در سرستون و راهنمای جدول هم‌چنان دیده می‌شود. */}
+      {density === 'comfortable' ? (
+        <span className="fd-axis-threshold truncate text-[9.5px] text-[var(--fd-text-3)]">{subtitle}</span>
+      ) : null}
     </div>
   );
 }

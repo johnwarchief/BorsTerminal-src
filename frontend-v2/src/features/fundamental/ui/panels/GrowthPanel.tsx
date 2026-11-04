@@ -1,12 +1,14 @@
 import type { FtsCard } from '../../api/useFtsCard';
+import { formatAxisValue } from '../../lib/axisMeta';
 import { cardStatus } from '../../lib/cardStatus';
 import { Bullet } from '../mini/Bullet';
-import { AxisPanel, faFixed, faThreshold } from './AxisPanel';
+import { AxisPanel, faThreshold } from './AxisPanel';
 
 export function GrowthPanel({ card }: { card: FtsCard }) {
   const monetary = card.indicators?.['1']?.monetary;
   const status = cardStatus(card, 'growth');
-  const pct = faFixed(monetary?.monetary_pct, 1, '٪');
+  // R91: رشد همان قالبِ ستون جدول را دارد: علامتِ +/− و درصد.
+  const pct = formatAxisValue(monetary?.monetary_pct ?? null, 'growth');
   const volume = card.indicators?.['1']?.volume?.applicable === false ? 'N/A' : '—';
   return (
     <AxisPanel

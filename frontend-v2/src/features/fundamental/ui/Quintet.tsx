@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import type { FtsCard } from '../api/useFtsCard';
-import { AXES, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
+import { AXES, formatAxisValue, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { Bullet } from './mini/Bullet';
 import { EpsBars } from './mini/EpsBars';
@@ -44,7 +44,8 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
   const items: QuintetItem[] = [
     {
       axis: 'growth',
-      value: pct(monetary?.monetary_pct),
+      // R91: رشد مثل ستون جدول علامتِ +/− دارد («+۴۵٫۹٪»).
+      value: formatAxisValue(monetary?.monetary_pct ?? null, 'growth'),
       threshold: `کف ${thresholdLabel(monetary?.threshold)}`,
       status: cardStatus(card, 'growth'),
       chart: <Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={monetary?.threshold ?? null} status={cardStatus(card, 'growth')} label="رشد" />,

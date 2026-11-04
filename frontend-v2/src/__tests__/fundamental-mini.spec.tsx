@@ -39,11 +39,13 @@ describe('mini charts', () => {
     expect(img.querySelector('circle')).toBeTruthy();
     expect(screen.getByText('۱۲ همتا')).toBeTruthy();
   });
-  it('renders one labelled bar per history value (R13)', () => {
+  it('renders one labelled bar per history value (R13/R93)', () => {
     render(<HistoryBars values={[1, 2, 3]} labels={['۱۴۰۲', '۱۴۰۳', '۱۴۰۴']} status="pass" />);
     const img = screen.getByRole('img', { name: /تاریخچه/ });
     const bars = img.querySelectorAll('.fd-history-bar.is-pass');
     expect(bars.length).toBe(3);
     expect(Array.from(bars).every((bar) => !(bar as HTMLElement).style.background)).toBe(true);
+    // R93: ارتفاعِ درصدیِ هر میله inline است تا در ستونِ flex ارتفاع قطعی بگیرد.
+    expect(Array.from(bars).every((bar) => (bar as HTMLElement).style.height !== '')).toBe(true);
   });
 });

@@ -95,8 +95,9 @@ function ScoreRibbon({ card }: { card: FtsCard }) {
           );
         })}
       </span>
-      {failed ? <span className="text-[var(--fd-down)]">{toFaDigits(failed)} {statusFa('fail')}</span> : null}
-      {abstained ? <span>{toFaDigits(abstained)} {statusFa('na')}/{statusFa('unknown')}</span> : null}
+      {/* R94: شمارش‌ها با «·» جدا می‌شوند تا «قبول۲ رد» به‌هم نچسبد. */}
+      {failed ? <span className="text-[var(--fd-down)]">· {toFaDigits(failed)} {statusFa('fail')}</span> : null}
+      {abstained ? <span>· {toFaDigits(abstained)} {statusFa('na')}/{statusFa('unknown')}</span> : null}
       <span className="ms-auto">{verdictFa(card.verdict)} · امتیاز {scoreLabel(card.score)}/۵</span>
     </div>
   );

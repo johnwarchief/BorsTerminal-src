@@ -114,6 +114,8 @@ describe('fundamental cockpit', () => {
     expect(screen.getByTestId('panel-evidence')).toBeTruthy();
     const ribbon = screen.getByTestId('fundamental-score-ribbon');
     expect(ribbon.textContent).toContain('۳ از ۵');
+    // R94: شمارش رد با «·» از شمارش قبول جدا می‌شود («قبول۲ رد» نه).
+    expect(ribbon.textContent).toContain('· ۲ رد');
     // R57: روبان هیچ رتبه‌بندی ساختگی از محورها اعلام نمی‌کند.
     expect(ribbon.textContent).not.toContain('قوی‌ترین');
     expect(ribbon.textContent).not.toContain('ضعیف‌ترین');
@@ -183,7 +185,7 @@ describe('fundamental cockpit', () => {
     expect(epsQuintet?.textContent).not.toContain('۰/۳');
   });
 
-  it('joins array evidence with «، » in the EPS panel (R82)', () => {
+  it('maps array evidence tokens to Persian and joins with «، » (R82/R88)', () => {
     mockCard({
       indicators: {
         ...baseIndicators,
@@ -196,7 +198,60 @@ describe('fundamental cockpit', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
     const epsPanel = screen.getByTestId('panel-eps');
     expect(epsPanel.textContent).toContain('شواهد');
-    expect(epsPanel.textContent).toContain('audited_year_end، audited_year_end، annualized_interim_short');
+    expect(epsPanel.textContent).toContain('سال‌پایانِ حسابرسی‌شده، سال‌پایانِ حسابرسی‌شده، سال‌سازیِ میاندورهٔ کوتاه');
+    expect(epsPanel.textContent).not.toContain('audited_year_end');
+    expect(epsPanel.textContent).not.toContain('annualized_interim_short');
+  });
+
+  it('keeps unknown evidence tokens raw and a string evidence as-is (R88)', () => {
+    mockCard({
+      indicators: { ...baseIndicators, '2': { ...baseIndicators['2'], evidence: ['mystery_token'] } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(screen.getByTestId('panel-eps').textContent).toContain('mystery_token');
+    cleanup();
+    mockCard({
+      indicators: { ...baseIndicators, '2': { ...baseIndicators['2'], evidence: 'شاهد یکتا' } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(screen.getByTestId('panel-eps').textContent).toContain('شاهد یکتا');
+  });
+
+  it('maps live margin tiers to Persian and keeps unknown raw (R89)', () => {
+    mockCard({
+      indicators: { ...baseIndicators, '3': { ...baseIndicators['3'], margin_tier: 'below_floor' } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(screen.getByTestId('panel-margin').textContent).toContain('زیر کف');
+    cleanup();
+    mockCard({
+      indicators: { ...baseIndicators, '3': { ...baseIndicators['3'], margin_tier: 'acceptable' } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(screen.getByTestId('panel-margin').textContent).toContain('قابل قبول');
+    cleanup();
+    mockCard({
+      indicators: { ...baseIndicators, '3': { ...baseIndicators['3'], margin_tier: 'odd_token' } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(screen.getByTestId('panel-margin').textContent).toContain('odd_token');
+  });
+
+  it('renders growth with an explicit +/− sign in the quintet and the panel (R91)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const growthTile = () => screen.getByTestId('fundamental-quintet').querySelector('[data-axis="growth"]');
+    expect(growthTile()?.textContent).toContain('+۴۵٫۹٪');
+    expect(screen.getByTestId('panel-growth').textContent).toContain('+۴۵٫۹٪');
+    cleanup();
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '1': { ...baseIndicators['1'], monetary: { ...baseIndicators['1'].monetary, monetary_pct: -3.2 } },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(growthTile()?.textContent).toContain('−۳٫۲٪');
+    expect(screen.getByTestId('panel-growth').textContent).toContain('−۳٫۲٪');
   });
 
   it('renders history dates in Persian digits (R58)', () => {
