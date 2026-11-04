@@ -12,14 +12,18 @@ export const CARD_KEY = {
 
 export const CARD_NUM = { growth: '1', eps: '2', margin: '3', sales: '4', industry: '5' } as const;
 
-type CardIndicator = { na?: boolean | null; data_gap?: boolean | null };
+type CardIndicator = { na?: boolean | null; available?: boolean | null; data_gap?: boolean | null };
 
-/** تنها منبعِ وضعیتِ پنج محور برای پنل‌ها، کوینتت و روبانِ امتیاز. */
+/**
+ * تنها منبعِ وضعیتِ پنج محور برای پنل‌ها، کوینتت و روبانِ امتیاز.
+ * R70: بی‌نظری و نبودِ داده بر pass/fail مقدم‌اند تا محورِ بدون داده «رد» دیده نشود.
+ */
 export function cardStatus(card: FtsCard, axis: AxisKey): AxisStatus {
   const pass = card.passes?.[CARD_KEY[axis]];
   const indicator = card.indicators?.[CARD_NUM[axis]] as unknown as CardIndicator | undefined;
+  if (indicator?.na === true) return 'na';
+  if (indicator?.available === false || indicator?.data_gap === true) return 'unknown';
   if (pass === true) return 'pass';
   if (pass === false) return 'fail';
-  if (indicator?.na === true) return 'na';
   return 'unknown';
 }

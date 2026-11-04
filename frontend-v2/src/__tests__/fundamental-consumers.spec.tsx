@@ -38,6 +38,26 @@ const abstainingCard = {
   },
 } as unknown as FtsCard;
 
+/** R70: pass=false روی محورِ ناموجود نباید «رد» دیده شود. */
+const unavailableSalesCard = {
+  ...card,
+  passes: { ...card.passes, '4_sales_to_mcap': false },
+  indicators: {
+    ...card.indicators,
+    '4': { sales_to_mcap: null, sales_threshold: 0.33, available: false, data_gap: false },
+  },
+} as unknown as FtsCard;
+
+/** R70: pass=false روی محورِ با شکافِ داده نباید «رد» دیده شود. */
+const gappedEpsCard = {
+  ...card,
+  passes: { ...card.passes, '2_eps_trend': false },
+  indicators: {
+    ...card.indicators,
+    '2': { eps_series: [], years_available: 0, years_required: 3, data_gap: true },
+  },
+} as unknown as FtsCard;
+
 function serve(payload: FtsCard | undefined, overrides: Record<string, unknown> = {}): void {
   vi.mocked(useFtsCard).mockReturnValue({
     data: payload,
@@ -107,6 +127,31 @@ describe('FundamentalCards (dock variant)', () => {
     expect(cardText('sales')).toContain('رد');
   });
 
+  it('shows an unavailable axis as نامشخص, not رد (R70)', () => {
+    serve(unavailableSalesCard);
+    render(<FundamentalCards symbol="رنيك" />);
+    expect(cardText('sales')).toContain('نامشخص');
+    expect(cardText('sales')).not.toContain('رد');
+    cleanup();
+
+    render(<FundamentalSummary symbol="رنيك" />);
+    expect(summaryBar('sales').getAttribute('data-status')).toBe('unknown');
+    expect(screen.getByTestId('symbol-fund-summary').textContent).not.toContain('رد');
+  });
+
+  it('shows a data-gap axis as نامشخص, not رد (R70)', () => {
+    serve(gappedEpsCard);
+    render(<FundamentalCards symbol="رنيك" />);
+    expect(cardText('eps')).toContain('نامشخص');
+    expect(cardText('eps')).not.toContain('رد');
+    cleanup();
+
+    render(<FundamentalSummary symbol="رنيك" />);
+    expect(summaryBar('eps').getAttribute('data-status')).toBe('unknown');
+    expect(summaryBar('eps').getAttribute('aria-label')).not.toContain('رد');
+    expect(summaryBar('eps').getAttribute('aria-label')).toContain('نامشخص');
+  });
+
   it('follows the surface preference on the cards root', () => {
     useFundamentalPrefs.setState({ surface: 'ink' });
     render(<FundamentalCards symbol="رنيك" />);
@@ -122,11 +167,14 @@ describe('FundamentalCards (dock variant)', () => {
     expect(loading.textContent).toContain('در حال خواندن');
     expect(loading.getAttribute('data-fund-surface')).toBe('paper');
     expect(loading.className).toContain('fundamental-surface');
+    expect(loading.className).toContain('bg-[var(--fd-bg)]');
     cleanup();
 
     serve(undefined, { isError: true, error: new Error('x') });
     render(<FundamentalCards symbol="رنيك" />);
-    expect(screen.getByTestId('fundamental-cards-error').textContent).toContain('در دسترس نیست');
+    const error = screen.getByTestId('fundamental-cards-error');
+    expect(error.textContent).toContain('در دسترس نیست');
+    expect(error.className).toContain('bg-[var(--fd-bg)]');
   });
 });
 
@@ -141,7 +189,13 @@ describe('FundamentalSummary (sidebar variant)', () => {
     expect(summaryBar('growth').getAttribute('style')).toContain('var(--fd-up)');
     expect(summaryBar('sales').getAttribute('style')).toContain('var(--fd-down)');
     expect(summaryBar('margin').getAttribute('style')).toContain('var(--fd-warn)');
-    expect(summaryBar('margin').className).toContain('fd-status--unknown');
+    expect(summaryBar('margin').getAttribute('data-status')).toBe('unknown');
+    expect(summaryBar('margin').getAttribute('aria-label')).toBe('حاشیهٔ ناخالص — نامشخص');
+    expect(summaryBar('margin').getAttribute('title')).toBe('حاشیهٔ ناخالص — نامشخص');
+    expect(summaryBar('margin').getAttribute('role')).toBe('img');
+    expect(summaryBar('margin').className).not.toContain('fd-status--');
+    expect(summaryBar('growth').getAttribute('aria-hidden')).toBeNull();
+    expect(summaryBar('growth').parentElement?.getAttribute('aria-hidden')).toBeNull();
   });
 
   it('paints an na axis with the flat token and keeps the count honest', () => {
@@ -149,7 +203,8 @@ describe('FundamentalSummary (sidebar variant)', () => {
     render(<FundamentalSummary symbol="رنيك" />);
     expect(screen.getByTestId('fund-summary-count').textContent).toBe('۳ از ۵');
     expect(summaryBar('margin').getAttribute('style')).toContain('var(--fd-flat)');
-    expect(summaryBar('margin').className).toContain('fd-status--na');
+    expect(summaryBar('margin').getAttribute('data-status')).toBe('na');
+    expect(summaryBar('margin').getAttribute('aria-label')).toBe('حاشیهٔ ناخالص — بی‌نظر');
     expect(screen.getByTestId('symbol-fund-summary').textContent).toContain('۱ بی‌نظر/نامشخص');
   });
 
@@ -159,6 +214,7 @@ describe('FundamentalSummary (sidebar variant)', () => {
     const button = screen.getByRole('button');
     expect(button).toBe(screen.getByTestId('symbol-fund-summary'));
     expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.className).toContain('bg-[var(--fd-bg)]');
     expect(button.textContent).toContain('بستن');
     fireEvent.click(button);
     expect(onToggle).toHaveBeenCalledTimes(1);
@@ -175,6 +231,7 @@ describe('FundamentalSummary (sidebar variant)', () => {
     expect(screen.queryByRole('button')).toBeNull();
     const summary = screen.getByTestId('symbol-fund-summary');
     expect(summary.tagName).toBe('DIV');
+    expect(summary.className).toContain('bg-[var(--fd-bg)]');
     expect(summary.textContent).not.toContain('کارت‌های بنیادی');
     expect(screen.getByTestId('fund-summary-count').textContent).toBe('۳ از ۵');
   });

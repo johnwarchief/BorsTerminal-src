@@ -3,7 +3,8 @@ import { AXES, statusFa } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { useFundamentalPrefs } from '../stores/prefs';
 
-const MESSAGE = 'p-2 text-[10px] leading-relaxed text-[var(--fd-text-3)]';
+// R69: پیام‌های بارگذاری/خطا متنِ fd دارند، پس باید پس‌زمینهٔ fd هم داشته باشند.
+const MESSAGE = 'bg-[var(--fd-bg)] p-2 text-[10px] leading-relaxed text-[var(--fd-text-3)]';
 
 /**
  * واریانتِ فشردهٔ داک: پنج کارتِ کوچک فقط شماره/نامِ محور و واژهٔ وضعیت را

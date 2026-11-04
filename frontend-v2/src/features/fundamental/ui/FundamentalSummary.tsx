@@ -66,12 +66,14 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
             </span>
           ) : null}
         </span>
-        <span className="flex gap-1" aria-hidden="true">
+        <span className="flex gap-1">
           {statuses.map((status, index) => {
-            const axis = AXES[index].key;
+            const meta = AXES[index];
+            const label = `${meta.label} — ${statusFa(status)}`;
             return (
-              <span key={axis} data-axis={axis}
-                className={`h-1 w-4 rounded-full fd-status--${status}`}
+              <span key={meta.key} data-axis={meta.key} data-status={status} role="img"
+                title={label} aria-label={label}
+                className="h-1 w-4 rounded-full"
                 style={{ background: BAR_COLOR[status] }} />
             );
           })}
@@ -80,7 +82,8 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
     );
   }
 
-  const className = 'fundamental-surface flex w-full flex-col gap-0.5 border-y border-[var(--fd-line)] px-2 py-1 text-start';
+  // R69: بدونِ پس‌زمینهٔ fd، متنِ --fd-text* روی پوستهٔ تیره/روشن ناخوانا می‌شد.
+  const className = 'fundamental-surface flex w-full flex-col gap-0.5 border-y border-[var(--fd-line)] bg-[var(--fd-bg)] px-2 py-1 text-start';
   if (!onToggle) {
     return (
       <div data-testid="symbol-fund-summary" data-fund-surface={surface} className={className}>
