@@ -184,6 +184,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("GET /api/market", srv.Market.Board)
 		mux.HandleFunc("GET /api/market/delta", srv.Market.Delta)
 		mux.HandleFunc("GET /api/market/sync-state", srv.Market.SyncState)
+		mux.HandleFunc("POST /api/orderbook/watch", orderbookWatchHandler)
 		mux.HandleFunc("GET /api/tape-history", srv.Market.TapeHistory)
 	}
 	if srv.Mstat != nil {

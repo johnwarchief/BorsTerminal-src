@@ -7,16 +7,22 @@ package live
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"borsterminal/backend/internal/store"
+
+	_ "modernc.org/sqlite"
 )
 
 const DefaultURL = "https://cdn.tsetmc.com/api/ClosingPrice/GetMarketWatch" +
@@ -40,6 +46,7 @@ type Row struct {
 	Value   float64
 	Trades  float64
 	PE      float64
+	DEven   int64
 	HEven   int64
 }
 
@@ -58,6 +65,17 @@ type Feed struct {
 	interval time.Duration
 	url      string
 	client   *http.Client
+
+	// persistence is optional; when a DB path is set, every persistEvery the
+	// live snapshot updates today's market_watch rows and market_sync.json.
+	dbPath       string
+	persistEvery time.Duration
+	lastPersist  time.Time
+	persistErr   string
+	db           *sql.DB
+	insCodes     map[string]string
+	dEven        int64
+	started      time.Time
 }
 
 func New(interval time.Duration) *Feed {
@@ -69,12 +87,37 @@ func New(interval time.Duration) *Feed {
 		url:      DefaultURL,
 		client:   &http.Client{Timeout: 15 * time.Second},
 		snap:     Snapshot{Rows: map[string]Row{}},
+		started:  time.Now(),
 	}
 }
 
 // SetURL/SetClient are for the offline feed tests; production keeps defaults.
 func (f *Feed) SetURL(url string)        { f.url = url }
 func (f *Feed) SetClient(c *http.Client) { f.client = c }
+
+// EnablePersistence makes the live snapshot durable at every persistEvery.
+// The DB is opened lazily on the first successful tick.
+func (f *Feed) EnablePersistence(dbPath string, every time.Duration) {
+	if every < time.Second {
+		every = 5 * time.Second
+	}
+	f.mu.Lock()
+	f.dbPath = dbPath
+	f.persistEvery = every
+	f.mu.Unlock()
+}
+
+// Close releases the persistence handle. The in-memory feed keeps working.
+func (f *Feed) Close() error {
+	f.mu.Lock()
+	db := f.db
+	f.db = nil
+	f.mu.Unlock()
+	if db != nil {
+		return db.Close()
+	}
+	return nil
+}
 
 func (f *Feed) Start(ctx context.Context) {
 	go func() {
@@ -140,6 +183,151 @@ func (f *Feed) FetchOnce(ctx context.Context) {
 	f.gen++
 	f.failTill = time.Time{}
 	f.mu.Unlock()
+	f.maybePersist(ctx, rows)
+}
+
+func (f *Feed) maybePersist(ctx context.Context, rows map[string]Row) {
+	f.mu.RLock()
+	dbPath, every, last := f.dbPath, f.persistEvery, f.lastPersist
+	f.mu.RUnlock()
+	if dbPath == "" || time.Since(last) < every {
+		return
+	}
+	f.mu.Lock()
+	f.lastPersist = time.Now()
+	f.mu.Unlock()
+	if err := f.persist(ctx, rows); err != nil {
+		log.Printf("[live] persist failed: %v", err)
+		f.mu.Lock()
+		f.persistErr = err.Error()
+		f.mu.Unlock()
+	}
+}
+
+// persist updates today's market_watch rows from the live snapshot. It only
+// updates instruments already known to the DB; new listings still need the
+// normal sync path (instruments/boards). Prices never regress to zero: a zero
+// live value preserves the stored value, while volume/value/trades are direct.
+func (f *Feed) persist(ctx context.Context, rows map[string]Row) error {
+	f.mu.Lock()
+	db, dbPath, insCodes, dEven := f.db, f.dbPath, f.insCodes, f.dEven
+	f.mu.Unlock()
+	if db == nil {
+		opened, err := sql.Open("sqlite", dbPath)
+		if err != nil {
+			return err
+		}
+		opened.SetMaxOpenConns(1)
+		if _, err := opened.Exec("PRAGMA busy_timeout=5000"); err != nil {
+			opened.Close()
+			return err
+		}
+		db = opened
+		f.mu.Lock()
+		f.db = db
+		f.mu.Unlock()
+	}
+	if insCodes == nil {
+		m := map[string]string{}
+		rs, err := db.Query("SELECT ins_code, l_val18 FROM instruments" +
+			" WHERE l_val18 IS NOT NULL AND l_val18 <> ''")
+		if err != nil {
+			return err
+		}
+		for rs.Next() {
+			var code, sym string
+			if err := rs.Scan(&code, &sym); err == nil && code != "" && sym != "" {
+				m[norm(sym)] = code
+			}
+		}
+		rs.Close()
+		insCodes = m
+		f.mu.Lock()
+		f.insCodes = m
+		f.mu.Unlock()
+	}
+	if dEven == 0 {
+		if err := db.QueryRow("SELECT COALESCE(MAX(d_even),0) FROM market_watch").Scan(&dEven); err != nil {
+			return err
+		}
+		if dEven == 0 {
+			return nil
+		}
+		f.mu.Lock()
+		f.dEven = dEven
+		f.mu.Unlock()
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, `UPDATE market_watch SET
+		d_even=?,
+		h_even=CASE WHEN ? > 0 THEN ? ELSE h_even END,
+		p_closing=COALESCE(NULLIF(?,0), p_closing),
+		p_last=COALESCE(NULLIF(?,0), p_last),
+		price_min=COALESCE(NULLIF(?,0), price_min),
+		price_max=COALESCE(NULLIF(?,0), price_max),
+		price_yesterday=COALESCE(NULLIF(?,0), price_yesterday),
+		price_first=COALESCE(NULLIF(?,0), price_first),
+		q_tot_tran=?, q_tot_cap=?, z_tot_tran=?, price_change=?,
+		pe=COALESCE(NULLIF(?,0), pe),
+		fetched_at=?
+		WHERE ins_code=?`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+	now := time.Now().Format("2006-01-02 15:04:05")
+	n := 0
+	for sym, row := range rows {
+		code := insCodes[norm(sym)]
+		if code == "" {
+			continue
+		}
+		de := row.DEven
+		if de == 0 {
+			de = dEven
+		}
+		if _, err := stmt.ExecContext(ctx, de, row.HEven, row.HEven,
+			row.Closing, row.Last, row.Min, row.Max, row.Prev, row.First,
+			row.Volume, row.Value, row.Trades, row.Change, row.PE, now, code); err != nil {
+			tx.Rollback()
+			return err
+		}
+		n++
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	f.writeSyncStatus(n, time.Now())
+	return nil
+}
+
+func (f *Feed) writeSyncStatus(n int, now time.Time) {
+	f.mu.RLock()
+	dbPath, started := f.dbPath, f.started
+	f.mu.RUnlock()
+	dir := filepath.Dir(dbPath)
+	data := map[string]any{
+		"stage": "tsetmc", "phase": "live",
+		"detail": fmt.Sprintf("ذخیرهٔ %d نماد زنده در پایگاه محلی ...", n),
+		"total":  n, "current": n, "symbol": "",
+		"elapsed": math.Round(now.Sub(started).Seconds()*10) / 10,
+		"percent": 100.0,
+		"ts":      now.Format("2006-01-02T15:04:05"),
+	}
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+	path := filepath.Join(dir, "market_sync.json")
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
+		return
+	}
+	_ = os.Rename(tmp, path)
 }
 
 func (f *Feed) fail(err error) {
@@ -248,7 +436,7 @@ func parseRows(raw []map[string]any) (map[string]Row, int64) {
 			Change: num(m["pc"]), Prev: num(m["py"]), Max: num(m["pmx"]),
 			Min: num(m["pmn"]), First: num(m["pf"]), Volume: num(m["qtj"]),
 			Value: num(m["qtc"]), Trades: num(m["ztt"]), PE: num(m["pe"]),
-			HEven: int64(num(m["hEven"])),
+			DEven: int64(num(m["dEven"])), HEven: int64(num(m["hEven"])),
 		}
 		rows[norm(sym)] = r
 		if r.HEven > maxHEven {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -51,6 +52,9 @@ func main() {
 			interval = time.Duration(ms) * time.Millisecond
 		}
 		feed := live.New(interval)
+		if v := os.Getenv("BORS_GO_LIVE_PERSIST"); v != "0" && v != "false" && v != "no" {
+			feed.EnablePersistence(filepath.Join(cfg.DataDir, "market.db"), 5*time.Second)
+		}
 		mkt.Live = feed
 		go feed.Start(context.Background())
 		slog.Info("live TSE feed enabled", "interval", interval.String())
