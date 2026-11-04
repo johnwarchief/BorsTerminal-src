@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
-import { jalaliFromYmd } from '@shared/lib/jalali';
 import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard, type FtsCard } from '../api/useFtsCard';
 import { useSectorPe } from '../api/useSectorPe';
@@ -35,14 +34,28 @@ const STATUS_COLOR: Record<AxisStatus, string> = {
   unknown: 'var(--fd-warn)',
 };
 
-const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** R83: هر ISO تاریخ/تاریخ‌زمانِ قابل‌تجزیه شمسی می‌شود؛ رشتهٔ غیرقابل‌تجزیه عیناً می‌ماند. */
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}(?:[T ][\d:.+\-Z]+)?$/;
 
-/** R48: as_of تاریخ‌تنها شمسی می‌شود؛ هر رشتهٔ دیگر عیناً می‌ماند. */
+function jalaliFromIso(value: string): string | null {
+  if (!ISO_DATE_TIME.test(value)) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      dateStyle: 'medium',
+      timeZone: 'Asia/Tehran',
+    }).format(date);
+  } catch {
+    return null;
+  }
+}
+
+/** R48/R83: as_of تاریخ یا تاریخ‌زمانِ ISO شمسی می‌شود؛ هر رشتهٔ نامعتبر عیناً می‌ماند. */
 function freshnessLabel(asOf: string | null | undefined): string {
   if (!asOf) return 'تازگی نامشخص';
-  const parts = DATE_ONLY.exec(asOf);
-  if (parts) return `دادهٔ بنیادی تا ${jalaliFromYmd(Number(`${parts[1]}${parts[2]}${parts[3]}`))}`;
-  return `دادهٔ بنیادی تا ${asOf}`;
+  const formatted = jalaliFromIso(asOf);
+  return `دادهٔ بنیادی تا ${formatted ?? asOf}`;
 }
 
 function scoreLabel(score: number | null | undefined): string {

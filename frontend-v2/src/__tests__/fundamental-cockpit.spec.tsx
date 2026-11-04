@@ -119,7 +119,27 @@ describe('fundamental cockpit', () => {
     expect(ribbon.textContent).not.toContain('ضعیف‌ترین');
     const freshness = screen.getByTestId('fundamental-freshness').textContent ?? '';
     expect(freshness).toContain('دادهٔ بنیادی تا');
+    expect(freshness).toContain('تیر');
     expect(freshness).not.toContain('2026-07-09');
+    expect(freshness).not.toMatch(/[0-9]/);
+  });
+
+  it('renders an ISO datetime freshness in Persian Jalali (R83)', () => {
+    mockCard({ freshness: { as_of: '2026-06-30T18:50:20+03:30', axes: {} } });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const freshness = screen.getByTestId('fundamental-freshness').textContent ?? '';
+    expect(freshness).toContain('دادهٔ بنیادی تا');
+    expect(freshness).toContain('تیر');
+    expect(freshness).toContain('۱۴۰۵');
+    expect(freshness).not.toContain('2026-');
+    expect(freshness).not.toContain('06-30');
+    expect(freshness).not.toMatch(/[0-9]/);
+  });
+
+  it('keeps an unparseable freshness raw (R83)', () => {
+    mockCard({ freshness: { as_of: 'نامعلوم', axes: {} } });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    expect(screen.getByTestId('fundamental-freshness').textContent).toContain('دادهٔ بنیادی تا نامعلوم');
   });
 
   it('keeps evidence keys unique across axes and shows the reasons', () => {
