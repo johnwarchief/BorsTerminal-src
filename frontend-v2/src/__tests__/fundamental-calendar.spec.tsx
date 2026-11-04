@@ -16,6 +16,7 @@ beforeEach(() => {
       events: [
         { date: '2099-01-01', ts: 1, title: 'دعوت به مجمع عمومی عادی', cat: 'assembly', date_source: 'title' },
         { date: '2020-01-01', ts: 0, title: 'تصویب تقسیم سود نقدی', cat: 'other', date_source: 'title' },
+        { date: '2099-02-01', ts: 2, title: 'اطلاعیهٔ بدون تاریخِ برگزاری', cat: 'other', date_source: 'publication_fallback' },
       ],
     },
     isLoading: false,
@@ -37,6 +38,9 @@ describe('corporate calendar', () => {
     const past = screen.getByTestId('calendar-event-2020-01-01');
     expect(past.textContent).toContain('سود نقدی');
     expect(past.textContent).toContain('گذشته');
+    const notices = screen.getByTestId('calendar-notices');
+    expect(notices.textContent).toContain('بدون تاریخِ برگزاری');
+    expect(future.textContent).not.toContain('بدون تاریخِ برگزاری');
   });
 
   it('says when no future event exists in the cache', () => {
