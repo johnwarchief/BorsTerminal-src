@@ -148,7 +148,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       row.name ?? '',
       row.sector_name ?? '',
       formatAxisValue(row.rev_growth ?? null, 'growth'),
-      `${toFaDigits(row.eps_years_available ?? 0)}/۳`,
+      row.eps_years_available == null ? '—/۳' : `${toFaDigits(row.eps_years_available)}/۳`,
       formatAxisValue(row.gross_margin ?? null, 'margin'),
       formatAxisValue(row.sales_to_mcap ?? null, 'sales'),
       formatAxisValue(row.pricing_mode ?? null, 'industry'),
@@ -180,10 +180,10 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       className="fd-row grid cursor-pointer items-center border-b border-[var(--fd-line)] hover:bg-[var(--fd-panel-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fd-accent)]"
       style={{ gridTemplateColumns: COLUMNS, minHeight: density === 'comfortable' ? 88 : 38 }}
     >
-      <div role="gridcell" className="flex h-full items-center justify-center py-1">
+      <div role="cell" className="flex h-full items-center justify-center py-1">
         <AxisGlyph statuses={AXES.map((axis) => statusOf(row, axis.key))} labels={AXES.map((axis) => axis.short)} />
       </div>
-      <div role="gridcell" className="min-w-0 px-2 py-1">
+      <div role="cell" className="min-w-0 px-2 py-1">
         <b className="block truncate text-[12px] font-medium text-[var(--fd-text)]">{row.symbol}</b>
         <span className="block truncate text-[9.5px] text-[var(--fd-text-3)]">{row.name ?? '—'} · {row.sector_name ?? '—'}</span>
         {row.i4_na ? (
@@ -194,11 +194,14 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
         ) : null}
       </div>
       {AXES.map((axis) => <FundamentalAxisCell key={axis.key} row={row} axis={axis.key} thresholds={thresholds} />)}
-      <div role="gridcell" className="text-center text-[12px] font-medium tabular-nums text-[var(--fd-text)]">
+      <div role="cell" className="text-center text-[12px] font-medium tabular-nums text-[var(--fd-text)]">
         {row.score == null ? '—' : `${toFaDigits(row.score)}/۵`}
       </div>
-      <div role="gridcell" className="flex justify-center">
-        <span className={`rounded border px-1 text-[9px] ${row.verdict === 'STRONG' ? 'border-[var(--fd-up)] text-[var(--fd-up)]' : row.verdict === 'REJECT' || row.verdict === 'EXCLUDED' ? 'border-[var(--fd-down)] text-[var(--fd-down)]' : 'border-[var(--fd-warn)] text-[var(--fd-warn)]'}`}>
+      <div role="cell" className="flex justify-center">
+        <span
+          data-testid={`fundamental-verdict-${row.symbol}`}
+          className={`rounded border px-1 text-[9px] ${row.verdict === 'STRONG' ? 'border-[var(--fd-up)] text-[var(--fd-up)]' : row.verdict === 'REJECT' || row.verdict === 'EXCLUDED' ? 'border-[var(--fd-down)] text-[var(--fd-down)]' : 'border-[var(--fd-warn)] text-[var(--fd-warn)]'}`}
+        >
           {verdictFa(row.verdict)}
         </span>
       </div>
@@ -243,7 +246,6 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
             {fmtInt(excluded.hidden)} حذف‌شده
           </span>
         ) : null}
-        <span className="t-85 text-[var(--fd-text-3)]">{asOf ? `زمان اسکن: ${asOf}` : ''}</span>
       </div>
 
       <div role="table" aria-label="جدول بنیادی" className="flex min-h-0 flex-1 flex-col">
@@ -252,7 +254,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           className="grid flex-none items-center border-b border-[var(--fd-line-strong)] bg-[var(--fd-panel-2)] px-1.5 text-[10px] text-[var(--fd-text-3)]"
           style={{ gridTemplateColumns: COLUMNS, minHeight: 55 }}
         >
-          <span role="columnheader" aria-sort="none" className="text-center">#</span>
+          <span role="columnheader" aria-label="نمای پنج‌محور" className="text-center" />
           <span role="columnheader" aria-sort={ariaSort('symbol')} className="min-w-0 px-1.5">
             {sortButton('symbol', 'نماد')}
             <span className="block truncate text-[9px]">نام · صنعت</span>
@@ -269,7 +271,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           <span role="columnheader" aria-sort={ariaSort('score')} className="justify-self-center">
             {sortButton('score', 'امتیاز')}
           </span>
-          <span role="columnheader" aria-sort="none" className="text-center">وضعیت</span>
+          <span role="columnheader" className="text-center">وضعیت</span>
         </div>
 
         <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">

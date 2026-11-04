@@ -45,7 +45,8 @@ function AxisCell({ row, axis, thresholds }: Props) {
   const meta = AXES.find((item) => item.key === axis)!;
   const status = statusOf(row, axis);
   const value = axis === 'eps'
-    ? `${toFaDigits(row.eps_years_available ?? 0)}/۳`
+    // R30: سالِ غایب «نامعلوم» است، نه صفر.
+    ? row.eps_years_available == null ? '—/۳' : `${toFaDigits(row.eps_years_available)}/۳`
     : formatAxisValue(valueOf(row, axis), axis);
   const threshold = thresholdOf(thresholds, axis);
   const reason = reasonOf(row, axis);
@@ -57,7 +58,7 @@ function AxisCell({ row, axis, thresholds }: Props) {
 
   return (
     <div
-      role="gridcell"
+      role="cell"
       data-testid={`fundamental-cell-${row.symbol}-${axis}`}
       data-state={status}
       className={`fd-axis-cell flex min-w-0 flex-col justify-center px-1.5 ${density === 'comfortable' ? 'gap-1 py-1' : 'gap-0 py-0.5'}`}

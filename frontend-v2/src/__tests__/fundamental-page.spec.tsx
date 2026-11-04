@@ -66,7 +66,7 @@ describe('fundamental page', () => {
     expect(screen.getByTestId('fundamental-row-خساپا')).toBeTruthy();
     for (const axis of ['growth', 'eps', 'margin', 'sales', 'industry']) {
       const cell = screen.getByTestId(`fundamental-cell-فولاد-${axis}`);
-      expect(cell.getAttribute('role')).toBe('gridcell');
+      expect(cell.getAttribute('role')).toBe('cell');
       expect(cell.getAttribute('data-state')).toBe('pass');
     }
     expect(screen.getByTestId('fundamental-excluded-خساپا')).toBeTruthy();

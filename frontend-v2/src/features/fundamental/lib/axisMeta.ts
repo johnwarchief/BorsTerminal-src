@@ -75,7 +75,10 @@ export function reasonOf(row: ScreenerReasonRow, axis: AxisKey): string | null {
 }
 
 export function verdictFa(verdict: string | null | undefined): string {
-  return ({ STRONG: 'قوی', WATCH: 'تحت نظر', REJECT: 'رد', EXCLUDED: 'خارج از غربال' } as Record<string, string>)[verdict ?? ''] ?? '—';
+  const map: Record<string, string> = { STRONG: 'قوی', WATCH: 'تحت نظر', REJECT: 'رد', EXCLUDED: 'خارج از غربال' };
+  // R31: حکمِ خارج از enum (مثل «FTS ندارد») باید عیناً دیده شود، نه '—'.
+  if (verdict == null || verdict === '') return '—';
+  return map[verdict] ?? verdict;
 }
 
 export function statusFa(status: AxisStatus): string {

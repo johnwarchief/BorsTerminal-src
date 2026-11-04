@@ -45,5 +45,6 @@ describe('axis meta', () => {
     expect(verdictFa('WATCH')).toBe('تحت نظر');
     expect(verdictFa('REJECT')).toBe('رد');
     expect(verdictFa('EXCLUDED')).toBe('خارج از غربال');
+    expect(verdictFa('FTS ندارد')).toBe('FTS ندارد');
   });
 });
