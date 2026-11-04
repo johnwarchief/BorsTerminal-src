@@ -818,16 +818,16 @@ func Ind4Valuation(annual, gm map[string]any, marketCapRials any,
 	// شاهدِ مقیاس ندارد (شتهران، هلد لیان).
 	noSales := len(annual) == 0 || toF(annual["annual_sales_mrl"]) <= 0
 	if noSales || mcap <= 0 {
-		gapCause, reason := "market_cap", a45ReasonNoMcap
+		gapCause := "market_cap"
 		if noSales {
-			gapCause, reason = "annual_sales", a45ReasonNoSales
+			gapCause = "annual_sales"
 		}
 		return map[string]any{
 			"available": false, "na": true, "gap_cause": gapCause,
-			"pass": false, "potential_pass": false, "sales_pass": false,
+			"pass": nil, "potential_pass": false, "sales_pass": false,
 			"mcap_ht": pyround.Round(mcap/1e13, 2),
 			"potential_threshold": potentialMin, "sales_threshold": salesMin,
-			"reason": reason,
+			"reason": a45ReasonNoMcap,
 		}
 	}
 	annMrl := toF(annual["annual_sales_mrl"])
