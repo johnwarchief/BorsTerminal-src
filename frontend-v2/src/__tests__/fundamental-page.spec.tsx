@@ -112,6 +112,18 @@ describe('fundamental page', () => {
     expect(label).toContain('۱۴۰۵');
   });
 
+  it('shows the rebuild indicator while refetching', () => {
+    mockedUseScreener.mockReturnValue({
+      data: { status: 'success', count: 2, data: rows, as_of: '2026-11-03' },
+      isLoading: false,
+      isFetching: true,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useScreenerCore>);
+    render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
+    expect(screen.getByTestId('fundamental-refetching')).toBeTruthy();
+  });
+
   it('navigates to the symbol route on row click', () => {
     render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
     fireEvent.click(screen.getByTestId('fundamental-row-فولاد'));

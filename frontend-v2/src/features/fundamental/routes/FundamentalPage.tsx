@@ -46,6 +46,9 @@ export function FundamentalPage() {
             زمان اسکن: {scanLabel}
           </span>
         ) : null}
+        {screener.isFetching && !screener.isLoading ? (
+          <span data-testid="fundamental-refetching" className="t-85 text-warn">جدول در حال بازسازی…</span>
+        ) : null}
       </header>
 
       {screener.isLoading ? (
