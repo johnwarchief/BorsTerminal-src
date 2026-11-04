@@ -35,12 +35,16 @@ const PASS_KEYS: Record<AxisKey, [keyof ScreenerRowLike, keyof ScreenerRowLike]>
 };
 
 export function statusOf(row: ScreenerRowLike, axis: AxisKey): AxisStatus {
-  // R-P1-9: در محور رشد، بی‌نظری و شکافِ دادهٔ ۱ب و بی‌نظریِ ۱الف بر حکمِ ترکیبی مقدم‌اند؛
-  // شکافِ داده هرگز «رد» دیده نمی‌شود.
+  // R-P1-9: در محور رشد، بی‌نظریِ ۱الف و شکافِ دادهٔ ۱ب بر حکمِ ترکیبی مقدم‌اند؛
+  // شکافِ داده هرگز «رد» دیده نمی‌شود. اگر ۱ب قابل‌اعمال نباشد، حکمِ ۱الف اگر قطعی باشد می‌ماند.
   if (axis === 'growth') {
-    if (row.i1b_applicable === false) return 'na';
-    if (row.i1b_data_gap === true) return 'unknown';
     if (row.i1_na === true) return 'na';
+    if (row.i1b_data_gap === true) return 'unknown';
+    if (row.i1b_applicable === false) {
+      if (row.i1_pass === true) return 'pass';
+      if (row.i1_pass === false) return 'fail';
+      return 'na';
+    }
   }
   const [passKey, naKey] = PASS_KEYS[axis];
   const pass = row[passKey];

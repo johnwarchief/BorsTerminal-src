@@ -98,8 +98,12 @@ describe('fundamental table visual', () => {
       { ...rows[0]!, symbol: 'پاس', i1_pass: true, i1a_pass: true, i1b_applicable: true, i1b_pass: true, i1b_data_gap: false },
       // هر دو زیرگیت رد.
       { ...rows[0]!, symbol: 'ردي', i1_pass: false, i1a_pass: false, i1b_applicable: true, i1b_pass: false, i1b_data_gap: false },
-      // ۱ب برای غیرتولیدی applicable نیست → بی‌نظر، هرچند pass دارد.
+      // ۱ب برای غیرتولیدی applicable نیست؛ حکمِ ترکیبی از ۱الف می‌آید → قبول.
       { ...rows[0]!, symbol: 'ناظر', i1_pass: true, i1a_pass: true, i1b_applicable: false, i1b_pass: true, i1b_data_gap: false },
+      // همان حالت با ۱الفِ رد → حکمِ ترکیبی رد است، نه بی‌نظر.
+      { ...rows[0]!, symbol: 'ناظررد', i1_pass: false, i1a_pass: false, i1b_applicable: false, i1b_pass: false, i1b_data_gap: false },
+      // همان حالت بدون حکمِ قطعیِ ۱الف → بی‌نظر.
+      { ...rows[0]!, symbol: 'ناظرنام', i1_pass: null, i1a_pass: null, i1b_applicable: false, i1b_pass: true, i1b_data_gap: false },
       // شکافِ داده بر pass=false مقدم است → نامشخص، نه رد.
       { ...rows[0]!, symbol: 'شکاف', i1_pass: true, i1a_pass: true, i1b_applicable: true, i1b_pass: false, i1b_data_gap: true },
       // بی‌نظریِ ۱الف بر حکمِ زیرگیت مقدم است.
@@ -114,7 +118,11 @@ describe('fundamental table visual', () => {
     expect(cell('ردي').textContent).toContain('۱ب رد');
     expect(cell('ردي').getAttribute('data-state')).toBe('fail');
     expect(cell('ناظر').textContent).toContain('۱ب بی‌نظر');
-    expect(cell('ناظر').getAttribute('data-state')).toBe('na');
+    expect(cell('ناظر').getAttribute('data-state')).toBe('pass');
+    expect(cell('ناظررد').textContent).toContain('۱ب بی‌نظر');
+    expect(cell('ناظررد').getAttribute('data-state')).toBe('fail');
+    expect(cell('ناظرنام').textContent).toContain('۱ب بی‌نظر');
+    expect(cell('ناظرنام').getAttribute('data-state')).toBe('na');
     expect(cell('شکاف').textContent).toContain('۱ب نامشخص');
     expect(cell('شکاف').textContent).not.toContain('۱ب رد');
     expect(cell('شکاف').getAttribute('data-state')).toBe('unknown');

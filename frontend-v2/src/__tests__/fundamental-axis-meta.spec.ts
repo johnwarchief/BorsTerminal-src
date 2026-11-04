@@ -7,6 +7,7 @@ import {
   epsYearsRequired,
   formatAxisValue,
   formatEpsTrend,
+  growthSubStatuses,
   potentialPath,
   potentialStatusOf,
   statusOf,
@@ -41,6 +42,23 @@ describe('axis meta', () => {
     expect(statusOf(row, 'eps')).toBe('pass');
     expect(statusOf({ ...row, i3_pass: null, i3_na: true }, 'margin')).toBe('na');
     expect(statusOf({ ...row, i2_pass: null, i2_na: false }, 'eps')).toBe('unknown');
+  });
+  it('keeps the 1a verdict when 1b is not applicable', () => {
+    const gated = { ...row, i1b_applicable: false, i1b_pass: true };
+    expect(statusOf({ ...gated, i1_pass: true }, 'growth')).toBe('pass');
+    expect(statusOf({ ...gated, i1_pass: false }, 'growth')).toBe('fail');
+    // بدون حکمِ قطعیِ ۱الف، «بی‌نظر» درست است.
+    expect(statusOf({ ...gated, i1_pass: null }, 'growth')).toBe('na');
+  });
+  it('orders the growth precedence: 1a na, then 1b data gap, then not-applicable 1b', () => {
+    const gated = { ...row, i1b_applicable: false, i1b_pass: true, i1_pass: false };
+    // بی‌نظریِ ۱الف بر همهٔ حالت‌ها مقدم است.
+    expect(statusOf({ ...gated, i1_na: true }, 'growth')).toBe('na');
+    expect(statusOf({ ...gated, i1_na: true, i1b_data_gap: true }, 'growth')).toBe('na');
+    // شکافِ دادهٔ ۱ب بر حکمِ ۱الف مقدم است، حتی وقتی ۱ب قابل‌اعمال نیست.
+    expect(statusOf({ ...gated, i1b_data_gap: true }, 'growth')).toBe('unknown');
+    // ۱ب غیرقابل‌اعمال همیشه بی‌نظر می‌ماند؛ حکمِ ترکیبی از ۱الف می‌آید.
+    expect(growthSubStatuses({ ...gated, i1a_pass: false }).b).toBe('na');
   });
   it('reads the axis value and threshold', () => {
     expect(valueOf(row, 'growth')).toBe(45.9);
