@@ -2,12 +2,10 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCodalHealth } from '@features/fundamental/api/useCodalHealth';
 import { useFtsCard } from '@features/fundamental/api/useFtsCard';
-import { useQuarters } from '@features/fundamental/api/useQuarters';
 import { useSectorPe } from '@features/fundamental/api/useSectorPe';
 import { FundamentalDetail } from '@features/fundamental/ui/FundamentalDetail';
 
 vi.mock('@features/fundamental/api/useFtsCard', () => ({ useFtsCard: vi.fn() }));
-vi.mock('@features/fundamental/api/useQuarters', () => ({ useQuarters: vi.fn() }));
 vi.mock('@features/fundamental/api/useSectorPe', () => ({ useSectorPe: vi.fn() }));
 vi.mock('@features/fundamental/api/useCodalHealth', () => ({ useCodalHealth: vi.fn() }));
 vi.mock('@features/fundamental/api/useCalendar', () => ({
@@ -15,7 +13,6 @@ vi.mock('@features/fundamental/api/useCalendar', () => ({
 }));
 
 const mockedCard = vi.mocked(useFtsCard);
-const mockedQuarters = vi.mocked(useQuarters);
 const mockedSectorPe = vi.mocked(useSectorPe);
 const mockedHealth = vi.mocked(useCodalHealth);
 
@@ -65,11 +62,6 @@ function card(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  mockedQuarters.mockReturnValue({
-    data: { status: 'success', quarters: [] },
-    isLoading: false,
-    isError: false,
-  } as unknown as ReturnType<typeof useQuarters>);
   mockedSectorPe.mockReturnValue({
     data: { pe: 5, median: 6, sector: 'سرمایه‌گذاری‌ها', peers: 3 },
     isLoading: false,
@@ -95,7 +87,7 @@ describe('P/NAV holding panel', () => {
     }));
     render(<FundamentalDetail symbol="ویسا" onBack={vi.fn()} />);
     expect(screen.getByTestId('holding-pnav-panel')).toBeTruthy();
-    expect(screen.queryByTestId('sector-pe-panel')).toBeNull();
+    expect(screen.queryByTestId('panel-industry')).toBeNull();
     expect(screen.getByTestId('holding-nav-na').textContent).toContain('NAV');
     expect(screen.queryByText(/P\/NAV ≈/)).toBeNull();
   });
@@ -116,9 +108,10 @@ describe('P/NAV holding panel', () => {
     expect(screen.queryByTestId('holding-pnav-panel')).toBeNull();
   });
 
-  it('normal symbol keeps sector P/E', () => {
+  it('normal symbol keeps the industry panel', () => {
     mockedCard.mockReturnValue(card({ profile: { kind: 'production' } }));
     render(<FundamentalDetail symbol="فولاد" onBack={vi.fn()} />);
-    expect(screen.getByTestId('sector-pe-panel')).toBeTruthy();
+    expect(screen.getByTestId('panel-industry')).toBeTruthy();
+    expect(screen.queryByTestId('sector-pe-panel')).toBeNull();
   });
 });
