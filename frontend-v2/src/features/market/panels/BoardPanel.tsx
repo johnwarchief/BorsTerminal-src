@@ -76,6 +76,7 @@ export function BoardPanel({ selectedKey, onSelect, onActivate, onFocusSearch }:
     status: board.status,
     dataUpdatedAt: board.dataUpdatedAt,
     dataChangedAt: board.data?.rev_at,
+    sourceUpdatedAt: board.data?.meta?.live_at ?? null,
     liveCount: board.data?.live_count,
     totalCount: board.data?.count,
     now: Date.now(),

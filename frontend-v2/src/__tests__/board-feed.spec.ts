@@ -111,6 +111,29 @@ describe('feed freshness', () => {
     expect(status.freshness).toBe('closed');
     expect(status.pulse).toBe(false);
   });
+
+  it('marks the feed stale when the source itself stops updating', () => {
+    const now = 400_000;
+    const status = computeFeedStatus({
+      status: 'success', dataUpdatedAt: now, dataChangedAt: now - 1_000,
+      sourceUpdatedAt: now - 40_000,
+      liveCount: 10, totalCount: 100, now, marketOpen: true,
+    });
+    expect(status.freshness).toBe('stale');
+    expect(status.pulse).toBe(false);
+    expect(status.label).toContain('منبع');
+  });
+
+  it('stays live while the source heartbeat is inside the measured tick window', () => {
+    const now = 400_000;
+    const status = computeFeedStatus({
+      status: 'success', dataUpdatedAt: now, dataChangedAt: now - 2_000,
+      sourceUpdatedAt: now - 10_000,
+      liveCount: 10, totalCount: 100, now, marketOpen: true,
+    });
+    expect(status.freshness).toBe('live');
+    expect(status.pulse).toBe(true);
+  });
 });
 
 describe('board HTTP fallback', () => {

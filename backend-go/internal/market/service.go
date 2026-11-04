@@ -308,11 +308,16 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	}
 	if s.Live != nil {
 		snap := s.Live.Latest()
-		if snap.HEven > 0 {
-			meta["h_even"] = snap.HEven
-		}
+		meta["live"] = true
 		if !snap.Updated.IsZero() {
 			meta["last_sync"] = snap.Updated.Format("2006-01-02 15:04:05")
+			meta["live_at"] = snap.Updated.UnixMilli()
+		}
+		if snap.Err != "" {
+			meta["live_err"] = snap.Err
+		}
+		if snap.HEven > 0 {
+			meta["h_even"] = snap.HEven
 		}
 	}
 	// روزِ نشست را پایتون از market_state (تیکِ زنده) می‌گیرد، نه از d_evenِ متا.
