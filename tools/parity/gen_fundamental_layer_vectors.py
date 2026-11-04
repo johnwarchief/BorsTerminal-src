@@ -192,12 +192,6 @@ def text_vectors(fd):
         cells, slots = fd._eps_cells(dict(e))
         out["eps_row"].append({"in": e, "cells": cells, "slots": slots,
                                "row": fd._eps_row(dict(e))})
-    series = [
-        [], [(1404, 6, 50.0, 300.0, 200.0, "1404-06-31")],
-        [(1404, 6, None, None, None, None)], [(1404, 6, "12.5", "0", "", 0)],
-    ]
-    out["ms_series"] = [{"in": [list(r) for r in s], "out": fd._ms_series(s)}
-                        for s in series]
     return out
 
 

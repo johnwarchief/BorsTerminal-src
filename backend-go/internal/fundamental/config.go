@@ -42,8 +42,8 @@ var listKeys = []string{"mandatory_sectors", "free_sectors", "include_industries
 // (float/int/bool/string/[]string) چون `load_fts_config` بر پایه‌یِ نوعِ همین
 // dictionary تصمیم می‌گیرد (`isinstance(FTS_DEFAULTS[k], bool)`).
 //
-// `mandatory_sectors` عمداً هنوز شش‌عضویِ قدیمی است؛ قفلِ سه‌صنعتیِ حکمِ Task 8
-// درِ `cardMandatorySectors` (پایین‌تر) با دلیلش آمده است.
+// `mandatory_sectors` همان سه صنعتِ جزوه است (api/market.py:36-45)؛ فایلِ
+// ذخیره‌شده فقط می‌تواند همان‌ها را تکرار کند و توکنِ تازه اضافه نمی‌کند.
 func ftsDefaults() map[string]any {
 	return map[string]any{
 		"growth_min":                   40.0,
@@ -54,7 +54,7 @@ func ftsDefaults() map[string]any {
 		"sales_to_mcap_ideal":          1.0,
 		"profit_potential_min":         40.0,
 		"industry_mode":                "Exclude_Mandatory_Pricing",
-		"mandatory_sectors":            []string{"خودرو", "نیروگاه", "قند و شکر", "لاستیک", "شوینده", "بیمه"},
+		"mandatory_sectors":            []string{"خودرو", "نیروگاه", "لاستیک"},
 		"free_sectors":                 []string{"سیمان", "پتروشیمی", "شیمیایی", "فلزات", "کانی", "کاشی", "سرامیک", "شیشه", "کانه", "معادن", "نفت", "محصولات فلزی"},
 		"reject_insurance":             true,
 		"watchlist_max":                50,
@@ -208,6 +208,20 @@ func LoadFtsConfig(dataDir string) map[string]any {
 		}
 		cfg[k] = out
 	}
+	// Task 8 migration عینِ api/market.py:83-86: فایلِ ذخیره‌شدهٔ پیش از
+	// 1.0.87 ممکن است لیستِ شش‌هشت‌عضوی داشته باشد؛ فقط سه صنعتِ جزوه می‌مانند
+	// (ترتیبِ ورودی حفظ می‌شود) و اگر هیچ‌کدام نماند پیش‌فرض برمی‌گردد.
+	allowedMandatory := []string{"خودرو", "نیروگاه", "لاستیک"}
+	keptMandatory := []string{}
+	for _, s := range cfg["mandatory_sectors"].([]string) {
+		if contains(allowedMandatory, s) {
+			keptMandatory = append(keptMandatory, s)
+		}
+	}
+	if len(keptMandatory) == 0 {
+		keptMandatory = allowedMandatory
+	}
+	cfg["mandatory_sectors"] = keptMandatory
 	for k, v := range cfg {
 		if contains(strKeys, k) {
 			cfg[k] = pyStr(v)

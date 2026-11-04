@@ -198,6 +198,7 @@ func ax1Period(month, year int64) string {
 func ax1DefaultProfile() map[string]any {
 	return map[string]any{
 		"kind":              "production",
+		"margin_class":      "production",
 		"label":             "تولیدی / صادراتی",
 		"pricing_note":      "درآمد به دلار/بورس کالا گره خورده (صادراتی).",
 		"revenue_basis":     "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
@@ -303,7 +304,6 @@ func (s *Service) Ind1aMonetaryGrowth(ctx context.Context, symbol string,
 		// مبنایِ دومی ندارد، پس کلیدِ صریحِ nil می‌ماند — نه حذف‌شده — تا شکلِ
 		// موفق و `_nodata` یک کلیدِ یکسان داشته باشند (رأیِ Task 1، ۱۴۰۵-۰۷-۲۳).
 		"basis":      nil,
-		"series":     ax1MsSeries(series),
 		"ytd_now_bt": ax1Bt(ytdNow), "ytd_prev_bt": ax1Bt(ytdPrev),
 		"ytd_now_mrl": ytdNow, "ytd_prev_mrl": ytdPrev,
 		"period":            ax1Period(month, year),

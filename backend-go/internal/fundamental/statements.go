@@ -470,10 +470,27 @@ func (s *Service) GrossMargin(ctx context.Context, symbol string,
 		"optimal":           margin >= optimal,
 		"threshold":         minMargin,
 		"optimal_threshold": optimal,
+		// برچسبِ نمایشیِ طبقه از همان عددِ خامِ حکم (نه گردشده) — عینِ
+		// `fts_engine.margin_tier` (1797-1812): ۵۰٪ دروازه نیست، فقط نام است.
+		"margin_tier": stmtMarginTier(margin),
 		// رقمِ فارسیِ «۱۰۰» از `faDigits` می‌آید (قیدِ گارد: ویرایشِ مستقیمِ رقم
 		// درِ متن رقم را می‌دزدد) — خروجی عینِ رشتهٔ پایتون است.
 		"formula": "(سود ناخالص ÷ درآمدهای عملیاتی) × " + faDigits("100"),
 	}, nil
+}
+
+// stmtMarginTier عینِ `fts_engine.margin_tier`: نامِ نمایشیِ طبقه، نه دروازه.
+func stmtMarginTier(pct float64) string {
+	switch {
+	case pct < 20:
+		return "below_floor"
+	case pct < 30:
+		return "floor"
+	case pct < 50:
+		return "standard"
+	default:
+		return "good"
+	}
 }
 
 // stmtFirstRunes برشِ `[:10]`ِ پایتون است: ده *نویسه*، نه ده بایت — یکِ تاریخِ
