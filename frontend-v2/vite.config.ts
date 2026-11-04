@@ -10,7 +10,8 @@ const backendGo = process.env.BORS_BACKEND_GO;
 // همان رفتارِ تک‌بک‌اندیِ قبلی.
 const goProxy: Record<string, { target: string; changeOrigin: boolean }> = backendGo ? {
   '/api/fundamental': { target: backendGo, changeOrigin: false },
-  '/api/screener': { target: backendGo, changeOrigin: false },
+  // جدول غربالگری در S4b از پایتون می‌آید تا کلید کش آستانه‌ها معتبر بماند؛
+  // S4c با materializer مستقل Go برمی‌گردد.
   '/api/market': { target: backendGo, changeOrigin: false },
   '/api/sync/codal': { target: backendGo, changeOrigin: false },
 } : {};
