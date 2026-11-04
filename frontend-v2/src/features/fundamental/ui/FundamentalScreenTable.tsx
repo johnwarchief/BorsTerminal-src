@@ -117,7 +117,9 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
     count: filtered.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => (density === 'comfortable' ? 88 : 38),
-    overscan: 14,
+    // R84: overscan از ۱۴ به ۸ کم شد تا تعداد ردیف‌های سوارشده در هر به‌روزرسانی اسکرول
+    // (و در نتیجه سلول‌ها/نمودارهای SVG) کم‌تر شود؛ رفتار دیداری تغییری نمی‌کند.
+    overscan: 8,
     enabled: virtual,
   });
   const bodyHeight = virtual ? virtualizer.getTotalSize() : 0;

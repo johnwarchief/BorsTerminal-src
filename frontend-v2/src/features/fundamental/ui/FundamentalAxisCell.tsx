@@ -94,4 +94,7 @@ function AxisCell({ row, axis, thresholds }: Props) {
   );
 }
 
+// R84: در طول اسکرول، row/axis/thresholds ارجاعاً پایدار می‌مانند؛ memo از رندر
+// دوبارهٔ سلول و چهار نمودار SVG آن در هر به‌روزرسانی مجازی‌ساز جلوگیری می‌کند.
+// مقایسهٔ سطحی پیش‌فرض کافی است — مقایسهٔ سفارشی نگذارید.
 export const FundamentalAxisCell = memo(AxisCell);
