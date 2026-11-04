@@ -59,30 +59,31 @@ afterEach(() => {
 });
 
 describe('fundamental page', () => {
-  it('renders the core table with pass chips and the excluded badge', () => {
+  it('renders the core table with pass cells and the excluded badge', () => {
     render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
     expect(screen.getByTestId('fundamental-screen-table')).toBeTruthy();
     expect(screen.getByTestId('fundamental-row-فولاد')).toBeTruthy();
     expect(screen.getByTestId('fundamental-row-خساپا')).toBeTruthy();
-    for (let i = 1; i <= 5; i++) {
-      expect(screen.getByTestId(`fundamental-chip-فولاد-${i}`).getAttribute('data-state')).toBe('pass');
+    for (const axis of ['growth', 'eps', 'margin', 'sales', 'industry']) {
+      const cell = screen.getByTestId(`fundamental-cell-فولاد-${axis}`);
+      expect(cell.getAttribute('role')).toBe('gridcell');
+      expect(cell.getAttribute('data-state')).toBe('pass');
     }
     expect(screen.getByTestId('fundamental-excluded-خساپا')).toBeTruthy();
     expect(screen.getByTestId('fundamental-as-of').textContent).toContain('۱۴۰۵');
     expect(screen.getByTestId('fundamental-legend')).toBeTruthy();
   });
 
-  it('distinguishes pass, fail, N/A and unknown chips', () => {
+  it('distinguishes pass, fail, N/A and unknown cells', () => {
     render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
-    expect(screen.getByTestId('fundamental-chip-فولاد-1').getAttribute('data-state')).toBe('pass');
-    const fail = screen.getByTestId('fundamental-chip-خساپا-1');
+    expect(screen.getByTestId('fundamental-cell-فولاد-growth').getAttribute('data-state')).toBe('pass');
+    const fail = screen.getByTestId('fundamental-cell-خساپا-growth');
     expect(fail.getAttribute('data-state')).toBe('fail');
-    expect(fail.getAttribute('title')).toContain('رشد زیر کف');
-    const na = screen.getByTestId('fundamental-chip-خساپا-2');
+    expect(fail.querySelector('.fd-status')?.getAttribute('title')).toContain('رشد زیر کف');
+    const na = screen.getByTestId('fundamental-cell-خساپا-eps');
     expect(na.getAttribute('data-state')).toBe('na');
-    expect(na.textContent).toContain('N/A');
-    expect(na.getAttribute('title')).toContain('EPS');
-    const unknown = screen.getByTestId('fundamental-chip-خساپا-3');
+    expect(na.querySelector('.fd-status')?.getAttribute('title')).toContain('EPS');
+    const unknown = screen.getByTestId('fundamental-cell-خساپا-margin');
     expect(unknown.getAttribute('data-state')).toBe('unknown');
     expect(unknown.textContent).toContain('—');
   });

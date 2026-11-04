@@ -59,6 +59,21 @@ export function thresholdOf(thresholds: AxisThresholds | null | undefined, axis:
   }
 }
 
+type ReasonField = 'i1_reason' | 'i2_reason' | 'i3_reason' | 'i4_reason' | 'i5_reason';
+export type ScreenerReasonRow = Pick<ScreenerCoreRow, ReasonField | 'eps_data_gap'>;
+
+const REASON_KEYS: Record<AxisKey, ReasonField> = {
+  growth: 'i1_reason', eps: 'i2_reason', margin: 'i3_reason', sales: 'i4_reason', industry: 'i5_reason',
+};
+
+/** دلیلِ وضعیتِ محور برای tooltip؛ فقط متنِ خودِ پاسخ، بدون ساختِ دلیلِ تازه. */
+export function reasonOf(row: ScreenerReasonRow, axis: AxisKey): string | null {
+  const reason = row[REASON_KEYS[axis]];
+  if (reason) return reason;
+  if (axis === 'eps' && row.eps_data_gap) return 'شکاف دادهٔ EPS';
+  return null;
+}
+
 export function verdictFa(verdict: string | null | undefined): string {
   return ({ STRONG: 'قوی', WATCH: 'تحت نظر', REJECT: 'رد', EXCLUDED: 'خارج از غربال' } as Record<string, string>)[verdict ?? ''] ?? '—';
 }
