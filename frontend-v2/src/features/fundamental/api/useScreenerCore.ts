@@ -18,6 +18,17 @@ export const ScreenerCoreRowSchema = z.looseObject({
   i3_pass: Bool,
   i4_pass: Bool,
   i5_pass: Bool,
+  i1_na: Bool,
+  i2_na: Bool,
+  i3_na: Bool,
+  i4_na: Bool,
+  i5_na: Bool,
+  i1_reason: Str,
+  i2_reason: Str,
+  i3_reason: Str,
+  i4_reason: Str,
+  i5_reason: Str,
+  eps_data_gap: Bool,
 });
 
 export const ScreenerCoreSchema = z.looseObject({

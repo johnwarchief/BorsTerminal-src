@@ -3,7 +3,35 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { faNum, fmtInt } from '@shared/lib/fa';
 import type { ScreenerCoreRow } from '../api/useScreenerCore';
 
-const PASS_KEYS = ['i1_pass', 'i2_pass', 'i3_pass', 'i4_pass', 'i5_pass'] as const;
+type ChipState = 'pass' | 'fail' | 'na' | 'unknown';
+
+const AXES = [
+  { pass: 'i1_pass', na: 'i1_na', reason: 'i1_reason' },
+  { pass: 'i2_pass', na: 'i2_na', reason: 'i2_reason' },
+  { pass: 'i3_pass', na: 'i3_na', reason: 'i3_reason' },
+  { pass: 'i4_pass', na: 'i4_na', reason: 'i4_reason' },
+  { pass: 'i5_pass', na: 'i5_na', reason: 'i5_reason' },
+] as const;
+
+const CHIP: Record<ChipState, { glyph: string; word: string; tone: string }> = {
+  pass: { glyph: '✓', word: 'قبول', tone: 'border-up/45 bg-up/15 text-up' },
+  fail: { glyph: '✗', word: 'رد', tone: 'border-down/45 bg-down/15 text-down' },
+  na: { glyph: 'N/A', word: 'بی‌نظر', tone: 'border-line bg-panel-3 text-text-3' },
+  unknown: { glyph: '—', word: 'نامشخص', tone: 'border-line border-dashed bg-panel-2 text-text-3' },
+};
+
+// ترتیبِ داوری: قبولیِ صریح، ردِ صریح، بعد N/Aِ طبقه. `pass=null` با `na=false`
+// «سنجیده نشد» است (شکافِ داده)، نه N/A و نه رد — همان تفکیکِ منبع.
+function chipOf(row: ScreenerCoreRow, index: number): { state: ChipState; title: string } {
+  const axis = AXES[index]!;
+  const pass = row[axis.pass];
+  const na = row[axis.na];
+  const reason = row[axis.reason] ?? (index === 1 && row.eps_data_gap ? 'شکاف دادهٔ EPS' : undefined);
+  if (pass === true) return { state: 'pass', title: reason || CHIP.pass.word };
+  if (pass === false) return { state: 'fail', title: reason || CHIP.fail.word };
+  if (na === true) return { state: 'na', title: reason || 'بینظر (N/A) — حکمِ این محور سنجیده نمی‌شود' };
+  return { state: 'unknown', title: reason || 'وضعیتِ این محور در پاسخ نیست' };
+}
 
 interface Props {
   rows: readonly ScreenerCoreRow[];
@@ -62,21 +90,19 @@ export function FundamentalScreenTable({ rows, onSelect }: Props) {
       </span>
       <span className="truncate text-text-2">{row.sector_name ?? '—'}</span>
       <span className="flex items-center gap-1" aria-label="پنج شاخص">
-        {PASS_KEYS.map((key, index) => {
-          const pass = row[key];
+        {AXES.map((axis, index) => {
+          const { state, title } = chipOf(row, index);
+          const chip = CHIP[state];
           return (
             <span
-              key={key}
+              key={axis.pass}
               data-testid={`fundamental-chip-${row.symbol}-${index + 1}`}
-              data-pass={pass === true ? 'true' : pass === false ? 'false' : 'na'}
-              title={`${faNum(index + 1)}: ${pass === true ? 'قبول' : pass === false ? 'رد' : 'بی‌نظر'}`}
-              className={`grid h-4 w-4 place-items-center rounded-[3px] border t-85 ${
-                pass === true
-                  ? 'border-up/45 bg-up/15 text-up'
-                  : 'border-line bg-panel-2 text-text-3'
-              }`}
+              data-state={state}
+              title={title}
+              aria-label={`${faNum(index + 1)}: ${chip.word}`}
+              className={`grid h-4 min-w-4 place-items-center rounded-[3px] border px-0.5 t-85 ${chip.tone}`}
             >
-              {pass === true ? '✓' : '—'}
+              {chip.glyph}
             </span>
           );
         })}
@@ -115,6 +141,16 @@ export function FundamentalScreenTable({ rows, onSelect }: Props) {
         </select>
         <span data-testid="fundamental-count" className="num t-9 text-text-3">
           {fmtInt(filtered.length)} از {fmtInt(rows.length)}
+        </span>
+        <span data-testid="fundamental-legend" className="flex flex-wrap items-center gap-1 t-85 text-text-3">
+          {(['pass', 'fail', 'na', 'unknown'] as const).map((state) => (
+            <span key={state} className="flex items-center gap-0.5">
+              <span className={`grid h-3.5 min-w-3.5 place-items-center rounded-[2px] border px-0.5 t-85 ${CHIP[state].tone}`}>
+                {CHIP[state].glyph}
+              </span>
+              {CHIP[state].word}
+            </span>
+          ))}
         </span>
       </div>
 
