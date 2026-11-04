@@ -176,12 +176,12 @@ describe('fundamental cockpit', () => {
     // R57: روبان هیچ رتبه‌بندی ساختگی از محورها اعلام نمی‌کند.
     expect(ribbon.textContent).not.toContain('قوی‌ترین');
     expect(ribbon.textContent).not.toContain('ضعیف‌ترین');
-    // R97: کاشی و پنلِ رشد آستانهٔ هدفِ گیت (۶۰) را نشان می‌دهند، نه threshold=۴۰.
+    // R-P1-1: کفِ نمودار/وضعیت ۴۰ است و ۶۰ فقط برچسبِ هدف؛ کاشی و پنل هر دو را نشان می‌دهند.
     const growthTile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="growth"]');
-    expect(growthTile?.textContent).toContain('کف ۶۰٪');
-    expect(growthTile?.textContent).not.toContain('کف ۴۰٪');
-    expect(screen.getByTestId('panel-growth').textContent).toContain('کف ۶۰٪');
-    expect(screen.getByTestId('panel-growth').textContent).not.toContain('کف ۴۰٪');
+    expect(growthTile?.textContent).toContain('کف ۴۰٪');
+    expect(growthTile?.textContent).toContain('هدف ۶۰٪');
+    expect(screen.getByTestId('panel-growth').textContent).toContain('کف ۴۰٪');
+    expect(screen.getByTestId('panel-growth').textContent).toContain('هدف ۶۰٪');
     const freshness = screen.getByTestId('fundamental-freshness').textContent ?? '';
     expect(freshness).toContain('دادهٔ بنیادی تا');
     expect(freshness).toContain('تیر');
@@ -300,6 +300,70 @@ describe('fundamental cockpit', () => {
     expect(growth.textContent).toContain('رد');
   });
 
+  it('shows the growth floor/target, 1a/1b, and both sales periods with charts', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '1': {
+          ...baseIndicators['1'],
+          monetary: {
+            ...baseIndicators['1'].monetary,
+            monetary_pct: 56,
+            ytd_now_bt: 250942.2,
+            ytd_prev_bt: 160873.4,
+          },
+          volume: {
+            ...baseIndicators['1'].volume,
+            applicable: true,
+            real_pct: -2.5,
+            pass: false,
+            data_gap: false,
+            note: '',
+          },
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="فولاد" onBack={vi.fn()} />);
+    const panel = screen.getByTestId('panel-growth');
+    expect(panel.textContent).toContain('کف ۴۰٪');
+    expect(panel.textContent).toContain('هدف ۶۰٪');
+    expect(panel.textContent).toContain('۲۵۰٬۹۴۲');
+    expect(panel.textContent).toContain('۱۶۰٬۸۷۳');
+    expect(panel.textContent).toContain('−۲٫۵٪');
+    expect(panel.querySelectorAll('svg[role="img"]').length).toBeGreaterThanOrEqual(2);
+    expect(panel.querySelector('[data-testid="growth-sales-pair"]')).toBeTruthy();
+  });
+
+  it('omits the target label when it equals the floor (R-P1-1)', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '1': {
+          ...baseIndicators['1'],
+          monetary: { ...baseIndicators['1'].monetary, threshold: 60, target_threshold: 60 },
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const growth = screen.getByTestId('panel-growth');
+    expect(growth.textContent).toContain('کف ۶۰٪');
+    expect(growth.textContent).not.toContain('هدف');
+  });
+
+  it('uses the exact gross margin name in the panel and the freshness label (R-P1-4)', () => {
+    mockCard({
+      freshness: {
+        as_of: '2026-07-09',
+        axes: { '3_gross_margin': { state: 'stale', source: 'financial_statements' } },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    // نامِ دقیق در پنل و کاشی با هم دیده می‌شود؛ عنوانِ پنل جداگانه سنجیده می‌شود.
+    expect(screen.getAllByText('حاشیه سود ناخالص').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId('panel-margin').querySelector('h3')?.textContent).toBe('حاشیه سود ناخالص');
+    expect(screen.getByTestId('fundamental-freshness-attention').getAttribute('title')).toContain('حاشیه سود ناخالص');
+  });
+
   it('keeps a 1b data gap at نامشخص even when its pass is false (R104)', () => {
     mockCard({
       indicators: {
@@ -416,7 +480,7 @@ describe('fundamental cockpit', () => {
     const attention = screen.getByTestId('fundamental-freshness-attention');
     expect(attention.textContent).toContain('۳ محور نیازمند بررسی');
     expect(attention.getAttribute('title')).toContain('رشد فروش');
-    expect(attention.getAttribute('title')).toContain('حاشیهٔ ناخالص');
+    expect(attention.getAttribute('title')).toContain('حاشیه سود ناخالص');
     expect(attention.getAttribute('title')).toContain('پتانسیل سود تا آخر سال');
     expect(attention.getAttribute('title')).not.toContain('سودآوری');
   });

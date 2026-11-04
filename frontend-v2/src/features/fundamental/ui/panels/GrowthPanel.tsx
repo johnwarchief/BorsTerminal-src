@@ -1,7 +1,9 @@
+import { faNum } from '@shared/lib/fa';
 import type { FtsCard } from '../../api/useFtsCard';
 import { formatAxisValue, statusFa, type AxisStatus } from '../../lib/axisMeta';
 import { cardStatus } from '../../lib/cardStatus';
 import { Bullet } from '../mini/Bullet';
+import { HistoryBars } from '../mini/HistoryBars';
 import { AxisPanel, faThreshold } from './AxisPanel';
 
 type MetricSignal = {
@@ -35,15 +37,22 @@ export function GrowthPanel({ card }: { card: FtsCard }) {
   const status = cardStatus(card, 'growth');
   // R91: رشد همان قالبِ ستون جدول را دارد: علامتِ +/− و درصد.
   const pct = formatAxisValue(monetary?.monetary_pct ?? null, 'growth');
-  // R97: آستانهٔ نمایش همان گیتِ S4b است (target_threshold)، وگرنه threshold.
-  const threshold = monetary?.target_threshold ?? monetary?.threshold ?? null;
+  // R-P1-1: نمودار/وضعیت روی کفِ threshold می‌ایستند؛ target_threshold فقط برچسبِ هدف است.
+  const floor = monetary?.threshold ?? null;
+  const target = monetary?.target_threshold ?? null;
+  const thresholdText = `کف ${faThreshold(floor, '٪')}${target == null || target === floor ? '' : ` · هدف ${faThreshold(target, '٪')}`}`;
+  const volumeStatus = metricStatus(volume);
   // R101: دلیلِ آشکار — دلیلِ ۱الف، وگرنه دلیلِ ۱ب، وگرنه یادداشتِ ۱ب.
   const reason = monetary?.reason || volume?.reason || volume?.note || '';
   // R104: شکافِ دادهٔ ۱الف هم ارزشِ ریالی را «نامشخص» می‌کند، نه ردیفِ بی‌حکم.
   const monetaryGap = monetary?.data_gap === true;
+  // R-P1-2: فروشِ دورهٔ جاری/قبل در میلیارد تومان؛ نبودِ مقدار «—».
+  const money = (value: number | null | undefined) => value == null ? '—' : `${faNum(value, 0)} میلیارد تومان`;
   const rows: Array<[string, string]> = [
     ['۱الف — رشد ریالی', monetaryGap ? `${pct} · ${statusFa(metricStatus(monetary))}` : pct],
-    ['۱ب — رشد واقعی/تناژ', `${volumeValue(card)} · ${statusFa(metricStatus(volume))}`],
+    ['۱ب — رشد واقعی/تناژ', `${volumeValue(card)} · ${statusFa(volumeStatus)}`],
+    ['فروش دورهٔ جاری', money(monetary?.ytd_now_bt)],
+    ['فروش دورهٔ قبل', money(monetary?.ytd_prev_bt)],
   ];
   if (reason) rows.push(['دلیل', reason]);
   return (
@@ -54,10 +63,35 @@ export function GrowthPanel({ card }: { card: FtsCard }) {
       subtitle="رشد ریالی در برابر کف، و تأیید رشد واقعی/تناژ"
       status={status}
       value={pct}
-      threshold={`کف ${faThreshold(threshold, '٪')}`}
-      chart={<Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={threshold} status={status} label="رشد فروش" />}
+      threshold={thresholdText}
+      chart={<Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={floor} status={status} label="رشد فروش" />}
       rows={rows}
       details={card.details?.['۱']}
-    />
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] text-[var(--fd-text-3)]">۱ب — رشد واقعی</span>
+          <div className="h-[24px]">
+            <Bullet
+              value={volume?.applicable === false ? null : volume?.real_pct ?? null}
+              max={100}
+              threshold={volume?.threshold ?? null}
+              status={volumeStatus}
+              label="رشد واقعی ۱ب"
+            />
+          </div>
+        </div>
+        <div data-testid="growth-sales-pair" className="flex flex-col gap-0.5">
+          <span className="text-[9px] text-[var(--fd-text-3)]">فروش جاری / دورهٔ قبل</span>
+          <div className="h-[24px]">
+            <HistoryBars
+              values={[monetary?.ytd_prev_bt ?? null, monetary?.ytd_now_bt ?? null]}
+              labels={['دوره قبل', 'دوره جاری']}
+              status="pass"
+            />
+          </div>
+        </div>
+      </div>
+    </AxisPanel>
   );
 }

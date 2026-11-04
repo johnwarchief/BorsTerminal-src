@@ -17,6 +17,9 @@ const Axis1Schema = z.looseObject({
     pass: Bool,
     data_gap: Bool,
     reason: Str,
+    // R-P1-1: فروشِ دورهٔ جاری/قبل (میلیارد تومان) برای ردیف‌ها و نمودارِ جفتِ فروش.
+    ytd_now_bt: Num,
+    ytd_prev_bt: Num,
   }).nullish(),
   volume: z.looseObject({
     applicable: Bool,

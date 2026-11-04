@@ -142,6 +142,20 @@ describe('fts card schema (R82)', () => {
     expect(volume?.reason).toContain('تناژ فروش');
   });
 
+  it('parses current and previous sales and 1b evidence', () => {
+    const parsed = FtsCardSchema.parse({
+      status: 'success', symbol: 'فولاد',
+      indicators: {
+        '1': {
+          monetary: { monetary_pct: 56, threshold: 40, target_threshold: 60, pass: true, ytd_now_bt: 250942.2, ytd_prev_bt: 160873.4 },
+          volume: { applicable: true, real_pct: -2.5, pass: false, threshold: 0, reason: 'رشد واقعی منفی' },
+        },
+      },
+    });
+    expect(parsed.indicators?.['1']?.monetary?.ytd_now_bt).toBe(250942.2);
+    expect(parsed.indicators?.['1']?.volume?.reason).toBe('رشد واقعی منفی');
+  });
+
   it('parses the EPS reason/data-gap and the root thresholds block (R99/R101)', () => {
     const parsed = FtsCardSchema.parse({
       status: 'success',

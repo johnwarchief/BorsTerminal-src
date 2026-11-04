@@ -67,7 +67,7 @@ const ATTENTION_STATES = new Set(['stale', 'missing', 'quarantined']);
 const FRESHNESS_AXIS_FA: Record<string, string> = {
   '1_growth': 'رشد فروش',
   '2_eps_trend': 'سودآوری ۳ساله',
-  '3_gross_margin': 'حاشیهٔ ناخالص',
+  '3_gross_margin': 'حاشیه سود ناخالص',
   // R-P0-2: نامِ کاربریِ شاخص ۴ «پتانسیل سود تا آخر سال» است؛ کلیدِ داخلی legacy می‌ماند.
   '4_sales_to_mcap': 'پتانسیل سود تا آخر سال',
   '5_industry': 'نرخ‌گذاری صنعت',

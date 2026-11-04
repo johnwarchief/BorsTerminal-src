@@ -8,6 +8,7 @@ export type PotentialPath = 'potential' | 'sales' | null;
 export type ScreenerRowLike = Pick<ScreenerCoreRow,
   'symbol' | 'score' | 'verdict' | 'i1_pass' | 'i1_na' | 'i2_pass' | 'i2_na' |
   'i3_pass' | 'i3_na' | 'i4_pass' | 'i4_na' | 'i5_pass' | 'i5_na' |
+  'i1a_pass' | 'i1b_pass' | 'i1b_applicable' | 'i1b_data_gap' |
   'rev_growth' | 'eps_series' | 'eps_years_available' | 'gross_margin' |
   'sales_to_mcap' | 'profit_potential_pct' | 'pricing_mode'
 >;
@@ -20,7 +21,8 @@ export interface AxisThresholds {
 export const AXES = [
   { key: 'growth', num: '۱', label: 'رشد فروش', short: 'رشد', thresholdKey: 'growth_min' },
   { key: 'eps', num: '۲', label: 'سودآوری ۳ساله', short: 'سودآوری', thresholdKey: 'v10_eps_years' },
-  { key: 'margin', num: '۳', label: 'حاشیهٔ ناخالص', short: 'حاشیه', thresholdKey: 'margin_min' },
+  // R-P1-4: نامِ کاربریِ دقیقِ شاخص ۳ «حاشیه سود ناخالص» است؛ همین‌جا منبعِ واحدِ نام.
+  { key: 'margin', num: '۳', label: 'حاشیه سود ناخالص', short: 'حاشیه', thresholdKey: 'margin_min' },
   // R-P0-1: تیترِ محور ۴ پتانسیل سود است؛ کلیدِ داخلیِ `sales` برای سازگاریِ sortKey می‌ماند.
   { key: 'sales', num: '۴', label: 'پتانسیل سود تا آخر سال', short: 'پتانسیل', thresholdKey: 'profit_potential_min' },
   { key: 'industry', num: '۵', label: 'نرخ‌گذاری صنعت', short: 'صنعت', thresholdKey: null },
@@ -73,6 +75,21 @@ export function potentialStatusOf(
   const threshold = thresholds?.profit_potential_min;
   if (value == null || threshold == null || !Number.isFinite(value) || !Number.isFinite(threshold)) return 'unknown';
   return value >= threshold ? 'pass' : 'fail';
+}
+
+/**
+ * R-P1-2: ۱الف و ۱ب جدا گزارش می‌شوند — ۱ب فقط برای تولیدی‌ها applicable است و
+ * شکافِ داده «نامشخص» است، نه «رد».
+ */
+export function growthSubStatuses(
+  row: Pick<ScreenerRowLike, 'i1a_pass' | 'i1b_pass' | 'i1b_applicable' | 'i1b_data_gap'>,
+): { a: AxisStatus; b: AxisStatus } {
+  const a: AxisStatus = row.i1a_pass === true ? 'pass' : row.i1a_pass === false ? 'fail' : 'unknown';
+  const b: AxisStatus = row.i1b_applicable === false ? 'na'
+    : row.i1b_pass === true ? 'pass'
+      : row.i1b_pass === false ? 'fail'
+        : row.i1b_data_gap ? 'unknown' : 'unknown';
+  return { a, b };
 }
 
 /** مسیرِ قبولیِ محور ۴: پتانسیل، وگرنه شاهدِ فروش/ارزش، وگرنه هیچ. */

@@ -40,8 +40,10 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
   const margin = card.indicators?.['3'];
   const sales = card.indicators?.['4'];
   const industry = card.indicators?.['5'];
-  // R97: کاشیِ رشد همان آستانهٔ گیتِ S4b را نشان می‌دهد (target، وگرنه threshold).
-  const growthThreshold = monetary?.target_threshold ?? monetary?.threshold ?? null;
+  // R-P1-1: کفِ نمودار/وضعیت threshold است؛ target_threshold فقط برچسبِ هدف است.
+  const growthFloor = monetary?.threshold ?? null;
+  const growthTarget = monetary?.target_threshold ?? null;
+  const growthThresholdText = `کف ${thresholdLabel(growthFloor)}${growthTarget == null || growthTarget === growthFloor ? '' : ` · هدف ${thresholdLabel(growthTarget)}`}`;
   const epsRequired = requiredYears(card);
   // R-P0-1: وضعیتِ نمودار فقط زیرگیتِ پتانسیل است؛ وضعیتِ کاشی همچنان ترکیبی است.
   const salesPotentialStatus = potentialStatusOf(
@@ -54,9 +56,9 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
       axis: 'growth',
       // R91: رشد مثل ستون جدول علامتِ +/− دارد («+۴۵٫۹٪»).
       value: formatAxisValue(monetary?.monetary_pct ?? null, 'growth'),
-      threshold: `کف ${thresholdLabel(growthThreshold)}`,
+      threshold: growthThresholdText,
       status: cardStatus(card, 'growth'),
-      chart: <Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={growthThreshold} status={cardStatus(card, 'growth')} label="رشد" />,
+      chart: <Bullet value={monetary?.monetary_pct ?? null} max={200} threshold={growthFloor} status={cardStatus(card, 'growth')} label="رشد" />,
     },
     {
       axis: 'eps',

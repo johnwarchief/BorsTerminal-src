@@ -6,6 +6,7 @@ import {
   epsYearsRequired,
   formatAxisValue,
   formatEpsTrend,
+  growthSubStatuses,
   potentialPath,
   potentialStatusOf,
   reasonOf,
@@ -71,6 +72,11 @@ function AxisCell({ row, axis, thresholds }: Props) {
     ? path === 'potential' ? '۴ب' : path === 'sales' ? '۴الف' : '—'
     : null;
   const salesWord = status === 'pass' && path === 'sales' ? 'مسیر فروش/ارزش' : 'فروش/ارزش';
+  // R-P1-2: ستونِ رشد در حالتِ راحت وضعیتِ جداگانهٔ ۱الف/۱ب را هم نشان می‌دهد.
+  const subs = axis === 'growth' ? growthSubStatuses(row) : null;
+  const growthSubtitle = subs
+    ? `${thresholdLabel(thresholds, 'growth')} · ۱الف ${statusFa(subs.a)} · ۱ب ${statusFa(subs.b)}`
+    : null;
   const subtitle = axis === 'eps'
     ? epsThresholdLabel(epsYears)
     : axis === 'industry'
@@ -78,7 +84,7 @@ function AxisCell({ row, axis, thresholds }: Props) {
       : axis === 'sales'
         // شاهدِ فروش/ارزش حتی بدون آستانهٔ پتانسیل می‌ماند («≥ —٪ · فروش/ارزش ۱٫۱۵»).
         ? `≥ ${threshold == null ? '—' : toFaDigits(threshold)}٪ · ${salesWord} ${salesRatio}`
-        : thresholdLabel(thresholds, axis);
+        : growthSubtitle ?? thresholdLabel(thresholds, axis);
   const epsTrend = axis === 'eps' ? trendFa(trendOf(row.eps_series)) : null;
 
   return (

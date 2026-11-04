@@ -189,8 +189,8 @@ describe('FundamentalSummary (sidebar variant)', () => {
     expect(summaryBar('sales').getAttribute('style')).toContain('var(--fd-down)');
     expect(summaryBar('margin').getAttribute('style')).toContain('var(--fd-warn)');
     expect(summaryBar('margin').getAttribute('data-status')).toBe('unknown');
-    expect(summaryBar('margin').getAttribute('aria-label')).toBe('حاشیهٔ ناخالص — نامشخص');
-    expect(summaryBar('margin').getAttribute('title')).toBe('حاشیهٔ ناخالص — نامشخص');
+    expect(summaryBar('margin').getAttribute('aria-label')).toBe('حاشیه سود ناخالص — نامشخص');
+    expect(summaryBar('margin').getAttribute('title')).toBe('حاشیه سود ناخالص — نامشخص');
     expect(summaryBar('margin').getAttribute('role')).toBe('img');
     expect(summaryBar('margin').className).not.toContain('fd-status--');
     expect(summaryBar('growth').getAttribute('aria-hidden')).toBeNull();
@@ -203,7 +203,7 @@ describe('FundamentalSummary (sidebar variant)', () => {
     expect(screen.getByTestId('fund-summary-count').textContent).toBe('۳ از ۵');
     expect(summaryBar('margin').getAttribute('style')).toContain('var(--fd-flat)');
     expect(summaryBar('margin').getAttribute('data-status')).toBe('na');
-    expect(summaryBar('margin').getAttribute('aria-label')).toBe('حاشیهٔ ناخالص — بی‌نظر');
+    expect(summaryBar('margin').getAttribute('aria-label')).toBe('حاشیه سود ناخالص — بی‌نظر');
     expect(screen.getByTestId('symbol-fund-summary').textContent).toContain('۱ بی‌نظر/نامشخص');
   });
 

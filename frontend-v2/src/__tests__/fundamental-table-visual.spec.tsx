@@ -48,7 +48,7 @@ describe('fundamental table visual', () => {
   it('renders five axis headers and values', () => {
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf="۱۴۰۵/۰۸/۱۳" />);
     expect(screen.getByRole('table', { name: 'جدول بنیادی' })).toBeTruthy();
-    for (const name of ['رشد فروش', 'سودآوری ۳ساله', 'حاشیهٔ ناخالص', 'پتانسیل سود تا آخر سال', 'نرخ‌گذاری صنعت']) expect(screen.getByText(name)).toBeTruthy();
+    for (const name of ['رشد فروش', 'سودآوری ۳ساله', 'حاشیه سود ناخالص', 'پتانسیل سود تا آخر سال', 'نرخ‌گذاری صنعت']) expect(screen.getByText(name)).toBeTruthy();
     expect(screen.getByText('+۴۵٫۹٪')).toBeTruthy();
     expect(screen.getByTestId('fundamental-cell-رنيك-sales').textContent).toContain('۱٫۱۵');
     // R33: زمان اسکن فقط در هدر صفحه؛ جدول نسخهٔ تکراری ندارد.
@@ -85,6 +85,12 @@ describe('fundamental table visual', () => {
       expect(cell.textContent).toContain('فروش/ارزش');
       expect(cell.textContent).toContain('۱٫۱۵');
     }
+  });
+  it('shows 1a/1b sub-statuses in the growth column', () => {
+    render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    const cell = screen.getByTestId('fundamental-cell-رنيك-growth');
+    expect(cell.textContent).toContain('۱الف');
+    expect(cell.textContent).toContain('۱ب');
   });
   it('sorts axis 4 by the potential percentage', () => {
     const onSelect = vi.fn();

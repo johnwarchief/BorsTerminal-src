@@ -36,12 +36,12 @@ export function MarginPanel({ card }: { card: FtsCard }) {
     <AxisPanel
       testId="panel-margin"
       axis="margin"
-      title="حاشیهٔ ناخالص"
-      subtitle="فاصله تا کف/ایده‌آل؛ باندهای ۲۰/۳۰/۴۰"
+      title="حاشیه سود ناخالص"
+      subtitle="سود ناخالص ÷ درآمد عملیاتی × ۱۰۰؛ کف ۲۰٪ · استاندارد ۳۰٪"
       status={status}
       value={faFixed(margin?.margin_pct, 1, '٪')}
       threshold={`کف ${faThreshold(margin?.threshold, '٪')}`}
-      chart={<Bullet value={margin?.margin_pct ?? null} max={60} threshold={margin?.threshold ?? null} status={status} label="حاشیهٔ ناخالص" />}
+      chart={<Bullet value={margin?.margin_pct ?? null} max={60} threshold={margin?.threshold ?? null} status={status} label="حاشیه سود ناخالص" />}
       rows={rows}
       details={card.details?.['۳']}
     />

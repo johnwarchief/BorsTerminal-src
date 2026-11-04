@@ -156,14 +156,15 @@ describe('fundamental page visual', () => {
   it('falls back to — for axis thresholds and CSV meta when thresholds are null (R45)', () => {
     mockScreener({ data: { status: 'success', count: 1, data: rows, as_of: 1793789441, thresholds: null } });
     renderPage();
-    for (const name of [/رشد فروش/, /حاشیهٔ ناخالص/, /پتانسیل سود تا آخر سال/]) {
+    for (const name of [/رشد فروش/, /حاشیه سود ناخالص/, /پتانسیل سود تا آخر سال/]) {
       const header = screen.getByRole('columnheader', { name });
       expect(within(header).getByText('—')).toBeTruthy();
     }
     for (const axis of ['growth', 'margin', 'sales']) {
       const cell = screen.getByTestId(`fundamental-cell-رنيك-${axis}`);
       // محورِ بی‌آستانه «—» را در خطِ آستانه/نشانِ مسیر نگه می‌دارد، نه مقدارِ ساختگی.
-      expect(within(cell).getAllByText('—').length).toBeGreaterThan(0);
+      // R-P1-2: خطِ آستانهٔ رشد وضعیتِ ۱الف/۱ب را هم دارد، پس متنِ کاملِ سلول سنجیده می‌شود.
+      expect(cell.textContent).toContain('—');
     }
     fireEvent.click(screen.getByTestId('fundamental-export'));
     const [, , meta] = mockedDownload.mock.calls[0]!;
