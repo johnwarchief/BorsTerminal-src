@@ -1,13 +1,13 @@
 {
  "meta": {
   "source": "search.codal.ir/api/search/v2/q",
-  "fetchedAt": "2026-11-04T09:30:30.617483Z",
+  "fetchedAt": "2026-11-04T09:38:14.016108Z",
   "jmonths": [
    "1405/07",
    "1405/08",
    "1405/09"
   ],
-  "count": 430,
+  "count": 431,
   "industries": {
    "آسان": "صندوق سرمايه گذاري قابل معامله",
    "اعتماد": "صندوق سرمايه گذاري قابل معامله",
@@ -4890,6 +4890,19 @@
    "date_source": "publication_fallback",
    "published_at": "2026-11-04T12:58:00+03:30",
    "link": "https://codal.ir/Reports/Decision.aspx?LetterSerial=5EOOObOOOrFSeqJQQQaQQQ34WcgTGEDLGQ%3d%3d&rt=2&let=122&ct=5&ft=4"
+  },
+  {
+   "asset_id": "",
+   "asset_symbol_trade": "کتوسعه",
+   "date_time": "2026-11-04T13:07:00+03:30",
+   "description": "آگهی دعوت به مجمع عمومی فوق العاده دوره ۱۲ ماهه منتهی به  ۱۴۰۵/۰۹/۳۰",
+   "report_id": "1629131",
+   "event_title": "آگهی دعوت به مجمع عمومی فوق العاده دوره ۱۲ ماهه منتهی به  ۱۴۰۵/۰۹/۳۰",
+   "event_type_id": 2,
+   "event_time": "13:07",
+   "date_source": "publication_fallback",
+   "published_at": "2026-11-04T13:07:00+03:30",
+   "link": "https://codal.ir/Reports/Decision.aspx?LetterSerial=CAJgE93L7g2j5Vkz03IdoA%3d%3d&rt=0&let=18&ct=0&ft=-1"
   },
   {
    "asset_id": "",

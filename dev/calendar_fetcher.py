@@ -44,10 +44,12 @@ static/calendar/cache.json — بدون نیاز به احراز هویت.
 """
 import argparse
 import json
+import os
 import random
 import re
 import sqlite3
 import sys
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -77,6 +79,8 @@ if _DEV_DIR not in sys.path:
 import codal_fetcher as _cf  # noqa: E402  (rotate_ip_via_adb — منبع یگانه حقیقت)
 from calendar_merge import merge_calendar  # noqa: E402  (Task 7: ادغامِ افزایشی)
 BASE = "https://search.codal.ir/api/search/v2/q"
+CAPTCHA_API = "https://search.codal.ir/api/ddos/v1"
+CAPTCHA_IMAGE = Path(tempfile.gettempdir()) / "bors_calendar_captcha.png"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
 
@@ -315,6 +319,77 @@ def _retry_after(resp):
         return max(0.0, (dt - datetime.now(timezone.utc)).total_seconds())
     except Exception:
         return None
+
+
+def _open_captcha_image(path):
+    """تصویر کپچا را با نمایشگرِ پیش‌فرض ویندوز باز می‌کند؛ خطا فقط مسیر را می‌گوید."""
+    try:
+        os.startfile(str(path))  # type: ignore[attr-defined]
+    except Exception:
+        print(f"[captcha] تصویر: {path}")
+
+
+def _read_captcha_code(code_file=None, timeout_s=240):
+    """کد را از فایل (اجرای غیرتعاملی/تست) یا stdin می‌خواند."""
+    if code_file:
+        p = Path(code_file)
+        deadline = time.time() + timeout_s
+        while time.time() < deadline:
+            if p.exists():
+                code = p.read_text(encoding="utf-8").strip()
+                if code:
+                    return code
+            time.sleep(0.5)
+        return ""
+    try:
+        return input("کد امنیتی کدال: ").strip()
+    except EOFError:
+        return ""
+
+
+def solve_captcha(session, code_file=None, prompt=None, opener=None,
+                  max_attempts=3):
+    """عبور از چالشِ رسمیِ 429: begin → تصویر → end.
+
+    این «دور زدن» نیست؛ همان مسیری است که خودِ کدال در مرورگر نشان می‌دهد.
+    بعد از end موفق، هدرِ X-Captcha-Token رویِ همان session می‌نشیند و
+    polite_get/ fetch_month بدونِ 429 ادامه می‌دهند. کدِ خالی یا سه تلاشِ
+    ناموفق ⇒ False (هیچ داده‌ای نوشته نمی‌شود).
+    """
+    prompt = prompt or (lambda: _read_captcha_code(code_file))
+    opener = opener or _open_captcha_image
+    session.headers.setdefault("origin", "https://codal.ir")
+    session.headers.setdefault("referer", "https://codal.ir/ReportList.aspx?search")
+    for attempt in range(1, max_attempts + 1):
+        try:
+            begin = session.post(CAPTCHA_API + "/begin",
+                                 json={"clientId": "ABBS"}, timeout=20)
+            begin.raise_for_status()
+            token = (begin.json() or {}).get("CaptchaToken")
+            if not token:
+                print("[captcha] توکنِ چالش نیامد")
+                return False
+            img = session.get(CAPTCHA_API + "/Captcha/" + token, timeout=20)
+            img.raise_for_status()
+            CAPTCHA_IMAGE.write_bytes(img.content)
+            print(f"[captcha] تصویرِ چالش ذخیره شد (تلاش {attempt}): {CAPTCHA_IMAGE}")
+            opener(CAPTCHA_IMAGE)
+            code = (prompt() or "").strip()
+            if not code:
+                print("[captcha] کدی وارد نشد؛ توقف بدونِ نوشتنِ داده")
+                return False
+            end = session.post(CAPTCHA_API + "/end",
+                               json={"CaptchaToken": token, "Captchatext": code},
+                               timeout=20)
+            if end.status_code == 200:
+                session.headers["X-Captcha-Token"] = token
+                print("[captcha] تأیید شد؛ ادامهٔ fetch در همین session")
+                return True
+            print(f"[captcha] کد پذیرفته نشد ({end.status_code}): {end.text[:120]}")
+        except Exception as exc:
+            print(f"[captcha] خطای چالش: {type(exc).__name__}: {exc}")
+    print("[captcha] پس از چند تلاش عبور نکرد؛ توقف")
+    return False
 
 
 def polite_get(session, params, rotate=False, max_backoffs=5, stats=None):
@@ -642,6 +717,12 @@ def main():
     ap.add_argument("--merge", action="store_true",
                     help="اگر static/calendar/cache.json موجود است، رویدادهای تازه را "
                          "افزایشی در آن ادغام کن (به‌جای جایگزینی)؛ ADB فقط با --adb-rotate")
+    ap.add_argument("--captcha", action="store_true",
+                    help="پس از 429، چالشِ رسمیِ کدال را باز کن (تصویر + کد) و در "
+                         "همان session ادامه بده")
+    ap.add_argument("--captcha-code-file", default=None,
+                    help="مسیر فایلِ کدِ کپچا برای اجرای غیرتعاملی/تست "
+                         "(بی‌این، کد از stdin خوانده می‌شود)")
     ap.add_argument("--max-pages", type=int, default=60,
                     help="حداکثر صفحات در هر کوئری کلان (هر صفحه ۲۰ نامه؛ پیش‌فرض ۶۰ = ۱۲۰۰ نامه)")
     args = ap.parse_args()
@@ -666,6 +747,11 @@ def main():
 
     sess = requests.Session()
     sess.headers.update({"User-Agent": UA, "accept": "application/json"})
+    if args.captcha:
+        if not solve_captcha(sess, code_file=args.captcha_code_file):
+            print("[captcha] چالش کامل نشد؛ دادهٔ قبلی دست‌نخورده ماند",
+                  file=sys.stderr, flush=True)
+            return 2
 
     all_events, seen = [], set()
     req_counter = [0]
