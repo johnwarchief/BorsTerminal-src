@@ -4,6 +4,7 @@ import { getJson } from '@shared/api/http';
 
 const Str = z.string().nullish();
 const Bool = z.boolean().nullish();
+const Num = z.number().nullish();
 
 export const ScreenerCoreRowSchema = z.looseObject({
   symbol: z.string(),
@@ -29,6 +30,17 @@ export const ScreenerCoreRowSchema = z.looseObject({
   i4_reason: Str,
   i5_reason: Str,
   eps_data_gap: Bool,
+  rev_growth: Num,
+  eps_series: z.array(z.number().nullable()).nullish(),
+  eps_years_required: Num,
+  eps_years_available: Num,
+  gross_margin: Num,
+  profit_potential_pct: Num,
+  sales_to_mcap: Num,
+  pricing_mode: Str,
+  i1a_pass: Bool,
+  i1b_applicable: Bool,
+  i1b_data_gap: Bool,
 });
 
 export const ScreenerCoreSchema = z.looseObject({

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { downloadCsvWithMeta } from '@shared/lib/tableExport';
 import { useScreenerCore, type ScreenerCoreRow } from '@features/fundamental/api/useScreenerCore';
 import { FundamentalPage } from '@features/fundamental/routes/FundamentalPage';
+import { resetExcludeAxes } from '@features/fundamental/lib/exclusionFilter';
 
 vi.mock('@features/fundamental/api/useScreenerCore', () => ({
   useScreenerCore: vi.fn(),
@@ -41,6 +42,7 @@ const rows: ScreenerCoreRow[] = [
 ];
 
 beforeEach(() => {
+  resetExcludeAxes();
   navigate.mockReset();
   mockedUseScreener.mockReturnValue({
     data: { status: 'success', count: 2, data: rows, as_of: '2026-11-03' },

@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { faNum, fmtInt } from '@shared/lib/fa';
 import { downloadCsvWithMeta } from '@shared/lib/tableExport';
 import type { ScreenerCoreRow } from '../api/useScreenerCore';
+import { EXCLUDE_LABEL, applyExcludeFilter, useExcludeAxes } from '../lib/exclusionFilter';
 
 type ChipState = 'pass' | 'fail' | 'na' | 'unknown';
 
@@ -44,6 +45,8 @@ interface Props {
 export function FundamentalScreenTable({ rows, onSelect, asOf, settingsSlot }: Props) {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState('');
+  const excludeAxes = useExcludeAxes();
+  const excluded = useMemo(() => applyExcludeFilter(rows, excludeAxes), [rows, excludeAxes]);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const sectors = useMemo(() => [...new Set(
@@ -52,14 +55,14 @@ export function FundamentalScreenTable({ rows, onSelect, asOf, settingsSlot }: P
 
   const filtered = useMemo(() => {
     const q = query.trim();
-    return rows
+    return excluded.rows
       .filter((row) => (sector ? row.sector_name === sector : true))
       .filter((row) => (q
         ? row.symbol.includes(q) || (row.name ?? '').includes(q)
         : true))
       .slice()
       .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-  }, [rows, query, sector]);
+  }, [excluded.rows, query, sector]);
 
   const virtual = filtered.length > 200;
   const virtualizer = useVirtualizer({
@@ -166,6 +169,15 @@ export function FundamentalScreenTable({ rows, onSelect, asOf, settingsSlot }: P
         <span data-testid="fundamental-count" className="num t-9 text-text-3">
           {fmtInt(filtered.length)} از {fmtInt(rows.length)}
         </span>
+        {excluded.hidden > 0 ? (
+          <span
+            data-testid="fundamental-hidden-count"
+            title={excludeAxes.map((axis) => EXCLUDE_LABEL[axis]).join(' · ')}
+            className="num t-9 text-warn"
+          >
+            {fmtInt(excluded.hidden)} حذف‌شده
+          </span>
+        ) : null}
         <span data-testid="fundamental-legend" className="flex flex-wrap items-center gap-1 t-85 text-text-3">
           {(['pass', 'fail', 'na', 'unknown'] as const).map((state) => (
             <span key={state} className="flex items-center gap-0.5">
