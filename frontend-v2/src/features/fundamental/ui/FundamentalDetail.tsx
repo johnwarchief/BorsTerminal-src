@@ -5,7 +5,7 @@ import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard, type FtsCard } from '../api/useFtsCard';
 import { useSectorPe } from '../api/useSectorPe';
 import { isBankCard, isHoldingCard } from '../lib/assetScope';
-import { AXES, statusFa, verdictFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
+import { statusFa, verdictFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { useFundamentalPrefs } from '../stores/prefs';
 import { CodalHealthStrip } from './CodalHealthStrip';
@@ -49,16 +49,15 @@ function scoreLabel(score: number | null | undefined): string {
   return score == null ? '—' : toFaDigits(score);
 }
 
-/** روبانِ امتیاز: شمارشِ همان پنج وضعیتِ `cardStatus`، بدونِ منطقِ دوم. */
+/**
+ * روبانِ امتیاز: شمارشِ همان پنج وضعیتِ `cardStatus`، بدونِ منطقِ دوم.
+ * R57: هیچ برچسبِ «قوی‌ترین/ضعیف‌ترین» ساخته نمی‌شود؛ فقط شمارش‌ها، حکم و امتیاز.
+ */
 function ScoreRibbon({ card }: { card: FtsCard }) {
   const statuses = AXIS_ORDER.map((axis) => cardStatus(card, axis));
   const passed = statuses.filter((status) => status === 'pass').length;
   const failed = statuses.filter((status) => status === 'fail').length;
   const abstained = statuses.filter((status) => status === 'na' || status === 'unknown').length;
-  const strongest = AXES.find((axis) => cardStatus(card, axis.key) === 'pass') ?? null;
-  const weakest = AXES.find((axis) => cardStatus(card, axis.key) === 'fail')
-    ?? AXES.find((axis) => cardStatus(card, axis.key) === 'unknown' || cardStatus(card, axis.key) === 'na')
-    ?? null;
   return (
     <div
       data-testid="fundamental-score-ribbon"
@@ -77,8 +76,6 @@ function ScoreRibbon({ card }: { card: FtsCard }) {
       </span>
       {failed ? <span className="text-[var(--fd-down)]">{toFaDigits(failed)} {statusFa('fail')}</span> : null}
       {abstained ? <span>{toFaDigits(abstained)} {statusFa('na')}/{statusFa('unknown')}</span> : null}
-      {strongest ? <span>قوی‌ترین: {strongest.short}</span> : null}
-      {weakest ? <span>ضعیف‌ترین: {weakest.short}</span> : null}
       <span className="ms-auto">{verdictFa(card.verdict)} · امتیاز {scoreLabel(card.score)}/۵</span>
     </div>
   );

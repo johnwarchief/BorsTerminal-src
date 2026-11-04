@@ -112,7 +112,11 @@ describe('fundamental cockpit', () => {
     expect(screen.getByTestId('panel-industry')).toBeTruthy();
     expect(screen.getByTestId('panel-history')).toBeTruthy();
     expect(screen.getByTestId('panel-evidence')).toBeTruthy();
-    expect(screen.getByTestId('fundamental-score-ribbon').textContent).toContain('۳ از ۵');
+    const ribbon = screen.getByTestId('fundamental-score-ribbon');
+    expect(ribbon.textContent).toContain('۳ از ۵');
+    // R57: روبان هیچ رتبه‌بندی ساختگی از محورها اعلام نمی‌کند.
+    expect(ribbon.textContent).not.toContain('قوی‌ترین');
+    expect(ribbon.textContent).not.toContain('ضعیف‌ترین');
     const freshness = screen.getByTestId('fundamental-freshness').textContent ?? '';
     expect(freshness).toContain('دادهٔ بنیادی تا');
     expect(freshness).not.toContain('2026-07-09');
@@ -157,5 +161,34 @@ describe('fundamental cockpit', () => {
     const epsQuintet = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="eps"]');
     expect(epsQuintet?.textContent).toContain('—/۳');
     expect(epsQuintet?.textContent).not.toContain('۰/۳');
+  });
+
+  it('renders history dates in Persian digits (R58)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const history = screen.getByTestId('panel-history');
+    expect(history.textContent).toContain('۱۴۰۴/۱۲/۲۹');
+    expect(history.textContent).not.toContain('1404/12/29');
+  });
+
+  it('shows بی‌نظر for an axis whose pass key is absent but whose indicator is na (R60)', () => {
+    mockCard({
+      passes: { '1_growth': false, '2_eps_trend': true, '3_gross_margin': false, '5_industry': true },
+      indicators: { ...baseIndicators, '4': { ...baseIndicators['4'], na: true } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const salesTile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="sales"]');
+    expect(salesTile?.textContent).toContain('بی‌نظر');
+    expect(salesTile?.textContent).not.toContain('رد');
+  });
+
+  it('shows نامشخص — never رد — when the pass key is absent and no na flag exists (R60)', () => {
+    mockCard({
+      passes: { '1_growth': false, '2_eps_trend': true, '3_gross_margin': false, '5_industry': true },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const salesTile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="sales"]');
+    expect(salesTile?.textContent).toContain('نامشخص');
+    expect(salesTile?.textContent).not.toContain('رد');
+    expect(screen.getByTestId('panel-sales').textContent).toContain('نامشخص');
   });
 });

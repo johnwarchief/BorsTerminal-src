@@ -17,9 +17,9 @@ export function HistoryPanel({ card }: { card: FtsCard }) {
       status={status}
       value={history.length ? `${toFaDigits(history.length)} گزارش` : '—'}
       threshold="EPS"
-      chart={<HistoryBars values={history.map((row) => row.eps ?? null)} labels={history.map((row) => row.period_end ?? '')} status={status} />}
+      chart={<HistoryBars values={history.map((row) => row.eps ?? null)} labels={history.map((row) => (row.period_end ? toFaDigits(row.period_end) : ''))} status={status} />}
       rows={[
-        ['آخرین دوره', last?.period_end ?? '—'],
+        ['آخرین دوره', last?.period_end ? toFaDigits(last.period_end) : '—'],
         ['EPS آخرین دوره', faFixed(last?.eps, 0)],
         ['درآمد آخرین دوره', faFixed(last?.revenue, 1)],
         ['تلفیقی', history.some((row) => row.consolidated) ? 'دارد' : '—'],
