@@ -102,6 +102,7 @@ type Notifications interface {
 type Sync interface {
 	SyncStatus(http.ResponseWriter, *http.Request)
 	CodalDBStatus(http.ResponseWriter, *http.Request)
+	CodalPipeline(http.ResponseWriter, *http.Request)
 	Diagnose(http.ResponseWriter, *http.Request)
 	SyncMarket(http.ResponseWriter, *http.Request)
 	SyncCodal(http.ResponseWriter, *http.Request)
@@ -244,6 +245,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 	if srv.Sync != nil {
 		mux.HandleFunc("GET /api/sync/status", srv.Sync.SyncStatus)
 		mux.HandleFunc("GET /api/sync/codal/db-status", srv.Sync.CodalDBStatus)
+		mux.HandleFunc("GET /api/sync/codal/pipeline", srv.Sync.CodalPipeline)
 		mux.HandleFunc("GET /api/sync/diagnose", srv.Sync.Diagnose)
 		mux.HandleFunc("POST /api/sync/market", srv.Sync.SyncMarket)
 		mux.HandleFunc("POST /api/sync/codal", srv.Sync.SyncCodal)

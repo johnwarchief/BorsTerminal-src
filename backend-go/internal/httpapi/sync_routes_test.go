@@ -22,14 +22,19 @@ func (f *fakeSync) hit(name string, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (f *fakeSync) SyncStatus(w http.ResponseWriter, _ *http.Request)          { f.hit("sync-status", w) }
-func (f *fakeSync) CodalDBStatus(w http.ResponseWriter, _ *http.Request)       { f.hit("codal-db-status", w) }
-func (f *fakeSync) Diagnose(w http.ResponseWriter, _ *http.Request)            { f.hit("diagnose", w) }
-func (f *fakeSync) SyncMarket(w http.ResponseWriter, _ *http.Request)          { f.hit("sync-market", w) }
-func (f *fakeSync) SyncCodal(w http.ResponseWriter, _ *http.Request)           { f.hit("sync-codal", w) }
-func (f *fakeSync) SyncCodalFTSRefresh(w http.ResponseWriter, _ *http.Request) { f.hit("sync-fts-refresh", w) }
-func (f *fakeSync) SyncCodalDBDownload(w http.ResponseWriter, _ *http.Request) { f.hit("sync-db-download", w) }
-func (f *fakeSync) CodalControl(w http.ResponseWriter, _ *http.Request)        { f.hit("codal-control", w) }
+func (f *fakeSync) SyncStatus(w http.ResponseWriter, _ *http.Request)    { f.hit("sync-status", w) }
+func (f *fakeSync) CodalDBStatus(w http.ResponseWriter, _ *http.Request) { f.hit("codal-db-status", w) }
+func (f *fakeSync) CodalPipeline(w http.ResponseWriter, _ *http.Request) { f.hit("codal-pipeline", w) }
+func (f *fakeSync) Diagnose(w http.ResponseWriter, _ *http.Request)      { f.hit("diagnose", w) }
+func (f *fakeSync) SyncMarket(w http.ResponseWriter, _ *http.Request)    { f.hit("sync-market", w) }
+func (f *fakeSync) SyncCodal(w http.ResponseWriter, _ *http.Request)     { f.hit("sync-codal", w) }
+func (f *fakeSync) SyncCodalFTSRefresh(w http.ResponseWriter, _ *http.Request) {
+	f.hit("sync-fts-refresh", w)
+}
+func (f *fakeSync) SyncCodalDBDownload(w http.ResponseWriter, _ *http.Request) {
+	f.hit("sync-db-download", w)
+}
+func (f *fakeSync) CodalControl(w http.ResponseWriter, _ *http.Request) { f.hit("codal-control", w) }
 
 func newSyncSrv(t *testing.T, sy Sync) http.Handler {
 	t.Helper()
@@ -49,6 +54,7 @@ func TestSyncRoutesReachHandlers(t *testing.T) {
 	}{
 		{"GET", "/api/sync/status", "sync-status", ""},
 		{"GET", "/api/sync/codal/db-status", "codal-db-status", ""},
+		{"GET", "/api/sync/codal/pipeline", "codal-pipeline", ""},
 		{"GET", "/api/sync/diagnose", "diagnose", ""},
 		{"POST", "/api/sync/market", "sync-market", ""},
 		{"POST", "/api/sync/codal", "sync-codal", ""},
