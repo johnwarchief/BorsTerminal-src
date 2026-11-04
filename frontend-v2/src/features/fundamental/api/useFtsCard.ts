@@ -53,6 +53,26 @@ const FreshnessSchema = z.looseObject({
   axes: z.record(z.string(), FreshnessAxisSchema).nullish(),
 });
 
+const DetailSubcheckSchema = z.looseObject({
+  key: Str,
+  label: Str,
+  state: Str,
+  value: Str,
+  threshold: Str,
+  detail: Str,
+  verified: Bool,
+  confidence: Str,
+});
+
+const DetailSchema = z.looseObject({
+  title: Str,
+  formula: Str,
+  source: Str,
+  calc: Str,
+  what: Str,
+  subchecks: z.array(DetailSubcheckSchema).nullish(),
+});
+
 export const FtsCardSchema = z.looseObject({
   status: z.literal('success'),
   symbol: z.string(),
@@ -60,6 +80,7 @@ export const FtsCardSchema = z.looseObject({
   score: Num,
   verdict: Str,
   applicable: Bool,
+  details: z.record(z.string(), DetailSchema).nullish(),
   freshness: FreshnessSchema.nullish(),
   message: Str,
   passes: z.record(z.string(), Bool).nullish(),
@@ -73,6 +94,8 @@ export const FtsCardSchema = z.looseObject({
 });
 
 export type FtsCard = z.infer<typeof FtsCardSchema>;
+export type FtsDetail = z.infer<typeof DetailSchema>;
+export type FtsDetailSubcheck = z.infer<typeof DetailSubcheckSchema>;
 
 export function useFtsCard(symbol: string | null | undefined) {
   return useQuery<FtsCard>({

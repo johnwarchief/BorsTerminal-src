@@ -1,6 +1,13 @@
+import { faNum } from '@shared/lib/fa';
+import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard } from '../api/useFtsCard';
+import { useQuarters } from '../api/useQuarters';
+import { useSectorPe } from '../api/useSectorPe';
+import { AxisDrilldown } from './AxisDrilldown';
+import { CodalHealthStrip } from './CodalHealthStrip';
 import { FundamentalCards } from './FundamentalCards';
 import { FundamentalSummary } from './FundamentalSummary';
+import { QuarterlyTrend } from './QuarterlyTrend';
 
 interface Props {
   symbol: string;
@@ -9,6 +16,9 @@ interface Props {
 
 export function FundamentalDetail({ symbol, onBack }: Props) {
   const query = useFtsCard(symbol);
+  const quarters = useQuarters(symbol);
+  const sectorPe = useSectorPe(symbol);
+  const health = useCodalHealth();
   const card = query.data;
 
   return (
@@ -35,9 +45,44 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
           کارتِ بنیادیِ این نماد در دسترس نیست؛ جدول و بقیهٔ بخش‌ها دست‌نخورده‌اند.
         </p>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
           <FundamentalSummary symbol={symbol} />
           <FundamentalCards symbol={symbol} />
+
+          <AxisDrilldown card={card} />
+
+          <div className="grid gap-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(220px,1fr)]">
+            <section data-testid="quarterly-panel" className="rounded-[var(--radius-sm)] border border-line bg-panel p-2">
+              <h3 className="mb-1 t-10 font-bold text-text-2">روند فصلی</h3>
+              <QuarterlyTrend
+                quarters={quarters.data?.quarters ?? []}
+                loading={quarters.isLoading}
+                error={quarters.isError}
+              />
+            </section>
+
+            <section data-testid="sector-pe-panel" className="rounded-[var(--radius-sm)] border border-line bg-panel p-2 t-9">
+              <h3 className="mb-1 t-10 font-bold text-text-2">P/E صنعت</h3>
+              <div className="flex flex-wrap items-baseline gap-1.5">
+                <span className="text-text-3">این نماد</span>
+                <b data-testid="sector-pe" className="num text-text">
+                  {sectorPe.data?.pe != null ? faNum(sectorPe.data.pe, 1) : '—'}
+                </b>
+                <span className="text-text-3">میانهٔ صنعت</span>
+                <b data-testid="sector-pe-median" className="num text-text">
+                  {sectorPe.data?.median != null ? faNum(sectorPe.data.median, 1) : '—'}
+                </b>
+              </div>
+              <p className="mt-1 text-text-3">
+                {sectorPe.data?.sector ?? 'صنعت نامشخص'}
+                {sectorPe.data?.peers != null ? ` · ${faNum(sectorPe.data.peers)} نماد با P/E مثبت` : ''}
+              </p>
+            </section>
+          </div>
+
+          <section className="rounded-[var(--radius-sm)] border border-line bg-panel px-2 py-1.5">
+            <CodalHealthStrip health={health.data} loading={health.isLoading} />
+          </section>
         </div>
       )}
     </section>
