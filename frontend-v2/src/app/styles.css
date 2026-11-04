@@ -145,10 +145,11 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-history-bar.is-unknown { background: var(--fd-warn); }
 /* R-P1-8: تُنِ «شاهد» خنثی است؛ نه رنگِ قبول و نه رد. */
 .fundamental-surface .fd-history-bar.is-evidence { background: var(--fd-text-3); }
-/* R-P1-3/R-P1-5: میله‌های رشد دوره‌ای EPS؛ مثبت/منفی و خالیِ بی‌رنگ. */
+/* R-P1-3/R-P1-5: میله‌های رشد دوره‌ای EPS؛ مثبت/منفی، صفرِ بی‌تغییر و خالیِ بی‌رنگ. */
 .fundamental-surface .fd-delta-bar { display: block; width: 100%; border-radius: 1px 1px 0 0; }
 .fundamental-surface .fd-delta-bar.is-up { background: var(--fd-up); }
 .fundamental-surface .fd-delta-bar.is-down { background: var(--fd-down); }
+.fundamental-surface .fd-delta-bar.is-flat { background: var(--fd-flat); }
 .fundamental-surface .fd-delta-bar.is-empty { background: transparent; }
 .fundamental-surface .fd-th-line { stroke: var(--fd-accent); stroke-width: 1; stroke-dasharray: 2 2; opacity: .9; }
 .fundamental-surface .fd-chart-tick { stroke: var(--fd-line-strong); stroke-width: .8; }

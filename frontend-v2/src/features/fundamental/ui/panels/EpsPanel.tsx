@@ -59,6 +59,8 @@ export function EpsPanel({ card }: { card: FtsCard }) {
   if (reason) rows.push(['دلیل', reason]);
   // R-P1-3: رشدِ هر دوره — از پاسخِ بک‌اند اگر هم‌طول باشد، وگرنه از سری؛ دورهٔ اول رشد ندارد.
   const changes = epsChanges(series, eps?.eps_yoy_pct);
+  // R-P1-3: سریِ همه‌تهی نمودارِ برچسب‌دار نمی‌سازد؛ وضعیتِ خالیِ صادق می‌آید.
+  const hasSeries = last != null;
   // R-P1-3: برچسبِ دوره از period_ends با ارقامِ فارسی؛ نبودش «دوره ۱..».
   const rawPeriods = eps?.period_ends ?? [];
   const labels = series.map((_, index) => {
@@ -79,9 +81,13 @@ export function EpsPanel({ card }: { card: FtsCard }) {
       details={card.details?.['۲']}
     >
       <div className="flex flex-col gap-1">
-        <div className="h-[30px]" data-testid="eps-growth-chart">
-          <DeltaBars values={changes} labels={labels} />
-        </div>
+        {hasSeries ? (
+          <div className="h-[30px]" data-testid="eps-growth-chart">
+            <DeltaBars values={changes} labels={labels} />
+          </div>
+        ) : (
+          <p className="text-[9px] text-[var(--fd-text-3)]" data-testid="eps-growth-empty">داده‌ای ثبت نشده</p>
+        )}
         <div className="grid grid-cols-1 gap-0.5">
           {series.map((value, index) => {
             const change = changes[index] ?? null;
@@ -92,18 +98,20 @@ export function EpsPanel({ card }: { card: FtsCard }) {
                 : change > 0
                   ? 'text-[var(--fd-up)]'
                   : 'text-[var(--fd-flat)]';
+            const deltaText = index === 0 ? '—' : epsDeltaText(series[index - 1], value);
+            const changeText = epsChangeText(change);
             return (
               <div
                 key={index}
                 data-testid={`eps-period-${index}`}
+                role="group"
+                aria-label={`${labels[index]}، EPS ${faInt(value)}، تغییر ${index === 0 ? 'بدون دورهٔ قبل' : deltaText}، رشد ${changeText}`}
                 className="flex items-center justify-between gap-2 border-b border-[var(--fd-line)] py-0.5 text-[9.5px]"
               >
                 <span className="text-[var(--fd-text-3)]">{labels[index]}</span>
                 <b className="text-[var(--fd-text)]">{faInt(value)}</b>
-                <span className="text-[var(--fd-text-2)]">
-                  {index === 0 ? '—' : epsDeltaText(series[index - 1], value)}
-                </span>
-                <span className={changeTone}>{epsChangeText(change)}</span>
+                <span className="text-[var(--fd-text-2)]">{deltaText}</span>
+                <span className={changeTone}>{changeText}</span>
               </div>
             );
           })}

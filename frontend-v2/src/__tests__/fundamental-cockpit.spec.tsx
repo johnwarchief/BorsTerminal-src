@@ -293,6 +293,27 @@ describe('fundamental cockpit', () => {
     expect(percent?.className).toContain('--fd-down');
   });
 
+  it('shows an honest empty state when every EPS value is absent (R-P1-3)', () => {
+    mockCard({
+      indicators: { ...baseIndicators, '2': { ...baseIndicators['2'], eps_series: [null, null] } },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const panel = screen.getByTestId('panel-eps');
+    expect(screen.queryByTestId('eps-growth-chart')).toBeNull();
+    expect(panel.textContent).toContain('داده‌ای ثبت نشده');
+  });
+
+  it('summarizes every EPS period row in a Persian aria-label (R-P1-5)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const label = screen.getByTestId('eps-period-1').getAttribute('aria-label') ?? '';
+    expect(label).toContain('دوره ۲');
+    expect(label).toContain('EPS ۱۶۱۵');
+    expect(label).toContain('+۴۹۶');
+    expect(label).toContain('+۴۴٫۳٪');
+    // متنِ ردیف هم دیده می‌شود، نه فقط aria-label.
+    expect(screen.getByTestId('eps-period-1').textContent).toContain('۱۶۱۵');
+  });
+
   it('does not turn missing EPS years into ۰/۳ (R30/R50)', () => {
     mockCard({
       indicators: { ...baseIndicators, '2': { ...baseIndicators['2'], years_available: null } },

@@ -194,7 +194,8 @@ export function epsChanges(
 ): (number | null)[] {
   if (!Array.isArray(series)) return [];
   if (Array.isArray(fromBackend) && fromBackend.length === series.length) {
-    return fromBackend.map((value) => value == null || !Number.isFinite(Number(value)) ? null : Number(value));
+    // دورهٔ اول حتی در پاسخِ بک‌اند هم رشد ندارد؛ مقدارِ نامعلوم null می‌ماند.
+    return fromBackend.map((value, index) => index === 0 || value == null || !Number.isFinite(Number(value)) ? null : Number(value));
   }
   return series.map((value, index) => {
     if (index === 0) return null;
@@ -212,9 +213,10 @@ export function epsChangeText(pct: number | null | undefined): string {
 /** R-P1-3: دلتای دوره — یک علامتِ «+»/«−» و قدرِ مطلق؛ هرگز «+-» یا صفرِ ساختگی. */
 export function epsDeltaText(prev: number | null | undefined, cur: number | null | undefined): string {
   if (prev == null || cur == null || !Number.isFinite(prev) || !Number.isFinite(cur)) return '—';
-  const delta = cur - prev;
+  // اول گرد می‌کنیم، بعد علامت می‌گذاریم؛ اختلافِ زیرِ نیم «۰» بی‌علامت است.
+  const delta = Math.round(cur - prev);
   const sign = delta > 0 ? '+' : delta < 0 ? '−' : '';
-  return `${sign}${toFaDigits(Math.abs(Math.round(delta)))}`;
+  return `${sign}${toFaDigits(Math.abs(delta))}`;
 }
 
 export function verdictFa(verdict: string | null | undefined): string {

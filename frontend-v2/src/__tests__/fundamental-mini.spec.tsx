@@ -70,6 +70,13 @@ describe('mini charts', () => {
     expect(empty).toBeTruthy();
     expect(empty?.style.height).toBe('0%');
   });
+  it('tones a zero delta as flat with no growth bar (R-P1-3)', () => {
+    render(<DeltaBars values={[0, 12.5]} labels={['۱۴۰۳', '۱۴۰۴']} />);
+    expect(document.querySelectorAll('.fd-delta-bar.is-flat').length).toBe(1);
+    expect(document.querySelectorAll('.fd-delta-bar.is-up').length).toBe(1);
+    const flat = document.querySelector('.fd-delta-bar.is-flat') as HTMLElement;
+    expect(flat.style.height).toBe('0%');
+  });
   it('renders an empty state when every history value is absent (R-P1-8)', () => {
     render(<HistoryBars values={[null, null]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);
     expect(screen.queryByRole('img')).toBeNull();

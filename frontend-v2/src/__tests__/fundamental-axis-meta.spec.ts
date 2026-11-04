@@ -149,4 +149,15 @@ describe('axis meta', () => {
     expect(computed[0]).toBeNull();
     expect(computed[1]).toBeCloseTo(44.325, 3);
   });
+  it('rounds EPS deltas before choosing the sign (R-P1-3)', () => {
+    // زیرِ نیم پس از گردکردن صفر است؛ «+۰»/«−۰» ساخته نمی‌شود.
+    expect(epsDeltaText(100, 100.4)).toBe('۰');
+    expect(epsDeltaText(100.4, 100)).toBe('۰');
+    expect(epsDeltaText(100, 100.6)).toBe('+۱');
+    expect(epsDeltaText(100.6, 100)).toBe('−۱');
+  });
+  it('keeps the first backend EPS period null even when the array starts with a value (R-P1-3)', () => {
+    expect(epsChanges([1, 2, 3], [10, 20, 30])).toEqual([null, 20, 30]);
+    expect(epsChanges([1, 2], [0, null])).toEqual([null, null]);
+  });
 });
