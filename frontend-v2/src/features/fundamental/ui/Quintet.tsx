@@ -80,7 +80,7 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
   ];
 
   return (
-    <div data-testid="fundamental-quintet" className="grid grid-cols-5 gap-2 max-[1050px]:grid-cols-2">
+    <div data-testid="fundamental-quintet" className="fd-in grid grid-cols-5 gap-2 max-[1050px]:grid-cols-2">
       {items.map((item) => {
         const meta = AXES.find((axis) => axis.key === item.axis)!;
         return (

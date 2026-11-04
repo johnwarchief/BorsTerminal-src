@@ -162,6 +162,81 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-glyph span.is-na { background: var(--fd-flat); }
 .fundamental-surface .fd-glyph span.is-unknown { background: var(--fd-warn); }
 
+/* ===== حرکتِ مهارشده و فوکوسِ سطح بنیادی (R73/R74/R76) =====
+   فقط opacity/transform؛ هیچ height/top/margin/left انیمیت نمی‌شود تا layout
+   جدولِ ۷۸۳ ردیفی تکان نخورد. ورودِ ردیف‌ها عمداً بی‌انیمیشن است. */
+.fundamental-surface .fd-in {
+  animation: fdIn 220ms ease-out both;
+}
+.fundamental-surface .fd-in:nth-child(2) { animation-delay: 40ms; }
+.fundamental-surface .fd-in:nth-child(3) { animation-delay: 80ms; }
+.fundamental-surface .fd-in:nth-child(4) { animation-delay: 120ms; }
+.fundamental-surface .fd-in:nth-child(5) { animation-delay: 160ms; }
+.fundamental-surface .fd-in:nth-child(6) { animation-delay: 200ms; }
+
+@keyframes fdIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* نمودارهای نمای نماد: کشیده‌شدنِ افقی از لبهٔ راست (RTL) — بدون انیمیشنِ loop. */
+.fundamental-surface .fd-draw {
+  animation: fdDraw 450ms ease-out both;
+  transform-origin: right center;
+}
+
+@keyframes fdDraw {
+  from {
+    opacity: 0;
+    transform: scaleX(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* R74: تغییر density/سطح فقط crossfade می‌شود؛ ردیف remount یا ارتفاعِ
+   انیمیشنی ندارد. */
+.fundamental-surface .fd-axis-chart {
+  transition: opacity 160ms ease-out;
+}
+
+/* R76: فوکوسِ ردیف و ریشهٔ پنل با توکنِ سطح، فقط برای :focus-visible. */
+.fundamental-surface .fd-row:focus-visible,
+.fundamental-surface .fd-panel:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: -2px;
+}
+
+/* R76: زیر reduced-motion، fd-in/fd-draw فقط محوِ کوتاهِ opacity می‌شوند؛
+   transform و stagger حذف می‌شوند. قاعدهٔ سراسریِ بالا هم مدت‌ها را کوتاه می‌کند. */
+@media (prefers-reduced-motion: reduce) {
+  .fundamental-surface .fd-in,
+  .fundamental-surface .fd-draw {
+    animation: fdFadeOnly 120ms ease-out both;
+    animation-delay: 0ms !important;
+  }
+  .fundamental-surface .fd-axis-chart {
+    transition: none;
+  }
+}
+
+@keyframes fdFadeOnly {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ===== geometry tokens ===== */
 :root {
   --rail-w: 208px;

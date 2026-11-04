@@ -5,7 +5,7 @@ import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard, type FtsCard } from '../api/useFtsCard';
 import { useSectorPe } from '../api/useSectorPe';
 import { isBankCard, isHoldingCard } from '../lib/assetScope';
-import { statusFa, verdictFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
+import { statusFa, verdictFa, AXES, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { useFundamentalPrefs } from '../stores/prefs';
 import { CodalHealthStrip } from './CodalHealthStrip';
@@ -52,6 +52,7 @@ function scoreLabel(score: number | null | undefined): string {
 /**
  * روبانِ امتیاز: شمارشِ همان پنج وضعیتِ `cardStatus`، بدونِ منطقِ دوم.
  * R57: هیچ برچسبِ «قوی‌ترین/ضعیف‌ترین» ساخته نمی‌شود؛ فقط شمارش‌ها، حکم و امتیاز.
+ * R72: هر میله data-status + title/aria-label فارسی دارد و پنهان از AT نیست.
  */
 function ScoreRibbon({ card }: { card: FtsCard }) {
   const statuses = AXIS_ORDER.map((axis) => cardStatus(card, axis));
@@ -61,18 +62,25 @@ function ScoreRibbon({ card }: { card: FtsCard }) {
   return (
     <div
       data-testid="fundamental-score-ribbon"
-      className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-2.5 py-1.5 text-[10px] text-[var(--fd-text-3)]"
+      className="fd-in flex flex-wrap items-center gap-2 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-2.5 py-1.5 text-[10px] text-[var(--fd-text-3)]"
     >
       <strong className="text-[var(--fd-text)]">{toFaDigits(passed)} از ۵ محور {statusFa('pass')}</strong>
-      <span className="flex gap-1" aria-hidden="true">
-        {statuses.map((status, index) => (
-          <span
-            key={AXIS_ORDER[index]}
-            className={`h-1.5 w-6 rounded-full fd-status--${status}`}
-            style={{ background: STATUS_COLOR[status] }}
-            title={statusFa(status)}
-          />
-        ))}
+      <span className="flex gap-1">
+        {statuses.map((status, index) => {
+          const meta = AXES.find((item) => item.key === AXIS_ORDER[index])!;
+          const label = `${meta.label} — ${statusFa(status)}`;
+          return (
+            <span
+              key={AXIS_ORDER[index]}
+              role="img"
+              data-status={status}
+              title={label}
+              aria-label={label}
+              className="h-1.5 w-6 rounded-full"
+              style={{ background: STATUS_COLOR[status] }}
+            />
+          );
+        })}
       </span>
       {failed ? <span className="text-[var(--fd-down)]">{toFaDigits(failed)} {statusFa('fail')}</span> : null}
       {abstained ? <span>{toFaDigits(abstained)} {statusFa('na')}/{statusFa('unknown')}</span> : null}
@@ -118,7 +126,15 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
   const notApplicable = card.applicable === false;
   const focusAxis = (axis: string) => {
     const panel = document.getElementById(`panel-${axis}`);
-    panel?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    if (!panel) return;
+    // R75: در jsdom متدِ scrollIntoView نیست؛ صدا زدنِ اختیاری امن است.
+    // R76: با کاهش حرکت، پرش به‌جای اسکرولِ نرم.
+    const reduceMotion = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panel.scrollIntoView?.({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+    // پنل‌ها tabIndex={-1} دارند؛ فوکوس بدون اسکرولِ دوباره منتقل می‌شود.
+    panel.focus({ preventScroll: true });
   };
 
   return (
@@ -166,18 +182,20 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
           <Quintet card={card} onFocus={focusAxis} />
           <ScoreRibbon card={card} />
+          {/* R77: fd-in روی فرزندانِ شبکه است تا nth-child stagger کار کند؛
+              ردیف‌های جدول و AxisCell هرگز انیمیشنِ ورود نمی‌گیرند. */}
           <div className="grid grid-cols-12 gap-2">
-            <div className="col-span-7 max-[1050px]:col-span-12"><GrowthPanel card={card} /></div>
-            <div className="col-span-5 max-[1050px]:col-span-12"><EpsPanel card={card} /></div>
-            <div className="col-span-5 max-[1050px]:col-span-12"><MarginPanel card={card} /></div>
-            <div className="col-span-7 max-[1050px]:col-span-12"><SalesPanel card={card} /></div>
-            <div className="col-span-7 max-[1050px]:col-span-12">
+            <div className="fd-in col-span-7 max-[1050px]:col-span-12"><GrowthPanel card={card} /></div>
+            <div className="fd-in col-span-5 max-[1050px]:col-span-12"><EpsPanel card={card} /></div>
+            <div className="fd-in col-span-5 max-[1050px]:col-span-12"><MarginPanel card={card} /></div>
+            <div className="fd-in col-span-7 max-[1050px]:col-span-12"><SalesPanel card={card} /></div>
+            <div className="fd-in col-span-7 max-[1050px]:col-span-12">
               {holding ? <HoldingNavPanel bankLike={bank} /> : <IndustryPanel card={card} sectorPe={sectorPe.data} />}
             </div>
-            <div className="col-span-5 max-[1050px]:col-span-12"><HistoryPanel card={card} /></div>
-            <div className="col-span-12"><EvidencePanel card={card} /></div>
-            <div className="col-span-12"><CorporateCalendar symbol={symbol} /></div>
-            <div className="col-span-12"><CodalHealthStrip health={health.data} loading={health.isLoading} /></div>
+            <div className="fd-in col-span-5 max-[1050px]:col-span-12"><HistoryPanel card={card} /></div>
+            <div className="fd-in col-span-12"><EvidencePanel card={card} /></div>
+            <div className="fd-in col-span-12"><CorporateCalendar symbol={symbol} /></div>
+            <div className="fd-in col-span-12"><CodalHealthStrip health={health.data} loading={health.isLoading} /></div>
           </div>
         </div>
       )}

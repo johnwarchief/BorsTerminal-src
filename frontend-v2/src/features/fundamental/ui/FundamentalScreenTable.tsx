@@ -178,7 +178,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           onSelect(row.symbol);
         }
       }}
-      className="fd-row grid cursor-pointer items-center border-b border-[var(--fd-line)] hover:bg-[var(--fd-panel-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fd-accent)]"
+      className="fd-row grid cursor-pointer items-center border-b border-[var(--fd-line)] hover:bg-[var(--fd-panel-2)]"
       style={{ gridTemplateColumns: COLUMNS, minHeight: density === 'comfortable' ? 88 : 38 }}
     >
       <div role="cell" className="flex h-full items-center justify-center py-1">
