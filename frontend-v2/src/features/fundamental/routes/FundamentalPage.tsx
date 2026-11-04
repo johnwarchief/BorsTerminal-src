@@ -36,6 +36,7 @@ export function FundamentalPage() {
       ) : (
         <FundamentalScreenTable
           rows={screener.data.data}
+          asOf={screener.data.as_of}
           onSelect={(next) => navigate(`/fundamental/${next}`)}
         />
       )}

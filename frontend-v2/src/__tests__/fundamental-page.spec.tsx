@@ -1,12 +1,17 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { downloadCsvWithMeta } from '@shared/lib/tableExport';
 import { useScreenerCore, type ScreenerCoreRow } from '@features/fundamental/api/useScreenerCore';
 import { FundamentalPage } from '@features/fundamental/routes/FundamentalPage';
 
 vi.mock('@features/fundamental/api/useScreenerCore', () => ({
   useScreenerCore: vi.fn(),
 }));
+vi.mock('@shared/lib/tableExport', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@shared/lib/tableExport')>();
+  return { ...actual, downloadCsvWithMeta: vi.fn() };
+});
 
 const navigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -15,6 +20,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 const mockedUseScreener = vi.mocked(useScreenerCore);
+const mockedDownload = vi.mocked(downloadCsvWithMeta);
 
 const rows: ScreenerCoreRow[] = [
   {
@@ -76,6 +82,18 @@ describe('fundamental page', () => {
     const unknown = screen.getByTestId('fundamental-chip-خساپا-3');
     expect(unknown.getAttribute('data-state')).toBe('unknown');
     expect(unknown.textContent).toContain('—');
+  });
+
+  it('exports only filtered rows with the session date', () => {
+    render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
+    fireEvent.change(screen.getByTestId('fundamental-search'), { target: { value: 'خساپا' } });
+    fireEvent.click(screen.getByTestId('fundamental-export'));
+    expect(mockedDownload).toHaveBeenCalledTimes(1);
+    const [base, table, meta] = mockedDownload.mock.calls[0]!;
+    expect(base).toBe('غربالگری-بنیادی');
+    expect(table.rows).toHaveLength(1);
+    expect(table.rows[0]![0]).toBe('خساپا');
+    expect(meta).toContainEqual(['روز تابلو', '2026-11-03']);
   });
 
   it('navigates to the symbol route on row click', () => {

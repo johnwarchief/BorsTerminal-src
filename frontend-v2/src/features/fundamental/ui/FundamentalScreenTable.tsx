@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { faNum, fmtInt } from '@shared/lib/fa';
+import { downloadCsvWithMeta } from '@shared/lib/tableExport';
 import type { ScreenerCoreRow } from '../api/useScreenerCore';
 
 type ChipState = 'pass' | 'fail' | 'na' | 'unknown';
@@ -36,9 +37,10 @@ function chipOf(row: ScreenerCoreRow, index: number): { state: ChipState; title:
 interface Props {
   rows: readonly ScreenerCoreRow[];
   onSelect: (symbol: string) => void;
+  asOf?: string | null;
 }
 
-export function FundamentalScreenTable({ rows, onSelect }: Props) {
+export function FundamentalScreenTable({ rows, onSelect, asOf }: Props) {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState('');
   const parentRef = useRef<HTMLDivElement>(null);
@@ -68,6 +70,23 @@ export function FundamentalScreenTable({ rows, onSelect }: Props) {
   });
   const virtualItems = virtual ? virtualizer.getVirtualItems() : [];
   const bodyHeight = virtual ? virtualizer.getTotalSize() : 0;
+
+  function exportCsv() {
+    const stateWord = (state: ChipState) => state === 'pass' ? 'قبول'
+      : state === 'fail' ? 'رد' : state === 'na' ? 'N/A' : '—';
+    downloadCsvWithMeta('غربالگری-بنیادی', {
+      columns: ['نماد', 'نام', 'صنعت', 'وضعیت', 'امتیاز', 'پنج شاخص', 'خارج از پنج‌شاخص'],
+      rows: filtered.map((row) => [
+        row.symbol, row.name ?? '', row.sector_name ?? '', row.verdict ?? '',
+        row.score ?? '', AXES.map((_, index) => stateWord(chipOf(row, index).state)).join(' / '),
+        row.excluded ? 'بله' : 'خیر',
+      ]),
+    }, [
+      ['منبع', '/api/screener'],
+      ['روز تابلو', asOf ?? '—'],
+      ['ردیف‌ها', String(filtered.length)],
+    ]);
+  }
 
   const renderRow = (row: ScreenerCoreRow) => (
     <div
@@ -139,6 +158,10 @@ export function FundamentalScreenTable({ rows, onSelect }: Props) {
           <option value="">همه صنایع</option>
           {sectors.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
+        <button type="button" data-testid="fundamental-export" onClick={exportCsv}
+          className="tape-btn" title="خروجی CSV از ردیف‌های همین فیلتر">
+          خروجی CSV
+        </button>
         <span data-testid="fundamental-count" className="num t-9 text-text-3">
           {fmtInt(filtered.length)} از {fmtInt(rows.length)}
         </span>
