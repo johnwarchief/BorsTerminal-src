@@ -489,6 +489,12 @@ var (
 		"واسطه گری", "واسطه‌گری", "نهادهای مالی واسط"}
 	a45SvcTokensSrc = []string{"خدمات", "حمل", "ترابری", "فناوري", "فناوری", "مخابرات",
 		"بازرگاني", "بازرگانی", "پخش", "رستوران", "گردش"}
+	// a45NonCompanyTokensSrc عینِ `fts_engine.NON_COMPANY_TOKENS`: نشانه‌هایِ
+	// غیرشرکتِ عملیاتی — صندوق/اوراق/حق تقدم و نهادهایِ عمومی. بیمه در
+	// classifyIdentity پیش از این فهرست وتو می‌شود (صنعتش «صندوق» دارد).
+	a45NonCompanyTokensSrc = []string{"صندوق", "اوراق", "اختيار", "اختیار",
+		"حق تقدم", "حق‌تقدم", "خیریه", "شهرداری", "فدراسیون", "موسسه",
+		"پرورشگاه", "وقف", "بنیاد"}
 )
 
 // a45HoldNorm عینِ `fts_engine._hold_norm`: norm_fa + حذفِ فاصله. بی‌این‌گام
@@ -512,6 +518,7 @@ var (
 	a45FinTokens           = a45NormList(a45FinTokensSrc, normFa)
 	a45HoldTokens          = a45NormList(a45HoldTokensSrc, normFa)
 	a45SvcTokens           = a45NormList(a45SvcTokensSrc, normFa)
+	a45NonCompanyTokens    = a45NormList(a45NonCompanyTokensSrc, normFa)
 )
 
 func a45HoldNormStr(s string) string { return strings.ReplaceAll(normFa(s), " ", "") }

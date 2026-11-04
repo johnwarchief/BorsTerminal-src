@@ -21,6 +21,7 @@ import (
 
 	"borsterminal/backend/internal/period"
 	"borsterminal/backend/internal/pyround"
+	"borsterminal/backend/internal/symbolid"
 )
 
 // evalCanonicalOrEmpty مثلِ `CP.canonicalize(x) or ""` — دورۀ بی‌تاریخ رشتهٔ
@@ -57,6 +58,46 @@ func evalOptFloat(v any) *float64 {
 	return nil
 }
 
+// classifyIdentity عینِ `fts_engine.classify_identity` (1977-1998): دروازهٔ
+// جهانِ FTS فقط شرکتِ عملیاتیِ دارایِ ابزار را می‌پذیرد. نمادِ بی‌ردیف در
+// `instruments` حتی با نام/صنعتِ شرکت «غیرشرکت» است؛ صندوق/اوراق/حق تقدم و
+// نهادهایِ عمومی هم داوری نمی‌گیرند. بیمه پیش از توکن‌ها است چون صنعتش
+// («بيمه وصندوق بازنشستگي…») کلمهٔ «صندوق» را دارد ولی شرکتِ عملیاتی است.
+func classifyIdentity(symbol, sector, companyName string, hasInstrument bool) (kind string, applicable bool, reason string) {
+	_ = symbol
+	sec := trimSpace(sector)
+	name := trimSpace(companyName)
+	if !hasInstrument {
+		return "non_company", false, "no_instrument"
+	}
+	if IsInsuranceSector(sec) {
+		return "company", true, ""
+	}
+	if a45FundClassMatch(sec, name) {
+		return "fund", false, "fund"
+	}
+	text := normFa(sec) + " " + normFa(name)
+	if a45AnyTokenIn(a45NonCompanyTokens, text) {
+		return "non_company", false, "fund_or_non_operating"
+	}
+	if sec == "" && name == "" {
+		return "non_company", false, "no_identity"
+	}
+	return "company", true, ""
+}
+
+// hasInstrument عینِ `bool(inst)` مسیرِ کارت: ردیفِ ابزار در `instruments` با
+// همان رزولورِ تابلوی کارت (`l_val18`). خطایِ رزولور مثلِ بقیهٔ مسیرها به شرطِ
+// خامِ `l_val18 = ?` می‌افتد؛ خطایِ کوئری ⇒ «ابزار نداریم» (کارت نه ۵۰۰).
+func (s *Service) hasInstrument(ctx context.Context, symbol string) bool {
+	pred, args, err := s.sid.Pred(ctx, "l_val18", symbol, symbolid.Board)
+	if err != nil {
+		pred, args = "l_val18 = ?", []any{symbol}
+	}
+	row, _ := s.queryRow(ctx, "SELECT 1 FROM instruments WHERE "+pred+" LIMIT 1", args)
+	return row != nil
+}
+
 // EvaluateV10 خروجیِ یکپارچۀ v10: پنج لایه + پاس‌ها + امتیاز + دلایل حذف.
 // `m141Map`/`liqMap` برایِ مسیرهایِ دسته‌ای (واچ‌لیست) تزریق می‌شوند تا نقشه‌های
 // کل‌بازار یک‌بار ساخته شوند، نه به‌ازای هر نماد؛ nil یعنی «خودت بخوان».
@@ -68,6 +109,11 @@ func (s *Service) EvaluateV10(ctx context.Context, symbol string,
 	}
 	th := V10Thresholds(cfg)
 	prof := a45CompanyProfile(sector, companyName)
+	// هویتِ جهان یک‌بار: پروفایل عینِ تولید می‌ماند (کارت باید طبقهٔ درآمد را
+	// نشان دهد)، ولی «قابلِ داوری بودن» از classify_identity می‌آید نه از kind —
+	// نمادِ فقط-کدال بی‌ابزار است، هرچند نامش شرکت باشد.
+	_, identityApplicable, _ := classifyIdentity(symbol, sector, companyName,
+		s.hasInstrument(ctx, symbol))
 
 	series, err := s.MonthlySeries(ctx, symbol, 0)
 	if err != nil {
@@ -184,9 +230,9 @@ func (s *Service) EvaluateV10(ctx context.Context, symbol string,
 	}
 	reasons = append(reasons, gateReasons...)
 
-	// رأیِ مالک (۱۴۰۵-۰۷-۰۳): FTS برای شرکت‌های عملیاتی است؛ صندوق باید
-	// «FTS ندارد» بگیرد نه REJECT با جدولِ خالی.
-	applicable := strOr(prof["kind"]) != "fund"
+	// رأیِ مالک (۱۴۰۵-۰۷-۰۳): FTS برای شرکت‌های عملیاتی است؛ صندوق و نمادِ
+	// بی‌ابزار باید «FTS ندارد» بگیرند نه REJECT با جدولِ خالی.
+	applicable := identityApplicable
 	verdict := "REJECT"
 	switch {
 	case !applicable:

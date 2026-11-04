@@ -314,7 +314,12 @@ func (s *Service) CardBody(ctx context.Context, symbol string, months int) (map[
 	// سه فیلدِ نمایشیِ شاخص ۴ (Task 7) — از خودِ حکمِ موجود ساخته می‌شوند، نه
 	// دروازهٔ تازه: مسیرِ پذیرش، تعدادِ ماهِ سالانه‌سازی و برچسبش. کارت پیش از
 	// این آن‌ها را نداشت ولی طلایی/اوراکل دارند (`ind4_valuation` 1230-1234).
+	// شاخهٔ N/A (گپِ ارزش بازار/فروش یا معافیت) در پایتون ۰/خالی می‌دهد، پس
+	// نباید از `annual`ِ موجود برچسبِ سالانه‌سازی ساخت (طلاییِ card_mixed).
 	annualizeMonths := ax1IntOf(annual["months_used"])
+	if truthy(val["na"]) {
+		annualizeMonths = 0
+	}
 	val["acceptance_path"] = cardAcceptancePath(truthy(val["sales_pass"]),
 		truthy(val["potential_pass"]))
 	val["annualize_months"] = annualizeMonths
