@@ -22,6 +22,8 @@ const Axis3Schema = z.looseObject({
   threshold: Num,
   band: Str,
   optimal: Bool,
+  na: Bool,
+  margin_class: Str,
 }).nullish();
 
 const Axis4Schema = z.looseObject({
@@ -31,6 +33,8 @@ const Axis4Schema = z.looseObject({
   available: Bool,
   data_gap: Bool,
   reason: Str,
+  na: Bool,
+  exempt: Bool,
 }).nullish();
 
 const Axis5Schema = z.looseObject({
@@ -84,6 +88,12 @@ export const FtsCardSchema = z.looseObject({
   freshness: FreshnessSchema.nullish(),
   message: Str,
   passes: z.record(z.string(), Bool).nullish(),
+  profile: z.looseObject({
+    kind: Str,
+    margin_class: Str,
+    label: Str,
+    volume_applicable: Bool,
+  }).nullish(),
   indicators: z.looseObject({
     '1': Axis1Schema,
     '2': Axis2Schema,

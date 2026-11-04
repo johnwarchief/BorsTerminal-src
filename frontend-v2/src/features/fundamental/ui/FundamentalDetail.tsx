@@ -4,12 +4,14 @@ import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard } from '../api/useFtsCard';
 import { useQuarters } from '../api/useQuarters';
 import { useSectorPe } from '../api/useSectorPe';
+import { isBankCard, isHoldingCard } from '../lib/assetScope';
 import { AxisDrilldown } from './AxisDrilldown';
 import { CodalHealthStrip } from './CodalHealthStrip';
 import { CorporateCalendar } from './CorporateCalendar';
 import { FundamentalCards } from './FundamentalCards';
 import { FundamentalSummary } from './FundamentalSummary';
 import { FtsSettingsTrigger } from './FtsSettingsDrawer';
+import { HoldingNavPanel } from './HoldingNavPanel';
 import { QuarterlyTrend } from './QuarterlyTrend';
 
 interface Props {
@@ -24,6 +26,9 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
   const health = useCodalHealth();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const card = query.data;
+  const holding = card ? isHoldingCard(card) : false;
+  const bank = card ? isBankCard(card) : false;
+  const notApplicable = card?.applicable === false;
 
   return (
     <section data-testid="fundamental-detail" className="flex min-h-0 flex-1 flex-col bg-bg">
@@ -38,6 +43,11 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
         </button>
         <b data-testid="fundamental-title" className="t-125 font-extrabold text-text">{symbol}</b>
         {card?.sector ? <span className="t-9 text-text-3">{card.sector}</span> : null}
+        {holding ? (
+          <span data-testid="holding-class-badge" className="rounded-[3px] border border-accent/40 bg-accent/10 px-1 t-85 text-accent">
+            {bank ? 'بانک / مؤسسهٔ اعتباری' : 'هلدینگ / سرمایه‌گذاری'}
+          </span>
+        ) : null}
         {card?.verdict ? <span className="rounded-[3px] border border-line px-1 t-85 text-text-2">{card.verdict}</span> : null}
         {card?.score != null ? <span className="num t-9 text-text-3">امتیاز {card.score}</span> : null}
         <span className="ms-auto">
@@ -70,23 +80,31 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
               />
             </section>
 
-            <section data-testid="sector-pe-panel" className="rounded-[var(--radius-sm)] border border-line bg-panel p-2 t-9">
-              <h3 className="mb-1 t-10 font-bold text-text-2">P/E صنعت</h3>
-              <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className="text-text-3">این نماد</span>
-                <b data-testid="sector-pe" className="num text-text">
-                  {sectorPe.data?.pe != null ? faNum(sectorPe.data.pe, 1) : '—'}
-                </b>
-                <span className="text-text-3">میانهٔ صنعت</span>
-                <b data-testid="sector-pe-median" className="num text-text">
-                  {sectorPe.data?.median != null ? faNum(sectorPe.data.median, 1) : '—'}
-                </b>
-              </div>
-              <p className="mt-1 text-text-3">
-                {sectorPe.data?.sector ?? 'صنعت نامشخص'}
-                {sectorPe.data?.peers != null ? ` · ${faNum(sectorPe.data.peers)} نماد با P/E مثبت` : ''}
-              </p>
-            </section>
+            {notApplicable ? (
+              <section data-testid="fundamental-not-applicable" className="rounded-[var(--radius-sm)] border border-line bg-panel p-2 t-9 leading-relaxed text-text-2">
+                FTS ندارد — این نماد صندوق/ابزار است و غربالگری پنج‌شاخص برای آن تعریف نشده است.
+              </section>
+            ) : holding ? (
+              <HoldingNavPanel bankLike={bank} />
+            ) : (
+              <section data-testid="sector-pe-panel" className="rounded-[var(--radius-sm)] border border-line bg-panel p-2 t-9">
+                <h3 className="mb-1 t-10 font-bold text-text-2">P/E صنعت</h3>
+                <div className="flex flex-wrap items-baseline gap-1.5">
+                  <span className="text-text-3">این نماد</span>
+                  <b data-testid="sector-pe" className="num text-text">
+                    {sectorPe.data?.pe != null ? faNum(sectorPe.data.pe, 1) : '—'}
+                  </b>
+                  <span className="text-text-3">میانهٔ صنعت</span>
+                  <b data-testid="sector-pe-median" className="num text-text">
+                    {sectorPe.data?.median != null ? faNum(sectorPe.data.median, 1) : '—'}
+                  </b>
+                </div>
+                <p className="mt-1 text-text-3">
+                  {sectorPe.data?.sector ?? 'صنعت نامشخص'}
+                  {sectorPe.data?.peers != null ? ` · ${faNum(sectorPe.data.peers)} نماد با P/E مثبت` : ''}
+                </p>
+              </section>
+            )}
           </div>
 
           <section className="rounded-[var(--radius-sm)] border border-line bg-panel px-2 py-1.5">
