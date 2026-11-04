@@ -121,8 +121,12 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
     // (و در نتیجه سلول‌ها/نمودارهای SVG) کم‌تر شود؛ رفتار دیداری تغییری نمی‌کند.
     overscan: 8,
     enabled: virtual,
+    // R86: مجازی‌ساز موقعیت ردیف‌ها (transform) و ارتفاع محفظه را مستقیم روی DOM
+    // می‌نویسد؛ رندر React فقط با تغییر بازهٔ دید یا isScrolling رخ می‌دهد و
+    // flushSync مسیر اسکرول را سنگین نمی‌کند.
+    directDomUpdates: true,
+    useFlushSync: false,
   });
-  const bodyHeight = virtual ? virtualizer.getTotalSize() : 0;
   useEffect(() => {
     if (virtual && parentRef.current) virtualizer.measure();
   }, [density, virtual, virtualizer]);
@@ -321,7 +325,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           {filtered.length === 0 ? (
             <p data-testid="fundamental-empty" className="p-3 text-[11px] text-[var(--fd-text-3)]">ردیفی با این فیلتر نیست.</p>
           ) : virtual ? (
-            <div role="rowgroup" style={{ height: bodyHeight, position: 'relative' }}>
+            <div ref={virtualizer.containerRef} role="rowgroup" style={{ position: 'relative' }}>
               {virtualizer.getVirtualItems().map((item) => {
                 const row = filtered[item.index];
                 return row ? (
@@ -330,7 +334,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
                     role="presentation"
                     data-index={item.index}
                     ref={virtualizer.measureElement}
-                    style={{ position: 'absolute', insetInline: 0, top: item.start }}
+                    style={{ position: 'absolute', insetInline: 0 }}
                   >
                     {renderRow(row)}
                   </div>
