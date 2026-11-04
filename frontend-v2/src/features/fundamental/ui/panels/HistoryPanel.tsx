@@ -18,6 +18,9 @@ export function HistoryPanel({ card }: { card: FtsCard }) {
       value={history.length ? `${toFaDigits(history.length)} گزارش` : '—'}
       threshold="EPS"
       chart={<HistoryBars values={history.map((row) => row.eps ?? null)} labels={history.map((row) => (row.period_end ? toFaDigits(row.period_end) : ''))} status={status} />}
+      // R-P1-13 (Minor 4): با میله‌های ۸٪ این پنل در شیارِ ۳۲پیکسلی خطِ باریک می‌ماند؛
+      // شیارِ نمودارش به ۴۰px بزرگ می‌شود (هم‌اندازهٔ جفتِ فروش). بقیهٔ پنل‌ها دست‌نخورده‌اند.
+      chartClass="h-[40px]"
       rows={[
         ['آخرین دوره', last?.period_end ? toFaDigits(last.period_end) : '—'],
         ['EPS آخرین دوره', faFixed(last?.eps, 0)],

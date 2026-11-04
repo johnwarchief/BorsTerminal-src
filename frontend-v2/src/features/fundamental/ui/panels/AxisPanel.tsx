@@ -31,6 +31,11 @@ export interface AxisPanelProps {
   value: string;
   threshold: string;
   chart: ReactNode;
+  /**
+   * R-P1-13 (Minor 4): کلاسِ ارتفاعِ ناحیهٔ نمودار. پیش‌فرض `h-[32px]` است و برایِ
+   * پنل‌های دیگر عوض نمی‌شود؛ پنل‌هایی که میلهٔ بلندتر می‌خواهند (تاریخچه) `h-[40px]` می‌دهند.
+   */
+  chartClass?: string;
   rows: Array<[string, string]>;
   details?: { formula?: string | null; source?: string | null } | null;
   children?: ReactNode;
@@ -38,7 +43,7 @@ export interface AxisPanelProps {
 
 /** قالبِ مشترکِ پنل‌های تصویری؛ وضعیت و رنگ فقط از `cardStatus`/توکن‌های fd می‌آید. */
 export function AxisPanel({
-  testId, axis, title, subtitle, status, value, threshold, chart, rows, details, children,
+  testId, axis, title, subtitle, status, value, threshold, chart, chartClass, rows, details, children,
 }: AxisPanelProps) {
   const meta = AXES.find((item) => item.key === axis)!;
   return (
@@ -59,8 +64,9 @@ export function AxisPanel({
         <b className="text-[19px] font-medium tabular-nums text-[var(--fd-text)]">{value}</b>
         <span className="text-[10px] text-[var(--fd-text-3)]">{threshold}</span>
       </div>
-      {/* R73: نمودارِ نمای نماد با fade/scaleX کوتاه؛ ریشهٔ پنل با fd-panel بی‌انیمیشن می‌ماند. */}
-      <div className="fd-draw h-[32px]">{chart}</div>
+      {/* R73: نمودارِ نمای نماد با fade/scaleX کوتاه؛ ریشهٔ پنل با fd-panel بی‌انیمیشن می‌ماند.
+          R-P1-13: ارتفاعِ ناحیه با chartClass تنظیم می‌شود؛ پیش‌فرض همان h-[32px] است. */}
+      <div className={`fd-draw ${chartClass ?? 'h-[32px]'}`}>{chart}</div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9.5px] text-[var(--fd-text-3)]">
         {rows.map(([label, val]) => (
           <span key={label} className="flex justify-between gap-1 border-b border-[var(--fd-line)] py-0.5">

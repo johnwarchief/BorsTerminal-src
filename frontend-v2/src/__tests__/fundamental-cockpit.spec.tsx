@@ -256,8 +256,11 @@ describe('fundamental cockpit', () => {
     expect(screen.getByTestId('eps-period-2').textContent).toContain('+۵۷');
     expect(panel.querySelector('[data-testid="eps-growth-chart"]')).toBeTruthy();
     // نمودارِ EPS در ستونِ جدول دست‌نخورده می‌ماند؛ نمودارِ رشد هم‌زمان اضافه می‌شود.
-    expect(panel.querySelector('[data-testid="eps-growth-chart"] [role="img"]')?.getAttribute('aria-label'))
-      .toBe('رشد دوره‌ای EPS');
+    // R-P1-13 (Minor 3): نام با همان پیشوند شروع می‌شود و عددِ دقیقِ هر دوره را اعلام می‌کند.
+    const growthChartName = panel.querySelector('[data-testid="eps-growth-chart"] [role="img"]')?.getAttribute('aria-label') ?? '';
+    expect(growthChartName.startsWith('رشد دوره‌ای EPS')).toBe(true);
+    expect(growthChartName).toContain('دوره ۲: +۴۴٫۳٪');
+    expect(growthChartName).toContain('دوره ۳: +۳٫۵٪');
   });
 
   it('lists every EPS period with its value and a fallback label, first period without growth (R-P1-3)', () => {
@@ -401,8 +404,12 @@ describe('fundamental cockpit', () => {
     expect(pair).toBeTruthy();
     // R-P1-8: نمودارِ جفتِ فروش شاهد است؛ برچسبِ خودش را دارد و «قبول» اعلام نمی‌کند.
     const pairChart = pair!.querySelector('[role="img"]');
-    expect(pairChart?.getAttribute('aria-label')).toBe('فروش دورهٔ جاری و قبل');
-    expect(pairChart?.getAttribute('aria-label')).not.toContain('قبول');
+    const pairName = pairChart?.getAttribute('aria-label') ?? '';
+    expect(pairName.startsWith('فروش دورهٔ جاری و قبل')).toBe(true);
+    // R-P1-13 (Minor 3): هر دو عددِ دقیق هم در نامِ قابل‌دسترس‌اند، نه فقط در title.
+    expect(pairName).toContain('دوره قبل: ۱۶۰۸۷۳.۴');
+    expect(pairName).toContain('دوره جاری: ۲۵۰۹۴۲.۲');
+    expect(pairName).not.toContain('قبول');
   });
 
   it('shows an honest empty state for the sales pair when both periods are absent (R-P1-8)', () => {
@@ -776,6 +783,16 @@ describe('fundamental cockpit', () => {
     const history = screen.getByTestId('panel-history');
     expect(history.textContent).toContain('۱۴۰۴/۱۲/۲۹');
     expect(history.textContent).not.toContain('1404/12/29');
+  });
+
+  it('gives the history panel a 40px chart slot and leaves the other panels on the default (R-P1-13)', () => {
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const slot = (testId: string) => screen.getByTestId(testId).querySelector('.fd-draw');
+    // R-P1-13 (Minor 4): شیارِ ۳۲پیکسلی با کفِ ۸٪ یعنی ~۱٫۱۶px؛ پنلِ تاریخچه ۴۰px می‌گیرد.
+    expect(slot('panel-history')?.className).toContain('h-[40px]');
+    // پیش‌فرضِ مشترک برایِ بقیهٔ پنل‌ها عوض نشده است.
+    expect(slot('panel-growth')?.className).toContain('h-[32px]');
+    expect(slot('panel-margin')?.className).toContain('h-[32px]');
   });
 
   it('shows بی‌نظر for an axis whose pass key is absent but whose indicator is na (R60)', () => {

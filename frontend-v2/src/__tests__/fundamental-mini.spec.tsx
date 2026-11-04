@@ -48,11 +48,20 @@ describe('mini charts', () => {
     expect(Array.from(bars).every((bar) => !(bar as HTMLElement).style.background)).toBe(true);
     // R93: ارتفاعِ درصدیِ هر میله inline است تا در ستونِ flex ارتفاع قطعی بگیرد.
     expect(Array.from(bars).every((bar) => (bar as HTMLElement).style.height !== '')).toBe(true);
+    // R-P1-13 (Minor 3): نامِ قابل‌دسترس هر سه عدد را اعلام می‌کند، نه فقط «تاریخچه…».
+    const name = img.getAttribute('aria-label') ?? '';
+    expect(name.startsWith('تاریخچهٔ گزارش‌ها')).toBe(true);
+    expect(name).toContain('۱۴۰۲: ۱');
+    expect(name).toContain('۱۴۰۴: ۳');
   });
   it('labels evidence bars by their own name and never announces a gate pass (R-P1-8)', () => {
     render(<HistoryBars values={[160873, 250942]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);
-    const img = screen.getByRole('img', { name: 'فروش دورهٔ جاری و قبل' });
-    expect(img.getAttribute('aria-label')).not.toContain('قبول');
+    // R-P1-13 (Minor 3): همان پیشوندِ نام حفظ است و عددِ دقیق هر میله به نام اضافه می‌شود.
+    const img = screen.getByRole('img', { name: /^فروش دورهٔ جاری و قبل/ });
+    const name = img.getAttribute('aria-label') ?? '';
+    expect(name).toContain('دوره قبل: ۱۶۰۸۷۳');
+    expect(name).toContain('دوره جاری: ۲۵۰۹۴۲');
+    expect(name).not.toContain('قبول');
     expect(img.querySelectorAll('.fd-history-bar.is-evidence').length).toBe(2);
   });
   it('renders delta bars with direction classes', () => {
@@ -77,18 +86,49 @@ describe('mini charts', () => {
     const flat = document.querySelector('.fd-delta-bar.is-flat') as HTMLElement;
     expect(flat.style.height).toBe('0%');
   });
-  it('fills the plot so the largest growth uses full height and small growth stays visible (R-P1-12)', () => {
-    render(<div className="h-[44px]"><DeltaBars values={[null, 44.3, 3.5]} labels={['۱۴۰', '۱۴۰۴', '۱۴۰۵']} /></div>);
-    const up = Array.from(document.querySelectorAll('.fd-delta-bar.is-up')) as HTMLElement[];
-    expect(up).toHaveLength(2);
-    expect(up[0].style.height).toBe('100%');
-    const small = parseFloat(up[1].style.height);
-    expect(small).toBeGreaterThanOrEqual(10);
-    expect(small).toBeLessThan(100);
+  it('fills the plot with a locked contract: 100% max, linear halves, 10% floor, honest 0% for null and real zero (R-P1-12)', () => {
+    render(
+      <div className="h-[44px]">
+        <DeltaBars values={[null, 44.3, 22.15, 3.5, 0]} labels={['۱۴۰', '۱۴۰۱', '۱۴۰۲', '۱۴۰۳', '۱۴۰۴']} />
+      </div>,
+    );
+    const bars = Array.from(document.querySelectorAll('.fd-delta-bar')) as HTMLElement[];
+    expect(bars).toHaveLength(5);
+    // بزرگ‌ترینِ غیرصفر کلِ ناحیه را پر می‌کند و نصفِ آن نصفِ ارتفاع (خطی‌بودن، نه کفِ تصادفی).
+    expect(bars[1].style.height).toBe('100%');
+    expect(bars[2].style.height).toBe('50%');
+    // کفِ ۱۰٪ رویِ مقدارِ کوچکِ غیرصفر می‌نشیند (طبیعی‌اش ۷٫۹٪ بود).
+    expect(parseFloat(bars[3].style.height)).toBeCloseTo(10, 5);
+    // نبودِ مقدار و صفرِ واقعی: میلهٔ صفرِ صادق، بدونِ رنگِ جهتِ ساختگی.
+    expect(bars[0].style.height).toBe('0%');
+    expect(bars[4].style.height).toBe('0%');
+    expect(bars[0].className).toContain('is-empty');
+    expect(bars[4].className).toContain('is-flat');
+    // R-P1-13 (Minor 3): عددِ دقیق در title هر میله و در نامِ قابل‌دسترسِ ظرف است.
+    expect(bars[1].closest('[title]')?.getAttribute('title')).toBe('۱۴۰۱ — +۴۴٫۳٪');
+    const name = screen.getByRole('img', { name: /^رشد دوره‌ای EPS/ }).getAttribute('aria-label') ?? '';
+    expect(name).toContain('۱۴۰۱: +۴۴٫۳٪');
+    expect(name).toContain('۱۴۰۳: +۳٫۵٪');
   });
   it('renders an empty state when every history value is absent (R-P1-8)', () => {
     render(<HistoryBars values={[null, null]} labels={['دوره قبل', 'دوره جاری']} status="evidence" label="فروش دورهٔ جاری و قبل" />);
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByText(/ثبت نشده/)).toBeTruthy();
+  });
+  it('floors small history values at 8% but paints absent and true-zero history as no bar (R-P1-12 regression)', () => {
+    render(<HistoryBars values={[1000, 40, null, 0]} labels={['۱۴۰۲', '۱۴۰۳', '۱۴۰۴', '۱۴۰۵']} status="pass" />);
+    const bars = Array.from(document.querySelectorAll('.fd-history-bar')) as HTMLElement[];
+    expect(bars).toHaveLength(4);
+    expect(bars[0].style.height).toBe('100%');
+    // R-P1-12: کفِ ۸٪ فقط برایِ مقدارِ واقعیِ کوچک است.
+    expect(bars[1].style.height).toBe('8%');
+    // Important 1: «نبودِ مقدار» و «صفرِ واقعی» میله نمی‌گیرند؛ خطِ باریکِ تُن‌دار هم نه.
+    expect(bars[2].style.height).toBe('0%');
+    expect(bars[3].style.height).toBe('0%');
+    // تُنِ وضعیتِ هر میله دست‌نخورده می‌ماند.
+    expect(bars.every((bar) => bar.classList.contains('is-pass'))).toBe(true);
+    // عددِ دقیق همچنان در title هر میله است.
+    expect(bars[0].closest('[title]')?.getAttribute('title')).toBe('۱۴۰۲ — ۱۰۰۰');
+    expect(bars[2].closest('[title]')?.getAttribute('title')).toBe('۱۴۰۴ — —');
   });
 });
