@@ -318,6 +318,27 @@ body {
 .tape-btn.is-all[aria-pressed='true'] {
   border-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
 }
+/* R42 — tape-btn داخل سطح دادهٔ بنیادی از توکن‌های --fd-* رنگ می‌گیرد،
+   نه از --line/--text-3/--accent-2 تمِ پوسته (کنتراست کاغذ و تیره). */
+.fundamental-surface .tape-btn {
+  border-color: var(--fd-line-strong);
+  background: var(--fd-panel);
+  color: var(--fd-text-2);
+}
+.fundamental-surface .tape-btn:hover {
+  border-color: var(--fd-accent);
+  color: var(--fd-text);
+}
+.fundamental-surface .tape-btn:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
+.fundamental-surface .tape-btn[aria-pressed='true'],
+.fundamental-surface .tape-btn[aria-expanded='true'] {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+  background: var(--fd-panel-2);
+}
 .status-card {
   min-width: 0;
   padding: 7px 9px;

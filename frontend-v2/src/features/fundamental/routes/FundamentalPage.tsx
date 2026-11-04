@@ -48,27 +48,33 @@ export function FundamentalPage() {
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
         <b className="t-125 font-extrabold text-[var(--fd-text)]">بنیادی</b>
         <span className="t-9 text-[var(--fd-text-3)]">غربالگری پنج‌محور FTS — هر ستون یک محور</span>
-        <span data-testid="fundamental-as-of" className="num ms-auto t-85 text-[var(--fd-text-3)]">
-          {scanLabel ? `زمان اسکن: ${scanLabel}` : ''}
+        <span className="ms-auto">
+          {scanLabel ? (
+            <span data-testid="fundamental-as-of" className="num t-85 text-[var(--fd-text-3)]">
+              {`زمان اسکن: ${scanLabel}`}
+            </span>
+          ) : null}
         </span>
-        <button
-          type="button"
-          data-testid="fundamental-surface-paper"
-          aria-pressed={surface === 'paper'}
-          onClick={() => setSurface('paper')}
-          className="tape-btn"
-        >
-          کاغذی
-        </button>
-        <button
-          type="button"
-          data-testid="fundamental-surface-ink"
-          aria-pressed={surface === 'ink'}
-          onClick={() => setSurface('ink')}
-          className="tape-btn"
-        >
-          تیره
-        </button>
+        <div role="group" aria-label="سطح داده" className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            data-testid="fundamental-surface-paper"
+            aria-pressed={surface === 'paper'}
+            onClick={() => setSurface('paper')}
+            className="tape-btn"
+          >
+            کاغذی
+          </button>
+          <button
+            type="button"
+            data-testid="fundamental-surface-ink"
+            aria-pressed={surface === 'ink'}
+            onClick={() => setSurface('ink')}
+            className="tape-btn"
+          >
+            تیره
+          </button>
+        </div>
         {screener.isFetching && !screener.isLoading ? (
           <span data-testid="fundamental-refetching" className="t-85 text-[var(--fd-warn)]">جدول در حال بازسازی…</span>
         ) : null}
