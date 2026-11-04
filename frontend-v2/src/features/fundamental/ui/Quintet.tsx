@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import type { FtsCard } from '../api/useFtsCard';
-import { AXES, formatAxisValue, formatEpsTrend, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
+import { AXES, formatAxisValue, formatEpsTrend, potentialStatusOf, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { Bullet } from './mini/Bullet';
 import { EpsBars } from './mini/EpsBars';
@@ -43,6 +43,11 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
   // R97: کاشیِ رشد همان آستانهٔ گیتِ S4b را نشان می‌دهد (target، وگرنه threshold).
   const growthThreshold = monetary?.target_threshold ?? monetary?.threshold ?? null;
   const epsRequired = requiredYears(card);
+  // R-P0-1: وضعیتِ نمودار فقط زیرگیتِ پتانسیل است؛ وضعیتِ کاشی همچنان ترکیبی است.
+  const salesPotentialStatus = potentialStatusOf(
+    { profit_potential_pct: sales?.potential_pct ?? null },
+    { profit_potential_min: sales?.potential_threshold ?? null },
+  );
 
   const items: QuintetItem[] = [
     {
@@ -79,9 +84,7 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
           value={sales?.potential_pct ?? null}
           max={100}
           threshold={sales?.potential_threshold ?? null}
-          status={sales?.potential_pct != null && sales?.potential_threshold != null
-            ? sales.potential_pct >= sales.potential_threshold ? 'pass' : 'fail'
-            : 'unknown'}
+          status={salesPotentialStatus}
           label="پتانسیل سود"
         />
       ),

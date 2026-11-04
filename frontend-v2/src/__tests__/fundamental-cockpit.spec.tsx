@@ -132,12 +132,30 @@ describe('fundamental cockpit', () => {
     expect(panel.querySelector('header')?.textContent).toContain('پتانسیل سود تا آخر سال');
     // وضعیت هدر ترکیبی است: مسیر فروش/ارزش قبول است، هرچند نمودار پتانسیل زیر آستانه است.
     expect(panel.querySelector('header')?.textContent).toContain('قبول');
-    expect(panel.textContent).toContain('۱۳٫۲٪');
+    expect(panel.textContent).toContain('+۱۳٫۲٪');
     expect(panel.textContent).toContain('کف ۴۰٪');
     expect(panel.textContent).toContain('فروش/ارزش (شاهد)');
     expect(panel.textContent).toContain('۱٫۱۵');
     expect(panel.textContent).toContain('مسیر قبولی');
     expect(panel.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toContain('رد');
+    // کفِ فروش/ارزش نسبت است؛ «۰٫۳» گِردشده نباید دیده شود.
+    expect(panel.textContent).toContain('۰٫۳۳');
+    expect(rowText(panel, 'آستانهٔ فروش/ارزش')).toContain('۰٫۳۳');
+    expect(rowText(panel, 'مسیر قبولی')).toContain('۴الف — فروش/ارزش');
+  });
+
+  it('hides the 4a/4b path row when the combined axis-4 verdict fails', () => {
+    mockCard({
+      passes: { '1_growth': false, '2_eps_trend': true, '3_gross_margin': false, '4_sales_to_mcap': false, '5_industry': true },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const panel = screen.getByTestId('panel-sales');
+    // شاهدِ فروش/ارزش از کف عبور می‌کند، ولی حکمِ ترکیبی رد است؛ مسیر نباید ادعا شود.
+    expect(panel.querySelector('header')?.textContent).toContain('رد');
+    const pathRow = rowText(panel, 'مسیر قبولی');
+    expect(pathRow).not.toContain('۴الف');
+    expect(pathRow).not.toContain('۴ب');
+    expect(pathRow.endsWith('—')).toBe(true);
   });
 
   it('renders quintet, five panels, history and evidence', () => {
@@ -609,6 +627,10 @@ describe('fundamental cockpit', () => {
     const salesTile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="sales"]');
     expect(salesTile?.textContent).toContain('بی‌نظر');
     expect(salesTile?.textContent).not.toContain('رد');
+    // مقادیرِ نشان پرشده‌اند، ولی حکمِ ترکیبی بی‌نظر است؛ مسیر نباید ادعا شود.
+    const pathRow = rowText(screen.getByTestId('panel-sales'), 'مسیر قبولی');
+    expect(pathRow).not.toContain('۴الف');
+    expect(pathRow).not.toContain('۴ب');
   });
 
   it('shows نامشخص — never رد — when the pass key is absent and no na flag exists (R60)', () => {

@@ -66,14 +66,18 @@ function AxisCell({ row, axis, thresholds }: Props) {
   const salesRatio = axis === 'sales'
     ? (row.sales_to_mcap == null ? '—' : toFaDigits(row.sales_to_mcap.toFixed(2)).replace('.', '٫'))
     : null;
+  // R-P0-4: نشانِ مسیر و صفتِ data-path فقط با قبولیِ ترکیبیِ محور معنا دارند.
+  const pathBadge = axis === 'sales' && status === 'pass'
+    ? path === 'potential' ? '۴ب' : path === 'sales' ? '۴الف' : '—'
+    : null;
+  const salesWord = status === 'pass' && path === 'sales' ? 'مسیر فروش/ارزش' : 'فروش/ارزش';
   const subtitle = axis === 'eps'
     ? epsThresholdLabel(epsYears)
     : axis === 'industry'
       ? row.sector_name ?? '—'
       : axis === 'sales'
-        ? (threshold == null
-            ? '—'
-            : `≥ ${toFaDigits(threshold)}٪ · ${path === 'sales' ? 'مسیر فروش/ارزش' : 'فروش/ارزش'} ${salesRatio}`)
+        // شاهدِ فروش/ارزش حتی بدون آستانهٔ پتانسیل می‌ماند («≥ —٪ · فروش/ارزش ۱٫۱۵»).
+        ? `≥ ${threshold == null ? '—' : toFaDigits(threshold)}٪ · ${salesWord} ${salesRatio}`
         : thresholdLabel(thresholds, axis);
   const epsTrend = axis === 'eps' ? trendFa(trendOf(row.eps_series)) : null;
 
@@ -82,7 +86,7 @@ function AxisCell({ row, axis, thresholds }: Props) {
       role="cell"
       data-testid={`fundamental-cell-${row.symbol}-${axis}`}
       data-state={status}
-      data-path={axis === 'sales' ? path ?? 'none' : undefined}
+      data-path={axis === 'sales' ? (status === 'pass' && path ? path : 'none') : undefined}
       className={`fd-axis-cell flex min-w-0 flex-col justify-center px-1.5 ${density === 'comfortable' ? 'gap-1 py-1' : 'gap-0 py-0.5'}`}
     >
       <div className="flex items-baseline gap-1.5">
@@ -98,12 +102,12 @@ function AxisCell({ row, axis, thresholds }: Props) {
         >
           <span aria-hidden>{STATUS_ICON[status]}</span> {statusFa(status)}
         </span>
-        {axis === 'sales' ? (
+        {pathBadge ? (
           <span
             className="rounded border border-[var(--fd-line-strong)] px-1 text-[8.5px] text-[var(--fd-text-3)]"
             title={path === 'potential' ? 'قبول از مسیر پتانسیل سود' : path === 'sales' ? 'قبول از مسیر فروش/ارزش' : 'مسیر قبولی مشخص نیست'}
           >
-            {path === 'potential' ? '۴ب' : path === 'sales' ? '۴الف' : '—'}
+            {pathBadge}
           </span>
         ) : null}
       </div>

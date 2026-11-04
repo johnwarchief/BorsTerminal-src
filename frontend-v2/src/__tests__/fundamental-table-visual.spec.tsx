@@ -68,6 +68,24 @@ describe('fundamental table visual', () => {
     expect(cell.getAttribute('data-state')).toBe('pass');
     expect(cell.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toContain('رد');
   });
+  it('shows no 4a/4b badge or path wording unless the combined axis-4 verdict passes', () => {
+    const gated: ScreenerCoreRow[] = [
+      // حکمِ ترکیبی رد/بی‌نظر است، هرچند مقادیرِ نشان مسیرِ فروش/ارزش را برمی‌آورند.
+      { ...rows[0]!, i4_pass: false },
+      { ...rows[0]!, symbol: 'ومعادن', i4_pass: null, i4_na: true },
+    ];
+    render(<FundamentalScreenTable rows={gated} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
+    for (const symbol of ['رنيك', 'ومعادن']) {
+      const cell = screen.getByTestId(`fundamental-cell-${symbol}-sales`);
+      expect(cell.getAttribute('data-path')).toBe('none');
+      expect(cell.textContent).not.toContain('۴الف');
+      expect(cell.textContent).not.toContain('۴ب');
+      expect(cell.textContent).not.toContain('مسیر فروش/ارزش');
+      // شاهدِ فروش/ارزش همچنان دیده می‌شود.
+      expect(cell.textContent).toContain('فروش/ارزش');
+      expect(cell.textContent).toContain('۱٫۱۵');
+    }
+  });
   it('sorts axis 4 by the potential percentage', () => {
     const onSelect = vi.fn();
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={onSelect} asOf={null} />);
