@@ -23,6 +23,7 @@ a = Analysis(
         ('app.py', '.'),
         ('bootstrap_first_run.py', '.'),
         ('codal_fetcher.py', '.'),
+        ('codal_captcha.py', '.'),
         ('fts_engine.py', '.'),
         ('mstat_engine.py', '.'),
         ('fts_thresholds.json', '.'),
@@ -90,7 +91,7 @@ a = Analysis(
                    # codal_fetcher (`_classify_unit`) و api.fundamental (ضریب‌های
                    # نمایش) سطح-بال importش می‌کنند. بی‌این خط EXE رویِ اولین
                    # درخواستِ بنیادی ModuleNotFoundError می‌دهد.
-                   'codal_units',
+                   'codal_units', 'codal_captcha',
                    # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴):
                    # `codal_pipeline` صف/checkpoint/قفلِ worker است و `app.py`
                    # (حلقۀ استارتاپ) و `api/_sync_codal.py` (دستۀ چرخه و سلامت)

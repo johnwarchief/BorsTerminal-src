@@ -1950,7 +1950,13 @@ def main(argv=None):
     ap.add_argument("--tracing-no", action="append", type=int, default=None,
                     help="فقط همین tracing_noها را آزاد کن (تکرارپذیر)")
     ap.add_argument("--json", action="store_true", help="خروجیِ JSON")
+    ap.add_argument("--captcha", action="store_true",
+                    help="پس از 429 چالشِ رسمیِ کدال را باز کن (اجرای دستی/کد فایل)")
+    ap.add_argument("--captcha-code-file", default=None,
+                    help="مسیر فایلِ کدِ کپچا برای اجرای غیرتعاملی/تست")
     a = ap.parse_args(argv)
+    if a.captcha:
+        CF.enable_captcha(a.captcha_code_file)
     db = a.db or CF.DB_PATH
     conn = sqlite3.connect(db, timeout=120, isolation_level=None)
     conn.row_factory = sqlite3.Row

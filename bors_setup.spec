@@ -18,6 +18,7 @@ a = Analysis(
         ('app.py', '.'),
         ('bootstrap_first_run.py', '.'),
         ('codal_fetcher.py', '.'),
+        ('codal_captcha.py', '.'),
         ('fts_engine.py', '.'),
         ('mstat_engine.py', '.'),
         ('confidence_engine.py', '.'),
@@ -33,7 +34,7 @@ a = Analysis(
     hiddenimports=[
         'uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
         'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
-        'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'mstat_engine',
+        'codal_fetcher', 'codal_captcha', 'app', 'test_tsetmc', 'fts_engine', 'mstat_engine',
         # `app.py` هوکِ استارتش `codal_pipeline` را داخلِ بدنهٔ تابع import
         # می‌کند (خطِ دریافت خودکار کدال)؛ اسکنِ ایستای PyInstaller آن را نمی‌بیند
         # و EXE رویِ اولین بوت با ModuleNotFoundError می‌مرد.

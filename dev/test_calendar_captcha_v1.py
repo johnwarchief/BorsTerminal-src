@@ -8,6 +8,7 @@ DEV = Path(__file__).resolve().parent
 if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
 import calendar_fetcher as cf  # noqa: E402
+import codal_captcha  # noqa: E402
 
 PASS = FAIL = 0
 
@@ -58,9 +59,9 @@ class FakeSession:
 
 
 def run():
-    old_image = cf.CAPTCHA_IMAGE
+    old_image = codal_captcha.CAPTCHA_IMAGE
     with tempfile.TemporaryDirectory() as tmp:
-        cf.CAPTCHA_IMAGE = Path(tmp) / "captcha.png"
+        codal_captcha.CAPTCHA_IMAGE = Path(tmp) / "captcha.png"
         try:
             # ۱) موفق: begin → تصویر → end → هدرِ توکن
             s = FakeSession()
@@ -69,8 +70,8 @@ def run():
                                   opener=lambda p: opened.append(p))
             check("success returns True", ok is True)
             check("captcha image is written",
-                  cf.CAPTCHA_IMAGE.read_bytes() == b"PNG")
-            check("image is opened for the operator", opened == [cf.CAPTCHA_IMAGE])
+                  codal_captcha.CAPTCHA_IMAGE.read_bytes() == b"PNG")
+            check("image is opened for the operator", opened == [codal_captcha.CAPTCHA_IMAGE])
             posts = [c for c in s.calls if c[0] == "post"]
             check("begin then end are called", [p[1].rsplit("/", 1)[-1] for p in posts] == ["begin", "end"])
             check("end carries token and code",
@@ -97,7 +98,7 @@ def run():
             check("empty code never submits end",
                   not any(c[0] == "post" and c[1].endswith("/end") for c in s3.calls))
         finally:
-            cf.CAPTCHA_IMAGE = old_image
+            codal_captcha.CAPTCHA_IMAGE = old_image
     print("calendar captcha guard: %d passed / %d failed" % (PASS, FAIL))
     return 0 if FAIL == 0 else 1
 

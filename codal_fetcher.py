@@ -27,6 +27,7 @@ from requests.adapters import HTTPAdapter
 
 # تنها تعریفِ «واحدِ پول» — `_classify_unit` به این واگرد می‌کند تا نوشتنِ مقیاس
 # و خواندنِ مقیاس یک مجموعه باشند (`codal_units` stdlib-only است، بی‌چرخه).
+import codal_captcha
 import codal_units as CU
 from urllib3.util.retry import Retry
 
@@ -96,6 +97,13 @@ REJECTED_SECTORS = (
 
 _LAST_429 = False
 _CONSEC_429 = 0          # consecutive final-429 symbols (WAF gate)
+
+# چالش رسمی 429: فقط با --captcha روشن می‌شود. اجرای خودکار بدون آن دقیقاً
+# مثل قبل backoff می‌کند؛ کد از فایل/ورودی اپراتور می‌آید و یک‌بار مصرف است.
+_CAPTCHA_ENABLED = False
+_CAPTCHA_CODE_FILE = None
+_CAPTCHA_PROMPT = None
+_CAPTCHA_ATTEMPTED = False
 POLITE = False           # پروفایل بدون-IP-روتاریشن: بین هر درخواست مکث امن (میانگین ~1.7s)
 # --no-tether از CLI ست میشود؛ پیش‌فرضِ ماژول لازم است تا make_session برای
 # فراخوانِ کتابخانه‌ای (api/, dev/, probeها) NameError ندهد.
@@ -1092,8 +1100,17 @@ def backfill_derived(conn, verbose=True):
 _CB_TOTAL, _CB_DONE, _CB_SYM = 0, 0, ""
 
 # ---------------------------------------------------------------- notice list
+def enable_captcha(code_file=None, prompt=None):
+    """روشن‌کردن چالش رسمی 429 برای اجرای دستی/کد فایل."""
+    global _CAPTCHA_ENABLED, _CAPTCHA_CODE_FILE, _CAPTCHA_PROMPT, _CAPTCHA_ATTEMPTED
+    _CAPTCHA_ENABLED = True
+    _CAPTCHA_CODE_FILE = code_file
+    _CAPTCHA_PROMPT = prompt
+    _CAPTCHA_ATTEMPTED = False
+
+
 def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
-    global _CONSEC_429
+    global _CONSEC_429, _CAPTCHA_ATTEMPTED
     """Fetch one page with robust exponential backoff on rate-limit (429).
     On 429 sleeps 30s, then 60s, then 120s (up to `max_429_retries` retries),
     then gives up and returns None (the caller stops the run gracefully).
@@ -1123,6 +1140,14 @@ def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
             time.sleep(random.uniform(2.5, 5.0))
             continue
         if r.status_code in (429, 403):
+            if _CAPTCHA_ENABLED and not _CAPTCHA_ATTEMPTED:
+                _CAPTCHA_ATTEMPTED = True
+                print(f"  page {page}: {r.status_code} → چالش رسمی کدال ...", flush=True)
+                if codal_captcha.solve_captcha(
+                        s, code_file=_CAPTCHA_CODE_FILE, prompt=_CAPTCHA_PROMPT):
+                    print(f"  page {page}: چالش تأیید شد؛ همان صفحه دوباره ...", flush=True)
+                    continue
+                print(f"  page {page}: چالش کامل نشد؛ بازگشت به backoff معمول", flush=True)
             # v9.8.1 — 403 (بن/WAF قطعی) هم مثل 429 با چرخش IP برخورد میکند؛
             # پیش‌تر 403 بی‌صدا به raise_for_status می‌افتاد و کل صفحه دور
             # ریخته میشد بدون هیچ تلاشی برای IP تازه.
