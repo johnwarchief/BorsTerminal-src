@@ -87,7 +87,7 @@ export function FundamentalScreenTable({ rows, onSelect, asOf, settingsSlot }: P
       ]),
     }, [
       ['منبع', '/api/screener'],
-      ['روز تابلو', asOf ?? '—'],
+      ['زمان اسکن', asOf ?? '—'],
       ['ردیف‌ها', String(filtered.length)],
     ]);
   }

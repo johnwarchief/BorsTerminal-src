@@ -47,7 +47,7 @@ export const ScreenerCoreSchema = z.looseObject({
   status: z.string(),
   count: z.number(),
   data: z.array(ScreenerCoreRowSchema),
-  as_of: Str,
+  as_of: z.union([z.string(), z.number()]).nullish(),
 });
 
 export type ScreenerCoreRow = z.infer<typeof ScreenerCoreRowSchema>;

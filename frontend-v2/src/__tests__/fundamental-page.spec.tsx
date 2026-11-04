@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { downloadCsvWithMeta } from '@shared/lib/tableExport';
+import { jalaliFromYmd } from '@shared/lib/jalali';
 import { useScreenerCore, type ScreenerCoreRow } from '@features/fundamental/api/useScreenerCore';
 import { FundamentalPage } from '@features/fundamental/routes/FundamentalPage';
 import { resetExcludeAxes } from '@features/fundamental/lib/exclusionFilter';
@@ -95,7 +96,20 @@ describe('fundamental page', () => {
     expect(base).toBe('غربالگری-بنیادی');
     expect(table.rows).toHaveLength(1);
     expect(table.rows[0]![0]).toBe('خساپا');
-    expect(meta).toContainEqual(['روز تابلو', '2026-11-03']);
+    expect(meta).toContainEqual(['زمان اسکن', jalaliFromYmd(20261103)]);
+  });
+
+  it('formats the python scan timestamp as_of', () => {
+    mockedUseScreener.mockReturnValue({
+      data: { status: 'success', count: 2, data: rows, as_of: 1793788694 },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useScreenerCore>);
+    render(<MemoryRouter initialEntries={['/fundamental']}><FundamentalPage /></MemoryRouter>);
+    const label = screen.getByTestId('fundamental-as-of').textContent ?? '';
+    expect(label).toContain('زمان اسکن');
+    expect(label).toContain('۱۴۰۵');
   });
 
   it('navigates to the symbol route on row click', () => {

@@ -6,12 +6,31 @@ import { FundamentalDetail } from '../ui/FundamentalDetail';
 import { FundamentalScreenTable } from '../ui/FundamentalScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
 
+/** as_of پایتون زمانِ اسکن (epoch) است، نه روز تابلو؛ برچسب باید همین را بگوید. */
+function scanTimeLabel(value: string | number | null | undefined): string | null {
+  if (value == null) return null;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Tehran',
+    }).format(new Date(value * 1000));
+  }
+  const text = String(value).trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return jalaliFromYmd(Number(text.replace(/-/g, '')));
+  return text;
+}
+
 export function FundamentalPage() {
   const { symbol } = useParams<{ symbol?: string }>();
   const navigate = useNavigate();
   const screener = useScreenerCore();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const asOfYmd = screener.data?.as_of ? Number(screener.data.as_of.replace(/-/g, '')) : null;
+  const scanLabel = scanTimeLabel(screener.data?.as_of);
 
   if (symbol) {
     return <FundamentalDetail symbol={symbol} onBack={() => navigate('/fundamental')} />;
@@ -22,9 +41,9 @@ export function FundamentalPage() {
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-line px-3 py-2">
         <b className="t-125 font-extrabold text-text">بنیادی</b>
         <span className="t-9 text-text-3">غربالگری پنج‌شاخص FTS — از جدول به کارت نماد</span>
-        {screener.data?.as_of ? (
+        {scanLabel ? (
           <span data-testid="fundamental-as-of" className="num ms-auto t-85 text-text-3">
-            روز تابلو: {jalaliFromYmd(asOfYmd)}
+            زمان اسکن: {scanLabel}
           </span>
         ) : null}
       </header>
@@ -39,7 +58,7 @@ export function FundamentalPage() {
       ) : (
         <FundamentalScreenTable
           rows={screener.data.data}
-          asOf={screener.data.as_of}
+          asOf={scanLabel}
           onSelect={(next) => navigate(`/fundamental/${next}`)}
           settingsSlot={<FtsSettingsTrigger open={settingsOpen} onToggle={() => setSettingsOpen((value) => !value)} />}
         />
