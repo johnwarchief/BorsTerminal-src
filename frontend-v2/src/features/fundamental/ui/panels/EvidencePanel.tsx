@@ -42,7 +42,7 @@ export function EvidencePanel({ card }: { card: FtsCard }) {
                 <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line)] text-[8.5px]">{digit}</span>
                 <span className="min-w-0 truncate" title={sub.detail ? faText(sub.detail) : undefined}>{sub.label ?? '—'}</span>
                 <span className="ms-auto text-[var(--fd-text)]">{faText(sub.value)}</span>
-                {sub.threshold ? <span title={sub.threshold}>{sub.threshold}</span> : null}
+                {sub.threshold ? <span title={faText(sub.threshold)}>{faText(sub.threshold)}</span> : null}
                 {state ? <span className={`flex-none fd-status--${state}`}>{statusFa(state)}</span> : null}
               </div>
             );

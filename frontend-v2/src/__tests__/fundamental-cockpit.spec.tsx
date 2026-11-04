@@ -113,6 +113,13 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** متنِ یک ردیفِ پنل بر پایهٔ برچسبش؛ برای سنجشِ وضعیتِ همان ردیف، نه کلِ پنل. */
+function rowText(panel: HTMLElement, label: string): string {
+  const row = Array.from(panel.querySelectorAll('span'))
+    .find((element) => element.firstElementChild?.textContent === label);
+  return row?.textContent ?? '';
+}
+
 describe('fundamental cockpit', () => {
   it('renders quintet, five panels, history and evidence', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
@@ -254,6 +261,91 @@ describe('fundamental cockpit', () => {
     expect(growth.textContent).toContain('−۸٫۸٪');
     expect(growth.textContent).not.toContain('−۳٫۱٪');
     expect(growth.textContent).toContain('رد');
+  });
+
+  it('keeps a 1b data gap at نامشخص even when its pass is false (R104)', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '1': {
+          ...baseIndicators['1'],
+          volume: {
+            applicable: true,
+            real_pct: -8.8,
+            volume_pct: -3.1,
+            pass: false,
+            threshold: 0,
+            data_gap: true,
+            basis: 'price_effect_decomposition',
+            note: 'یادداشتِ روش',
+            reason: 'تناژ فروش در دورهٔ جاری ثبت نشده است.',
+          },
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const growth = screen.getByTestId('panel-growth');
+    const volumeRow = rowText(growth, '۱ب — رشد واقعی/تناژ');
+    expect(volumeRow).toContain('نامشخص');
+    expect(volumeRow).not.toContain('رد');
+    expect(growth.querySelector('header')?.textContent).toContain('نامشخص');
+    // R106: دلیلِ ۱ب بر یادداشتِ عمومیِ volume مقدم است.
+    expect(growth.textContent).toContain('تناژ فروش در دورهٔ جاری ثبت نشده است.');
+    expect(growth.textContent).not.toContain('یادداشتِ روش');
+    const growthTile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="growth"]');
+    expect(growthTile?.textContent).toContain('نامشخص');
+    expect(growthTile?.textContent).not.toContain('رد');
+  });
+
+  it('labels a 1a monetary data gap as نامشخص instead of a bare percentage (R104)', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '1': {
+          ...baseIndicators['1'],
+          monetary: { ...baseIndicators['1'].monetary, data_gap: true, pass: false },
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const growth = screen.getByTestId('panel-growth');
+    const monetaryRow = rowText(growth, '۱الف — رشد ریالی');
+    expect(monetaryRow).toContain('نامشخص');
+    expect(monetaryRow).not.toContain('رد');
+    expect(growth.querySelector('header')?.textContent).toContain('نامشخص');
+  });
+
+  it('uses the last finite EPS in both the headline and the «آخرین EPS» row (R106)', () => {
+    mockCard({
+      indicators: {
+        ...baseIndicators,
+        '2': { ...baseIndicators['2'], eps_series: [1119, 1615, 1672, null] },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const epsPanel = screen.getByTestId('panel-eps');
+    expect(epsPanel.textContent).toContain('۱۶۷۲ ↑');
+    expect(epsPanel.textContent).toMatch(/آخرین EPS\s*۱۶۷۲/);
+    expect(screen.getByTestId('fundamental-quintet').querySelector('[data-axis="eps"]')?.textContent).toContain('۱۶۷۲ ↑');
+  });
+
+  it('localizes digits in the evidence threshold as well as the value (R106)', () => {
+    mockCard({
+      details: {
+        ...details,
+        '۳': {
+          title: 'حاشیه',
+          formula: 'x',
+          source: 'کدال',
+          subchecks: [{ key: '3a', label: 'حاشیه', state: 'pass', value: '1,234.5', threshold: '≥ 20.5', detail: '' }],
+        },
+      },
+    });
+    render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
+    const evidence = screen.getByTestId('panel-evidence');
+    expect(evidence.textContent).toContain('≥ ۲۰٫۵');
+    expect(evidence.textContent).not.toContain('20.5');
+    expect(evidence.querySelector('[title="≥ ۲۰٫۵"]')).toBeTruthy();
   });
 
   it('turns a growth data gap into نامشخص instead of a pass/fail claim (R97)', () => {

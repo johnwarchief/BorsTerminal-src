@@ -109,6 +109,8 @@ describe('fundamental page visual', () => {
     expect(table.columns).toContain('صنعت شرکت');
     expect(meta).toEqual(expect.arrayContaining([
       ['آستانه رشد', '60'],
+      // R107: گیتِ EPS در متادیتا می‌ماند، هرچند ستون نمایشی آخرین EPS + فلش است.
+      ['آستانه EPS', '3'],
       ['آستانه حاشیه', '40'],
       ['آستانه فروش/ارزش', '0.33'],
     ]));
@@ -179,6 +181,7 @@ describe('fundamental page visual', () => {
     const [, , meta] = mockedDownload.mock.calls[0]!;
     expect(meta).toEqual(expect.arrayContaining([
       ['آستانه رشد', '—'],
+      ['آستانه EPS', '—'],
       ['آستانه حاشیه', '—'],
       ['آستانه فروش/ارزش', '—'],
     ]));

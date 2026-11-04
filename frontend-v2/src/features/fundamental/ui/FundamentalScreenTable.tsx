@@ -178,6 +178,8 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
     ]);
     const meta: Array<[string, string]> = [
       ['آستانه رشد', String(thresholds?.growth_min ?? '—')],
+      // R107: گیتِ EPS در متادیتا می‌ماند تا ستون نمایشی (آخرین EPS + فلش) گیت را پنهان نکند.
+      ['آستانه EPS', String(thresholds?.v10_eps_years ?? '—')],
       ['آستانه حاشیه', String(thresholds?.margin_min ?? '—')],
       ['آستانه فروش/ارزش', String(thresholds?.v10_sales_to_mcap_min ?? '—')],
       ['زمان اسکن', asOf ?? '—'],

@@ -25,6 +25,8 @@ const Axis1Schema = z.looseObject({
     pass: Bool,
     threshold: Num,
     note: Str,
+    // R106: دلیلِ شکستِ ۱ب جدا از یادداشتِ روش می‌آید.
+    reason: Str,
     data_gap: Bool,
     basis: Str,
   }).nullish(),

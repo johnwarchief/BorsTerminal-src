@@ -59,16 +59,22 @@ describe('axis meta', () => {
     expect(verdictFa('EXCLUDED')).toBe('خارج از غربال');
     expect(verdictFa('FTS ندارد')).toBe('FTS ندارد');
   });
-  it('derives the EPS trend from the last two finite points (R98)', () => {
+  it('derives the EPS trend from the whole finite series (R98/R105)', () => {
     expect(trendOf([1119, 1615, 1672])).toBe('up');
-    expect(trendOf([1425, 454, 456])).toBe('up');
     expect(trendOf([1672, 1615])).toBe('down');
     expect(trendOf([500, 500])).toBe('flat');
     expect(trendOf([1672])).toBeNull();
     expect(trendOf(null)).toBeNull();
     expect(trendOf([null, null])).toBeNull();
-    // نقطهٔ null نادیده گرفته می‌شود و دو مقدارِ متناهیِ آخر ملاک است.
+    // نقطهٔ null نادیده گرفته می‌شود و سریِ متناهی ملاک است.
     expect(trendOf([100, null, 90])).toBe('down');
+    // R105: جهشِ دو نقطهٔ آخر روند را نمی‌سازد؛ کل سری باید هم‌جهت باشد.
+    expect(trendOf([1425, 454, 456])).toBe('flat');
+    expect(trendOf([1425, 454, 456])).not.toBe('up');
+    expect(trendOf([100, 200, 150])).toBe('flat');
+    expect(trendOf([300, 200, 100])).toBe('down');
+    expect(trendOf([100, 200, 300])).toBe('up');
+    expect(formatEpsTrend([1425, 454, 456])).toBe('۴۵۶ →');
   });
   it('renders trend arrows and Persian words (R98)', () => {
     expect([trendArrow('up'), trendArrow('down'), trendArrow('flat'), trendArrow(null)])

@@ -4,12 +4,21 @@ import { cardStatus } from '../../lib/cardStatus';
 import { Bullet } from '../mini/Bullet';
 import { AxisPanel, faThreshold } from './AxisPanel';
 
-/** وضعیتِ ۱ب از pass خودش؛ «نامعطّل» بی‌نظر است و غیبتِ حکم نامشخص. */
-function volumeStatus(card: FtsCard): AxisStatus {
-  const volume = card.indicators?.['1']?.volume;
-  if (volume?.applicable === false) return 'na';
-  if (volume?.pass === true) return 'pass';
-  if (volume?.pass === false) return 'fail';
+type MetricSignal = {
+  applicable?: boolean | null;
+  data_gap?: boolean | null;
+  pass?: boolean | null;
+};
+
+/**
+ * R104: ترتیبِ تقدمِ وضعیتِ زیرردیف: «نامعطّل» → بی‌نظر، شکافِ داده → نامشخص،
+ * سپس حکمِ pass؛ غیبتِ حکم نامشخص. شکافِ داده هرگز «رد» دیده نمی‌شود.
+ */
+function metricStatus(signal: MetricSignal | null | undefined): AxisStatus {
+  if (signal?.applicable === false) return 'na';
+  if (signal?.data_gap === true) return 'unknown';
+  if (signal?.pass === true) return 'pass';
+  if (signal?.pass === false) return 'fail';
   return 'unknown';
 }
 
@@ -28,11 +37,13 @@ export function GrowthPanel({ card }: { card: FtsCard }) {
   const pct = formatAxisValue(monetary?.monetary_pct ?? null, 'growth');
   // R97: آستانهٔ نمایش همان گیتِ S4b است (target_threshold)، وگرنه threshold.
   const threshold = monetary?.target_threshold ?? monetary?.threshold ?? null;
-  // R101: دلیلِ آشکار — دلیلِ ۱الف، وگرنه یادداشتِ ۱ب.
-  const reason = monetary?.reason || volume?.note || '';
+  // R101: دلیلِ آشکار — دلیلِ ۱الف، وگرنه دلیلِ ۱ب، وگرنه یادداشتِ ۱ب.
+  const reason = monetary?.reason || volume?.reason || volume?.note || '';
+  // R104: شکافِ دادهٔ ۱الف هم ارزشِ ریالی را «نامشخص» می‌کند، نه ردیفِ بی‌حکم.
+  const monetaryGap = monetary?.data_gap === true;
   const rows: Array<[string, string]> = [
-    ['۱الف — رشد ریالی', pct],
-    ['۱ب — رشد واقعی/تناژ', `${volumeValue(card)} · ${statusFa(volumeStatus(card))}`],
+    ['۱الف — رشد ریالی', monetaryGap ? `${pct} · ${statusFa(metricStatus(monetary))}` : pct],
+    ['۱ب — رشد واقعی/تناژ', `${volumeValue(card)} · ${statusFa(metricStatus(volume))}`],
   ];
   if (reason) rows.push(['دلیل', reason]);
   return (

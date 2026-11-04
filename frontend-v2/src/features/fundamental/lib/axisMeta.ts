@@ -74,7 +74,7 @@ export function reasonOf(row: ScreenerReasonRow, axis: AxisKey): string | null {
   return null;
 }
 
-/** R98: روندِ سری (دو مقدارِ آخر) — گیتِ محور ۲ روند است، نه شمارشِ سال. */
+/** R98: روندِ سری — گیتِ محور ۲ روند است، نه شمارشِ سال. */
 export type Trend = 'up' | 'down' | 'flat' | null;
 
 function finiteValues(series: readonly (number | null | undefined)[] | null | undefined): number[] {
@@ -88,14 +88,17 @@ export function lastSeriesValue(series: readonly (number | null | undefined)[] |
   return values.length ? values[values.length - 1]! : null;
 }
 
-/** روند از دو مقدارِ آخر؛ کمتر از دو مقدار = نامشخص، نه «ثابت». */
+/**
+ * R105: روند از کلِ سریِ متناهی — همهٔ اختلاف‌های متوالی مثبت → صعودی، همه منفی →
+ * نزولی، وگرنه بی‌تغییر. دو نقطهٔ آخر کافی نیست: [۱۴۲۵, ۴۵۴, ۴۵۶] صعودی نیست.
+ * کمتر از دو مقدار = نامشخص، نه «ثابت».
+ */
 export function trendOf(series: readonly (number | null | undefined)[] | null | undefined): Trend {
   const values = finiteValues(series);
   if (values.length < 2) return null;
-  const last = values[values.length - 1]!;
-  const previous = values[values.length - 2]!;
-  if (last > previous) return 'up';
-  if (last < previous) return 'down';
+  const diffs = values.slice(1).map((value, index) => value - values[index]!);
+  if (diffs.every((diff) => diff > 0)) return 'up';
+  if (diffs.every((diff) => diff < 0)) return 'down';
   return 'flat';
 }
 

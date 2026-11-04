@@ -1,6 +1,6 @@
 import { toFaDigits } from '@shared/lib/fa';
 import type { FtsCard } from '../../api/useFtsCard';
-import { formatEpsTrend } from '../../lib/axisMeta';
+import { formatEpsTrend, lastSeriesValue } from '../../lib/axisMeta';
 import { cardStatus } from '../../lib/cardStatus';
 import { EpsBars } from '../mini/EpsBars';
 import { AxisPanel, faInt } from './AxisPanel';
@@ -25,7 +25,8 @@ export function EpsPanel({ card }: { card: FtsCard }) {
   const eps = card.indicators?.['2'];
   const status = cardStatus(card, 'eps');
   const series = eps?.eps_series ?? [];
-  const last = series.length ? series[series.length - 1] : null;
+  // R106: همان آخرین مقدارِ متناهیِ سرصفحه، نه آخرین خانهٔ سری (که گاه null است).
+  const last = lastSeriesValue(series);
   // R99: مخرجِ «سال‌های موجود» از تنظیمِ گیت می‌آید، نه ۳ سخت‌کد؛ نامعلوم «—».
   const required = eps?.years_required ?? card.thresholds?.v10_eps_years ?? null;
   const years = required == null

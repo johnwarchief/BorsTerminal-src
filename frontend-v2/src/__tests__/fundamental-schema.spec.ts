@@ -100,6 +100,8 @@ describe('fts card schema (R82)', () => {
             data_gap: false,
             basis: 'price_effect_decomposition',
             note: 'این شرکت کالای وزن‌شدنی تولید نمی‌کند.',
+            // R106: دلیلِ ۱ب از یادداشتِ روش جدا خوانده می‌شود.
+            reason: '',
           },
           pass: false,
           reason: 'رشد ریالی زیر کف است.',
@@ -115,6 +117,29 @@ describe('fts card schema (R82)', () => {
     expect(growth?.volume?.pass).toBe(false);
     expect(growth?.volume?.basis).toBe('price_effect_decomposition');
     expect(growth?.volume?.note).toContain('وزن‌شدنی');
+    expect(growth?.volume?.reason).toBe('');
+  });
+
+  it('parses the 1b volume reason and data-gap signal (R106)', () => {
+    const parsed = FtsCardSchema.parse({
+      status: 'success',
+      symbol: 'رنيك',
+      indicators: {
+        '1': {
+          volume: {
+            applicable: true,
+            real_pct: -8.8,
+            pass: false,
+            data_gap: true,
+            reason: 'تناژ فروش در دورهٔ جاری ثبت نشده است.',
+          },
+        },
+      },
+    });
+    const volume = parsed.indicators?.['1']?.volume;
+    expect(volume?.applicable).toBe(true);
+    expect(volume?.data_gap).toBe(true);
+    expect(volume?.reason).toContain('تناژ فروش');
   });
 
   it('parses the EPS reason/data-gap and the root thresholds block (R99/R101)', () => {
