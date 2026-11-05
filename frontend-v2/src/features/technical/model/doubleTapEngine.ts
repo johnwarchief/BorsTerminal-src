@@ -15,6 +15,7 @@ import type {
   FormationConfidence,
   FormationEstimate,
 } from './types';
+import { isPivotHigh, isPivotLow } from './patterns/pivots';
 
 export interface EngineCandle {
   timestamp: number;
@@ -87,22 +88,6 @@ export function calculateAtr(candles: readonly EngineCandle[], period = 14): num
     atr[i] = i >= period - 1 ? sum / period : sum / (i + 1);
   }
   return atr;
-}
-
-function isPivotHigh(data: readonly EngineCandle[], idx: number, left: number, right: number): boolean {
-  const h = data[idx].high;
-  for (let j = Math.max(0, idx - left); j <= Math.min(data.length - 1, idx + right); j++) {
-    if (j !== idx && data[j].high > h) return false;
-  }
-  return true;
-}
-
-function isPivotLow(data: readonly EngineCandle[], idx: number, left: number, right: number): boolean {
-  const l = data[idx].low;
-  for (let j = Math.max(0, idx - left); j <= Math.min(data.length - 1, idx + right); j++) {
-    if (j !== idx && data[j].low < l) return false;
-  }
-  return true;
 }
 
 function qualityScore(args: {
