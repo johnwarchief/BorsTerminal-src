@@ -8,6 +8,8 @@ export interface PatternConfig {
   outcomeHorizon: number;
   returnHorizons: [number, number, number];
   formationMinResolved: number;
+  expiryGraceBars: number;
+  expiryMinPoints: number;
   flag: { impulseLegAtrMin: number; channelMaxWidthPct: number; slopeOpposite: boolean; maxBars: number };
   pennant: { impulseLegAtrMin: number; convergenceMin: number; maxBars: number };
   triangle: { flatToleranceAtr: number; convergenceMin: number; maxBars: number };
@@ -26,6 +28,8 @@ export const PATTERN_CONFIG: PatternConfig = {
   outcomeHorizon: 10,
   returnHorizons: [1, 3, 5],
   formationMinResolved: 8,
+  expiryGraceBars: 1,
+  expiryMinPoints: 5,
   flag: { impulseLegAtrMin: 3.0, channelMaxWidthPct: 35, slopeOpposite: true, maxBars: 40 },
   pennant: { impulseLegAtrMin: 3.0, convergenceMin: 0.35, maxBars: 30 },
   triangle: { flatToleranceAtr: 0.35, convergenceMin: 0.30, maxBars: 60 },

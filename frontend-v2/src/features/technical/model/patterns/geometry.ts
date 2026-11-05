@@ -55,13 +55,13 @@ export interface PatternSpec {
 export function emitPattern(
   spec: PatternSpec,
   candles: readonly EngineCandle[],
-  // R-PAT-5: انقضا از maxBars خودِ spec خوانده می‌شود؛ config در امضا برای سازگاری با فراخوان‌ها می‌ماند.
-  _config: PatternConfig,
+  config: PatternConfig,
 ): ChartPattern | null {
   const anchor = spec.points[spec.points.length - 1];
   if (!anchor) return null;
   const maxBars = spec.maxBars;
-  if (anchor.index < candles.length - maxBars - 1 && spec.points.length < 5) return null;
+  if (anchor.index < candles.length - maxBars - config.expiryGraceBars
+    && spec.points.length < config.expiryMinPoints) return null;
 
   const start = anchor.index + 1;
   let status: ChartPattern['status'] = 'forming';
@@ -71,7 +71,9 @@ export function emitPattern(
     const close = candles[i].close;
     const brokeUp = close > lineValue(spec.upper, i);
     const brokeDown = close < lineValue(spec.lower, i);
-    if (spec.direction === 'bullish' ? brokeUp : spec.direction === 'bearish' ? brokeDown : false) {
+    // R-PAT-11: الگوی خنثی با شکست هر یک از دو مرز تأیید می‌شود و جهت خود را خنثی نگه می‌دارد.
+    if (spec.direction === 'bullish' ? brokeUp
+      : spec.direction === 'bearish' ? brokeDown : brokeUp || brokeDown) {
       status = 'confirmed';
       breakoutIndex = i;
       break;
