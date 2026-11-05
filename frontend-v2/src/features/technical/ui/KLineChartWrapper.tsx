@@ -34,6 +34,8 @@ import { registerAllUserIndicators } from '../overlays/userIndicators';
 import { registerCorporateEventsOverlay } from '../overlays/corporateEventsOverlay';
 import { registerAllAdvancedIndicators } from '../overlays/advancedTradingIndicators';
 import { registerPatternOverlay } from '../overlays/patternOverlay';
+import { detectAllPatterns } from '../model/patterns/registry';
+import type { EngineCandle } from '../model/doubleTapEngine';
 import { OSCILLATOR_NAMES, oscillatorPaneId, registerOscillatorIndicators } from '../indicators/oscillatorIndicators';
 import { PatternStoryOverlay } from './PatternStoryOverlay';
 import type { Candle } from '../model/types';
@@ -339,6 +341,27 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   barsRef.current = bars;
 
   const lastCandle = bars.length > 0 ? bars[bars.length - 1] : null;
+
+  const setChartCandles = useTechnicalStore((s) => s.setChartCandles);
+  const setDetectedPatterns = useTechnicalStore((s) => s.setDetectedPatterns);
+
+  // R-PAT-26: تشخیص الگوها همان‌جا که سری کندل زندگی می‌کند انجام می‌شود؛
+  // نه فچ تازه، نه محاسبهٔ موازی در میزکار. با تغییر نکردن هویت آرایه از محاسبهٔ دوباره صرف‌نظر می‌کنیم.
+  const lastPatternBarsRef = useRef<KLineData[] | null>(null);
+  useEffect(() => {
+    if (lastPatternBarsRef.current === bars) return;
+    lastPatternBarsRef.current = bars;
+    const engineCandles: EngineCandle[] = bars.map((bar) => ({
+      timestamp: bar.timestamp,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume,
+    }));
+    setChartCandles(engineCandles);
+    setDetectedPatterns(engineCandles.length >= 30 ? detectAllPatterns(engineCandles) : []);
+  }, [bars, setChartCandles, setDetectedPatterns]);
 
   // ۱. راه‌اندازی و نابودی چارت با ایمنی کامل از نشتی حافظه DOM
   useEffect(() => {
