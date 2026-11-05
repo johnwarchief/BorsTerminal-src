@@ -20,6 +20,7 @@ import type { ChannelMode, RsiVariant, DrawerTab } from '../model/types';
 import { ADVANCED_INDICATORS_REGISTRY } from '../overlays/advancedTradingIndicators';
 import { USER_INDICATORS_REGISTRY } from '../overlays/userIndicators';
 import { CandleEdgeCard } from './CandleEdgeCard';
+import { PatternsTab } from './PatternsTab';
 import { TelegramCatalogList } from './TelegramCatalogList';
 import { classifyAssetType } from '@features/market/lib/assetType';
 import { useUiStore } from '@shared/stores/uiStore';
@@ -270,6 +271,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
   const detectedDoubleTapPatterns = useTechnicalStore((s) => s.detectedDoubleTapPatterns);
   const detectedPullbackSignals = useTechnicalStore((s) => s.detectedPullbackSignals);
   const detectedCHoCHSignals = useTechnicalStore((s) => s.detectedCHoCHSignals);
+  const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
   const doubleTapProfile = useTechnicalStore((s) => s.doubleTapProfile);
   const setDoubleTapProfile = useTechnicalStore((s) => s.setDoubleTapProfile);
   const formationHorizon = useTechnicalStore((s) => s.indicatorParams.DoubleTap3D?.formationHorizon ?? 10);
@@ -357,6 +359,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
     { id: 'top50', labelFa: '۵۰ نماد برتر', badge: top50Symbols.length },
     { id: 'indicators', labelFa: 'اندیکاتورها و کانال' },
     { id: 'scanner', labelFa: 'اسکنر الگوها', badge: detectedDoubleTapPatterns.length + detectedPullbackSignals.length },
+    { id: 'patterns', labelFa: 'الگوها' },
     { id: 'edge', labelFa: 'لبه آماری' },
   ];
 
@@ -797,7 +800,14 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
           </div>
         )}
 
-        {/* ۴. تب لبه آماری کندل‌ها (همیشه سوار در DOM برای آزمون‌های سیستمی) */}
+        {/* ۴. تب الگوهای کلاسیک (کارت، فهرست و قواعد) */}
+        {activeTab === 'patterns' && (
+          <div className="block p-3">
+            <PatternsTab patterns={detectedPatterns} />
+          </div>
+        )}
+
+        {/* ۵. تب لبه آماری کندل‌ها (همیشه سوار در DOM برای آزمون‌های سیستمی) */}
         <div
           data-testid="edge-tab-panel"
           className={activeTab === 'edge' ? 'block p-3' : 'hidden'}

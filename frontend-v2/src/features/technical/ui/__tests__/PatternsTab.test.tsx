@@ -1,0 +1,77 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { PatternsTab } from '../PatternsTab';
+import type { ChartPattern } from '../../model/patterns/types';
+
+const point = (index: number, price: number) => ({ index, price, timestamp: index * 60_000 });
+const base = (over: Partial<ChartPattern>): ChartPattern => ({
+  id: 'p1', kind: 'FLAG_BULL', direction: 'bullish', family: 'continuation',
+  anchor: point(40, 105), points: [], upper: { from: point(30, 106), to: point(40, 106) },
+  lower: { from: point(30, 104), to: point(40, 104) },
+  target: 112, stopLoss: 98, quality: 60, status: 'forming', ...over,
+});
+
+afterEach(cleanup);
+
+describe('PatternsTab', () => {
+  it('shows the percentage only when a formation estimate exists', () => {
+    render(<PatternsTab patterns={[base({
+      formation: { probability: 62, successes: 14, failures: 9, resolved: 23, confidence: 'medium', horizon: 10, method: 'same-symbol' },
+      returns: { h1: 1.2, h3: 2.1, h5: null },
+    })]} />);
+    const card = screen.getByTestId('pattern-card');
+    expect(card.textContent).toContain('۶۲٪');
+    expect(card.textContent).toContain('۲۳');
+    expect(card.textContent).toContain('کندلِ در حال تشکیل');
+  });
+
+  it('says the sample is not enough instead of showing a number', () => {
+    render(<PatternsTab patterns={[base({
+      formation: { probability: null, successes: 2, failures: 1, resolved: 3, confidence: 'none', horizon: 10, method: 'same-symbol' },
+    })]} />);
+    expect(screen.getByTestId('pattern-card').textContent).toContain('نمونهٔ کافی نیست');
+    expect(screen.getByTestId('pattern-card').textContent).not.toMatch(/تشکیل\s*[۰-۹]+٪/);
+  });
+
+  it('lists recent patterns with stable row testids and filters by family', () => {
+    render(<PatternsTab patterns={[
+      base({ id: 'a' }),
+      base({ id: 'b', kind: 'HEAD_SHOULDERS', family: 'reversal', direction: 'bearish', status: 'confirmed' }),
+    ]} />);
+    expect(screen.getByTestId('pattern-row-a')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('فیلتر خانواده'), { target: { value: 'reversal' } });
+    expect(screen.queryByTestId('pattern-row-a')).toBeNull();
+    expect(screen.getByTestId('pattern-row-b')).toBeTruthy();
+  });
+
+  it('renders the rule book from PATTERN_CONFIG', () => {
+    render(<PatternsTab patterns={[]} />);
+    const rules = screen.getByTestId('pattern-rules');
+    expect(rules.textContent).toContain('۳');
+    expect(rules.textContent).toContain('۳۵');
+    expect(rules.textContent).toContain('۸');
+  });
+
+  it('renders every config key added after the brief in the rule book', () => {
+    render(<PatternsTab patterns={[]} />);
+    const rules = screen.getByTestId('pattern-rules').textContent ?? '';
+    // touchToleranceAtr
+    expect(rules).toContain('تحمل لمس ۰٫۵×ATR');
+    // flag.minLegBars
+    expect(rules).toContain('حداقل لگ ۳ کندل');
+    // triangle.minSpan
+    expect(rules).toContain('حداقل طول ۳ کندل');
+    // expiryGraceBars
+    expect(rules).toContain('مهلت تمدید ۱ کندل');
+    // expiryMinPoints
+    expect(rules).toContain('حداقل نقاط تمدید ۵');
+    // reversal.minSpanBars
+    expect(rules).toContain('حداقل طول بازگشتی ۶ کندل');
+    // neutralMinTargetAtr
+    expect(rules).toContain('حداقل هدف خنثی ۰٫۵×ATR');
+    // returnsMinSamples
+    expect(rules).toContain('حداقل نمونهٔ بازده ۵');
+    // overlapWindowBars
+    expect(rules).toContain('پنجرهٔ هم‌پوشانی ۳ کندل');
+  });
+});
