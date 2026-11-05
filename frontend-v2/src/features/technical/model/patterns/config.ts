@@ -18,6 +18,7 @@ export interface PatternConfig {
   wedge: { convergenceMin: number; maxBars: number };
   hs: { headAboveShouldersAtr: number; shouldersToleranceAtr: number; maxBars: number };
   triple: { levelToleranceAtr: number; maxBars: number };
+  reversal: { minSpanBars: number };
 }
 
 export const PATTERN_CONFIG: PatternConfig = {
@@ -39,4 +40,5 @@ export const PATTERN_CONFIG: PatternConfig = {
   wedge: { convergenceMin: 0.30, maxBars: 60 },
   hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, maxBars: 120 },
   triple: { levelToleranceAtr: 0.50, maxBars: 120 },
+  reversal: { minSpanBars: 6 },
 };

@@ -79,6 +79,60 @@ function tripleBottomSeries(): EngineCandle[] {
   ]);
 }
 
+/** شانه‌ها ۲ واحد (بیش از 0.6×1.5=0.9) از هم فاصله دارند؛ بقیهٔ هندسه سر و شانه است. */
+function shouldersApartSeries(): EngineCandle[] {
+  return zigzag(100, [
+    [110, 3], // شانهٔ چپ (قلهٔ ۳)
+    [100, 4], // درهٔ گردن (۷)
+    [120, 5], // سر (۱۲)
+    [101, 5], // درهٔ گردن دوم (۱۷)
+    [108, 5], // شانهٔ راست، ۲ واحد زیر شانهٔ چپ (۲۲)
+    [95, 4], // شکست نزولی
+  ]);
+}
+
+/** سر فقط 0.3 = 0.2×1.5 بالای شانهٔ بلندتر است؛ آستانهٔ سر 0.5 ATR است. */
+function shallowHeadSeries(): EngineCandle[] {
+  return zigzag(100, [
+    [110, 3], // شانهٔ چپ (قلهٔ ۳)
+    [100, 4], // درهٔ گردن (۷)
+    [110.3, 5], // سر: 0.3 بالاتر از شانهٔ بلندتر (۱۲)
+    [101, 5], // درهٔ گردن دوم (۱۷)
+    [109.5, 5], // شانهٔ راست (۲۲)
+    [95, 4], // شکست نزولی
+  ]);
+}
+
+/**
+ * سه قله با گام‌های 0.5 (درون levelToleranceAtr=0.5) ولی دامنهٔ 1.0 = یک ATR کامل (بیرون آستانه)؛
+ * بررسی زنجیره‌ای جفتی این را می‌پذیرد، بررسی max−min باید رد کند.
+ */
+function spreadTripleTopSeries(): EngineCandle[] {
+  return zigzag(110, [
+    [104, 3], // درهٔ آغاز (۳)
+    [110, 4], // قلهٔ ۱ (۷)
+    [104, 4], // درهٔ ۱ (۱۱)
+    [110.5, 4], // قلهٔ ۲ (۱۵)
+    [104, 4], // درهٔ ۲ (۱۹)
+    [111, 4], // قلهٔ ۳ (۲۳)
+    [95, 4], // شکست نزولی
+  ]);
+}
+
+/** بسته‌شدن بالای سر پیش از شکست خط گردن: الگو باید باطل شود، هرگز تأیید. */
+function headShouldersBrokenAboveHeadSeries(): EngineCandle[] {
+  return zigzag(100, [
+    [110, 3], // شانهٔ چپ (قلهٔ ۳)
+    [100, 4], // درهٔ گردن (۷)
+    [120, 5], // سر (۱۲)
+    [101, 5], // درهٔ گردن دوم (۱۷)
+    [110, 5], // شانهٔ راست (۲۲)
+    [105, 2], // درهٔ بالای خط گردن (۲۴)
+    [125, 2], // بسته‌شدن بالای سر (۲۶)
+    [125, 3], // ادامهٔ بالای خط گردن؛ شکست گردن رخ نمی‌دهد
+  ]);
+}
+
 describe('reversal detectors', () => {
   it('finds a head & shoulders with a broken neckline', () => {
     const candles = headShouldersSeries();
@@ -145,6 +199,45 @@ describe('reversal detectors', () => {
     const neckline = Math.max(bottom!.neckline!.from.price, bottom!.neckline!.to.price);
     expect(bottom!.target).toBeGreaterThan(neckline);
     expect(bottom!.stopLoss).toBeLessThan(bottom!.lower.to.price);
+  });
+
+  it('rejects a head & shoulders whose shoulders drift beyond shouldersToleranceAtr', () => {
+    const found = detectReversal(shouldersApartSeries(), 1.5, FIXTURE_CONFIG);
+    expect(found.filter((p) => p.kind === 'HEAD_SHOULDERS')).toEqual([]);
+  });
+
+  it('rejects a head only 0.2 ATR above the shoulders', () => {
+    const found = detectReversal(shallowHeadSeries(), 1.5, FIXTURE_CONFIG);
+    expect(found.filter((p) => p.kind === 'HEAD_SHOULDERS')).toEqual([]);
+  });
+
+  it('rejects a triple top whose peaks span more than levelToleranceAtr in total', () => {
+    // گام‌های جفتی 0.5 ≤ tol، ولی دامنهٔ 1.0 > tol؛ قاعدهٔ max−min باید رد کند.
+    const found = detectReversal(spreadTripleTopSeries(), 1, FIXTURE_CONFIG);
+    expect(found.filter((p) => p.kind === 'TRIPLE_TOP')).toEqual([]);
+  });
+
+  it('invalidates a head & shoulders when price closes above the head before the neckline breaks', () => {
+    const found = detectReversal(headShouldersBrokenAboveHeadSeries(), 1.5, FIXTURE_CONFIG);
+    const hs = found.find((p) => p.kind === 'HEAD_SHOULDERS');
+    expect(hs).toBeTruthy();
+    expect(hs!.status).toBe('invalidated');
+    expect(hs!.status).not.toBe('confirmed');
+  });
+
+  it('reads the minimum window span from config.reversal.minSpanBars', () => {
+    // پنج پیوت با span=4: پیش‌فرض ۶ آن را رد می‌کند، بازنویسی ۴ می‌پذیرد.
+    const candles = zigzag(100, [
+      [110, 1], // شانهٔ چپ (۱)
+      [100, 1], // درهٔ گردن (۲)
+      [120, 1], // سر (۳)
+      [101, 1], // درهٔ گردن دوم (۴)
+      [110, 1], // شانهٔ راست (۵)
+      [95, 1], // شکست نزولی
+    ]);
+    expect(detectReversal(candles, 1.5, FIXTURE_CONFIG).some((p) => p.kind === 'HEAD_SHOULDERS')).toBe(false);
+    const shortSpan = { ...FIXTURE_CONFIG, reversal: { minSpanBars: 4 } };
+    expect(detectReversal(candles, 1.5, shortSpan).some((p) => p.kind === 'HEAD_SHOULDERS')).toBe(true);
   });
 
   it('ignores non-positive ATR', () => {

@@ -23,6 +23,7 @@ describe('PATTERN_CONFIG', () => {
       wedge: { convergenceMin: 0.30, maxBars: 60 },
       hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, maxBars: 120 },
       triple: { levelToleranceAtr: 0.50, maxBars: 120 },
+      reversal: { minSpanBars: 6 },
     });
   });
 });
