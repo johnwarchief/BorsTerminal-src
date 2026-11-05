@@ -89,6 +89,8 @@ const Axis5Schema = z.looseObject({
   outlook: Str,
   rule_ref: Str,
   pass: Bool,
+  // R-V1-1: پرچمِ «حالتِ Exclude_Mandatory_Pricing فعال است» — با وتویِ خودِ نماد یکی نیست.
+  exclusion_active: Bool,
 }).nullish();
 
 const FreshnessAxisSchema = z.looseObject({
@@ -154,6 +156,10 @@ export const FtsCardSchema = z.looseObject({
   score: Num,
   verdict: Str,
   applicable: Bool,
+  // R-V1-1: وتویِ طبقه در سطحِ نماد (بیمه/دستوری) — با flagِ حالتِ پنلِ ۵ یکی نیست؛
+  // زنده: البرز excluded=true و indicators['5'].pass=true هم‌زمان.
+  excluded: Bool,
+  exclusion_reasons: z.array(z.string()).nullish(),
   // R99: تنظیمِ گیتِ EPS از ریشهٔ کارت (loose) خوانده می‌شود تا آستانهٔ ۳سال سخت‌کد نشود.
   thresholds: z.looseObject({
     growth_min: Num,

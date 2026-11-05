@@ -115,18 +115,24 @@ function DetailFrame({ testId, symbol, onBack, settingsOpen, onToggleSettings, c
  * روبانِ امتیاز: شمارشِ همان پنج وضعیتِ `cardStatus`، بدونِ منطقِ دوم.
  * R57: هیچ برچسبِ «قوی‌ترین/ضعیف‌ترین» ساخته نمی‌شود؛ فقط شمارش‌ها، حکم و امتیاز.
  * R72: هر میله data-status + title/aria-label فارسی دارد و پنهان از AT نیست.
+ * R-V1-3 (M-1/M-2): محوری که سنجیده نشده در مخرجِ امتیاز نمی‌نشیند — وتویِ صنعتی
+ * «از ۴» می‌شود و هلدینگ/بانک هم «از ۴»؛ «۳ از » برایِ نمادِ خارج‌شده صادق نیست.
  */
 function ScoreRibbon({ card }: { card: FtsCard }) {
   const statuses = AXIS_ORDER.map((axis) => cardStatus(card, axis));
-  const passed = statuses.filter((status) => status === 'pass').length;
-  const failed = statuses.filter((status) => status === 'fail').length;
-  const abstained = statuses.filter((status) => status === 'na' || status === 'unknown').length;
+  const vetoed = card.excluded === true;
+  const industryUnscored = vetoed || statuses[4] === 'na';
+  const scored = industryUnscored ? statuses.slice(0, 4) : statuses;
+  const total = scored.length;
+  const passed = scored.filter((status) => status === 'pass').length;
+  const failed = scored.filter((status) => status === 'fail').length;
+  const abstained = scored.filter((status) => status === 'na' || status === 'unknown').length;
   return (
     <div
       data-testid="fundamental-score-ribbon"
       className="fd-in flex flex-wrap items-center gap-2 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-2.5 py-1.5 text-[10px] text-[var(--fd-text-3)]"
     >
-      <strong className="text-[var(--fd-text)]">{toFaDigits(passed)} از ۵ محور {statusFa('pass')}</strong>
+      <strong className="text-[var(--fd-text)]">{toFaDigits(passed)} از {toFaDigits(total)} محور {statusFa('pass')}</strong>
       <span className="flex gap-1">
         {statuses.map((status, index) => {
           const meta = AXES.find((item) => item.key === AXIS_ORDER[index])!;
@@ -147,6 +153,10 @@ function ScoreRibbon({ card }: { card: FtsCard }) {
       {/* R94: شمارش‌ها با «·» جدا می‌شوند تا «قبول۲ رد» به‌هم نچسبد. */}
       {failed ? <span className="text-[var(--fd-down)]">· {toFaDigits(failed)} {statusFa('fail')}</span> : null}
       {abstained ? <span>· {toFaDigits(abstained)} {statusFa('na')}/{statusFa('unknown')}</span> : null}
+      {vetoed ? <span data-testid="ribbon-veto" className="text-[var(--fd-down)]">· وتوی صنعتی</span> : null}
+      {!vetoed && industryUnscored ? (
+        <span data-testid="ribbon-unscored">· {toFaDigits(total)} محور سنجیده شد</span>
+      ) : null}
       <span className="ms-auto">{verdictFa(card.verdict)} · امتیاز {scoreLabel(card.score)}/۵</span>
     </div>
   );
@@ -227,6 +237,15 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
         <span data-testid="fundamental-verdict" className="rounded border border-[var(--fd-line-strong)] px-1 text-[9px]">
           {verdictFa(card.verdict)}
         </span>
+        {/* R-V1-4 (M-2): دلیلِ حذفِ طبقه کنارِ حکم نوشته می‌شود؛ کاربر نباید بماند بگوید «چرا خارج شده». */}
+        {card.excluded === true && card.exclusion_reasons?.length ? (
+          <span
+            data-testid="fundamental-exclusion-reason"
+            className="text-[9px] text-[var(--fd-down)]"
+          >
+            دلیل: {card.exclusion_reasons.join(' · ')}
+          </span>
+        ) : null}
         <span className="num t-9">امتیاز {scoreLabel(card.score)}/۵</span>
         <span className="ms-auto flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] text-[var(--fd-text-3)]">
           <span data-testid="fundamental-freshness">{freshnessLabel(card.freshness?.as_of)}</span>
@@ -267,9 +286,14 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
             <div className="fd-enter col-span-5 max-[1050px]:col-span-12"><MarginPanel card={card} /></div>
             <div className="fd-enter col-span-7 max-[1050px]:col-span-12"><SalesPanel card={card} /></div>
             <div className="fd-enter col-span-7 max-[1050px]:col-span-12">
-              {holding ? <HoldingNavPanel bankLike={bank} /> : <IndustryPanel card={card} sectorPe={sectorPe.data} />}
+              {/* R-V1-5 (M-1): پنلِ شاخص ۵ برایِ همه می‌آید؛ پنلِ P/NAV جای آن را
+                  نمی‌گیرد، بعد از پنج محور می‌نشیند. */}
+              <IndustryPanel card={card} sectorPe={sectorPe.data} />
             </div>
             <div className="fd-enter col-span-5 max-[1050px]:col-span-12"><HistoryPanel card={card} /></div>
+            {holding ? (
+              <div className="fd-enter col-span-7 max-[1050px]:col-span-12"><HoldingNavPanel bankLike={bank} /></div>
+            ) : null}
             <div className="fd-enter col-span-12"><EvidencePanel card={card} /></div>
             <div className="fd-enter col-span-12"><CorporateCalendar symbol={symbol} /></div>
             <div className="fd-enter col-span-12"><CodalHealthStrip health={health.data} loading={health.isLoading} /></div>

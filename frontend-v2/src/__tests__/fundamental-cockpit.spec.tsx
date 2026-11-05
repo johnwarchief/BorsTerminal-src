@@ -223,7 +223,8 @@ describe('fundamental cockpit', () => {
     });
     render(<FundamentalDetail symbol="ویسا" onBack={vi.fn()} />);
     expect(screen.getByTestId('holding-pnav-panel')).toBeTruthy();
-    expect(screen.queryByTestId('panel-industry')).toBeNull();
+    // R-V1-5: پنلِ شاخص ۵ برایِ هلدینگ می‌ماند و «بی‌نظر» است؛ P/NAV جای آن را نمی‌گیرد.
+    expect(screen.getByTestId('panel-industry').textContent).toContain('بی‌نظر');
     expect(screen.queryByText(/P\/NAV ≈/)).toBeNull();
   });
 

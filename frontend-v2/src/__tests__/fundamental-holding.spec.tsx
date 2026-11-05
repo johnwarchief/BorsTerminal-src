@@ -87,7 +87,8 @@ describe('P/NAV holding panel', () => {
     }));
     render(<FundamentalDetail symbol="ویسا" onBack={vi.fn()} />);
     expect(screen.getByTestId('holding-pnav-panel')).toBeTruthy();
-    expect(screen.queryByTestId('panel-industry')).toBeNull();
+    // R-V1-5: پنلِ شاخص ۵ دیگر جای خود را به P/NAV نمی‌دهد؛ برایِ این طبقه «بی‌نظر» می‌ماند.
+    expect(screen.getByTestId('panel-industry').textContent).toContain('بی‌نظر');
     expect(screen.getByTestId('holding-nav-na').textContent).toContain('NAV');
     expect(screen.queryByText(/P\/NAV ≈/)).toBeNull();
   });

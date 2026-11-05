@@ -21,6 +21,20 @@ export function IndustryPanel({ card, sectorPe }: { card: FtsCard; sectorPe?: Se
   const industry = card.indicators?.['5'];
   const status = cardStatus(card, 'industry');
   const regime = industry?.label ?? industry?.regime_label ?? '—';
+  const rows: Array<[string, string]> = [
+    ['P/E این نماد', faFixed(sectorPe?.pe, 1)],
+    ['میانهٔ صنعت', faFixed(sectorPe?.median, 1)],
+    ['همتاها', faInt(sectorPe?.peers)],
+    ['سهم بازار', shareFixed(industry?.market_share_pct)],
+    ['چشم‌انداز', industry?.outlook ?? '—'],
+    ['رژیم', regimeFa(industry?.verdict)],
+  ];
+  // R-V1-6 (B-1/M-1): «چرا» در همین پنل نوشته می‌شود — وتویِ طبقه یا نبودِ تعریفِ نرخ برایِ این طبقه.
+  if (card.excluded === true) {
+    rows.push(['دلیل', `وتوی طبقه — نماد از غربال حذف شده${card.exclusion_reasons?.length ? ` (${card.exclusion_reasons.join(' · ')})` : ''}.`]);
+  } else if (status === 'na') {
+    rows.push(['دلیل', 'شاخص ۵ برایِ این طبقه سنجیده نمی‌شود؛ نرخِ محصولِ فروش برایِ هلدینگ/سرمایه‌گذاری و بانک تعریف نشده است.']);
+  }
   return (
     <AxisPanel
       testId="panel-industry"
@@ -31,14 +45,7 @@ export function IndustryPanel({ card, sectorPe }: { card: FtsCard; sectorPe?: Se
       value={regime}
       threshold="رژیم"
       chart={<PeDots pe={sectorPe?.pe ?? null} median={sectorPe?.median ?? null} peers={sectorPe?.peers ?? null} />}
-      rows={[
-        ['P/E این نماد', faFixed(sectorPe?.pe, 1)],
-        ['میانهٔ صنعت', faFixed(sectorPe?.median, 1)],
-        ['همتاها', faInt(sectorPe?.peers)],
-        ['سهم بازار', shareFixed(industry?.market_share_pct)],
-        ['چشم‌انداز', industry?.outlook ?? '—'],
-        ['رژیم', regimeFa(industry?.verdict)],
-      ]}
+      rows={rows}
       details={card.details?.['۵']}
     />
   );

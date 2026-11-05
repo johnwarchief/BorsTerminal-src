@@ -1,5 +1,6 @@
 import type { FtsCard } from '../api/useFtsCard';
 import type { AxisKey, AxisStatus } from './axisMeta';
+import { isBankCard, isHoldingCard } from './assetScope';
 
 /** کلیدِ هر محور در `card.passes` و شمارهٔ آن در `card.indicators`/`card.details`. */
 export const CARD_KEY = {
@@ -27,6 +28,14 @@ export function cardStatus(card: FtsCard, axis: AxisKey): AxisStatus {
   if (axis === 'growth') {
     const growth = card.indicators?.['1'];
     if (growth?.monetary?.data_gap === true || growth?.volume?.data_gap === true) return 'unknown';
+  }
+  // R-V1-1 (B-1): وتویِ طبقه در سطحِ نماد بر passِ محور ۵ مقدم است — بیمه با
+  // indicators['5'].pass=true هم بیرونِ غربال است و «قبول» نباید بگوید.
+  // R-V1-2 (M-1): برایِ هلدینگ/بانک نرخ‌گذاریِ محصول تعریف نشده، پس این محور
+  // سنجیده نمی‌شود؛ «بی‌نظر» و بیرونِ شمارشِ امتیاز، نه «رد».
+  if (axis === 'industry') {
+    if (card.excluded === true) return 'fail';
+    if (isHoldingCard(card) || isBankCard(card)) return 'na';
   }
   if (pass === true) return 'pass';
   if (pass === false) return 'fail';
