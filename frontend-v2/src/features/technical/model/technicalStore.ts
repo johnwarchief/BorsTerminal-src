@@ -64,6 +64,7 @@ const INITIAL_STATE = {
   detectedPullbackSignals: [] as PullbackSignal[],
   detectedCHoCHSignals: [] as CHoCHSignal[],
   detectedPatterns: [] as ChartPattern[],
+  focusPatternId: null as string | null,
   chartCandles: [] as EngineCandle[],
 };
 
@@ -181,6 +182,8 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
     set({ detectedCHoCHSignals: signals }),
 
   setDetectedPatterns: (patterns: ChartPattern[]) => set({ detectedPatterns: patterns }),
+
+  setFocusPatternId: (id: string | null) => set({ focusPatternId: id }),
 
   setChartCandles: (candles: EngineCandle[]) => set({ chartCandles: candles }),
 

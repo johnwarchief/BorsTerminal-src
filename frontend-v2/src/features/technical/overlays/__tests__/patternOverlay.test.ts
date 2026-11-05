@@ -182,6 +182,22 @@ describe('pattern overlay figures', () => {
     expect(styles.family).toBe('Vazirmatn, sans-serif');
   });
 
+  it('flips the label inside the pane when the anchor sits at the right edge', () => {
+    const edgeParams = {
+      chart: { convertToPixel: vi.fn(() => ({ x: 1040, y: 200 })) },
+      bounding: { width: 1052, height: 662, left: 0, right: 1052, top: 0, bottom: 662 },
+    } as never;
+    const [label] = textFigures(patternFigures(edgeParams, [p]));
+    const attrs = label.attrs as { x: number; align: string };
+    // برچسبِ لنگرِ چسبیده به لبه باید به چپ باز شود، نه بیرونِ کادر.
+    expect(attrs.align).toBe('right');
+    expect(attrs.x).toBeLessThan(1040);
+
+    // وسطِ چارت همان چپ‌چینِ قبلی می‌ماند (بدون bounding هم امن است).
+    const [center] = textFigures(patternFigures(params, [p]));
+    expect((center.attrs as { align: string }).align).toBe('left');
+  });
+
   it('keeps label contrast at or above 4.5:1 on every theme panel', () => {
     const directions = ['bullish', 'bearish', 'neutral'] as const;
     for (const theme of Object.keys(PANEL_BACKGROUND) as Theme[]) {

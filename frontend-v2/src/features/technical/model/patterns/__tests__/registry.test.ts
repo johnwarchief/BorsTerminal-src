@@ -130,8 +130,47 @@ describe('pattern registry', () => {
     const adapted = fromDoubleTap(doubleBottom());
     expect(adapted.direction).toBe('bullish');
     expect(adapted.upper.from.price).toBe(100); // خط گردن
-    expect(adapted.lower.from.price).toBe(91); // درهٔ دوم
+    // مرزِ پایین = min(درهٔ ۹۰، درهٔ ۹۱): هر دو دره درونِ الگو می‌مانند.
+    expect(adapted.lower.from.price).toBe(90);
     expect(adapted.upper.from.price).toBeGreaterThan(adapted.lower.from.price);
+  });
+
+  it('spans double-tap boundaries from peak1 to the anchor instead of a zero-length point', () => {
+    const top = fromDoubleTap(doubleTap());
+    // پیش از رفع، from === to بود و اورلی خطِ صفرطول را دور می‌زد ⇒ هیچ مرزی رسم نمی‌شد.
+    expect(top.upper.from.index).toBe(10);
+    expect(top.upper.to.index).toBe(24);
+    expect(top.lower.from.index).toBe(10);
+    expect(top.lower.to.index).toBe(24);
+    expect(top.upper.from.index).toBeLessThan(top.upper.to.index);
+    expect(top.lower.from.index).toBeLessThan(top.lower.to.index);
+    // R-PAT-21: سقف = سطح قله‌ها، کف = خط گردن.
+    expect(top.upper.from.price).toBe(111);
+    expect(top.lower.from.price).toBe(100);
+    expect(top.upper.from.price).toBeGreaterThan(top.lower.from.price);
+
+    const bottom = fromDoubleTap(doubleBottom());
+    expect(bottom.upper.from.index).toBeLessThan(bottom.upper.to.index);
+    expect(bottom.lower.from.index).toBeLessThan(bottom.lower.to.index);
+    // R-PAT-21: در دوقلوی کف، خط گردن بالا و کفِ هر دو دره پایین‌اند.
+    expect(bottom.upper.from.price).toBe(100);
+    expect(bottom.lower.from.price).toBe(90);
+    expect(bottom.upper.from.price).toBeGreaterThan(bottom.lower.from.price);
+  });
+
+  it('spans both boundaries even when the double has no retest', () => {
+    const top = fromDoubleTap(doubleTap({ retest: undefined }));
+    expect(top.anchor.index).toBe(20);
+    expect(top.upper.from.index).toBe(10);
+    expect(top.upper.to.index).toBe(20);
+    expect(top.upper.from.index).toBeLessThan(top.upper.to.index);
+  });
+
+  it('uses max(peak1, peak2) for the double-top ceiling and min for the double-bottom floor', () => {
+    // قلهٔ اول بالاتر از دوم: مرز بالا باید همان اولی باشد، نه peak2.
+    expect(fromDoubleTap(doubleTap({ peak1: point(10, 113) })).upper.from.price).toBe(113);
+    // درهٔ اول پایین‌تر از دوم: مرز پایین باید همان اولی باشد.
+    expect(fromDoubleTap(doubleBottom({ peak1: point(10, 88) })).lower.from.price).toBe(88);
   });
 
   it('needs a close above the neckline — not merely above the trough — for a double-bottom success', () => {

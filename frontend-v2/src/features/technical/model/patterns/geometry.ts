@@ -49,9 +49,19 @@ export interface PatternSpec {
   quality: number;
   /** پنجرهٔ زمانی خانوادهٔ الگو؛ ریشهٔ الگو بیش از این مقدار عقب نماند. */
   maxBars: number;
+  /**
+   * بافرِ ابطال بر حسب قیمت (`invalidationBufferAtr × atr`)؛ دتکتور آن را می‌دهد
+   * تا وضعیتِ منتشرشده با `outcomeOf` یک قاعدهٔ مشترک داشته باشد.
+   */
+  invalidationBuffer: number;
 }
 
-/** وضعیت را از داده می‌سازد؛ الگوی منقضی (نه تأیید و نه باطل) حذف می‌شود. */
+/**
+ * وضعیت را از داده می‌سازد؛ الگوی منقضی (نه تأیید و نه باطل) حذف می‌شود.
+ * ابطال با همان بافرِ outcome سنجیده می‌شود (invalidationBufferAtr) تا وضعیتِ
+ * منتشرشده و نتیجهٔ آماری هرگز با هم اختلاف نداشته باشند: یک بستهٔ ۰٫۲×ATR
+ * بیرونِ مرز هنوز «در حال تشکیل» است، نه «باطل».
+ */
 export function emitPattern(
   spec: PatternSpec,
   candles: readonly EngineCandle[],
@@ -64,6 +74,7 @@ export function emitPattern(
     && spec.points.length < config.expiryMinPoints) return null;
 
   const start = anchor.index + 1;
+  const buffer = spec.invalidationBuffer;
   let status: ChartPattern['status'] = 'forming';
   let breakoutIndex: number | undefined;
 
@@ -78,7 +89,8 @@ export function emitPattern(
       breakoutIndex = i;
       break;
     }
-    if (spec.direction === 'bullish' ? brokeDown : spec.direction === 'bearish' ? brokeUp : false) {
+    if (spec.direction === 'bullish' ? close < lineValue(spec.lower, i) - buffer
+      : spec.direction === 'bearish' ? close > lineValue(spec.upper, i) + buffer : false) {
       status = 'invalidated';
       break;
     }

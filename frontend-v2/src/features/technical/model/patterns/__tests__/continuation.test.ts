@@ -152,6 +152,65 @@ function rectangleSeries(): EngineCandle[] {
   ]);
 }
 
+/**
+ * همان جفت مرزی، هم مجازِ پرچم و هم همگرا: کانال در legEnd باریک‌تر از ۳۵٪ لگ است
+ * (شرط پرچم) و در پایان فشرده‌سازی از ۶۵٪ عرض شروع کوچک‌تر می‌شود (شرط پنانت).
+ */
+function flagAndPennantSeries(): EngineCandle[] {
+  return reshape(zigzag(100, [
+    [98, 2],
+    [130, 8], // لگ صعودی (۳۴ واحد)
+    [127, 3],
+    [133, 3],
+    [129, 3],
+    [130.5, 3],
+    [130.5, 1],
+    [140, 4],
+  ]), 23, { low: 130.2 });
+}
+
+/**
+ * یک شکل که هم مستطیل است و هم مثلث صعودی: سقف‌ها ۰٫۲ = ۰٫۱×ATR تخت و
+ * کف‌ها ۰٫۸ = ۰٫۴×ATR بالارونده (درون تحمل مستطیل ۰٫۵×ATR، بیرون تحمل تختِ مثلث).
+ */
+function rectangleAndAscendingTriangleSeries(): EngineCandle[] {
+  return zigzag(120, [
+    [130, 5],
+    [100, 8],
+    [130.2, 8],
+    [100.8, 8],
+    [134, 3],
+  ]);
+}
+
+/**
+ * مثلث صعودی قدیمی (پایان ~۲۸) و سپس یک پلکانِ صعودی ثابت‌عرض در انتهای سری:
+ * پنجرهٔ تازه هیچ شکل خانوادهٔ مثلث نمی‌دهد، پس فقط پنجرهٔ قدیمی باید پیدا شود.
+ */
+function olderTriangleSeries(): EngineCandle[] {
+  return zigzag(120, [
+    [100, 3],
+    [130, 6],
+    [108, 6],
+    [130, 6],
+    [116, 6],
+    [116, 1],
+    [136, 4], // شکست صعودی و تأیید مثلث قدیمی
+    [130, 3],
+    [140, 3],
+    [134, 3],
+    [144, 3],
+    [138, 3],
+    [148, 3],
+    [142, 3],
+    [152, 3],
+    [146, 3],
+    [156, 3],
+    [150, 3],
+    [160, 3],
+  ]);
+}
+
 /** گُوهٔ برخاسته: سقف و کف بالارونده با همگرایی، شکست نزولی. */
 function risingWedgeSeries(): EngineCandle[] {
   return zigzag(120, [
@@ -245,6 +304,39 @@ describe('continuation detectors', () => {
     expect(found.some((p) => p.kind === 'FLAG_BULL')).toBe(false);
     // R-PAT-14: پنانت همین جفت پیوت مرزی را مصرف کرده، پس مثلث متقارن تکراری حذف می‌شود.
     expect(found.some((p) => p.kind === 'TRIANGLE_SYM')).toBe(false);
+    // یک شکل برای هر جفت مرزی: پنانت تنها شکل این فشرده‌سازی است.
+    expect(found).toHaveLength(1);
+    expect(found[0]!.kind).toBe('PENNANT');
+  });
+
+  it('keeps the flag when a flag and a pennant share the same boundary pair', () => {
+    const found = detectContinuation(flagAndPennantSeries(), ATR, FIXTURE_CONFIG);
+    const overlapping = found.filter((p) => p.kind === 'FLAG_BULL' || p.kind === 'PENNANT');
+    // پیش از رفع: هر دو برای جفت یکسان منتشر می‌شدند؛ اکنون فقط پرچم می‌ماند.
+    expect(overlapping).toHaveLength(1);
+    expect(overlapping[0]!.kind).toBe('FLAG_BULL');
+    expect(overlapping[0]!.direction).toBe('bullish');
+  });
+
+  it('emits one shape for a window that is both a rectangle and an ascending triangle', () => {
+    const found = detectContinuation(rectangleAndAscendingTriangleSeries(), ATR, FIXTURE_CONFIG);
+    const flatFamily = found.filter((p) => p.kind === 'RECTANGLE' || p.kind === 'TRIANGLE_ASC');
+    // پیش از رفع، همین پنجره هر دو شکل را می‌داد.
+    expect(flatFamily).toHaveLength(1);
+    expect(flatFamily[0]!.kind).toBe('TRIANGLE_ASC');
+  });
+
+  it('scans older pivot windows so a historical triangle still contributes a confirmed sample', () => {
+    const candles = olderTriangleSeries();
+    const found = detectContinuation(candles, ATR, FIXTURE_CONFIG);
+    const triangles = found.filter((p) => p.kind.startsWith('TRIANGLE_'));
+    expect(triangles.length).toBeGreaterThan(0);
+    // لنگر باید در تاریخچه باشد، نه انتهای سری (پنجرهٔ «دو پیوت آخر» این را از دست می‌داد).
+    const historic = triangles.filter((p) => p.anchor.index < candles.length - 20);
+    expect(historic.length).toBeGreaterThan(0);
+    // الزامِ تسک: مثلثِ تاریخی‌ای که بعداً شکسته می‌شود باید نمونهٔ confirmed بدهد.
+    expect(historic.some((p) => p.status === 'confirmed' && p.breakoutIndex != null)).toBe(true);
+    expect(triangles.some((p) => p.anchor.index === candles.length - 1)).toBe(false);
   });
 
   it('finds an ascending triangle with flat highs and rising lows', () => {

@@ -68,6 +68,23 @@ function px(
   return { x: first?.x ?? 0, y: first?.y ?? 0 };
 }
 
+/**
+ * جای برچسب: اگر لنگر به لبهٔ راستِ پنل نزدیک باشد، متن به سمت چپ باز می‌شود
+ * تا برش نخورد. عرض تقریبی هر کاراکتر در ۱۱px حدود ۷px است؛ حاشیهٔ امن ۸px.
+ */
+function labelPlacement(
+  params: OverlayCreateFiguresCallbackParams<unknown>,
+  anchor: { x: number; y: number },
+  text: string,
+): { x: number; y: number; align: 'left' | 'right' } {
+  const width = params.bounding?.width ?? 0;
+  const approxWidth = text.length * 7 + 8;
+  const flip = width > 0 && anchor.x + approxWidth > width;
+  return flip
+    ? { x: anchor.x - 6, y: anchor.y - 8, align: 'right' }
+    : { x: anchor.x + 6, y: anchor.y - 8, align: 'left' };
+}
+
 export function patternFigures(
   params: OverlayCreateFiguresCallbackParams<unknown>,
   patterns: readonly ChartPattern[],
@@ -114,9 +131,12 @@ export function patternFigures(
       ? pct == null ? `${label} — در حال تشکیل` : `${label} — تشکیل ${toFaDigits(Math.round(pct * 100))}٪`
       : label;
     const anchor = px(params, pattern.anchor.index, pattern.anchor.price);
+    const placement = labelPlacement(params, anchor, text);
     figures.push({
       type: 'text',
-      attrs: { x: anchor.x + 6, y: anchor.y - 8, text, align: 'left', baseline: 'bottom' },
+      attrs: {
+        x: placement.x, y: placement.y, text, align: placement.align, baseline: 'bottom',
+      },
       styles: { color: labelColor, size: 11, family: 'Vazirmatn, sans-serif' },
     });
   }

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { detectReversal } from '../detectReversal';
 import { PATTERN_CONFIG } from '../config';
+import { lineValue } from '../geometry';
 import type { EngineCandle } from '../../doubleTapEngine';
 
 /**
@@ -133,7 +134,38 @@ function headShouldersBrokenAboveHeadSeries(): EngineCandle[] {
   ]);
 }
 
+/**
+ * خط گردنِ تند: دو درهٔ گردن نزدیک و به‌شدت بالارونده‌اند، پس تعمیم خط به لنگر
+ * (شانهٔ راست) از سر بالاتر می‌زند و ارتفاعِ خام منفی می‌شود. بدون کفِ ۰٫۵×ATR،
+ * هدف بالای خط گردن می‌افتاد (سمت اشتباه).
+ */
+function steepNecklineSeries(): EngineCandle[] {
+  return zigzag(105, [
+    [110, 3], // شانهٔ چپ، سقف ۳
+    [100, 3], // درهٔ گردن، کف ۶
+    [120, 1], // سر، سقف ۷
+    [109, 1], // درهٔ گردن دوم، کف ۸
+    [110, 4], // شانهٔ راست، سقف ۱۲
+    [100, 3], // شکست نزولی
+  ]);
+}
+
 describe('reversal detectors', () => {
+  it('keeps the target below the neckline and the stop above it when the neck extrapolates past the head', () => {
+    const found = detectReversal(steepNecklineSeries(), 1.5, FIXTURE_CONFIG);
+    const hs = found.find((p) => p.kind === 'HEAD_SHOULDERS');
+    expect(hs).toBeTruthy();
+    // خط گردن در لنگر (۱۲) از سر (۱۲۰) گذشته است: ارتفاع خام منفی می‌شد.
+    const neckAtAnchor = lineValue(hs!.neckline!, hs!.anchor.index);
+    expect(neckAtAnchor).toBeGreaterThan(hs!.upper.from.price);
+    // کفِ ۰٫۵×ATR هدف را در سمت درست نگه می‌دارد: زیر خط گردن، نه بالای آن.
+    expect(hs!.target).toBeLessThan(neckAtAnchor);
+    expect(neckAtAnchor - hs!.target).toBeGreaterThanOrEqual(0.5 * 1.5 - 1e-9);
+    // حد ضررِ معاملهٔ فروش باید بالای ورود (خط گردنِ تعمیم‌یافته) بماند، نه زیر سر.
+    expect(hs!.stopLoss).toBeGreaterThan(neckAtAnchor);
+    expect(hs!.stopLoss).toBeGreaterThan(hs!.target);
+  });
+
   it('finds a head & shoulders with a broken neckline', () => {
     const candles = headShouldersSeries();
     const found = detectReversal(candles, 1.5, FIXTURE_CONFIG);

@@ -39,6 +39,10 @@ export function detectReversal(
   if (!Number.isFinite(atr) || atr <= 0) return [];
   const pivots = findAlternatingPivots(candles, config.pivLeft, config.pivRight);
   const out: ChartPattern[] = [];
+  /** همان بافرِ ابطالِ outcome؛ وضعیت و نتیجهٔ آماری یک قاعده دارند. */
+  const invalidationBuffer = config.invalidationBufferAtr * atr;
+  /** کفِ ارتفاع: خط گردنِ تند می‌تواند از سر/سه‌قلو بگذرد و ارتفاع را منفی کند. */
+  const minHeight = 0.5 * atr;
 
   for (let i = 0; i + 4 < pivots.length; i++) {
     const [a, b, c, d, e] = pivots.slice(i, i + 5) as [PivotPoint, PivotPoint, PivotPoint, PivotPoint, PivotPoint];
@@ -59,15 +63,19 @@ export function detectReversal(
         const top: BoundaryLine = { from: toPoint(c, candles), to: toPoint(c, candles) };
         // ارتفاع اندازه‌گیری‌شده از مقدار خط گردن در لنگر، همان مرجعی که تأیید می‌سنجد.
         const neckAtAnchor = lineValue(neck, e.index);
-        const height = c.price - neckAtAnchor;
+        // کفِ ارتفاع: خط گردنِ تند که به لنگر تعمیم می‌یابد می‌تواند از سر بگذرد و
+        // ارتفاع را منفی کند؛ بدون این کف، هدف/حد ضرر معکوس می‌شد.
+        const height = Math.max(c.price - neckAtAnchor, minHeight);
         const emitted = emitPattern({
           kind: 'HEAD_SHOULDERS', direction: 'bearish', family: 'reversal',
           points,
           upper: top, lower: neck, neckline: neck,
-          target: neckAtAnchor - height, stopLoss: c.price + atr,
+          // حد ضرر بالای هر دو (سر و خط گردنِ تعمیم‌یافته) می‌ماند تا سمتِ معامله حفظ شود.
+          target: neckAtAnchor - height, stopLoss: Math.max(c.price, neckAtAnchor) + atr,
           quality: quality(height, config.hs.shouldersToleranceAtr * atr * 2),
           // R-PAT-5: پنجرهٔ انقضای خانوادهٔ سر و شانه.
           maxBars: config.hs.maxBars,
+          invalidationBuffer,
         }, candles, config);
         if (emitted) out.push(emitted);
       }
@@ -80,15 +88,17 @@ export function detectReversal(
         const neck: BoundaryLine = { from: toPoint(b, candles), to: toPoint(d, candles) };
         const bottom: BoundaryLine = { from: toPoint(c, candles), to: toPoint(c, candles) };
         const neckAtAnchor = lineValue(neck, e.index);
-        const height = neckAtAnchor - c.price;
+        const height = Math.max(neckAtAnchor - c.price, minHeight);
         const emitted = emitPattern({
           kind: 'INVERSE_HEAD_SHOULDERS', direction: 'bullish', family: 'reversal',
           points,
           upper: neck, lower: bottom, neckline: neck,
-          target: neckAtAnchor + height, stopLoss: c.price - atr,
+          // آینه: حد ضرر زیر سر و زیر خط گردنِ تعمیم‌یافته.
+          target: neckAtAnchor + height, stopLoss: Math.min(c.price, neckAtAnchor) - atr,
           quality: quality(height, config.hs.shouldersToleranceAtr * atr * 2),
           // R-PAT-5: همان پنجرهٔ سر و شانه برای آینهٔ آن.
           maxBars: config.hs.maxBars,
+          invalidationBuffer,
         }, candles, config);
         if (emitted) out.push(emitted);
       }
@@ -102,15 +112,17 @@ export function detectReversal(
       const neck: BoundaryLine = { from: toPoint(b, candles), to: toPoint(d, candles) };
       const top: BoundaryLine = { from: toPoint(a, candles), to: toPoint(e, candles) };
       const neckAtAnchor = lineValue(neck, e.index);
-      const height = Math.max(a.price, c.price, e.price) - neckAtAnchor;
+      const height = Math.max(Math.max(a.price, c.price, e.price) - neckAtAnchor, minHeight);
       const emitted = emitPattern({
         kind: 'TRIPLE_TOP', direction: 'bearish', family: 'reversal',
         points,
         upper: top, lower: neck, neckline: neck,
-        target: neckAtAnchor - height, stopLoss: Math.max(a.price, c.price, e.price) + atr,
+        target: neckAtAnchor - height,
+        stopLoss: Math.max(Math.max(a.price, c.price, e.price), neckAtAnchor) + atr,
         quality: quality(height, tol * 2),
         // R-PAT-5: پنجرهٔ انقضای خانوادهٔ سه‌قلو.
         maxBars: config.triple.maxBars,
+        invalidationBuffer,
       }, candles, config);
       if (emitted) out.push(emitted);
     }
@@ -118,15 +130,17 @@ export function detectReversal(
       const neck: BoundaryLine = { from: toPoint(b, candles), to: toPoint(d, candles) };
       const bottom: BoundaryLine = { from: toPoint(a, candles), to: toPoint(e, candles) };
       const neckAtAnchor = lineValue(neck, e.index);
-      const height = neckAtAnchor - Math.min(a.price, c.price, e.price);
+      const height = Math.max(neckAtAnchor - Math.min(a.price, c.price, e.price), minHeight);
       const emitted = emitPattern({
         kind: 'TRIPLE_BOTTOM', direction: 'bullish', family: 'reversal',
         points,
         upper: neck, lower: bottom, neckline: neck,
-        target: neckAtAnchor + height, stopLoss: Math.min(a.price, c.price, e.price) - atr,
+        target: neckAtAnchor + height,
+        stopLoss: Math.min(Math.min(a.price, c.price, e.price), neckAtAnchor) - atr,
         quality: quality(height, tol * 2),
         // R-PAT-5: همان پنجرهٔ سه‌قلو برای آینهٔ آن.
         maxBars: config.triple.maxBars,
+        invalidationBuffer,
       }, candles, config);
       if (emitted) out.push(emitted);
     }

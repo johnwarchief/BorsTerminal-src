@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PatternsTab } from '../PatternsTab';
+import { useTechnicalStore } from '../../model/technicalStore';
 import type { ChartPattern } from '../../model/patterns/types';
 
 const point = (index: number, price: number) => ({ index, price, timestamp: index * 60_000 });
@@ -12,6 +13,9 @@ const base = (over: Partial<ChartPattern>): ChartPattern => ({
 });
 
 afterEach(cleanup);
+beforeEach(() => {
+  useTechnicalStore.setState({ focusPatternId: null });
+});
 
 describe('PatternsTab', () => {
   it('shows the percentage only when a formation estimate exists', () => {
@@ -94,5 +98,38 @@ describe('PatternsTab', () => {
     expect(rules).toContain('حداقل نمونهٔ بازده ۵');
     // overlapWindowBars
     expect(rules).toContain('پنجرهٔ هم‌پوشانی ۳ کندل');
+  });
+
+  it('renders the convergence, tolerance, pivot, ATR and per-family window keys', () => {
+    render(<PatternsTab patterns={[]} />);
+    const rules = screen.getByTestId('pattern-rules').textContent ?? '';
+    // pennant.convergenceMin
+    expect(rules).toContain('پنانت: لگ ≥ ۳×ATR · همگرایی ≥ ۳۵٪');
+    // wedge.convergenceMin
+    expect(rules).toContain('گُوه: همگرایی ≥ ۳۰٪');
+    // minTouchesPerLine
+    expect(rules).toContain('حداقل لمس هر خط ۲');
+    // hs.headAboveShouldersAtr / hs.shouldersToleranceAtr
+    expect(rules).toContain('سر و شانه: سر ≥ ۰٫۵×ATR بالاتر · شانه‌ها ±۰٫۶×ATR');
+    // triple.levelToleranceAtr
+    expect(rules).toContain('سه‌قلو: تحمل سطح ۰٫۵×ATR');
+    // pivLeft / pivRight
+    expect(rules).toContain('پیوت ۵ چپ / ۴ راست');
+    // atrPeriod
+    expect(rules).toContain('دورهٔ ATR ۱۴');
+    // maxBars هر خانواده
+    expect(rules).toContain('پرچم ۴۰');
+    expect(rules).toContain('پنانت ۳۰');
+    expect(rules).toContain('مثلث ۶۰');
+    expect(rules).toContain('مستطیل ۸۰');
+    expect(rules).toContain('گُوه ۶۰');
+    expect(rules).toContain('سر و شانه ۱۲۰');
+    expect(rules).toContain('سه‌قلو ۱۲۰');
+  });
+
+  it('sets the focused pattern id when a row is clicked (spec §7.3)', () => {
+    render(<PatternsTab patterns={[base({ id: 'focus-me' })]} />);
+    fireEvent.click(screen.getByTestId('pattern-row-focus-me'));
+    expect(useTechnicalStore.getState().focusPatternId).toBe('focus-me');
   });
 });

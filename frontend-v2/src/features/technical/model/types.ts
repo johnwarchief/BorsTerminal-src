@@ -268,6 +268,8 @@ export interface TechnicalState {
   detectedCHoCHSignals: CHoCHSignal[];
   /** الگوهای کلاسیک شناسایی‌شده؛ مصرف‌کنندهٔ آن رجیستری و اورلیِ چارت است. */
   detectedPatterns: ChartPattern[];
+  /** شناسهٔ الگویی که کاربر از فهرست انتخاب کرده تا چارت روی آن فوکوس کند (spec §7.3). */
+  focusPatternId: string | null;
   /** کندل‌های موتور برای مصرف در تب الگوها (تسک ۱۰ آن را منتشر می‌کند). */
   chartCandles: EngineCandle[];
 
@@ -307,6 +309,7 @@ export interface TechnicalState {
   setDetectedPullbackSignals: (signals: PullbackSignal[]) => void;
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) => void;
   setDetectedPatterns: (patterns: ChartPattern[]) => void;
+  setFocusPatternId: (id: string | null) => void;
   setChartCandles: (candles: EngineCandle[]) => void;
   enableDefaultIndicators: () => void;
 

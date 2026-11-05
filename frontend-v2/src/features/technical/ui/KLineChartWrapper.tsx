@@ -59,6 +59,12 @@ export function ensureAllOverlaysRegistered(): void {
 }
 
 // ----------------------------------------------------------------------------
+// شناسهٔ پایدارِ اورلی الگوهای کلاسیک روی چارت
+// ----------------------------------------------------------------------------
+
+export const CLASSIC_PATTERNS_OVERLAY_ID = 'classic-patterns';
+
+// ----------------------------------------------------------------------------
 // تنظیمات تم برنجی (Brass Aesthetics) چارت KLineCharts
 // ----------------------------------------------------------------------------
 
@@ -460,6 +466,58 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     if (!chart || bars.length === 0) return;
     chart.resetData();
   }, [bars]);
+
+  // ۲٫۱. اورلی الگوهای کلاسیک: ثبت یک‌باره کافی نیست؛ باید ساخته شود (spec §7.2).
+  // یک نمونهٔ پایدار با شناسهٔ ثابت بعد از راه‌اندازی چارت ساخته می‌شود و با هر
+  // تشخیصِ تازه حذف و بازساخته می‌شود تا ارقام بازکشیده شوند. اشتراک استور
+  // دستی است تا تغییر تشخیص موجِ رندر تازه نسازد (و حلقهٔ bars → ست → bars نشود).
+  // وابستگی به symbol (نه state چارت) تضمین می‌کند هر چارت تازه دقیقاً یک‌بار sync شود.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    // klinecharts فقط وقتی createPointFigures را صدا می‌زند که دست‌کم یک نقطه داشته باشد.
+    const sync = () => {
+      try {
+        // ابتدا نمونهٔ قبلی (هم‌نام یا هم‌شناسه) برداشته می‌شود: هیچ‌وقت دو اورلی زنده نمی‌ماند.
+        chart.removeOverlay({ name: 'ClassicPatterns' });
+        chart.createOverlay({
+          name: 'ClassicPatterns',
+          id: CLASSIC_PATTERNS_OVERLAY_ID,
+          points: [{ dataIndex: 0 }],
+          lock: true,
+          zLevel: 5,
+        });
+      } catch {
+        // ایمنی در زمان تست
+      }
+    };
+    sync();
+    return useTechnicalStore.subscribe((state, prev) => {
+      if (state.detectedPatterns !== prev.detectedPatterns) sync();
+    });
+  }, [symbol]);
+
+  // ۲٫۲. فوکوس روی الگوی انتخاب‌شده از فهرست (spec §7.3): پیمایش چارت به لنگر و پاک‌کردن شناسه.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const focus = (id: string | null) => {
+      if (!id) return;
+      const target = useTechnicalStore.getState().detectedPatterns.find((p) => p.id === id);
+      if (target) {
+        try {
+          chart.scrollToDataIndex(target.anchor.index);
+        } catch {
+          // ایمنی در زمان تست
+        }
+      }
+      useTechnicalStore.getState().setFocusPatternId(null);
+    };
+    focus(useTechnicalStore.getState().focusPatternId);
+    return useTechnicalStore.subscribe((state, prev) => {
+      if (state.focusPatternId !== prev.focusPatternId) focus(state.focusPatternId);
+    });
+  }, [activeChartInstance]);
 
 
   // ۴. مدیریت ابزار رسم فعال (Drawing Tool Activation)

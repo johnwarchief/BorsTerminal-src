@@ -15,8 +15,16 @@ export function fromDoubleTap(p: DoubleTapPattern): ChartPattern {
   const at = (index: number, price: number, timestamp: number) => ({ index, price, timestamp });
   // R-PAT-21: مرزها بر اساس جهت مرتب می‌شوند. در دوقلوی کف، خط گردن بالاتر از درهٔ دوم است؛
   // در دوقلوی سقف، قلهٔ دوم بالاتر از خط گردن. upper همیشه قیمت بزرگ‌تر و lower قیمت کوچک‌تر است.
-  const upperSource = bullish ? p.neckline : p.peak2;
-  const lowerSource = bullish ? p.peak2 : p.neckline;
+  // مرزِ قله/دره از max/min هر دو قله/دره ساخته می‌شود تا هر دو سرِ الگو درونِ مرز بمانند.
+  const peakHigh = p.peak1.price >= p.peak2.price ? p.peak1 : p.peak2;
+  const peakLow = p.peak1.price <= p.peak2.price ? p.peak1 : p.peak2;
+  const upperSource = bullish ? p.neckline : peakHigh;
+  const lowerSource = bullish ? peakLow : p.neckline;
+  // مرزهای افقی از peak1 تا لنگر کشیده می‌شوند؛ خطِ تک‌نقطه‌ای هیچ‌وقت روی چارت رسم نمی‌شد.
+  const horizontal = (price: number, timestamp: number) => ({
+    from: at(p.peak1.index, price, p.peak1.timestamp),
+    to: at(anchor.index, price, timestamp),
+  });
   return {
     id: `DT:${p.id}`,
     kind: p.type,
@@ -24,8 +32,8 @@ export function fromDoubleTap(p: DoubleTapPattern): ChartPattern {
     family: 'reversal',
     anchor: at(anchor.index, anchor.price, anchor.timestamp),
     points: [p.peak1, p.neckline, p.peak2].map((x) => at(x.index, x.price, x.timestamp)),
-    upper: { from: at(upperSource.index, upperSource.price, upperSource.timestamp), to: at(upperSource.index, upperSource.price, upperSource.timestamp) },
-    lower: { from: at(lowerSource.index, lowerSource.price, lowerSource.timestamp), to: at(lowerSource.index, lowerSource.price, lowerSource.timestamp) },
+    upper: horizontal(upperSource.price, upperSource.timestamp),
+    lower: horizontal(lowerSource.price, lowerSource.timestamp),
     // R-PAT-19: بازدهِ الگوی بازگشتی از شکست واقعی دوقلو اندازه‌گیری می‌شود، نه از لنگر.
     breakoutIndex: p.breakoutIndex,
     target: p.target1,

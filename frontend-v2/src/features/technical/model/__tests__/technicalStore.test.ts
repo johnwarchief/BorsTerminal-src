@@ -189,6 +189,14 @@ describe('useTechnicalStore', () => {
     expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(true);
   });
 
+  it('sets and clears the focused pattern id (spec §7.3)', () => {
+    expect(useTechnicalStore.getState().focusPatternId).toBeNull();
+    useTechnicalStore.getState().setFocusPatternId('FLAG_BULL:4:1-2-3-4');
+    expect(useTechnicalStore.getState().focusPatternId).toBe('FLAG_BULL:4:1-2-3-4');
+    useTechnicalStore.getState().setFocusPatternId(null);
+    expect(useTechnicalStore.getState().focusPatternId).toBeNull();
+  });
+
   it('resets state back to initial values', () => {
     useTechnicalStore.getState().setTimeframe('1H');
     useTechnicalStore.getState().setActiveDrawingTool('rectZone');

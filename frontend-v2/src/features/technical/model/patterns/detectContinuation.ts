@@ -45,6 +45,14 @@ function boundaryFingerprint(highs: [PivotPoint, PivotPoint], lows: [PivotPoint,
   return `${highs[1].index}:${lows[1].index}`;
 }
 
+/**
+ * هم‌پوشانیِ بازهٔ فشرده‌سازی: دو پنجره‌ای که بخشی از یک فشرده‌سازی را شریک‌اند
+ * یک شکل نیستند. فقط اشتراکِ داخلی ملاک است؛ پنجره‌های مجاورِ یک‌سر مشترک تکرار نیستند.
+ */
+function overlaps(a: [number, number], b: [number, number]): boolean {
+  return a[0] < b[1] && b[0] < a[1];
+}
+
 /** خروجی: الگوهای ادامه‌دهندهٔ باز/تأییدشده؛ الگوهای منقضی در emitPattern حذف می‌شوند. */
 export function detectContinuation(
   candles: readonly EngineCandle[],
@@ -54,8 +62,15 @@ export function detectContinuation(
   if (!Number.isFinite(atr) || atr <= 0) return [];
   const pivots = findAlternatingPivots(candles, config.pivLeft, config.pivRight);
   const out: ChartPattern[] = [];
-  /** R-PAT-14: جفت‌های مرزی‌ای که پرچم/پنانت برایشان منتشر شده است. */
-  const continuationPairs = new Set<string>();
+  /** R-PAT-14: جفت‌های مرزی‌ای که هر الگویی (پرچم/پنانت/مثلث/مستطیل/گُوه) برایشان منتشر شده است. */
+  const usedPairs = new Set<string>();
+  /** بازهٔ فشرده‌سازیِ شکل‌های منتشرشده؛ پنجرهٔ تازه نباید همان فشرده‌سازی را بازتوصیف کند. */
+  const usedSpans: Array<[number, number]> = [];
+  const remember = (fingerprint: string, span: [number, number]) => {
+    usedPairs.add(fingerprint);
+    usedSpans.push(span);
+  };
+  const invalidationBuffer = config.invalidationBufferAtr * atr;
 
   for (let i = 0; i + 3 < pivots.length; i++) {
     const legStart = pivots[i]!;
@@ -79,6 +94,10 @@ export function detectContinuation(
     const { upper, lower } = lines(highs, lows, candles);
     const widthAtEnd = Math.abs(lineValue(upper, legEnd.index) - lineValue(lower, legEnd.index));
     if (widthAtEnd <= 0) continue;
+    const fingerprint = boundaryFingerprint(highs, lows);
+    const consolidationStart = Math.min(highs[0]!.index, lows[0]!.index);
+    const consolidationEnd = Math.max(highs[1]!.index, lows[1]!.index);
+    const span: [number, number] = [consolidationStart, consolidationEnd];
 
     const touches = touchCount(after, upper, 'high', atr * config.touchToleranceAtr)
       + touchCount(after, lower, 'low', atr * config.touchToleranceAtr);
@@ -98,7 +117,8 @@ export function detectContinuation(
       + QUALITY_TOUCH_WEIGHT * Math.min(1, touches / QUALITY_TOUCH_FULL),
     );
 
-    if (flagImpulse && widthAtEnd <= (config.flag.channelMaxWidthPct / 100) * legHeight) {
+    if (!usedPairs.has(fingerprint)
+      && flagImpulse && widthAtEnd <= (config.flag.channelMaxWidthPct / 100) * legHeight) {
       const slope = lineSlope(upper);
       const slopeAgainst = config.flag.slopeOpposite
         && ((bullish && slope > 0) || (!bullish && slope < 0));
@@ -110,10 +130,11 @@ export function detectContinuation(
           points, upper, lower, target, stopLoss, quality,
           // R-PAT-5: پنجرهٔ انقضای خانوادهٔ پرچم.
           maxBars: config.flag.maxBars,
+          invalidationBuffer,
         }, candles, config);
         if (flag) {
           out.push(flag);
-          continuationPairs.add(boundaryFingerprint(highs, lows));
+          remember(fingerprint, span);
         }
       }
     }
@@ -121,13 +142,13 @@ export function detectContinuation(
     // پنانت: همان لگ، ولی دو خط همگرا (سقف پایین‌آینده و کف بالارونده).
     // عرض در شروع و پایان خودِ فشرده‌سازی سنجیده می‌شود؛ فرمول بریف عرض را در
     // legEnd (پیش از شروع فشرده‌سازی) می‌گرفت که برای خطوط همگرا هرگز کوچک نمی‌شود.
-    const consolidationStart = Math.min(highs[0]!.index, lows[0]!.index);
-    const consolidationEnd = Math.max(highs[1]!.index, lows[1]!.index);
     const widthAtStart = Math.abs(lineValue(upper, consolidationStart) - lineValue(lower, consolidationStart));
     const widthAtConsolidationEnd = Math.abs(lineValue(upper, consolidationEnd) - lineValue(lower, consolidationEnd));
     const converge = widthAtStart > 0
       && widthAtConsolidationEnd <= (1 - config.pennant.convergenceMin) * widthAtStart;
-    if (pennantImpulse && converge && legBars <= config.pennant.maxBars) {
+    // جفتِ مشترک: اگر پرچم همین جفت را منتشر کرده، پرچم می‌ماند و پنانت اضافه نمی‌شود.
+    if (!usedPairs.has(fingerprint)
+      && pennantImpulse && converge && legBars <= config.pennant.maxBars) {
       const pennant = emitPattern({
         kind: 'PENNANT',
         direction: bullish ? 'bullish' : 'bearish',
@@ -135,41 +156,82 @@ export function detectContinuation(
         points, upper, lower, target, stopLoss,
         quality: quality - PENNANT_QUALITY_PENALTY,
         maxBars: config.pennant.maxBars,
+        invalidationBuffer,
       }, candles, config);
       if (pennant) {
         out.push(pennant);
-        continuationPairs.add(boundaryFingerprint(highs, lows));
+        remember(fingerprint, span);
       }
     }
   }
 
-  out.push(...detectTriangleFamily(pivots, candles, atr, config, continuationPairs));
+  out.push(...detectTriangleFamily(pivots, candles, atr, config, usedPairs, usedSpans));
   return dedupe(out);
 }
 
+/**
+ * مثلث/مستطیل/گُوه: هر پنجرهٔ چهار پیوت متوالی یک نامزد است، نه فقط دو سقف و کفِ
+ * آخر سری. بدون این پیمایش، این سه خانواده هیچ نمونهٔ تاریخی‌ای به آمار نمی‌دادند.
+ * ترتیب از تازه به کهنه است و هر جفت مرزی فقط یک‌بار منتشر می‌شود.
+ * پیرترین نامزدها به emitPattern سپرده می‌شوند؛ همان‌جا پنجرهٔ خانواده و
+ * وضعیت (تأییدشده/باطل/منقضی) تعیین می‌شود تا نمونه‌های تاریخیِ تأییدشده از دست نروند.
+ */
 function detectTriangleFamily(
   pivots: PivotPoint[],
   candles: readonly EngineCandle[],
   atr: number,
   config: PatternConfig,
-  continuationPairs: ReadonlySet<string>,
+  usedPairs: Set<string>,
+  usedSpans: Array<[number, number]>,
 ): ChartPattern[] {
-  const highs = lastTwo(pivots, 'high');
-  const lows = lastTwo(pivots, 'low');
-  if (!highs || !lows) return [];
-  // R-PAT-14: اگر پرچم/پنانت همین جفت پیوت مرزی را مصرف کرده، مثلث/مستطیل/گُوه تکراری است.
-  if (continuationPairs.has(boundaryFingerprint(highs, lows))) return [];
+  const out: ChartPattern[] = [];
+  const windows: Array<[PivotPoint, PivotPoint, PivotPoint, PivotPoint]> = [];
+  for (let i = 0; i + 3 < pivots.length; i++) {
+    windows.push([pivots[i]!, pivots[i + 1]!, pivots[i + 2]!, pivots[i + 3]!]);
+  }
+  windows.reverse();
 
+  for (const window of windows) {
+    const highPivots = window.filter((p) => p.kind === 'high');
+    const lowPivots = window.filter((p) => p.kind === 'low');
+    if (highPivots.length !== 2 || lowPivots.length !== 2) continue;
+    const highs: [PivotPoint, PivotPoint] = [highPivots[0]!, highPivots[1]!];
+    const lows: [PivotPoint, PivotPoint] = [lowPivots[0]!, lowPivots[1]!];
+    // R-PAT-14: هر جفتی که هر الگویی (پرچم/پنانت/پنجرهٔ دیگر) مصرف کرده، دوباره ساخته نمی‌شود.
+    const fingerprint = boundaryFingerprint(highs, lows);
+    if (usedPairs.has(fingerprint)) continue;
+
+    const startIndex = Math.min(highs[0]!.index, lows[0]!.index);
+    const endIndex = Math.max(highs[1]!.index, lows[1]!.index);
+    // همان فشرده‌سازیِ یک شکلِ منتشرشده دوباره توصیف نمی‌شود (guard هم‌پوشانیِ spec §5).
+    if (usedSpans.some((range) => overlaps(range, [startIndex, endIndex]))) continue;
+    const emitted = buildTriangleWindow(highs, lows, candles, atr, config, startIndex, endIndex);
+    if (!emitted) continue;
+    out.push(emitted);
+    usedPairs.add(fingerprint);
+    usedSpans.push([startIndex, endIndex]);
+  }
+  return out.reverse();
+}
+
+/** اولین شکلِ واجد شرایطِ یک پنجره؛ ترتیب اولویت همان ترتیب قبلی است. */
+function buildTriangleWindow(
+  highs: [PivotPoint, PivotPoint],
+  lows: [PivotPoint, PivotPoint],
+  candles: readonly EngineCandle[],
+  atr: number,
+  config: PatternConfig,
+  startIndex: number,
+  endIndex: number,
+): ChartPattern | null {
   const { upper, lower } = lines(highs, lows, candles);
   const h1 = highs[0]!.price, h2 = highs[1]!.price;
   const l1 = lows[0]!.price, l2 = lows[1]!.price;
   const flat = config.triangle.flatToleranceAtr * atr;
   const span = Math.abs(highs[1]!.index - lows[1]!.index);
-  if (span < config.triangle.minSpan) return [];
+  if (span < config.triangle.minSpan) return null;
   // R-PAT-5: انقضا با پنجرهٔ هر خانواده در emitPattern اعمال می‌شود؛ گارد عرضی مثلث لازم نیست.
 
-  const startIndex = Math.min(highs[0]!.index, lows[0]!.index);
-  const endIndex = Math.max(highs[1]!.index, lows[1]!.index);
   const widthStart = Math.abs(lineValue(upper, startIndex) - lineValue(lower, startIndex));
   const widthEnd = Math.abs(lineValue(upper, endIndex) - lineValue(lower, endIndex));
   const converging = widthStart > 0
@@ -189,29 +251,22 @@ function detectTriangleFamily(
   const targets = (direction: ChartPattern['direction']) => (direction === 'bearish'
     ? { target: lowerEnd - height, stopLoss: upperEnd + atr }
     : { target: upperEnd + height, stopLoss: lowerEnd - atr });
-  const base = { points, upper, lower, family: 'continuation' as const };
+  const base = { points, upper, lower, family: 'continuation' as const, invalidationBuffer: config.invalidationBufferAtr * atr };
 
-  const out: ChartPattern[] = [];
-  const push = (kind: PatternKind, direction: ChartPattern['direction'], quality: number, maxBars: number) => {
-    const emitted = emitPattern(
-      { ...base, ...targets(direction), kind, direction, quality, maxBars },
-      candles,
-      config,
-    );
-    if (emitted) out.push(emitted);
-  };
+  const build = (kind: PatternKind, direction: ChartPattern['direction'], quality: number, maxBars: number) =>
+    emitPattern({ ...base, ...targets(direction), kind, direction, quality, maxBars }, candles, config);
 
-  if (Math.abs(h2 - h1) <= flat && l2 > l1) push('TRIANGLE_ASC', 'bullish', TRIANGLE_QUALITY, config.triangle.maxBars);
-  if (Math.abs(l2 - l1) <= flat && h2 < h1) push('TRIANGLE_DESC', 'bearish', TRIANGLE_QUALITY, config.triangle.maxBars);
-  if (converging && h2 < h1 && l2 > l1) push('TRIANGLE_SYM', 'neutral', SYMMETRIC_QUALITY, config.triangle.maxBars);
+  if (Math.abs(h2 - h1) <= flat && l2 > l1) return build('TRIANGLE_ASC', 'bullish', TRIANGLE_QUALITY, config.triangle.maxBars);
+  if (Math.abs(l2 - l1) <= flat && h2 < h1) return build('TRIANGLE_DESC', 'bearish', TRIANGLE_QUALITY, config.triangle.maxBars);
+  if (converging && h2 < h1 && l2 > l1) return build('TRIANGLE_SYM', 'neutral', SYMMETRIC_QUALITY, config.triangle.maxBars);
   if (Math.abs(h2 - h1) <= config.rectangle.flatToleranceAtr * atr
     && Math.abs(l2 - l1) <= config.rectangle.flatToleranceAtr * atr) {
     // R-PAT-5: پنجرهٔ انقضای مستطیل، نه پنجرهٔ مثلث.
-    push('RECTANGLE', 'neutral', RECTANGLE_QUALITY, config.rectangle.maxBars);
+    return build('RECTANGLE', 'neutral', RECTANGLE_QUALITY, config.rectangle.maxBars);
   }
-  if (wedgeConverging && h2 > h1 && l2 > l1) push('WEDGE_RISING', 'bearish', WEDGE_QUALITY, config.wedge.maxBars);
-  if (wedgeConverging && h2 < h1 && l2 < l1) push('WEDGE_FALLING', 'bullish', WEDGE_QUALITY, config.wedge.maxBars);
-  return out;
+  if (wedgeConverging && h2 > h1 && l2 > l1) return build('WEDGE_RISING', 'bearish', WEDGE_QUALITY, config.wedge.maxBars);
+  if (wedgeConverging && h2 < h1 && l2 < l1) return build('WEDGE_FALLING', 'bullish', WEDGE_QUALITY, config.wedge.maxBars);
+  return null;
 }
 
 function dedupe(patterns: ChartPattern[]): ChartPattern[] {
