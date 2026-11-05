@@ -53,6 +53,42 @@ function flagSeries(): EngineCandle[] {
   ]), 23, { low: 124.2 });
 }
 
+/**
+ * همان پرچم، ولی پیش از شکست قطع می‌شود: فشرده‌سازی با سقف (نه کف) تمام می‌شود؛
+ * لنگر باید دیرترین پیوت (سقف ۲۲) باشد، نه lows[1] (۱۹).
+ */
+function formingFlagSeries(): EngineCandle[] {
+  return flagSeries().slice(0, 24);
+}
+
+/** آینهٔ پرچم صعودی: لگ نزولی تند، بعد کانال صعودی تنگ، بعد ادامهٔ نزولی. */
+function bearFlagSeries(): EngineCandle[] {
+  return reshape(zigzag(130, [
+    [132, 2], // سقف شروع لگ
+    [100, 8], // کف پایان لگ
+    [104.5, 3],
+    [102, 3],
+    [107.5, 3],
+    [105, 3],
+    [105, 1], // داخل کانال؛ پیوت کف قبلی را حفظ می‌کند
+    [94, 4], // شکست و ادامه
+  ]), 23, { high: 105.8 });
+}
+
+/** کانال عریض‌تر از ۳۵٪ ارتفاع لگ: نامزد پرچم/پنانت باید رد شود. */
+function wideChannelSeries(): EngineCandle[] {
+  return reshape(zigzag(100, [
+    [98, 2],
+    [130, 8],
+    [118, 3],
+    [132, 3],
+    [114, 3],
+    [128, 3],
+    [128, 1],
+    [136, 4],
+  ]), 23, { low: 127.2 });
+}
+
 /** همان لگ، بعد کانال همگرا: سقف پایین‌آینده و کف بالارونده. */
 function pennantSeries(): EngineCandle[] {
   return reshape(zigzag(100, [
@@ -147,7 +183,48 @@ describe('continuation detectors', () => {
     expect(flag.direction).toBe('bullish');
     expect(flag.upper.to.price).toBeGreaterThan(flag.lower.to.price);
     expect(flag.quality).toBeGreaterThan(0);
+    // تأییدشده با شکست پس از لنگر.
+    expect(flag.status).toBe('confirmed');
+    expect(flag.breakoutIndex).toBeDefined();
+    expect(flag.breakoutIndex! > flag.anchor.index).toBe(true);
     expect(found.some((p) => p.kind === 'PENNANT')).toBe(false);
+  });
+
+  it('finds a bear flag after a bear impulse leg', () => {
+    const candles = bearFlagSeries();
+    const found = detectContinuation(candles, ATR, FIXTURE_CONFIG);
+    const flag = found.find((p) => p.kind === 'FLAG_BEAR')!;
+    expect(flag.family).toBe('continuation');
+    expect(flag.direction).toBe('bearish');
+    expect(flag.status).toBe('confirmed');
+    expect(flag.breakoutIndex).toBeDefined();
+    expect(flag.breakoutIndex! > flag.anchor.index).toBe(true);
+    // جهت نزولی: هدف زیر ورود و حد ضرر بالای آن.
+    const entry = candles[flag.breakoutIndex!]!.close;
+    expect(flag.target).toBeLessThan(entry);
+    expect(flag.stopLoss).toBeGreaterThan(entry);
+    expect(found.some((p) => p.kind === 'FLAG_BULL' || p.kind === 'PENNANT')).toBe(false);
+  });
+
+  it('rejects a channel wider than the flag width limit', () => {
+    const found = detectContinuation(wideChannelSeries(), ATR, FIXTURE_CONFIG);
+    expect(found.some((p) => p.kind === 'FLAG_BULL' || p.kind === 'FLAG_BEAR' || p.kind === 'PENNANT')).toBe(false);
+  });
+
+  it('anchors on the latest point when the consolidation ends on a high', () => {
+    const found = detectContinuation(formingFlagSeries(), ATR, FIXTURE_CONFIG);
+    const flag = found.find((p) => p.kind === 'FLAG_BULL');
+    expect(flag).toBeDefined();
+    // آرایهٔ بریف با lows[1] (۱۹) تمام می‌شد؛ لنگر درست دیرترین نقطه (سقف ۲۲) است.
+    expect(flag!.anchor.index).toBe(Math.max(...flag!.points.map((p) => p.index)));
+    expect(flag!.anchor.index).toBe(22);
+    expect(flag!.points.map((p) => p.index)).toEqual(
+      [...flag!.points.map((p) => p.index)].sort((a, b) => a - b),
+    );
+    // حالت باز: هنوز شکستی رخ نداده و اسکن شکست هرگز پیش از لنگر شروع نمی‌شود.
+    expect(flag!.status).toBe('forming');
+    expect(flag!.breakoutIndex).toBeUndefined();
+    expect(flag!.breakoutIndex === undefined || flag!.breakoutIndex > flag!.anchor.index).toBe(true);
   });
 
   it('does not invent a pattern on a straight line', () => {
@@ -166,6 +243,8 @@ describe('continuation detectors', () => {
     expect(pennant.quality).toBeGreaterThan(0);
     // همگرایی از مسیر خودش (نه از دروازهٔ عرض کانال پرچم) آمده است.
     expect(found.some((p) => p.kind === 'FLAG_BULL')).toBe(false);
+    // R-PAT-14: پنانت همین جفت پیوت مرزی را مصرف کرده، پس مثلث متقارن تکراری حذف می‌شود.
+    expect(found.some((p) => p.kind === 'TRIANGLE_SYM')).toBe(false);
   });
 
   it('finds an ascending triangle with flat highs and rising lows', () => {
@@ -177,11 +256,16 @@ describe('continuation detectors', () => {
   });
 
   it('finds a descending triangle with flat lows and falling highs', () => {
-    const found = detectContinuation(descendingTriangleSeries(), ATR, FIXTURE_CONFIG);
+    const candles = descendingTriangleSeries();
+    const found = detectContinuation(candles, ATR, FIXTURE_CONFIG);
     const triangle = found.find((p) => p.kind === 'TRIANGLE_DESC');
     expect(triangle).toBeDefined();
     expect(triangle?.direction).toBe('bearish');
     expect(triangle?.family).toBe('continuation');
+    // R-PAT-15: هدف زیر مرز پایین منهای ارتفاع و حد ضرر بالای مرز بالا به‌علاوهٔ ATR.
+    const entry = candles[triangle!.breakoutIndex!]!.close;
+    expect(triangle!.target).toBeLessThan(entry);
+    expect(triangle!.stopLoss).toBeGreaterThan(entry);
   });
 
   it('finds a symmetric triangle when both boundaries converge', () => {
@@ -201,11 +285,16 @@ describe('continuation detectors', () => {
   });
 
   it('finds a rising wedge and reports its bearish resolution', () => {
-    const found = detectContinuation(risingWedgeSeries(), ATR, FIXTURE_CONFIG);
+    const candles = risingWedgeSeries();
+    const found = detectContinuation(candles, ATR, FIXTURE_CONFIG);
     const wedge = found.find((p) => p.kind === 'WEDGE_RISING');
     expect(wedge).toBeDefined();
     expect(wedge?.direction).toBe('bearish');
     expect(wedge?.family).toBe('continuation');
+    // R-PAT-15: گُوهٔ نزولی هدف زیر ورود و حد ضرر بالای ورود دارد.
+    const entry = candles[wedge!.breakoutIndex!]!.close;
+    expect(wedge!.target).toBeLessThan(entry);
+    expect(wedge!.stopLoss).toBeGreaterThan(entry);
   });
 
   it('finds a falling wedge and reports its bullish resolution', () => {
