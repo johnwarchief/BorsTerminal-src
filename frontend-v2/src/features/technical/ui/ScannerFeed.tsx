@@ -1,10 +1,12 @@
 /**
- * frontend-v2/src/features/technical/ui/PatternsTab.tsx
+ * frontend-v2/src/features/technical/ui/ScannerFeed.tsx
  *
- * تب «الگوها» در میزکار عریض:
+ * فیدِ واحدِ اسکنر (ادغامِ تبِ «الگوها» در «اسکنر الگوها»):
  * - کارت آخرین الگوی در حال تشکیل با درصد تشکیلِ تاریخیِ همین نماد (فقط وقتی نمونه کافی است)
  * - فهرست الگوهای اخیر با فیلتر خانواده؛ کلیک روی هر ردیف = فوکوس روی چارت (spec §7.3)
+ * - ردیف‌های پولبک/CHoCH که overlayهای موجود در استور می‌نویسند (کندل، جهت، تاریخ)
  * - کتاب قواعد؛ همهٔ اعداد از PATTERN_CONFIG خوانده می‌شوند تا با موتور یکی بمانند
+ * - ردهٔ ۲ (کم‌بسامد) با برچسب نمایش داده می‌شود، نه پنهان.
  */
 import { useState } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
@@ -12,6 +14,7 @@ import { PATTERN_CONFIG } from '../model/patterns/config';
 import { DIRECTION_FA, KIND_FA } from '../model/patterns/labels';
 import { useTechnicalStore } from '../model/technicalStore';
 import type { ChartPattern, PatternFamily } from '../model/patterns/types';
+import type { CHoCHSignal, FormationEstimate, PullbackSignal } from '../model/types';
 
 const STATUS_FA: Record<string, string> = { forming: 'در حال تشکیل', confirmed: 'تأییدشده', invalidated: 'باطل‌شده' };
 const FAMILY_FA: Record<PatternFamily, string> = { continuation: 'ادامه‌دهنده', reversal: 'بازگشتی' };
@@ -23,8 +26,33 @@ const faNum = (value: number | null | undefined, digits = 1) => {
   // Number(...) صفرهای انتهایی را حذف می‌کند تا «۰٫۵» به‌جای «۰٫۵۰» نمایش داده شود.
   return toFaDigits(Number(value.toFixed(digits))).replace('.', '٫');
 };
+const faDate = (timestamp: number) => {
+  if (!timestamp || !Number.isFinite(timestamp)) return '—';
+  try {
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'UTC',
+    }).format(new Date(timestamp));
+  } catch {
+    return '—';
+  }
+};
 
-export function PatternsTab({ patterns }: { patterns: readonly ChartPattern[] }) {
+// دروازهٔ درصد: موتور زیر formationMinResolved (۸ نمونهٔ حل‌شده) احتمالی نمی‌دهد؛
+// UI هم به همان دروازه پایبند می‌ماند تا عددِ دیتای ناقص به کاربر نرسد.
+const gatedProbability = (formation: FormationEstimate | null | undefined): number | null =>
+  formation?.probability != null && formation.resolved >= PATTERN_CONFIG.formationMinResolved
+    ? formation.probability
+    : null;
+
+export interface ScannerFeedProps {
+  patterns: readonly ChartPattern[];
+  pullbacks: readonly PullbackSignal[];
+  chochs: readonly CHoCHSignal[];
+}
+
+export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
   const [family, setFamily] = useState<'all' | PatternFamily>('all');
   const setFocusPatternId = useTechnicalStore((s) => s.setFocusPatternId);
   const lastForming = [...patterns]
@@ -35,6 +63,7 @@ export function PatternsTab({ patterns }: { patterns: readonly ChartPattern[] })
     .sort((a, b) => b.anchor.index - a.anchor.index)
     .slice(0, 20);
   const estimate = lastForming?.formation;
+  const gated = gatedProbability(estimate);
 
   return (
     <div className="flex flex-col gap-3 p-3 text-[var(--text)]">
@@ -45,13 +74,21 @@ export function PatternsTab({ patterns }: { patterns: readonly ChartPattern[] })
               <span className="flex items-baseline gap-1">
                 <b className="text-[13px]">{KIND_FA[lastForming.kind] ?? lastForming.kind}</b>
                 <span className="text-[12px] text-[var(--text-2)]">{DIRECTION_FA[lastForming.direction]}</span>
+                {lastForming.tier === 2 ? (
+                  <span
+                    data-testid="pattern-tier-2"
+                    className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-600"
+                  >
+                    کم‌بسامد
+                  </span>
+                ) : null}
               </span>
               <span className="text-[12px] text-[var(--text-3)]">{STATUS_FA[lastForming.status]}</span>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              {estimate?.probability != null ? (
+              {gated != null && estimate ? (
                 <>
-                  <b className="text-[20px] tabular-nums">{faPct(estimate.probability)}</b>
+                  <b className="text-[20px] tabular-nums">{faPct(gated)}</b>
                   <span className="text-[12px] text-[var(--text-3)]">
                     {toFaDigits(estimate.successes)} از {toFaDigits(estimate.resolved)} نمونه
                     {estimate.intervalLow != null && estimate.intervalHigh != null
@@ -91,25 +128,77 @@ export function PatternsTab({ patterns }: { patterns: readonly ChartPattern[] })
           </select>
         </label>
         <ul data-testid="pattern-list" className="flex flex-col">
-          {visible.map((pattern) => (
-            <li key={pattern.id}>
-              {/* spec §7.3: کلیک روی ردیف = فوکوس روی چارت (استور، مصرف: KLineChartWrapper). */}
-              <button
-                type="button"
-                data-testid={`pattern-row-${pattern.id}`}
-                onClick={() => setFocusPatternId(pattern.id)}
-                title="نمایش روی چارت"
-                className="flex w-full items-baseline justify-between gap-2 border-b border-[var(--line)] bg-transparent py-2 text-start text-[12px]"
-              >
-                <span>{KIND_FA[pattern.kind] ?? pattern.kind}</span>
-                <span className="text-[var(--text-3)]">{FAMILY_FA[pattern.family]} · {STATUS_FA[pattern.status]}</span>
-                <span className="tabular-nums text-[var(--text-2)]">
-                  {pattern.formation?.probability != null ? faPct(pattern.formation.probability) : '—'}
-                </span>
-              </button>
+          {visible.map((pattern) => {
+            const rowProbability = gatedProbability(pattern.formation);
+            return (
+              <li key={pattern.id}>
+                {/* spec §7.3: کلیک روی ردیف = فوکوس روی چارت (استور، مصرف: KLineChartWrapper). */}
+                <button
+                  type="button"
+                  data-testid={`pattern-row-${pattern.id}`}
+                  onClick={() => setFocusPatternId(pattern.id)}
+                  title="نمایش روی چارت"
+                  className="flex w-full items-baseline justify-between gap-2 border-b border-[var(--line)] bg-transparent py-2 text-start text-[12px]"
+                >
+                  <span className="flex items-baseline gap-1">
+                    {KIND_FA[pattern.kind] ?? pattern.kind}
+                    {pattern.tier === 2 ? (
+                      <span className="rounded-full border border-amber-500/30 px-1 text-[11px] text-amber-600">
+                        کم‌بسامد
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="text-[var(--text-3)]">{FAMILY_FA[pattern.family]} · {STATUS_FA[pattern.status]}</span>
+                  <span className="tabular-nums text-[var(--text-2)]">
+                    {rowProbability != null ? faPct(rowProbability) : '—'}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {visible.length === 0 ? <li className="py-2 text-[12px] text-[var(--text-3)]">الگویی در این فیلتر نیست</li> : null}
+        </ul>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between">
+          <b className="text-[13px] text-[var(--text)]">رویدادهای پولبک و ساختار</b>
+          <span className="text-[12px] text-[var(--text-3)]">
+            {toFaDigits(pullbacks.length + chochs.length)} مورد
+          </span>
+        </div>
+        <ul data-testid="scanner-events" className="flex flex-col">
+          {pullbacks.map((signal) => (
+            <li
+              key={signal.id}
+              data-testid={`scanner-event-${signal.id}`}
+              className="flex items-baseline justify-between gap-2 border-b border-[var(--line)] py-2 text-[12px]"
+            >
+              <span>پولبک</span>
+              <span className={signal.type === 'BULLISH' ? 'text-emerald-500' : 'text-rose-500'}>
+                {signal.type === 'BULLISH' ? 'صعودی' : 'نزولی'}
+              </span>
+              <span className="tabular-nums text-[var(--text-3)]">کندل {toFaDigits(signal.index)}</span>
+              <span className="tabular-nums text-[var(--text-3)]">{faDate(signal.timestamp)}</span>
             </li>
           ))}
-          {visible.length === 0 ? <li className="py-2 text-[12px] text-[var(--text-3)]">الگویی در این فیلتر نیست</li> : null}
+          {chochs.map((signal) => (
+            <li
+              key={signal.id}
+              data-testid={`scanner-event-${signal.id}`}
+              className="flex items-baseline justify-between gap-2 border-b border-[var(--line)] py-2 text-[12px]"
+            >
+              <span>{signal.type}</span>
+              <span className={signal.isBullish ? 'text-emerald-500' : 'text-rose-500'}>
+                {signal.isBullish ? 'صعودی' : 'نزولی'}
+              </span>
+              <span className="tabular-nums text-[var(--text-3)]">کندل {toFaDigits(signal.index)}</span>
+              <span className="tabular-nums text-[var(--text-3)]">{faDate(signal.timestamp)}</span>
+            </li>
+          ))}
+          {pullbacks.length + chochs.length === 0 ? (
+            <li className="py-2 text-[12px] text-[var(--text-3)]">رویداد پولبک یا CHoCH ثبت نشده است</li>
+          ) : null}
         </ul>
       </section>
 

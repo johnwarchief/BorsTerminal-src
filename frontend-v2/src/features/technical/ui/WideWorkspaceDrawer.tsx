@@ -5,7 +5,7 @@
  * ۱. جدول ۵۰ نماد برتر بازار بر پایه حجم و ارزش معاملات (Top 50 Market Symbols) با امکان سوییچ فوری چارت
  * ۲. کاتالوگ اندیکاتورها و سوئیچرهای مد (Double Tap 3D, SuperTrend Pullback, CHoCH, Multi-Mode Channel)
  * ۳. انتخاب‌گر دراپ‌داون خانواده چندگانه RSI (استاندارد، فیبوناچی ۸، باندهای بولینگر، آراس‌آی هموار)
- * ۴. اسکنر زنده الگوهای کلاسیک و ساختار بازار (Double Tap W/M, Pullback, CHoCH)
+ * ۴. اسکنر واحد: الگوهای کلاسیک (کارت، فهرست و قواعد) + رویدادهای پولبک و CHoCH
  * ۵. پنل تحلیل لبه آماری و پرایس‌اکشن نهادی (CandleEdgeCard)
  * ۶. قابلیت تغییر عرض پویا (۴۲۰ تا ۶۴۰ پیکسل) و پشتیبانی از پورتال React (createPortal)
  */
@@ -20,7 +20,7 @@ import type { ChannelMode, RsiVariant, DrawerTab } from '../model/types';
 import { ADVANCED_INDICATORS_REGISTRY } from '../overlays/advancedTradingIndicators';
 import { USER_INDICATORS_REGISTRY } from '../overlays/userIndicators';
 import { CandleEdgeCard } from './CandleEdgeCard';
-import { PatternsTab } from './PatternsTab';
+import { ScannerFeed } from './ScannerFeed';
 import { TelegramCatalogList } from './TelegramCatalogList';
 import { classifyAssetType } from '@features/market/lib/assetType';
 import { useUiStore } from '@shared/stores/uiStore';
@@ -359,7 +359,6 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
     { id: 'top50', labelFa: '۵۰ نماد برتر', badge: top50Symbols.length },
     { id: 'indicators', labelFa: 'اندیکاتورها و کانال' },
     { id: 'scanner', labelFa: 'اسکنر الگوها', badge: detectedDoubleTapPatterns.length + detectedPullbackSignals.length },
-    { id: 'patterns', labelFa: 'الگوها' },
     { id: 'edge', labelFa: 'لبه آماری' },
   ];
 
@@ -712,98 +711,14 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
           </div>
         )}
 
-        {/* ۳. تب اسکنر الگوهای کلاسیک و ساختار */}
+        {/* ۳. تب اسکنر واحد: الگوهای کلاسیک + رویدادهای پولبک/CHoCH */}
         {activeTab === 'scanner' && (
-          <div data-testid="scanner-panel" className="p-3 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="t-10 font-bold text-accent">الگوهای شناسایی‌شده روی نمودار</span>
-              <span className="t-85 text-text-3 font-mono">
-                {toFaDigits(detectedDoubleTapPatterns.length + detectedPullbackSignals.length + detectedCHoCHSignals.length)} مورد
-              </span>
-            </div>
-
-            {/* لیست سقف و کف‌های دوقلو */}
-            {detectedDoubleTapPatterns.map((pat) => {
-              const isDoubleTop = pat.type === 'DOUBLE_TOP';
-              const name = isDoubleTop ? 'سقف دوقلو (M)' : 'کف دوقلو (W)';
-              const badgeColor = isDoubleTop ? 'text-rose-400 bg-rose-500/15' : 'text-cyan-400 bg-cyan-500/15';
-
-              return (
-                <div
-                  key={pat.id}
-                  className="p-2.5 rounded-[var(--radius-sm)] bg-panel-2 border border-line flex flex-col gap-1"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`px-1.5 py-0.5 rounded t-85 font-bold ${badgeColor}`}>{name}</span>
-                    <span className="t-85 font-bold text-accent font-mono">امتیاز: {toFaDigits(pat.score)}٪</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1 t-85 text-text-3 mt-1 font-mono">
-                    <div>خط‌گردن: {toFaDigits(Math.round(pat.neckline.price))}</div>
-                    <div>هدف ۱: {toFaDigits(Math.round(pat.target1))}</div>
-                    <div>هدف ۲: {toFaDigits(Math.round(pat.target2))}</div>
-                    <div>حد ضرر: {toFaDigits(Math.round(pat.stopLoss))}</div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* سیگنال‌های پولبک سوپرترند */}
-            {detectedPullbackSignals.map((sig) => {
-              const isBull = sig.type === 'BULLISH';
-              return (
-                <div
-                  key={sig.id}
-                  className="p-2 rounded-[var(--radius-sm)] bg-panel-2 border border-line flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`px-1.5 py-0.5 rounded t-85 font-bold ${
-                        isBull ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
-                      }`}
-                    >
-                      {isBull ? 'پولبک صعودی (خرید)' : 'پولبک نزولی (فروش)'}
-                    </span>
-                    <span className="t-85 text-text-3 font-mono">قیمت: {toFaDigits(Math.round(sig.price))}</span>
-                  </div>
-                  <span className="t-8 text-accent font-mono">{toFaDigits(sig.qualityScore)}٪</span>
-                </div>
-              );
-            })}
-
-            {/* سیگنال‌های تغییر ماهیت ساختار (CHoCH) */}
-            {detectedCHoCHSignals.map((ch) => (
-              <div
-                key={ch.id}
-                className="p-2 rounded-[var(--radius-sm)] bg-panel-2 border border-line flex items-center justify-between"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`px-1.5 py-0.5 rounded t-85 font-bold ${
-                      ch.isBullish ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
-                    }`}
-                  >
-                    {ch.isBullish ? 'CHoCH صعودی' : 'CHoCH نزولی'}
-                  </span>
-                  <span className="t-85 text-text-3 font-mono">سطح: {toFaDigits(Math.round(ch.levelPrice))}</span>
-                </div>
-                <span className="t-8 text-text-3 font-mono">شکست در: {toFaDigits(Math.round(ch.brokenPrice))}</span>
-              </div>
-            ))}
-
-            {detectedDoubleTapPatterns.length === 0 &&
-              detectedPullbackSignals.length === 0 &&
-              detectedCHoCHSignals.length === 0 && (
-                <div className="p-4 text-center text-text-3 t-9">
-                  در کندل‌های فعلی این نماد، الگوی قطعی تشکیل نشده است.
-                </div>
-              )}
-          </div>
-        )}
-
-        {/* ۴. تب الگوهای کلاسیک (کارت، فهرست و قواعد) */}
-        {activeTab === 'patterns' && (
-          <div className="block p-3">
-            <PatternsTab patterns={detectedPatterns} />
+          <div className="block p-3" data-testid="scanner-panel">
+            <ScannerFeed
+              patterns={detectedPatterns}
+              pullbacks={detectedPullbackSignals}
+              chochs={detectedCHoCHSignals}
+            />
           </div>
         )}
 

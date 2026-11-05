@@ -153,7 +153,7 @@ export type ChannelMode = 'regression' | 'retest_channel' | 'donchian';
 
 export type RsiVariant = 'standard' | 'fibo' | 'bb' | 'smooth_ma';
 
-export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge' | 'patterns';
+export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
 
 export type FormationConfidence = 'none' | 'low' | 'medium' | 'high';
 

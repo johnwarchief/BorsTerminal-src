@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WideWorkspaceDrawer } from '../WideWorkspaceDrawer';
 import { useTechnicalStore } from '../../model/technicalStore';
+import type { ChartPattern } from '../../model/patterns/types';
 
 vi.mock('@features/market/api/useBoard', () => ({
   useBoard: vi.fn(() => ({
@@ -127,38 +128,44 @@ describe('WideWorkspaceDrawer Component', () => {
     expect(useTechnicalStore.getState().channelMode).toBe('donchian');
   });
 
-  it('switches to scanner tab and displays detected patterns', () => {
-    useTechnicalStore.getState().setDetectedDoubleTapPatterns([
-      {
-        id: 'pat-1',
-        type: 'DOUBLE_TOP',
-        peak1: { index: 5, price: 1200, timestamp: 1730000000000 },
-        neckline: { index: 10, price: 1050, timestamp: 1730100000000 },
-        peak2: { index: 15, price: 1205, timestamp: 1730200000000 },
-        target1: 900,
-        target2: 800,
-        stopLoss: 1250,
-        score: 92,
-        quality: 92,
-        height: 150,
-        status: 'active',
-      },
+  it('switches to the scanner tab and shows the merged pattern/event feed', () => {
+    // A5: تبِ موازیِ «الگوها» حذف شد؛ اسکنر واحد هم الگوهای کلاسیک و هم رویدادهای پولبک/CHoCH را نشان می‌دهد.
+    const pattern: ChartPattern = {
+      id: 'flag-1',
+      kind: 'FLAG_BULL',
+      direction: 'bullish',
+      family: 'continuation',
+      anchor: { index: 40, price: 105, timestamp: 40 * 60_000 },
+      points: [],
+      upper: { from: { index: 30, price: 106, timestamp: 30 * 60_000 }, to: { index: 40, price: 106, timestamp: 40 * 60_000 } },
+      lower: { from: { index: 30, price: 104, timestamp: 30 * 60_000 }, to: { index: 40, price: 104, timestamp: 40 * 60_000 } },
+      target: 112,
+      stopLoss: 98,
+      quality: 60,
+      status: 'forming',
+    };
+    useTechnicalStore.getState().setDetectedPatterns([pattern]);
+    useTechnicalStore.getState().setDetectedPullbackSignals([
+      { id: 'pullback-1', type: 'BULLISH', index: 42, timestamp: 42 * 60_000, price: 101, superTrendPrice: 99, qualityScore: 77 },
     ]);
 
     renderDrawer();
 
     fireEvent.click(screen.getByTestId('drawer-tab-scanner'));
     expect(screen.getByTestId('scanner-panel')).toBeDefined();
-    expect(screen.getByText('سقف دوقلو (M)')).toBeDefined();
+    expect(screen.getByTestId('pattern-row-flag-1')).toBeDefined();
+    expect(screen.getByTestId('scanner-event-pullback-1')).toBeDefined();
+    expect(screen.getByTestId('pattern-rules')).toBeDefined();
   });
 
-  it('keeps every tab label at the 11px floor', () => {
+  it('keeps every tab label at the 11px floor and drops the duplicate patterns tab', () => {
     renderDrawer();
-    for (const id of ['top50', 'indicators', 'scanner', 'patterns', 'edge']) {
+    for (const id of ['top50', 'indicators', 'scanner', 'edge']) {
       const tab = screen.getByTestId(`drawer-tab-${id}`);
       expect(tab.className).toContain('text-[11px]');
       expect(tab.className).not.toContain('t-95');
     }
+    expect(screen.queryByTestId('drawer-tab-patterns')).toBeNull();
   });
 
   it('renders collapsed mini-bar when isOpen is false', () => {
