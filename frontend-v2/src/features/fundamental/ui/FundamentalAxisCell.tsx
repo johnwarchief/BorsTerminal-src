@@ -5,7 +5,7 @@ import {
   AXES,
   epsYearsRequired,
   formatAxisValue,
-  formatEpsTrend,
+  formatEpsValue,
   growthSubStatuses,
   potentialPath,
   potentialStatusOf,
@@ -20,12 +20,12 @@ import {
   type AxisStatus,
   type AxisThresholds,
 } from '../lib/axisMeta';
+import { faSectorName } from '../lib/faOrthography';
 import { Bullet } from './mini/Bullet';
 import { EpsBars } from './mini/EpsBars';
 import { RegimeGlyph } from './mini/RegimeGlyph';
+import { StatusMark, TrendMark } from './icons';
 import type { ScreenerCoreRow } from '../api/useScreenerCore';
-
-export const STATUS_ICON: Record<AxisStatus, string> = { pass: '✓', fail: '✕', na: '−', unknown: '?' };
 
 const STATUS_TITLE: Record<AxisStatus, string> = {
   pass: 'قبول — این محور آستانه را پاس کرده است',
@@ -54,10 +54,10 @@ function AxisCell({ row, axis, thresholds }: Props) {
   const density = useFundamentalPrefs((state) => state.density);
   const meta = AXES.find((item) => item.key === axis)!;
   const status = statusOf(row, axis);
-  // R98: محور ۲ روندِ EPS است، نه «N/N»؛ فلش در حالتِ فشرده هم می‌ماند.
+  // R98: محور ۲ روندِ EPS است، نه «N/N»؛ R-UNSLOP-3: روند آیکنِ SVG است، نه کاراکتر.
   const epsYears = axis === 'eps' ? epsYearsRequired(row, thresholds) : null;
   const value = axis === 'eps'
-    ? formatEpsTrend(row.eps_series)
+    ? formatEpsValue(row.eps_series)
     : formatAxisValue(valueOf(row, axis), axis);
   const threshold = thresholdOf(thresholds, axis);
   const reason = reasonOf(row, axis);
@@ -80,12 +80,12 @@ function AxisCell({ row, axis, thresholds }: Props) {
   const subtitle = axis === 'eps'
     ? epsThresholdLabel(epsYears)
     : axis === 'industry'
-      ? row.sector_name ?? '—'
+      ? faSectorName(row.sector_name) || '—'
       : axis === 'sales'
         // شاهدِ فروش/ارزش حتی بدون آستانهٔ پتانسیل می‌ماند («≥ —٪ · فروش/ارزش ۱٫۱۵»).
         ? `≥ ${threshold == null ? '—' : toFaDigits(threshold)}٪ · ${salesWord} ${salesRatio}`
         : growthSubtitle ?? thresholdLabel(thresholds, axis);
-  const epsTrend = axis === 'eps' ? trendFa(trendOf(row.eps_series)) : null;
+  const epsTrend = axis === 'eps' ? trendOf(row.eps_series) : null;
 
   return (
     <div
@@ -93,24 +93,25 @@ function AxisCell({ row, axis, thresholds }: Props) {
       data-testid={`fundamental-cell-${row.symbol}-${axis}`}
       data-state={status}
       data-path={axis === 'sales' ? (status === 'pass' && path ? path : 'none') : undefined}
-      className={`fd-axis-cell flex min-w-0 flex-col justify-center px-1.5 ${density === 'comfortable' ? 'gap-1 py-1' : 'gap-0 py-0.5'}`}
+      className={`fd-axis-cell flex min-w-0 flex-col justify-center px-2 ${density === 'comfortable' ? 'gap-1 py-1' : 'gap-0 py-1'}`}
     >
-      <div className="flex items-baseline gap-1.5">
+      <div className="flex items-baseline gap-2">
         <b
-          className="fd-axis-value text-[12px] font-medium tabular-nums text-[var(--fd-text)]"
-          title={epsTrend ? `روند ${epsTrend}` : undefined}
+          className="fd-axis-value fd-cell-strong tabular-nums text-[var(--fd-text)]"
+          title={epsTrend ? `روند ${trendFa(epsTrend)}` : undefined}
         >
           {value}
         </b>
-        <span
-          className={`fd-status fd-status--${status} inline-flex items-center gap-0.5 text-[10px]`}
+        {axis === 'eps' ? <TrendMark trend={epsTrend} /> : null}
+        <StatusMark
+          status={status}
+          word={statusFa(status)}
           title={reason ?? STATUS_TITLE[status]}
-        >
-          <span aria-hidden>{STATUS_ICON[status]}</span> {statusFa(status)}
-        </span>
+          className="fd-cell-meta"
+        />
         {pathBadge ? (
           <span
-            className="rounded border border-[var(--fd-line-strong)] px-1 text-[8.5px] text-[var(--fd-text-3)]"
+            className="rounded border border-[var(--fd-line-strong)] px-1 fd-cell-meta text-[var(--fd-text-3)]"
             title={path === 'potential' ? 'قبول از مسیر پتانسیل سود' : path === 'sales' ? 'قبول از مسیر فروش/ارزش' : 'مسیر قبولی مشخص نیست'}
           >
             {pathBadge}
@@ -144,7 +145,7 @@ function AxisCell({ row, axis, thresholds }: Props) {
           خط آستانه در سرستون و راهنمای جدول هم‌چنان دیده می‌شود. */}
       {density === 'comfortable' ? (
         // R-P1-2: زیرنویسِ رشد ممکن است در ستونِ باریک بریده شود؛ متنِ کامل در title می‌ماند.
-        <span className="fd-axis-threshold truncate text-[9.5px] text-[var(--fd-text-3)]" title={subtitle}>{subtitle}</span>
+        <span className="fd-axis-threshold truncate fd-cell-meta text-[var(--fd-text-3)]" title={subtitle}>{subtitle}</span>
       ) : null}
     </div>
   );

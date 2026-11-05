@@ -4,7 +4,7 @@ import {
   epsChangeText,
   epsChanges,
   epsDeltaText,
-  formatEpsTrend,
+  formatEpsValue,
   lastSeriesValue,
 } from '../../lib/axisMeta';
 import { cardStatus } from '../../lib/cardStatus';
@@ -74,7 +74,7 @@ export function EpsPanel({ card }: { card: FtsCard }) {
       title="سودآوری ۳ساله"
       subtitle="سابقهٔ EPS و روند سال‌به‌سال؛ «سنجیده‌نشده» از «رد» جدا است"
       status={status}
-      value={formatEpsTrend(series)}
+      value={formatEpsValue(series)}
       threshold={required == null ? '—' : `${toFaDigits(required)} سال`}
       chart={<EpsBars series={series} status={status} label="سری EPS" />}
       rows={rows}
@@ -86,9 +86,9 @@ export function EpsPanel({ card }: { card: FtsCard }) {
             <DeltaBars values={changes} labels={labels} />
           </div>
         ) : (
-          <p className="text-[9px] text-[var(--fd-text-3)]" data-testid="eps-growth-empty">داده‌ای ثبت نشده</p>
+          <p className="fd-meta text-[var(--fd-text-3)]" data-testid="eps-growth-empty">داده‌ای ثبت نشده</p>
         )}
-        <div className="grid grid-cols-1 gap-0.5">
+        <div className="grid grid-cols-1 gap-1">
           {series.map((value, index) => {
             const change = changes[index] ?? null;
             const changeTone = change == null
@@ -106,7 +106,7 @@ export function EpsPanel({ card }: { card: FtsCard }) {
                 data-testid={`eps-period-${index}`}
                 role="group"
                 aria-label={`${labels[index]}، EPS ${faInt(value)}، تغییر ${index === 0 ? 'بدون دورهٔ قبل' : deltaText}، رشد ${changeText}`}
-                className="flex items-center justify-between gap-2 border-b border-[var(--fd-line)] py-0.5 text-[9.5px]"
+                className="flex items-center justify-between gap-2 border-b border-[var(--fd-line)] py-1 fd-meta"
               >
                 <span className="text-[var(--fd-text-3)]">{labels[index]}</span>
                 <b className="text-[var(--fd-text)]">{faInt(value)}</b>

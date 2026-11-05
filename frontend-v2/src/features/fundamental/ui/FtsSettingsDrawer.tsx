@@ -36,10 +36,10 @@ function Slider({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={testId} className="t-95 text-text-2">{label}</label>
-        <span className="num rounded-[3px] border border-line bg-panel-2 px-1.5 t-9 text-text">
+        <label htmlFor={testId} className="fd-meta text-text-2">{label}</label>
+        <span className="num rounded border border-line bg-panel-2 px-2 fd-meta text-text">
           {toFaDigits(value)}٪
         </span>
       </div>
@@ -52,7 +52,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-panel-3"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded bg-panel-3"
       />
     </div>
   );
@@ -78,11 +78,11 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-line bg-panel px-3 py-2 text-start hover:border-line-strong"
+      className="flex w-full items-center justify-between gap-3 rounded border border-line bg-panel px-3 py-2 text-start hover:border-line-strong"
     >
       <span className="min-w-0 flex-1">
-        <span className="block t-95 text-text-2">{label}</span>
-        {hint ? <span className="mt-0.5 block t-85 leading-relaxed text-text-3">{hint}</span> : null}
+        <span className="block fd-meta text-text-2">{label}</span>
+        {hint ? <span className="mt-1 block fd-meta leading-relaxed text-text-3">{hint}</span> : null}
       </span>
       <span
         aria-hidden
@@ -113,13 +113,13 @@ function Radio({
       aria-checked={checked}
       data-testid={testId}
       onClick={onChange}
-      className={`flex items-center gap-2 rounded-[var(--radius-sm)] border px-2.5 py-1.5 text-start t-9 ${checked ? 'border-line-strong bg-panel-2 text-text' : 'border-line bg-panel text-text-3'}`}
+      className={`flex items-center gap-2 rounded border px-3 py-2 text-start fd-meta ${checked ? 'border-line-strong bg-panel-2 text-text' : 'border-line bg-panel text-text-3'}`}
     >
       <span
         aria-hidden
-        className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-accent' : 'border-line-strong'}`}
+        className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-2 ${checked ? 'border-accent' : 'border-line-strong'}`}
       >
-        {checked ? <span className="h-1.5 w-1.5 rounded-full bg-accent" /> : null}
+        {checked ? <span className="h-1.5 w-1.5 rounded bg-accent" /> : null}
       </span>
       {label}
     </button>
@@ -227,8 +227,8 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         data-testid="fts-settings-panel"
         className="fixed inset-y-0 start-0 z-50 flex w-[420px] max-w-[92vw] flex-col border-e border-line bg-panel shadow-2xl outline-none"
       >
-        <header className="flex flex-none items-center justify-between border-b border-line px-4 py-2.5">
-          <h3 className="t-105 font-bold text-text">تنظیمات پیش‌شرط‌های FTS</h3>
+        <header className="flex flex-none items-center justify-between border-b border-line px-4 py-3">
+          <h3 className="fd-meta  text-text">تنظیمات پیش‌شرط‌های FTS</h3>
           <button
             type="button"
             onClick={onClose}
@@ -242,10 +242,10 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-3">
           {cfg.isLoading ? (
-            <p data-testid="fts-settings-loading" className="t-95 text-text-3">در حال خواندن تنظیمات…</p>
+            <p data-testid="fts-settings-loading" className="fd-meta text-text-3">در حال خواندن تنظیمات…</p>
           ) : null}
           {cfg.isError ? (
-            <div data-testid="fts-settings-load-error" className="rounded-[var(--radius-sm)] border border-down/40 bg-down/10 p-2 t-9 text-down">
+            <div data-testid="fts-settings-load-error" className="rounded border border-down/40 bg-down/10 p-2 fd-meta text-down">
               تنظیمات خوانده نشد.
               <button type="button" onClick={() => void cfg.refetch()} className="ms-2 underline">تلاش دوباره</button>
             </div>
@@ -254,7 +254,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           {base ? (
             <>
               <section className="flex flex-col gap-3">
-                <h4 className="t-95 font-bold text-text-2">آستانه‌های پنج شاخص</h4>
+                <h4 className="fd-meta  text-text-2">آستانه‌های پنج شاخص</h4>
                 <Slider testId="fts-growth-min" label="حداقل درصد رشد درآمد کدال" value={draft.growth_min} min={0} max={150} step={5} onChange={(value) => update('growth_min', value)} />
                 <Slider testId="fts-monetary-growth" label="هدف درصد رشد (پوشش تورم)" value={draft.v10_monetary_growth_min} min={0} max={150} step={5} onChange={(value) => update('v10_monetary_growth_min', value)} />
                 <Slider testId="fts-inflation-basis" label="مبنای تورم در فرمول رشد تولیدی" value={draft.v10_inflation_basis} min={0} max={100} step={5} onChange={(value) => update('v10_inflation_basis', value)} />
@@ -266,7 +266,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
               </section>
 
               <section className="flex flex-col gap-2 border-t border-line pt-3">
-                <h4 className="t-95 font-bold text-text-2">دروازه‌های سخت</h4>
+                <h4 className="fd-meta  text-text-2">دروازه‌های سخت</h4>
                 <div className="flex flex-col gap-1" role="radiogroup" aria-label="نرخ‌گذاری دستوری">
                   <Radio testId="fts-pricing-free" label="حذف سه صنعت دستوری جزوه" checked={draft.pricingGate === 'free_only'} onChange={() => update('pricingGate', 'free_only')} />
                   <Radio testId="fts-pricing-all" label="همه صنایع" checked={draft.pricingGate === 'all'} onChange={() => update('pricingGate', 'all')} />
@@ -280,9 +280,9 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
 
               <section className="flex flex-col gap-2 border-t border-line pt-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="t-95 font-bold text-text-2">فیلتر حذف بر اساس شاخص</h4>
+                  <h4 className="fd-meta  text-text-2">فیلتر حذف بر اساس شاخص</h4>
                   {excludeAxes.length > 0 ? (
-                    <button type="button" data-testid="fts-exclude-reset" onClick={resetExcludeAxes} className="t-85 text-accent hover:underline">
+                    <button type="button" data-testid="fts-exclude-reset" onClick={resetExcludeAxes} className="fd-meta text-accent hover:underline">
                       بازنشانی فیلترها
                     </button>
                   ) : null}
@@ -300,12 +300,12 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
               </section>
 
               {serverError ? (
-                <div data-testid="fts-settings-error" className="rounded-[var(--radius-sm)] border border-down/40 bg-down/10 px-3 py-2 t-9 text-down">
+                <div data-testid="fts-settings-error" className="rounded border border-down/40 bg-down/10 px-3 py-2 fd-meta text-down">
                   {serverError}
                 </div>
               ) : null}
               {saved ? (
-                <div data-testid="fts-settings-success" className="rounded-[var(--radius-sm)] border border-up/40 bg-up/10 px-3 py-2 t-9 text-up">
+                <div data-testid="fts-settings-success" className="rounded border border-up/40 bg-up/10 px-3 py-2 fd-meta text-up">
                   تنظیمات ذخیره شد.
                 </div>
               ) : null}
@@ -316,7 +316,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                   data-testid="fts-settings-save"
                   onClick={onSave}
                   disabled={save.isPending}
-                  className="rounded-[var(--radius-sm)] border border-accent/40 bg-accent/15 px-4 py-2 t-10 font-bold text-accent disabled:opacity-50"
+                  className="rounded border border-accent/40 bg-accent/15 px-4 py-2 fd-meta  text-accent disabled:opacity-50"
                 >
                   {save.isPending ? 'در حال ذخیره…' : 'ذخیرهٔ تنظیمات'}
                 </button>
@@ -325,7 +325,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                   data-testid="fts-settings-reset"
                   onClick={onReset}
                   disabled={save.isPending}
-                  className="rounded-[var(--radius-sm)] border border-line bg-panel-2 px-4 py-2 t-10 text-text-2 disabled:opacity-50"
+                  className="rounded border border-line bg-panel-2 px-4 py-2 fd-meta text-text-2 disabled:opacity-50"
                 >
                   بازگردانی آستانه‌های بنیادی به پیش‌فرض FTS
                 </button>

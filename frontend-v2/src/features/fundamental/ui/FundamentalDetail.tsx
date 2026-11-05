@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
+import { faSectorName } from '../lib/faOrthography';
+import { ArrowRight } from './icons';
 import { useCodalHealth } from '../api/useCodalHealth';
 import { useFtsCard, type FtsCard } from '../api/useFtsCard';
 import { useSectorPe } from '../api/useSectorPe';
@@ -100,13 +102,14 @@ function DetailFrame({ testId, symbol, onBack, settingsOpen, onToggleSettings, c
     >
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
         <button type="button" data-testid="fundamental-back" onClick={onBack} className="tape-btn">
-          ← جدول بنیادی
+          <ArrowRight />
+          جدول بنیادی
         </button>
-        <b data-testid="fundamental-title" className="t-125 font-extrabold">{symbol}</b>
+        <b data-testid="fundamental-title" className="fd-heading ">{symbol}</b>
         <span className="ms-auto" />
         <FtsSettingsTrigger open={settingsOpen} onToggle={onToggleSettings} />
       </header>
-      <div className="p-3 text-[11px] text-[var(--fd-text-3)]">{children}</div>
+      <div className="p-3 fd-meta text-[var(--fd-text-3)]">{children}</div>
     </section>
   );
 }
@@ -130,7 +133,7 @@ function ScoreRibbon({ card }: { card: FtsCard }) {
   return (
     <div
       data-testid="fundamental-score-ribbon"
-      className="fd-in flex flex-wrap items-center gap-2 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-2.5 py-1.5 text-[10px] text-[var(--fd-text-3)]"
+      className="fd-in flex flex-wrap items-center gap-2 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-3 py-2 fd-meta text-[var(--fd-text-3)]"
     >
       <strong className="text-[var(--fd-text)]">{toFaDigits(passed)} از {toFaDigits(total)} محور {statusFa('pass')}</strong>
       <span className="flex gap-1">
@@ -144,7 +147,7 @@ function ScoreRibbon({ card }: { card: FtsCard }) {
               data-status={status}
               title={label}
               aria-label={label}
-              className="h-1.5 w-6 rounded-full"
+              className="h-1.5 w-6 rounded"
               style={{ background: STATUS_COLOR[status] }}
             />
           );
@@ -222,32 +225,33 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
     >
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
         <button type="button" data-testid="fundamental-back" onClick={onBack} className="tape-btn">
-          ← جدول بنیادی
+          <ArrowRight />
+          جدول بنیادی
         </button>
-        <b data-testid="fundamental-title" className="t-125 font-extrabold">{symbol}</b>
-        {card.sector ? <span className="t-9 text-[var(--fd-text-3)]">{card.sector}</span> : null}
+        <b data-testid="fundamental-title" className="fd-heading ">{symbol}</b>
+        {card.sector ? <span className="fd-meta text-[var(--fd-text-3)]">{faSectorName(card.sector)}</span> : null}
         {holding ? (
           <span
             data-testid="holding-class-badge"
-            className="rounded border border-[var(--fd-accent)] px-1 text-[9px] text-[var(--fd-accent)]"
+            className="rounded border border-[var(--fd-accent)] px-1 fd-meta text-[var(--fd-accent)]"
           >
             {bank ? 'بانک / مؤسسهٔ اعتباری' : 'هلدینگ / سرمایه‌گذاری'}
           </span>
         ) : null}
-        <span data-testid="fundamental-verdict" className="rounded border border-[var(--fd-line-strong)] px-1 text-[9px]">
+        <span data-testid="fundamental-verdict" className="rounded border border-[var(--fd-line-strong)] px-1 fd-meta">
           {verdictFa(card.verdict)}
         </span>
         {/* R-V1-4 (M-2): دلیلِ حذفِ طبقه کنارِ حکم نوشته می‌شود؛ کاربر نباید بماند بگوید «چرا خارج شده». */}
         {card.excluded === true && card.exclusion_reasons?.length ? (
           <span
             data-testid="fundamental-exclusion-reason"
-            className="text-[9px] text-[var(--fd-down)]"
+            className="fd-meta text-[var(--fd-down)]"
           >
             دلیل: {card.exclusion_reasons.join(' · ')}
           </span>
         ) : null}
-        <span className="num t-9">امتیاز {scoreLabel(card.score)}/۵</span>
-        <span className="ms-auto flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] text-[var(--fd-text-3)]">
+        <span className="num fd-meta">امتیاز {scoreLabel(card.score)}/۵</span>
+        <span className="ms-auto flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 fd-meta text-[var(--fd-text-3)]">
           <span data-testid="fundamental-freshness">{freshnessLabel(card.freshness?.as_of)}</span>
           {attention.length ? (
             <span
@@ -266,7 +270,7 @@ export function FundamentalDetail({ symbol, onBack }: Props) {
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
           <section
             data-testid="fundamental-not-applicable"
-            className="rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2.5 text-[10px] leading-relaxed text-[var(--fd-text-2)]"
+            className="rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-3 fd-meta leading-relaxed text-[var(--fd-text-2)]"
           >
             FTS ندارد — این نماد صندوق/ابزار است و غربالگری پنج‌شاخص برای آن تعریف نشده است.
           </section>

@@ -13,7 +13,7 @@ type MetricSignal = {
 };
 
 /**
- * R104: ترتیبِ تقدمِ وضعیتِ زیرردیف: «نامعطّل» → بی‌نظر، شکافِ داده → نامشخص،
+ * R104: ترتیبِ تقدمِ وضعیتِ زیرردیف: «نامعطّل» به بی‌نظر، شکافِ داده به نامشخص،
  * سپس حکمِ pass؛ غیبتِ حکم نامشخص. شکافِ داده هرگز «رد» دیده نمی‌شود.
  */
 function metricStatus(signal: MetricSignal | null | undefined): AxisStatus {
@@ -69,8 +69,8 @@ export function GrowthPanel({ card }: { card: FtsCard }) {
       details={card.details?.['۱']}
     >
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[9px] text-[var(--fd-text-3)]">۱ب — رشد واقعی</span>
+        <div className="flex flex-col gap-1">
+          <span className="fd-meta text-[var(--fd-text-3)]">۱ب — رشد واقعی</span>
           <div className="h-[24px]">
             <Bullet
               value={volume?.applicable === false ? null : volume?.real_pct ?? null}
@@ -81,8 +81,8 @@ export function GrowthPanel({ card }: { card: FtsCard }) {
             />
           </div>
         </div>
-        <div data-testid="growth-sales-pair" className="flex flex-col gap-0.5">
-          <span className="text-[9px] text-[var(--fd-text-3)]">فروش جاری / دورهٔ قبل</span>
+        <div data-testid="growth-sales-pair" className="flex flex-col gap-1">
+          <span className="fd-meta text-[var(--fd-text-3)]">فروش جاری / دورهٔ قبل</span>
           <div className="h-[40px]">
             {/* R-P1-8: جفتِ فروش شاهد است، نه گیت؛ تُنِ خنثی و برچسبِ خودش. */}
             <HistoryBars

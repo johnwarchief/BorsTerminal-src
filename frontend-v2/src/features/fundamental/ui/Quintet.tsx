@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import type { FtsCard } from '../api/useFtsCard';
-import { AXES, formatAxisValue, formatEpsTrend, potentialStatusOf, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
+import { AXES, formatAxisValue, formatEpsValue, potentialStatusOf, statusFa, type AxisKey, type AxisStatus } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 import { Bullet } from './mini/Bullet';
 import { EpsBars } from './mini/EpsBars';
@@ -63,7 +63,7 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
     {
       axis: 'eps',
       // R98: مقدارِ محور ۲ آخرین EPS + فلشِ روند است، نه «سال‌های موجود/نیاز».
-      value: formatEpsTrend(eps?.eps_series),
+      value: formatEpsValue(eps?.eps_series),
       threshold: epsRequired == null ? '—' : `${toFaDigits(epsRequired)} سال`,
       status: cardStatus(card, 'eps'),
       chart: <EpsBars series={eps?.eps_series} status={cardStatus(card, 'eps')} label="EPS" />,
@@ -113,16 +113,16 @@ export function Quintet({ card, onFocus }: { card: FtsCard; onFocus?: (axis: Axi
             className="flex flex-col gap-1 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2 text-start hover:border-[var(--fd-line-strong)]"
             aria-label={`${meta.label} — ${item.value} — ${statusFa(item.status)}`}
           >
-            <span className="flex items-center gap-1 text-[10.5px] text-[var(--fd-text-2)]">
-              <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line-strong)] text-[9px]">{meta.num}</span>
+            <span className="flex items-center gap-1 fd-meta text-[var(--fd-text-2)]">
+              <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line-strong)] fd-meta">{meta.num}</span>
               {meta.label}
             </span>
             <span className="flex items-baseline gap-1">
-              <b className="text-[16px] font-medium tabular-nums text-[var(--fd-text)]">{item.value}</b>
-              <span className="text-[9px] text-[var(--fd-text-3)]">{item.threshold}</span>
+              <b className="fd-heading  tabular-nums text-[var(--fd-text)]">{item.value}</b>
+              <span className="fd-meta text-[var(--fd-text-3)]">{item.threshold}</span>
             </span>
-            <span className="h-[18px]">{item.chart}</span>
-            <span className={`text-[9px] fd-status--${item.status}`}>{statusFa(item.status)}</span>
+            <span className="h-[20px]">{item.chart}</span>
+            <span className={`fd-meta fd-status--${item.status}`}>{statusFa(item.status)}</span>
           </button>
         );
       })}

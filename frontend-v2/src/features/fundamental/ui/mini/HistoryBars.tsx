@@ -10,10 +10,10 @@ export function HistoryBars({ values, labels, status, label }: {
   status: HistoryBarTone;
   label?: string;
 }) {
-  // R-P1-8: نبودِ هر دو مقدار → وضعیتِ خالیِ صادق، نه میله‌های حداقلی.
+  // R-P1-8: نبودِ هر دو مقدار به وضعیتِ خالیِ صادق، نه میله‌های حداقلی.
   if (!values.some((value) => value != null)) {
     return (
-      <p className="flex h-full items-center justify-center text-[9px] text-[var(--fd-text-3)]">
+      <p className="flex h-full items-center justify-center fd-meta text-[var(--fd-text-3)]">
         {label ? `${label} — داده‌ای ثبت نشده` : 'داده‌ای برای نمایش ثبت نشده'}
       </p>
     );
@@ -45,7 +45,7 @@ export function HistoryBars({ values, labels, status, label }: {
             <span className="flex min-h-0 w-full flex-1 items-end">
               <span className={`fd-history-bar is-${status} w-full rounded-t-sm`} style={{ height: `${pct}%` }} />
             </span>
-            <span className="w-full truncate text-center text-[9px] text-[var(--fd-text-3)]">{labels[i]}</span>
+            <span className="w-full truncate text-center fd-meta text-[var(--fd-text-3)]">{labels[i]}</span>
           </div>
         );
       })}

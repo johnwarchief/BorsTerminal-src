@@ -23,7 +23,7 @@ export function DeltaBars({ values, labels }: {
             <span className="flex min-h-0 w-full flex-1 items-end">
               <span className={`fd-delta-bar ${tone} w-full rounded-t-sm`} style={{ height: `${barHeight}%` }} />
             </span>
-            <span className="w-full truncate text-center text-[8px] text-[var(--fd-text-3)]">{labels[i]}</span>
+            <span className="w-full truncate text-center fd-meta text-[var(--fd-text-3)]">{labels[i]}</span>
           </div>
         );
       })}

@@ -119,6 +119,8 @@ html[data-theme='cool'] {
 
 /* ===== سطح داده از تم برنامه ارث می‌برد؛ هیچ تم مستقل/سوییچی وجود ندارد. ===== */
 .fundamental-surface {
+  /* R-UNSLOP-2: پایهٔ سطح روی مقیاس می‌نشیند؛ وگرنه ۱۲٫۵pxِ بدنه به‌عنوان ارث به گره‌های بی‌کلاس نشت می‌کند. */
+  font-size: 12px;
   --fd-bg: var(--bg); --fd-panel: var(--panel); --fd-panel-2: var(--panel-2); --fd-panel-3: var(--panel-3);
   --fd-line: var(--line); --fd-line-strong: var(--line-strong);
   --fd-text: var(--text); --fd-text-2: var(--text-2); --fd-text-3: var(--text-3);

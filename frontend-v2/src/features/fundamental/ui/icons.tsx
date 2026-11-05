@@ -1,10 +1,9 @@
-import type { AxisStatus, Trend } from '../../lib/axisMeta';
-import { trendFa } from '../../lib/axisMeta';
+import type { AxisStatus } from '../lib/axisMeta';
 
 /**
  * R-UNSLOP-3: ستِ آیکنِ واقعیِ سطح بنیادی.
  * همه در جعبهٔ ۱۶پیکسلی، stroke 1.5، `currentColor` و بدونِ قلمِ متن — تا
- * «✓ ✕ − ? ← ↑ ↓ ↕» دیگر در RTL وارونه خوانده نشود یا با فونتِ متن نجنگد.
+ * کاراکترهایِ تیک، ضربدر، منفی، سؤال و فلش دیگر در RTL وارونه خوانده نشوند یا با قلمِ متن نجنگند.
  * آیکن‌ها aria-hidden‌اند؛ نامِ دسترس‌پذیر همیشه روی خودِ واژهٔ فارسی است.
  */
 type IconProps = { className?: string };
@@ -57,7 +56,7 @@ export const SortAsc = (props: IconProps) => <Icon {...props} d="M8 12.4V4M4.8 7
 export const SortDesc = (props: IconProps) => <Icon {...props} d="M8 3.6V12M4.8 8.8 8 12l3.2-3.2" />;
 export const SortNone = (props: IconProps) => <Icon {...props} d="M8 12.6V3.4M5.4 5.6 8 3.2l2.6 2.4M5.4 10.4 8 12.8l2.6-2.4" />;
 
-/** نگاشتِ وضعیت → آیکن؛ تنها منبعِ شکلِ وضعیت در سطح بنیادی. */
+/** نگاشتِ وضعیت به آیکن؛ تنها منبعِ شکلِ وضعیت در سطح بنیادی. */
 export const STATUS_GLYPH: Record<AxisStatus, (props: IconProps) => JSX.Element> = {
   pass: Check,
   fail: Cross,
@@ -92,4 +91,19 @@ export function StatusMark({ status, word, title, className = '' }: {
 export function StatusGlyph({ status, className = '' }: { status: AxisStatus; className?: string }) {
   const Glyph = STATUS_GLYPH[status];
   return <Glyph className={className} />;
+}
+
+/**
+ * R-UNSLOP-3: نشانِ روندِ EPS — شکلِ SVG با نامِ فارسیِ روند روی خودش.
+ * جهت با `data-trend` و `aria-label` گفته می‌شود، نه با کاراکترِ فلشِ متن.
+ */
+export function TrendMark({ trend }: { trend: 'up' | 'down' | 'flat' | null }) {
+  if (trend == null) return null;
+  const Glyph = trend === 'up' ? TrendUp : trend === 'down' ? TrendDown : TrendFlat;
+  const word = trend === 'up' ? 'صعودی' : trend === 'down' ? 'نزولی' : 'بی‌تغییر';
+  return (
+    <span data-trend={trend} role="img" aria-label={`روند ${word}`} className="inline-flex items-center text-[var(--fd-text-3)]">
+      <Glyph />
+    </span>
+  );
 }

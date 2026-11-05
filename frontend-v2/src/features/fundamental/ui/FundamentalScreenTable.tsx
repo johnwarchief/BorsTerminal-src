@@ -18,7 +18,9 @@ import {
   type AxisThresholds,
 } from '../lib/axisMeta';
 import { EXCLUDE_LABEL, applyExcludeFilter, useExcludeAxes } from '../lib/exclusionFilter';
-import { FundamentalAxisCell, STATUS_ICON } from './FundamentalAxisCell';
+import { faSectorName } from '../lib/faOrthography';
+import { FundamentalAxisCell } from './FundamentalAxisCell';
+import { SortAsc, SortDesc, SortNone, StatusGlyph } from './icons';
 import { AxisGlyph } from './mini/AxisGlyph';
 import type { ScreenerCoreRow } from '../api/useScreenerCore';
 
@@ -120,7 +122,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
   const virtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => (density === 'comfortable' ? 88 : 38),
+    estimateSize: () => (density === 'comfortable' ? 92 : 44),
     // R84: overscan از ۱۴ به ۸ کم شد تا تعداد ردیف‌های سوارشده در هر به‌روزرسانی اسکرول
     // (و در نتیجه سلول‌ها/نمودارهای SVG) کم‌تر شود؛ رفتار دیداری تغییری نمی‌کند.
     overscan: 8,
@@ -166,7 +168,12 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       className="inline-flex items-center gap-1 text-start focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fd-accent)]"
     >
       {label}
-      <span aria-hidden>{sortKey === key ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}</span>
+      {(() => {
+        // R-UNSLOP-3: جهتِ مرتب‌سازی با شکلِ SVG گفته می‌شود، نه با کاراکترِ فلشِ متن.
+        const dir = sortKey === key ? sortDir : 'none';
+        const Glyph = dir === 'asc' ? SortAsc : dir === 'desc' ? SortDesc : SortNone;
+        return <span data-sort={dir} role="img" aria-hidden className="inline-flex items-center"><Glyph /></span>;
+      })()}
     </button>
   );
 
@@ -213,36 +220,36 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
         }
       }}
       className="fd-row grid cursor-pointer items-center border-b border-[var(--fd-line)] hover:bg-[var(--fd-panel-2)]"
-      style={{ gridTemplateColumns: COLUMNS, minHeight: density === 'comfortable' ? 88 : 38 }}
+      style={{ gridTemplateColumns: COLUMNS, minHeight: density === 'comfortable' ? 92 : 44 }}
     >
       <div role="cell" className="flex h-full items-center justify-center py-1">
         <AxisGlyph statuses={AXES.map((axis) => statusOf(row, axis.key))} labels={AXES.map((axis) => axis.short)} />
       </div>
       <div role="cell" className="min-w-0 px-2 py-1">
-        <b className="block truncate text-[12px] font-medium text-[var(--fd-text)]">{row.symbol}</b>
-        <span className="block truncate text-[9.5px] text-[var(--fd-text-3)]">{row.name ?? '—'} · {row.sector_name ?? '—'}</span>
+        <b className="block truncate fd-cell-strong text-[var(--fd-text)]">{row.symbol}</b>
+        <span className="block truncate fd-cell-meta text-[var(--fd-text-3)]">{row.name ?? '—'} · {faSectorName(row.sector_name) || '—'}</span>
         {row.i4_na ? (
           // R100: i4_na معافیت است (هلدینگ/بانک/صنعتِ معاف)، نه همیشه «بانک».
           <span
             data-testid={`fundamental-bank-${row.symbol}`}
             title={row.i4_reason ?? 'محور پتانسیل سود برای این نماد معاف است'}
-            className="mt-0.5 inline-block rounded border border-[var(--fd-line-strong)] px-1 text-[9px] text-[var(--fd-text-3)]"
+            className="mt-1 inline-block rounded border border-[var(--fd-line-strong)] px-1 fd-meta text-[var(--fd-text-3)]"
           >
             معاف / N/A
           </span>
         ) : null}
         {row.excluded ? (
-          <span data-testid={`fundamental-excluded-${row.symbol}`} className="mt-0.5 inline-block rounded border border-[var(--fd-warn)] px-1 text-[9px] text-[var(--fd-warn)]">خارج از غربال</span>
+          <span data-testid={`fundamental-excluded-${row.symbol}`} className="mt-1 inline-block rounded border border-[var(--fd-warn)] px-1 fd-meta text-[var(--fd-warn)]">خارج از غربال</span>
         ) : null}
       </div>
       {AXES.map((axis) => <FundamentalAxisCell key={axis.key} row={row} axis={axis.key} thresholds={thresholds} />)}
-      <div role="cell" className="text-center text-[12px] font-medium tabular-nums text-[var(--fd-text)]">
+      <div role="cell" className="text-center fd-meta  tabular-nums text-[var(--fd-text)]">
         {row.score == null ? '—' : `${toFaDigits(row.score)}/۵`}
       </div>
       <div role="cell" className="flex justify-center">
         <span
           data-testid={`fundamental-verdict-${row.symbol}`}
-          className={`rounded border px-1 text-[9px] ${row.verdict === 'STRONG' ? 'border-[var(--fd-up)] text-[var(--fd-up)]' : row.verdict === 'REJECT' || row.verdict === 'EXCLUDED' ? 'border-[var(--fd-down)] text-[var(--fd-down)]' : 'border-[var(--fd-warn)] text-[var(--fd-warn)]'}`}
+          className={`rounded border px-1 fd-meta ${row.verdict === 'STRONG' ? 'border-[var(--fd-up)] text-[var(--fd-up)]' : row.verdict === 'REJECT' || row.verdict === 'EXCLUDED' ? 'border-[var(--fd-down)] text-[var(--fd-down)]' : 'border-[var(--fd-warn)] text-[var(--fd-warn)]'}`}
         >
           {verdictFa(row.verdict)}
         </span>
@@ -251,7 +258,10 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
   );
 
   return (
-    <div data-testid="fundamental-screen-table" className="flex min-h-0 flex-1 flex-col text-[var(--fd-text)]">
+    <div
+      data-testid="fundamental-screen-table"
+      className={`flex min-h-0 flex-1 flex-col text-[var(--fd-text)] fd-table${density === 'compact' ? ' fd-table--compact' : ''}`}
+    >
       <div className="flex flex-none flex-wrap items-center gap-2 border-b border-[var(--fd-line)] px-3 py-2">
         <input
           data-testid="fundamental-search"
@@ -260,16 +270,16 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           onChange={(event) => setQuery(event.target.value)}
           placeholder="جستجو در نماد یا نام…"
           aria-label="جستجوی بنیادی"
-          className="h-[26px] min-w-[150px] flex-1 rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] px-2 text-[11px] text-[var(--fd-text)] outline-none placeholder:text-[var(--fd-text-3)] focus:border-[var(--fd-line-strong)]"
+          className="h-[24px] min-w-[150px] flex-1 rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] px-2 fd-meta text-[var(--fd-text)] outline-none placeholder:text-[var(--fd-text-3)] focus:border-[var(--fd-line-strong)]"
         />
         <select
           aria-label="فیلتر صنعت"
           value={sector}
           onChange={(event) => setSector(event.target.value)}
-          className="h-[26px] max-w-[210px] rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] px-1.5 text-[11px] text-[var(--fd-text)] outline-none focus:border-[var(--fd-line-strong)]"
+          className="h-[24px] max-w-[210px] rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] px-2 fd-meta text-[var(--fd-text)] outline-none focus:border-[var(--fd-line-strong)]"
         >
           <option value="">همه صنایع</option>
-          {sectors.map((item) => <option key={item} value={item}>{item}</option>)}
+          {sectors.map((item) => <option key={item} value={item}>{faSectorName(item)}</option>)}
         </select>
         <button type="button" data-testid="fundamental-export" onClick={exportCsv}
           className="tape-btn" title="خروجی CSV از ردیف‌های همین فیلتر">
@@ -298,14 +308,14 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           </button>
         </div>
         {settingsSlot ?? <span />}
-        <span data-testid="fundamental-count" className="num t-9 text-[var(--fd-text-3)]">
+        <span data-testid="fundamental-count" className="num fd-meta text-[var(--fd-text-3)]">
           {fmtInt(filtered.length)} از {fmtInt(rows.length)}
         </span>
         {excluded.hidden > 0 ? (
           <span
             data-testid="fundamental-hidden-count"
             title={excludeAxes.map((axis) => EXCLUDE_LABEL[axis]).join(' · ')}
-            className="num t-9 text-[var(--fd-warn)]"
+            className="num fd-meta text-[var(--fd-warn)]"
           >
             {fmtInt(excluded.hidden)} حذف‌شده
           </span>
@@ -315,22 +325,22 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
       <div role="table" aria-label="جدول بنیادی" className="flex min-h-0 flex-1 flex-col">
         <div
           role="row"
-          className="grid flex-none items-center border-b border-[var(--fd-line-strong)] bg-[var(--fd-panel-2)] px-1.5 text-[10px] text-[var(--fd-text-3)]"
+          className="grid flex-none items-center border-b border-[var(--fd-line-strong)] bg-[var(--fd-panel-2)] px-2 fd-meta text-[var(--fd-text-3)]"
           style={{ gridTemplateColumns: COLUMNS, minHeight: 55 }}
         >
           {/* R87: نشانهٔ ستونِ گلیف؛ aria-label نامِ دسترس‌پذیر را تعیین می‌کند. */}
           <span role="columnheader" aria-label="نمای پنج‌محور" className="text-center">#</span>
-          <span role="columnheader" aria-sort={ariaSort('symbol')} className="min-w-0 px-1.5">
+          <span role="columnheader" aria-sort={ariaSort('symbol')} className="min-w-0 px-2">
             {sortButton('symbol', 'نماد')}
-            <span className="block truncate text-[9px]">نام · صنعت</span>
+            <span className="block truncate fd-meta">نام · صنعت</span>
           </span>
           {AXES.map((axis) => (
-            <span key={axis.key} role="columnheader" aria-sort={ariaSort(axis.key)} className="min-w-0 px-1.5">
-              <span className="flex items-baseline gap-1 text-[11px] text-[var(--fd-text)]">
-                <span className="text-[9px] text-[var(--fd-text-3)]">{axis.num}</span>
+            <span key={axis.key} role="columnheader" aria-sort={ariaSort(axis.key)} className="min-w-0 px-2">
+              <span className="flex items-baseline gap-1 fd-meta text-[var(--fd-text)]">
+                <span className="fd-meta text-[var(--fd-text-3)]">{axis.num}</span>
                 {sortButton(axis.key, axis.label)}
               </span>
-              <span className="block truncate text-[9px]">{axisThresholdLabel(thresholds, axis.key)}</span>
+              <span className="block truncate fd-meta">{axisThresholdLabel(thresholds, axis.key)}</span>
             </span>
           ))}
           <span role="columnheader" aria-sort={ariaSort('score')} className="justify-self-center">
@@ -341,7 +351,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
 
         <div ref={parentRef} className={`fd-scroll min-h-0 flex-1 overflow-auto${fading ? ' is-fading' : ''}`}>
           {filtered.length === 0 ? (
-            <p data-testid="fundamental-empty" className="p-3 text-[11px] text-[var(--fd-text-3)]">ردیفی با این فیلتر نیست.</p>
+            <p data-testid="fundamental-empty" className="p-3 fd-meta text-[var(--fd-text-3)]">ردیفی با این فیلتر نیست.</p>
           ) : virtual ? (
             <div ref={virtualizer.containerRef} role="rowgroup" style={{ position: 'relative' }}>
               {virtualizer.getVirtualItems().map((item) => {
@@ -367,7 +377,7 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
 
       <div
         data-testid="fundamental-legend"
-        className="flex flex-none flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-3 py-1.5 text-[9.5px] text-[var(--fd-text-3)]"
+        className="flex flex-none flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--fd-line)] bg-[var(--fd-panel-2)] px-3 py-2 fd-meta text-[var(--fd-text-3)]"
       >
         <span className="inline-flex items-center gap-1">
           <span aria-hidden className="inline-block w-4 border-t border-dashed border-[var(--fd-accent)]" />
@@ -377,8 +387,8 @@ export function FundamentalScreenTable({ rows, thresholds, onSelect, asOf, setti
           <span key={axis.key} className="whitespace-nowrap">{axis.num} {axis.label}</span>
         ))}
         {STATUSES.map((status) => (
-          <span key={status} className={`fd-status fd-status--${status} inline-flex items-center gap-0.5`}>
-            <span aria-hidden>{STATUS_ICON[status]}</span> {statusFa(status)}
+          <span key={status} className={`fd-status fd-status--${status} inline-flex items-center gap-1`}>
+            <StatusGlyph status={status} /> {statusFa(status)}
           </span>
         ))}
       </div>

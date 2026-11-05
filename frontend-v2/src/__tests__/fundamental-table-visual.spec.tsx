@@ -199,7 +199,10 @@ describe('fundamental table visual', () => {
   it('renders the EPS cell as the last EPS plus a trend arrow, never N/N (R98)', () => {
     render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
     const epsCell = screen.getByTestId('fundamental-cell-رنيك-eps');
-    expect(epsCell.textContent).toContain('۱۶۷۲ ↑');
+    expect(epsCell.textContent).toContain('۱۶۷۲');
+    // R-UNSLOP-3: روند با شکلِ SVG و نامِ فارسی گفته می‌شود، نه کاراکترِ فلش.
+    expect(epsCell.querySelector('[data-trend="up"]')?.getAttribute('aria-label')).toBe('روند صعودی');
+    expect(epsCell.textContent).not.toContain('↑');
     expect(epsCell.textContent).not.toContain('۳/۳');
     // خطِ آستانه = سال‌های تنظیم‌شده، نه ۳ سخت‌کد.
     expect(epsCell.textContent).toContain('≥ ۳ سال');
@@ -231,7 +234,7 @@ describe('fundamental table visual', () => {
     const { container } = render(<FundamentalScreenTable rows={rows} thresholds={thresholds} onSelect={vi.fn()} asOf={null} />);
     act(() => useFundamentalPrefs.setState({ density: 'compact' }));
     expect(container.querySelectorAll('.fd-axis-threshold').length).toBe(0);
-    expect(screen.getByTestId('fundamental-cell-رنيك-eps').textContent).toContain('↑');
+    expect(screen.getByTestId('fundamental-cell-رنيك-eps').querySelector('[data-trend="up"]')).toBeTruthy();
   });
   it('renders absent EPS years as — in the cell and the CSV (R30/R98)', () => {
     render(<FundamentalScreenTable rows={fallbackRows} thresholds={thresholds} onSelect={vi.fn()} asOf="۱۴۰۵/۰۸/۱۳" />);

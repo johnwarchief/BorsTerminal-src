@@ -42,25 +42,25 @@ export function FundamentalPage() {
       className="fundamental-surface flex min-h-0 flex-1 flex-col bg-[var(--fd-bg)] text-[var(--fd-text)]"
     >
       <header className="flex flex-none flex-wrap items-baseline gap-2 border-b border-[var(--fd-line)] px-3 py-2">
-        <b className="t-125 font-extrabold text-[var(--fd-text)]">بنیادی</b>
-        <span className="t-9 text-[var(--fd-text-3)]">غربالگری پنج‌محور FTS — هر ستون یک محور</span>
+        <b className="fd-heading  text-[var(--fd-text)]">بنیادی</b>
+        <span className="fd-meta text-[var(--fd-text-3)]">غربالگری پنج‌محور FTS — هر ستون یک محور</span>
         <span className="ms-auto">
           {scanLabel ? (
-            <span data-testid="fundamental-as-of" className="num t-85 text-[var(--fd-text-3)]">
+            <span data-testid="fundamental-as-of" className="num fd-meta text-[var(--fd-text-3)]">
               {`زمان اسکن: ${scanLabel}`}
             </span>
           ) : null}
         </span>
         {screener.isFetching && !screener.isLoading ? (
-          <span data-testid="fundamental-refetching" className="t-85 text-[var(--fd-warn)]">جدول در حال بازسازی…</span>
+          <span data-testid="fundamental-refetching" className="fd-meta text-[var(--fd-warn)]">جدول در حال بازسازی…</span>
         ) : null}
       </header>
 
       {screener.isLoading ? (
-        <p data-testid="fundamental-table-loading" className="p-3 t-95 text-[var(--fd-text-3)]">جدول بنیادی در حال خواندن…</p>
+        <p data-testid="fundamental-table-loading" className="p-3 fd-meta text-[var(--fd-text-3)]">جدول بنیادی در حال خواندن…</p>
       ) : screener.isError || !screener.data ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-3 text-center">
-          <p data-testid="fundamental-table-error" className="t-10 text-[var(--fd-text-2)]">جدول بنیادی نیامد — /api/screener</p>
+          <p data-testid="fundamental-table-error" className="fd-meta text-[var(--fd-text-2)]">جدول بنیادی نیامد — /api/screener</p>
           <button type="button" onClick={() => void screener.refetch()} className="tape-btn">تلاش دوباره</button>
         </div>
       ) : (

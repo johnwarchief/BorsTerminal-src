@@ -3,7 +3,7 @@ import { AXES, statusFa } from '../lib/axisMeta';
 import { cardStatus } from '../lib/cardStatus';
 
 // R69: پیام‌های بارگذاری/خطا متنِ fd دارند، پس باید پس‌زمینهٔ fd هم داشته باشند.
-const MESSAGE = 'bg-[var(--fd-bg)] p-2 text-[10px] leading-relaxed text-[var(--fd-text-3)]';
+const MESSAGE = 'bg-[var(--fd-bg)] p-2 fd-meta leading-relaxed text-[var(--fd-text-3)]';
 
 /**
  * واریانتِ فشردهٔ داک: پنج کارتِ کوچک فقط شماره/نامِ محور و واژهٔ وضعیت را
@@ -37,11 +37,11 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
         const status = cardStatus(card, meta.key);
         return (
           <div key={meta.key} data-axis={meta.key}
-            className="min-w-0 rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] p-1.5">
-            <span className="block truncate text-[9px] text-[var(--fd-text-3)]">
+            className="min-w-0 rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2">
+            <span className="block truncate fd-meta text-[var(--fd-text-3)]">
               {meta.num} {meta.short}
             </span>
-            <b className={`block text-[11px] fd-status--${status}`}>{statusFa(status)}</b>
+            <b className={`block fd-meta fd-status--${status}`}>{statusFa(status)}</b>
           </div>
         );
       })}

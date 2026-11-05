@@ -1,5 +1,6 @@
 import type { FtsCard } from '../../api/useFtsCard';
 import { regimeFa } from '../../lib/axisMeta';
+import { faSectorName } from '../../lib/faOrthography';
 import { cardStatus } from '../../lib/cardStatus';
 import { PeDots } from '../mini/PeDots';
 import { AxisPanel, faFixed, faInt } from './AxisPanel';
@@ -40,7 +41,7 @@ export function IndustryPanel({ card, sectorPe }: { card: FtsCard; sectorPe?: Se
       testId="panel-industry"
       axis="industry"
       title="نرخ‌گذاری صنعت"
-      subtitle={`${industry?.sector ?? card.sector ?? '—'} — رژیم ${regime}`}
+      subtitle={`${faSectorName(industry?.sector ?? card.sector) || '—'} — رژیم ${regime}`}
       status={status}
       value={regime}
       threshold="رژیم"

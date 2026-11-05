@@ -23,10 +23,10 @@ export function EvidencePanel({ card }: { card: FtsCard }) {
     (card.details?.[digit]?.subchecks ?? []).map((sub) => ({ digit, sub })),
   );
   return (
-    <section data-testid="panel-evidence" className="rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2.5">
-      <h3 className="mb-1 text-[11.5px] font-medium text-[var(--fd-text)]">شواهد و پاسخ «چرا»</h3>
+    <section data-testid="panel-evidence" className="rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-3">
+      <h3 className="mb-1 fd-meta  text-[var(--fd-text)]">شواهد و پاسخ «چرا»</h3>
       {rows.length === 0 ? (
-        <p className="text-[9.5px] leading-relaxed text-[var(--fd-text-3)]">
+        <p className="fd-meta leading-relaxed text-[var(--fd-text-3)]">
           زیرشواهدی برای این نماد در کارت ثبت نشده است؛ نتیجه بدونِ شاهدِ تفصیلی است.
         </p>
       ) : (
@@ -37,9 +37,9 @@ export function EvidencePanel({ card }: { card: FtsCard }) {
               <div
                 key={`${digit}-${sub.key ?? ''}`}
                 data-testid={`evidence-${digit}-${sub.key ?? ''}`}
-                className="flex items-center gap-1.5 border-b border-[var(--fd-line)] py-0.5 text-[9.5px] text-[var(--fd-text-3)]"
+                className="flex items-center gap-2 border-b border-[var(--fd-line)] py-1 fd-meta text-[var(--fd-text-3)]"
               >
-                <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line)] text-[8.5px]">{digit}</span>
+                <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line)] fd-meta">{digit}</span>
                 <span className="min-w-0 truncate" title={sub.detail ? faText(sub.detail) : undefined}>{sub.label ?? '—'}</span>
                 <span className="ms-auto text-[var(--fd-text)]">{faText(sub.value)}</span>
                 {sub.threshold ? <span title={faText(sub.threshold)}>{faText(sub.threshold)}</span> : null}

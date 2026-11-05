@@ -56,7 +56,7 @@ describe('unslop · قراردادِ فضایی و قلمیِ سطح بنیاد�
     const banned = ['text-[8px]', 'text-[8.5px]', 'text-[9px]', 'text-[9.5px]', 'text-[10px]', 'text-[10.5px]',
       't-85', 't-9 ', 't-95', 't-10 ', 't-105', 't-125'];
     for (const file of featureSources) {
-      for (const token of banned) expect(`${file.path} :: ${token}`, file.text.includes(token)).toBe(false);
+      for (const token of banned) expect(file.text.includes(token), `${file.path} :: ${token}`).toBe(false);
     }
   });
 
@@ -64,7 +64,7 @@ describe('unslop · قراردادِ فضایی و قلمیِ سطح بنیاد�
     const banned = ['gap-1.5', 'gap-0.5', 'px-1.5', 'py-0.5', 'py-1.5', 'p-2.5', 'mt-0.5', 'px-2.5', 'py-2.5', 'p-1.5',
       'h-[26px]', 'h-[18px]', 'w-[26px]'];
     for (const file of featureSources) {
-      for (const token of banned) expect(`${file.path} :: ${token}`, file.text.includes(token)).toBe(false);
+      for (const token of banned) expect(file.text.includes(token), `${file.path} :: ${token}`).toBe(false);
     }
   });
 
@@ -76,10 +76,10 @@ describe('unslop · قراردادِ فضایی و قلمیِ سطح بنیاد�
           // قرصِ سوئیچِ تنظیمات و نقطهٔ رژیم مجازند؛ هیچ میلهٔ مستطیلی گردِ کامل نمی‌شود.
           const uses = file.text.split('rounded-full').length - 1;
           const allowed = file.path.endsWith('FtsSettingsDrawer.tsx') ? 2 : file.path.endsWith('RegimeGlyph.tsx') ? 1 : 0;
-          expect(`${file.path} :: rounded-full`, uses).toBeLessThanOrEqual(allowed);
+          expect(uses, `${file.path} :: rounded-full`).toBeLessThanOrEqual(allowed);
           continue;
         }
-        expect(`${file.path} :: ${token}`, file.text.includes(token)).toBe(false);
+        expect(file.text.includes(token), `${file.path} :: ${token}`).toBe(false);
       }
     }
   });
@@ -87,7 +87,7 @@ describe('unslop · قراردادِ فضایی و قلمیِ سطح بنیاد�
   it('آیکنِ متن نیست: هیچ کاراکترِ ✓ ✕ ← → ↑ ↓ ↕ در UI نمانده است', () => {
     const glyphs = ['✓', '✕', '←', '→', '↑', '↓', '↕'];
     for (const file of uiSources) {
-      for (const glyph of glyphs) expect(`${file.path} :: ${glyph}`, file.text.includes(glyph)).toBe(false);
+      for (const glyph of glyphs) expect(file.text.includes(glyph), `${file.path} :: ${glyph}`).toBe(false);
     }
   });
 

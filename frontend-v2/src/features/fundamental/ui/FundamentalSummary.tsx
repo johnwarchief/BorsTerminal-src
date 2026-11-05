@@ -29,19 +29,19 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
   let body: ReactNode;
   if (!symbol) {
     body = (
-      <span className="text-[10.5px] text-[var(--fd-text-3)]">
+      <span className="fd-meta text-[var(--fd-text-3)]">
         برای دیدن بنیادی، نمادی را از تابلو انتخاب کن.
       </span>
     );
   } else if (query.isLoading) {
     body = (
-      <span className="text-[10.5px] text-[var(--fd-text-3)]">
+      <span className="fd-meta text-[var(--fd-text-3)]">
         پنج محورِ بنیادی در حال خواندن…
       </span>
     );
   } else if (query.isError || !card) {
     body = (
-      <span data-testid="symbol-fund-unavailable" className="text-[10.5px] text-[var(--fd-text-3)]">
+      <span data-testid="symbol-fund-unavailable" className="fd-meta text-[var(--fd-text-3)]">
         بنیادی این نماد در دسترس نیست.
       </span>
     );
@@ -49,17 +49,17 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
     body = (
       <>
         <span className="flex flex-wrap items-baseline gap-1">
-          <b data-testid="fund-summary-count" className="text-[11px] font-extrabold text-[var(--fd-text)]">
+          <b data-testid="fund-summary-count" className="fd-meta  text-[var(--fd-text)]">
             {toFaDigits(passed)} از ۵
           </b>
-          <span className="text-[9px] text-[var(--fd-text-3)]">محور قبول</span>
+          <span className="fd-meta text-[var(--fd-text-3)]">محور قبول</span>
           {failed ? (
-            <span className="text-[9px] text-[var(--fd-down)]">
+            <span className="fd-meta text-[var(--fd-down)]">
               · {toFaDigits(failed)} {statusFa('fail')}
             </span>
           ) : null}
           {abstained ? (
-            <span className="text-[9px] text-[var(--fd-text-3)]">
+            <span className="fd-meta text-[var(--fd-text-3)]">
               · {toFaDigits(abstained)} بی‌نظر/نامشخص
             </span>
           ) : null}
@@ -71,7 +71,7 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
             return (
               <span key={meta.key} data-axis={meta.key} data-status={status} role="img"
                 title={label} aria-label={label}
-                className="h-1 w-4 rounded-full"
+                className="h-1 w-4 rounded"
                 style={{ background: BAR_COLOR[status] }} />
             );
           })}
@@ -81,7 +81,7 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
   }
 
   // R69: بدونِ پس‌زمینهٔ fd، متنِ --fd-text* روی پوستهٔ تیره/روشن ناخوانا می‌شد.
-  const className = 'fundamental-surface flex w-full flex-col gap-0.5 border-y border-[var(--fd-line)] bg-[var(--fd-bg)] px-2 py-1 text-start';
+  const className = 'fundamental-surface flex w-full flex-col gap-1 border-y border-[var(--fd-line)] bg-[var(--fd-bg)] px-2 py-1 text-start';
   if (!onToggle) {
     return (
       <div data-testid="symbol-fund-summary" className={className}>
@@ -94,7 +94,7 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
       aria-expanded={Boolean(expanded)} onClick={onToggle}
       className={`${className} hover:bg-[var(--fd-panel-2)]`}>
       {body}
-      <span className="text-[9px] text-[var(--fd-text-3)]">
+      <span className="fd-meta text-[var(--fd-text-3)]">
         {expanded ? 'بستن کارت‌های بنیادی' : 'باز کردن کارت‌های بنیادی'}
       </span>
     </button>

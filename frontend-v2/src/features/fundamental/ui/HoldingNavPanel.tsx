@@ -1,11 +1,11 @@
 export function HoldingNavPanel({ bankLike }: { bankLike: boolean }) {
   return (
-    <section data-testid="holding-pnav-panel" className="rounded-[var(--radius-sm)] border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2 t-9">
+    <section data-testid="holding-pnav-panel" className="rounded border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2 fd-meta">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <h3 className="t-10 font-bold text-[var(--fd-text-2)]">
+        <h3 className="fd-meta  text-[var(--fd-text-2)]">
           {bankLike ? 'ارزش‌گذاری بانک' : 'ارزش‌گذاری هلدینگ'}
         </h3>
-        <span className="rounded-[3px] border border-[var(--fd-warn)] px-1 text-[var(--fd-warn)]">N/A</span>
+        <span className="rounded border border-[var(--fd-warn)] px-1 text-[var(--fd-warn)]">N/A</span>
       </div>
       <p data-testid="holding-nav-na" className="leading-relaxed text-[var(--fd-text-2)]">
         {bankLike

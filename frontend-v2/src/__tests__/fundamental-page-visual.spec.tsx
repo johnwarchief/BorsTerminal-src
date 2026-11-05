@@ -139,7 +139,7 @@ describe('fundamental page visual', () => {
     renderPage();
     const page = screen.getByTestId('fundamental-page');
     const loading = within(page).getByTestId('fundamental-table-loading');
-    expect(loading.className).toBe('p-3 t-95 text-[var(--fd-text-3)]');
+    expect(loading.className).toBe('p-3 fd-meta text-[var(--fd-text-3)]');
     expect(Object.keys(page.dataset)).not.toContain('fundSurface');
     cleanup();
 
@@ -147,7 +147,7 @@ describe('fundamental page visual', () => {
     renderPage();
     const errorPage = screen.getByTestId('fundamental-page');
     const error = within(errorPage).getByTestId('fundamental-table-error');
-    expect(error.className).toBe('t-10 text-[var(--fd-text-2)]');
+    expect(error.className).toBe('fd-meta text-[var(--fd-text-2)]');
     expect(Object.keys(errorPage.dataset)).not.toContain('fundSurface');
     // R42: دکمهٔ تلاش دوباره هم داخل تم می‌ماند و همان کلاس هدفِ استایل fd را دارد.
     expect(within(errorPage).getByRole('button', { name: 'تلاش دوباره' }).className).toBe('tape-btn');

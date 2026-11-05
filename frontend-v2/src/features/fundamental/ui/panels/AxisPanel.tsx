@@ -51,34 +51,34 @@ export function AxisPanel({
       data-testid={testId}
       id={testId}
       tabIndex={-1}
-      className="fd-panel flex h-full flex-col gap-1.5 rounded-lg border border-[var(--fd-line)] bg-[var(--fd-panel)] p-2.5"
+      className="fd-panel flex h-full flex-col gap-2 rounded-xl border border-[var(--fd-line)] bg-[var(--fd-panel)] p-3"
     >
       {/* R79: هدفِ فوکوسِ quintet سرصفحه است، نه ریشهٔ پنل. */}
-      <header id={`${testId}-title`} tabIndex={-1} className="flex items-baseline gap-1.5">
-        <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line-strong)] text-[9px] text-[var(--fd-text-3)]">{meta.num}</span>
-        <h3 className="text-[11.5px] font-medium text-[var(--fd-text)]">{title}</h3>
-        <span className={`ms-auto text-[9.5px] fd-status--${status}`}>{statusFa(status)}</span>
+      <header id={`${testId}-title`} tabIndex={-1} className="flex items-baseline gap-2">
+        <span className="grid h-4 w-4 flex-none place-items-center rounded border border-[var(--fd-line-strong)] fd-meta text-[var(--fd-text-3)]">{meta.num}</span>
+        <h3 className="fd-title text-[var(--fd-text)]">{title}</h3>
+        <span className={`fd-status-word ms-auto fd-status--${status}`}>{statusFa(status)}</span>
       </header>
-      <p className="text-[9.5px] leading-relaxed text-[var(--fd-text-3)]">{subtitle}</p>
-      <div className="flex items-baseline gap-1.5">
-        <b className="text-[19px] font-medium tabular-nums text-[var(--fd-text)]">{value}</b>
-        <span className="text-[10px] text-[var(--fd-text-3)]">{threshold}</span>
+      <p className="fd-secondary leading-relaxed text-[var(--fd-text-3)]">{subtitle}</p>
+      <div className="flex items-baseline gap-2">
+        <b className="fd-figure tabular-nums text-[var(--fd-text)]">{value}</b>
+        <span className="fd-meta text-[var(--fd-text-3)]">{threshold}</span>
       </div>
       {/* R73: نمودارِ نمای نماد با fade/scaleX کوتاه؛ ریشهٔ پنل با fd-panel بی‌انیمیشن می‌ماند.
           R-P1-13: ارتفاعِ ناحیه با chartClass تنظیم می‌شود؛ پیش‌فرض همان h-[32px] است. */}
       <div className={`fd-draw ${chartClass ?? 'h-[32px]'}`}>{chart}</div>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9.5px] text-[var(--fd-text-3)]">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 fd-meta text-[var(--fd-text-3)]">
         {rows.map(([label, val]) => (
-          <span key={label} className="flex justify-between gap-1 border-b border-[var(--fd-line)] py-0.5">
+          <span key={label} className="flex justify-between gap-1 border-b border-[var(--fd-line)] py-1">
             <span>{label}</span>
             <b className="text-[var(--fd-text)]">{val}</b>
           </span>
         ))}
       </div>
       {children}
-      <details className="mt-auto border-t border-[var(--fd-line)] pt-1">
-        <summary className="cursor-pointer text-[9.5px] text-[var(--fd-text-3)]">فرمول و منبع</summary>
-        <p className="mt-1 text-[9.5px] leading-relaxed text-[var(--fd-text-3)]">
+      <details className="border-t border-[var(--fd-line)] pt-1">
+        <summary className="cursor-pointer fd-meta text-[var(--fd-text-3)]">فرمول و منبع</summary>
+        <p className="mt-1 fd-secondary leading-relaxed text-[var(--fd-text-3)]">
           {details?.formula ?? '—'} — {details?.source ?? '—'}
         </p>
       </details>

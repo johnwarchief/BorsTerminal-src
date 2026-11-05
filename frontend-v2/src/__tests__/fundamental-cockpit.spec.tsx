@@ -241,11 +241,13 @@ describe('fundamental cockpit', () => {
   it('shows the last EPS with a trend arrow and the configured years in the panel and the quintet (R98)', () => {
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
     const epsPanel = screen.getByTestId('panel-eps');
-    expect(epsPanel.textContent).toContain('۱۶۷۲ ↑');
+    expect(epsPanel.textContent).toContain('۱۶۷۲');
+    expect(epsPanel.textContent).not.toContain('↑');
+    expect(epsPanel.querySelector('[role="img"][aria-label*="سری EPS"]')).toBeTruthy();
     expect(epsPanel.textContent).toContain('سال‌های موجود');
     expect(epsPanel.textContent).toContain('۳/۳');
     const epsTile = screen.getByTestId('fundamental-quintet').querySelector('[data-axis="eps"]');
-    expect(epsTile?.textContent).toContain('۱۶۷۲ ↑');
+    expect(epsTile?.textContent).toContain('۱۶۷۲');
     expect(epsTile?.textContent).toContain('۳ سال');
   });
 
@@ -529,9 +531,9 @@ describe('fundamental cockpit', () => {
     });
     render(<FundamentalDetail symbol="رنيك" onBack={vi.fn()} />);
     const epsPanel = screen.getByTestId('panel-eps');
-    expect(epsPanel.textContent).toContain('۱۶۷۲ ↑');
+    expect(epsPanel.textContent).toContain('۱۶۷۲');
     expect(epsPanel.textContent).toMatch(/آخرین EPS\s*۱۶۷۲/);
-    expect(screen.getByTestId('fundamental-quintet').querySelector('[data-axis="eps"]')?.textContent).toContain('۱۶۷۲ ↑');
+    expect(screen.getByTestId('fundamental-quintet').querySelector('[data-axis="eps"]')?.textContent).toContain('۱۶۷۲');
   });
 
   it('localizes digits in the evidence threshold as well as the value (R106)', () => {
