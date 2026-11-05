@@ -16,13 +16,34 @@ afterEach(cleanup);
 describe('PatternsTab', () => {
   it('shows the percentage only when a formation estimate exists', () => {
     render(<PatternsTab patterns={[base({
-      formation: { probability: 62, successes: 14, failures: 9, resolved: 23, confidence: 'medium', horizon: 10, method: 'same-symbol' },
+      formation: {
+        probability: 0.62, successes: 14, failures: 9, resolved: 23,
+        confidence: 'medium', horizon: 10, method: 'same-symbol',
+        intervalLow: 0.48, intervalHigh: 0.73,
+      },
       returns: { h1: 1.2, h3: 2.1, h5: null },
     })]} />);
     const card = screen.getByTestId('pattern-card');
+    // R-PAT-24: احتمال ۰..۱ است؛ کارت باید آن را در ۱۰۰ ضرب و «۶۲٪» نشان دهد.
     expect(card.textContent).toContain('۶۲٪');
+    // سرصفحه و بازهٔ ویلسون باید یک واحد داشته باشند: ۰٫۴۸–۰٫۷۳ → «۴۸٪–۷۳٪».
+    expect(card.textContent).toContain('۴۸٪–۷۳٪');
     expect(card.textContent).toContain('۲۳');
     expect(card.textContent).toContain('کندلِ در حال تشکیل');
+  });
+
+  it('renders a 0.5 rate as ۵۰٪, not as ۱٪', () => {
+    render(<PatternsTab patterns={[base({
+      formation: { probability: 0.5, successes: 5, failures: 4, resolved: 9, confidence: 'medium', horizon: 10, method: 'same-symbol' },
+    })]} />);
+    const card = screen.getByTestId('pattern-card');
+    expect(card.textContent).toContain('۵۰٪');
+    expect(card.textContent).not.toContain('۱٪');
+  });
+
+  it('shows the Persian direction next to the kind', () => {
+    render(<PatternsTab patterns={[base({ direction: 'neutral' })]} />);
+    expect(screen.getByTestId('pattern-card').textContent).toContain('خنثی');
   });
 
   it('says the sample is not enough instead of showing a number', () => {

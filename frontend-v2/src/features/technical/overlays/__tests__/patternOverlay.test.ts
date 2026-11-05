@@ -10,7 +10,7 @@ const p: ChartPattern = {
   upper: { from: { index: 2, price: 110, timestamp: 2000 }, to: { index: 10, price: 110, timestamp: 10_000 } },
   lower: { from: { index: 2, price: 100, timestamp: 2000 }, to: { index: 10, price: 106, timestamp: 10_000 } },
   target: 120, stopLoss: 98, quality: 60, status: 'forming',
-  formation: { probability: 62, successes: 14, failures: 9, resolved: 23, confidence: 'medium', horizon: 10, method: 'same-symbol' },
+  formation: { probability: 0.62, successes: 14, failures: 9, resolved: 23, confidence: 'medium', horizon: 10, method: 'same-symbol' },
 };
 
 const params = { chart: { convertToPixel: vi.fn(() => ({ x: 10, y: 20 })) } } as never;
@@ -76,6 +76,15 @@ describe('pattern overlay figures', () => {
     const figures = patternFigures(params, [p]);
     expect(figures.filter((f) => f.type === 'line').length).toBeGreaterThanOrEqual(2);
     expect(figures.some((f) => f.type === 'text' && textOf(f).includes('۶۲٪'))).toBe(true);
+  });
+
+  it('renders a 0.5 formation rate as ۵۰٪', () => {
+    const half: ChartPattern = {
+      ...p,
+      id: 'HALF',
+      formation: { probability: 0.5, successes: 5, failures: 4, resolved: 9, confidence: 'medium', horizon: 10, method: 'same-symbol' },
+    };
+    expect(texts(patternFigures(params, [half]))[0]).toContain('۵۰٪');
   });
 
   it('shows a single label per pattern', () => {

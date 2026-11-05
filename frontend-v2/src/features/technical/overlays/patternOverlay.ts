@@ -20,17 +20,9 @@ import type {
 import { toFaDigits } from '@shared/lib/fa';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useTechnicalStore } from '../model/technicalStore';
+import { KIND_FA } from '../model/patterns/labels';
 import { selectFeaturedPatterns } from '../model/patterns/registry';
 import type { BoundaryLine, ChartPattern } from '../model/patterns/types';
-
-const KIND_FA: Record<string, string> = {
-  FLAG_BULL: 'پرچم صعودی', FLAG_BEAR: 'پرچم نزولی', PENNANT: 'پنانت',
-  TRIANGLE_ASC: 'مثلث صعودی', TRIANGLE_DESC: 'مثلث نزولی', TRIANGLE_SYM: 'مثلث متقارن',
-  RECTANGLE: 'مستطیل', WEDGE_RISING: 'گُوهٔ صعودی', WEDGE_FALLING: 'گُوهٔ نزولی',
-  HEAD_SHOULDERS: 'سر و شانه', INVERSE_HEAD_SHOULDERS: 'سر و شانهٔ معکوس',
-  TRIPLE_TOP: 'سه‌قلوی سقف', TRIPLE_BOTTOM: 'سه‌قلوی کف',
-  DOUBLE_TOP: 'سقف دوقلو', DOUBLE_BOTTOM: 'کف دوقلو',
-};
 
 const KIND_COLOR: Record<string, string> = {
   bullish: '#4f8f72', bearish: '#b45a6a', neutral: '#a89a6a',
@@ -116,9 +108,10 @@ export function patternFigures(
     }
     const label = KIND_FA[pattern.kind] ?? pattern.kind;
     // R-PAT-3: درصد فقط وقتی احتمالِ تشکیل واقعاً موجود است.
+    // R-PAT-24: احتمال نسبت ۰..۱ است؛ نمایش درصدی یعنی ×۱۰۰.
     const pct = pattern.formation?.probability;
     const text = forming
-      ? pct == null ? `${label} — در حال تشکیل` : `${label} — تشکیل ${toFaDigits(Math.round(pct))}٪`
+      ? pct == null ? `${label} — در حال تشکیل` : `${label} — تشکیل ${toFaDigits(Math.round(pct * 100))}٪`
       : label;
     const anchor = px(params, pattern.anchor.index, pattern.anchor.price);
     figures.push({

@@ -425,7 +425,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
                 data-testid={`drawer-tab-${tab.id}`}
                 aria-selected={isTabActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-sm)] t-95 font-medium transition-colors shrink-0 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-sm)] text-[11px] font-medium transition-colors shrink-0 ${
                   isTabActive
                     ? 'bg-panel-3 text-accent border border-accent/30 font-semibold shadow-xs'
                     : 'text-text-3 hover:text-text hover:bg-panel'

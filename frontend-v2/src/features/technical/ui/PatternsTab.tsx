@@ -9,19 +9,14 @@
 import { useState } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import { PATTERN_CONFIG } from '../model/patterns/config';
+import { DIRECTION_FA, KIND_FA } from '../model/patterns/labels';
 import type { ChartPattern, PatternFamily } from '../model/patterns/types';
 
-const KIND_FA: Record<string, string> = {
-  FLAG_BULL: 'پرچم صعودی', FLAG_BEAR: 'پرچم نزولی', PENNANT: 'پنانت',
-  TRIANGLE_ASC: 'مثلث صعودی', TRIANGLE_DESC: 'مثلث نزولی', TRIANGLE_SYM: 'مثلث متقارن',
-  RECTANGLE: 'مستطیل', WEDGE_RISING: 'گُوهٔ صعودی', WEDGE_FALLING: 'گُوهٔ نزولی',
-  HEAD_SHOULDERS: 'سر و شانه', INVERSE_HEAD_SHOULDERS: 'سر و شانهٔ معکوس',
-  TRIPLE_TOP: 'سه‌قلوی سقف', TRIPLE_BOTTOM: 'سه‌قلوی کف',
-  DOUBLE_TOP: 'سقف دوقلو', DOUBLE_BOTTOM: 'کف دوقلو',
-};
 const STATUS_FA: Record<string, string> = { forming: 'در حال تشکیل', confirmed: 'تأییدشده', invalidated: 'باطل‌شده' };
 const FAMILY_FA: Record<PatternFamily, string> = { continuation: 'ادامه‌دهنده', reversal: 'بازگشتی' };
-const faPct = (value: number) => `${toFaDigits(Math.round(value))}٪`;
+// R-PAT-24: FormationEstimate احتمال را به‌صورت نسبت ۰..۱ می‌دهد؛ درصد یعنی ×۱۰۰.
+// بازهٔ ویلسون هم همان نسبت است، پس سرصفحه و بازه یک واحد دارند.
+const faPct = (rate: number) => `${toFaDigits(Math.round(rate * 100))}٪`;
 const faNum = (value: number | null | undefined, digits = 1) => {
   if (value == null || !Number.isFinite(value)) return '—';
   // Number(...) صفرهای انتهایی را حذف می‌کند تا «۰٫۵» به‌جای «۰٫۵۰» نمایش داده شود.
@@ -45,7 +40,10 @@ export function PatternsTab({ patterns }: { patterns: readonly ChartPattern[] })
         {lastForming ? (
           <>
             <div className="flex items-baseline justify-between gap-2">
-              <b className="text-[13px]">{KIND_FA[lastForming.kind] ?? lastForming.kind}</b>
+              <span className="flex items-baseline gap-1">
+                <b className="text-[13px]">{KIND_FA[lastForming.kind] ?? lastForming.kind}</b>
+                <span className="text-[12px] text-[var(--text-2)]">{DIRECTION_FA[lastForming.direction]}</span>
+              </span>
               <span className="text-[12px] text-[var(--text-3)]">{STATUS_FA[lastForming.status]}</span>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -55,7 +53,7 @@ export function PatternsTab({ patterns }: { patterns: readonly ChartPattern[] })
                   <span className="text-[12px] text-[var(--text-3)]">
                     {toFaDigits(estimate.successes)} از {toFaDigits(estimate.resolved)} نمونه
                     {estimate.intervalLow != null && estimate.intervalHigh != null
-                      ? ` · بازهٔ ${faPct(estimate.intervalLow * 100)}–${faPct(estimate.intervalHigh * 100)}`
+                      ? ` · بازهٔ ${faPct(estimate.intervalLow)}–${faPct(estimate.intervalHigh)}`
                       : ''}
                   </span>
                 </>

@@ -152,6 +152,15 @@ describe('WideWorkspaceDrawer Component', () => {
     expect(screen.getByText('سقف دوقلو (M)')).toBeDefined();
   });
 
+  it('keeps every tab label at the 11px floor', () => {
+    renderDrawer();
+    for (const id of ['top50', 'indicators', 'scanner', 'patterns', 'edge']) {
+      const tab = screen.getByTestId(`drawer-tab-${id}`);
+      expect(tab.className).toContain('text-[11px]');
+      expect(tab.className).not.toContain('t-95');
+    }
+  });
+
   it('renders collapsed mini-bar when isOpen is false', () => {
     const onToggle = vi.fn();
     renderDrawer(false, onToggle);
