@@ -155,6 +155,12 @@ export type RsiVariant = 'standard' | 'fibo' | 'bb' | 'smooth_ma';
 
 export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
 
+/**
+ * پنل‌های میزکارِ تازه (فاز B): فیدِ رویدادها + سه پنلی که امروز در کشوی عریض‌اند.
+ * در B1 فقط وضعیتِ پنلِ فعال را نگه می‌دارد؛ میزبانِ واقعی در B3 ساخته می‌شود.
+ */
+export type WorkspacePanel = 'events' | 'top50' | 'indicators' | 'edge';
+
 export type FormationConfidence = 'none' | 'low' | 'medium' | 'high';
 
 export interface FormationEstimate {
@@ -263,6 +269,8 @@ export interface TechnicalState {
   isLeftDrawerOpen: boolean;
   leftDrawerWidth: number;
   activeDrawerTab: DrawerTab;
+  /** پنلِ فعالِ فید/نوار فعالیت در پوستهٔ تازه (B1). */
+  activePanel: WorkspacePanel;
   detectedDoubleTapPatterns: DoubleTapPattern[];
   detectedPullbackSignals: PullbackSignal[];
   detectedCHoCHSignals: CHoCHSignal[];
@@ -303,6 +311,12 @@ export interface TechnicalState {
   setMaxDrawnPatterns: (count: number) => void;
   setIsLeftDrawerOpen: (open: boolean) => void;
   toggleLeftDrawer: () => void;
+  /**
+   * معادلِ toggleLeftDrawer برای فید (R-PB-1): پرچمِ تازه‌ای ساخته نمی‌شود؛
+   * فقط نامِ مناسبِ فید به همان پرچم/اکشنِ موجود اشاره می‌کند.
+   */
+  toggleFeed: () => void;
+  setActivePanel: (panel: WorkspacePanel) => void;
   setLeftDrawerWidth: (width: number) => void;
   setActiveDrawerTab: (tab: DrawerTab) => void;
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) => void;

@@ -15,6 +15,7 @@ import type {
   ChannelMode,
   RsiVariant,
   DrawerTab,
+  WorkspacePanel,
   DoubleTapPattern,
   PullbackSignal,
   CHoCHSignal,
@@ -60,6 +61,7 @@ const INITIAL_STATE = {
   isLeftDrawerOpen: false,
   leftDrawerWidth: 460,
   activeDrawerTab: 'top50' as DrawerTab,
+  activePanel: 'events' as WorkspacePanel,
   detectedDoubleTapPatterns: [] as DoubleTapPattern[],
   detectedPullbackSignals: [] as PullbackSignal[],
   detectedCHoCHSignals: [] as CHoCHSignal[],
@@ -68,7 +70,7 @@ const INITIAL_STATE = {
   chartCandles: [] as EngineCandle[],
 };
 
-export const useTechnicalStore = create<TechnicalState>((set) => ({
+export const useTechnicalStore = create<TechnicalState>((set, get) => ({
   ...INITIAL_STATE,
 
   setTimeframe: (tf: string) => set({ timeframe: tf }),
@@ -167,6 +169,11 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
 
   toggleLeftDrawer: () => set((state) => ({ isLeftDrawerOpen: !state.isLeftDrawerOpen })),
 
+  // R-PB-1: فید همان پرچمِ کشو را باز/بسته می‌کند؛ پرچمِ دوم وجود ندارد.
+  toggleFeed: () => get().toggleLeftDrawer(),
+
+  setActivePanel: (panel: WorkspacePanel) => set({ activePanel: panel }),
+
   setLeftDrawerWidth: (width: number) =>
     set({ leftDrawerWidth: Math.min(Math.max(width, 360), 650) }),
 
@@ -192,3 +199,12 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
 
   reset: () => set(INITIAL_STATE),
 }));
+
+/**
+ * R-PB-1: `feedOpen` نامِ خوانشیِ همان `isLeftDrawerOpen` است، نه یک پرچمِ دوم.
+ * مصرف‌کننده‌های فید باید از این انتخابگر استفاده کنند تا دو منبعِ حقیقت نسازیم.
+ */
+export const selectFeedOpen = (state: TechnicalState): boolean => state.isLeftDrawerOpen;
+
+/** هوکِ خوانشِ وضعیتِ بازبودنِ فید؛ همان پرچمِ کشو. */
+export const useFeedOpen = (): boolean => useTechnicalStore(selectFeedOpen);
