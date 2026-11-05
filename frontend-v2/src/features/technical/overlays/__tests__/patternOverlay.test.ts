@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { patternFigures } from '../patternOverlay';
 import { selectFeaturedPatterns } from '../../model/patterns/registry';
 import type { ChartPattern } from '../../model/patterns/types';
+import { useUiStore, type Theme } from '@shared/stores/uiStore';
 
 const p: ChartPattern = {
   id: 'X:4:1-2-3-4', kind: 'TRIANGLE_ASC', direction: 'bullish', family: 'continuation',
@@ -14,16 +15,63 @@ const p: ChartPattern = {
 
 const params = { chart: { convertToPixel: vi.fn(() => ({ x: 10, y: 20 })) } } as never;
 
-function textOf(figure: ReturnType<typeof patternFigures>[number]): string {
+const at = (index: number, price: number) => ({ index, price, timestamp: index * 1000 });
+
+type Figure = ReturnType<typeof patternFigures>[number];
+interface FigureStyles {
+  color?: string;
+  size?: number;
+  family?: string;
+  style?: string;
+}
+
+function textOf(figure: Figure): string {
   const attrs = figure.attrs as { text?: unknown } | undefined;
   return String(attrs?.text ?? '');
 }
 
-function texts(figures: ReturnType<typeof patternFigures>): string[] {
-  return figures.filter((f) => f.type === 'text').map(textOf);
+function textFigures(figures: Figure[]): Figure[] {
+  return figures.filter((f) => f.type === 'text');
+}
+
+function lineFigures(figures: Figure[]): Figure[] {
+  return figures.filter((f) => f.type === 'line');
+}
+
+function texts(figures: Figure[]): string[] {
+  return textFigures(figures).map(textOf);
+}
+
+function stylesOf(figure: Figure): FigureStyles {
+  return (figure.styles ?? {}) as FigureStyles;
+}
+
+/** پس‌زمینهٔ پنلِ هر تم، مطابق `src/app/styles.css` (`--panel`). */
+const PANEL_BACKGROUND: Record<Theme, string> = {
+  brass: '#15181c',
+  warm: '#fbf9f5',
+  terminal: '#0a110d',
+  cool: '#fafcfd',
+};
+
+function channel(value: number): number {
+  const c = value / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex: string): number {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
+}
+
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
 }
 
 describe('pattern overlay figures', () => {
+  beforeEach(() => useUiStore.setState({ theme: 'brass' }));
+
   it('draws both boundaries and one label for a forming pattern', () => {
     const figures = patternFigures(params, [p]);
     expect(figures.filter((f) => f.type === 'line').length).toBeGreaterThanOrEqual(2);
@@ -59,21 +107,84 @@ describe('pattern overlay figures', () => {
     expect(label).not.toContain('٪');
   });
 
-  it('never draws more than six featured shapes', () => {
-    const many: ChartPattern[] = Array.from({ length: 10 }, (_, i) => ({
+  it('caps seven eligible patterns at six labels', () => {
+    const seven: ChartPattern[] = Array.from({ length: 7 }, (_, i) => ({
       ...p,
-      id: `P${i}`,
-      family: i % 2 === 0 ? 'continuation' : 'reversal',
-      status: i % 3 === 0 ? 'confirmed' : 'forming',
-      anchor: { index: 10 + i, price: 105, timestamp: 10_000 + i },
+      id: `ELIGIBLE_${i}`,
+      family: i % 2 === 0 ? 'reversal' : 'continuation',
+      status: i < 4 ? 'forming' : 'confirmed',
+      anchor: at(10 + i, 105 + i),
     }));
-    const labels = texts(patternFigures(params, many));
+    const labels = texts(patternFigures(params, seven));
     expect(labels.length).toBeLessThanOrEqual(6);
-    expect(labels).toHaveLength(selectFeaturedPatterns(many, 6).length);
+    expect(labels).toHaveLength(selectFeaturedPatterns(seven, 6).length);
   });
 
   it('draws nothing for invalidated patterns', () => {
     const invalidated: ChartPattern = { ...p, id: 'DEAD', status: 'invalidated' };
     expect(patternFigures(params, [invalidated])).toHaveLength(0);
+  });
+
+  it('skips a zero-length H&S upper line and a neckline identical to a boundary', () => {
+    const neck = { from: at(2, 100), to: at(8, 104) };
+    const hs: ChartPattern = {
+      ...p,
+      id: 'HS',
+      kind: 'HEAD_SHOULDERS',
+      direction: 'bearish',
+      upper: { from: at(4, 110), to: at(4, 110) },
+      lower: neck,
+      neckline: { from: at(2, 100), to: at(8, 104) },
+    };
+    const lines = lineFigures(patternFigures(params, [hs]));
+    expect(lines).toHaveLength(1);
+    expect(stylesOf(lines[0]).style).toBe('solid');
+  });
+
+  it('draws no boundary lines for double-tap patterns whose bounds are single points', () => {
+    const doubleBottom: ChartPattern = {
+      ...p,
+      id: 'DT',
+      kind: 'DOUBLE_BOTTOM',
+      direction: 'bullish',
+      upper: { from: at(6, 104), to: at(6, 104) },
+      lower: { from: at(4, 100), to: at(4, 100) },
+    };
+    const figures = patternFigures(params, [doubleBottom]);
+    expect(lineFigures(figures)).toHaveLength(0);
+    expect(textFigures(figures)).toHaveLength(1);
+  });
+
+  it('draws the dashed neckline when it is distinct from both boundaries', () => {
+    const withNeckline: ChartPattern = {
+      ...p,
+      id: 'NECKLINE',
+      neckline: { from: at(2, 105), to: at(10, 103) },
+    };
+    const lines = lineFigures(patternFigures(params, [withNeckline]));
+    expect(lines).toHaveLength(3);
+    expect(lines.filter((f) => stylesOf(f).style === 'dashed')).toHaveLength(1);
+  });
+
+  it('uses an 11px label with a real font stack', () => {
+    const [label] = textFigures(patternFigures(params, [p]));
+    const styles = stylesOf(label);
+    expect(styles.size).toBe(11);
+    expect(styles.family).toBe('Vazirmatn, sans-serif');
+  });
+
+  it('keeps label contrast at or above 4.5:1 on every theme panel', () => {
+    const directions = ['bullish', 'bearish', 'neutral'] as const;
+    for (const theme of Object.keys(PANEL_BACKGROUND) as Theme[]) {
+      useUiStore.setState({ theme });
+      for (const direction of directions) {
+        const [label] = textFigures(
+          patternFigures(params, [{ ...p, id: `${theme}:${direction}`, direction }]),
+        );
+        const { color } = stylesOf(label);
+        expect(color).toBeTruthy();
+        expect(contrast(color as string, PANEL_BACKGROUND[theme])).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 });

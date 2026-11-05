@@ -5,6 +5,8 @@
  * - حداکثر شش شکلِ منتخب (selectFeaturedPatterns) و یک برچسب برای هر الگو
  * - برچسب فارسی با ارقام فارسی؛ درصدِ تشکیل فقط وقتی احتمال واقعاً موجود است
  * - بدون انیمیشن، پالس یا افکت اضافه
+ * - خطِ صفرطول رسم نمی‌شود؛ خط گردنی که با مرزِ بالا/پایین یکسان است دوباره کشیده نمی‌شود
+ * - رنگِ برچسب تابعِ تم است تا روی پنلِ روشن و تیره کنتراستِ ≥ ۴٫۵:۱ داشته باشد
  *
  * تشخیص و آمار از `model/patterns/registry` می‌آید؛ این فایل فقط رسم می‌کند.
  */
@@ -16,9 +18,10 @@ import type {
   OverlayTemplate,
 } from 'klinecharts';
 import { toFaDigits } from '@shared/lib/fa';
+import { useUiStore } from '@shared/stores/uiStore';
 import { useTechnicalStore } from '../model/technicalStore';
 import { selectFeaturedPatterns } from '../model/patterns/registry';
-import type { ChartPattern } from '../model/patterns/types';
+import type { BoundaryLine, ChartPattern } from '../model/patterns/types';
 
 const KIND_FA: Record<string, string> = {
   FLAG_BULL: 'پرچم صعودی', FLAG_BEAR: 'پرچم نزولی', PENNANT: 'پنانت',
@@ -32,6 +35,36 @@ const KIND_FA: Record<string, string> = {
 const KIND_COLOR: Record<string, string> = {
   bullish: '#4f8f72', bearish: '#b45a6a', neutral: '#a89a6a',
 };
+
+/**
+ * پالتِ برچسب جدا از پالتِ خط است: متن باید کنتراستِ ≥ ۴٫۵:۱ با پس‌زمینهٔ پنل
+ * داشته باشد. رنگ‌های KIND_COLOR روی پنلِ روشن فقط ۲٫۶۶–۳٫۷۱:۱ می‌دهند،
+ * بنابراین نسخهٔ تیره‌تر (تمِ روشن) و روشن‌تر (تمِ تیره) اینجا آمده است.
+ */
+const LABEL_COLOR_DARK: Record<string, string> = {
+  bullish: '#7fc4a0', bearish: '#e79aa7', neutral: '#d8c98d',
+};
+const LABEL_COLOR_LIGHT: Record<string, string> = {
+  bullish: '#2f6b52', bearish: '#8f3f4f', neutral: '#6f6132',
+};
+
+/** همان روشِ smcOverlays: تمِ روشن یعنی warm/cool؛ پیش‌فرضِ امن = تیره. */
+function isLightTheme(): boolean {
+  try {
+    const theme = useUiStore.getState().theme;
+    return theme === 'warm' || theme === 'cool';
+  } catch {
+    return false;
+  }
+}
+
+function samePoint(a: { index: number; price: number }, b: { index: number; price: number }): boolean {
+  return a.index === b.index && a.price === b.price;
+}
+
+function sameLine(a: BoundaryLine, b: BoundaryLine): boolean {
+  return samePoint(a.from, b.from) && samePoint(a.to, b.to);
+}
 
 function px(
   params: OverlayCreateFiguresCallbackParams<unknown>,
@@ -49,39 +82,36 @@ export function patternFigures(
 ): OverlayFigure[] {
   const figures: OverlayFigure[] = [];
   const featured = selectFeaturedPatterns(patterns, 6);
+  const labelPalette = isLightTheme() ? LABEL_COLOR_LIGHT : LABEL_COLOR_DARK;
+  const pushBoundary = (line: BoundaryLine, styles: Record<string, unknown>) => {
+    // خطِ صفرطول (from === to در اندیس و قیمت) هیچ چیزِ مفیدی رسم نمی‌کند:
+    // سقفِ سر و شانه و هر دو مرزِ الگوهای دوقلویی چنین‌اند.
+    if (samePoint(line.from, line.to)) return;
+    figures.push({
+      type: 'line',
+      attrs: {
+        coordinates: [
+          px(params, line.from.index, line.from.price),
+          px(params, line.to.index, line.to.price),
+        ],
+      },
+      styles,
+    });
+  };
   for (const pattern of featured) {
     const color = KIND_COLOR[pattern.direction] ?? KIND_COLOR.neutral;
+    const labelColor = labelPalette[pattern.direction] ?? labelPalette.neutral;
     const forming = pattern.status === 'forming';
-    figures.push({
-      type: 'line',
-      attrs: {
-        coordinates: [
-          px(params, pattern.upper.from.index, pattern.upper.from.price),
-          px(params, pattern.upper.to.index, pattern.upper.to.price),
-        ],
-      },
-      styles: { color, size: forming ? 1.75 : 1.1, style: 'solid' },
-    });
-    figures.push({
-      type: 'line',
-      attrs: {
-        coordinates: [
-          px(params, pattern.lower.from.index, pattern.lower.from.price),
-          px(params, pattern.lower.to.index, pattern.lower.to.price),
-        ],
-      },
-      styles: { color, size: forming ? 1.75 : 1.1, style: 'solid' },
-    });
-    if (pattern.neckline) {
-      figures.push({
-        type: 'line',
-        attrs: {
-          coordinates: [
-            px(params, pattern.neckline.from.index, pattern.neckline.from.price),
-            px(params, pattern.neckline.to.index, pattern.neckline.to.price),
-          ],
-        },
-        styles: { color: '#8a8580', size: 1.1, style: 'dashed', dashedValue: [4, 3] },
+    const boundaryStyle = { color, size: forming ? 1.75 : 1.1, style: 'solid' };
+    pushBoundary(pattern.upper, boundaryStyle);
+    pushBoundary(pattern.lower, boundaryStyle);
+    if (
+      pattern.neckline
+      && !sameLine(pattern.neckline, pattern.upper)
+      && !sameLine(pattern.neckline, pattern.lower)
+    ) {
+      pushBoundary(pattern.neckline, {
+        color: '#8a8580', size: 1.1, style: 'dashed', dashedValue: [4, 3],
       });
     }
     const label = KIND_FA[pattern.kind] ?? pattern.kind;
@@ -94,7 +124,7 @@ export function patternFigures(
     figures.push({
       type: 'text',
       attrs: { x: anchor.x + 6, y: anchor.y - 8, text, align: 'left', baseline: 'bottom' },
-      styles: { color, size: 10, family: 'inherit' },
+      styles: { color: labelColor, size: 11, family: 'Vazirmatn, sans-serif' },
     });
   }
   return figures;
