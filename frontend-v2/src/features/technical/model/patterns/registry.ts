@@ -3,11 +3,27 @@ import type { EngineCandle } from '../doubleTapEngine';
 import { calculateAtr, DEFAULT_PRECISION_PARAMS, detectDoubleTapPatterns } from '../doubleTapEngine';
 import type { DoubleTapPattern } from '../types';
 import { PATTERN_CONFIG, type PatternConfig } from './config';
-import type { ChartPattern } from './types';
+import type { ChartPattern, PatternKind, PatternTier } from './types';
 import { detectContinuation } from './detectContinuation';
 import { detectReversal } from './detectReversal';
+import { detectCupRounding } from './detectCupRounding';
+import { detectTier2 } from './detectTier2';
 import { estimatePatternFormation, estimateReturns } from './formation';
 import { outcomeOf, type PatternOutcome } from './outcome';
+
+/**
+ * ردهٔ پذیرش هر گونه: ردهٔ ۱ پذیرش کامل، ردهٔ ۲ کم‌بسامد با برچسب.
+ * `Record<PatternKind, …>` exhaustiveness را در زمان کامپایل تضمین می‌کند.
+ */
+export const PATTERN_TIER: Record<PatternKind, PatternTier> = {
+  DOUBLE_TOP: 1, DOUBLE_BOTTOM: 1, HEAD_SHOULDERS: 1, INVERSE_HEAD_SHOULDERS: 1,
+  TRIPLE_TOP: 1, TRIPLE_BOTTOM: 1, FLAG_BULL: 1, FLAG_BEAR: 1, PENNANT: 1,
+  TRIANGLE_ASC: 1, TRIANGLE_DESC: 1, TRIANGLE_SYM: 1, RECTANGLE: 1,
+  WEDGE_RISING: 1, WEDGE_FALLING: 1, CUP_HANDLE: 1, INVERSE_CUP_HANDLE: 1,
+  ROUNDING_TOP: 1, ROUNDING_BOTTOM: 1,
+  DIAMOND_TOP: 2, DIAMOND_BOTTOM: 2, BROADENING_TOP: 2, BROADENING_BOTTOM: 2,
+  ISLAND_REVERSAL: 2, THREE_RISING_PEAKS: 2, THREE_FALLING_PEAKS: 2,
+};
 
 export function fromDoubleTap(p: DoubleTapPattern): ChartPattern {
   const anchor = p.retest ?? p.peak2;
@@ -39,6 +55,8 @@ export function fromDoubleTap(p: DoubleTapPattern): ChartPattern {
     target: p.target1,
     stopLoss: p.stopLoss,
     quality: p.quality,
+    // آداپتر دوقلو همیشه ردهٔ یک است؛ جدول مرکزی هم همین را تحمیل می‌کند.
+    tier: 1,
     status: p.status === 'forming' ? 'forming' : p.status === 'invalidated' ? 'invalidated' : 'confirmed',
     formation: p.formation,
   };
@@ -54,15 +72,20 @@ export function detectAllPatterns(
   const merged = [
     ...detectContinuation(candles, atr, config),
     ...detectReversal(candles, atr, config),
+    ...detectCupRounding(candles, atr, config),
+    ...detectTier2(candles, atr, config),
     ...detectDoubleTapPatterns(candles, DEFAULT_PRECISION_PARAMS).map(fromDoubleTap),
   ].filter((p, i, all) => all.findIndex((x) => x.id === p.id) === i);
 
   // R-PAT-6: بازگشتی بر ادامه‌دهنده اولویت دارد؛ ادامه‌دهندهٔ لنگرِ نزدیک (تا پنجرهٔ config) حذف می‌شود.
   const reversals = merged.filter((p) => p.family === 'reversal');
-  const withoutOverlaps = merged.filter(
-    (p) => p.family === 'reversal'
-      || !reversals.some((r) => Math.abs(r.anchor.index - p.anchor.index) <= config.overlapWindowBars),
-  );
+  const withoutOverlaps = merged
+    .filter(
+      (p) => p.family === 'reversal'
+        || !reversals.some((r) => Math.abs(r.anchor.index - p.anchor.index) <= config.overlapWindowBars),
+    )
+    // ردهٔ هر نمونه یک‌جا از جدول می‌آید؛ دتکتورها هم ردهٔ خود را اعلام می‌کنند و این نقشه مرجع نهایی است.
+    .map((p) => ({ ...p, tier: PATTERN_TIER[p.kind] }));
 
   // R-PAT-22: نتیجهٔ هر نمونه یک‌بار محاسبه می‌شود و فقط نمونه‌های حل‌شده به تخمین بازده می‌رسند.
   const outcomes = new Map<string, PatternOutcome>(
