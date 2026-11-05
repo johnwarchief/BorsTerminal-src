@@ -763,7 +763,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
     {
       id: 'scanner',
       labelFa: 'اسکنر الگوهای کلاسیک و ساختار',
-      badge: detectedPatterns.length + detectedPullbackSignals.length + detectedCHoCHSignals.length + detectedCHoCHSignals.length,
+      badge: detectedPatterns.length + detectedPullbackSignals.length + detectedCHoCHSignals.length,
       icon: (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="8" />
