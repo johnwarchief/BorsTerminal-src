@@ -206,4 +206,38 @@ describe('ScannerFeed', () => {
     fireEvent.click(screen.getByTestId('pattern-row-focus-me'));
     expect(useTechnicalStore.getState().focusPatternId).toBe('focus-me');
   });
+
+  it('shows the geometric quality and the measured levels on the card', () => {
+    renderFeed([flag()]);
+    const card = screen.getByTestId('pattern-card');
+    expect(card.textContent).toContain('کیفیت ساختار ۶۰');
+    expect(card.textContent).toContain('هدف ۱۱۲');
+    expect(card.textContent).toContain('حد ضرر ۹۸');
+  });
+
+  it('renders no raw enum names for the new kinds', () => {
+    const kinds = ['CUP_HANDLE', 'DIAMOND_TOP', 'THREE_FALLING_PEAKS', 'ROUNDING_BOTTOM', 'BROADENING_TOP'];
+    renderFeed(kinds.map((kind, i) => base({ id: kind, kind: kind as never, anchor: point(60 + i) })));
+    const text = screen.getByTestId('pattern-list').textContent ?? '';
+    expect(text).not.toMatch(/[A-Z_]{4,}/);
+    expect(text).toContain('کاپ‌هندل');
+    expect(text).toContain('دیاموند سقف');
+  });
+
+  it('caps the scanner event list at 20 and shows the newest first', () => {
+    const pullbacks = Array.from({ length: 25 }, (_, i) => ({
+      ...pullback(), id: 'pb-' + i, index: 10 + i, timestamp: (10 + i) * 60_000,
+    }));
+    renderFeed([], pullbacks, []);
+    const rows = screen.getAllByTestId(/^scanner-event-/);
+    expect(rows.length).toBe(20);
+    expect(rows[0]!.getAttribute('data-testid')).toBe('scanner-event-pb-24');
+  });
+
+  it('keeps the percent gate closed at 7 resolved samples', () => {
+    renderFeed([base({
+      formation: { probability: 0.6, successes: 6, failures: 1, resolved: 7, confidence: 'none', horizon: 10, method: 'same-symbol' },
+    })]);
+    expect(screen.getByTestId('pattern-card').textContent).toContain('نمونهٔ کافی نیست');
+  });
 });

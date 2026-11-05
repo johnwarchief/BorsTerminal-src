@@ -358,7 +358,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
   const TABS: Array<{ id: DrawerTab; labelFa: string; badge?: string | number }> = [
     { id: 'top50', labelFa: '۵۰ نماد برتر', badge: top50Symbols.length },
     { id: 'indicators', labelFa: 'اندیکاتورها و کانال' },
-    { id: 'scanner', labelFa: 'اسکنر الگوها', badge: detectedDoubleTapPatterns.length + detectedPullbackSignals.length },
+    { id: 'scanner', labelFa: 'اسکنر الگوها', badge: detectedPatterns.length + detectedPullbackSignals.length + detectedCHoCHSignals.length },
     { id: 'edge', labelFa: 'لبه آماری' },
   ];
 
@@ -763,7 +763,7 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
     {
       id: 'scanner',
       labelFa: 'اسکنر الگوهای کلاسیک و ساختار',
-      badge: detectedDoubleTapPatterns.length + detectedPullbackSignals.length + detectedCHoCHSignals.length,
+      badge: detectedPatterns.length + detectedPullbackSignals.length + detectedCHoCHSignals.length + detectedCHoCHSignals.length,
       icon: (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="8" />

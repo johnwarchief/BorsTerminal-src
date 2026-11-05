@@ -20,7 +20,8 @@ import type {
 import { toFaDigits } from '@shared/lib/fa';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useTechnicalStore } from '../model/technicalStore';
-import { KIND_FA } from '../model/patterns/labels';
+import { PATTERN_CONFIG } from '../model/patterns/config';
+import { KIND_FA, showPercent } from '../model/patterns/labels';
 import { selectFeaturedPatterns } from '../model/patterns/registry';
 import type { BoundaryLine, ChartPattern } from '../model/patterns/types';
 
@@ -126,7 +127,7 @@ export function patternFigures(
     const label = KIND_FA[pattern.kind] ?? pattern.kind;
     // R-PAT-3: درصد فقط وقتی احتمالِ تشکیل واقعاً موجود است.
     // R-PAT-24: احتمال نسبت ۰..۱ است؛ نمایش درصدی یعنی ×۱۰۰.
-    const pct = pattern.formation?.probability;
+    const pct = showPercent(pattern.formation, PATTERN_CONFIG.formationMinResolved);
     const text = forming
       ? pct == null ? `${label} — در حال تشکیل` : `${label} — تشکیل ${toFaDigits(Math.round(pct * 100))}٪`
       : label;

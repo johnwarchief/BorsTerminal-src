@@ -11,10 +11,10 @@
 import { useState } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import { PATTERN_CONFIG } from '../model/patterns/config';
-import { DIRECTION_FA, KIND_FA } from '../model/patterns/labels';
+import { DIRECTION_FA, KIND_FA, showPercent } from '../model/patterns/labels';
 import { useTechnicalStore } from '../model/technicalStore';
 import type { ChartPattern, PatternFamily } from '../model/patterns/types';
-import type { CHoCHSignal, FormationEstimate, PullbackSignal } from '../model/types';
+import type { CHoCHSignal, PullbackSignal } from '../model/types';
 
 const STATUS_FA: Record<string, string> = { forming: 'در حال تشکیل', confirmed: 'تأییدشده', invalidated: 'باطل‌شده' };
 const FAMILY_FA: Record<PatternFamily, string> = { continuation: 'ادامه‌دهنده', reversal: 'بازگشتی' };
@@ -39,13 +39,6 @@ const faDate = (timestamp: number) => {
   }
 };
 
-// دروازهٔ درصد: موتور زیر formationMinResolved (۸ نمونهٔ حل‌شده) احتمالی نمی‌دهد؛
-// UI هم به همان دروازه پایبند می‌ماند تا عددِ دیتای ناقص به کاربر نرسد.
-const gatedProbability = (formation: FormationEstimate | null | undefined): number | null =>
-  formation?.probability != null && formation.resolved >= PATTERN_CONFIG.formationMinResolved
-    ? formation.probability
-    : null;
-
 export interface ScannerFeedProps {
   patterns: readonly ChartPattern[];
   pullbacks: readonly PullbackSignal[];
@@ -63,7 +56,12 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
     .sort((a, b) => b.anchor.index - a.anchor.index)
     .slice(0, 20);
   const estimate = lastForming?.formation;
-  const gated = gatedProbability(estimate);
+  const gated = showPercent(estimate, PATTERN_CONFIG.formationMinResolved);
+  // R-PA-16: رویدادهای اسکنر هم مثل الگوها کران دارند و از تازه به قدیم مرتب‌اند.
+  const scannerEvents = [
+    ...pullbacks.map((s) => ({ key: `pb-${s.id}`, testid: s.id, kind: 'پولبک', bullish: s.type === 'BULLISH', index: s.index, timestamp: s.timestamp })),
+    ...chochs.map((s) => ({ key: `ch-${s.id}`, testid: s.id, kind: s.type, bullish: s.isBullish, index: s.index, timestamp: s.timestamp })),
+  ].sort((a, b) => b.index - a.index).slice(0, 20);
 
   return (
     <div className="flex flex-col gap-3 p-3 text-[var(--text)]">
@@ -84,6 +82,10 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
                 ) : null}
               </span>
               <span className="text-[12px] text-[var(--text-3)]">{STATUS_FA[lastForming.status]}</span>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-[var(--text-3)]">
+              <span data-testid="pattern-quality">کیفیت ساختار {toFaDigits(Math.round(lastForming.quality))}</span>
+              <span className="tabular-nums">هدف {faNum(lastForming.target, 0)} · حد ضرر {faNum(lastForming.stopLoss, 0)}</span>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               {gated != null && estimate ? (
@@ -129,7 +131,7 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
         </label>
         <ul data-testid="pattern-list" className="flex flex-col">
           {visible.map((pattern) => {
-            const rowProbability = gatedProbability(pattern.formation);
+            const rowProbability = showPercent(pattern.formation, PATTERN_CONFIG.formationMinResolved);
             return (
               <li key={pattern.id}>
                 {/* spec §7.3: کلیک روی ردیف = فوکوس روی چارت (استور، مصرف: KLineChartWrapper). */}
@@ -149,6 +151,7 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
                     ) : null}
                   </span>
                   <span className="text-[var(--text-3)]">{FAMILY_FA[pattern.family]} · {STATUS_FA[pattern.status]}</span>
+                  <span className="tabular-nums text-[var(--text-3)]">کیفیت {toFaDigits(Math.round(pattern.quality))}</span>
                   <span className="tabular-nums text-[var(--text-2)]">
                     {rowProbability != null ? faPct(rowProbability) : '—'}
                   </span>
@@ -168,32 +171,18 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
           </span>
         </div>
         <ul data-testid="scanner-events" className="flex flex-col">
-          {pullbacks.map((signal) => (
+          {scannerEvents.map((event) => (
             <li
-              key={signal.id}
-              data-testid={`scanner-event-${signal.id}`}
+              key={event.key}
+              data-testid={`scanner-event-${event.testid}`}
               className="flex items-baseline justify-between gap-2 border-b border-[var(--line)] py-2 text-[12px]"
             >
-              <span>پولبک</span>
-              <span className={signal.type === 'BULLISH' ? 'text-emerald-500' : 'text-rose-500'}>
-                {signal.type === 'BULLISH' ? 'صعودی' : 'نزولی'}
+              <span>{event.kind}</span>
+              <span className={event.bullish ? 'text-emerald-500' : 'text-rose-500'}>
+                {event.bullish ? 'صعودی' : 'نزولی'}
               </span>
-              <span className="tabular-nums text-[var(--text-3)]">کندل {toFaDigits(signal.index)}</span>
-              <span className="tabular-nums text-[var(--text-3)]">{faDate(signal.timestamp)}</span>
-            </li>
-          ))}
-          {chochs.map((signal) => (
-            <li
-              key={signal.id}
-              data-testid={`scanner-event-${signal.id}`}
-              className="flex items-baseline justify-between gap-2 border-b border-[var(--line)] py-2 text-[12px]"
-            >
-              <span>{signal.type}</span>
-              <span className={signal.isBullish ? 'text-emerald-500' : 'text-rose-500'}>
-                {signal.isBullish ? 'صعودی' : 'نزولی'}
-              </span>
-              <span className="tabular-nums text-[var(--text-3)]">کندل {toFaDigits(signal.index)}</span>
-              <span className="tabular-nums text-[var(--text-3)]">{faDate(signal.timestamp)}</span>
+              <span className="tabular-nums text-[var(--text-3)]">کندل {toFaDigits(event.index)}</span>
+              <span className="tabular-nums text-[var(--text-3)]">{faDate(event.timestamp)}</span>
             </li>
           ))}
           {pullbacks.length + chochs.length === 0 ? (
