@@ -1,8 +1,9 @@
 // model/patterns/__tests__/accuracy.test.ts
 import { describe, expect, it } from 'vitest';
 import { detectAllPatterns, PATTERN_TIER } from '../registry';
-import { PATTERN_CONFIG } from '../config';
+import { PATTERN_CONFIG, type PatternConfig } from '../config';
 import { detectContinuation } from '../detectContinuation';
+import { detectTier2 } from '../detectTier2';
 import { calculateAtr } from '../../doubleTapEngine';
 import type { EngineCandle } from '../../doubleTapEngine';
 import type { PatternKind } from '../types';
@@ -43,11 +44,15 @@ function mirrored(values: number[]): EngineCandle[] {
   return seriesFrom(values.map((v) => 200 - v));
 }
 
+/** پیکربندی با یک کلیدِ رده‌دو که آگاهانه شل شده است؛ بقیهٔ کلیدها دست‌نخورده. */
+function relaxedTier2(patch: Partial<PatternConfig['tier2']>): PatternConfig {
+  return { ...PATTERN_CONFIG, tier2: { ...PATTERN_CONFIG.tier2, ...patch } };
+}
+
 /**
- * سری ۳۰۰/۲۵۰ کندلیِ آزمون بدون نگاه به آینده: دوقلوی سقف در کندل‌های ۱۰..۵۰
- * (شکست در ~۸۳) و سپس یک رَمپ یکنوا تا انتها. فقط سری ۳۰۰ یک جزیرهٔ گپ‌دار
- * در دم (کندل‌های ۲۹۳..۲۹۵) دارد که ردهٔ دو را هم وارد خروجی می‌کند؛ لنگرش
- * ۲۹۵ است و در آزمون عدم‌نگاه‌به‌آینده (لنگر < ۲۵۰) دیده نمی‌شود.
+ * سری ۳۰۰/۲۵۰ کندلیِ آزمون رده‌بندی: دوقلوی سقف در کندل‌های ۱۰..۵۰ (شکست در
+ * ~۸۳) و سپس یک رَمپ یکنوا تا انتها. فقط سری ۳۰۰ یک جزیرهٔ گپ‌دار در دم
+ * (کندل‌های ۲۹۳..۲۹۵) دارد که ردهٔ دو را هم وارد خروجی می‌کند؛ لنگرش ۲۹۵ است.
  */
 function series(n: number): EngineCandle[] {
   const values = pathValues(
@@ -69,10 +74,45 @@ function series(n: number): EngineCandle[] {
   return seriesFrom(values);
 }
 
+/** پیوتِ پنجمِ پهن‌شوندهٔ `lookAheadSeries`، دقیقاً سه کندل پیش از برشِ ۱۰۰. */
+const NEAR_CUT_PIVOT = 97;
+/** برش‌های آزمونِ عدم‌نگاه‌به‌آینده. */
+const CUTS = [100, 120, 160, 250] as const;
+
 /**
- * کاپ با لبه‌های نامتقارن: چپ ۱۰۰ و راست ۱۰۴؛ فاصلهٔ ۴ از
- * cup.rimToleranceAtr·ATR بزرگ‌تر است. عمق، پنجرهٔ کندلی و دستهٔ کم‌عمق
- * (۹۷ در برابر سقف ۳۳٪ از ۱۸) همه معتبرند، پس فقط قاعدهٔ لبه نقض می‌شود.
+ * سریِ آزمونِ عدم‌نگاه‌به‌آینده: دوقلوی سقف (۱۰..۵۰)، سپس یک پهن‌شوندهٔ سقف با
+ * پنج پیوتِ ۶۵/۷۳/۸۱/۸۹/۹۷ — لنگرش ۹۷ است، یعنی سه کندل پیش از برشِ ۱۰۰ —
+ * و در انتها یک رَمپ تا ۲۹۹ (به‌علاوهٔ جزیرهٔ دم، مانند `series`).
+ * مقدار هر ایندکس مستقل از طول سری است، پس `lookAheadSeries(cut)` پیشوندِ
+ * دقیق `lookAheadSeries(300)` است.
+ */
+function lookAheadSeries(n: number): EngineCandle[] {
+  const values = pathValues(
+    [[0, 96], [10, 100], [30, 94], [50, 100], [60, 90],
+      [65, 100], [73, 96], [81, 104], [89, 93], [97, 106],
+      [108, 88], [200, 96], [299, 104]],
+    n - 1,
+  );
+  if (n >= 300) {
+    values[290] = 103.4;
+    values[291] = 103.6;
+    values[292] = 104;
+    values[293] = 105.5; // گپ ورود
+    values[294] = 106;
+    values[295] = 103.5; // گپ خروج
+    values[296] = 103;
+    values[297] = 102.5;
+    values[298] = 102.2;
+    values[299] = 102;
+  }
+  return seriesFrom(values);
+}
+
+/**
+ * کاپ با لبه‌های نامتقارن: چپ ۱۰۰٫۴ و راست ۱۰۴٫۴؛ فاصلهٔ ۴ از
+ * cup.rimToleranceAtr·ATR = ۰٫۴۴ بزرگ‌تر است. عمق ۱۸٫۸، پنجرهٔ کندلی ۸۰ و
+ * دستهٔ کم‌عمق ۵٫۸ (در برابر سقف ۳۳٪ × ۱۸٫۸ = ۶٫۲) معتبرند، پس فقط قاعدهٔ
+ * لبه نقض می‌شود.
  */
 function wideRimCup(): EngineCandle[] {
   return path([[0, 96], [10, 100], [50, 84], [90, 104], [100, 97], [110, 98]], 110);
@@ -83,10 +123,9 @@ function wideRimInverseCup(): EngineCandle[] {
 }
 
 /**
- * کف V تیز: عمق/برجستگی/هم‌ترازی سرها معتبرند، اما فقط ۹ کندل از ۲۰ کندلِ
- * بخش میانی زیر خط لبه بسته می‌شوند (سهم ۰٫۴۵ < rounding.curvatureMin = ۰٫۵۵).
- * سکوی پایانی ۹۸ هم باعث می‌شود لبهٔ راست فقط ۲ واحد از چپ اختلاف داشته باشد
- * (زیر endSkewPct = ۵۰٪ عمق).
+ * کف V تیز: عمق ۵ (≥ minDepthAtr·ATR = ۰٫۸)، برجستگی و هم‌ترازی سرها معتبر
+ * (اختلاف لبه‌ها ۲ ≤ ۵۰٪ × ۵)، اما فقط ۸ کندل از ۲۰ کندلِ بخش میانی زیر خط
+ * لبه بسته می‌شوند (سهم ۰٫۴ < rounding.curvatureMin = ۰٫۵۵).
  */
 function vBottom(): EngineCandle[] {
   return path([[0, 100], [25, 100], [30, 94], [35, 100], [40, 98], [59, 98]], 59);
@@ -97,10 +136,10 @@ function vTop(): EngineCandle[] {
 }
 
 /**
- * پنج پیوتِ متناوب با مرزهای واگرا: سقف ۱۰۰→۱۱۰ و کف ۹۲→۹۰ (پنجرهٔ سقف)،
- * و سقف ۱۰۸→۱۱۰ و کف ۹۲→۹۰ (پنجرهٔ کف). عرض‌ها بزرگ می‌شوند، پس شرط
- * diamondConvergeMin (پایان ≤ ۰٫۷۵×شروع) نقض می‌شود؛ هر دو پنجره در عوض
- * پهن‌شوندهٔ معتبرند.
+ * پنج پیوتِ متناوب با مرزهای واگرا: سقف ۱۰۰٫۴→۱۱۰٫۴ و کف ۹۱٫۶→۸۹٫۶ (پنجرهٔ
+ * سقف)، و سقف ۱۰۸٫۴→۱۱۰٫۴ و کف ۸۷٫۶→۸۹٫۶ (پنجرهٔ کف). عرض‌ها بزرگ می‌شوند
+ * (۶٫۸ → ۲۴٫۸)، پس شرط diamondConvergeMin (پایان ≤ ۰٫۷۵×شروع) نقض می‌شود؛
+ * هر دو پنجره در عوض پهن‌شوندهٔ معتبرند.
  */
 function wideningFive(): EngineCandle[] {
   return path(
@@ -110,9 +149,9 @@ function wideningFive(): EngineCandle[] {
 }
 
 /**
- * قرینهٔ `wideningFive`: پنج پیوتِ متناوب با مرزهای همگرا. عرض‌ها کوچک می‌شوند،
- * پس شرط broadeningMin (پایان ≥ ۱٫۲۵×شروع) نقض می‌شود؛ پنجرهٔ سقف در عوض
- * الماسِ معتبر است.
+ * قرینهٔ `wideningFive`: پنج پیوتِ متناوب با مرزهای همگرا. عرض‌ها کوچک می‌شوند
+ * (۱۰٫۸ → ۵٫۸)، پس شرط broadeningMin (پایان ≥ ۱٫۲۵×شروع) نقض می‌شود؛ پنجرهٔ
+ * سقف در عوض الماسِ معتبر است.
  */
 function convergingFive(): EngineCandle[] {
   return path(
@@ -122,9 +161,43 @@ function convergingFive(): EngineCandle[] {
 }
 
 /**
- * جزیرهٔ یک‌طرفه: گپ ورود در کندل ۱۵ بزرگ است (۱٫۲ ≥ islandGapAtr·ATR) اما
- * گپ خروج تا آخرین کندلِ پنجرهٔ بلوک (۱۹) هرگز به آستانه نمی‌رسد؛ فقط یکی از
- * دو گپ لازم نقض می‌شود.
+ * پنج پیوتِ متناوبِ نزدیک‌به‌مرزِ الماس: عرض ۱۲٫۸ → ۱۴٫۸ → ۱۰٫۸۸ (نسبت ۰٫۸۵).
+ * `mid > end` و `midSpan > start` برقرارند، اما ۱۰٫۸۸ > ۰٫۷۵×۱۲٫۸ = ۹٫۶، پس
+ * آستانهٔ همگرایی نقض می‌شود؛ پهن‌شونده هم نیست (۱۰٫۸۸ < ۱٫۲۵×۱۲٫۸).
+ * همان سری با `diamondConvergeMin = 0.1` (مرز ۰٫۹×۱۲٫۸ = ۱۱٫۵۲) منتشر می‌شود.
+ */
+function nearMissDiamond(): EngineCandle[] {
+  return path([[0, 88], [61, 100], [71, 90], [81, 106], [91, 94], [101, 106.08], [110, 90], [119, 88]], 119);
+}
+
+function nearMissDiamondMirror(): EngineCandle[] {
+  return mirrored(pathValues(
+    [[0, 88], [61, 100], [71, 90], [81, 106], [91, 94], [101, 106.08], [110, 90], [119, 88]],
+    119,
+  ));
+}
+
+/**
+ * پنج پیوتِ متناوبِ نزدیک‌به‌مرزِ پهن‌شونده: عرض ۱۲٫۸ → ۱۳٫۴۴ → ۱۴٫۰۸ (نسبت
+ * ۱٫۱). ۱۴٫۰۸ < ۱٫۲۵×۱۲٫۸ = ۱۶، پس آستانهٔ واگرایی نقض می‌شود؛ الماس هم نیست
+ * (`mid > end` برقرار نیست). همان سری با `broadeningMin = 0.05` (مرز
+ * ۱٫۰۵×۱۲٫۸ = ۱۳٫۴۴) منتشر می‌شود.
+ */
+function nearMissBroadening(): EngineCandle[] {
+  return path([[0, 88], [61, 100], [71, 90], [81, 106], [91, 94], [101, 109.28], [110, 90], [119, 88]], 119);
+}
+
+function nearMissBroadeningMirror(): EngineCandle[] {
+  return mirrored(pathValues(
+    [[0, 88], [61, 100], [71, 90], [81, 106], [91, 94], [101, 109.28], [110, 90], [119, 88]],
+    119,
+  ));
+}
+
+/**
+ * جزیرهٔ یک‌طرفه: گپ ورود در کندل ۱۵ بزرگ است (۱٫۶ ≥ islandGapAtr·ATR ≈ ۰٫۵۵)
+ * اما گپ خروج تا آخرین کندلِ پنجرهٔ بلوک (۱۹) هرگز به آستانه نمی‌رسد؛ فقط یکی
+ * از دو گپ لازم نقض می‌شود.
  */
 function oneSidedGap(): EngineCandle[] {
   return seriesFrom([
@@ -134,12 +207,38 @@ function oneSidedGap(): EngineCandle[] {
 }
 
 /**
- * سه سقفِ ۱۰۰/۱۱۰/۱۰۱ و سه کفِ ۹۲/۸۸/۹۰: گسترهٔ هر سه‌گانه از
- * threePeaksToleranceAtr·ATR بزرگ‌تر است، پس هر دو گونه (سقف و کف) رد می‌شوند.
+ * جزیرهٔ نزدیک‌به‌مرزِ گپ خروج: همان گپ ورودِ بزرگ در کندل ۱۵، اما سقفِ کندل ۱۸
+ * فقط ۰٫۳ زیر کفِ بلوک (۱۰۱٫۶) می‌ماند و آستانه ۰٫۵ × ATR ≈ ۰٫۵۱ است. با
+ * `islandGapAtr = 0.25` (آستانه ≈ ۰٫۲۵) همان سری منتشر می‌شود.
+ */
+function nearMissExitGap(): EngineCandle[] {
+  return seriesFrom([
+    99, 99.1, 99.2, 99.3, 99.4, 99.45, 99.5, 99.55, 99.6, 99.6, 99.6, 99.6, 99.6, 99.6, 99.6,
+    102, 102, 102, 100.9, 100.5, 100, 99.5, 99,
+  ]);
+}
+
+/**
+ * سه سقفِ ۱۰۰٫۴/۱۱۰٫۴/۱۰۱٫۴ و سه کفِ ۹۱٫۶/۸۷٫۶/۸۹٫۶: گسترهٔ سه‌گانهٔ سقف‌ها
+ * از threePeaksToleranceAtr·ATR بزرگ‌تر است، پس هیچ‌کدام از دو گونهٔ سه‌قله
+ * (که هر دو فقط از سقف‌ها ساخته می‌شوند، R-PA-13) منتشر نمی‌شود.
  */
 function spreadPeaks(): EngineCandle[] {
   return path(
     [[0, 96], [10, 100], [30, 92], [50, 110], [70, 88], [90, 101], [110, 90], [119, 95]],
+    119,
+  );
+}
+
+/**
+ * سه سقفِ نزولیِ ۱۰۰٫۷/۱۰۰٫۵/۱۰۰٫۴ با کف‌های ۹۲٫۶ و ۹۰٫۶: گسترهٔ ۰٫۳ ≤
+ * تلورانس (~۰٫۴۵) و سقف سوم پایین‌تر از سقف اول، پس سه‌قلهٔ نزولی
+ * (ادامه‌دهنده) ساخته می‌شود؛ اما همان پنج پیوت سه‌قلوی هم‌سطحِ رده یک را هم
+ * می‌سازد (تلورانس یکسان) و R-PAT-6 آن را ترجیح می‌دهد.
+ */
+function descendingPeaks(): EngineCandle[] {
+  return path(
+    [[0, 96], [10, 100.3], [30, 92], [50, 100.1], [70, 90], [90, 100], [110, 92], [119, 97]],
     119,
   );
 }
@@ -207,14 +306,53 @@ describe('pattern accuracy', () => {
     for (const p of patterns) expect(p.tier, p.id).toBe(PATTERN_TIER[p.kind]);
   });
 
-  it('never changes an event when later bars are removed', () => {
-    const full = detectAllPatterns(series(300), PATTERN_CONFIG)
-      .filter((p) => p.anchor.index < 250);
-    const cut = detectAllPatterns(series(250), PATTERN_CONFIG);
-    for (const past of full) {
-      const same = cut.find((p) => p.id === past.id);
-      expect(same?.status, past.id).toBe(past.status);
+  /**
+   * R-PA-14: هر رویدادی که لنگرش دست‌کم `pivRight` کندل پیش از برش است باید در
+   * سریِ بریده دقیقاً همان ساختار را داشته باشد. چهار برش، همهٔ رویدادهای
+   * واجدشرط (نه فقط یکی) و شکل/مرز/نقطه‌ها مقایسه می‌شوند تا آزمون غیرتهی و
+   * واقعاً حساس باشد.
+   * وضعیت فقط وقتی مقایسه می‌شود که پیش از برش تعیین شده باشد (`confirmed` با
+   * `breakoutIndex < cut`)؛ وضعیتِ `forming`/`invalidated` بنا به تعریف به
+   * کندل‌های پس از لنگر — و نه پس از برش — وابسته است و با برش تغییر می‌کند.
+   */
+  it('never changes a recorded event when later bars are removed', () => {
+    const full = detectAllPatterns(lookAheadSeries(300), PATTERN_CONFIG);
+    for (const cut of CUTS) {
+      const past = full.filter((p) => p.anchor.index <= cut - PATTERN_CONFIG.pivRight);
+      expect(past.length, `cut ${cut}`).toBeGreaterThan(0);
+      const truncated = detectAllPatterns(lookAheadSeries(cut), PATTERN_CONFIG);
+      expect(truncated.length, `cut ${cut}`).toBeGreaterThan(0);
+      for (const p of past) {
+        const same = truncated.find((x) => x.id === p.id);
+        expect(same, `${p.id} at cut ${cut}`).toBeDefined();
+        expect(same!.kind, p.id).toBe(p.kind);
+        expect(same!.family, p.id).toBe(p.family);
+        expect(same!.direction, p.id).toBe(p.direction);
+        expect(same!.anchor, p.id).toEqual(p.anchor);
+        expect(same!.points.map((x) => [x.index, x.price]), p.id)
+          .toEqual(p.points.map((x) => [x.index, x.price]));
+        expect(same!.upper, p.id).toEqual(p.upper);
+        expect(same!.lower, p.id).toEqual(p.lower);
+        if (p.status === 'confirmed' && p.breakoutIndex !== undefined && p.breakoutIndex < cut) {
+          expect(same!.status, p.id).toBe('confirmed');
+          expect(same!.breakoutIndex, p.id).toBe(p.breakoutIndex);
+        }
+      }
     }
+  });
+
+  /**
+   * R-PA-14: پیوتِ ۹۷ سه کندل پیش از برشِ ۱۰۰ است و با دادهٔ کامل شناسایی
+   * می‌شود، اما در سریِ ۱۰۰ کندلی نمی‌تواند پیوت باشد (هر پیوت `pivRight = 4`
+   * کندلِ سمت راست می‌خواهد). اگر تشخیص‌دهنده کندلِ بعد از برش را بخواند، این
+   * رویداد در سریِ بریده هم ظاهر می‌شود و آزمون قرمز می‌شود.
+   */
+  it('never reaches a pivot that a truncated history cannot confirm', () => {
+    const full = detectAllPatterns(lookAheadSeries(300), PATTERN_CONFIG);
+    const nearCut = full.find((p) => p.kind === 'BROADENING_TOP' && p.anchor.index === NEAR_CUT_PIVOT);
+    expect(nearCut, `BROADENING_TOP@${NEAR_CUT_PIVOT} in the full series`).toBeDefined();
+    const truncated = detectAllPatterns(lookAheadSeries(100), PATTERN_CONFIG);
+    expect(truncated.some((p) => p.anchor.index >= NEAR_CUT_PIVOT)).toBe(false);
   });
 
   const negatives: Array<[PatternKind, string, EngineCandle[]]> = [
@@ -224,11 +362,16 @@ describe('pattern accuracy', () => {
     ['ROUNDING_TOP', 'the V leaves fewer than rounding.curvatureMin closes beyond the rim', vTop()],
     ['DIAMOND_TOP', 'the five-pivot boundaries widen instead of converging', wideningFive()],
     ['DIAMOND_BOTTOM', 'the five-pivot boundaries widen instead of converging', wideningFive()],
+    ['DIAMOND_TOP', 'the width shrinks by less than diamondConvergeMin', nearMissDiamond()],
+    ['DIAMOND_BOTTOM', 'the width shrinks by less than diamondConvergeMin', nearMissDiamondMirror()],
     ['BROADENING_TOP', 'the five-pivot boundaries converge instead of widening', convergingFive()],
     ['BROADENING_BOTTOM', 'the five-pivot boundaries converge instead of widening', convergingFive()],
+    ['BROADENING_TOP', 'the width grows by less than broadeningMin', nearMissBroadening()],
+    ['BROADENING_BOTTOM', 'the width grows by less than broadeningMin', nearMissBroadeningMirror()],
     ['ISLAND_REVERSAL', 'only the entry gap reaches islandGapAtr, not the exit gap', oneSidedGap()],
-    ['THREE_RISING_PEAKS', 'the trio spread exceeds threePeaksToleranceAtr', spreadPeaks()],
-    ['THREE_FALLING_PEAKS', 'the trio spread exceeds threePeaksToleranceAtr', spreadPeaks()],
+    ['ISLAND_REVERSAL', 'the exit gap stays below islandGapAtr', nearMissExitGap()],
+    ['THREE_RISING_PEAKS', 'the high trio spread exceeds threePeaksToleranceAtr', spreadPeaks()],
+    ['THREE_FALLING_PEAKS', 'the high trio spread exceeds threePeaksToleranceAtr', spreadPeaks()],
   ];
 
   it.each(negatives)('rejects %s when %s', (kind, rule, candles) => {
@@ -237,10 +380,11 @@ describe('pattern accuracy', () => {
   });
 
   /**
-   * `THREE_FALLING_PEAKS` عمداً در جدول نیست: هر سه کفِ هم‌سطح که تلورانس
-   * سه‌قلو را پاس می‌کند، همان پنجرهٔ TRIPLE_BOTTOM را هم می‌سازد و قاعدهٔ
-   * اولویت بازگشتی (R-PAT-6) آن را حذف می‌کند؛ دتکتور مستقل در tier2.test.ts
-   * با ردهٔ ۲ پوشش داده شده است.
+   * `THREE_FALLING_PEAKS` عمداً در این جدول نیست: هر سه سقفِ نزولیِ هم‌سطح که
+   * تلورانس سه‌قله را پاس می‌کند، همان پنجرهٔ TRIPLE_TOP را هم می‌سازد (هر دو
+   * تلورانس ۰٫۵×ATR) و قاعدهٔ اولویت بازگشتی (R-PAT-6) آن را حذف می‌کند؛
+   * دتکتور مستقل در tier2.test.ts با ردهٔ ۲ پوشش داده شده و آزمونِ بعدی همین
+   * هم‌پوشانی را تثبیت می‌کند.
    */
   const registered: Array<[PatternKind, 1 | 2, EngineCandle[]]> = [
     ['CUP_HANDLE', 1, alignedRimCup()],
@@ -260,6 +404,60 @@ describe('pattern accuracy', () => {
     expect(found, kind).toBeDefined();
     expect(found!.tier).toBe(tier);
     expect(found!.tier).toBe(PATTERN_TIER[kind]);
+  });
+
+  /**
+   * سه‌قلهٔ نزولی در سطح دتکتور واقعاً ساخته می‌شود (ردهٔ ۲، جهت نزولی، خانوادهٔ
+   * ادامه‌دهنده)؛ رجیستری اما نمونهٔ هم‌لنگرِ رده‌یک TRIPLE_TOP را ترجیح می‌دهد.
+   * اگر در آینده R-PAT-6 برای این هم‌پوشانی تغییر کند، این آزمون قرمز می‌شود و
+   * ردیفِ ثبتِ `THREE_FALLING_PEAKS` باید به جدول بالا برگردد.
+   */
+  it('keeps the tier-1 triple when a THREE_FALLING_PEAKS shares its anchor', () => {
+    const candles = descendingPeaks();
+    const atr = calculateAtr(candles, PATTERN_CONFIG.atrPeriod).at(-1) ?? 0;
+    const detector = detectTier2(candles, atr, PATTERN_CONFIG).find((p) => p.kind === 'THREE_FALLING_PEAKS');
+    expect(detector?.family).toBe('continuation');
+    expect(detector?.direction).toBe('bearish');
+    const patterns = detectAllPatterns(candles, PATTERN_CONFIG);
+    expect(patterns.some((p) => p.kind === 'THREE_FALLING_PEAKS')).toBe(false);
+    const triple = patterns.find((p) => p.kind === 'TRIPLE_TOP');
+    expect(triple, 'TRIPLE_TOP at the same anchor').toBeDefined();
+    expect(Math.abs(triple!.anchor.index - detector!.anchor.index))
+      .toBeLessThanOrEqual(PATTERN_CONFIG.overlapWindowBars);
+  });
+
+  /**
+   * R-PA-14 (کنترلِ مثبت): هر ردیفِ منفیِ آستانه‌ای باید با شل‌کردن همان کلید و
+   * روی همان سری منتشر شود؛ وگرنه آزمون فقط یک نابرابری را ثابت می‌کند، نه
+   * اینکه «همان کلید» دروازه است.
+   */
+  it('emits the diamond family on the near-miss series once diamondConvergeMin is relaxed', () => {
+    const relaxed = relaxedTier2({ diamondConvergeMin: 0.1 });
+    for (const [kind, candles] of [
+      ['DIAMOND_TOP', nearMissDiamond()],
+      ['DIAMOND_BOTTOM', nearMissDiamondMirror()],
+    ] as Array<[PatternKind, EngineCandle[]]>) {
+      expect(detectAllPatterns(candles, PATTERN_CONFIG).some((p) => p.kind === kind), kind).toBe(false);
+      expect(detectAllPatterns(candles, relaxed).some((p) => p.kind === kind), kind).toBe(true);
+    }
+  });
+
+  it('emits the broadening family on the near-miss series once broadeningMin is relaxed', () => {
+    const relaxed = relaxedTier2({ broadeningMin: 0.05 });
+    for (const [kind, candles] of [
+      ['BROADENING_TOP', nearMissBroadening()],
+      ['BROADENING_BOTTOM', nearMissBroadeningMirror()],
+    ] as Array<[PatternKind, EngineCandle[]]>) {
+      expect(detectAllPatterns(candles, PATTERN_CONFIG).some((p) => p.kind === kind), kind).toBe(false);
+      expect(detectAllPatterns(candles, relaxed).some((p) => p.kind === kind), kind).toBe(true);
+    }
+  });
+
+  it('emits ISLAND_REVERSAL on the near-miss series once islandGapAtr is relaxed', () => {
+    const candles = nearMissExitGap();
+    const relaxed = relaxedTier2({ islandGapAtr: 0.25 });
+    expect(detectAllPatterns(candles, PATTERN_CONFIG).some((p) => p.kind === 'ISLAND_REVERSAL')).toBe(false);
+    expect(detectAllPatterns(candles, relaxed).some((p) => p.kind === 'ISLAND_REVERSAL')).toBe(true);
   });
 
   it('keeps the reversal when a continuation overlaps it', () => {

@@ -122,10 +122,14 @@ function island(candles: readonly EngineCandle[], atr: number, config: PatternCo
 }
 
 /**
- * سه قلهٔ هم‌سطح: سه سقف یا سه کفِ پیاپی با اختلافِ max−min ≤ تلورانس و
- * حداقل دو پیوتِ میانیِ ناهمسان. خانواده دقیقاً مطابقِ نقشه است: سقف →
- * بازگشتی، کف → ادامه‌دهنده؛ تعریفِ کتابِ مرجع AMBIGUOUS است و صعودی‌بودن
- * فقط ۱۰ امتیاز کیفیت می‌دهد، نه دروازه.
+ * سه قلهٔ هم‌سطح روی سقف‌ها (R-PA-13): سه سقفِ پیاپی با گسترهٔ max−min ≤
+ * تلورانس و حداقل دو کفِ میانی. هر دو گونه از سقف‌ها ساخته می‌شوند و فقط
+ * روندِ سه‌گانه تفکیک می‌کند:
+ *   THREE_RISING_PEAKS  = سقف سوم بالاتر از سقف اول → بازگشتیِ نزولی در سقف؛
+ *   THREE_FALLING_PEAKS = سقف سوم پایین‌تر از سقف اول → ادامه‌دهندهٔ نزولی.
+ * کف‌ها گونه‌ای نمی‌سازند؛ نگاشتِ قبلی (کف → THREE_FALLING_PEAKS) با
+ * TRIPLE_BOTTOM هم‌پوشان می‌شد و در فیلترِ R-PAT-6 همیشه حذف می‌شد.
+ * سقف‌های هم‌ارتفاع «صعودی» شمرده می‌شوند تا تفکیک یکتا و بدونِ آستانهٔ نو بماند.
  */
 function threePeaks(
   pivots: PivotPoint[],
@@ -135,39 +139,36 @@ function threePeaks(
 ): ChartPattern[] {
   const out: ChartPattern[] = [];
   const tol = config.tier2.threePeaksToleranceAtr * atr;
-  for (const kind of ['high', 'low'] as const) {
-    const peaks = pivots.filter((x) => x.kind === kind);
-    for (let i = 0; i + 2 < peaks.length; i++) {
-      const trio = peaks.slice(i, i + 3);
-      // R-PA-11: همان سقفِ پنجرهٔ خانواده و پیش‌فیلترِ تازگیِ detectReversal؛
-      // سه‌گانهٔ کش‌آمده یا کهنه نباید منتشر شود.
-      if (trio[2]!.index - trio[0]!.index > config.hs.maxBars) continue;
-      if (trio[2]!.index < candles.length - config.hs.maxBars) continue;
-      const spread = Math.max(...trio.map((x) => x.price)) - Math.min(...trio.map((x) => x.price));
-      if (spread > tol) continue;
-      const rising = trio[2]!.price > trio[0]!.price;
-      const isTop = kind === 'high';
-      const level = isTop ? Math.max(...trio.map((x) => x.price)) : Math.min(...trio.map((x) => x.price));
-      const tween = pivots.filter((x) => x.index > trio[0]!.index && x.index < trio[2]!.index && x.kind !== kind);
-      if (tween.length < 2) continue;
-      const neck = lineP(p(tween[0]!, candles), p(tween[tween.length - 1]!, candles));
-      const height = Math.abs(level - tween[0]!.price);
-      const emitted = emitPattern({
-        kind: isTop ? 'THREE_RISING_PEAKS' : 'THREE_FALLING_PEAKS',
-        direction: isTop ? 'bearish' : 'bullish',
-        family: isTop ? 'reversal' : 'continuation',
-        points: trio.map((x) => p(x, candles)),
-        upper: isTop ? lineP(p(trio[0]!, candles), p(trio[2]!, candles)) : neck,
-        lower: isTop ? neck : lineP(p(trio[0]!, candles), p(trio[2]!, candles)),
-        target: isTop ? neck.to.price - height : neck.to.price + height,
-        stopLoss: isTop ? level + atr : level - atr,
-        quality: clampQ(55 + 30 * Math.min(1, height / (2 * atr)) + (rising ? 10 : 0)),
-        tier: 2,
-        maxBars: config.hs.maxBars,
-        invalidationBuffer: config.invalidationBufferAtr * atr,
-      }, candles, config);
-      if (emitted) out.push(emitted);
-    }
+  const peaks = pivots.filter((x) => x.kind === 'high');
+  for (let i = 0; i + 2 < peaks.length; i++) {
+    const trio = peaks.slice(i, i + 3);
+    // R-PA-11: همان سقفِ پنجرهٔ خانواده و پیش‌فیلترِ تازگیِ detectReversal؛
+    // سه‌گانهٔ کش‌آمده یا کهنه نباید منتشر شود.
+    if (trio[2]!.index - trio[0]!.index > config.hs.maxBars) continue;
+    if (trio[2]!.index < candles.length - config.hs.maxBars) continue;
+    const spread = Math.max(...trio.map((x) => x.price)) - Math.min(...trio.map((x) => x.price));
+    if (spread > tol) continue;
+    const falling = trio[2]!.price < trio[0]!.price;
+    const level = Math.max(...trio.map((x) => x.price));
+    const tween = pivots.filter((x) => x.index > trio[0]!.index && x.index < trio[2]!.index && x.kind === 'low');
+    if (tween.length < 2) continue;
+    const neck = lineP(p(tween[0]!, candles), p(tween[tween.length - 1]!, candles));
+    const height = Math.abs(level - tween[0]!.price);
+    const emitted = emitPattern({
+      kind: falling ? 'THREE_FALLING_PEAKS' : 'THREE_RISING_PEAKS',
+      direction: 'bearish',
+      family: falling ? 'continuation' : 'reversal',
+      points: trio.map((x) => p(x, candles)),
+      upper: lineP(p(trio[0]!, candles), p(trio[2]!, candles)),
+      lower: neck,
+      target: neck.to.price - height,
+      stopLoss: level + atr,
+      quality: clampQ(55 + 30 * Math.min(1, height / (2 * atr)) + (falling ? 0 : 10)),
+      tier: 2,
+      maxBars: config.hs.maxBars,
+      invalidationBuffer: config.invalidationBufferAtr * atr,
+    }, candles, config);
+    if (emitted) out.push(emitted);
   }
   return out;
 }

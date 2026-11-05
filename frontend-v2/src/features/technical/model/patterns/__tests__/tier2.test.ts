@@ -144,6 +144,21 @@ const RISING_SPREAD_CLOSES = [
 ];
 
 /**
+ * سه سقفِ نزولیِ ۱۰۱٫۰ (۴)، ۱۰۰٫۷ (۱۰)، ۱۰۰٫۴ (۱۶) با کف‌های ۹۶٫۶ (۷) و
+ * ۹۷٫۶ (۱۳)؛ گسترهٔ max−min = ۰٫۶ ≤ threePeaksToleranceAtr·ATR = ۱. سقف سوم
+ * پایین‌تر از سقف اول است و سری پس از ۱۶ زیر خط گردن می‌رود، پس الگو تأیید
+ * می‌شود. (R-PA-13: هر دو گونهٔ سه‌قله فقط از سقف‌ها ساخته می‌شوند.)
+ */
+const FALLING_CLOSES = [
+  96, 97.5, 99, 100.2, 100.6, // 0..4 → سقف ۱۰۰٫۷
+  99.6, 98.2, 97, // 5..7 → کف ۹۶٫۶
+  97.8, 99.4, 100.3, // 8..10 → سقف ۱۰۰٫۵
+  99.6, 98.8, 98, // 11..13 → کف ۹۷٫۶
+  98.8, 99.6, 100, // 14..16 → سقف ۱۰۰٫۴
+  99, 97.5, 96, 95, 94.5, 94, // 17..22 → شکستِ خط گردن
+];
+
+/**
  * الماسِ کف: آینهٔ DIAMOND_CLOSES با دُمِ داخلِ شکل (بدون شکست). پیوت‌ها
  * کف ۱۰۰ (۴) → سقف ۱۰۸ (۱۰) → کف ۹۲ (۱۶) → سقف ۱۰۴ (۲۲) → کف ۹۷ (۲۸)؛
  * قیمت پس از لنگر زیرِ خطِ سقف‌ها (۱۰۱٫۶۷ در ۲۹ تا ۱۰۰ در ۳۴) می‌ماند.
@@ -361,16 +376,29 @@ describe('detectTier2', () => {
     expect(has(detectTier2(seriesFrom(RISING_SPREAD_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_RISING_PEAKS')).toBe(false);
   });
 
-  it('detects THREE_FALLING_PEAKS at a bottom as a continuation within tolerance', () => {
-    const result = detectTier2(mirrored(RISING_CLOSES), ATR, FIXTURE_CONFIG);
+  it('detects THREE_FALLING_PEAKS for three descending highs as a bearish continuation', () => {
+    const result = detectTier2(seriesFrom(FALLING_CLOSES), ATR, FIXTURE_CONFIG);
     const peaks = result.find((p) => p.kind === 'THREE_FALLING_PEAKS');
     expect(peaks).toBeDefined();
-    expect(peaks?.direction).toBe('bullish');
+    expect(peaks?.direction).toBe('bearish');
     expect(peaks?.family).toBe('continuation');
     expect(peaks?.tier).toBe(2);
     expect(peaks?.points).toHaveLength(3);
+    expect(peaks?.status).toBe('confirmed');
+    // مرزِ بالا خطِ سقف‌ها (۱۰۱٫۰ → ۱۰۰٫۴) و مرزِ پایین خطِ گردنِ کف‌هاست.
+    expect(peaks?.upper.from.price).toBeCloseTo(101, 6);
+    expect(peaks?.upper.to.price).toBeCloseTo(100.4, 6);
     expect(result.every((p) => p.tier === 2)).toBe(true);
-    expect(has(detectTier2(mirrored(RISING_SPREAD_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_FALLING_PEAKS')).toBe(false);
+    expect(has(detectTier2(seriesFrom(RISING_SPREAD_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_FALLING_PEAKS'))
+      .toBe(false);
+  });
+
+  it('builds three-peaks only from highs: level lows no longer emit a kind (R-PA-13)', () => {
+    // آینهٔ RISING_CLOSES سه کفِ هم‌سطحِ ۱۰۰/۹۹٫۷/۹۹٫۴ دارد (نگاشتِ قدیمی این‌ها را
+    // THREE_FALLING_PEAKS می‌کرد و با TRIPLE_BOTTOM هم‌پوشان می‌شد) و فقط دو سقف.
+    const result = detectTier2(mirrored(RISING_CLOSES), ATR, FIXTURE_CONFIG);
+    expect(has(result, 'THREE_FALLING_PEAKS')).toBe(false);
+    expect(has(result, 'THREE_RISING_PEAKS')).toBe(false);
   });
 
   it('rejects a three-peaks trio whose span exceeds hs.maxBars', () => {
