@@ -13,6 +13,8 @@ describe('PATTERN_CONFIG', () => {
       invalidationBufferAtr: 0.5,
       outcomeHorizon: 10,
       returnHorizons: [1, 3, 5],
+      returnsMinSamples: 5,
+      neutralMinTargetAtr: 0.5,
       formationMinResolved: 8,
       expiryGraceBars: 1,
       expiryMinPoints: 5,

@@ -23,7 +23,7 @@ export function outcomeOf(
 
   if (pattern.direction === 'neutral') {
     const height = heightOf(pattern);
-    const target = height / 2;
+    const target = Math.max(height / 2, config.neutralMinTargetAtr * atr);
     let bias: 'up' | 'down' | null = null;
     let entry = 0;
     for (let i = start; i < end; i++) {
@@ -57,7 +57,7 @@ export function outcomeOf(
   return 'unresolved';
 }
 
-/** میانگین بازدهِ ۱/۳/۵ کندلِ نمونه‌های حل‌شده؛ زیرِ ۵ نمونه null. */
+/** میانگین بازدهِ ۱/۳/۵ کندلِ نمونه‌های حل‌شده؛ زیرِ returnsMinSamples نمونه null. */
 export function meanReturns(
   samples: readonly ChartPattern[],
   candles: readonly EngineCandle[],
@@ -68,7 +68,8 @@ export function meanReturns(
   for (const horizon of config.returnHorizons) {
     const values: number[] = [];
     for (const sample of directional) {
-      const triggerIndex = sample.breakoutIndex ?? sample.anchor.index;
+      const triggerIndex = sample.breakoutIndex;
+      if (triggerIndex === undefined) continue;
       const end = triggerIndex + horizon;
       if (end >= candles.length) continue;
       const trigger = sample.direction === 'bullish'
@@ -78,7 +79,9 @@ export function meanReturns(
       const close = candles[end].close;
       values.push(((sample.direction === 'bullish' ? close - trigger : trigger - close) / trigger) * 100);
     }
-    const mean = values.length >= 5 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    const mean = values.length >= config.returnsMinSamples
+      ? values.reduce((a, b) => a + b, 0) / values.length
+      : null;
     if (horizon === 1) result.h1 = mean;
     if (horizon === 3) result.h3 = mean;
     if (horizon === 5) result.h5 = mean;

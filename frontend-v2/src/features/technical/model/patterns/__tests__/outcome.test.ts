@@ -42,6 +42,24 @@ describe('outcome', () => {
     expect(outcomeOf(neutral(), bars([100, 104, 105, 106, 106.5, 107.5, 103]), 1, PATTERN_CONFIG)).toBe('failure');
   });
 
+  it('floors the neutral target at half an ATR when the pattern has converged', () => {
+    // مرزها روی ۱۰۵ به هم رسیده‌اند (ارتفاع ≈ ۰)؛ کفِ هدف ۰.۵×atr = ۰.۵ است.
+    const converged = (): ChartPattern => pattern({
+      id: 'TRIANGLE_SYM:4:1-2-3-4', kind: 'TRIANGLE_SYM', direction: 'neutral', family: 'continuation',
+      upper: { from: point(4, 105), to: point(4, 105) },
+      lower: { from: point(4, 105), to: point(4, 105) },
+    });
+    // شکست در ۱۰۵.۳ (تنها ۰.۳ بالاتر از ورود) پیروزی نیست.
+    expect(outcomeOf(converged(), bars([100, 104, 105, 105, 105, 105.3, 105.4]), 1, PATTERN_CONFIG)).toBe('unresolved');
+    // ۱۰۵.۶ یعنی ۰.۶ بالاتر از ورود، بیش از ۰.۵×atr → پیروزی.
+    expect(outcomeOf(converged(), bars([100, 104, 105, 105, 105, 105.3, 105.6]), 1, PATTERN_CONFIG)).toBe('success');
+  });
+
+  it('takes the downside for a neutral first break and needs 0.5 ATR of follow-through', () => {
+    // atr = ۴ → هدف = max(ارتفاع/۲ = ۱، ۰.۵×۴ = ۲)؛ شکست زیر ۱۰۴ و بستهٔ ۱۰۲ (۲ پایین‌تر) پیروزی است.
+    expect(outcomeOf(neutral(), bars([100, 104, 105, 106, 104, 103.5, 102]), 4, PATTERN_CONFIG)).toBe('success');
+  });
+
   it('reports mean returns as null with fewer than five samples', () => {
     const candles = bars([100, 104, 105, 106, 107, 108, 109, 110, 111, 112]);
     const sample = (anchorIndex: number): ChartPattern => pattern({ anchor: point(anchorIndex, 105), breakoutIndex: anchorIndex });
@@ -50,5 +68,23 @@ describe('outcome', () => {
 
     expect(meanReturns(five, candles, PATTERN_CONFIG).h1).not.toBeNull();
     expect(meanReturns(four, candles, PATTERN_CONFIG)).toEqual({ h1: null, h3: null, h5: null });
+  });
+
+  it('skips samples without a breakout index instead of fabricating an entry', () => {
+    // پنج نمونهٔ تأییدشدهٔ بدون breakoutIndex؛ اگر ورود از لنگر ساخته شود اینجا عدد تولید می‌شد.
+    const candles = bars([100, 104, 105, 106, 107, 108, 109, 110, 111, 112]);
+    const samples = [0, 1, 2, 3, 4].map(() => pattern({ status: 'confirmed' }));
+
+    expect(meanReturns(samples, candles, PATTERN_CONFIG)).toEqual({ h1: null, h3: null, h5: null });
+  });
+
+  it('gives bearish samples a positive return when price falls after the break', () => {
+    // شکست نزولی در کندل ۴ (مرز پایین ۱۰۴) و بستهٔ ۱۰۲ در کندل ۵ → بازده مثبت.
+    const candles = bars([110, 108, 106, 105, 104, 102, 101, 100, 99, 98]);
+    const samples = [0, 1, 2, 3, 4].map(() => pattern({ direction: 'bearish', breakoutIndex: 4 }));
+    const h1 = meanReturns(samples, candles, PATTERN_CONFIG).h1 ?? Number.NaN;
+
+    expect(h1).toBeGreaterThan(0);
+    expect(h1).toBeCloseTo(((104 - 102) / 104) * 100);
   });
 });
