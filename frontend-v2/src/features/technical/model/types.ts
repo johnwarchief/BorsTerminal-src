@@ -161,6 +161,12 @@ export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
  */
 export type WorkspacePanel = 'events' | 'top50' | 'indicators' | 'edge';
 
+/**
+ * بخش‌های نوار فعالیت طبق §3 سند طراحی: chart | scanner | indicators | settings.
+ * این‌ها با تب‌های فید (WorkspacePanel) یکی نیستند؛ چارت/تنظیمات اصلاً فید نیستند.
+ */
+export type WorkspaceSection = 'chart' | 'scanner' | 'indicators' | 'settings';
+
 export type FormationConfidence = 'none' | 'low' | 'medium' | 'high';
 
 export interface FormationEstimate {
@@ -269,8 +275,10 @@ export interface TechnicalState {
   isLeftDrawerOpen: boolean;
   leftDrawerWidth: number;
   activeDrawerTab: DrawerTab;
-  /** پنلِ فعالِ فید/نوار فعالیت در پوستهٔ تازه (B1). */
+  /** پنلِ فعالِ فید در پوستهٔ تازه (B1)؛ محتوای میزبان از همین مقدار پیروی می‌کند (R-PB-5). */
   activePanel: WorkspacePanel;
+  /** بخشِ فعالِ نوار فعالیت طبق §3 (R-PB-4). */
+  activeSection: WorkspaceSection;
   detectedDoubleTapPatterns: DoubleTapPattern[];
   detectedPullbackSignals: PullbackSignal[];
   detectedCHoCHSignals: CHoCHSignal[];
@@ -317,6 +325,7 @@ export interface TechnicalState {
    */
   toggleFeed: () => void;
   setActivePanel: (panel: WorkspacePanel) => void;
+  setActiveSection: (section: WorkspaceSection) => void;
   setLeftDrawerWidth: (width: number) => void;
   setActiveDrawerTab: (tab: DrawerTab) => void;
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) => void;

@@ -1,36 +1,41 @@
 /**
  * frontend-v2/src/features/technical/ui/workspace/ActivityBar.tsx
  *
- * نوار فعالیت ۴۰px (B1) — مطابق §3: آیکن‌های SVG از ستِ موجود `@app/shell/icons`.
- * هر دکمه پنلِ فید را انتخاب می‌کند (WorkspacePanel) و فید را باز می‌کند؛
- * کلیک دوباره روی پنلِ فعال، فید را جمع می‌کند. تبِ کشوی موجود هم هم‌گام
- * می‌شود تا محتوای امروزِ کشو تا تسک B3 در دسترس بماند.
+ * نوار فعالیت ۴۰px (B1، اصلاح R-PB-4) — دقیقاً بخش‌های §3 سند طراحی:
+ *   chart | scanner | indicators | settings
+ * آیکن‌های SVG از ستِ موجود `@app/shell/icons`؛ هیچ تبِ فیدی اینجا نیست
+ * (تب‌های فید در EventFeed زندگی می‌کنند).
+ *
+ * رفتار بخش‌ها:
+ * - chart: فید جمع می‌شود و تمرکز به چارت برمی‌گردد.
+ * - scanner: فید روی تبِ رویدادها باز می‌شود.
+ * - indicators: فید روی تبِ اندیکاتورها باز می‌شود.
+ * - settings: محتوای تنظیماتِ موجود در ریل بازرس نمایش داده می‌شود.
  */
 
 import React from 'react';
 import { Icon } from '@app/shell/icons';
 import { useTechnicalStore } from '../../model/technicalStore';
-import type { WorkspacePanel } from '../../model/types';
+import type { WorkspacePanel, WorkspaceSection } from '../../model/types';
+import { DRAWER_TAB_BY_PANEL } from './panelMapping';
 
 interface ActivityItem {
-  id: WorkspacePanel;
+  id: WorkspaceSection;
   labelFa: string;
   icon: string;
 }
 
 const ACTIVITY_ITEMS: ActivityItem[] = [
-  { id: 'events', labelFa: 'رویدادها', icon: 'pulse' },
-  { id: 'top50', labelFa: '۵۰ نماد برتر', icon: 'grid' },
-  { id: 'indicators', labelFa: 'اندیکاتورها و کانال', icon: 'chart' },
-  { id: 'edge', labelFa: 'لبه آماری', icon: 'bolt' },
+  { id: 'chart', labelFa: 'چارت', icon: 'chart' },
+  { id: 'scanner', labelFa: 'اسکنر', icon: 'pulse' },
+  { id: 'indicators', labelFa: 'اندیکاتورها', icon: 'compass' },
+  { id: 'settings', labelFa: 'تنظیمات', icon: 'sliders' },
 ];
 
-/** نگاشتِ پنلِ تازه به تبِ کشوی موجود؛ `events` همان اسکنر است. */
-const LEGACY_DRAWER_TAB_BY_PANEL: Record<WorkspacePanel, 'top50' | 'indicators' | 'scanner' | 'edge'> = {
-  events: 'scanner',
-  top50: 'top50',
+/** بخش‌هایی که فید را روی یک پنل مشخص باز می‌کنند. */
+const FEED_PANEL_BY_SECTION: Partial<Record<WorkspaceSection, WorkspacePanel>> = {
+  scanner: 'events',
   indicators: 'indicators',
-  edge: 'edge',
 };
 
 export interface ActivityBarProps {
@@ -38,23 +43,28 @@ export interface ActivityBarProps {
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({ className = '' }) => {
-  const activePanel = useTechnicalStore((s) => s.activePanel);
+  const activeSection = useTechnicalStore((s) => s.activeSection);
+  const setActiveSection = useTechnicalStore((s) => s.setActiveSection);
   const setActivePanel = useTechnicalStore((s) => s.setActivePanel);
+  const setActiveDrawerTab = useTechnicalStore((s) => s.setActiveDrawerTab);
   const feedOpen = useTechnicalStore((s) => s.isLeftDrawerOpen);
   const toggleFeed = useTechnicalStore((s) => s.toggleFeed);
-  const setActiveDrawerTab = useTechnicalStore((s) => s.setActiveDrawerTab);
 
-  const handleSelect = (panel: WorkspacePanel) => {
-    // کلیک دوباره روی پنلِ فعال، فید را جمع می‌کند.
-    if (feedOpen && activePanel === panel) {
-      toggleFeed();
+  const handleSelect = (section: WorkspaceSection) => {
+    setActiveSection(section);
+
+    const panel = FEED_PANEL_BY_SECTION[section];
+    if (panel) {
+      setActivePanel(panel);
+      setActiveDrawerTab(DRAWER_TAB_BY_PANEL[panel]);
+      if (!feedOpen) toggleFeed();
       return;
     }
-    setActivePanel(panel);
-    setActiveDrawerTab(LEGACY_DRAWER_TAB_BY_PANEL[panel]);
-    if (!feedOpen) {
+
+    if (section === 'chart' && feedOpen) {
       toggleFeed();
     }
+    // settings: فید دست‌نخورده می‌ماند؛ محتوای تنظیمات در InspectorRail می‌آید.
   };
 
   return (
@@ -62,19 +72,20 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({ className = '' }) => {
       data-testid="workspace-activity"
       aria-label="نوار فعالیت میزکار"
       style={{ gridArea: 'activity' }}
-      className={`flex flex-col items-center gap-1.5 py-2 bg-panel border-e border-line select-none ${className}`}
+      className={`flex flex-col items-center gap-2 py-2 bg-panel border-e border-line select-none ${className}`}
       dir="rtl"
     >
       {ACTIVITY_ITEMS.map((item) => {
-        const isActive = activePanel === item.id;
+        const isActive = activeSection === item.id;
         return (
           <button
             key={item.id}
             type="button"
-            data-testid={`activity-panel-${item.id}`}
+            data-testid={`activity-section-${item.id}`}
             title={item.labelFa}
             aria-label={item.labelFa}
-            aria-pressed={isActive}
+            // برای بخش فعال از aria-current استفاده می‌شود، نه aria-pressed.
+            aria-current={isActive ? 'true' : undefined}
             onClick={() => handleSelect(item.id)}
             className={`flex items-center justify-center w-8 h-8 rounded-[var(--radius-sm)] border transition-colors ${
               isActive

@@ -16,6 +16,7 @@ import type {
   RsiVariant,
   DrawerTab,
   WorkspacePanel,
+  WorkspaceSection,
   DoubleTapPattern,
   PullbackSignal,
   CHoCHSignal,
@@ -62,6 +63,7 @@ const INITIAL_STATE = {
   leftDrawerWidth: 460,
   activeDrawerTab: 'top50' as DrawerTab,
   activePanel: 'events' as WorkspacePanel,
+  activeSection: 'chart' as WorkspaceSection,
   detectedDoubleTapPatterns: [] as DoubleTapPattern[],
   detectedPullbackSignals: [] as PullbackSignal[],
   detectedCHoCHSignals: [] as CHoCHSignal[],
@@ -173,6 +175,8 @@ export const useTechnicalStore = create<TechnicalState>((set, get) => ({
   toggleFeed: () => get().toggleLeftDrawer(),
 
   setActivePanel: (panel: WorkspacePanel) => set({ activePanel: panel }),
+
+  setActiveSection: (section: WorkspaceSection) => set({ activeSection: section }),
 
   setLeftDrawerWidth: (width: number) =>
     set({ leftDrawerWidth: Math.min(Math.max(width, 360), 650) }),

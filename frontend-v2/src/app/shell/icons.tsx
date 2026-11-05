@@ -12,6 +12,7 @@ export const PATHS: Record<string, string> = {
   bolt: 'M13 2L4 14h7l-1 8 9-12h-7z',
   funnel: 'M3 5h18l-7 8v6l-4-2v-4z',
   menu: 'M4 7h16M4 12h16M4 17h16',
+  sliders: 'M4 6h8M16 6h4M14 4v4M4 12h4M12 12h8M10 10v4M4 18h10M18 18h2M16 16v4',
 };
 
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {

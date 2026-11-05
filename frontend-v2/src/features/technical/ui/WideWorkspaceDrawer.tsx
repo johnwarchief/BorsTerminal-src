@@ -30,6 +30,15 @@ export interface WideWorkspaceDrawerProps {
   isOpen: boolean;
   onToggleOpen: () => void;
   className?: string;
+  /**
+   * حالت کنترل‌شده (فید میزکار، R-PB-5): تب فعال از بیرون می‌آید تا برچسب فید و
+   * محتوای میزبان هرگز از هم جدا نشوند. نبودِ این prop یعنی خواندن از استور.
+   */
+  activeTab?: DrawerTab;
+  /** گزارش تغییر تب در حالت کنترل‌شده؛ بدون آن، تب‌ها به استور می‌نویسند. */
+  onTabChange?: (tab: DrawerTab) => void;
+  /** پنهان‌کردن نوار تب داخلی وقتی میزبان (فید) نوار تب خودش را دارد. */
+  hideTabs?: boolean;
 }
 
 const FALLBACK_TOP_SYMBOLS: Array<Partial<MarketRow>> = [
@@ -254,9 +263,15 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
   isOpen,
   onToggleOpen,
   className = '',
+  activeTab: controlledTab,
+  onTabChange,
+  hideTabs = false,
 }) => {
-  const activeTab = useTechnicalStore((s) => s.activeDrawerTab);
-  const setActiveTab = useTechnicalStore((s) => s.setActiveDrawerTab);
+  const storeActiveTab = useTechnicalStore((s) => s.activeDrawerTab);
+  const storeSetActiveTab = useTechnicalStore((s) => s.setActiveDrawerTab);
+  // حالت کنترل‌شده: تبِ میزبان بر محتوای کشو حاکم است (R-PB-5).
+  const activeTab = controlledTab ?? storeActiveTab;
+  const setActiveTab = onTabChange ?? storeSetActiveTab;
   const drawerWidth = useTechnicalStore((s) => s.leftDrawerWidth);
   const setDrawerWidth = useTechnicalStore((s) => s.setLeftDrawerWidth);
   const setSelectedSymbol = useTechnicalStore((s) => s.setSelectedSymbol);
@@ -412,38 +427,40 @@ export const WideWorkspaceDrawer: React.FC<WideWorkspaceDrawerProps> = ({
           </div>
         </div>
 
-        {/* نوار تب‌های میزکار */}
-        <div className="flex items-center gap-1 px-2 py-1 overflow-x-auto" role="tablist">
-          {TABS.map((tab) => {
-            const isTabActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                data-testid={`drawer-tab-${tab.id}`}
-                aria-selected={isTabActive}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-sm)] text-[11px] font-medium transition-colors shrink-0 ${
-                  isTabActive
-                    ? 'bg-panel-3 text-accent border border-accent/30 font-semibold shadow-xs'
-                    : 'text-text-3 hover:text-text hover:bg-panel'
-                }`}
-              >
-                <span>{tab.labelFa}</span>
-                {tab.badge !== undefined && (
-                  <span
-                    className={`t-85 px-1 py-0.2 rounded-full font-mono ${
-                      isTabActive ? 'bg-accent/20 text-accent font-bold' : 'bg-panel-3 text-text-3'
-                    }`}
-                  >
-                    {toFaDigits(tab.badge)}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* نوار تب‌های میزکار؛ وقتی میزبان نوار تب خودش را دارد پنهان می‌شود. */}
+        {!hideTabs && (
+          <div className="flex items-center gap-1 px-2 py-1 overflow-x-auto" role="tablist">
+            {TABS.map((tab) => {
+              const isTabActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  data-testid={`drawer-tab-${tab.id}`}
+                  aria-selected={isTabActive}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-sm)] text-[11px] font-medium transition-colors shrink-0 ${
+                    isTabActive
+                      ? 'bg-panel-3 text-accent border border-accent/30 font-semibold shadow-xs'
+                      : 'text-text-3 hover:text-text hover:bg-panel'
+                  }`}
+                >
+                  <span>{tab.labelFa}</span>
+                  {tab.badge !== undefined && (
+                    <span
+                      className={`t-85 px-1 py-0.2 rounded-full font-mono ${
+                        isTabActive ? 'bg-accent/20 text-accent font-bold' : 'bg-panel-3 text-text-3'
+                      }`}
+                    >
+                      {toFaDigits(tab.badge)}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </header>
 
       {/* ناحیه محتوای تب‌ها */}
