@@ -24,7 +24,14 @@ export interface PatternConfig {
   triple: { levelToleranceAtr: number; maxBars: number };
   reversal: { minSpanBars: number };
   cup: { rimToleranceAtr: number; handleDepthPct: number; minDepthAtr: number; minBars: number; maxBars: number };
-  rounding: { curvatureMin: number; minDepthAtr: number; minBars: number; maxBars: number };
+  rounding: {
+    curvatureMin: number;
+    minDepthAtr: number;
+    minBulgeAtr: number;
+    endSkewPct: number;
+    minBars: number;
+    maxBars: number;
+  };
   tier2: { diamondConvergeMin: number; broadeningMin: number; islandGapAtr: number; threePeaksToleranceAtr: number };
 }
 
@@ -52,6 +59,6 @@ export const PATTERN_CONFIG: PatternConfig = {
   triple: { levelToleranceAtr: 0.50, maxBars: 120 },
   reversal: { minSpanBars: 6 },
   cup: { rimToleranceAtr: 0.5, handleDepthPct: 33, minDepthAtr: 2, minBars: 20, maxBars: 160 },
-  rounding: { curvatureMin: 0.55, minDepthAtr: 1, minBars: 30, maxBars: 200 },
+  rounding: { curvatureMin: 0.55, minDepthAtr: 1, minBulgeAtr: 1, endSkewPct: 50, minBars: 30, maxBars: 200 },
   tier2: { diamondConvergeMin: 0.25, broadeningMin: 0.25, islandGapAtr: 0.5, threePeaksToleranceAtr: 0.5 },
 };

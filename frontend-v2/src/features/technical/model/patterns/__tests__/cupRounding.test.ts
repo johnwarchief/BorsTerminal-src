@@ -40,6 +40,40 @@ const CUP_CLOSES = [
 ];
 
 /**
+ * U بدون دسته: همان دو لبهٔ ۱۰۰ و کفِ ۹۰، اما سری روی لبهٔ راست تمام می‌شود؛
+ * هیچ پیوتِ کفی پس از لبهٔ دوم شکل نمی‌گیرد، پس کاپ نباید صادر شود (R-PA-7).
+ */
+const CUP_NO_HANDLE_CLOSES = [
+  ...Array.from({ length: 11 }, (_, i) => 96 + i * 0.4), // 0..10 → 100 (لبهٔ چپ)
+  ...Array.from({ length: 15 }, (_, i) => 100 - (i + 1) * (10 / 15)), // 11..25 → 90 (کف)
+  ...Array.from({ length: 17 }, (_, i) => 90 + (i + 1) * (10 / 17)), // 26..42 → 100 (لبهٔ راست)
+  100, // 43: تخت روی لبه، بدون بازگشت
+];
+
+/**
+ * همان کاپِ معتبر، اما دسته تا ۹۵٫۹ می‌رود: عمقِ دسته ۴٫۹ در برابر سقفِ
+ * ۳۳٪ از ۱۰٫۸ (۳٫۵۶)؛ باید رد شود.
+ */
+const CUP_DEEP_HANDLE_CLOSES = [
+  ...Array.from({ length: 11 }, (_, i) => 96 + i * 0.4), // 0..10 → 100
+  ...Array.from({ length: 15 }, (_, i) => 100 - (i + 1) * (10 / 15)), // 11..25 → 90
+  ...Array.from({ length: 17 }, (_, i) => 90 + (i + 1) * (10 / 17)), // 26..42 → 100
+  ...Array.from({ length: 7 }, (_, i) => 100 - (i + 1) * 0.5857), // 43..49 → 95.9 (کف ۹۵٫۵)
+  ...Array.from({ length: 10 }, (_, i) => 95.9 + (i + 1) * 0.6), // 50..59 → 101.9
+];
+
+/**
+ * کاسهٔ کم‌عمق: لبه‌های ۹۱٫۶ و ۹۲٫۱ (خطِ لبهٔ شیب‌دار)، قعرِ ۸۸٫۶ در کندلِ ۲۶
+ * و شکستِ سه کندل بعد (۲۹) بالای خطِ لبه. عمق ۳٫۲۵؛ هدف ۹۵٫۱.
+ */
+const LATE_BREAKOUT_CLOSES = [
+  ...Array.from({ length: 15 }, (_, i) => 100 - i * (8 / 14)), // 0..14 → 100..92
+  ...Array.from({ length: 11 }, (_, i) => 91.9 - i * (2 / 10)), // 15..25 → 91.9..89.9
+  89, 89.6, 90.6, 92.2, // 26..29 → قعر و شکستِ سه‌کندل بعد
+  ...Array.from({ length: 15 }, (_, i) => 92.5 + i * (7.5 / 14)), // 30..44 → 92.5..100
+];
+
+/**
  * کاسهٔ کم‌عمق: ۱۰۰ → ۹۲، قعرِ سهمیِ ۸۹ در یک‌سومِ میانی، بازگشت به ۱۰۰.
  * عمق = ۳٫۰ (۱٫۵×ATR)؛ بیش از نیمی از بسته‌های میانی زیرِ خطِ لبه‌اند.
  */
@@ -83,6 +117,27 @@ describe('detectCupRounding', () => {
     expect(cup?.family).toBe('continuation');
     expect(cup?.tier).toBe(1);
     expect(result.every((p) => p.tier === 1)).toBe(true);
+  });
+
+  it('requires a handle pivot: a U with no pullback after the right rim is not a CUP_HANDLE', () => {
+    expect(
+      detectCupRounding(seriesFrom(CUP_NO_HANDLE_CLOSES), ATR, FIXTURE_CONFIG).some((p) => p.kind === 'CUP_HANDLE'),
+    ).toBe(false);
+    expect(
+      detectCupRounding(mirrored(CUP_NO_HANDLE_CLOSES), ATR, FIXTURE_CONFIG).some((p) => p.kind === 'INVERSE_CUP_HANDLE'),
+    ).toBe(false);
+  });
+
+  it('rejects a handle deeper than handleDepthPct of the cup depth', () => {
+    expect(
+      detectCupRounding(seriesFrom(CUP_CLOSES), ATR, FIXTURE_CONFIG).some((p) => p.kind === 'CUP_HANDLE'),
+    ).toBe(true);
+    expect(
+      detectCupRounding(seriesFrom(CUP_DEEP_HANDLE_CLOSES), ATR, FIXTURE_CONFIG).some((p) => p.kind === 'CUP_HANDLE'),
+    ).toBe(false);
+    expect(
+      detectCupRounding(mirrored(CUP_DEEP_HANDLE_CLOSES), ATR, FIXTURE_CONFIG).some((p) => p.kind === 'INVERSE_CUP_HANDLE'),
+    ).toBe(false);
   });
 
   it('uses cup.minDepthAtr as the depth gate, not a literal', () => {
@@ -135,5 +190,50 @@ describe('detectCupRounding', () => {
       rounding: { ...FIXTURE_CONFIG.rounding, minDepthAtr: 2 },
     };
     expect(detectCupRounding(bowl, ATR, strict).some((p) => p.kind === 'ROUNDING_BOTTOM')).toBe(false);
+  });
+
+  it('anchors ROUNDING_BOTTOM on the real extreme bar and confirms the breakout 3 bars later', () => {
+    const result = detectCupRounding(seriesFrom(LATE_BREAKOUT_CLOSES), ATR, FIXTURE_CONFIG);
+    const bottom = result.find((p) => p.kind === 'ROUNDING_BOTTOM');
+    expect(bottom).toBeDefined();
+    // لنگر = کندلِ واقعیِ قعر (۲۶)، نه انتهای پنجره.
+    expect(bottom?.anchor.index).toBe(26);
+    expect(bottom?.anchor.price).toBeCloseTo(88.6, 6);
+    expect(bottom?.status).toBe('confirmed');
+    expect(bottom?.breakoutIndex).toBe(29);
+    expect((bottom?.breakoutIndex ?? -1) - (bottom?.anchor.index ?? -1)).toBe(3);
+  });
+
+  it('targets rim ± depth beyond the rim, not the rim itself', () => {
+    const bowl = detectCupRounding(seriesFrom(BOWL_CLOSES), ATR, FIXTURE_CONFIG)
+      .find((p) => p.kind === 'ROUNDING_BOTTOM');
+    expect(bowl).toBeDefined();
+    // لبهٔ کف = ۹۱٫۶ (میانگین دو سر)، عمق ۳٫۰.
+    expect(bowl?.target).toBeCloseTo(94.6, 3);
+    const top = detectCupRounding(mirrored(BOWL_CLOSES), ATR, FIXTURE_CONFIG)
+      .find((p) => p.kind === 'ROUNDING_TOP');
+    expect(top).toBeDefined();
+    // لبهٔ سقف = ۱۰۸٫۴، عمق ۳٫۰.
+    expect(top?.target).toBeCloseTo(105.4, 3);
+  });
+
+  it('consumes rounding.minBulgeAtr as a real gate', () => {
+    const bowl = seriesFrom(BOWL_CLOSES);
+    expect(detectCupRounding(bowl, ATR, FIXTURE_CONFIG).some((p) => p.kind === 'ROUNDING_BOTTOM')).toBe(true);
+    const flat = {
+      ...FIXTURE_CONFIG,
+      rounding: { ...FIXTURE_CONFIG.rounding, minBulgeAtr: 10 },
+    };
+    expect(detectCupRounding(bowl, ATR, flat).some((p) => p.kind === 'ROUNDING_BOTTOM')).toBe(false);
+  });
+
+  it('consumes rounding.endSkewPct as a real gate', () => {
+    const skewed = seriesFrom(LATE_BREAKOUT_CLOSES);
+    expect(detectCupRounding(skewed, ATR, FIXTURE_CONFIG).some((p) => p.kind === 'ROUNDING_BOTTOM')).toBe(true);
+    const aligned = {
+      ...FIXTURE_CONFIG,
+      rounding: { ...FIXTURE_CONFIG.rounding, endSkewPct: 0 },
+    };
+    expect(detectCupRounding(skewed, ATR, aligned).some((p) => p.kind === 'ROUNDING_BOTTOM')).toBe(false);
   });
 });
