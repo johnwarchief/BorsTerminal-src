@@ -122,14 +122,14 @@ function island(candles: readonly EngineCandle[], atr: number, config: PatternCo
 }
 
 /**
- * سه قلهٔ هم‌سطح روی سقف‌ها (R-PA-13): سه سقفِ پیاپی با گسترهٔ max−min ≤
- * تلورانس و حداقل دو کفِ میانی. هر دو گونه از سقف‌ها ساخته می‌شوند و فقط
- * روندِ سه‌گانه تفکیک می‌کند:
- *   THREE_RISING_PEAKS  = سقف سوم بالاتر از سقف اول → بازگشتیِ نزولی در سقف؛
- *   THREE_FALLING_PEAKS = سقف سوم پایین‌تر از سقف اول → ادامه‌دهندهٔ نزولی.
- * کف‌ها گونه‌ای نمی‌سازند؛ نگاشتِ قبلی (کف → THREE_FALLING_PEAKS) با
- * TRIPLE_BOTTOM هم‌پوشان می‌شد و در فیلترِ R-PAT-6 همیشه حذف می‌شد.
- * سقف‌های هم‌ارتفاع «صعودی» شمرده می‌شوند تا تفکیک یکتا و بدونِ آستانهٔ نو بماند.
+ * سه قله روی سقف‌ها (R-PA-13, R-PA-15): سه سقفِ پیاپی با تقدّمِ سخت و حداقل
+ * شیبِ کلِ `threePeaksSlopeAtr`·atr، به‌علاوهٔ حداقل دو کفِ میانی.
+ * برابریِ سطح دروازهٔ این دو گونه نیست (فقط در TRIPLE_TOP/TRIPLE_BOTTOM
+ * می‌ماند)؛ وگرنه «سه سقفِ نزولی» با سه‌قلوی هم‌سطح قابل تفکیک نبود و در
+ * فیلترِ R-PAT-6 همیشه حذف می‌شد.
+ *   THREE_RISING_PEAKS  = h3 > h2 > h1 و h3 − h1 ≥ شیب → بازگشتیِ نزولی در سقف؛
+ *   THREE_FALLING_PEAKS = h3 < h2 < h1 و h1 − h3 ≥ شیب → ادامه‌دهندهٔ نزولی.
+ * کف‌ها گونه‌ای نمی‌سازند.
  */
 function threePeaks(
   pivots: PivotPoint[],
@@ -138,19 +138,20 @@ function threePeaks(
   config: PatternConfig,
 ): ChartPattern[] {
   const out: ChartPattern[] = [];
-  const tol = config.tier2.threePeaksToleranceAtr * atr;
+  const slopeFloor = config.tier2.threePeaksSlopeAtr * atr;
   const peaks = pivots.filter((x) => x.kind === 'high');
   for (let i = 0; i + 2 < peaks.length; i++) {
-    const trio = peaks.slice(i, i + 3);
+    const trio = peaks.slice(i, i + 3) as [PivotPoint, PivotPoint, PivotPoint];
+    const [h1, h2, h3] = trio;
     // R-PA-11: همان سقفِ پنجرهٔ خانواده و پیش‌فیلترِ تازگیِ detectReversal؛
     // سه‌گانهٔ کش‌آمده یا کهنه نباید منتشر شود.
-    if (trio[2]!.index - trio[0]!.index > config.hs.maxBars) continue;
-    if (trio[2]!.index < candles.length - config.hs.maxBars) continue;
-    const spread = Math.max(...trio.map((x) => x.price)) - Math.min(...trio.map((x) => x.price));
-    if (spread > tol) continue;
-    const falling = trio[2]!.price < trio[0]!.price;
+    if (h3.index - h1.index > config.hs.maxBars) continue;
+    if (h3.index < candles.length - config.hs.maxBars) continue;
+    const rising = h3.price > h2.price && h2.price > h1.price && h3.price - h1.price >= slopeFloor;
+    const falling = h3.price < h2.price && h2.price < h1.price && h1.price - h3.price >= slopeFloor;
+    if (!rising && !falling) continue;
     const level = Math.max(...trio.map((x) => x.price));
-    const tween = pivots.filter((x) => x.index > trio[0]!.index && x.index < trio[2]!.index && x.kind === 'low');
+    const tween = pivots.filter((x) => x.index > h1.index && x.index < h3.index && x.kind === 'low');
     if (tween.length < 2) continue;
     const neck = lineP(p(tween[0]!, candles), p(tween[tween.length - 1]!, candles));
     const height = Math.abs(level - tween[0]!.price);
@@ -159,7 +160,7 @@ function threePeaks(
       direction: 'bearish',
       family: falling ? 'continuation' : 'reversal',
       points: trio.map((x) => p(x, candles)),
-      upper: lineP(p(trio[0]!, candles), p(trio[2]!, candles)),
+      upper: lineP(p(h1, candles), p(h3, candles)),
       lower: neck,
       target: neck.to.price - height,
       stopLoss: level + atr,

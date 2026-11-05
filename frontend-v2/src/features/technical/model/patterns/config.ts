@@ -41,6 +41,8 @@ export interface PatternConfig {
     /** پنجرهٔ خانوادهٔ جزیره برای `emitPattern`؛ ریشه بیش از این مقدار عقب نماند. */
     islandMaxBars: number;
     threePeaksToleranceAtr: number;
+    /** حداقل شیبِ کلِ سه سقف (h3−h1) برای سه‌قله‌های صعودی/نزولی (R-PA-15). */
+    threePeaksSlopeAtr: number;
   };
 }
 
@@ -76,5 +78,6 @@ export const PATTERN_CONFIG: PatternConfig = {
     islandMaxBlockBars: 5,
     islandMaxBars: 6,
     threePeaksToleranceAtr: 0.5,
+    threePeaksSlopeAtr: 0.5,
   },
 };

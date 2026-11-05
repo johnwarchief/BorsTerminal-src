@@ -121,41 +121,45 @@ const ISLAND_LONG_CLOSES = [
 ];
 
 /**
- * سه سقفِ ۱۰۰ (۴)، ۱۰۰٫۳ (۱۰)، ۱۰۰٫۶ (۱۶) با دو کفِ بالاروندهٔ ۹۷ (۷) و
- * ۹۸ (۱۳)؛ گسترهٔ max−min = ۰٫۶ ≤ threePeaksToleranceAtr·ATR = ۱.
+ * سه سقفِ صعودیِ ۱۰۰٫۰ (۴)، ۱۰۰٫۶ (۱۰)، ۱۰۱٫۴ (۱۶) با دو کفِ ۹۷ (۷) و
+ * ۹۸ (۱۳)؛ h3 − h1 = ۱٫۴ ≥ threePeaksSlopeAtr·ATR = ۱ (R-PA-15).
  */
 const RISING_CLOSES = [
   97, 98, 98.8, 99.2, 99.6, // 0..4 → سقف ۱۰۰
   99, 98.2, 97.4, // 5..7 → کف ۹۷
-  98.2, 99.2, 99.9, // 8..10 → سقف ۱۰۰٫۳
+  98.2, 99.4, 100.2, // 8..10 → سقف ۱۰۰٫۶
   99.4, 98.8, 98.4, // 11..13 → کف ۹۸
-  99.2, 99.9, 100.2, // 14..16 → سقف ۱۰۰٫۶
-  99, 97.5, 96, 95, 94.5, 94, // 17..22
-];
-
-/** همان سه قله با سقفِ سوم ۱۰۱٫۲: گسترهٔ ۱٫۲ > ۱؛ تلورانس نقض می‌شود. */
-const RISING_SPREAD_CLOSES = [
-  97, 98, 98.8, 99.2, 99.6, // 0..4
-  99, 98.2, 97.4, // 5..7
-  98.2, 99.2, 99.9, // 8..10
-  99.4, 98.8, 98.4, // 11..13
-  99.2, 100, 100.8, // 14..16 → سقف ۱۰۱٫۲
+  99.4, 100.4, 101, // 14..16 → سقف ۱۰۱٫۴
   99.5, 98, 96.5, 95.5, 95, 94.5, // 17..22
 ];
 
 /**
- * سه سقفِ نزولیِ ۱۰۱٫۰ (۴)، ۱۰۰٫۷ (۱۰)، ۱۰۰٫۴ (۱۶) با کف‌های ۹۶٫۶ (۷) و
- * ۹۷٫۶ (۱۳)؛ گسترهٔ max−min = ۰٫۶ ≤ threePeaksToleranceAtr·ATR = ۱. سقف سوم
- * پایین‌تر از سقف اول است و سری پس از ۱۶ زیر خط گردن می‌رود، پس الگو تأیید
- * می‌شود. (R-PA-13: هر دو گونهٔ سه‌قله فقط از سقف‌ها ساخته می‌شوند.)
+ * همان شکل اما سقف‌ها فقط ۱۰۰٫۰ → ۱۰۰٫۱ → ۱۰۰٫۴ می‌روند: تقدّم سخت برقرار
+ * است ولی h3 − h1 = ۰٫۴ < threePeaksSlopeAtr·ATR = ۱؛ پس هیچ‌کدام از دو گونهٔ
+ * سه‌قله منتشر نمی‌شود (R-PA-15).
+ */
+const NEAR_LEVEL_CLOSES = [
+  97, 98, 98.8, 99.2, 99.6, // 0..4 → سقف ۱۰۰
+  99, 98.2, 97.4, // 5..7 → کف ۹۷
+  98.2, 99.1, 99.7, // 8..10 → سقف ۱۰۰٫۱
+  99.4, 98.8, 98.4, // 11..13 → کف ۹۸
+  99.4, 99.9, 100, // 14..16 → سقف ۱۰۰٫۴
+  99.5, 98, 96.5, 95.5, 95, 94.5, // 17..22
+];
+
+/**
+ * سه سقفِ نزولیِ ۱۰۲٫۰ (۴)، ۱۰۱٫۰ (۱۰)، ۱۰۰٫۰ (۱۶) با کف‌های ۹۷٫۶ (۷) و
+ * ۹۷٫۶ (۱۳)؛ h1 − h3 = ۲ ≥ threePeaksSlopeAtr·ATR = ۱. سری پس از ۱۶ زیر خط
+ * گردن می‌رود، پس الگو تأیید می‌شود. (R-PA-13/R-PA-15: هر دو گونهٔ سه‌قله فقط
+ * از سقف‌ها ساخته می‌شوند.)
  */
 const FALLING_CLOSES = [
-  96, 97.5, 99, 100.2, 100.6, // 0..4 → سقف ۱۰۰٫۷
-  99.6, 98.2, 97, // 5..7 → کف ۹۶٫۶
-  97.8, 99.4, 100.3, // 8..10 → سقف ۱۰۰٫۵
+  98, 99.4, 100.8, 101.2, 101.6, // 0..4 → سقف ۱۰۲
+  100.6, 99.2, 98, // 5..7 → کف ۹۷٫۶
+  98.8, 100, 100.6, // 8..10 → سقف ۱۰۱
   99.6, 98.8, 98, // 11..13 → کف ۹۷٫۶
-  98.8, 99.6, 100, // 14..16 → سقف ۱۰۰٫۴
-  99, 97.5, 96, 95, 94.5, 94, // 17..22 → شکستِ خط گردن
+  98.8, 99.4, 99.6, // 14..16 → سقف ۱۰۰
+  98.5, 97, 95.5, 94.5, 94, 93.5, // 17..22 → شکستِ خط گردن
 ];
 
 /**
@@ -211,20 +215,21 @@ const ISLAND_SPIKE_INSIDE_CLOSES = [
 ];
 
 /**
- * سه سقفِ هم‌سطح با فاصلهٔ ۷۰ کندل (گسترهٔ سه‌گانه ۱۴۰ > hs.maxBars=120)؛
- * هر سه در تلورانس‌اند و دو کفِ میانی دارند، پس فقط دروازهٔ گستره رد می‌کند.
+ * سه سقفِ صعودیِ ۱۰۰٫۰/۱۰۱٫۰/۱۰۲٫۰ با فاصلهٔ ۷۰ کندل (گسترهٔ سه‌گانه ۱۴۰ >
+ * hs.maxBars=120)؛ تقدّمِ سخت و شیبِ ۲ ≥ threePeaksSlopeAtr·ATR = ۱ برقرارند
+ * و دو کفِ میانی هم هست، پس فقط دروازهٔ گستره رد می‌کند.
  */
 const THREE_PEAKS_LONG_CLOSES = pathValues(
-  [[0, 99], [4, 99.6], [9, 91.4], [74, 99.9], [79, 91.8], [144, 100.2], [149, 92]],
+  [[0, 99], [4, 99.6], [9, 91.4], [74, 100.6], [79, 91.8], [144, 101.6], [149, 92]],
   149,
 );
 
 /**
- * همان سه قله با گسترهٔ ۷۰ (≤ ۱۲۰) اما آخرین سقف در ۷۴ و سری تا ۱۹۹ ادامه
- * دارد؛ الگو چند کندل بعد تأیید می‌شود و پیش‌فیلترِ تازگی باید آن را براند.
+ * همان سه قلهٔ صعودی با گسترهٔ ۷۰ (≤ ۱۲۰) اما آخرین سقف در ۷۴ و سری تا ۱۹۹
+ * ادامه دارد؛ الگو چند کندل بعد تأیید می‌شود و پیش‌فیلترِ تازگی باید آن را براند.
  */
 const THREE_PEAKS_STALE_CLOSES = pathValues(
-  [[0, 95], [4, 99.6], [12, 91.4], [40, 99.9], [52, 91.8], [74, 100.2], [80, 90.4], [199, 88]],
+  [[0, 95], [4, 99.6], [12, 91.4], [40, 100.6], [52, 91.8], [74, 101.6], [80, 90.4], [199, 88]],
   199,
 );
 
@@ -364,7 +369,7 @@ describe('detectTier2', () => {
       .toBe(false);
   });
 
-  it('detects THREE_RISING_PEAKS within threePeaksToleranceAtr and rejects a wider spread', () => {
+  it('detects THREE_RISING_PEAKS when the highs rise strictly by threePeaksSlopeAtr', () => {
     const result = detectTier2(seriesFrom(RISING_CLOSES), ATR, FIXTURE_CONFIG);
     const peaks = result.find((p) => p.kind === 'THREE_RISING_PEAKS');
     expect(peaks).toBeDefined();
@@ -373,7 +378,7 @@ describe('detectTier2', () => {
     expect(peaks?.tier).toBe(2);
     expect(peaks?.points).toHaveLength(3);
     expect(result.every((p) => p.tier === 2)).toBe(true);
-    expect(has(detectTier2(seriesFrom(RISING_SPREAD_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_RISING_PEAKS')).toBe(false);
+    expect(has(detectTier2(seriesFrom(NEAR_LEVEL_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_RISING_PEAKS')).toBe(false);
   });
 
   it('detects THREE_FALLING_PEAKS for three descending highs as a bearish continuation', () => {
@@ -385,17 +390,23 @@ describe('detectTier2', () => {
     expect(peaks?.tier).toBe(2);
     expect(peaks?.points).toHaveLength(3);
     expect(peaks?.status).toBe('confirmed');
-    // مرزِ بالا خطِ سقف‌ها (۱۰۱٫۰ → ۱۰۰٫۴) و مرزِ پایین خطِ گردنِ کف‌هاست.
-    expect(peaks?.upper.from.price).toBeCloseTo(101, 6);
-    expect(peaks?.upper.to.price).toBeCloseTo(100.4, 6);
+    // مرزِ بالا خطِ سقف‌ها (۱۰۲ → ۱۰۰) و مرزِ پایین خطِ گردنِ کف‌هاست.
+    expect(peaks?.upper.from.price).toBeCloseTo(102, 6);
+    expect(peaks?.upper.to.price).toBeCloseTo(100, 6);
     expect(result.every((p) => p.tier === 2)).toBe(true);
-    expect(has(detectTier2(seriesFrom(RISING_SPREAD_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_FALLING_PEAKS'))
+    expect(has(detectTier2(seriesFrom(NEAR_LEVEL_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_FALLING_PEAKS'))
       .toBe(false);
   });
 
+  it('rejects near-level highs inside threePeaksSlopeAtr for both three-peaks kinds (R-PA-15)', () => {
+    const result = detectTier2(seriesFrom(NEAR_LEVEL_CLOSES), ATR, FIXTURE_CONFIG);
+    expect(has(result, 'THREE_RISING_PEAKS')).toBe(false);
+    expect(has(result, 'THREE_FALLING_PEAKS')).toBe(false);
+  });
+
   it('builds three-peaks only from highs: level lows no longer emit a kind (R-PA-13)', () => {
-    // آینهٔ RISING_CLOSES سه کفِ هم‌سطحِ ۱۰۰/۹۹٫۷/۹۹٫۴ دارد (نگاشتِ قدیمی این‌ها را
-    // THREE_FALLING_PEAKS می‌کرد و با TRIPLE_BOTTOM هم‌پوشان می‌شد) و فقط دو سقف.
+    // آینهٔ RISING_CLOSES سه کفِ صعودی و فقط دو سقف دارد (نگاشتِ قدیمی این کف‌ها را
+    // THREE_FALLING_PEAKS می‌کرد و با TRIPLE_BOTTOM هم‌پوشان می‌شد).
     const result = detectTier2(mirrored(RISING_CLOSES), ATR, FIXTURE_CONFIG);
     expect(has(result, 'THREE_FALLING_PEAKS')).toBe(false);
     expect(has(result, 'THREE_RISING_PEAKS')).toBe(false);

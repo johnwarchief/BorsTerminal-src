@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { detectAllPatterns, PATTERN_TIER } from '../registry';
 import { PATTERN_CONFIG, type PatternConfig } from '../config';
 import { detectContinuation } from '../detectContinuation';
-import { detectTier2 } from '../detectTier2';
 import { calculateAtr } from '../../doubleTapEngine';
 import type { EngineCandle } from '../../doubleTapEngine';
 import type { PatternKind } from '../types';
@@ -219,9 +218,9 @@ function nearMissExitGap(): EngineCandle[] {
 }
 
 /**
- * سه سقفِ ۱۰۰٫۴/۱۱۰٫۴/۱۰۱٫۴ و سه کفِ ۹۱٫۶/۸۷٫۶/۸۹٫۶: گسترهٔ سه‌گانهٔ سقف‌ها
- * از threePeaksToleranceAtr·ATR بزرگ‌تر است، پس هیچ‌کدام از دو گونهٔ سه‌قله
- * (که هر دو فقط از سقف‌ها ساخته می‌شوند، R-PA-13) منتشر نمی‌شود.
+ * سه سقفِ ۱۰۰٫۴/۱۱۰٫۴/۱۰۱٫۴: سه‌گانه یکنوا نیست (سقف دوم از هر دو بالاتر
+ * است)، پس با دروازهٔ تقدّمِ سختِ R-PA-15 هیچ‌کدام از دو گونهٔ سه‌قله منتشر
+ * نمی‌شود.
  */
 function spreadPeaks(): EngineCandle[] {
   return path(
@@ -231,14 +230,25 @@ function spreadPeaks(): EngineCandle[] {
 }
 
 /**
- * سه سقفِ نزولیِ ۱۰۰٫۷/۱۰۰٫۵/۱۰۰٫۴ با کف‌های ۹۲٫۶ و ۹۰٫۶: گسترهٔ ۰٫۳ ≤
- * تلورانس (~۰٫۴۵) و سقف سوم پایین‌تر از سقف اول، پس سه‌قلهٔ نزولی
- * (ادامه‌دهنده) ساخته می‌شود؛ اما همان پنج پیوت سه‌قلوی هم‌سطحِ رده یک را هم
- * می‌سازد (تلورانس یکسان) و R-PAT-6 آن را ترجیح می‌دهد.
+ * سه سقفِ صعودیِ ۱۰۰٫۴/۱۰۱٫۴/۱۰۲٫۴ (کندل‌های ۱۰/۵۰/۹۰) با دو کفِ میانی:
+ * h3 > h2 > h1 و h3 − h1 = ۲ ≥ threePeaksSlopeAtr·ATR؛ سه‌قلهٔ صعودی
+ * (بازگشتیِ نزولی) از رجیستری بیرون می‌آید (R-PA-15).
  */
-function descendingPeaks(): EngineCandle[] {
+function ascendingSeries(): EngineCandle[] {
   return path(
-    [[0, 96], [10, 100.3], [30, 92], [50, 100.1], [70, 90], [90, 100], [110, 92], [119, 97]],
+    [[0, 96], [10, 100], [30, 92], [50, 101], [70, 92.2], [90, 102], [110, 91], [119, 96]],
+    119,
+  );
+}
+
+/**
+ * آینهٔ شکلِ صعودی: سه سقفِ نزولیِ ۱۰۲٫۴/۱۰۱٫۴/۱۰۰٫۴ با دو کفِ میانی؛
+ * h3 < h2 < h1 و h1 − h3 = ۲ ≥ threePeaksSlopeAtr·ATR؛ سه‌قلهٔ نزولی
+ * (ادامه‌دهندهٔ نزولی) از رجیستری بیرون می‌آید (R-PA-15).
+ */
+function descendingSeries(): EngineCandle[] {
+  return path(
+    [[0, 98], [10, 102], [30, 94], [50, 101], [70, 94.5], [90, 100], [110, 90], [119, 95]],
     119,
   );
 }
@@ -291,10 +301,14 @@ function convergingFiveMirror(): EngineCandle[] {
   ));
 }
 
-/** سه سقفِ ۱۰۰/۱۰۰٫۲/۱۰۰٫۱ (گستره ۰٫۲ ≤ threePeaksToleranceAtr·ATR). */
-function levelPeaks(): EngineCandle[] {
+/**
+ * سه سقفِ صعودیِ نزدیک‌به‌هم‌سطح: ۱۰۰٫۴ → ۱۰۰٫۵ → ۱۰۰٫۶؛ تقدّم سخت برقرار
+ * است اما h3 − h1 = ۰٫۲ < threePeaksSlopeAtr·ATR (~۰٫۴)، پس هر دو گونهٔ
+ * سه‌قله رد می‌شوند (R-PA-15).
+ */
+function nearLevelPeaks(): EngineCandle[] {
   return path(
-    [[0, 96], [10, 100], [30, 92], [50, 100.2], [70, 92.2], [90, 100.1], [110, 92], [119, 97]],
+    [[0, 96], [10, 100], [30, 92], [50, 100.1], [70, 92.2], [90, 100.2], [110, 91], [119, 96]],
     119,
   );
 }
@@ -370,8 +384,10 @@ describe('pattern accuracy', () => {
     ['BROADENING_BOTTOM', 'the width grows by less than broadeningMin', nearMissBroadeningMirror()],
     ['ISLAND_REVERSAL', 'only the entry gap reaches islandGapAtr, not the exit gap', oneSidedGap()],
     ['ISLAND_REVERSAL', 'the exit gap stays below islandGapAtr', nearMissExitGap()],
-    ['THREE_RISING_PEAKS', 'the high trio spread exceeds threePeaksToleranceAtr', spreadPeaks()],
-    ['THREE_FALLING_PEAKS', 'the high trio spread exceeds threePeaksToleranceAtr', spreadPeaks()],
+    ['THREE_RISING_PEAKS', 'the high trio is not monotone', spreadPeaks()],
+    ['THREE_FALLING_PEAKS', 'the high trio is not monotone', spreadPeaks()],
+    ['THREE_RISING_PEAKS', 'the highs lack a strict progression of at least threePeaksSlopeAtr', nearLevelPeaks()],
+    ['THREE_FALLING_PEAKS', 'the highs lack a strict progression of at least threePeaksSlopeAtr', nearLevelPeaks()],
   ];
 
   it.each(negatives)('rejects %s when %s', (kind, rule, candles) => {
@@ -380,11 +396,9 @@ describe('pattern accuracy', () => {
   });
 
   /**
-   * `THREE_FALLING_PEAKS` عمداً در این جدول نیست: هر سه سقفِ نزولیِ هم‌سطح که
-   * تلورانس سه‌قله را پاس می‌کند، همان پنجرهٔ TRIPLE_TOP را هم می‌سازد (هر دو
-   * تلورانس ۰٫۵×ATR) و قاعدهٔ اولویت بازگشتی (R-PAT-6) آن را حذف می‌کند؛
-   * دتکتور مستقل در tier2.test.ts با ردهٔ ۲ پوشش داده شده و آزمونِ بعدی همین
-   * هم‌پوشانی را تثبیت می‌کند.
+   * R-PA-15: هر دو گونهٔ سه‌قله با تقدّمِ سختِ سقف‌ها و کفِ شیبِ
+   * `threePeaksSlopeAtr` از رجیستری بیرون می‌آیند؛ دیگر با سه‌قلوی هم‌سطح
+   * هم‌پوشان نیستند.
    */
   const registered: Array<[PatternKind, 1 | 2, EngineCandle[]]> = [
     ['CUP_HANDLE', 1, alignedRimCup()],
@@ -396,7 +410,8 @@ describe('pattern accuracy', () => {
     ['BROADENING_TOP', 2, wideningFive()],
     ['BROADENING_BOTTOM', 2, wideningFive()],
     ['ISLAND_REVERSAL', 2, series(300)],
-    ['THREE_RISING_PEAKS', 2, levelPeaks()],
+    ['THREE_RISING_PEAKS', 2, ascendingSeries()],
+    ['THREE_FALLING_PEAKS', 2, descendingSeries()],
   ];
 
   it.each(registered)('registers %s with tier %i through detectAllPatterns', (kind, tier, candles) => {
@@ -407,23 +422,17 @@ describe('pattern accuracy', () => {
   });
 
   /**
-   * سه‌قلهٔ نزولی در سطح دتکتور واقعاً ساخته می‌شود (ردهٔ ۲، جهت نزولی، خانوادهٔ
-   * ادامه‌دهنده)؛ رجیستری اما نمونهٔ هم‌لنگرِ رده‌یک TRIPLE_TOP را ترجیح می‌دهد.
-   * اگر در آینده R-PAT-6 برای این هم‌پوشانی تغییر کند، این آزمون قرمز می‌شود و
-   * ردیفِ ثبتِ `THREE_FALLING_PEAKS` باید به جدول بالا برگردد.
+   * R-PA-15: نزولِ سختِ سقف‌ها (h1 − h3 ≥ threePeaksSlopeAtr·ATR) با برابریِ
+   * سطحِ سه‌قلو (گستره ≤ triple.levelToleranceAtr·ATR) ناسازگار است؛ پس دیگر
+   * TRIPLE_TOP هم‌لنگرِ سه‌قلهٔ نزولی ساخته نمی‌شود و نمونهٔ رده‌دو در رجیستری
+   * می‌ماند. اگر دروازهٔ برابری به سه‌قله‌ها برگردد، این آزمون قرمز می‌شود.
    */
-  it('keeps the tier-1 triple when a THREE_FALLING_PEAKS shares its anchor', () => {
-    const candles = descendingPeaks();
-    const atr = calculateAtr(candles, PATTERN_CONFIG.atrPeriod).at(-1) ?? 0;
-    const detector = detectTier2(candles, atr, PATTERN_CONFIG).find((p) => p.kind === 'THREE_FALLING_PEAKS');
-    expect(detector?.family).toBe('continuation');
-    expect(detector?.direction).toBe('bearish');
-    const patterns = detectAllPatterns(candles, PATTERN_CONFIG);
-    expect(patterns.some((p) => p.kind === 'THREE_FALLING_PEAKS')).toBe(false);
-    const triple = patterns.find((p) => p.kind === 'TRIPLE_TOP');
-    expect(triple, 'TRIPLE_TOP at the same anchor').toBeDefined();
-    expect(Math.abs(triple!.anchor.index - detector!.anchor.index))
-      .toBeLessThanOrEqual(PATTERN_CONFIG.overlapWindowBars);
+  it('does not build a same-anchor TRIPLE_TOP for a strictly descending trio (R-PA-15)', () => {
+    const patterns = detectAllPatterns(descendingSeries(), PATTERN_CONFIG);
+    const falling = patterns.find((p) => p.kind === 'THREE_FALLING_PEAKS');
+    expect(falling?.family).toBe('continuation');
+    expect(falling?.direction).toBe('bearish');
+    expect(patterns.some((p) => p.kind === 'TRIPLE_TOP')).toBe(false);
   });
 
   /**
