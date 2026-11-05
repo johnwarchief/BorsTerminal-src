@@ -27,15 +27,15 @@ describe('PATTERN_CONFIG', () => {
       hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, maxBars: 120 },
       triple: { levelToleranceAtr: 0.50, maxBars: 120 },
       reversal: { minSpanBars: 6 },
-      cup: { rimToleranceAtr: 0.5, handleDepthPct: 33, minBars: 20, maxBars: 160 },
-      rounding: { curvatureMin: 0.55, minBars: 30, maxBars: 200 },
+      cup: { rimToleranceAtr: 0.5, handleDepthPct: 33, minDepthAtr: 2, minBars: 20, maxBars: 160 },
+      rounding: { curvatureMin: 0.55, minDepthAtr: 1, minBars: 30, maxBars: 200 },
       tier2: { diamondConvergeMin: 0.25, broadeningMin: 0.25, islandGapAtr: 0.5, threePeaksToleranceAtr: 0.5 },
     });
   });
 
   it('pins the tier-2 and cup/rounding defaults', () => {
-    expect(PATTERN_CONFIG.cup).toEqual({ rimToleranceAtr: 0.5, handleDepthPct: 33, minBars: 20, maxBars: 160 });
-    expect(PATTERN_CONFIG.rounding).toEqual({ curvatureMin: 0.55, minBars: 30, maxBars: 200 });
+    expect(PATTERN_CONFIG.cup).toEqual({ rimToleranceAtr: 0.5, handleDepthPct: 33, minDepthAtr: 2, minBars: 20, maxBars: 160 });
+    expect(PATTERN_CONFIG.rounding).toEqual({ curvatureMin: 0.55, minDepthAtr: 1, minBars: 30, maxBars: 200 });
     expect(PATTERN_CONFIG.tier2).toEqual({ diamondConvergeMin: 0.25, broadeningMin: 0.25, islandGapAtr: 0.5, threePeaksToleranceAtr: 0.5 });
   });
 });

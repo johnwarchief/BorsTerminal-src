@@ -2,7 +2,7 @@
 import type { EngineCandle } from '../doubleTapEngine';
 import type { PatternConfig } from './config';
 import type {
-  BoundaryLine, ChartPattern, PatternDirection, PatternFamily, PatternKind, PatternPoint,
+  BoundaryLine, ChartPattern, PatternDirection, PatternFamily, PatternKind, PatternPoint, PatternTier,
 } from './types';
 import type { PivotPoint } from './pivots';
 
@@ -47,6 +47,8 @@ export interface PatternSpec {
   target: number;
   stopLoss: number;
   quality: number;
+  /** ردهٔ الگو؛ هر دتکتور ردهٔ خود را اعلام می‌کند (A1: فیلد `tier` در `ChartPattern`). */
+  tier?: PatternTier;
   /** پنجرهٔ زمانی خانوادهٔ الگو؛ ریشهٔ الگو بیش از این مقدار عقب نماند. */
   maxBars: number;
   /**
@@ -111,6 +113,7 @@ export function emitPattern(
     target: spec.target,
     stopLoss: spec.stopLoss,
     quality: Math.max(0, Math.min(100, Math.round(spec.quality))),
+    tier: spec.tier,
     status,
   };
 }
