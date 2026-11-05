@@ -32,7 +32,16 @@ export interface PatternConfig {
     minBars: number;
     maxBars: number;
   };
-  tier2: { diamondConvergeMin: number; broadeningMin: number; islandGapAtr: number; threePeaksToleranceAtr: number };
+  tier2: {
+    diamondConvergeMin: number;
+    broadeningMin: number;
+    islandGapAtr: number;
+    /** حداکثر فاصلهٔ کندلیِ گپِ خروج از گپِ ورود (پنجرهٔ جزیره). */
+    islandMaxBlockBars: number;
+    /** پنجرهٔ خانوادهٔ جزیره برای `emitPattern`؛ ریشه بیش از این مقدار عقب نماند. */
+    islandMaxBars: number;
+    threePeaksToleranceAtr: number;
+  };
 }
 
 export const PATTERN_CONFIG: PatternConfig = {
@@ -60,5 +69,12 @@ export const PATTERN_CONFIG: PatternConfig = {
   reversal: { minSpanBars: 6 },
   cup: { rimToleranceAtr: 0.5, handleDepthPct: 33, minDepthAtr: 2, minBars: 20, maxBars: 160 },
   rounding: { curvatureMin: 0.55, minDepthAtr: 1, minBulgeAtr: 1, endSkewPct: 50, minBars: 30, maxBars: 200 },
-  tier2: { diamondConvergeMin: 0.25, broadeningMin: 0.25, islandGapAtr: 0.5, threePeaksToleranceAtr: 0.5 },
+  tier2: {
+    diamondConvergeMin: 0.25,
+    broadeningMin: 0.25,
+    islandGapAtr: 0.5,
+    islandMaxBlockBars: 5,
+    islandMaxBars: 6,
+    threePeaksToleranceAtr: 0.5,
+  },
 };
