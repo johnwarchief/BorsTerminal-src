@@ -335,7 +335,7 @@ export function wilsonInterval(successes: number, resolved: number, z = 1.2816):
   return [Math.max(0, center - margin), Math.min(1, center + margin)];
 }
 
-function confidenceFor(resolved: number): FormationConfidence {
+export function confidenceFor(resolved: number): FormationConfidence {
   if (resolved < 8) return 'none';
   if (resolved < 20) return 'low';
   if (resolved < 50) return 'medium';
