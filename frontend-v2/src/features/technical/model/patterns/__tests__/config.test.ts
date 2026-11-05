@@ -3,15 +3,23 @@ import { describe, expect, it } from 'vitest';
 import { PATTERN_CONFIG } from '../config';
 
 describe('PATTERN_CONFIG', () => {
-  it('keeps every window positive and every tolerance in ATR terms', () => {
-    for (const key of ['flag', 'pennant', 'triangle', 'rectangle', 'wedge', 'hs', 'triple'] as const) {
-      expect(PATTERN_CONFIG[key].maxBars).toBeGreaterThan(2);
-    }
-    expect(PATTERN_CONFIG.flag.channelMaxWidthPct).toBeGreaterThan(0);
-    expect(PATTERN_CONFIG.flag.channelMaxWidthPct).toBeLessThanOrEqual(60);
-    expect(PATTERN_CONFIG.triangle.flatToleranceAtr).toBeGreaterThan(0);
-    expect(PATTERN_CONFIG.outcomeHorizon).toBe(10);
-    expect(PATTERN_CONFIG.returnHorizons).toEqual([1, 3, 5]);
-    expect(PATTERN_CONFIG.formationMinResolved).toBe(8);
+  it('pins every default threshold and window exactly as specified in the brief', () => {
+    expect(PATTERN_CONFIG).toEqual({
+      pivLeft: 5,
+      pivRight: 4,
+      atrPeriod: 14,
+      minTouchesPerLine: 2,
+      invalidationBufferAtr: 0.5,
+      outcomeHorizon: 10,
+      returnHorizons: [1, 3, 5],
+      formationMinResolved: 8,
+      flag: { impulseLegAtrMin: 3.0, channelMaxWidthPct: 35, slopeOpposite: true, maxBars: 40 },
+      pennant: { impulseLegAtrMin: 3.0, convergenceMin: 0.35, maxBars: 30 },
+      triangle: { flatToleranceAtr: 0.35, convergenceMin: 0.30, maxBars: 60 },
+      rectangle: { flatToleranceAtr: 0.50, maxBars: 80 },
+      wedge: { convergenceMin: 0.30, maxBars: 60 },
+      hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, maxBars: 120 },
+      triple: { levelToleranceAtr: 0.50, maxBars: 120 },
+    });
   });
 });
