@@ -189,6 +189,18 @@ export function formatEpsTrend(series: readonly (number | null | undefined)[] | 
 }
 
 /**
+ * R-UNSLOP-3: همان مقدارِ محور ۲ بدونِ کاراکترِ فلش — برایِ DOM.
+ * روند در مرورگر آیکنِ SVG است (در RTL کاراکترِ «↑/↓/→» وارونه خوانده می‌شد و
+ * با قلمِ متن می‌جنگید)؛ نامِ دسترس‌پذیرش `trendFa` را می‌گوید.
+ * `formatEpsTrend` برایِ ستونِ CSV همان رشتهٔ سابق را نگه می‌دارد.
+ */
+export function formatEpsValue(series: readonly (number | null | undefined)[] | null | undefined): string {
+  const last = lastSeriesValue(series);
+  if (last == null) return '—';
+  return toFaDigits(Math.round(last)).replace(/^-/, '−');
+}
+
+/**
  * R-P1-3: رشدِ دوره‌به‌دورهٔ EPS — دورهٔ اول رشد ندارد؛ مخرجِ صفر/منفی رشد نمی‌سازد؛
  * مقدارِ گم‌شده «—» می‌ماند. اگر پاسخِ بک‌اند هم‌طولِ سری باشد، همان ملاک است.
  */

@@ -130,6 +130,47 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-status--fail { color: var(--fd-down); }
 .fundamental-surface .fd-status--na { color: var(--fd-flat); }
 .fundamental-surface .fd-status--unknown { color: var(--fd-warn); }
+/* ===== R-UNSLOP · تایپوگرافیِ سطح بنیادی =====
+   شش جفتِ اندازه/وزن برایِ پروفایل، دو جفت برایِ جدولِ هر چگالی، و هیچ متنِ
+   فارسیِ زیرِ ۱۱px. سلسله‌مراتب با اندازه و رنگ ساخته می‌شود، نه با bold:
+   `<b>/<strong>` روی همین سطح به ۵۰۰ می‌نشیند تا ۷۰۰/۸۰۰ باقی نماند.
+   قاعده‌ها با پیشوندِ سطح نوشته شده‌اند تا از قاعدهٔ `<b>` سنگین‌تر باشند. */
+.fundamental-surface {
+  --fd-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fd-cell-fs: 12px;
+  --fd-grid-gap: 8px;
+}
+.fundamental-surface b,
+.fundamental-surface strong {
+  font-weight: 500;
+}
+/* برچسب و متا ۱۲/۴۰۰ · متنِ روان ۱۳/۴۰۰ · تیترِ پنل ۱۳/۵۰۰
+   عددِ اصلیِ پنل ۲۰/۵۰۰ · تیترِ نماد ۱۶/۵۰۰ · واژهٔ وضعیت ۱۲/۵۰۰ */
+.fundamental-surface .fd-meta { font-size: 12px; font-weight: 400; line-height: 1.45; }
+.fundamental-surface .fd-secondary { font-size: 13px; font-weight: 400; line-height: 1.55; }
+.fundamental-surface .fd-title { font-size: 13px; font-weight: 500; line-height: 1.4; }
+.fundamental-surface .fd-figure { font-size: 20px; font-weight: 500; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.fundamental-surface .fd-heading { font-size: 16px; font-weight: 500; line-height: 1.3; }
+.fundamental-surface .fd-status-word { font-size: 12px; font-weight: 500; line-height: 1.4; }
+/* جدولِ بنیادی: راحت ۱۲px، فشرده ۱۱px؛ هر دو چگالی فقط ۴۰۰ و ۵۰۰ می‌بیند. */
+.fundamental-surface .fd-table { --fd-cell-fs: 12px; }
+.fundamental-surface .fd-table--compact { --fd-cell-fs: 11px; }
+.fundamental-surface .fd-cell-meta { font-size: var(--fd-cell-fs); font-weight: 400; line-height: 1.4; }
+.fundamental-surface .fd-cell-strong { font-size: var(--fd-cell-fs); font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; }
+/* مهرِ وضعیت: واژهٔ فارسی + یک نقطهٔ رنگیِ ۶پیکسلی، در جدول، پنل و روبان یکی. */
+.fundamental-surface .fd-status-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.fundamental-surface .fd-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
 .fundamental-surface .fd-chart-track { fill: color-mix(in srgb, var(--fd-text-3) 16%, transparent); }
 .fundamental-surface .fd-chart-fill { fill: var(--fd-up); }
 .fundamental-surface .fd-chart-fill.is-fail { fill: var(--fd-down); }
@@ -145,8 +186,10 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-history-bar.is-unknown { background: var(--fd-warn); }
 /* R-P1-8: تُنِ «شاهد» خنثی است؛ نه رنگِ قبول و نه رد. */
 .fundamental-surface .fd-history-bar.is-evidence { background: var(--fd-text-3); }
-/* R-P1-3/R-P1-5: میله‌های رشد دوره‌ای EPS؛ مثبت/منفی، صفرِ بی‌تغییر و خالیِ بی‌رنگ. */
-.fundamental-surface .fd-delta-bar { display: block; width: 100%; border-radius: 1px 1px 0 0; }
+/* R-P1-3/R-P1-5: میله‌های رشد دوره‌ای EPS؛ مثبت/منفی، صفرِ بی‌تغییر و خالیِ بی‌رنگ.
+   R-UNSLOP-4: شعاعِ سرِ میله ۲px است (نه ۱px) و از همین‌جا می‌آید، نه از utility. */
+.fundamental-surface .fd-delta-bar,
+.fundamental-surface .fd-history-bar { border-radius: 2px 2px 0 0; display: block; width: 100%; }
 .fundamental-surface .fd-delta-bar.is-up { background: var(--fd-up); }
 .fundamental-surface .fd-delta-bar.is-down { background: var(--fd-down); }
 .fundamental-surface .fd-delta-bar.is-flat { background: var(--fd-flat); }
@@ -166,13 +209,16 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-glyph span.is-na { background: var(--fd-flat); }
 .fundamental-surface .fd-glyph span.is-unknown { background: var(--fd-warn); }
 
-/* ===== حرکتِ مهارشده و فوکوسِ سطح بنیادی (R73/R76/R77/R78/R80) =====
+/* ===== حرکتِ مهارشده و فوکوسِ سطح بنیادی (R73/R76/R77/R78/R80 + R-UNSLOP-6) =====
    فقط opacity/transform؛ هیچ height/top/margin/left انیمیت نمی‌شود تا layout
    جدولِ ۷۸۳ ردیفی تکان نخورد. ورودِ ردیف‌ها عمداً بی‌انیمیشن است.
-   fd-in فقط روی ریشهٔ Quintet/ScoreRibbon؛ fd-enter روی ۹ wrapper جزئیات. */
+   fd-in فقط روی ریشهٔ Quintet/ScoreRibbon؛ fd-enter روی ۹ wrapper جزئیات.
+   R-UNSLOP-6: پلکانِ شش‌پله‌ای و سقفِ ۲۰۰ms — از فرزندِ هفتم به بعد همه روی
+   آخرین پله می‌نشینند (پلکانِ نه‌تایی و ۳۲۰ms بویِ قالب می‌داد) و کلِ حرکتِ
+   سطح یک منحنیِ شتاب دارد: --fd-ease. */
 .fundamental-surface .fd-in,
 .fundamental-surface .fd-enter {
-  animation: fdIn 220ms ease-out both;
+  animation: fdIn 200ms var(--fd-ease) both;
 }
 .fundamental-surface .fd-in:nth-child(2),
 .fundamental-surface .fd-enter:nth-child(2) { animation-delay: 40ms; }
@@ -183,10 +229,8 @@ html[data-theme='cool'] {
 .fundamental-surface .fd-in:nth-child(5),
 .fundamental-surface .fd-enter:nth-child(5) { animation-delay: 160ms; }
 .fundamental-surface .fd-in:nth-child(6),
-.fundamental-surface .fd-enter:nth-child(6) { animation-delay: 200ms; }
-.fundamental-surface .fd-enter:nth-child(7) { animation-delay: 240ms; }
-.fundamental-surface .fd-enter:nth-child(8) { animation-delay: 280ms; }
-.fundamental-surface .fd-enter:nth-child(9) { animation-delay: 320ms; }
+.fundamental-surface .fd-enter:nth-child(6),
+.fundamental-surface .fd-enter:nth-child(n+7) { animation-delay: 200ms; }
 
 @keyframes fdIn {
   from {
@@ -201,7 +245,7 @@ html[data-theme='cool'] {
 
 /* نمودارهای نمای نماد: کشیده‌شدنِ افقی از لبهٔ راست (RTL) — بدون انیمیشنِ loop. */
 .fundamental-surface .fd-draw {
-  animation: fdDraw 450ms ease-out both;
+  animation: fdDraw 260ms var(--fd-ease) both;
   transform-origin: right center;
 }
 
@@ -238,7 +282,7 @@ html[data-theme='cool'] {
   .fundamental-surface .fd-in,
   .fundamental-surface .fd-draw,
   .fundamental-surface .fd-enter {
-    animation: fdFadeOnly 120ms ease-out both;
+    animation: fdFadeOnly 120ms var(--fd-ease) both;
     animation-delay: 0ms !important;
   }
   /* R78: کاهش حرکت، crossfade جدول را هم خاموش می‌کند. */
@@ -413,8 +457,16 @@ body {
   border-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
 }
 /* R42 — tape-btn داخل سطح بنیادی از توکن‌های --fd-* رنگ می‌گیرد؛
-   این توکن‌ها alias تم برنامه‌اند و سطح مستقل ندارند. */
+   این توکن‌ها alias تم برنامه‌اند و سطح مستقل ندارند.
+   R-UNSLOP-1/2/5: در همین سطح ارتفاع ۲۴، شعاع ۸ (کنترل) و متن ۱۲px —
+   پوستهٔ بیرونیِ برنامه (تابلو) دست‌نخورده می‌ماند. */
 .fundamental-surface .tape-btn {
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 400;
   border-color: var(--fd-line-strong);
   background: var(--fd-panel);
   color: var(--fd-text-2);
