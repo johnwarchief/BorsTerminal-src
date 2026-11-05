@@ -6,6 +6,8 @@ export interface PatternConfig {
   minTouchesPerLine: number;
   touchToleranceAtr: number;
   invalidationBufferAtr: number;
+  /** نیم‌پنجرهٔ حذف هم‌پوشانی: ادامه‌دهندهٔ لنگرِ نزدیک‌تر از این مقدار کندل به یک بازگشتی حذف می‌شود. */
+  overlapWindowBars: number;
   outcomeHorizon: number;
   returnHorizons: [number, number, number];
   returnsMinSamples: number;
@@ -30,6 +32,7 @@ export const PATTERN_CONFIG: PatternConfig = {
   minTouchesPerLine: 2,
   touchToleranceAtr: 0.5,
   invalidationBufferAtr: 0.5,
+  overlapWindowBars: 3,
   outcomeHorizon: 10,
   returnHorizons: [1, 3, 5],
   returnsMinSamples: 5,

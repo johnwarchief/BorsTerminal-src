@@ -24,16 +24,18 @@ export function estimatePatternFormation(
     .map((sample) => ({ sample, outcome: outcomeOf(sample, candles, atr, config) }))
     .filter((item): item is { sample: ChartPattern; outcome: 'success' | 'failure' } => item.outcome !== 'unresolved');
 
-  const qualities = samples.map((s) => s.quality).sort((a, b) => a - b);
+  // R-PAT-20: آستانه‌های ترسیل کیفیت از config خوانده می‌شوند، نه از عدد جادویی.
+  // ترسیل‌ها فقط روی نمونه‌های حل‌شده بسته می‌شوند تا نمونه‌های حل‌نشده کیفیت‌های بی‌مصرف را وارد نکنند.
+  const qualities = resolved.map((item) => item.sample.quality).sort((a, b) => a - b);
   let selected = resolved;
   let qualityBucket: number | undefined;
-  if (qualities.length >= 8) {
+  if (qualities.length >= config.formationMinResolved) {
     const low = qualities[Math.floor(qualities.length / 3)]!;
     const high = qualities[Math.floor((2 * qualities.length) / 3)]!;
     const bucket = current.quality <= low ? 0 : current.quality <= high ? 1 : 2;
     const bucketOf = (q: number) => (q <= low ? 0 : q <= high ? 1 : 2);
     const bucketSamples = resolved.filter((item) => bucketOf(item.sample.quality) === bucket);
-    if (bucketSamples.length >= 8) {
+    if (bucketSamples.length >= config.formationMinResolved) {
       selected = bucketSamples;
       qualityBucket = bucket;
     }
@@ -61,8 +63,11 @@ export function estimateReturns(
   all: readonly ChartPattern[],
   candles: readonly EngineCandle[],
   config: PatternConfig,
+  resolvedIds: ReadonlySet<string>,
 ): ChartPattern['returns'] {
   if (current.status !== 'forming') return undefined;
-  const samples = all.filter((p) => p.id !== current.id && p.family === current.family && p.status !== 'forming');
+  // R-PAT-22: فقط نمونه‌های حل‌شده در بازده سهم دارند؛ نمونهٔ حل‌نشده (مثلاً شکست بعد از افق) کنار می‌رود.
+  const samples = all.filter((p) => p.id !== current.id && p.family === current.family
+    && p.status !== 'forming' && resolvedIds.has(p.id));
   return meanReturns(samples, candles, config);
 }

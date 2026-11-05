@@ -11,6 +11,7 @@ describe('PATTERN_CONFIG', () => {
       minTouchesPerLine: 2,
       touchToleranceAtr: 0.5,
       invalidationBufferAtr: 0.5,
+      overlapWindowBars: 3,
       outcomeHorizon: 10,
       returnHorizons: [1, 3, 5],
       returnsMinSamples: 5,

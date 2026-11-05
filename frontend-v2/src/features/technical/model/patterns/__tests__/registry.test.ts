@@ -5,6 +5,7 @@ import type { ChartPattern } from '../types';
 import type { DoubleTapPattern } from '../../types';
 import { detectDoubleTapPatterns, DEFAULT_PRECISION_PARAMS } from '../../doubleTapEngine';
 import type { EngineCandle } from '../../doubleTapEngine';
+import { outcomeOf } from '../outcome';
 
 /**
  * R-PAT-6: فقط تست هم‌پوشانی دتکتورها را با خروجی مصنوعی جایگزین می‌کند؛
@@ -47,6 +48,10 @@ const monotonic: EngineCandle[] = Array.from({ length: 40 }, (_, i) => {
 
 const point = (index: number, price: number) => ({ index, price, timestamp: index * 60_000 });
 
+const bars = (closes: number[]): EngineCandle[] => closes.map((close, i) => ({
+  timestamp: i * 60_000, open: close, high: close + 0.5, low: close - 0.5, close,
+}));
+
 const shaped = (id: string, anchorIndex: number, family: ChartPattern['family']): ChartPattern => ({
   id,
   kind: family === 'reversal' ? 'HEAD_SHOULDERS' : 'FLAG_BULL',
@@ -60,6 +65,39 @@ const shaped = (id: string, anchorIndex: number, family: ChartPattern['family'])
   stopLoss: 95,
   quality: 60,
   status: 'confirmed',
+});
+
+const doubleTap = (over: Partial<DoubleTapPattern> = {}): DoubleTapPattern => ({
+  id: 'double-top-10-20',
+  type: 'DOUBLE_TOP',
+  peak1: point(10, 110),
+  neckline: point(15, 100),
+  peak2: point(20, 111),
+  retest: point(24, 100),
+  breakoutIndex: 26,
+  breakoutTs: 26 * 60_000,
+  target1: 90,
+  target2: 85,
+  stopLoss: 112,
+  score: 70,
+  quality: 70,
+  height: 10,
+  status: 'active',
+  profile: 'precision',
+  ...over,
+});
+
+const doubleBottom = (over: Partial<DoubleTapPattern> = {}): DoubleTapPattern => doubleTap({
+  id: 'double-bottom-10-20',
+  type: 'DOUBLE_BOTTOM',
+  peak1: point(10, 90),
+  neckline: point(15, 100),
+  peak2: point(20, 91),
+  retest: point(24, 100),
+  target1: 110,
+  target2: 115,
+  stopLoss: 89,
+  ...over,
 });
 
 describe('pattern registry', () => {
@@ -77,38 +115,76 @@ describe('pattern registry', () => {
   });
 
   it('keeps the double-tap breakout index when adapting', () => {
-    const double: DoubleTapPattern = {
-      id: 'double-top-10-20',
-      type: 'DOUBLE_TOP',
-      peak1: point(10, 110),
-      neckline: point(15, 100),
-      peak2: point(20, 111),
-      retest: point(24, 100),
-      breakoutIndex: 26,
-      breakoutTs: 26 * 60_000,
-      target1: 90,
-      target2: 85,
-      stopLoss: 112,
-      score: 70,
-      quality: 70,
-      height: 10,
-      status: 'active',
-      profile: 'precision',
-    };
-    const adapted = fromDoubleTap(double);
+    const adapted = fromDoubleTap(doubleTap());
     expect(adapted.breakoutIndex).toBe(26);
     expect(adapted.kind).toBe('DOUBLE_TOP');
     expect(adapted.family).toBe('reversal');
   });
 
-  it('drops a continuation anchor sitting within three bars of a reversal anchor', () => {
+  it('maps double-tap statuses: active → confirmed and invalidated → invalidated', () => {
+    expect(fromDoubleTap(doubleTap({ status: 'active' })).status).toBe('confirmed');
+    expect(fromDoubleTap(doubleTap({ status: 'invalidated' })).status).toBe('invalidated');
+  });
+
+  it('orders double-bottom boundaries as neckline above trough (upper > lower)', () => {
+    const adapted = fromDoubleTap(doubleBottom());
+    expect(adapted.direction).toBe('bullish');
+    expect(adapted.upper.from.price).toBe(100); // خط گردن
+    expect(adapted.lower.from.price).toBe(91); // درهٔ دوم
+    expect(adapted.upper.from.price).toBeGreaterThan(adapted.lower.from.price);
+  });
+
+  it('needs a close above the neckline — not merely above the trough — for a double-bottom success', () => {
+    const adapted = fromDoubleTap(doubleBottom());
+    // بستهٔ ۹۵ بالای درهٔ ۹۱ است اما زیر خط گردن ۱۰۰: نه پیروزی، نه شکست.
+    const belowNeckline = bars(Array.from({ length: 40 }, () => 95));
+    expect(outcomeOf(adapted, belowNeckline, 1, PATTERN_CONFIG)).toBe('unresolved');
+
+    const aboveNeckline = bars(Array.from({ length: 40 }, (_, i) => (i === 30 ? 100.5 : 95)));
+    expect(outcomeOf(adapted, aboveNeckline, 1, PATTERN_CONFIG)).toBe('success');
+  });
+
+  it('drops continuations at the overlap boundary and keeps those beyond it', () => {
     detectors.synthetic = {
-      continuation: [shaped('cont-near', 10, 'continuation'), shaped('cont-far', 30, 'continuation')],
+      continuation: [
+        shaped('cont-inside', 10, 'continuation'),
+        shaped('cont-edge', 15, 'continuation'),
+        shaped('cont-outside', 16, 'continuation'),
+        shaped('cont-far', 30, 'continuation'),
+      ],
       reversal: [shaped('rev', 12, 'reversal')],
     };
     const all = detectAllPatterns(monotonic, PATTERN_CONFIG);
     expect(all.some((p) => p.id === 'rev')).toBe(true);
-    expect(all.some((p) => p.id === 'cont-near')).toBe(false);
-    expect(all.some((p) => p.id === 'cont-far')).toBe(true);
+    expect(all.some((p) => p.id === 'cont-inside')).toBe(false); // فاصلهٔ ۲
+    expect(all.some((p) => p.id === 'cont-edge')).toBe(false); // فاصلهٔ ۳ = مرز پنجره
+    expect(all.some((p) => p.id === 'cont-outside')).toBe(true); // فاصلهٔ ۴
+    expect(all.some((p) => p.id === 'cont-far')).toBe(true); // فاصلهٔ ۱۸
+
+    // پنجره از config می‌آید: با پنجرهٔ ۲، همسایهٔ فاصلهٔ ۳ حفظ می‌شود.
+    const narrow = detectAllPatterns(monotonic, { ...PATTERN_CONFIG, overlapWindowBars: 2 });
+    expect(narrow.some((p) => p.id === 'cont-inside')).toBe(false);
+    expect(narrow.some((p) => p.id === 'cont-edge')).toBe(true);
+  });
+
+  it('keeps samples whose breakout lands beyond the outcome horizon out of returns (R-PAT-22)', () => {
+    // ناحیهٔ بالای مرز ۱۰۱ تا کندل ۲۴، و ناحیهٔ میان مرزها از کندل ۲۵.
+    const candles = bars(Array.from({ length: 60 }, (_, i) => (i < 25 ? 102 + i * 0.001 : 100 + (i - 25) * 0.001)));
+    const forming: ChartPattern = { ...shaped('current', 50, 'continuation'), status: 'forming' };
+    const onTime: ChartPattern[] = [3, 6, 9, 12, 15].map((anchor, k) => ({
+      ...shaped(`early-${k}`, anchor, 'continuation'),
+      breakoutIndex: anchor + 2,
+    }));
+    // شکست در ۴۵ یعنی ۱۵ کندل بعد از لنگر ۳۰؛ بیرون از افق ۱۰ کندلیِ نتیجه → حل‌نشده.
+    const late: ChartPattern = { ...shaped('late', 30, 'continuation'), breakoutIndex: 45 };
+
+    detectors.synthetic = { continuation: [forming, ...onTime], reversal: [] };
+    const baseline = detectAllPatterns(candles, PATTERN_CONFIG).find((p) => p.id === 'current')?.returns;
+
+    detectors.synthetic = { continuation: [forming, ...onTime, late], reversal: [] };
+    const withLate = detectAllPatterns(candles, PATTERN_CONFIG).find((p) => p.id === 'current')?.returns;
+
+    expect(baseline?.h1).not.toBeNull();
+    expect(withLate).toEqual(baseline);
   });
 });

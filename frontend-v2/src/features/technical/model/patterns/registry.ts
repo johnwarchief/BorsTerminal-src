@@ -7,11 +7,16 @@ import type { ChartPattern } from './types';
 import { detectContinuation } from './detectContinuation';
 import { detectReversal } from './detectReversal';
 import { estimatePatternFormation, estimateReturns } from './formation';
+import { outcomeOf, type PatternOutcome } from './outcome';
 
 export function fromDoubleTap(p: DoubleTapPattern): ChartPattern {
   const anchor = p.retest ?? p.peak2;
   const bullish = p.type === 'DOUBLE_BOTTOM';
   const at = (index: number, price: number, timestamp: number) => ({ index, price, timestamp });
+  // R-PAT-21: مرزها بر اساس جهت مرتب می‌شوند. در دوقلوی کف، خط گردن بالاتر از درهٔ دوم است؛
+  // در دوقلوی سقف، قلهٔ دوم بالاتر از خط گردن. upper همیشه قیمت بزرگ‌تر و lower قیمت کوچک‌تر است.
+  const upperSource = bullish ? p.neckline : p.peak2;
+  const lowerSource = bullish ? p.peak2 : p.neckline;
   return {
     id: `DT:${p.id}`,
     kind: p.type,
@@ -19,8 +24,8 @@ export function fromDoubleTap(p: DoubleTapPattern): ChartPattern {
     family: 'reversal',
     anchor: at(anchor.index, anchor.price, anchor.timestamp),
     points: [p.peak1, p.neckline, p.peak2].map((x) => at(x.index, x.price, x.timestamp)),
-    upper: { from: at(p.peak2.index, p.peak2.price, p.peak2.timestamp), to: at(p.peak2.index, p.peak2.price, p.peak2.timestamp) },
-    lower: { from: at(p.neckline.index, p.neckline.price, p.neckline.timestamp), to: at(p.neckline.index, p.neckline.price, p.neckline.timestamp) },
+    upper: { from: at(upperSource.index, upperSource.price, upperSource.timestamp), to: at(upperSource.index, upperSource.price, upperSource.timestamp) },
+    lower: { from: at(lowerSource.index, lowerSource.price, lowerSource.timestamp), to: at(lowerSource.index, lowerSource.price, lowerSource.timestamp) },
     // R-PAT-19: بازدهِ الگوی بازگشتی از شکست واقعی دوقلو اندازه‌گیری می‌شود، نه از لنگر.
     breakoutIndex: p.breakoutIndex,
     target: p.target1,
@@ -44,10 +49,19 @@ export function detectAllPatterns(
     ...detectDoubleTapPatterns(candles, DEFAULT_PRECISION_PARAMS).map(fromDoubleTap),
   ].filter((p, i, all) => all.findIndex((x) => x.id === p.id) === i);
 
-  // R-PAT-6: بازگشتی بر ادامه‌دهنده اولویت دارد؛ ادامه‌دهندهٔ لنگرِ نزدیک (≤ ۳ کندل) حذف می‌شود.
+  // R-PAT-6: بازگشتی بر ادامه‌دهنده اولویت دارد؛ ادامه‌دهندهٔ لنگرِ نزدیک (تا پنجرهٔ config) حذف می‌شود.
   const reversals = merged.filter((p) => p.family === 'reversal');
   const withoutOverlaps = merged.filter(
-    (p) => p.family === 'reversal' || !reversals.some((r) => Math.abs(r.anchor.index - p.anchor.index) <= 3),
+    (p) => p.family === 'reversal'
+      || !reversals.some((r) => Math.abs(r.anchor.index - p.anchor.index) <= config.overlapWindowBars),
+  );
+
+  // R-PAT-22: نتیجهٔ هر نمونه یک‌بار محاسبه می‌شود و فقط نمونه‌های حل‌شده به تخمین بازده می‌رسند.
+  const outcomes = new Map<string, PatternOutcome>(
+    withoutOverlaps.map((p): [string, PatternOutcome] => [p.id, outcomeOf(p, candles, atr, config)]),
+  );
+  const resolvedIds: ReadonlySet<string> = new Set(
+    [...outcomes].filter(([, outcome]) => outcome !== 'unresolved').map(([id]) => id),
   );
 
   return withoutOverlaps
@@ -55,7 +69,7 @@ export function detectAllPatterns(
       ? {
           ...pattern,
           formation: estimatePatternFormation(pattern, withoutOverlaps, candles, atr, config) ?? undefined,
-          returns: estimateReturns(pattern, withoutOverlaps, candles, config),
+          returns: estimateReturns(pattern, withoutOverlaps, candles, config, resolvedIds),
         }
       : pattern))
     .sort((a, b) => a.anchor.index - b.anchor.index);
