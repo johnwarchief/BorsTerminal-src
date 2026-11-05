@@ -8,6 +8,10 @@
  * - وضعیت و اکشن‌های استور Zustand
  */
 
+// R-PAT-3: فقط نوع — هیچ import زمان‌اجرایی اضافه نمی‌شود و چرخهٔ runtime ساخته نمی‌شود.
+import type { ChartPattern } from './patterns/types';
+import type { EngineCandle } from './doubleTapEngine';
+
 export interface Candle {
   timestamp: number;
   open: number;
@@ -149,7 +153,7 @@ export type ChannelMode = 'regression' | 'retest_channel' | 'donchian';
 
 export type RsiVariant = 'standard' | 'fibo' | 'bb' | 'smooth_ma';
 
-export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
+export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge' | 'patterns';
 
 export type FormationConfidence = 'none' | 'low' | 'medium' | 'high';
 
@@ -262,6 +266,10 @@ export interface TechnicalState {
   detectedDoubleTapPatterns: DoubleTapPattern[];
   detectedPullbackSignals: PullbackSignal[];
   detectedCHoCHSignals: CHoCHSignal[];
+  /** الگوهای کلاسیک شناسایی‌شده؛ مصرف‌کنندهٔ آن رجیستری و اورلیِ چارت است. */
+  detectedPatterns: ChartPattern[];
+  /** کندل‌های موتور برای مصرف در تب الگوها (تسک ۱۰ آن را منتشر می‌کند). */
+  chartCandles: EngineCandle[];
 
   setTimeframe: (tf: string) => void;
   setActiveDrawingTool: (tool: DrawingToolType | null) => void;
@@ -298,6 +306,8 @@ export interface TechnicalState {
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) => void;
   setDetectedPullbackSignals: (signals: PullbackSignal[]) => void;
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) => void;
+  setDetectedPatterns: (patterns: ChartPattern[]) => void;
+  setChartCandles: (candles: EngineCandle[]) => void;
   enableDefaultIndicators: () => void;
 
   reset: () => void;

@@ -19,6 +19,9 @@ import type {
   PullbackSignal,
   CHoCHSignal,
 } from './types';
+// R-PAT-3: نوع‌ها فقط برای امضای اسلایس؛ بدون import زمان‌اجرایی و بدون چرخه.
+import type { ChartPattern } from './patterns/types';
+import type { EngineCandle } from './doubleTapEngine';
 
 export const DEFAULT_ACTIVE_INDICATORS = [
   'DoubleTap3D',
@@ -60,6 +63,8 @@ const INITIAL_STATE = {
   detectedDoubleTapPatterns: [] as DoubleTapPattern[],
   detectedPullbackSignals: [] as PullbackSignal[],
   detectedCHoCHSignals: [] as CHoCHSignal[],
+  detectedPatterns: [] as ChartPattern[],
+  chartCandles: [] as EngineCandle[],
 };
 
 export const useTechnicalStore = create<TechnicalState>((set) => ({
@@ -174,6 +179,10 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
 
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) =>
     set({ detectedCHoCHSignals: signals }),
+
+  setDetectedPatterns: (patterns: ChartPattern[]) => set({ detectedPatterns: patterns }),
+
+  setChartCandles: (candles: EngineCandle[]) => set({ chartCandles: candles }),
 
   enableDefaultIndicators: () =>
     set({ activeUserIndicators: [...DEFAULT_ACTIVE_INDICATORS] }),

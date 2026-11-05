@@ -33,6 +33,7 @@ import { registerSMCOverlays } from '../overlays/smcOverlays';
 import { registerAllUserIndicators } from '../overlays/userIndicators';
 import { registerCorporateEventsOverlay } from '../overlays/corporateEventsOverlay';
 import { registerAllAdvancedIndicators } from '../overlays/advancedTradingIndicators';
+import { registerPatternOverlay } from '../overlays/patternOverlay';
 import { OSCILLATOR_NAMES, oscillatorPaneId, registerOscillatorIndicators } from '../indicators/oscillatorIndicators';
 import { PatternStoryOverlay } from './PatternStoryOverlay';
 import type { Candle } from '../model/types';
@@ -50,6 +51,7 @@ export function ensureAllOverlaysRegistered(): void {
   registerAllUserIndicators();
   registerCorporateEventsOverlay();
   registerAllAdvancedIndicators();
+  registerPatternOverlay();
   registerOscillatorIndicators();
   overlaysRegistered = true;
 }
