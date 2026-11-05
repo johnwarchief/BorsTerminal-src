@@ -7,7 +7,16 @@ export type PatternKind =
   | 'TRIANGLE_ASC' | 'TRIANGLE_DESC' | 'TRIANGLE_SYM'
   | 'RECTANGLE' | 'WEDGE_RISING' | 'WEDGE_FALLING'
   | 'HEAD_SHOULDERS' | 'INVERSE_HEAD_SHOULDERS'
-  | 'TRIPLE_TOP' | 'TRIPLE_BOTTOM';
+  | 'TRIPLE_TOP' | 'TRIPLE_BOTTOM'
+  | 'CUP_HANDLE' | 'INVERSE_CUP_HANDLE'
+  | 'ROUNDING_TOP' | 'ROUNDING_BOTTOM'
+  | 'DIAMOND_TOP' | 'DIAMOND_BOTTOM'
+  | 'BROADENING_TOP' | 'BROADENING_BOTTOM'
+  | 'ISLAND_REVERSAL'
+  | 'THREE_RISING_PEAKS' | 'THREE_FALLING_PEAKS';
+
+/** ردهٔ ۱ = پذیرش کامل؛ ردهٔ ۲ = کم‌بسامد، بهترین‌تلاش با برچسب. */
+export type PatternTier = 1 | 2;
 
 export type PatternStatus = 'forming' | 'confirmed' | 'invalidated';
 export type PatternDirection = 'bullish' | 'bearish' | 'neutral';
@@ -19,6 +28,7 @@ export interface BoundaryLine { from: PatternPoint; to: PatternPoint }
 export interface ChartPattern {
   id: string;
   kind: PatternKind;
+  tier?: PatternTier;
   direction: PatternDirection;
   family: PatternFamily;
   anchor: PatternPoint;

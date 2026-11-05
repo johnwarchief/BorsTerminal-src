@@ -23,6 +23,9 @@ export interface PatternConfig {
   hs: { headAboveShouldersAtr: number; shouldersToleranceAtr: number; maxBars: number };
   triple: { levelToleranceAtr: number; maxBars: number };
   reversal: { minSpanBars: number };
+  cup: { rimToleranceAtr: number; handleDepthPct: number; minBars: number; maxBars: number };
+  rounding: { curvatureMin: number; minBars: number; maxBars: number };
+  tier2: { diamondConvergeMin: number; broadeningMin: number; islandGapAtr: number; threePeaksToleranceAtr: number };
 }
 
 export const PATTERN_CONFIG: PatternConfig = {
@@ -48,4 +51,7 @@ export const PATTERN_CONFIG: PatternConfig = {
   hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, maxBars: 120 },
   triple: { levelToleranceAtr: 0.50, maxBars: 120 },
   reversal: { minSpanBars: 6 },
+  cup: { rimToleranceAtr: 0.5, handleDepthPct: 33, minBars: 20, maxBars: 160 },
+  rounding: { curvatureMin: 0.55, minBars: 30, maxBars: 200 },
+  tier2: { diamondConvergeMin: 0.25, broadeningMin: 0.25, islandGapAtr: 0.5, threePeaksToleranceAtr: 0.5 },
 };
