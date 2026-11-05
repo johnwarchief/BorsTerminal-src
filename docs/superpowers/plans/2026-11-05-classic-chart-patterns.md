@@ -76,7 +76,7 @@ const series: EngineCandle[] = [
 describe('pivot primitives', () => {
   it('detects a fractal high and low with asymmetric windows', () => {
     expect(isPivotHigh(series, 3, 2, 1)).toBe(true);
-    expect(isPivotHigh(series, 1, 2, 1)).toBe(false);
+    expect(isPivotHigh(series, 0, 2, 1)).toBe(false); // left-clamp: 12 همسایهٔ بزرگ‌تر دارد
     expect(isPivotLow(series, 4, 2, 1)).toBe(true);
   });
 
