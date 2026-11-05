@@ -23,14 +23,27 @@ function diamondOrBroadening(
     const bottom = w[0].kind === 'low' && w[2].kind === 'low' && w[4].kind === 'low';
     if (!top && !bottom) continue;
     if (w[4].index - w[0].index > config.hs.maxBars) continue;
-    const upper = lineP(p(w[0], candles), p(w[4], candles));
-    const lower = lineP(p(w[1], candles), p(w[3], candles));
+    // R-PA-10: در شکلِ کف، سقف‌ها (w[1]، w[3]) خطِ بالا و کف‌ها (w[0]، w[2]، w[4])
+    // خطِ پایین‌اند؛ وگرنه خطِ کف‌ها بالای خطِ سقف‌ها می‌افتد و شکستِ صعودیِ
+    // ساختگی داخلِ شکل تأیید می‌شود.
+    const upper = top
+      ? lineP(p(w[0], candles), p(w[4], candles))
+      : lineP(p(w[1], candles), p(w[3], candles));
+    const lower = top
+      ? lineP(p(w[1], candles), p(w[3], candles))
+      : lineP(p(w[0], candles), p(w[4], candles));
     const width = (idx: number) => Math.abs(lineValue(upper, idx) - lineValue(lower, idx));
     const start = width(w[0].index);
     const mid = width(w[2].index);
     const end = width(w[4].index);
+    // R-PA-11: عرضِ میانه از خودِ پیوتِ میانی تا مرزِ مقابل سنجیده می‌شود؛ عرضِ
+    // بینِ دو خطِ مرزی خطی است و «میانهٔ پهن‌تر از شروع» با تفاضلِ خطوط ممکن نیست.
+    const midSpan = top
+      ? w[2].price - lineValue(lower, w[2].index)
+      : lineValue(upper, w[2].index) - w[2].price;
     if (!(start > 0) || !(end > 0)) continue;
-    const converging = mid > end && end <= (1 - config.tier2.diamondConvergeMin) * start;
+    const converging = mid > end && midSpan > start
+      && end <= (1 - config.tier2.diamondConvergeMin) * start;
     const broadening = end >= (1 + config.tier2.broadeningMin) * start;
     if (!converging && !broadening) continue;
     const kind = converging
@@ -71,9 +84,18 @@ function island(candles: readonly EngineCandle[], atr: number, config: PatternCo
     const downGap = prev.low - cur.high >= gap;
     if (!upGap && !downGap) continue;
     const lastExit = Math.min(candles.length - 1, i + config.tier2.islandMaxBlockBars);
+    // R-PA-11: گپِ خروج از اکسترممِ جاریِ بلوک (بیشترین سقف / کمترین کف تا این
+    // کندل) سنجیده می‌شود، نه فقط از کندلِ ورود؛ وگرنه نوسانِ داخلیِ جزیره یک
+    // «گپِ خروج» ساختگی می‌سازد.
+    let blockHigh = cur.high;
+    let blockLow = cur.low;
     for (let j = i + 1; j <= lastExit; j++) {
-      const closeGap = upGap ? candles[j]!.high < cur.low - gap : candles[j]!.low > cur.high + gap;
-      if (!closeGap) continue;
+      const closeGap = upGap ? candles[j]!.high < blockLow - gap : candles[j]!.low > blockHigh + gap;
+      if (!closeGap) {
+        blockHigh = Math.max(blockHigh, candles[j]!.high);
+        blockLow = Math.min(blockLow, candles[j]!.low);
+        continue;
+      }
       const block = candles.slice(i, j + 1);
       const islandHigh = Math.max(...block.map((c) => c.high));
       const islandLow = Math.min(...block.map((c) => c.low));
@@ -117,6 +139,10 @@ function threePeaks(
     const peaks = pivots.filter((x) => x.kind === kind);
     for (let i = 0; i + 2 < peaks.length; i++) {
       const trio = peaks.slice(i, i + 3);
+      // R-PA-11: همان سقفِ پنجرهٔ خانواده و پیش‌فیلترِ تازگیِ detectReversal؛
+      // سه‌گانهٔ کش‌آمده یا کهنه نباید منتشر شود.
+      if (trio[2]!.index - trio[0]!.index > config.hs.maxBars) continue;
+      if (trio[2]!.index < candles.length - config.hs.maxBars) continue;
       const spread = Math.max(...trio.map((x) => x.price)) - Math.min(...trio.map((x) => x.price));
       if (spread > tol) continue;
       const rising = trio[2]!.price > trio[0]!.price;
@@ -151,7 +177,7 @@ export function detectTier2(
   atr: number,
   config: PatternConfig,
 ): ChartPattern[] {
-  if (!(atr > 0)) return [];
+  if (!Number.isFinite(atr) || atr <= 0) return [];
   const pivots = findAlternatingPivots(candles, config.pivLeft, config.pivRight);
   return [
     ...diamondOrBroadening(pivots, candles, atr, config),

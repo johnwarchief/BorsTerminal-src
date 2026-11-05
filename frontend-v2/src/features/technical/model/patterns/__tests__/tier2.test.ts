@@ -1,6 +1,7 @@
 // model/patterns/__tests__/tier2.test.ts
 import { describe, expect, it } from 'vitest';
 import { detectTier2 } from '../detectTier2';
+import { lineValue } from '../geometry';
 import { PATTERN_CONFIG } from '../config';
 import type { EngineCandle } from '../../doubleTapEngine';
 
@@ -18,6 +19,18 @@ function seriesFrom(values: number[]): EngineCandle[] {
 /** آینهٔ سری حول ۲۰۰؛ سقف‌ها/کف‌ها و جهت الگو برعکس می‌شوند. */
 function mirrored(values: number[]): EngineCandle[] {
   return seriesFrom(values.map((v) => 200 - v));
+}
+
+/** مسیرِ خطی بین نقاطِ عطف (index، value)؛ بینِ عطف‌ها پیوتِ اضافی ساخته نمی‌شود. */
+function pathValues(turns: ReadonlyArray<readonly [number, number]>, end: number): number[] {
+  return Array.from({ length: end + 1 }, (_, i) => {
+    let k = 0;
+    while (k + 2 < turns.length && i > turns[k + 1]![0]) k++;
+    const [x0, y0] = turns[k]!;
+    const [x1, y1] = turns[k + 1] ?? turns[k]!;
+    const t = x1 === x0 ? 0 : Math.min(1, Math.max(0, (i - x0) / (x1 - x0)));
+    return y0 + (y1 - y0) * t;
+  });
 }
 
 const FIXTURE_CONFIG = { ...PATTERN_CONFIG, pivLeft: 1, pivRight: 1 };
@@ -130,6 +143,76 @@ const RISING_SPREAD_CLOSES = [
   99.5, 98, 96.5, 95.5, 95, 94.5, // 17..22
 ];
 
+/**
+ * الماسِ کف: آینهٔ DIAMOND_CLOSES با دُمِ داخلِ شکل (بدون شکست). پیوت‌ها
+ * کف ۱۰۰ (۴) → سقف ۱۰۸ (۱۰) → کف ۹۲ (۱۶) → سقف ۱۰۴ (۲۲) → کف ۹۷ (۲۸)؛
+ * قیمت پس از لنگر زیرِ خطِ سقف‌ها (۱۰۱٫۶۷ در ۲۹ تا ۱۰۰ در ۳۴) می‌ماند.
+ */
+const DIAMOND_BOTTOM_INSIDE_CLOSES = [
+  104, 102.8, 101.6, 100.8, 100.4, // 0..4 → کف ۱۰۰
+  101.6, 103.2, 104.8, 106.4, 107.2, 107.6, // 5..10 → سقف ۱۰۸
+  105, 101, 98, 95, 93.2, 92.4, // 11..16 → کف ۹۲
+  95, 98, 100.5, 102.5, 103.2, 103.6, // 17..22 → سقف ۱۰۴
+  102, 100.5, 99.2, 98.4, 97.8, 97.4, // 23..28 → کف ۹۷
+  98, 98.8, 99.2, 99.4, 99.5, 99.6, // 29..34 → داخلِ شکل
+];
+
+/**
+ * پهن‌شوندهٔ کف (آینهٔ BROADENING_CLOSES): سقف‌های ۱۰۸ (۱۰) و ۱۱۰ (۲۲)،
+ * کف‌های ۱۰۰ (۴)، ۹۲ (۱۶) و ۹۴ (۲۸)؛ عرض ۷ → ۱۲ → ۱۷. دُمِ صعودی ۱۰۹،
+ * ۱۱۲، ۱۱۵ در ۳۵..۳۷ فقط در ۳۷ از خطِ سقف‌ها (۱۱۲٫۵) می‌گذرد.
+ */
+const BROADENING_BOTTOM_CLOSES = [
+  104, 102.8, 101.6, 100.8, 100.4, // 0..4 → کف ۱۰۰
+  102, 103.5, 105, 106.5, 107.2, 107.6, // 5..10 → سقف ۱۰۸
+  105, 101, 98, 95, 93.2, 92.4, // 11..16 → کف ۹۲
+  96, 99, 101.5, 105, 108.5, 109.6, // 17..22 → سقف ۱۱۰
+  107, 104, 101, 98, 95.5, 94.4, // 23..28 → کف ۹۴
+  96, 98, 100, 102, 104, 106, 109, 112, 115, // 29..37 → شکستِ سقف
+];
+
+/**
+ * گُوهِ باریک‌شوندهٔ یکنوا: سقف ۱۰۶ (۴) → کف ۹۲ (۱۰) → سقف ۱۰۴ (۱۶) →
+ * کف ۹۶ (۲۲) → سقف ۱۰۰ (۲۸). عرض ۱۶ → ۹ → ۲ پیوسته کم می‌شود، اما پیوتِ
+ * میانی از سقفِ آغازین بالاتر نمی‌رود؛ پس الماس نیست (R-PA-11).
+ */
+const WEDGE_CLOSES = [
+  100, 101.4, 102.8, 104.2, 105.6, // 0..4 → سقف ۱۰۶
+  103.4, 101.2, 99, 96.8, 94.6, 92.4, // 5..10 → کف ۹۲
+  94.27, 96.13, 98, 99.87, 101.73, 103.6, // 11..16 → سقف ۱۰۴
+  101.5, 100.4, 99.3, 98.2, 97.1, 96.4, // 17..22 → کف ۹۶
+  98, 98.32, 98.64, 98.96, 99.28, 99.6, // 23..28 → سقف ۱۰۰
+  99.2, // 29
+];
+
+/**
+ * جزیرهٔ گپ‌بالا با کفِ داخلیِ پایین‌تر: گپِ ورود در ۵ (۱٫۶ ≥ ۱)، کندلِ ۶ کفِ
+ * بلوک را به ۱۰۰٫۱ می‌برد و کندلِ ۷ با سقفِ ۹۹٫۹ فقط از کفِ کندلِ ورود
+ * (۱۰۱٫۶ − ۱ = ۱۰۰٫۶) می‌گذرد، نه از کفِ جاریِ بلوک (۱۰۰٫۱ − ۱ = ۹۹٫۱).
+ */
+const ISLAND_SPIKE_INSIDE_CLOSES = [
+  99, 99.2, 99.4, 99.5, 99.6, // 0..4
+  102, 100.5, 99.5, 98.5, // 5..8 → ورود، کفِ داخلی، گپِ ساختگی
+];
+
+/**
+ * سه سقفِ هم‌سطح با فاصلهٔ ۷۰ کندل (گسترهٔ سه‌گانه ۱۴۰ > hs.maxBars=120)؛
+ * هر سه در تلورانس‌اند و دو کفِ میانی دارند، پس فقط دروازهٔ گستره رد می‌کند.
+ */
+const THREE_PEAKS_LONG_CLOSES = pathValues(
+  [[0, 99], [4, 99.6], [9, 91.4], [74, 99.9], [79, 91.8], [144, 100.2], [149, 92]],
+  149,
+);
+
+/**
+ * همان سه قله با گسترهٔ ۷۰ (≤ ۱۲۰) اما آخرین سقف در ۷۴ و سری تا ۱۹۹ ادامه
+ * دارد؛ الگو چند کندل بعد تأیید می‌شود و پیش‌فیلترِ تازگی باید آن را براند.
+ */
+const THREE_PEAKS_STALE_CLOSES = pathValues(
+  [[0, 95], [4, 99.6], [12, 91.4], [40, 99.9], [52, 91.8], [74, 100.2], [80, 90.4], [199, 88]],
+  199,
+);
+
 const has = (patterns: { kind: string }[], kind: string) => patterns.some((p) => p.kind === kind);
 
 describe('detectTier2', () => {
@@ -141,6 +224,15 @@ describe('detectTier2', () => {
     expect(diamond?.direction).toBe('bearish');
     expect(diamond?.family).toBe('reversal');
     expect(diamond?.tier).toBe(2);
+    // R-PA-10: در سقف، خطِ بالا از سقف‌ها (w[0]، w[4]) و خطِ پایین از کف‌ها (w[1]، w[3]).
+    expect(diamond?.upper.from.index).toBe(4);
+    expect(diamond?.upper.to.index).toBe(28);
+    expect(diamond?.lower.from.index).toBe(10);
+    expect(diamond?.lower.to.index).toBe(22);
+    expect(diamond?.upper.from.price).toBeCloseTo(100, 6);
+    expect(diamond?.upper.to.price).toBeCloseTo(103, 6);
+    expect(diamond?.lower.from.price).toBeCloseTo(92, 6);
+    expect(diamond?.lower.to.price).toBeCloseTo(96, 6);
     expect(result.every((p) => p.tier === 2)).toBe(true);
     expect(has(detectTier2(seriesFrom(DIAMOND_SHALLOW_CLOSES), ATR, FIXTURE_CONFIG), 'DIAMOND_TOP')).toBe(false);
   });
@@ -153,7 +245,53 @@ describe('detectTier2', () => {
     expect(diamond?.direction).toBe('bullish');
     expect(diamond?.family).toBe('reversal');
     expect(diamond?.tier).toBe(2);
+    // R-PA-10: در کف، خطِ بالا از سقف‌ها (w[1]، w[3]) و خطِ پایین از کف‌ها (w[0]، w[4]).
+    expect(diamond?.upper.from.index).toBe(10);
+    expect(diamond?.upper.to.index).toBe(22);
+    expect(diamond?.lower.from.index).toBe(4);
+    expect(diamond?.lower.to.index).toBe(28);
+    expect(diamond?.upper.from.price).toBeCloseTo(108, 6);
+    expect(diamond?.upper.to.price).toBeCloseTo(104, 6);
+    expect(diamond?.lower.from.price).toBeCloseTo(100, 6);
+    expect(diamond?.lower.to.price).toBeCloseTo(97, 6);
     expect(has(detectTier2(mirrored(DIAMOND_SHALLOW_CLOSES), ATR, FIXTURE_CONFIG), 'DIAMOND_BOTTOM')).toBe(false);
+  });
+
+  it('keeps bottom shapes forming inside the highs line and confirms only above it', () => {
+    const diamondInside = detectTier2(seriesFrom(DIAMOND_BOTTOM_INSIDE_CLOSES), ATR, FIXTURE_CONFIG)
+      .find((p) => p.kind === 'DIAMOND_BOTTOM');
+    expect(diamondInside?.status).toBe('forming');
+
+    const diamondCandles = mirrored(DIAMOND_CLOSES);
+    const diamond = detectTier2(diamondCandles, ATR, FIXTURE_CONFIG).find((p) => p.kind === 'DIAMOND_BOTTOM');
+    expect(diamond?.status).toBe('confirmed');
+    expect(diamond?.breakoutIndex).toBe(31);
+    expect(diamondCandles[diamond!.breakoutIndex!]!.close)
+      .toBeGreaterThan(lineValue(diamond!.upper, diamond!.breakoutIndex!));
+
+    const broadeningInside = detectTier2(mirrored(BROADENING_CLOSES), ATR, FIXTURE_CONFIG)
+      .find((p) => p.kind === 'BROADENING_BOTTOM');
+    expect(broadeningInside?.status).toBe('forming');
+    expect(broadeningInside?.upper.from.index).toBe(10);
+    expect(broadeningInside?.upper.to.index).toBe(22);
+    expect(broadeningInside?.lower.from.index).toBe(4);
+    expect(broadeningInside?.lower.to.index).toBe(28);
+
+    const broadeningCandles = seriesFrom(BROADENING_BOTTOM_CLOSES);
+    const broadening = detectTier2(broadeningCandles, ATR, FIXTURE_CONFIG)
+      .find((p) => p.kind === 'BROADENING_BOTTOM');
+    expect(broadening?.status).toBe('confirmed');
+    expect(broadening?.breakoutIndex).toBe(37);
+    expect(broadeningCandles[broadening!.breakoutIndex!]!.close)
+      .toBeGreaterThan(lineValue(broadening!.upper, broadening!.breakoutIndex!));
+  });
+
+  it('rejects a monotone narrowing wedge as a diamond (mid > start)', () => {
+    expect(has(detectTier2(seriesFrom(WEDGE_CLOSES), ATR, FIXTURE_CONFIG), 'DIAMOND_TOP')).toBe(false);
+  });
+
+  it('rejects a non-finite ATR', () => {
+    expect(detectTier2(seriesFrom(DIAMOND_CLOSES), Number.POSITIVE_INFINITY, FIXTURE_CONFIG)).toEqual([]);
   });
 
   it('detects a diverging BROADENING_TOP and rejects near-parallel and converging boundaries', () => {
@@ -206,6 +344,11 @@ describe('detectTier2', () => {
     expect(has(detectTier2(candles, ATR, strict), 'ISLAND_REVERSAL')).toBe(false);
   });
 
+  it('measures the island exit gap against the running block extreme, not the entry candle', () => {
+    expect(has(detectTier2(seriesFrom(ISLAND_SPIKE_INSIDE_CLOSES), ATR, FIXTURE_CONFIG), 'ISLAND_REVERSAL'))
+      .toBe(false);
+  });
+
   it('detects THREE_RISING_PEAKS within threePeaksToleranceAtr and rejects a wider spread', () => {
     const result = detectTier2(seriesFrom(RISING_CLOSES), ATR, FIXTURE_CONFIG);
     const peaks = result.find((p) => p.kind === 'THREE_RISING_PEAKS');
@@ -228,5 +371,15 @@ describe('detectTier2', () => {
     expect(peaks?.points).toHaveLength(3);
     expect(result.every((p) => p.tier === 2)).toBe(true);
     expect(has(detectTier2(mirrored(RISING_SPREAD_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_FALLING_PEAKS')).toBe(false);
+  });
+
+  it('rejects a three-peaks trio whose span exceeds hs.maxBars', () => {
+    expect(has(detectTier2(seriesFrom(THREE_PEAKS_LONG_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_RISING_PEAKS'))
+      .toBe(false);
+  });
+
+  it('rejects a trio older than the hs.maxBars recency window', () => {
+    expect(has(detectTier2(seriesFrom(THREE_PEAKS_STALE_CLOSES), ATR, FIXTURE_CONFIG), 'THREE_RISING_PEAKS'))
+      .toBe(false);
   });
 });
