@@ -75,6 +75,21 @@ function bearFlagSeries(): EngineCandle[] {
   ]), 23, { high: 105.8 });
 }
 
+
+/** پرچمِ عمیق: عرضِ کانال در شروع باریک است ولی در انتها از ۳۵٪ لگ می‌گذرد. */
+function deepWideningFlagSeries(): EngineCandle[] {
+  return zigzag(100, [
+    [98, 2],
+    [300, 10], // لگِ صعودی: ۲۰۲ واحد
+    [285, 3],
+    [290, 3],
+    [220, 3],
+    [280, 3],
+    [200, 3], // کفِ کانال به‌شدت پایین می‌رود
+    [270, 1],
+    [320, 4],
+  ]);
+}
 /** کانال عریض‌تر از ۳۵٪ ارتفاع لگ: نامزد پرچم/پنانت باید رد شود. */
 function wideChannelSeries(): EngineCandle[] {
   return reshape(zigzag(100, [
@@ -94,13 +109,55 @@ function pennantSeries(): EngineCandle[] {
   return reshape(zigzag(100, [
     [98, 2],
     [130, 8],
-    [120, 3],
+    [122, 3],
     [132, 3],
     [125, 3],
     [130, 3],
     [130, 1],
     [140, 4],
   ]), 23, { low: 129.2 });
+}
+
+/** پرچم خرسیِ نازک که تمامش زیر کف لگ افتاده؛ لگ ادامه یافته، نه پرچم. */
+function bearFlagBelowPoleSeries(): EngineCandle[] {
+  return zigzag(112, [
+    [132, 2],
+    [80, 8], // کف پایان لگ
+    [84, 3], // بازگشت، تا کف لگ پیوت بماند
+    [74, 3], // کف تازه حدود ۱۰٪ زیر کف لگ
+    [78, 3],
+    [76, 3],
+    [80, 3],
+    [70, 4],
+  ]);
+}
+
+/** پنانت با اصلاح بیش از ۳۸٪ لگ؛ همگراست ولی عمقش از قاعدهٔ پرچم می‌گذرد. */
+function deepPennantSeries(): EngineCandle[] {
+  return zigzag(100, [
+    [98, 2],
+    [130, 8], // لگ صعودی ۳۲ واحدی
+    [110, 3], // اصلاح ۲۱ واحد = ۶۶٪
+    [129, 3],
+    [120, 3],
+    [126, 3],
+    [126, 2], // سقف آخر را پیوت نگه می‌دارد
+    [140, 4],
+  ]);
+}
+
+/** فشرده‌سازی همگرا ولی سه برابرِ لگ؛ «پنانت» ۳۹ هفته‌ای در دادهٔ واقعی همین بود. */
+function longPennantSeries(): EngineCandle[] {
+  return zigzag(112, [
+    [98, 2],
+    [130, 8],
+    [122, 6],
+    [128, 6],
+    [124, 6],
+    [127, 6],
+    [127, 2],
+    [140, 4],
+  ]);
 }
 
 /** سه‌گوشهٔ صعودی: سقف‌های هم‌سطح و کف‌های بالارونده. */
@@ -138,6 +195,20 @@ function symmetricTriangleSeries(): EngineCandle[] {
     [126, 8],
     [108, 8],
     [130, 5],
+  ]);
+}
+
+/**
+ * لگ روند + پولبک: اولین لگ کل موج است، نه یک ضلع مثلث. موتور پیش از این
+ * همین را مثلث متقارن می‌دید؛ وفادار به همان سه FP واقعی (شپنا/خودرو/شتران).
+ */
+function trendLegTriangleSeries(): EngineCandle[] {
+  return zigzag(100, [
+    [100, 2],
+    [500, 10], // لگ روند ۴۰۰ واحدی
+    [380, 6],
+    [450, 6],
+    [300, 4],
   ]);
 }
 
@@ -265,6 +336,11 @@ describe('continuation detectors', () => {
     expect(found.some((p) => p.kind === 'FLAG_BULL' || p.kind === 'PENNANT')).toBe(false);
   });
 
+  it('rejects a flag whose channel widens beyond the limit at consolidation end', () => {
+    const found = detectContinuation(deepWideningFlagSeries(), ATR, FIXTURE_CONFIG);
+    expect(found.some((p) => p.kind === 'FLAG_BULL' || p.kind === 'FLAG_BEAR' || p.kind === 'PENNANT')).toBe(false);
+  });
+
   it('rejects a channel wider than the flag width limit', () => {
     const found = detectContinuation(wideChannelSeries(), ATR, FIXTURE_CONFIG);
     expect(found.some((p) => p.kind === 'FLAG_BULL' || p.kind === 'FLAG_BEAR' || p.kind === 'PENNANT')).toBe(false);
@@ -307,6 +383,33 @@ describe('continuation detectors', () => {
     // یک شکل برای هر جفت مرزی: پنانت تنها شکل این فشرده‌سازی است.
     expect(found).toHaveLength(1);
     expect(found[0]!.kind).toBe('PENNANT');
+  });
+
+  it('measures the pole to the flag-start extreme so a slightly extended pole is still a flag', () => {
+    const found = detectContinuation(bearFlagBelowPoleSeries(), ATR, FIXTURE_CONFIG);
+    const flag = found.find((p) => p.kind === 'FLAG_BEAR');
+    expect(flag).toBeDefined();
+    expect(flag!.direction).toBe('bearish');
+  });
+
+  it('rejects a converging pennant that retraces more than 38% of the impulse', () => {
+    const candles = deepPennantSeries();
+    const relaxed = {
+      ...FIXTURE_CONFIG,
+      pennant: { ...FIXTURE_CONFIG.pennant, maxRetracePct: 100 },
+    };
+    expect(detectContinuation(candles, ATR, relaxed).some((p) => p.kind === 'PENNANT')).toBe(true);
+    expect(detectContinuation(candles, ATR, FIXTURE_CONFIG).some((p) => p.kind === 'PENNANT')).toBe(false);
+  });
+
+  it('rejects a converging pennant whose consolidation outlasts the impulse', () => {
+    const candles = longPennantSeries();
+    const relaxed = {
+      ...FIXTURE_CONFIG,
+      pennant: { ...FIXTURE_CONFIG.pennant, maxDurationRatio: 10 },
+    };
+    expect(detectContinuation(candles, ATR, relaxed).some((p) => p.kind === 'PENNANT')).toBe(true);
+    expect(detectContinuation(candles, ATR, FIXTURE_CONFIG).some((p) => p.kind === 'PENNANT')).toBe(false);
   });
 
   it('keeps the flag when a flag and a pennant share the same boundary pair', () => {
@@ -366,6 +469,16 @@ describe('continuation detectors', () => {
     expect(triangle).toBeDefined();
     expect(triangle?.direction).toBe('neutral');
     expect(triangle?.family).toBe('continuation');
+  });
+
+  it('rejects a trend leg + pullback labelled as a symmetric triangle', () => {
+    const candles = trendLegTriangleSeries();
+    const relaxed = {
+      ...FIXTURE_CONFIG,
+      triangle: { ...FIXTURE_CONFIG.triangle, maxFirstLegRatio: 100 },
+    };
+    expect(detectContinuation(candles, ATR, relaxed).some((p) => p.kind === 'TRIANGLE_SYM')).toBe(true);
+    expect(detectContinuation(candles, ATR, FIXTURE_CONFIG).some((p) => p.kind === 'TRIANGLE_SYM')).toBe(false);
   });
 
   it('finds a rectangle with flat highs and flat lows', () => {

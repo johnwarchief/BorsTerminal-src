@@ -159,7 +159,7 @@ describe('pattern overlay figures', () => {
     expect(stylesOf(lines[0]).style).toBe('solid');
   });
 
-  it('draws no boundary lines for double-tap patterns whose bounds are single points', () => {
+  it('never draws classic DOUBLE_TOP/DOUBLE_BOTTOM; W/M belongs to the DoubleTap engine only', () => {
     const doubleBottom: ChartPattern = {
       ...p,
       id: 'DT',
@@ -168,7 +168,27 @@ describe('pattern overlay figures', () => {
       upper: { from: at(6, 104), to: at(6, 104) },
       lower: { from: at(4, 100), to: at(4, 100) },
     };
-    const figures = patternFigures(params, [doubleBottom]);
+    const doubleTop: ChartPattern = { ...doubleBottom, id: 'DT2', kind: 'DOUBLE_TOP', direction: 'bearish' };
+    const figures = patternFigures(params, [doubleBottom, doubleTop]);
+    expect(figures).toHaveLength(0);
+
+    // یک الگوی کلاسیک دیگر هنوز رسم می‌شود؛ فیلتر فقط W/M را برمی‌دارد.
+    const flag: ChartPattern = { ...p, id: 'FLAG', kind: 'FLAG_BULL' };
+    const withFlag = patternFigures(params, [doubleBottom, doubleTop, flag]);
+    expect(textFigures(withFlag)).toHaveLength(1);
+    expect(texts(withFlag)[0]).toContain('پرچم صعودی');
+    expect(withFlag.every((figure) => figure.type !== 'text' || !String((figure.attrs as { text?: unknown }).text).includes('دوقلو'))).toBe(true);
+  });
+
+  it('draws no boundary lines for double-tap patterns whose bounds are single points', () => {
+    const triangle: ChartPattern = {
+      ...p,
+      id: 'TRI_SINGLE',
+      kind: 'TRIANGLE_SYM',
+      upper: { from: at(6, 104), to: at(6, 104) },
+      lower: { from: at(4, 100), to: at(4, 100) },
+    };
+    const figures = patternFigures(params, [triangle]);
     expect(lineFigures(figures)).toHaveLength(0);
     expect(textFigures(figures)).toHaveLength(1);
   });

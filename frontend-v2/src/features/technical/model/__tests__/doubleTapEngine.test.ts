@@ -148,6 +148,92 @@ describe('doubleTapEngine — detection', () => {
   });
 });
 
+describe('doubleTapEngine — p12 score and lifecycle', () => {
+  const detect = (bars: Bar[], extra: Record<string, number> = {}) =>
+    detectDoubleTapPatterns(bars, {
+      ...DEFAULT_PRECISION_PARAMS,
+      pivLeft: 2,
+      pivRight: 2,
+      minSpan: 3,
+      maxSpan: 30,
+      tolAtr: 0.6,
+      requireTrendContext: false,
+      ...extra,
+    });
+
+  it('attaches the p12 score, grade and breakdown to the model', () => {
+    const m = detect(makeMDoubleTop()).find((p) => p.type === 'DOUBLE_TOP');
+    expect(m).toBeTruthy();
+    expect(m!.p12Score).toBeGreaterThanOrEqual(0);
+    expect(m!.p12Score).toBeLessThanOrEqual(100);
+    expect(['A', 'B', 'C']).toContain(m!.grade);
+    const breakdown = m!.scoreBreakdown!;
+    expect(Math.round(breakdown.match + breakdown.rsi + breakdown.volume + breakdown.height + breakdown.symmetry + breakdown.trend))
+      .toBe(m!.p12Score);
+    expect(m!.atr).toBeGreaterThan(0);
+  });
+
+  it('marks the breakout close as breakoutPrice', () => {
+    const m = detect(makeMDoubleTop()).find((p) => p.type === 'DOUBLE_TOP');
+    expect(m!.breakoutIndex).toBe(12);
+    expect(m!.breakoutPrice).toBeCloseTo(89.5, 5);
+  });
+
+  it('failed: stop hit after the break and before TP1', () => {
+    const bars = makeMDoubleTop();
+    // پیوت دوم با pivRight=1 در کندل ۱۲ تأیید می‌شود؛ کندل ۱۳ آزاد است تا استاپ را بزند.
+    bars[13] = { timestamp: 13 * 86_400_000, open: 92, high: 102, low: 91, close: 99, volume: 1_000 };
+    const m = detectDoubleTapPatterns(bars, {
+      ...DEFAULT_PRECISION_PARAMS,
+      pivLeft: 2,
+      pivRight: 1,
+      minSpan: 3,
+      maxSpan: 30,
+      tolAtr: 0.6,
+      requireTrendContext: false,
+    }).find((p) => p.peak2.index === 11);
+    expect(m).toBeTruthy();
+    expect(m!.status).toBe('failed');
+  });
+
+  it('tp2_hit: the second target ends the lifecycle', () => {
+    const bars = makeMDoubleTop();
+    // TP2 = neck − 1.618×height ≈ ۷۳٫۲؛ کندل با low=۷۰ هر دو تارگت را رد می‌کند.
+    bars[13] = { timestamp: 13 * 86_400_000, open: 89, high: 90, low: 70, close: 72, volume: 1_000 };
+    const m = detect(bars).find((p) => p.peak2.index === 11);
+    expect(m!.status).toBe('tp2_hit');
+  });
+
+  it('timed_out: expiry after the break without touching TP1 or the stop', () => {
+    const bars = makeMDoubleTop();
+    for (let i = 13; i < 210; i++) {
+      const close = 89 + Math.sin(i / 3) * 0.5;
+      bars.push({ timestamp: i * 86_400_000, open: close, high: close + 0.2, low: close - 0.2, close, volume: 1_000 });
+    }
+    const m = detect(bars).find((p) => p.peak2.index === 11);
+    expect(m).toBeTruthy();
+    expect(m!.breakoutIndex).toBe(12);
+    expect(m!.status).toBe('timed_out');
+  });
+
+  it('invalidated: invalidation before any neckline break', () => {
+    const bars = makeMDoubleTop();
+    bars[12] = { timestamp: 12 * 86_400_000, open: 94, high: 96, low: 93, close: 95, volume: 1_000 };
+    bars[13] = { timestamp: 13 * 86_400_000, open: 100, high: 104, low: 99, close: 103, volume: 1_000 };
+    const m = detectDoubleTapPatterns(bars, {
+      ...DEFAULT_PRECISION_PARAMS,
+      pivLeft: 2,
+      pivRight: 1,
+      minSpan: 3,
+      maxSpan: 30,
+      tolAtr: 0.6,
+      requireTrendContext: false,
+    }).find((p) => p.peak2.index === 11);
+    expect(m).toBeTruthy();
+    expect(m!.status).toBe('invalidated');
+  });
+});
+
 describe('doubleTapEngine — probability', () => {
   it('نرخ لاپلاس را درست حساب می‌کند', () => {
     expect(laplaceRate(3, 1)).toBeCloseTo(4 / 6, 6);

@@ -120,6 +120,19 @@ function spreadTripleTopSeries(): EngineCandle[] {
   ]);
 }
 
+/** سه کف با فاصلهٔ ۲۰٪: ATR بزرگِ جاری نباید سه‌قلوی جعلی بسازد. */
+function spreadTripleBottomSeries(): EngineCandle[] {
+  return zigzag(110, [
+    [116, 3],
+    [110, 4], // کف ۱
+    [124, 4],
+    [120, 4], // کف ۲، ۹٪ بالاتر
+    [136, 4],
+    [130, 4], // کف ۳، ۱۸٪ بالاتر از کف ۱
+    [150, 4], // شکست صعودی
+  ]);
+}
+
 /** بسته‌شدن بالای سر پیش از شکست خط گردن: الگو باید باطل شود، هرگز تأیید. */
 function headShouldersBrokenAboveHeadSeries(): EngineCandle[] {
   return zigzag(100, [
@@ -247,6 +260,16 @@ describe('reversal detectors', () => {
     // گام‌های جفتی 0.5 ≤ tol، ولی دامنهٔ 1.0 > tol؛ قاعدهٔ max−min باید رد کند.
     const found = detectReversal(spreadTripleTopSeries(), 1, FIXTURE_CONFIG);
     expect(found.filter((p) => p.kind === 'TRIPLE_TOP')).toEqual([]);
+  });
+
+  it('rejects a triple bottom whose lows spread beyond the price-percentage cap even with a large ATR', () => {
+    const candles = spreadTripleBottomSeries();
+    const relaxed = {
+      ...FIXTURE_CONFIG,
+      triple: { ...FIXTURE_CONFIG.triple, levelTolerancePct: 100 },
+    };
+    expect(detectReversal(candles, 100, relaxed).some((p) => p.kind === 'TRIPLE_BOTTOM')).toBe(true);
+    expect(detectReversal(candles, 100, FIXTURE_CONFIG).some((p) => p.kind === 'TRIPLE_BOTTOM')).toBe(false);
   });
 
   it('invalidates a head & shoulders when price closes above the head before the neckline breaks', () => {

@@ -16,6 +16,7 @@ import type {
   FormationEstimate,
 } from './types';
 import { isPivotHigh, isPivotLow } from './patterns/pivots';
+import { rsiSeries, scoreDoubleTap } from './doubleTapScore';
 
 export interface EngineCandle {
   timestamp: number;
@@ -36,6 +37,10 @@ export interface DoubleTapParams {
   requireTrendContext: boolean;
   nonOverlapBars: number;
   atrPeriod: number;
+  /** دورهٔ RSI واگرایی p12؛ اختیاری تا شیء پیش‌فرض فاز D دست‌نخورده بماند. */
+  rsiPeriod?: number;
+  /** پنجرهٔ مجاز شکست p12؛ اختیاری (پیش‌فرض ۶۰) و خارج از DEFAULT_PRECISION_PARAMS. */
+  expiryBars?: number;
   profile?: 'source' | 'precision';
 }
 
@@ -118,6 +123,7 @@ function qualityScore(args: {
 function buildPattern(
   data: readonly EngineCandle[],
   atr: number[],
+  rsi: number[],
   type: DoubleTapPattern['type'],
   p1: Point,
   p2: Point,
@@ -207,15 +213,38 @@ function buildPattern(
     }
   }
 
+  // چرخهٔ p12: forming → active → TP1/TP2 | failed (استاپ پس از شکست، پیش از TP1) | timed_out.
+  // استاپ پیش از تارگت در همان کندل «محافظه‌کارانه» شکست تلقی می‌شود (مثل p12).
   let status: DoubleTapPattern['status'] = 'forming';
+  const breakoutPrice = breakoutIdx !== -1 ? data[breakoutIdx].close : undefined;
   if (breakoutIdx !== -1) {
-    const tp1Hit = data
-      .slice(breakoutIdx + 1)
-      .some((c) => (isTop ? c.low <= target1 : c.high >= target1));
-    const tp2Hit = data
-      .slice(breakoutIdx + 1)
-      .some((c) => (isTop ? c.low <= target2 : c.high >= target2));
-    status = tp2Hit ? 'tp2_hit' : tp1Hit ? 'tp1_hit' : 'active';
+    status = 'active';
+    let tp1Hit = false;
+    let stopNow = stopLoss;
+    const expiryAfterBreak = (params.expiryBars ?? 60) * 3;
+    for (let b = breakoutIdx + 1; b < data.length; b++) {
+      const hitStop = isTop ? data[b].high >= stopNow : data[b].low <= stopNow;
+      const hitT1 = isTop ? data[b].low <= target1 : data[b].high >= target1;
+      const hitT2 = isTop ? data[b].low <= target2 : data[b].high >= target2;
+      if (hitStop) {
+        status = tp1Hit ? 'tp1_hit' : 'failed';
+        break;
+      }
+      if (hitT2) {
+        status = 'tp2_hit';
+        break;
+      }
+      if (hitT1 && !tp1Hit) {
+        tp1Hit = true;
+        status = 'tp1_hit';
+        // p12: پس از TP1 حد ضرر به قیمت شکست (سربه‌سر) منتقل می‌شود.
+        stopNow = data[breakoutIdx].close;
+      }
+      if (b - breakoutIdx > expiryAfterBreak) {
+        status = 'timed_out';
+        break;
+      }
+    }
   } else if (invalidatedIdx !== -1) {
     status = 'invalidated';
   }
@@ -237,6 +266,36 @@ function buildPattern(
     status,
   });
 
+  // امتیاز وفادار p12 در کنار quality فعلی (quality برای رتبه‌بندی می‌ماند).
+  const leftLeg = neckIdx - p1.index;
+  const rightLeg = p2.index - neckIdx;
+  const symmetry = Math.min(leftLeg, rightLeg) / Math.max(Math.max(leftLeg, rightLeg), 1);
+  const pivotVolume = (index: number): number => {
+    let sum = 0;
+    for (let k = Math.max(0, index - 2); k <= index; k++) sum += data[k].volume ?? 0;
+    return sum;
+  };
+  const volume1 = pivotVolume(p1.index);
+  const volume2 = pivotVolume(p2.index);
+  const volumeKnown = volume1 > 0 && volume2 > 0;
+  const rsiDivergence = isTop
+    ? rsi[p2.index] < rsi[p1.index]
+    : rsi[p2.index] > rsi[p1.index];
+  const priorMove = origin
+    ? isTop
+      ? Math.max(0, p1.price - origin.price)
+      : Math.max(0, origin.price - p1.price)
+    : 0;
+  const p12 = scoreDoubleTap({
+    matchPct: Math.max(0, 1 - diff / Math.max(tol, 1e-9)),
+    rsiDivergence,
+    volumeDivergence: volumeKnown && volume2 < volume1,
+    volumeKnown,
+    heightAtr: height / Math.max(currentAtr, 1e-9),
+    symmetry,
+    priorTrendRatio: Math.min(1, priorMove / Math.max(height, 1e-9)),
+  });
+
   return {
     id: `${type === 'DOUBLE_TOP' ? 'double-top' : 'double-bottom'}-${p1.index}-${p2.index}`,
     type,
@@ -251,12 +310,17 @@ function buildPattern(
     },
     breakoutIndex: breakoutIdx !== -1 ? breakoutIdx : undefined,
     breakoutTs: breakoutIdx !== -1 ? data[breakoutIdx].timestamp : undefined,
+    breakoutPrice,
     target1,
     target2,
     stopLoss,
     score: quality,
+    p12Score: p12.score,
+    grade: p12.grade,
+    scoreBreakdown: p12.breakdown,
     quality,
     height,
+    atr: currentAtr,
     status,
     trendContext,
     profile: params.profile ?? 'precision',
@@ -293,6 +357,7 @@ export function detectDoubleTapPatterns(
   if (n < Math.max(20, p.atrPeriod + 2)) return [];
 
   const atr = calculateAtr(data, p.atrPeriod);
+  const rsi = rsiSeries(data.map((c) => c.close), p.rsiPeriod ?? 14);
   const highs: Point[] = [];
   const lows: Point[] = [];
 
@@ -307,11 +372,11 @@ export function detectDoubleTapPatterns(
 
   const patterns: DoubleTapPattern[] = [];
   for (let i = 0; i < highs.length - 1; i++) {
-    const pattern = buildPattern(data, atr, 'DOUBLE_TOP', highs[i], highs[i + 1], p);
+    const pattern = buildPattern(data, atr, rsi, 'DOUBLE_TOP', highs[i], highs[i + 1], p);
     if (pattern) patterns.push(pattern);
   }
   for (let i = 0; i < lows.length - 1; i++) {
-    const pattern = buildPattern(data, atr, 'DOUBLE_BOTTOM', lows[i], lows[i + 1], p);
+    const pattern = buildPattern(data, atr, rsi, 'DOUBLE_BOTTOM', lows[i], lows[i + 1], p);
     if (pattern) patterns.push(pattern);
   }
 

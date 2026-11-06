@@ -43,6 +43,11 @@ export function detectReversal(
   const invalidationBuffer = config.invalidationBufferAtr * atr;
   /** کفِ ارتفاع: خط گردنِ تند می‌تواند از سر/سه‌قلو بگذرد و ارتفاع را منفی کند. */
   const minHeight = 0.5 * atr;
+  /** اختلاف شانه‌ها هم با ATR و هم با درصدِ قیمت سنجیده می‌شود. */
+  const shouldersTolerance = (a: number, e: number) => Math.min(
+    config.hs.shouldersToleranceAtr * atr,
+    (config.hs.shouldersTolerancePct / 100) * Math.min(Math.abs(a), Math.abs(e)),
+  );
 
   for (let i = 0; i + 4 < pivots.length; i++) {
     const [a, b, c, d, e] = pivots.slice(i, i + 5) as [PivotPoint, PivotPoint, PivotPoint, PivotPoint, PivotPoint];
@@ -57,7 +62,7 @@ export function detectReversal(
 
     if (heads) {
       const middleHighest = c.price >= Math.max(a.price, e.price) + config.hs.headAboveShouldersAtr * atr;
-      const shouldersAligned = Math.abs(a.price - e.price) <= config.hs.shouldersToleranceAtr * atr;
+      const shouldersAligned = Math.abs(a.price - e.price) <= shouldersTolerance(a.price, e.price);
       if (middleHighest && shouldersAligned) {
         const neck: BoundaryLine = { from: toPoint(b, candles), to: toPoint(d, candles) };
         const top: BoundaryLine = { from: toPoint(c, candles), to: toPoint(c, candles) };
@@ -83,7 +88,7 @@ export function detectReversal(
 
     if (bottoms) {
       const middleLowest = c.price <= Math.min(a.price, e.price) - config.hs.headAboveShouldersAtr * atr;
-      const shouldersAligned = Math.abs(a.price - e.price) <= config.hs.shouldersToleranceAtr * atr;
+      const shouldersAligned = Math.abs(a.price - e.price) <= shouldersTolerance(a.price, e.price);
       if (middleLowest && shouldersAligned) {
         const neck: BoundaryLine = { from: toPoint(b, candles), to: toPoint(d, candles) };
         const bottom: BoundaryLine = { from: toPoint(c, candles), to: toPoint(c, candles) };
@@ -105,8 +110,12 @@ export function detectReversal(
     }
 
     // سه‌قلو: سه قله/درهٔ هم‌سطح با دو دره/قلهٔ میانی.
-    const tol = config.triple.levelToleranceAtr * atr;
-    // برابری سطح با دامنهٔ کل سنجیده می‌شود، نه زنجیرهٔ جفتی.
+    // برابری سطح با دامنهٔ کل سنجیده می‌شود، نه زنجیرهٔ جفتی؛ سقفِ درصدی
+    // جلوی ATR بزرگِ بعد از ریزش را می‌گیرد.
+    const tol = Math.min(
+      config.triple.levelToleranceAtr * atr,
+      (config.triple.levelTolerancePct / 100) * Math.min(Math.abs(a.price), Math.abs(c.price), Math.abs(e.price)),
+    );
     const levelSpread = Math.max(a.price, c.price, e.price) - Math.min(a.price, c.price, e.price);
     if (heads && levelSpread <= tol) {
       const neck: BoundaryLine = { from: toPoint(b, candles), to: toPoint(d, candles) };

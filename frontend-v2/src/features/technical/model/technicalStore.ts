@@ -23,6 +23,7 @@ import type {
 // R-PAT-3: نوع‌ها فقط برای امضای اسلایس؛ بدون import زمان‌اجرایی و بدون چرخه.
 import type { ChartPattern } from './patterns/types';
 import type { EngineCandle } from './doubleTapEngine';
+import type { ScanResult } from './events/types';
 
 export const DEFAULT_ACTIVE_INDICATORS = [
   'DoubleTap3D',
@@ -65,6 +66,8 @@ const INITIAL_STATE = {
   detectedPullbackSignals: [] as PullbackSignal[],
   detectedCHoCHSignals: [] as CHoCHSignal[],
   detectedPatterns: [] as ChartPattern[],
+  showTier2Patterns: false,
+  scanResult: null as ScanResult | null,
   focusPatternId: null as string | null,
   chartCandles: [] as EngineCandle[],
 };
@@ -108,6 +111,7 @@ export const useTechnicalStore = create<TechnicalState>((set, get) => ({
         detectedDoubleTapPatterns: [],
         detectedPullbackSignals: [],
         detectedCHoCHSignals: [],
+        scanResult: null,
         predictionData: null,
         candleEdgeData: null,
       };
@@ -185,6 +189,10 @@ export const useTechnicalStore = create<TechnicalState>((set, get) => ({
     set({ detectedCHoCHSignals: signals }),
 
   setDetectedPatterns: (patterns: ChartPattern[]) => set({ detectedPatterns: patterns }),
+
+  toggleTier2Patterns: () => set((state) => ({ showTier2Patterns: !state.showTier2Patterns })),
+
+  setScanResult: (result: ScanResult | null) => set({ scanResult: result }),
 
   setFocusPatternId: (id: string | null) => set({ focusPatternId: id }),
 

@@ -53,6 +53,26 @@ function overlaps(a: [number, number], b: [number, number]): boolean {
   return a[0] < b[1] && b[0] < a[1];
 }
 
+/**
+ * اکستریم واقعی کندل‌ها در پنجرهٔ فشرده‌سازی. خطوط مرزی از دو پیوت ساخته می‌شوند
+ * و اکستریمِ میانی/پایانی را نشان نمی‌دهند؛ دروازهٔ عمق باید روی کندل سنجیده شود.
+ */
+function windowExtremes(
+  candles: readonly EngineCandle[],
+  from: number,
+  to: number,
+): { high: number; low: number } {
+  let high = -Infinity;
+  let low = Infinity;
+  const start = Math.max(0, from);
+  const end = Math.min(candles.length - 1, to);
+  for (let i = start; i <= end; i++) {
+    high = Math.max(high, candles[i]!.high);
+    low = Math.min(low, candles[i]!.low);
+  }
+  return { high, low };
+}
+
 /** خروجی: الگوهای ادامه‌دهندهٔ باز/تأییدشده؛ الگوهای منقضی در emitPattern حذف می‌شوند. */
 export function detectContinuation(
   candles: readonly EngineCandle[],
@@ -92,12 +112,27 @@ export function detectContinuation(
     const lows = lastTwo(after, 'low');
     if (!highs || !lows) continue;
     const { upper, lower } = lines(highs, lows, candles);
-    const widthAtEnd = Math.abs(lineValue(upper, legEnd.index) - lineValue(lower, legEnd.index));
-    if (widthAtEnd <= 0) continue;
     const fingerprint = boundaryFingerprint(highs, lows);
     const consolidationStart = Math.min(highs[0]!.index, lows[0]!.index);
     const consolidationEnd = Math.max(highs[1]!.index, lows[1]!.index);
     const span: [number, number] = [consolidationStart, consolidationEnd];
+    const widthAtConsolidationStart = Math.abs(
+      lineValue(upper, consolidationStart) - lineValue(lower, consolidationStart));
+    const widthAtConsolidationEnd = Math.abs(
+      lineValue(upper, consolidationEnd) - lineValue(lower, consolidationEnd));
+    // The pole ends at the furthest point price actually reached before the
+    // consolidation ends; a pivot can sit inside a final push. Measuring from
+    // that true extreme keeps a valid flag whose pole extended slightly, while
+    // the spec's 38% retrace rule still rejects deep reversal channels.
+    const extremes = windowExtremes(candles, legEnd.index, consolidationEnd);
+    const poleEndPrice = bullish
+      ? Math.max(legEnd.price, extremes.high)
+      : Math.min(legEnd.price, extremes.low);
+    const poleHeight = Math.abs(poleEndPrice - legStart.price);
+    // A flag's channel must stay narrow for its whole life; measuring only at
+    // the leg end lets a widening/deep pullback pass as a flag.
+    const flagWidth = Math.max(widthAtConsolidationStart, widthAtConsolidationEnd);
+    if (flagWidth <= 0 || poleHeight <= 0) continue;
 
     const touches = touchCount(after, upper, 'high', atr * config.touchToleranceAtr)
       + touchCount(after, lower, 'low', atr * config.touchToleranceAtr);
@@ -108,17 +143,24 @@ export function detectContinuation(
       toPoint(highs[0], candles), toPoint(highs[1], candles),
       toPoint(lows[0], candles), toPoint(lows[1], candles),
     ]);
-    const target = bullish ? legEnd.price + legHeight : legEnd.price - legHeight;
-    const stopLoss = bullish ? legEnd.price - legHeight : legEnd.price + legHeight;
+    const target = bullish ? poleEndPrice + poleHeight : poleEndPrice - poleHeight;
+    const stopLoss = legStart.price;
     const quality = clampQuality(
       QUALITY_BASE
       + QUALITY_WIDTH_WEIGHT
-        * (1 - Math.min(1, widthAtEnd / (legHeight * (config.flag.channelMaxWidthPct / 100))))
+        * (1 - Math.min(1, flagWidth / (poleHeight * (config.flag.channelMaxWidthPct / 100))))
       + QUALITY_TOUCH_WEIGHT * Math.min(1, touches / QUALITY_TOUCH_FULL),
     );
 
+    // Spec §5: the impulse leg must not retrace more than maxRetracePct before
+    // the flag is accepted; otherwise a deep reversal channel is mislabelled.
+    // The retrace is measured on actual candles, not the extrapolated boundary.
+    const durationRatio = (consolidationEnd - legEnd.index) / Math.max(1, legBars);
+    const retrace = bullish ? poleEndPrice - extremes.low : extremes.high - poleEndPrice;
     if (!usedPairs.has(fingerprint)
-      && flagImpulse && widthAtEnd <= (config.flag.channelMaxWidthPct / 100) * legHeight) {
+      && flagImpulse && flagWidth <= (config.flag.channelMaxWidthPct / 100) * poleHeight
+      && retrace <= (config.flag.maxRetracePct / 100) * poleHeight
+      && durationRatio <= config.flag.maxDurationRatio) {
       const slope = lineSlope(upper);
       const slopeAgainst = config.flag.slopeOpposite
         && ((bullish && slope > 0) || (!bullish && slope < 0));
@@ -142,13 +184,15 @@ export function detectContinuation(
     // پنانت: همان لگ، ولی دو خط همگرا (سقف پایین‌آینده و کف بالارونده).
     // عرض در شروع و پایان خودِ فشرده‌سازی سنجیده می‌شود؛ فرمول بریف عرض را در
     // legEnd (پیش از شروع فشرده‌سازی) می‌گرفت که برای خطوط همگرا هرگز کوچک نمی‌شود.
-    const widthAtStart = Math.abs(lineValue(upper, consolidationStart) - lineValue(lower, consolidationStart));
-    const widthAtConsolidationEnd = Math.abs(lineValue(upper, consolidationEnd) - lineValue(lower, consolidationEnd));
-    const converge = widthAtStart > 0
-      && widthAtConsolidationEnd <= (1 - config.pennant.convergenceMin) * widthAtStart;
+    const converge = widthAtConsolidationStart > 0
+      && widthAtConsolidationEnd <= (1 - config.pennant.convergenceMin) * widthAtConsolidationStart;
     // جفتِ مشترک: اگر پرچم همین جفت را منتشر کرده، پرچم می‌ماند و پنانت اضافه نمی‌شود.
+    // همان دروازه‌های عمق/طولِ پرچم برای پنانت هم لازم‌اند؛ بدون آن یک اصلاح ۷۰٪
+    // شبیه «پنانت» برچسب می‌خورد.
     if (!usedPairs.has(fingerprint)
-      && pennantImpulse && converge && legBars <= config.pennant.maxBars) {
+      && pennantImpulse && converge && legBars <= config.pennant.maxBars
+      && retrace <= (config.pennant.maxRetracePct / 100) * poleHeight
+      && durationRatio <= config.pennant.maxDurationRatio) {
       const pennant = emitPattern({
         kind: 'PENNANT',
         direction: bullish ? 'bullish' : 'bearish',
@@ -244,6 +288,18 @@ function buildTriangleWindow(
     toPoint(highs[0], candles), toPoint(lows[0], candles),
     toPoint(highs[1], candles), toPoint(lows[1], candles),
   ]);
+  // A triangle's first swing is a boundary swing, not the impulse leg before it.
+  // When the first leg is the whole trend and only the last two pivots converge,
+  // the window is a trend leg + pullback; measured in price, scale-free.
+  const legPrice = (a: typeof points[number], b: typeof points[number]) => Math.abs(a.price - b.price);
+  const firstLeg = legPrice(points[0]!, points[1]!);
+  const laterLeg = Math.max(
+    legPrice(points[1]!, points[2]!),
+    legPrice(points[2]!, points[3]!),
+    atr * 0.5,
+  );
+  const triangleLegsOk = firstLeg <= config.triangle.maxFirstLegRatio * laterLeg;
+  const wedgeLegsOk = firstLeg <= config.wedge.maxFirstLegRatio * laterLeg;
   const height = Math.abs(h1 - l1);
   const upperEnd = lineValue(upper, endIndex);
   const lowerEnd = lineValue(lower, endIndex);
@@ -256,16 +312,20 @@ function buildTriangleWindow(
   const build = (kind: PatternKind, direction: ChartPattern['direction'], quality: number, maxBars: number) =>
     emitPattern({ ...base, ...targets(direction), kind, direction, quality, maxBars }, candles, config);
 
-  if (Math.abs(h2 - h1) <= flat && l2 > l1) return build('TRIANGLE_ASC', 'bullish', TRIANGLE_QUALITY, config.triangle.maxBars);
-  if (Math.abs(l2 - l1) <= flat && h2 < h1) return build('TRIANGLE_DESC', 'bearish', TRIANGLE_QUALITY, config.triangle.maxBars);
-  if (converging && h2 < h1 && l2 > l1) return build('TRIANGLE_SYM', 'neutral', SYMMETRIC_QUALITY, config.triangle.maxBars);
+  if (triangleLegsOk && Math.abs(h2 - h1) <= flat && l2 > l1) return build('TRIANGLE_ASC', 'bullish', TRIANGLE_QUALITY, config.triangle.maxBars);
+  if (triangleLegsOk && Math.abs(l2 - l1) <= flat && h2 < h1) return build('TRIANGLE_DESC', 'bearish', TRIANGLE_QUALITY, config.triangle.maxBars);
+  if (triangleLegsOk && converging && h2 < h1 && l2 > l1) return build('TRIANGLE_SYM', 'neutral', SYMMETRIC_QUALITY, config.triangle.maxBars);
+  const driftPct = (a: number, b: number) =>
+    Math.abs(a - b) / Math.max(1, Math.min(Math.abs(a), Math.abs(b))) * 100;
   if (Math.abs(h2 - h1) <= config.rectangle.flatToleranceAtr * atr
-    && Math.abs(l2 - l1) <= config.rectangle.flatToleranceAtr * atr) {
+    && Math.abs(l2 - l1) <= config.rectangle.flatToleranceAtr * atr
+    && driftPct(h1, h2) <= config.rectangle.maxDriftPct
+    && driftPct(l1, l2) <= config.rectangle.maxDriftPct) {
     // R-PAT-5: پنجرهٔ انقضای مستطیل، نه پنجرهٔ مثلث.
     return build('RECTANGLE', 'neutral', RECTANGLE_QUALITY, config.rectangle.maxBars);
   }
-  if (wedgeConverging && h2 > h1 && l2 > l1) return build('WEDGE_RISING', 'bearish', WEDGE_QUALITY, config.wedge.maxBars);
-  if (wedgeConverging && h2 < h1 && l2 < l1) return build('WEDGE_FALLING', 'bullish', WEDGE_QUALITY, config.wedge.maxBars);
+  if (wedgeLegsOk && wedgeConverging && h2 > h1 && l2 > l1) return build('WEDGE_RISING', 'bearish', WEDGE_QUALITY, config.wedge.maxBars);
+  if (wedgeLegsOk && wedgeConverging && h2 < h1 && l2 < l1) return build('WEDGE_FALLING', 'bullish', WEDGE_QUALITY, config.wedge.maxBars);
   return null;
 }
 

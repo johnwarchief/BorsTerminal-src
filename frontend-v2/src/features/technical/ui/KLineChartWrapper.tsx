@@ -34,10 +34,18 @@ import { registerAllUserIndicators } from '../overlays/userIndicators';
 import { registerCorporateEventsOverlay } from '../overlays/corporateEventsOverlay';
 import { registerAllAdvancedIndicators } from '../overlays/advancedTradingIndicators';
 import { registerPatternOverlay } from '../overlays/patternOverlay';
-import { detectAllPatterns } from '../model/patterns/registry';
-import type { EngineCandle } from '../model/doubleTapEngine';
+import { EVENT_OVERLAY_ID, registerEventOverlay } from '../overlays/eventOverlay';
+import { scanChart } from '../model/events/scan';
+import {
+  DEFAULT_PRECISION_PARAMS,
+  DEFAULT_SOURCE_PARAMS,
+  detectDoubleTapPatterns,
+  type EngineCandle,
+} from '../model/doubleTapEngine';
 import { OSCILLATOR_NAMES, oscillatorPaneId, registerOscillatorIndicators } from '../indicators/oscillatorIndicators';
-import { PatternStoryOverlay } from './PatternStoryOverlay';
+import { PatternSpotlightLayer } from './PatternSpotlightLayer';
+import { classicToSpotlight, doubleTapToSpotlight } from '../model/spotlight/adapter';
+import { selectSpotlightPattern } from '../model/spotlight/select';
 import type { Candle } from '../model/types';
 
 // ----------------------------------------------------------------------------
@@ -54,6 +62,7 @@ export function ensureAllOverlaysRegistered(): void {
   registerCorporateEventsOverlay();
   registerAllAdvancedIndicators();
   registerPatternOverlay();
+  registerEventOverlay();
   registerOscillatorIndicators();
   overlaysRegistered = true;
 }
@@ -299,6 +308,9 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   const channelMode = useTechnicalStore((s) => s.channelMode);
   const rsiVariant = useTechnicalStore((s) => s.rsiVariant);
   const detectedDoubleTapPatterns = useTechnicalStore((s) => s.detectedDoubleTapPatterns);
+  const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
+  const chartCandles = useTechnicalStore((s) => s.chartCandles);
+  const doubleTapProfile = useTechnicalStore((s) => s.doubleTapProfile);
   const adjustmentMode = useTechnicalStore((s) => s.adjustmentMode);
   const showCorporateEvents = useTechnicalStore((s) => s.showCorporateEvents);
   const isMagnetMode = useTechnicalStore((s) => s.isMagnetMode);
@@ -350,13 +362,19 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
 
   const setChartCandles = useTechnicalStore((s) => s.setChartCandles);
   const setDetectedPatterns = useTechnicalStore((s) => s.setDetectedPatterns);
+  const setDetectedDoubleTapPatterns = useTechnicalStore((s) => s.setDetectedDoubleTapPatterns);
+  const setScanResult = useTechnicalStore((s) => s.setScanResult);
 
   // R-PAT-26: تشخیص الگوها همان‌جا که سری کندل زندگی می‌کند انجام می‌شود؛
   // نه فچ تازه، نه محاسبهٔ موازی در میزکار. با تغییر نکردن هویت آرایه از محاسبهٔ دوباره صرف‌نظر می‌کنیم.
+  // adjustmentMode در dependencyهاست تا تغییر حالت تعدیل، اسکن را دوباره اجرا کند (spec §3.5).
   const lastPatternBarsRef = useRef<KLineData[] | null>(null);
+  const lastScanKeyRef = useRef<string>('');
   useEffect(() => {
-    if (lastPatternBarsRef.current === bars) return;
+    const scanKey = `${adjustmentMode}:${doubleTapProfile}:${symbol}:${timeframe}`;
+    if (lastPatternBarsRef.current === bars && lastScanKeyRef.current === scanKey) return;
     lastPatternBarsRef.current = bars;
+    lastScanKeyRef.current = scanKey;
     const engineCandles: EngineCandle[] = bars.map((bar) => ({
       timestamp: bar.timestamp,
       open: bar.open,
@@ -366,8 +384,48 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
       volume: bar.volume,
     }));
     setChartCandles(engineCandles);
-    setDetectedPatterns(engineCandles.length >= 30 ? detectAllPatterns(engineCandles) : []);
-  }, [bars, setChartCandles, setDetectedPatterns]);
+    const result = scanChart(engineCandles, {
+      symbol,
+      timeframe,
+      adjustmentMode,
+    });
+    setScanResult(result);
+    setDetectedPatterns(
+      result.events
+        .filter((event) => event.pattern)
+        .map((event) => event.pattern!),
+    );
+    // منبع واحد W/M همین موتور است؛ لایهٔ اسپات‌لایت و آمار ری p12 از همین آرایه می‌خوانند.
+    setDetectedDoubleTapPatterns(
+      detectDoubleTapPatterns(
+        engineCandles,
+        doubleTapProfile === 'source' ? DEFAULT_SOURCE_PARAMS : DEFAULT_PRECISION_PARAMS,
+      ),
+    );
+  }, [
+    bars,
+    setChartCandles,
+    setDetectedPatterns,
+    setDetectedDoubleTapPatterns,
+    setScanResult,
+    symbol,
+    timeframe,
+    adjustmentMode,
+    doubleTapProfile,
+  ]);
+
+  // یک الگوی اصلی برای اسپات‌لایت: W/M از موتور دوقلو، بقیهٔ ردهٔ ۱ از الگوهای کلاسیک.
+  // DOUBLE_TOP/DOUBLE_BOTTOM کلاسیک حذف می‌شوند تا هیچ رسم/برچسب تکراری ساخته نشود.
+  const spotlightPrimary = useMemo(() => {
+    const lastIndex = Math.max(0, chartCandles.length - 1);
+    const models = [
+      ...detectedDoubleTapPatterns.map(doubleTapToSpotlight),
+      ...detectedPatterns
+        .filter((pattern) => pattern.kind !== 'DOUBLE_TOP' && pattern.kind !== 'DOUBLE_BOTTOM')
+        .map(classicToSpotlight),
+    ];
+    return selectSpotlightPattern(models, lastIndex);
+  }, [detectedDoubleTapPatterns, detectedPatterns, chartCandles.length]);
 
   // ۱. راه‌اندازی و نابودی چارت با ایمنی کامل از نشتی حافظه DOM
   useEffect(() => {
@@ -494,6 +552,30 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     sync();
     return useTechnicalStore.subscribe((state, prev) => {
       if (state.detectedPatterns !== prev.detectedPatterns) sync();
+    });
+  }, [symbol]);
+
+  // ۲٫۱.ب. اورلی رویدادهای واحد (واگرایی/پولبک/شکست)؛ الگو و کانال اورلی خودشان را دارند.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const sync = () => {
+      try {
+        chart.removeOverlay({ name: 'ChartEvents' });
+        chart.createOverlay({
+          name: 'ChartEvents',
+          id: EVENT_OVERLAY_ID,
+          points: [{ dataIndex: 0 }],
+          lock: true,
+          zLevel: 5,
+        });
+      } catch {
+        // ایمنی در زمان تست
+      }
+    };
+    sync();
+    return useTechnicalStore.subscribe((state, prev) => {
+      if (state.scanResult !== prev.scanResult) sync();
     });
   }, [symbol]);
 
@@ -668,12 +750,8 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     }
   }, [activeUserIndicators, channelMode, rsiVariant]);
 
-  // وقتی Double Tap خاموش است، الگوهای ذخیره‌شده هم پاک می‌شوند تا اسکنر کهنه نماند.
-  useEffect(() => {
-    if (!activeUserIndicators.includes('DoubleTap3D')) {
-      useTechnicalStore.getState().setDetectedDoubleTapPatterns([]);
-    }
-  }, [activeUserIndicators]);
+  // W/M حالا از اسکنِ خود چارت (منبع واحد detectDoubleTapPatterns) می‌آید؛
+  // خاموش‌کردن اندیکاتور DoubleTap3D فقط رسم تفصیلیِ canvas را می‌بندد، نه اسپات‌لایت/آمار را.
 
   // ۸. همگام‌سازی و مدیریت رویدادهای تعدیلی و شرکتی رهاورد ۳۶۵ (M مجمع، D سود نقدی، E افزایش سرمایه)
   useEffect(() => {
@@ -785,11 +863,10 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
         </button>
       </div>
 
-      {/* لایه انیمیشن وب برای الگوهای سقف و کف دوقلو W و M */}
-      <PatternStoryOverlay
+      {/* لایهٔ اسپات‌لایت ۳D الگوی اصلی (W/M از موتور دوقلو، بقیه از الگوهای کلاسیک) */}
+      <PatternSpotlightLayer
         chart={activeChartInstance || chartRef.current}
-        patterns={detectedDoubleTapPatterns}
-        active={activeUserIndicators.includes('DoubleTap3D')}
+        primary={spotlightPrimary}
         isLight={isLight}
       />
 

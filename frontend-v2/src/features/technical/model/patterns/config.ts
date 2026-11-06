@@ -15,13 +15,41 @@ export interface PatternConfig {
   formationMinResolved: number;
   expiryGraceBars: number;
   expiryMinPoints: number;
-  flag: { impulseLegAtrMin: number; channelMaxWidthPct: number; slopeOpposite: boolean; maxBars: number; minLegBars: number };
-  pennant: { impulseLegAtrMin: number; convergenceMin: number; maxBars: number };
-  triangle: { flatToleranceAtr: number; convergenceMin: number; maxBars: number; minSpan: number };
-  rectangle: { flatToleranceAtr: number; maxBars: number };
-  wedge: { convergenceMin: number; maxBars: number };
-  hs: { headAboveShouldersAtr: number; shouldersToleranceAtr: number; maxBars: number };
-  triple: { levelToleranceAtr: number; maxBars: number };
+  flag: {
+    impulseLegAtrMin: number;
+    channelMaxWidthPct: number;
+    maxRetracePct: number;
+    /** نسبت طول فشرده‌سازی به لگ؛ فشرده‌سازی بلندتر از این دیگر پرچم نیست. */
+    maxDurationRatio: number;
+    slopeOpposite: boolean;
+    maxBars: number;
+    minLegBars: number;
+  };
+  pennant: {
+    impulseLegAtrMin: number;
+    convergenceMin: number;
+    maxRetracePct: number;
+    maxDurationRatio: number;
+    maxBars: number;
+  };
+  triangle: {
+    flatToleranceAtr: number;
+    convergenceMin: number;
+    /** لگ اول نباید خودِ موج روند باشد؛ نسبت به بزرگ‌ترین لگ بعدی سنجیده می‌شود. */
+    maxFirstLegRatio: number;
+    maxBars: number;
+    minSpan: number;
+  };
+  rectangle: { flatToleranceAtr: number; maxDriftPct: number; maxBars: number };
+  wedge: { convergenceMin: number; maxFirstLegRatio: number; maxBars: number };
+  hs: {
+    headAboveShouldersAtr: number;
+    shouldersToleranceAtr: number;
+    /** سقف درصدیِ اختلاف شانه‌ها؛ ATR جاری بعد از ریزش می‌تواند بی‌معنا بزرگ شود. */
+    shouldersTolerancePct: number;
+    maxBars: number;
+  };
+  triple: { levelToleranceAtr: number; levelTolerancePct: number; maxBars: number };
   reversal: { minSpanBars: number };
   cup: { rimToleranceAtr: number; handleDepthPct: number; minDepthAtr: number; minBars: number; maxBars: number };
   rounding: {
@@ -44,6 +72,28 @@ export interface PatternConfig {
     /** حداقل شیبِ کلِ سه سقف (h3−h1) برای سه‌قله‌های صعودی/نزولی (R-PA-15). */
     threePeaksSlopeAtr: number;
   };
+  /** p19 — Wedge & Channel Detector (Indi 407). همهٔ آستانه‌ها اینجا می‌مانند. */
+  channelPivot: {
+    /** طول پیوت دو طرفهٔ لبه‌ها (`ta.pivothigh/low(20,20)`). */
+    pivotLen: number;
+    autoPivotCount: number;
+    autoLookbackBars: number;
+    minAnchorSpacing: number;
+    breakoutAtr: number;
+    breakoutConfirmBars: number;
+    expireAfterBreakBars: number;
+    reclaimBars: number;
+    lateStageWidthAtr: number;
+    lateStageApexBars: number;
+    touchTolAtr: number;
+    violationTolAtr: number;
+    minTouchSpacing: number;
+    minWidthAtr: number;
+    maxWidthAtr: number;
+    balancePenaltyStart: number;
+    balancePenaltyStrength: number;
+    convergenceProjectionBars: number;
+  };
 }
 
 export const PATTERN_CONFIG: PatternConfig = {
@@ -61,13 +111,27 @@ export const PATTERN_CONFIG: PatternConfig = {
   formationMinResolved: 8,
   expiryGraceBars: 1,
   expiryMinPoints: 5,
-  flag: { impulseLegAtrMin: 3.0, channelMaxWidthPct: 35, slopeOpposite: true, maxBars: 40, minLegBars: 3 },
-  pennant: { impulseLegAtrMin: 3.0, convergenceMin: 0.35, maxBars: 30 },
-  triangle: { flatToleranceAtr: 0.35, convergenceMin: 0.30, maxBars: 60, minSpan: 3 },
-  rectangle: { flatToleranceAtr: 0.50, maxBars: 80 },
-  wedge: { convergenceMin: 0.30, maxBars: 60 },
-  hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, maxBars: 120 },
-  triple: { levelToleranceAtr: 0.50, maxBars: 120 },
+  flag: {
+    impulseLegAtrMin: 3.0,
+    channelMaxWidthPct: 35,
+    maxRetracePct: 38,
+    maxDurationRatio: 2,
+    slopeOpposite: true,
+    maxBars: 40,
+    minLegBars: 3,
+  },
+  pennant: {
+    impulseLegAtrMin: 3.0,
+    convergenceMin: 0.35,
+    maxRetracePct: 38,
+    maxDurationRatio: 2,
+    maxBars: 30,
+  },
+  triangle: { flatToleranceAtr: 0.35, convergenceMin: 0.30, maxFirstLegRatio: 2, maxBars: 60, minSpan: 3 },
+  rectangle: { flatToleranceAtr: 0.50, maxDriftPct: 8, maxBars: 80 },
+  wedge: { convergenceMin: 0.30, maxFirstLegRatio: 2, maxBars: 60 },
+  hs: { headAboveShouldersAtr: 0.50, shouldersToleranceAtr: 0.60, shouldersTolerancePct: 8, maxBars: 120 },
+  triple: { levelToleranceAtr: 0.50, levelTolerancePct: 8, maxBars: 120 },
   reversal: { minSpanBars: 6 },
   cup: { rimToleranceAtr: 0.5, handleDepthPct: 33, minDepthAtr: 2, minBars: 20, maxBars: 160 },
   rounding: { curvatureMin: 0.55, minDepthAtr: 1, minBulgeAtr: 1, endSkewPct: 50, minBars: 30, maxBars: 200 },
@@ -79,5 +143,25 @@ export const PATTERN_CONFIG: PatternConfig = {
     islandMaxBars: 6,
     threePeaksToleranceAtr: 0.5,
     threePeaksSlopeAtr: 0.5,
+  },
+  channelPivot: {
+    pivotLen: 20,
+    autoPivotCount: 5,
+    autoLookbackBars: 250,
+    minAnchorSpacing: 10,
+    breakoutAtr: 0.3,
+    breakoutConfirmBars: 2,
+    expireAfterBreakBars: 10,
+    reclaimBars: 2,
+    lateStageWidthAtr: 1.5,
+    lateStageApexBars: 15,
+    touchTolAtr: 0.2,
+    violationTolAtr: 0.35,
+    minTouchSpacing: 5,
+    minWidthAtr: 1,
+    maxWidthAtr: 20,
+    balancePenaltyStart: 1.5,
+    balancePenaltyStrength: 8,
+    convergenceProjectionBars: 50,
   },
 };

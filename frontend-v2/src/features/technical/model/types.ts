@@ -11,6 +11,7 @@
 // R-PAT-3: فقط نوع — هیچ import زمان‌اجرایی اضافه نمی‌شود و چرخهٔ runtime ساخته نمی‌شود.
 import type { ChartPattern } from './patterns/types';
 import type { EngineCandle } from './doubleTapEngine';
+import type { ScanResult } from './events/types';
 
 export interface Candle {
   timestamp: number;
@@ -180,6 +181,18 @@ export interface FormationEstimate {
   intervalHigh?: number;
 }
 
+export type DoubleTapGrade = 'A' | 'B' | 'C';
+
+/** تفکیک امتیاز p12 (۲۵/۲۰/۱۵/۱۵/۱۰/۱۵). */
+export interface DoubleTapScoreBreakdown {
+  match: number;
+  rsi: number;
+  volume: number;
+  height: number;
+  symmetry: number;
+  trend: number;
+}
+
 export interface DoubleTapPattern {
   id: string;
   type: 'DOUBLE_TOP' | 'DOUBLE_BOTTOM';
@@ -190,15 +203,27 @@ export interface DoubleTapPattern {
   retest?: { index: number; price: number; timestamp: number };
   breakoutIndex?: number;
   breakoutTs?: number;
+  /** بستهٔ شکست (close)؛ مبنای تگ BREAK و انتقال حد ضرر به نقطهٔ سربه‌سر. */
+  breakoutPrice?: number;
   target1: number;
   target2: number;
   stopLoss: number;
   /** شباهت هندسی قدیمی؛ برای سازگاری نمایش حفظ شده است. */
   score: number;
+  /** امتیاز وفادار p12 (۰..۱۰۰)؛ منبع گرید و رتبه‌بندی اسپات‌لایت. */
+  p12Score?: number;
+  grade?: DoubleTapGrade;
+  scoreBreakdown?: DoubleTapScoreBreakdown;
   /** کیفیت ساختار ۰–۱۰۰؛ احتمال نیست. */
   quality: number;
   height: number;
-  status: 'forming' | 'active' | 'tp1_hit' | 'tp2_hit' | 'invalidated';
+  /** ATR جاری در زمان تشخیص؛ عمق ۳D و فاصلهٔ تارگت‌ها بر همین مبناست. */
+  atr?: number;
+  /**
+   * چرخهٔ p12: forming → active → tp1_hit/tp2_hit | failed | timed_out.
+   * `invalidated` یعنی ابطال پیش از شکست.
+   */
+  status: 'forming' | 'active' | 'tp1_hit' | 'tp2_hit' | 'invalidated' | 'failed' | 'timed_out';
   trendContext?: boolean;
   profile?: 'source' | 'precision';
   formation?: FormationEstimate;
@@ -280,8 +305,12 @@ export interface TechnicalState {
   detectedCHoCHSignals: CHoCHSignal[];
   /** الگوهای کلاسیک شناسایی‌شده؛ مصرف‌کنندهٔ آن رجیستری و اورلیِ چارت است. */
   detectedPatterns: ChartPattern[];
+  /** رده۲ (کم‌بسامد) فقط با سوییچ صریح؛ پیش‌فرض خاموش. */
+  showTier2Patterns: boolean;
   /** شناسهٔ الگویی که کاربر از فهرست انتخاب کرده تا چارت روی آن فوکوس کند (spec §7.3). */
   focusPatternId: string | null;
+  /** نتیجهٔ اسکن واحد چارت: الگو، کانال، واگرایی، پولبک و شکست. */
+  scanResult: ScanResult | null;
   /** کندل‌های موتور برای مصرف در تب الگوها (تسک ۱۰ آن را منتشر می‌کند). */
   chartCandles: EngineCandle[];
 
@@ -326,7 +355,9 @@ export interface TechnicalState {
   setDetectedPullbackSignals: (signals: PullbackSignal[]) => void;
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) => void;
   setDetectedPatterns: (patterns: ChartPattern[]) => void;
+  toggleTier2Patterns: () => void;
   setFocusPatternId: (id: string | null) => void;
+  setScanResult: (result: ScanResult | null) => void;
   setChartCandles: (candles: EngineCandle[]) => void;
   enableDefaultIndicators: () => void;
 

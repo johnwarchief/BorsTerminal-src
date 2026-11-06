@@ -1,0 +1,91 @@
+/**
+ * ui/patternSpotlight.css
+ *
+ * انیمیشنِ یک‌بارهٔ اسپات‌لایت الگو (spec §3.3):
+ * - رسم مسیر ۷۰۰ms، اسلب/تگ ۲۰۰ms با stagger، برچسب ۱۵۰ms
+ * - فقط stroke-dashoffset و opacity/transform؛ بدون loop، pulse یا glow
+ * - prefers-reduced-motion: همه static
+ */
+
+.spotlight-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: spotlight-draw 700ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.spotlight-slab {
+  opacity: 0;
+  animation: spotlight-slab-in 200ms cubic-bezier(0.23, 1, 0.32, 1) 700ms both;
+}
+
+.spotlight-slab-top {
+  animation-delay: 780ms;
+}
+
+.spotlight-slab-side {
+  animation-delay: 860ms;
+}
+
+.spotlight-tag {
+  opacity: 0;
+  animation: spotlight-tag-in 200ms cubic-bezier(0.23, 1, 0.32, 1) 900ms both;
+}
+
+.spotlight-tag-2 {
+  animation-delay: 1000ms;
+}
+
+.spotlight-rail {
+  opacity: 0;
+  animation: spotlight-tag-in 200ms cubic-bezier(0.23, 1, 0.32, 1) 1040ms both;
+}
+
+.spotlight-label {
+  opacity: 0;
+  animation: spotlight-label-in 150ms cubic-bezier(0.23, 1, 0.32, 1) 1100ms both;
+}
+
+@keyframes spotlight-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes spotlight-slab-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spotlight-tag-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spotlight-label-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* کلاس صریح برای محیطی که matchMedia در دسترس نیست/آزمون است. */
+.spotlight-reduced .spotlight-path,
+.spotlight-reduced .spotlight-slab,
+.spotlight-reduced .spotlight-tag,
+.spotlight-reduced .spotlight-rail,
+.spotlight-reduced .spotlight-label {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  stroke-dashoffset: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-path,
+  .spotlight-slab,
+  .spotlight-tag,
+  .spotlight-rail,
+  .spotlight-label {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

@@ -91,7 +91,12 @@ export function patternFigures(
   patterns: readonly ChartPattern[],
 ): OverlayFigure[] {
   const figures: OverlayFigure[] = [];
-  const featured = selectFeaturedPatterns(patterns, 6);
+  // مالکیت واحد W/M: رسم/برچسب DOUBLE_TOP و DOUBLE_BOTTOM فقط از موتور دوقلو
+  // (`DoubleTap3D`/`PatternSpotlightLayer`) می‌آید؛ این اورلی کلاسیک هرگز آن‌ها را دوباره نمی‌کشد.
+  const classicOnly = patterns.filter(
+    (pattern) => pattern.kind !== 'DOUBLE_TOP' && pattern.kind !== 'DOUBLE_BOTTOM',
+  );
+  const featured = selectFeaturedPatterns(classicOnly, 6);
   const labelPalette = isLightTheme() ? LABEL_COLOR_LIGHT : LABEL_COLOR_DARK;
   const pushBoundary = (line: BoundaryLine, styles: Record<string, unknown>) => {
     // خطِ صفرطول (from === to در اندیس و قیمت) هیچ چیزِ مفیدی رسم نمی‌کند:
@@ -178,8 +183,13 @@ export function registerPatternOverlay(): void {
     needDefaultPointFigure: false,
     needDefaultXAxisFigure: false,
     needDefaultYAxisFigure: false,
-    createPointFigures: (params): OverlayFigure[] =>
-      patternFigures(params, useTechnicalStore.getState().detectedPatterns),
+    createPointFigures: (params): OverlayFigure[] => {
+      const state = useTechnicalStore.getState();
+      const visible = state.showTier2Patterns
+        ? state.detectedPatterns
+        : state.detectedPatterns.filter((pattern) => pattern.tier !== 2);
+      return patternFigures(params, visible);
+    },
   };
   try {
     registerOverlay(template);
