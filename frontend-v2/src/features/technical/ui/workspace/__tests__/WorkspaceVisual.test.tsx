@@ -61,6 +61,10 @@ vi.mock('@features/market/api/useBoard', () => ({
   })),
 }));
 
+vi.mock('@features/fundamental/api/useFtsCard', () => ({
+  useFtsCard: vi.fn(() => ({ data: null, isLoading: false, isError: false })),
+}));
+
 // مسیرِ سورس از cwd ویتست (frontend-v2) خوانده می‌شود؛ در jsdom آدرسِ ماژول http است.
 const WORKSPACE_DIR = resolve(process.cwd(), 'src/features/technical/ui/workspace').replace(/\\/g, '/');
 const SCANNER_FEED = resolve(process.cwd(), 'src/features/technical/ui/ScannerFeed.tsx');
@@ -221,6 +225,26 @@ describe('workspace visual contract · 12px floor', () => {
 
     const portal = screen.getByTestId('portal-modal-backdrop');
     expect(textOffenders([portal], 'portal')).toEqual([]);
+  });
+
+  it('keeps the 12px floor in scan/research modes and the command palette', () => {
+    renderShell();
+    const offenders: string[] = [];
+
+    for (const mode of ['scan', 'research'] as const) {
+      fireEvent.click(screen.getByTestId(`workspace-mode-${mode}`));
+      const roots = [
+        screen.getByTestId('workspace-topbar'),
+        screen.getByTestId('workspace-activity'),
+        ...Array.from(document.querySelectorAll('[data-testid^="panel-"]')),
+      ];
+      offenders.push(...textOffenders(roots, mode));
+    }
+
+    fireEvent.keyDown(window, { key: 'k', code: 'KeyK', ctrlKey: true });
+    offenders.push(...textOffenders([screen.getByTestId('command-palette')], 'palette'));
+
+    expect(offenders, `متنِ زیر ۱۲px در مودها/پالت:\n${offenders.join('\n')}`).toEqual([]);
   });
 });
 

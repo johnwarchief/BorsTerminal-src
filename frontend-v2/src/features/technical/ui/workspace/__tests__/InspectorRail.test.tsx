@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe('InspectorRail active event card', () => {
-  it('shows the last forming pattern with percent, quality and measured levels', () => {
+  it('shows the last forming tier-1 pattern while the low-frequency switch is off', () => {
     useTechnicalStore.getState().setDetectedPatterns([
       base({
         id: 'older',
@@ -57,12 +57,31 @@ describe('InspectorRail active event card', () => {
     render(<InspectorRail />);
 
     const card = screen.getByTestId('pattern-card');
-    expect(card.textContent).toContain('دیاموند سقف');
-    expect(card.textContent).toContain('۴۰٪');
-    expect(card.textContent).toContain('کیفیت ساختار ۷۲');
+    expect(card.textContent).toContain('پرچم صعودی');
+    expect(card.textContent).toContain('۶۲٪');
+    expect(card.textContent).toContain('کیفیت ساختار ۶۰');
     expect(card.textContent).toContain('هدف ۱۱۲');
     expect(card.textContent).toContain('حد ضرر ۹۸');
     expect(card.textContent).toContain('کندلِ در حال تشکیل ≠ تأییدشده');
+    expect(screen.queryByTestId('pattern-tier-2')).toBeNull();
+  });
+
+  it('shows a tier-2 forming pattern only when the low-frequency switch is on', () => {
+    useTechnicalStore.getState().setDetectedPatterns([
+      base({ id: 'older', anchor: point(40) }),
+      base({
+        id: 'newer', kind: 'DIAMOND_TOP', direction: 'bearish', family: 'reversal',
+        tier: 2, anchor: point(55), quality: 72,
+        formation: { probability: 0.4, successes: 10, failures: 15, resolved: 25, confidence: 'medium', horizon: 10, method: 'same-symbol' },
+      }),
+    ]);
+    useTechnicalStore.getState().toggleTier2Patterns();
+
+    render(<InspectorRail />);
+
+    const card = screen.getByTestId('pattern-card');
+    expect(card.textContent).toContain('دیاموند سقف');
+    expect(card.textContent).toContain('۴۰٪');
     expect(screen.getByTestId('pattern-tier-2').textContent).toContain('کم‌بسامد');
   });
 

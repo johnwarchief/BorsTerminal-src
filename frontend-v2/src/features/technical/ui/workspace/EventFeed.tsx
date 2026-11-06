@@ -20,6 +20,7 @@ import type { AssetCategoryFilter } from '../panels/Top50Panel';
 import { IndicatorsPanel } from '../panels/IndicatorsPanel';
 import { EdgePanel } from '../panels/EdgePanel';
 import { PANEL_LABELS } from './panelMapping';
+import { UnifiedEventList } from './UnifiedEventList';
 
 /** تب‌های فید دقیقاً طبق §3؛ برچسب‌ها از panelMapping می‌آیند تا تک‌منبع بمانند. */
 const FEED_TABS: WorkspacePanel[] = ['events', 'top50', 'indicators', 'edge'];
@@ -41,6 +42,8 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
   const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
   const detectedPullbackSignals = useTechnicalStore((s) => s.detectedPullbackSignals);
   const detectedCHoCHSignals = useTechnicalStore((s) => s.detectedCHoCHSignals);
+  const scanResult = useTechnicalStore((s) => s.scanResult);
+  const showTier2Patterns = useTechnicalStore((s) => s.showTier2Patterns);
 
   // وضعیت جستجو/دستهٔ پنل ۵۰ نماد هنگام تعویض تب حفظ می‌شود.
   const [symbolSearchQuery, setSymbolSearchQuery] = useState('');
@@ -90,8 +93,15 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
       // scanner-panel همان ظرف تب رویدادهاست؛ کارت رویداد فعال این‌جا نیست.
       return (
         <div data-testid="scanner-panel" className="h-full overflow-y-auto">
+          <UnifiedEventList
+            events={(scanResult?.events ?? []).filter((event) => event.family !== 'pattern')}
+            limit={8}
+            className="border-b border-line"
+          />
           <ScannerFeed
-            patterns={detectedPatterns}
+            patterns={showTier2Patterns
+              ? detectedPatterns
+              : detectedPatterns.filter((pattern) => pattern.tier !== 2)}
             pullbacks={detectedPullbackSignals}
             chochs={detectedCHoCHSignals}
           />

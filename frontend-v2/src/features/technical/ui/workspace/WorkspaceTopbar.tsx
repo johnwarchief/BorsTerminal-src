@@ -11,6 +11,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTechnicalStore } from '../../model/technicalStore';
 import { TIMEFRAME_OPTIONS } from '../../model/timeframeAggregation';
+import { useTechnicalWorkspaceStore } from '../../workspace/technicalWorkspaceStore';
+import { MODE_LABEL, WORKSPACE_MODES } from '../../workspace/presets';
+import { LayoutMenu } from './LayoutMenu';
 
 interface AdjustmentOption {
   value: number;
@@ -32,15 +35,22 @@ const CHART_TYPES = [{ id: 'candle', labelFa: 'شمعی' }] as const;
 
 export interface WorkspaceTopbarProps {
   className?: string;
+  /** باز کردن پالت دستور از دکمهٔ Ctrl+K. */
+  onOpenPalette?: () => void;
 }
 
-export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = '' }) => {
+export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({
+  className = '',
+  onOpenPalette,
+}) => {
   const selectedSymbol = useTechnicalStore((s) => s.selectedSymbol);
   const setSelectedSymbol = useTechnicalStore((s) => s.setSelectedSymbol);
   const timeframe = useTechnicalStore((s) => s.timeframe);
   const setTimeframe = useTechnicalStore((s) => s.setTimeframe);
   const adjustmentMode = useTechnicalStore((s) => s.adjustmentMode);
   const setAdjustmentMode = useTechnicalStore((s) => s.setAdjustmentMode);
+  const mode = useTechnicalWorkspaceStore((s) => s.mode);
+  const setMode = useTechnicalWorkspaceStore((s) => s.setMode);
 
   const [symbolInput, setSymbolInput] = useState(selectedSymbol || 'فولاد');
 
@@ -65,7 +75,7 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
       data-testid="workspace-topbar"
       aria-label="نوار بالای میزکار تکنیکال"
       style={{ gridArea: 'topbar' }}
-      className={`h-14 px-3 bg-panel border-b border-line flex items-center gap-3 overflow-hidden select-none ${className}`}
+      className={`h-14 px-3 bg-panel border-b border-line flex items-center gap-3 select-none ${className}`}
       dir="rtl"
     >
       {/* هویت میزکار */}
@@ -73,6 +83,44 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
         <span aria-hidden className="w-2 h-2 rounded-full bg-accent" />
         <h1 className="text-sm font-medium text-accent whitespace-nowrap">میزکار تکنیکال</h1>
       </div>
+
+      <span aria-hidden className="h-6 w-px bg-line shrink-0" />
+
+      {/* مودهای میزکار: تحلیل | اسکن | پژوهش */}
+      <div
+        role="group"
+        aria-label="حالت میزکار"
+        data-testid="workspace-mode-switcher"
+        className="flex items-center h-9 p-1 bg-panel-2 rounded-[var(--radius-md)] border border-line shrink-0"
+      >
+        {WORKSPACE_MODES.map((item) => {
+          const isSelected = mode === item;
+          return (
+            <button
+              key={item}
+              type="button"
+              data-testid={`workspace-mode-${item}`}
+              aria-pressed={isSelected}
+              title={`حالت ${MODE_LABEL[item]}`}
+              onClick={() => setMode(item)}
+              className={`h-7 px-2 rounded-[var(--radius-md)] text-xs transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                isSelected
+                  ? 'bg-panel-3 text-accent font-medium'
+                  : 'text-text-3 hover:text-text'
+              }`}
+            >
+              {MODE_LABEL[item]}
+            </button>
+          );
+        })}
+      </div>
+
+      <span
+        data-testid="workspace-mode-label"
+        className="text-xs text-text-3 whitespace-nowrap shrink-0"
+      >
+        حالت: {MODE_LABEL[mode]}
+      </span>
 
       <span aria-hidden className="h-6 w-px bg-line shrink-0" />
 
@@ -171,6 +219,21 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
             {type.labelFa}
           </span>
         ))}
+      </div>
+
+      {/* چیدمان‌های نام‌دار + پالت دستور */}
+      <div className="ms-auto flex items-center gap-2 shrink-0">
+        <LayoutMenu />
+        <button
+          type="button"
+          data-testid="workspace-command-btn"
+          onClick={onOpenPalette}
+          title="همهٔ کارها (Ctrl+K)"
+          aria-label="باز کردن پالت دستور"
+          className="h-9 px-2 rounded-[var(--radius-md)] border border-line bg-panel-2 text-xs text-text-3 hover:text-accent hover:bg-panel-3 transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent shrink-0"
+        >
+          Ctrl+K
+        </button>
       </div>
     </header>
   );

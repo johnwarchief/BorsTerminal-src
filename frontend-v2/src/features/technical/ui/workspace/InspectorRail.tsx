@@ -14,6 +14,7 @@ import React from 'react';
 import { useTechnicalStore } from '../../model/technicalStore';
 import type { ChartPattern } from '../../model/patterns/types';
 import { ActiveEventCard } from './ActiveEventCard';
+import { UnifiedEventList } from './UnifiedEventList';
 
 interface SettingsToggleProps {
   testId: string;
@@ -54,8 +55,11 @@ export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) 
 
   // آخرین الگوی در حال تشکیل = رویداد فعال ریل؛ تأییدشده‌ها این‌جا نمی‌آیند.
   const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
+  const scanResult = useTechnicalStore((s) => s.scanResult);
+  const showTier2Patterns = useTechnicalStore((s) => s.showTier2Patterns);
   const lastForming: ChartPattern | undefined = [...detectedPatterns]
-    .filter((pattern) => pattern.status === 'forming')
+    .filter((pattern) => pattern.status === 'forming'
+      && (showTier2Patterns || pattern.tier !== 2))
     .sort((a, b) => b.anchor.index - a.anchor.index)[0];
 
   const isLogScale = useTechnicalStore((s) => s.isLogScale);
@@ -67,6 +71,7 @@ export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) 
   const isLockedAllDrawings = useTechnicalStore((s) => s.isLockedAllDrawings);
   const toggleLockAllDrawings = useTechnicalStore((s) => s.toggleLockAllDrawings);
   const isHideAllDrawings = useTechnicalStore((s) => s.isHideAllDrawings);
+  const toggleTier2Patterns = useTechnicalStore((s) => s.toggleTier2Patterns);
   const toggleHideAllDrawings = useTechnicalStore((s) => s.toggleHideAllDrawings);
   const showCorporateEvents = useTechnicalStore((s) => s.showCorporateEvents);
   const toggleCorporateEvents = useTechnicalStore((s) => s.toggleCorporateEvents);
@@ -129,6 +134,12 @@ export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) 
               onToggle={toggleHideAllDrawings}
             />
             <SettingsToggle
+              testId="settings-toggle-tier2"
+              label="الگوهای کم‌بسامد (رده۲)"
+              checked={showTier2Patterns}
+              onToggle={toggleTier2Patterns}
+            />
+            <SettingsToggle
               testId="settings-toggle-corporate-events"
               label="رویدادهای شرکتی"
               checked={showCorporateEvents}
@@ -150,6 +161,17 @@ export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) 
         ) : (
           <>
             <ActiveEventCard pattern={lastForming} />
+
+            <div className="rounded-[var(--radius-md)] border border-line bg-panel-2/50 overflow-hidden">
+              <div className="px-3 py-2 text-xs font-medium text-text border-b border-line">
+                رویدادهای برجسته
+              </div>
+              <UnifiedEventList
+                events={(scanResult?.events ?? []).filter((event) => event.family !== 'pattern')}
+                primariesOnly
+                limit={4}
+              />
+            </div>
 
             <div className="rounded-[var(--radius-md)] border border-line bg-panel-2/50 p-3">
               <div className="text-xs font-medium text-text mb-1">لایه‌ها و قواعد</div>
