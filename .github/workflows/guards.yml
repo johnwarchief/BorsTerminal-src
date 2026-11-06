@@ -1,13 +1,11 @@
 name: guards
 
-# This repo's correctness lives in dev/*.py guard scripts, not in unit tests.
-# CI runs exactly what a developer runs locally, so a green PR locally is green here.
-#
-#   python dev/run_all_tests.py     -> 12 offline guard suites
-#   node --check static/*.js        -> JS syntax (no bundler in this project)
-#
-# The server smoke test (dev/serve_check_v95.py) needs a live uvicorn on :8012
-# and a market.db, so it is intentionally NOT part of CI.
+# BorsTerminal CI Pipeline:
+# - python-guards: 110 offline guard suites (reproducible fixtures)
+# - go-backend: Go 1.27.3, go vet, AST architectural guard (0 sql.Open outside internal/db), unit/integration suites
+# - frontend-v2: Node 22, tsc typecheck, 368 vitest unit tests, production build
+# - js-syntax: Legacy static asset syntax verification
+# - repo-hygiene: .gitattributes, no tracked-but-ignored files, zero untracked garbage
 
 on:
   push:
@@ -48,6 +46,61 @@ jobs:
             done
           fi
           exit "$rc"
+
+  go-backend:
+    name: go backend (vet / ast-arch / unit-tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          check-latest: true
+          cache-dependency-path: backend-go/go.sum
+
+      - name: Go Version
+        run: go version
+
+      - name: Go Vet
+        run: go vet ./...
+
+      - name: AST Architecture Guard (No direct sql.Open outside internal/db)
+        run: go test -v ./internal/db -run TestArchitectureNoDirectSQLOpen
+
+      - name: Run All Go Unit Tests
+        run: go test -v ./...
+
+  frontend-v2:
+    name: frontend v2 (typecheck / vitest / build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-v2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend-v2/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck TypeScript
+        run: npm run typecheck
+
+      - name: Vitest Unit Tests
+        run: npx vitest run
+
+      - name: Build Production Bundle
+        run: npm run build
 
   js-syntax:
     name: node --check on our bundles
