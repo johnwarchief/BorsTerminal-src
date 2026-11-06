@@ -1,10 +1,9 @@
 /**
  * frontend-v2/src/features/technical/ui/workspace/InspectorRail.tsx
  *
- * ریل بازرس ۲۸۰px (B1، اصلاح R-PB-4) — طبق §3: لایه‌ها، رویداد فعال و قواعد.
- * در B1 فقط جای‌گیر است؛ کارت رویداد فعال و لایه‌ها در تسک B3 به این ریل
- * منتقل می‌شوند. محتوای فعلی کشو موقتاً در فید (EventFeed) سوار است تا
- * هیچ قابلیتی از دست نرود.
+ * ریل بازرس ۲۸۰px (B1/B3، اصلاح R-PB-4) — طبق §3: لایه‌ها، رویداد فعال و قواعد.
+ * در B3 کارت رویداد فعال (ActiveEventCard) از فید به این ریل منتقل شد و
+ * بالای بخش لایه‌ها می‌نشیند؛ فید فقط فهرست/رویدادها/قواعد را میزبانی می‌کند.
  *
  * بخشِ «تنظیمات» نوار فعالیت همین ریل را به نمایش تنظیماتِ موجود می‌برد؛
  * هیچ فیلد یا فرمِ تازه‌ای ساخته نمی‌شود — همان کلیدهای نمایشِ استور که
@@ -13,6 +12,8 @@
 
 import React from 'react';
 import { useTechnicalStore } from '../../model/technicalStore';
+import type { ChartPattern } from '../../model/patterns/types';
+import { ActiveEventCard } from './ActiveEventCard';
 
 interface SettingsToggleProps {
   testId: string;
@@ -50,6 +51,12 @@ export interface InspectorRailProps {
 export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) => {
   const activeSection = useTechnicalStore((s) => s.activeSection);
   const isSettings = activeSection === 'settings';
+
+  // آخرین الگوی در حال تشکیل = رویداد فعال ریل؛ تأییدشده‌ها این‌جا نمی‌آیند.
+  const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
+  const lastForming: ChartPattern | undefined = [...detectedPatterns]
+    .filter((pattern) => pattern.status === 'forming')
+    .sort((a, b) => b.anchor.index - a.anchor.index)[0];
 
   const isLogScale = useTechnicalStore((s) => s.isLogScale);
   const toggleLogScale = useTechnicalStore((s) => s.toggleLogScale);
@@ -142,18 +149,12 @@ export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) 
           </div>
         ) : (
           <>
-            <div className="rounded-[var(--radius-sm)] border border-line bg-panel-2/50 p-3">
-              <div className="text-xs font-medium text-text mb-1">رویداد فعال</div>
-              <p className="text-xs leading-6 text-text-3">
-                کارت رویداد برجسته (نوع، وضعیت، نرخ برد و کیفیت هندسی) در تسک B3 اینجا می‌نشیند.
-              </p>
-            </div>
+            <ActiveEventCard pattern={lastForming} />
 
             <div className="rounded-[var(--radius-sm)] border border-line bg-panel-2/50 p-3">
               <div className="text-xs font-medium text-text mb-1">لایه‌ها و قواعد</div>
               <p className="text-xs leading-6 text-text-3">
-                کلیدهای روشن/خاموش لایه‌ها و دکمهٔ قواعد هم در تسک B3 به این ریل منتقل می‌شوند. تا آن زمان
-                همهٔ این کنترل‌ها از فید پایین در دسترس‌اند.
+                کلیدهای روشن/خاموش لایه‌ها و دکمهٔ قواعد در تسک بعدی به همین ریل منتقل می‌شوند.
               </p>
             </div>
           </>

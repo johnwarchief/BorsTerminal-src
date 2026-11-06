@@ -2,11 +2,13 @@
  * frontend-v2/src/features/technical/ui/__tests__/ScannerFeed.test.tsx
  *
  * آزمون‌های فیدِ واحدِ اسکنر (ادغام تب «الگوها» در «اسکنر الگوها»):
- * - کارت آخرین الگوی در حال تشکیل با دروازهٔ درصد (هیچ عددی زیر ۸ نمونه)
  * - فهرست الگوها با فیلتر خانواده و فوکوس روی چارت
- * - برچسب ردهٔ ۲ («کم‌بسامد»)
+ * - برچسب ردهٔ ۲ («کم‌بسامد») در فهرست
  * - ردیف‌های پولبک/CHoCH با testidهای پایدار
  * - کتاب قواعد از PATTERN_CONFIG
+ * - بدونِ کارت رویداد فعال؛ کارت در ریل بازرس می‌نشیند (B3)
+ *
+ * آزمون‌های کارت به ActiveEventCard.test.tsx منتقل شده‌اند.
  */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -65,59 +67,25 @@ describe('ScannerFeed', () => {
     expect(screen.getByTestId('scanner-event-choch-1')).toBeTruthy();
   });
 
-  it('badges tier-2 patterns and keeps the percent gate', () => {
+  it('badges tier-2 patterns in the list and leaves the active card to the rail', () => {
     render(<ScannerFeed patterns={[diamond({ formation: null }), flag()]} pullbacks={[]} chochs={[]} />);
-    expect(screen.getByTestId('pattern-tier-2').textContent).toContain('کم‌بسامد');
-    expect(screen.getByTestId('pattern-card').textContent).not.toMatch(/[۰-۹]+٪/);
+    expect(screen.getByTestId('pattern-row-DIAMOND_TOP:1').textContent).toContain('کم‌بسامد');
+    // testidهای کارت فقط در ریل بازرس وجود دارند.
+    expect(screen.queryByTestId('pattern-tier-2')).toBeNull();
+    expect(screen.queryByTestId('pattern-card')).toBeNull();
   });
 
-  it('shows the percentage only when a formation estimate exists', () => {
+  it('renders no active event card even when a formation estimate exists', () => {
     renderFeed([base({
       formation: {
         probability: 0.62, successes: 14, failures: 9, resolved: 23,
         confidence: 'medium', horizon: 10, method: 'same-symbol',
-        intervalLow: 0.48, intervalHigh: 0.73,
       },
-      returns: { h1: 1.2, h3: 2.1, h5: null },
     })]);
-    const card = screen.getByTestId('pattern-card');
-    // R-PAT-24: احتمال ۰..۱ است؛ کارت باید آن را در ۱۰۰ ضرب و «۶۲٪» نشان دهد.
-    expect(card.textContent).toContain('۶۲٪');
-    // سرصفحه و بازهٔ ویلسون باید یک واحد داشته باشند: ۰٫۴۸–۰٫۷۳ → «۴۸٪–۷۳٪».
-    expect(card.textContent).toContain('۴۸٪–۷۳٪');
-    expect(card.textContent).toContain('۲۳');
-    expect(card.textContent).toContain('کندلِ در حال تشکیل');
-  });
-
-  it('renders a 0.5 rate as ۵۰٪, not as ۱٪', () => {
-    renderFeed([base({
-      formation: { probability: 0.5, successes: 5, failures: 4, resolved: 9, confidence: 'medium', horizon: 10, method: 'same-symbol' },
-    })]);
-    const card = screen.getByTestId('pattern-card');
-    expect(card.textContent).toContain('۵۰٪');
-    expect(card.textContent).not.toContain('۱٪');
-  });
-
-  it('shows the Persian direction next to the kind', () => {
-    renderFeed([base({ direction: 'neutral' })]);
-    expect(screen.getByTestId('pattern-card').textContent).toContain('خنثی');
-  });
-
-  it('says the sample is not enough instead of showing a number', () => {
-    renderFeed([base({
-      formation: { probability: null, successes: 2, failures: 1, resolved: 3, confidence: 'none', horizon: 10, method: 'same-symbol' },
-    })]);
-    expect(screen.getByTestId('pattern-card').textContent).toContain('نمونهٔ کافی نیست');
-    expect(screen.getByTestId('pattern-card').textContent).not.toMatch(/تشکیل\s*[۰-۹]+٪/);
-  });
-
-  it('keeps the 8-sample gate even if a probability leaks through', () => {
-    renderFeed([base({
-      formation: { probability: 0.62, successes: 4, failures: 3, resolved: 7, confidence: 'low', horizon: 10, method: 'same-symbol' },
-    })]);
-    const card = screen.getByTestId('pattern-card');
-    expect(card.textContent).toContain('نمونهٔ کافی نیست');
-    expect(card.textContent).not.toMatch(/[۰-۹]+٪/);
+    expect(screen.queryByTestId('pattern-card')).toBeNull();
+    expect(screen.queryByTestId('pattern-quality')).toBeNull();
+    // درصد در ردیف فهرست می‌ماند؛ فقط کارت منتقل شده است.
+    expect(screen.getByTestId('pattern-row-p1').textContent).toContain('۶۲٪');
   });
 
   it('lists recent patterns with stable row testids and filters by family', () => {
@@ -207,14 +175,6 @@ describe('ScannerFeed', () => {
     expect(useTechnicalStore.getState().focusPatternId).toBe('focus-me');
   });
 
-  it('shows the geometric quality and the measured levels on the card', () => {
-    renderFeed([flag()]);
-    const card = screen.getByTestId('pattern-card');
-    expect(card.textContent).toContain('کیفیت ساختار ۶۰');
-    expect(card.textContent).toContain('هدف ۱۱۲');
-    expect(card.textContent).toContain('حد ضرر ۹۸');
-  });
-
   it('renders no raw enum names for the new kinds', () => {
     const kinds = ['CUP_HANDLE', 'DIAMOND_TOP', 'THREE_FALLING_PEAKS', 'ROUNDING_BOTTOM', 'BROADENING_TOP'];
     renderFeed(kinds.map((kind, i) => base({ id: kind, kind: kind as never, anchor: point(60 + i) })));
@@ -234,10 +194,4 @@ describe('ScannerFeed', () => {
     expect(rows[0]!.getAttribute('data-testid')).toBe('scanner-event-pb-24');
   });
 
-  it('keeps the percent gate closed at 7 resolved samples', () => {
-    renderFeed([base({
-      formation: { probability: 0.6, successes: 6, failures: 1, resolved: 7, confidence: 'none', horizon: 10, method: 'same-symbol' },
-    })]);
-    expect(screen.getByTestId('pattern-card').textContent).toContain('نمونهٔ کافی نیست');
-  });
 });

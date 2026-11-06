@@ -14,6 +14,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TechnicalWorkspace } from '../../TechnicalWorkspace';
 import { useTechnicalStore } from '../../../model/technicalStore';
+import type { ChartPattern } from '../../../model/patterns/types';
 
 // موک کردن بچه‌های سنگین میزکار
 vi.mock('../../KLineChartWrapper', () => ({
@@ -59,6 +60,22 @@ vi.mock('@features/market/api/useBoard', () => ({
 function renderShell() {
   return render(<TechnicalWorkspace symbol="FOOLAD" />);
 }
+
+const formingPattern = (): ChartPattern => ({
+  id: 'shell-flag',
+  kind: 'FLAG_BULL',
+  direction: 'bullish',
+  family: 'continuation',
+  tier: 1,
+  anchor: { index: 40, price: 105, timestamp: 40 * 60_000 },
+  points: [],
+  upper: { from: { index: 30, price: 106, timestamp: 30 * 60_000 }, to: { index: 40, price: 106, timestamp: 40 * 60_000 } },
+  lower: { from: { index: 30, price: 104, timestamp: 30 * 60_000 }, to: { index: 40, price: 104, timestamp: 40 * 60_000 } },
+  target: 112,
+  stopLoss: 98,
+  quality: 60,
+  status: 'forming',
+});
 
 describe('WorkspaceShell', () => {
   beforeEach(() => {
@@ -128,6 +145,24 @@ describe('WorkspaceShell', () => {
     expect(screen.getByTestId('workspace-feed-active-panel').textContent).toBe('۵۰ نماد');
     expect(useTechnicalStore.getState().activePanel).toBe('top50');
     expect(useTechnicalStore.getState().activeDrawerTab).toBe('top50');
+  });
+
+  it('renders exactly one active event card, inside the rail (B3)', () => {
+    useTechnicalStore.getState().setDetectedPatterns([formingPattern()]);
+    renderShell();
+
+    // فید روی تب رویدادها باز می‌شود: ScannerFeed بدون کارت.
+    fireEvent.click(screen.getByTestId('activity-section-scanner'));
+
+    const cards = screen.getAllByTestId('pattern-card');
+    expect(cards).toHaveLength(1);
+    expect(screen.getByTestId('workspace-rail').contains(cards[0]!)).toBe(true);
+    expect(screen.getByTestId('workspace-feed').querySelector('[data-testid="pattern-card"]')).toBeNull();
+    expect(cards[0]!.textContent).toContain('کیفیت ساختار ۶۰');
+
+    // تعویض تب فید کارت ریل را تکرار نمی‌کند.
+    fireEvent.click(screen.getByTestId('feed-tab-top50'));
+    expect(screen.getAllByTestId('pattern-card')).toHaveLength(1);
   });
 
   it('indicators section opens the feed on the indicators panel (R-PB-4)', () => {

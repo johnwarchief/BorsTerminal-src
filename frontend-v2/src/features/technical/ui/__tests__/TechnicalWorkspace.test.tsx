@@ -68,21 +68,24 @@ describe('TechnicalWorkspace', () => {
     expect(screen.getByTestId('technical-workspace')).toBeDefined();
   });
 
-  it('toggles candle edge sidebar visibility on button click', () => {
+  it('toggles the event feed body and its panels on button click', () => {
     render(<TechnicalWorkspace symbol="FOOLAD" />);
 
-    // کشو پیش‌فرض بسته است؛ اول بازش می‌کنیم.
+    // فید پیش‌فرض بسته است؛ اول بازش می‌کنیم.
     fireEvent.click(screen.getByTitle('باز کردن سایدبار لبه آماری'));
-    const toggleBtn = screen.getByTitle('بستن سایدبار لبه آماری');
-    expect(toggleBtn).toBeDefined();
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(false);
+    // پنل لبه آماری در بدنهٔ فید سوار می‌ماند (تب فعال پیش‌فرض رویدادهاست).
+    expect(screen.getByTestId('candle-edge-card')).toBeDefined();
 
-    // بستن سایدبار
+    // بستن فید، بدنه و پنل‌ها را از DOM خارج می‌کند.
+    const toggleBtn = screen.getByTestId('workspace-feed-toggle');
     fireEvent.click(toggleBtn);
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(true);
     expect(screen.queryByTestId('candle-edge-card')).toBeNull();
 
-    // باز کردن مجدد سایدبار
-    const openBtn = screen.getByTitle('باز کردن سایدبار لبه آماری');
-    fireEvent.click(openBtn);
+    // باز کردن مجدد فید
+    fireEvent.click(screen.getByTestId('workspace-feed-toggle'));
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(false);
     expect(screen.getByTestId('candle-edge-card')).toBeDefined();
   });
 

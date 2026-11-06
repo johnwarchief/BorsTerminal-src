@@ -2,42 +2,25 @@
  * frontend-v2/src/features/technical/ui/ScannerFeed.tsx
  *
  * فیدِ واحدِ اسکنر (ادغامِ تبِ «الگوها» در «اسکنر الگوها»):
- * - کارت آخرین الگوی در حال تشکیل با درصد تشکیلِ تاریخیِ همین نماد (فقط وقتی نمونه کافی است)
  * - فهرست الگوهای اخیر با فیلتر خانواده؛ کلیک روی هر ردیف = فوکوس روی چارت (spec §7.3)
  * - ردیف‌های پولبک/CHoCH که overlayهای موجود در استور می‌نویسند (کندل، جهت، تاریخ)
  * - کتاب قواعد؛ همهٔ اعداد از PATTERN_CONFIG خوانده می‌شوند تا با موتور یکی بمانند
  * - ردهٔ ۲ (کم‌بسامد) با برچسب نمایش داده می‌شود، نه پنهان.
+ *
+ * کارت رویداد فعال در B3 به ریل بازرس منتقل شد (ActiveEventCard)؛ این فید
+ * فقط فهرست و رویدادها و قواعد را نگه می‌دارد تا pattern-card یکتا بماند.
  */
 import { useState } from 'react';
 import { toFaDigits } from '@shared/lib/fa';
 import { PATTERN_CONFIG } from '../model/patterns/config';
-import { DIRECTION_FA, KIND_FA, showPercent } from '../model/patterns/labels';
+import { KIND_FA, showPercent } from '../model/patterns/labels';
+import { faDate, faNum, faPct } from '../model/patterns/format';
 import { useTechnicalStore } from '../model/technicalStore';
 import type { ChartPattern, PatternFamily } from '../model/patterns/types';
 import type { CHoCHSignal, PullbackSignal } from '../model/types';
 
 const STATUS_FA: Record<string, string> = { forming: 'در حال تشکیل', confirmed: 'تأییدشده', invalidated: 'باطل‌شده' };
 const FAMILY_FA: Record<PatternFamily, string> = { continuation: 'ادامه‌دهنده', reversal: 'بازگشتی' };
-// R-PAT-24: FormationEstimate احتمال را به‌صورت نسبت ۰..۱ می‌دهد؛ درصد یعنی ×۱۰۰.
-// بازهٔ ویلسون هم همان نسبت است، پس سرصفحه و بازه یک واحد دارند.
-const faPct = (rate: number) => `${toFaDigits(Math.round(rate * 100))}٪`;
-const faNum = (value: number | null | undefined, digits = 1) => {
-  if (value == null || !Number.isFinite(value)) return '—';
-  // Number(...) صفرهای انتهایی را حذف می‌کند تا «۰٫۵» به‌جای «۰٫۵۰» نمایش داده شود.
-  return toFaDigits(Number(value.toFixed(digits))).replace('.', '٫');
-};
-const faDate = (timestamp: number) => {
-  if (!timestamp || !Number.isFinite(timestamp)) return '—';
-  try {
-    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-      month: '2-digit',
-      day: '2-digit',
-      timeZone: 'UTC',
-    }).format(new Date(timestamp));
-  } catch {
-    return '—';
-  }
-};
 
 export interface ScannerFeedProps {
   patterns: readonly ChartPattern[];
@@ -48,15 +31,10 @@ export interface ScannerFeedProps {
 export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
   const [family, setFamily] = useState<'all' | PatternFamily>('all');
   const setFocusPatternId = useTechnicalStore((s) => s.setFocusPatternId);
-  const lastForming = [...patterns]
-    .filter((p) => p.status === 'forming')
-    .sort((a, b) => b.anchor.index - a.anchor.index)[0];
   const visible = [...patterns]
     .filter((p) => family === 'all' || p.family === family)
     .sort((a, b) => b.anchor.index - a.anchor.index)
     .slice(0, 20);
-  const estimate = lastForming?.formation;
-  const gated = showPercent(estimate, PATTERN_CONFIG.formationMinResolved);
   // R-PA-16: رویدادهای اسکنر هم مثل الگوها کران دارند و از تازه به قدیم مرتب‌اند.
   const scannerEvents = [
     ...pullbacks.map((s) => ({ key: `pb-${s.id}`, testid: s.id, kind: 'پولبک', bullish: s.type === 'BULLISH', index: s.index, timestamp: s.timestamp })),
@@ -65,57 +43,6 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
 
   return (
     <div className="flex flex-col gap-3 p-3 text-[var(--text)]">
-      <section data-testid="pattern-card" className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3">
-        {lastForming ? (
-          <>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="flex items-baseline gap-1">
-                <b className="text-[13px]">{KIND_FA[lastForming.kind] ?? lastForming.kind}</b>
-                <span className="text-[12px] text-[var(--text-2)]">{DIRECTION_FA[lastForming.direction]}</span>
-                {lastForming.tier === 2 ? (
-                  <span
-                    data-testid="pattern-tier-2"
-                    className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-600"
-                  >
-                    کم‌بسامد
-                  </span>
-                ) : null}
-              </span>
-              <span className="text-[12px] text-[var(--text-3)]">{STATUS_FA[lastForming.status]}</span>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-[var(--text-3)]">
-              <span data-testid="pattern-quality">کیفیت ساختار {toFaDigits(Math.round(lastForming.quality))}</span>
-              <span className="tabular-nums">هدف {faNum(lastForming.target, 0)} · حد ضرر {faNum(lastForming.stopLoss, 0)}</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              {gated != null && estimate ? (
-                <>
-                  <b className="text-[20px] tabular-nums">{faPct(gated)}</b>
-                  <span className="text-[12px] text-[var(--text-3)]">
-                    {toFaDigits(estimate.successes)} از {toFaDigits(estimate.resolved)} نمونه
-                    {estimate.intervalLow != null && estimate.intervalHigh != null
-                      ? ` · بازهٔ ${faPct(estimate.intervalLow)}–${faPct(estimate.intervalHigh)}`
-                      : ''}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[12px] text-[var(--text-3)]">نمونهٔ کافی نیست</span>
-              )}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-3 text-[12px] text-[var(--text-3)]">
-              <span>کندل ۱: {faNum(lastForming.returns?.h1)}٪</span>
-              <span>کندل ۳: {faNum(lastForming.returns?.h3)}٪</span>
-              <span>کندل ۵: {faNum(lastForming.returns?.h5)}٪</span>
-            </div>
-            <p className="mt-2 text-[12px] text-[var(--text-3)]">
-              کندلِ در حال تشکیل ≠ تأییدشده؛ درصد از تاریخچهٔ همین نماد است، نه پیش‌بینی.
-            </p>
-          </>
-        ) : (
-          <p className="text-[12px] text-[var(--text-3)]">الگوی در حال تشکیل نیست</p>
-        )}
-      </section>
-
       <section className="flex flex-col gap-2">
         <label className="flex items-center gap-2 text-[12px] text-[var(--text-3)]">
           فیلتر خانواده

@@ -1,29 +1,30 @@
 /**
  * frontend-v2/src/features/technical/ui/workspace/EventFeed.tsx
  *
- * فید رویدادهای پایین میزکار (B1، اصلاح R-PB-5):
+ * فید رویدادهای پایین میزکار (B3):
  * - تب‌های خود فید طبق §3: رویدادها | ۵۰ نماد | اندیکاتورها | لبه آماری.
- * - همین تب‌ها activePanel و activeDrawerTab را با هم می‌نویسند و پنلِ میزبان
- *   (کشوی موقت) را کنترل می‌کنند؛ پس برچسبِ فید هم‌یشه با محتوای رندرشده یکی است.
+ * - هر تب پنل خودش را میزبانی می‌کند: رویدادها → ScannerFeed (فهرست/رویدادها/قواعد،
+ *   بدون کارت)، ۵۰ نماد → Top50Panel، اندیکاتورها → IndicatorsPanel، لبه آماری → EdgePanel.
+ * - همین تب‌ها activePanel و activeDrawerTab را با هم می‌نویسند تا برچسبِ فید و
+ *   محتوای رندرشده هرگز از هم جدا نشوند (R-PB-5).
+ * - کارت رویداد فعال در ریل بازرس زندگی می‌کند، نه در این فید.
  */
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTechnicalStore } from '../../model/technicalStore';
-import type { DrawerTab, WorkspacePanel } from '../../model/types';
-import { WideWorkspaceDrawer } from '../WideWorkspaceDrawer';
-import { DRAWER_TAB_BY_PANEL, PANEL_BY_DRAWER_TAB, PANEL_LABELS } from './panelMapping';
-
-/**
- * پرچمِ موقتِ B1: محتوای کشوی موجود تا انتقال پنل‌ها (B2/B3) در فید می‌ماند.
- * هیچ مصرف‌کنندهٔ دیگری نباید به این پرچم وابسته شود.
- */
-export const TEMP_HOST_LEGACY_DRAWER_IN_FEED = true;
+import type { WorkspacePanel } from '../../model/types';
+import { ScannerFeed } from '../ScannerFeed';
+import { Top50Panel } from '../panels/Top50Panel';
+import type { AssetCategoryFilter } from '../panels/Top50Panel';
+import { IndicatorsPanel } from '../panels/IndicatorsPanel';
+import { EdgePanel } from '../panels/EdgePanel';
+import { DRAWER_TAB_BY_PANEL, PANEL_LABELS } from './panelMapping';
 
 /** تب‌های فید دقیقاً طبق §3؛ برچسب‌ها از panelMapping می‌آیند تا تک‌منبع بمانند. */
 const FEED_TABS: WorkspacePanel[] = ['events', 'top50', 'indicators', 'edge'];
 
 export interface EventFeedProps {
-  /** نماد فعال؛ به کشوی موقت پاس داده می‌شود. */
+  /** نماد فعال؛ به پنل‌های ۵۰ نماد و لبه آماری پاس داده می‌شود. */
   activeSymbol: string;
   className?: string;
 }
@@ -35,6 +36,15 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
   // R-PB-1: همان پرچمِ کشو؛ هیچ پرچم دومی وجود ندارد.
   const feedOpen = useTechnicalStore((s) => s.isLeftDrawerOpen);
   const toggleFeed = useTechnicalStore((s) => s.toggleFeed);
+  const setSelectedSymbol = useTechnicalStore((s) => s.setSelectedSymbol);
+
+  const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
+  const detectedPullbackSignals = useTechnicalStore((s) => s.detectedPullbackSignals);
+  const detectedCHoCHSignals = useTechnicalStore((s) => s.detectedCHoCHSignals);
+
+  // وضعیت جستجو/دستهٔ پنل ۵۰ نماد هنگام تعویض تب حفظ می‌شود.
+  const [symbolSearchQuery, setSymbolSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<AssetCategoryFilter>('all');
 
   /** تعویض پنلِ فید: هر دو وضعیت با هم نوشته می‌شوند تا برچسب/محتوا از هم جدا نشوند. */
   const selectPanel = (panel: WorkspacePanel) => {
@@ -45,10 +55,16 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
     }
   };
 
-  /** تغییر تب از داخل کشوی میزبان (حالت کنترل‌شده) به پنل فید ترجمه می‌شود. */
-  const handleHostedTabChange = (tab: DrawerTab) => {
-    selectPanel(PANEL_BY_DRAWER_TAB[tab]);
-  };
+  /** سوییچ سریع نماد در چارت و نوار آدرس، همان رفتار کشوی قبلی. */
+  const handleSelectSymbol = useCallback(
+    (symbol: string) => {
+      setSelectedSymbol(symbol);
+      if (typeof window !== 'undefined') {
+        window.location.hash = `#/technical/${encodeURIComponent(symbol)}`;
+      }
+    },
+    [setSelectedSymbol]
+  );
 
   return (
     <section
@@ -97,9 +113,6 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
           <span data-testid="workspace-feed-active-panel" className="text-xs text-text-3 truncate">
             {PANEL_LABELS[activePanel]}
           </span>
-          <span className="text-xs text-text-3 truncate hidden md:inline">
-            پنل‌های میزکار تا تسک B3 موقتاً در همین فید می‌مانند.
-          </span>
         </div>
 
         <button
@@ -118,8 +131,8 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
       </header>
 
       {/*
-        ارتفاع ثابت ۳۲۰px (h-80) در B1 اندازهٔ پذیرش است؛ کشوی موقت absolute
-        داخل همین بدنه می‌نشیند. واکنش‌گرایی این ارتفاع در B5 انجام می‌شود.
+        ارتفاع ثابت ۳۲۰px (h-80) در B1 اندازهٔ پذیرش است؛ هر پنل داخل همین
+        بدنه اسکرول می‌شود. واکنش‌گرایی این ارتفاع در B5 انجام می‌شود.
         بدنه در حالتِ بسته unmount نمی‌شود، فقط hidden می‌شود تا aria-controls معتبر بماند.
       */}
       <div
@@ -129,20 +142,42 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
         className="relative h-80 border-t border-line overflow-hidden"
       >
         {feedOpen ? (
-          TEMP_HOST_LEGACY_DRAWER_IN_FEED ? (
-            <WideWorkspaceDrawer
-              activeSymbol={activeSymbol}
-              isOpen
-              onToggleOpen={toggleFeed}
-              activeTab={DRAWER_TAB_BY_PANEL[activePanel]}
-              onTabChange={handleHostedTabChange}
-              hideTabs
-            />
-          ) : (
-            <div className="h-full p-3 text-xs leading-6 text-text-3">
-              پنل‌های فید (رویدادها، ۵۰ نماد، اندیکاتورها، لبه آماری) در تسک بعدی اینجا ساخته می‌شوند.
+          <>
+            {activePanel === 'events' ? (
+              // scanner-panel همان ظرف تب رویدادهاست؛ کارت رویداد فعال این‌جا نیست.
+              <div data-testid="scanner-panel" className="h-full overflow-y-auto">
+                <ScannerFeed
+                  patterns={detectedPatterns}
+                  pullbacks={detectedPullbackSignals}
+                  chochs={detectedCHoCHSignals}
+                />
+              </div>
+            ) : null}
+
+            {activePanel === 'top50' ? (
+              <div className="h-full overflow-y-auto">
+                <Top50Panel
+                  activeSymbol={activeSymbol}
+                  onSelect={handleSelectSymbol}
+                  searchQuery={symbolSearchQuery}
+                  onSearchQueryChange={setSymbolSearchQuery}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                />
+              </div>
+            ) : null}
+
+            {activePanel === 'indicators' ? (
+              <div className="h-full overflow-y-auto">
+                <IndicatorsPanel />
+              </div>
+            ) : null}
+
+            {/* لبه آماری مثل قبل سوار در DOM می‌ماند و فقط با کلاس hidden پنهان می‌شود. */}
+            <div className="h-full overflow-y-auto">
+              <EdgePanel symbol={activeSymbol} active={activePanel === 'edge'} />
             </div>
-          )
+          </>
         ) : null}
       </div>
     </section>
