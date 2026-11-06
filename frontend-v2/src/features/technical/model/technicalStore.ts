@@ -14,7 +14,6 @@ import type {
   TechnicalState,
   ChannelMode,
   RsiVariant,
-  DrawerTab,
   WorkspacePanel,
   WorkspaceSection,
   DoubleTapPattern,
@@ -60,8 +59,6 @@ const INITIAL_STATE = {
   indicatorParams: {} as Record<string, Record<string, number>>,
   maxDrawnPatterns: 1,
   isLeftDrawerOpen: false,
-  leftDrawerWidth: 460,
-  activeDrawerTab: 'top50' as DrawerTab,
   activePanel: 'events' as WorkspacePanel,
   activeSection: 'chart' as WorkspaceSection,
   detectedDoubleTapPatterns: [] as DoubleTapPattern[],
@@ -177,11 +174,6 @@ export const useTechnicalStore = create<TechnicalState>((set, get) => ({
   setActivePanel: (panel: WorkspacePanel) => set({ activePanel: panel }),
 
   setActiveSection: (section: WorkspaceSection) => set({ activeSection: section }),
-
-  setLeftDrawerWidth: (width: number) =>
-    set({ leftDrawerWidth: Math.min(Math.max(width, 360), 650) }),
-
-  setActiveDrawerTab: (tab: DrawerTab) => set({ activeDrawerTab: tab }),
 
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) =>
     set({ detectedDoubleTapPatterns: patterns }),

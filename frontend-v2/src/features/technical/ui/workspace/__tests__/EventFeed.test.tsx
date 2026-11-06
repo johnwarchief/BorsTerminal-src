@@ -7,7 +7,7 @@
  * - تب لبه آماری → EdgePanel
  * - تب‌های خود فید تنها نوار تب صفحه‌اند؛ نوار تب کشو دیگر رندر نمی‌شود
  */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventFeed } from '../EventFeed';
 import { useTechnicalStore } from '../../../model/technicalStore';
@@ -70,7 +70,6 @@ describe('EventFeed panel hosting', () => {
     expect(screen.getByTestId('top50-panel')).toBeTruthy();
     expect(screen.queryByTestId('scanner-panel')).toBeNull();
     expect(useTechnicalStore.getState().activePanel).toBe('top50');
-    expect(useTechnicalStore.getState().activeDrawerTab).toBe('top50');
   });
 
   it('shows EdgePanel only as the active tab content', () => {
@@ -91,5 +90,64 @@ describe('EventFeed panel hosting', () => {
     // تب‌های داخلی کشو دیگر روی صفحه نیستند؛ فقط تب‌های خود فید می‌مانند.
     expect(screen.queryByTestId('drawer-tab-scanner')).toBeNull();
     expect(screen.queryByTestId('drawer-tab-top50')).toBeNull();
+    // کشوی بازنشسته هیچ اثری در DOM ندارد.
+    expect(screen.queryByTestId('wide-workspace-drawer')).toBeNull();
+  });
+});
+
+describe('EventFeed portal pop-out (B4)', () => {
+  it.each([
+    ['events', 'scanner-panel'],
+    ['top50', 'top50-panel'],
+    ['indicators', 'indicators-panel'],
+    ['edge', 'edge-tab-panel'],
+  ])('renders the selected %s panel inside the floating portal', (panel, panelTestId) => {
+    renderFeed();
+
+    fireEvent.click(screen.getByTestId(`feed-tab-${panel}`));
+    fireEvent.click(screen.getByTestId('portal-modal-btn'));
+
+    const portal = screen.getByTestId('portal-modal-backdrop');
+    expect(within(portal).getByTestId(panelTestId)).toBeTruthy();
+  });
+
+  it('closes the portal with its close button', () => {
+    renderFeed();
+
+    fireEvent.click(screen.getByTestId('portal-modal-btn'));
+    const portal = screen.getByTestId('portal-modal-backdrop');
+    fireEvent.click(within(portal).getByTestId('portal-modal-close'));
+
+    expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+  });
+
+  it('closes the portal on Escape', () => {
+    renderFeed();
+
+    fireEvent.click(screen.getByTestId('portal-modal-btn'));
+    expect(screen.getByTestId('portal-modal-backdrop')).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+  });
+});
+
+describe('EventFeed collapse (B4)', () => {
+  it('hides the panel body but keeps the feed header toggle usable', () => {
+    renderFeed();
+
+    fireEvent.click(screen.getByTestId('workspace-feed-toggle'));
+
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(true);
+    expect(screen.queryByTestId('scanner-panel')).toBeNull();
+    // سربرگ فید می‌ماند و دکمهٔ جمع‌کردن همان‌جا قابل استفاده است.
+    expect(screen.getByTestId('workspace-feed').contains(screen.getByTestId('workspace-feed-toggle'))).toBe(true);
+    expect(screen.getByTestId('workspace-feed-toggle').getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(screen.getByTestId('workspace-feed-toggle'));
+
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(false);
+    expect(screen.getByTestId('scanner-panel')).toBeDefined();
   });
 });

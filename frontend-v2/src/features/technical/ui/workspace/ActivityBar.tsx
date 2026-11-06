@@ -17,7 +17,6 @@ import React from 'react';
 import { Icon } from '@app/shell/icons';
 import { useTechnicalStore } from '../../model/technicalStore';
 import type { WorkspacePanel, WorkspaceSection } from '../../model/types';
-import { DRAWER_TAB_BY_PANEL } from './panelMapping';
 
 interface ActivityItem {
   id: WorkspaceSection;
@@ -46,7 +45,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({ className = '' }) => {
   const activeSection = useTechnicalStore((s) => s.activeSection);
   const setActiveSection = useTechnicalStore((s) => s.setActiveSection);
   const setActivePanel = useTechnicalStore((s) => s.setActivePanel);
-  const setActiveDrawerTab = useTechnicalStore((s) => s.setActiveDrawerTab);
   const feedOpen = useTechnicalStore((s) => s.isLeftDrawerOpen);
   const toggleFeed = useTechnicalStore((s) => s.toggleFeed);
 
@@ -56,7 +54,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({ className = '' }) => {
     const panel = FEED_PANEL_BY_SECTION[section];
     if (panel) {
       setActivePanel(panel);
-      setActiveDrawerTab(DRAWER_TAB_BY_PANEL[panel]);
       if (!feedOpen) toggleFeed();
       return;
     }

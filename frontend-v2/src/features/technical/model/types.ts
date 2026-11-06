@@ -153,8 +153,6 @@ export type ChannelMode = 'regression' | 'retest_channel' | 'donchian';
 
 export type RsiVariant = 'standard' | 'fibo' | 'bb' | 'smooth_ma';
 
-export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
-
 /**
  * پنل‌های میزکارِ تازه (فاز B): فیدِ رویدادها + سه پنلی که امروز در کشوی عریض‌اند.
  * در B1 فقط وضعیتِ پنلِ فعال را نگه می‌دارد؛ میزبانِ واقعی در B3 ساخته می‌شود.
@@ -261,7 +259,7 @@ export interface TechnicalState {
   isHideAllDrawings: boolean;
   corporateEvents: CorporateEventItem[];
 
-  // تنظیمات جدید کانال چندحالته، خانواده RSI و سایدبار عریض
+  // تنظیمات جدید کانال چندحالته و خانواده RSI
   channelMode: ChannelMode;
   rsiVariant: RsiVariant;
   doubleTapProfile: 'precision' | 'source';
@@ -273,8 +271,6 @@ export interface TechnicalState {
   /** سقفِ شکل‌های رسم‌شده به‌ازای هر اندیکاتور؛ الگوهای قدیمی‌تر حذف می‌شوند */
   maxDrawnPatterns: number;
   isLeftDrawerOpen: boolean;
-  leftDrawerWidth: number;
-  activeDrawerTab: DrawerTab;
   /** پنلِ فعالِ فید در پوستهٔ تازه (B1)؛ محتوای میزبان از همین مقدار پیروی می‌کند (R-PB-5). */
   activePanel: WorkspacePanel;
   /** بخشِ فعالِ نوار فعالیت طبق §3 (R-PB-4). */
@@ -326,8 +322,6 @@ export interface TechnicalState {
   toggleFeed: () => void;
   setActivePanel: (panel: WorkspacePanel) => void;
   setActiveSection: (section: WorkspaceSection) => void;
-  setLeftDrawerWidth: (width: number) => void;
-  setActiveDrawerTab: (tab: DrawerTab) => void;
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) => void;
   setDetectedPullbackSignals: (signals: PullbackSignal[]) => void;
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) => void;

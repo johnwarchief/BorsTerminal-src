@@ -10,7 +10,7 @@
  * همان‌طور که در آزمون‌های موجود میزکار موک می‌شوند.
  */
 
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TechnicalWorkspace } from '../../TechnicalWorkspace';
 import { useTechnicalStore } from '../../../model/technicalStore';
@@ -121,7 +121,6 @@ describe('WorkspaceShell', () => {
     fireEvent.click(screen.getByTestId('activity-section-scanner'));
 
     expect(useTechnicalStore.getState().activePanel).toBe('events');
-    expect(useTechnicalStore.getState().activeDrawerTab).toBe('scanner');
     expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(false);
     // «رویدادها» همان پنل اسکنر/رویدادهای میزبان است.
     expect(screen.getByTestId('scanner-panel')).toBeDefined();
@@ -144,7 +143,6 @@ describe('WorkspaceShell', () => {
     expect(screen.getByTestId('feed-tab-top50').getAttribute('aria-selected')).toBe('true');
     expect(screen.getByTestId('workspace-feed-active-panel').textContent).toBe('۵۰ نماد');
     expect(useTechnicalStore.getState().activePanel).toBe('top50');
-    expect(useTechnicalStore.getState().activeDrawerTab).toBe('top50');
   });
 
   it('renders exactly one active event card, inside the rail (B3)', () => {
@@ -200,5 +198,49 @@ describe('WorkspaceShell', () => {
     const before = useTechnicalStore.getState().isLogScale;
     fireEvent.click(logToggle);
     expect(useTechnicalStore.getState().isLogScale).toBe(!before);
+  });
+
+  it('retires the wide drawer: no legacy drawer testids remain (B4)', () => {
+    renderShell();
+
+    expect(screen.queryByTestId('wide-workspace-drawer')).toBeNull();
+    expect(screen.queryByTestId('wide-workspace-drawer-collapsed')).toBeNull();
+    expect(screen.queryByTestId('slim-activity-bar')).toBeNull();
+    expect(screen.queryByTestId('drawer-backdrop')).toBeNull();
+    expect(screen.queryByTestId('drawer-resizer-handle')).toBeNull();
+  });
+
+  it('feed header pop-out opens the portal with the selected panel and Escape closes it (B4)', () => {
+    renderShell();
+
+    fireEvent.click(screen.getByTestId('feed-tab-top50'));
+    fireEvent.click(screen.getByTestId('portal-modal-btn'));
+
+    const portal = screen.getByTestId('portal-modal-backdrop');
+    expect(within(portal).getByTestId('top50-panel')).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+  });
+
+  it('collapsing the feed hides the panel but keeps the activity bar and header toggle (B4)', () => {
+    renderShell();
+
+    fireEvent.click(screen.getByTestId('activity-section-scanner'));
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(false);
+
+    fireEvent.click(screen.getByTestId('workspace-feed-toggle'));
+
+    expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(false);
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(true);
+    expect(screen.queryByTestId('scanner-panel')).toBeNull();
+    // نوار فعالیت و سربرگ فید (با دکمهٔ جمع‌کردن) دست‌نخورده می‌مانند.
+    expect(screen.getByTestId('workspace-activity')).toBeDefined();
+    expect(screen.getByTestId('workspace-feed-toggle').getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(screen.getByTestId('workspace-feed-toggle'));
+    expect(screen.getByTestId('workspace-feed-body').hasAttribute('hidden')).toBe(false);
+    expect(screen.getByTestId('scanner-panel')).toBeDefined();
   });
 });
