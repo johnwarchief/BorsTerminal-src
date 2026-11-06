@@ -326,7 +326,7 @@ func TestAnalysisSnapshotIsTwentySeconds(t *testing.T) {
 	ctx := context.Background()
 	var now = time.Date(2026, 10, 28, 10, 30, 0, 0, time.Local)
 	dir := copyFixture(t)
-	h, err := db.Open(dir, false)
+	h, err := db.OpenWritableForTest(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

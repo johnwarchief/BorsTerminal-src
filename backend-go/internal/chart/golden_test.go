@@ -41,7 +41,7 @@ func openService(t *testing.T, scenario string) *Service {
 	dir := copyFixture(t)
 	switch scenario {
 	case "s2":
-		h, err := db.Open(dir, false)
+		h, err := db.OpenWritableForTest(dir)
 		if err != nil {
 			t.Fatal(err)
 		}

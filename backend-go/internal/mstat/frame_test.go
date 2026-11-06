@@ -73,7 +73,7 @@ func openFixture(t *testing.T) *db.Handles {
 // نمی‌نویسند.
 func openWritableFixture(t *testing.T) *db.Handles {
 	t.Helper()
-	h, err := db.Open(copyFixture(t), false)
+	h, err := db.OpenWritableForTest(copyFixture(t))
 	if err != nil {
 		t.Fatal(err)
 	}

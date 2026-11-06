@@ -31,7 +31,7 @@ func stmtfloatFixtureRW(t *testing.T) *Service {
 	if err := os.WriteFile(filepath.Join(dir, "market.db"), raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	h, err := db.Open(dir, false)
+	h, err := db.OpenWritableForTest(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

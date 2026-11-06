@@ -32,7 +32,7 @@ func fixtureCopy(t *testing.T) (*db.Handles, string) {
 			t.Fatal(err)
 		}
 	}
-	h, err := db.Open(dst, true)
+	h, err := db.Open(dst, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestDeltaJournalAfterChange(t *testing.T) {
 	if _, _, err := s.build(true, true); err != nil {
 		t.Fatal(err)
 	}
-	w, err := db.Open(dir, false)
+	w, err := db.OpenWritableForTest(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestBuildRecordsWithDataToken(t *testing.T) {
 // ثبت‌شده باید زیرِ روزِ ردیف‌هایِ زنده بنشینند، نه زیرِ روزِ متا.
 func TestBuildRecordsUnderLiveMaxDEven(t *testing.T) {
 	h, dir := fixtureCopy(t)
-	w, err := db.Open(dir, false)
+	w, err := db.OpenWritableForTest(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

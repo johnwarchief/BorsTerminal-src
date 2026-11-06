@@ -36,7 +36,13 @@ func copyFixture(t *testing.T) string {
 // openCopy کپیِ فیکسچر را مثلِ مسیرِ واقعی باز می‌کند: market.db فقط‌خواندنی.
 func openCopy(t *testing.T, dir string, readOnly bool) *db.Handles {
 	t.Helper()
-	h, err := db.Open(dir, readOnly)
+	var h *db.Handles
+	var err error
+	if !readOnly {
+		h, err = db.OpenWritableForTest(dir)
+	} else {
+		h, err = db.Open(dir, true)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}

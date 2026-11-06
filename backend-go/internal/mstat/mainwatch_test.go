@@ -487,7 +487,7 @@ func TestMainwatchFlagShapes(t *testing.T) {
 // tape_flags نداشته باشند — عینِ _attach_tape_flags وقتی _tape_flag_map خالی است.
 func TestMainwatchRealServiceFlagSource(t *testing.T) {
 	dir := copyFixture(t)
-	h, err := db.Open(dir, false)
+	h, err := db.OpenWritableForTest(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
