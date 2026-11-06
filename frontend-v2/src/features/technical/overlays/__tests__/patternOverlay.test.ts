@@ -70,6 +70,15 @@ function contrast(a: string, b: string): number {
 }
 
 describe('pattern overlay figures', () => {
+  it('draws the pattern as a connected zig-zag through its pivots (R-PB-9)', () => {
+    const pt = (index: number, price: number) => ({ index, price, timestamp: index * 60_000 });
+    const zigzag = { ...p, points: [pt(1, 101), pt(3, 110), pt(5, 103), pt(7, 112), pt(9, 106)], anchor: pt(9, 106) };
+    const figures = patternFigures(params, [zigzag]);
+    const polyline = figures.find((f) => f.type === 'line' && Array.isArray((f.attrs as { coordinates?: unknown[] }).coordinates) && ((f.attrs as { coordinates?: unknown[] }).coordinates as unknown[]).length === 5);
+    expect(polyline).toBeTruthy();
+    expect(figures.filter((f) => f.type === 'circle')).toHaveLength(5);
+  });
+
   beforeEach(() => useUiStore.setState({ theme: 'brass' }));
 
   it('draws both boundaries and one label for a forming pattern', () => {

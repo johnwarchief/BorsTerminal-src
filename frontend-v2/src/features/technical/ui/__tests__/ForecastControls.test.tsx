@@ -211,5 +211,17 @@ describe('ForecastControls', () => {
     fireEvent.click(clearBtn);
     expect(useTechnicalStore.getState().activeUserIndicators.length).toBe(0);
   });
+
+  it('hides the duplicated symbol/timeframe/adjustment row in compact mode (R-PB-10)', () => {
+    render(<ForecastControls compact />);
+
+    expect(screen.getByTestId('forecast-controls')).toBeTruthy();
+    expect(screen.queryByTestId('symbol-search-input')).toBeNull();
+    expect(screen.queryByTestId('timeframe-selector')).toBeNull();
+    expect(screen.queryByTestId('adjustment-mode-select')).toBeNull();
+    // ابزارهای یکتا می‌مانند
+    expect(screen.getByRole('button', { name: /رویدادها/ })).toBeTruthy();
+    expect(screen.getByTestId('indicator-dropdown-btn')).toBeTruthy();
+  });
 });
 

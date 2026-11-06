@@ -125,6 +125,33 @@ export function patternFigures(
       });
     }
     const label = KIND_FA[pattern.kind] ?? pattern.kind;
+    // R-PB-9: شکلِ الگو مثل W/M دوقلو با یک خطِ پیوسته از پیوت‌ها کشیده می‌شود،
+    // نه فقط دو مرزِ موازی. نقاطِ تکراری حذف و به ترتیبِ زمان مرتب می‌شوند؛
+    // لنگر اگر در فهرست نباشد به انتها اضافه می‌شود.
+    const pathPoints = [...pattern.points]
+      .sort((a, b) => a.index - b.index)
+      .filter((p, i, all) => i === 0 || p.index !== all[i - 1]!.index || p.price !== all[i - 1]!.price);
+    const lastPoint = pattern.points[pattern.points.length - 1];
+    if (lastPoint && !pathPoints.some((p) => p.index === lastPoint.index && p.price === lastPoint.price)) {
+      pathPoints.push(lastPoint);
+    }
+    if (pathPoints.length >= 2) {
+      figures.push({
+        type: 'line',
+        attrs: { coordinates: pathPoints.map((p) => px(params, p.index, p.price)) },
+        styles: { color, size: forming ? 2.5 : 1.8, style: 'solid' },
+      });
+      // نقطه‌های پیوت شکل را می‌خوانند (مثلِ W/M دوقلو): بدونِ نشانگر، خطِ نازک
+      // روی کندل‌ها گم می‌شود.
+      for (const point of pathPoints) {
+        const screen = px(params, point.index, point.price);
+        figures.push({
+          type: 'circle',
+          attrs: { x: screen.x, y: screen.y, r: forming ? 3 : 2.5 },
+          styles: { style: 'fill', color, borderColor: color, borderSize: 0 },
+        });
+      }
+    }
     // R-PAT-3: درصد فقط وقتی احتمالِ تشکیل واقعاً موجود است.
     // R-PAT-24: احتمال نسبت ۰..۱ است؛ نمایش درصدی یعنی ×۱۰۰.
     const pct = showPercent(pattern.formation, PATTERN_CONFIG.formationMinResolved);

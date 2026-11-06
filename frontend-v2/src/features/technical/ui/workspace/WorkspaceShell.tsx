@@ -73,7 +73,7 @@ export const WorkspaceShell: React.FC<WorkspaceShellProps> = ({
       >
         <DrawingToolbar />
         <div className="flex-1 flex flex-col h-full min-w-0 min-h-0 overflow-hidden">
-          <ForecastControls />
+          <ForecastControls compact />
           <div className="flex-1 w-full min-h-0 relative overflow-hidden bg-bg">
             <KLineChartWrapper symbol={symbol} />
           </div>
