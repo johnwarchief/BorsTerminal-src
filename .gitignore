@@ -25,6 +25,8 @@ dist/
 portable/
 releases/
 backend-go/bin/
+backend-go/*.exe
+*.exe
 android/
 backups/
 .v2cache/
