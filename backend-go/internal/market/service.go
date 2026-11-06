@@ -85,10 +85,24 @@ type Service struct {
 	frame        *store.Frame
 	frameNumeric map[string]bool
 	frameToken   string
+
+	readOnly bool
+	noLoops  bool
 }
 
 func New(h *db.Handles, dataDir string) *Service {
-	return &Service{market: h.Market, user: h.User, dataDir: dataDir, recorder: tapehistory.NewRecorder()}
+	return NewWithOptions(h, dataDir, false, false)
+}
+
+func NewWithOptions(h *db.Handles, dataDir string, readOnly, noLoops bool) *Service {
+	return &Service{
+		market:   h.Market,
+		user:     h.User,
+		dataDir:  dataDir,
+		recorder: tapehistory.NewRecorder(),
+		readOnly: readOnly,
+		noLoops:  noLoops,
+	}
 }
 
 // symNorm همان str.maketransِ funnel_engine._SYM_TRANS است: ي/ى عربی → ی و ك → ک.
@@ -250,6 +264,9 @@ func (s *Service) cached() ([]byte, string, string, error) {
 }
 
 func (s *Service) rebuildAsync() {
+	if s.noLoops {
+		return
+	}
 	s.mu.Lock()
 	if s.building {
 		s.mu.Unlock()
@@ -297,8 +314,10 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	// از ردیف‌هایِ زندهٔ همین قاب می‌آید (عینِ int(_live_df["d_even"].max() or 0))،
 	// نه از d_evenِ متا؛ و نشانه dataToken است تا با نبودنِ market_sync.json هم
 	// درِ «همان داده» خاموش نشود.
-	if day := recordDay(recs); day != 0 {
-		_, _ = s.recorder.Record(s.user, recs, day, token, time.Now())
+	if !s.readOnly {
+		if day := recordDay(recs); day != 0 {
+			_, _ = s.recorder.Record(s.user, recs, day, token, time.Now())
+		}
 	}
 	if dropUnused {
 		dropUnusedFields(recs)

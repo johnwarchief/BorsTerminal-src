@@ -39,7 +39,7 @@ func main() {
 	}
 	defer handles.Close()
 
-	mkt := market.New(handles, cfg.DataDir)
+	mkt := market.NewWithOptions(handles, cfg.DataDir, cfg.ReadOnly, cfg.NoLoops)
 	ms := mstat.New(handles.Market, cfg.DataDir, mkt)
 	ch := chart.New(chart.Config{Market: handles.Market, User: handles.User,
 		DataDir: cfg.DataDir, CalendarPath: cfg.CalendarPath})
