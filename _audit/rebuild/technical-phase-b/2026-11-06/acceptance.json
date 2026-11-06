@@ -1,0 +1,1906 @@
+{
+  "startedAt": "2026-11-06T07:23:10.800Z",
+  "url": "http://127.0.0.1:7093/#/technical/%D9%88%D8%A8%D9%85%D9%84%D8%AA",
+  "symbol": "وبملت",
+  "viewports": {
+    "1366x768-brass": {
+      "key": "1366x768-brass",
+      "theme": "brass",
+      "viewport": {
+        "w": 1366,
+        "h": 768
+      },
+      "shell": {
+        "viewport": {
+          "w": 1366,
+          "h": 768
+        },
+        "chart": {
+          "x": 41,
+          "y": 136,
+          "w": 836,
+          "h": 284
+        },
+        "chartRatio": 0.612,
+        "rail": {
+          "x": 918,
+          "y": 100,
+          "w": 240,
+          "h": 320
+        },
+        "activity": {
+          "x": 0,
+          "y": 100,
+          "w": 40,
+          "h": 320
+        },
+        "feed": {
+          "x": 0,
+          "y": 420,
+          "w": 1158,
+          "h": 348
+        },
+        "feedBody": {
+          "x": 0,
+          "y": 461,
+          "w": 1158,
+          "h": 307
+        },
+        "drawingToolbar": {
+          "x": 877,
+          "y": 100,
+          "w": 40,
+          "h": 320
+        },
+        "forecastControls": {
+          "x": 41,
+          "y": 100,
+          "w": 836,
+          "h": 36
+        },
+        "drawingToolbarVisible": true,
+        "forecastControlsVisible": true,
+        "scrollWidth": 1366,
+        "clientWidth": 1366,
+        "noHorizontalScroll": true,
+        "theme": "brass",
+        "activePanel": "لبه آماری",
+        "scannerRows": 0,
+        "scannerEvents": 0,
+        "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+        "feedTabs": [
+          {
+            "testid": "feed-tab-events",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-top50",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-indicators",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-edge",
+            "selected": "true"
+          }
+        ]
+      },
+      "tabs": {
+        "events": {
+          "panelTestId": "scanner-panel",
+          "panelVisible": true,
+          "activeLabel": "رویدادها",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "رویدادها",
+            "scannerRows": 20,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 137,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "top50": {
+          "panelTestId": "top50-panel",
+          "panelVisible": true,
+          "activeLabel": "۵۰ نماد",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "۵۰ نماد",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 392,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "indicators": {
+          "panelTestId": "indicators-panel",
+          "panelVisible": true,
+          "activeLabel": "اندیکاتورها",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "اندیکاتورها",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 321,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "edge": {
+          "panelTestId": "edge-tab-panel",
+          "panelVisible": true,
+          "activeLabel": "لبه آماری",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "لبه آماری",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "true"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 57,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        }
+      },
+      "portal": {
+        "visible": true,
+        "header": "میزکار جامع (پنجره شناور پورتال)بستنلبه و الگو۲۰ نماد برترزون‌های SMCلبه آماری و SMC (وبملت)راهنما (؟)روند صعودیالگوی اخیر:چکش صعودیفروشندگان در ابتدای بازار سه",
+        "census": {
+          "nodes": 29,
+          "min": 12,
+          "offenderCount": 0,
+          "offenders": []
+        }
+      },
+      "census": {
+        "nodes": 57,
+        "min": 12,
+        "offenderCount": 0,
+        "offenders": []
+      }
+    },
+    "1366x768-warm": {
+      "key": "1366x768-warm",
+      "theme": "warm",
+      "viewport": {
+        "w": 1366,
+        "h": 768
+      },
+      "shell": {
+        "viewport": {
+          "w": 1366,
+          "h": 768
+        },
+        "chart": {
+          "x": 41,
+          "y": 136,
+          "w": 836,
+          "h": 284
+        },
+        "chartRatio": 0.612,
+        "rail": {
+          "x": 918,
+          "y": 100,
+          "w": 240,
+          "h": 320
+        },
+        "activity": {
+          "x": 0,
+          "y": 100,
+          "w": 40,
+          "h": 320
+        },
+        "feed": {
+          "x": 0,
+          "y": 420,
+          "w": 1158,
+          "h": 348
+        },
+        "feedBody": {
+          "x": 0,
+          "y": 461,
+          "w": 1158,
+          "h": 307
+        },
+        "drawingToolbar": {
+          "x": 877,
+          "y": 100,
+          "w": 40,
+          "h": 320
+        },
+        "forecastControls": {
+          "x": 41,
+          "y": 100,
+          "w": 836,
+          "h": 36
+        },
+        "drawingToolbarVisible": true,
+        "forecastControlsVisible": true,
+        "scrollWidth": 1366,
+        "clientWidth": 1366,
+        "noHorizontalScroll": true,
+        "theme": "warm",
+        "activePanel": "لبه آماری",
+        "scannerRows": 0,
+        "scannerEvents": 0,
+        "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+        "feedTabs": [
+          {
+            "testid": "feed-tab-events",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-top50",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-indicators",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-edge",
+            "selected": "true"
+          }
+        ]
+      },
+      "tabs": {
+        "events": {
+          "panelTestId": "scanner-panel",
+          "panelVisible": true,
+          "activeLabel": "رویدادها",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "رویدادها",
+            "scannerRows": 20,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 137,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "top50": {
+          "panelTestId": "top50-panel",
+          "panelVisible": true,
+          "activeLabel": "۵۰ نماد",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "۵۰ نماد",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 392,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "indicators": {
+          "panelTestId": "indicators-panel",
+          "panelVisible": true,
+          "activeLabel": "اندیکاتورها",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "اندیکاتورها",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 321,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "edge": {
+          "panelTestId": "edge-tab-panel",
+          "panelVisible": true,
+          "activeLabel": "لبه آماری",
+          "measurement": {
+            "viewport": {
+              "w": 1366,
+              "h": 768
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 836,
+              "h": 284
+            },
+            "chartRatio": 0.612,
+            "rail": {
+              "x": 918,
+              "y": 100,
+              "w": 240,
+              "h": 320
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "feed": {
+              "x": 0,
+              "y": 420,
+              "w": 1158,
+              "h": 348
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 461,
+              "w": 1158,
+              "h": 307
+            },
+            "drawingToolbar": {
+              "x": 877,
+              "y": 100,
+              "w": 40,
+              "h": 320
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 836,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1366,
+            "clientWidth": 1366,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "لبه آماری",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "true"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 57,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        }
+      },
+      "portal": {
+        "visible": true,
+        "header": "میزکار جامع (پنجره شناور پورتال)بستنلبه و الگو۲۰ نماد برترزون‌های SMCلبه آماری و SMC (وبملت)راهنما (؟)روند صعودیالگوی اخیر:چکش صعودیفروشندگان در ابتدای بازار سه",
+        "census": {
+          "nodes": 29,
+          "min": 12,
+          "offenderCount": 0,
+          "offenders": []
+        }
+      },
+      "census": {
+        "nodes": 57,
+        "min": 12,
+        "offenderCount": 0,
+        "offenders": []
+      }
+    },
+    "1920x1080-brass": {
+      "key": "1920x1080-brass",
+      "theme": "brass",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "shell": {
+        "viewport": {
+          "w": 1920,
+          "h": 1080
+        },
+        "chart": {
+          "x": 41,
+          "y": 136,
+          "w": 1350,
+          "h": 583
+        },
+        "chartRatio": 0.7031,
+        "rail": {
+          "x": 1432,
+          "y": 100,
+          "w": 280,
+          "h": 619
+        },
+        "activity": {
+          "x": 0,
+          "y": 100,
+          "w": 40,
+          "h": 619
+        },
+        "feed": {
+          "x": 0,
+          "y": 719,
+          "w": 1712,
+          "h": 361
+        },
+        "feedBody": {
+          "x": 0,
+          "y": 760,
+          "w": 1712,
+          "h": 320
+        },
+        "drawingToolbar": {
+          "x": 1391,
+          "y": 100,
+          "w": 40,
+          "h": 619
+        },
+        "forecastControls": {
+          "x": 41,
+          "y": 100,
+          "w": 1350,
+          "h": 36
+        },
+        "drawingToolbarVisible": true,
+        "forecastControlsVisible": true,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "noHorizontalScroll": true,
+        "theme": "brass",
+        "activePanel": "لبه آماری",
+        "scannerRows": 0,
+        "scannerEvents": 0,
+        "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+        "feedTabs": [
+          {
+            "testid": "feed-tab-events",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-top50",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-indicators",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-edge",
+            "selected": "true"
+          }
+        ]
+      },
+      "tabs": {
+        "events": {
+          "panelTestId": "scanner-panel",
+          "panelVisible": true,
+          "activeLabel": "رویدادها",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "رویدادها",
+            "scannerRows": 20,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 137,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "top50": {
+          "panelTestId": "top50-panel",
+          "panelVisible": true,
+          "activeLabel": "۵۰ نماد",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "۵۰ نماد",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 392,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "indicators": {
+          "panelTestId": "indicators-panel",
+          "panelVisible": true,
+          "activeLabel": "اندیکاتورها",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "اندیکاتورها",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 321,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "edge": {
+          "panelTestId": "edge-tab-panel",
+          "panelVisible": true,
+          "activeLabel": "لبه آماری",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "brass",
+            "activePanel": "لبه آماری",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "true"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 57,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        }
+      },
+      "portal": {
+        "visible": true,
+        "header": "میزکار جامع (پنجره شناور پورتال)بستنلبه و الگو۲۰ نماد برترزون‌های SMCلبه آماری و SMC (وبملت)راهنما (؟)روند صعودیالگوی اخیر:چکش صعودیفروشندگان در ابتدای بازار سه",
+        "census": {
+          "nodes": 29,
+          "min": 12,
+          "offenderCount": 0,
+          "offenders": []
+        }
+      },
+      "census": {
+        "nodes": 57,
+        "min": 12,
+        "offenderCount": 0,
+        "offenders": []
+      }
+    },
+    "1920x1080-warm": {
+      "key": "1920x1080-warm",
+      "theme": "warm",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "shell": {
+        "viewport": {
+          "w": 1920,
+          "h": 1080
+        },
+        "chart": {
+          "x": 41,
+          "y": 136,
+          "w": 1350,
+          "h": 583
+        },
+        "chartRatio": 0.7031,
+        "rail": {
+          "x": 1432,
+          "y": 100,
+          "w": 280,
+          "h": 619
+        },
+        "activity": {
+          "x": 0,
+          "y": 100,
+          "w": 40,
+          "h": 619
+        },
+        "feed": {
+          "x": 0,
+          "y": 719,
+          "w": 1712,
+          "h": 361
+        },
+        "feedBody": {
+          "x": 0,
+          "y": 760,
+          "w": 1712,
+          "h": 320
+        },
+        "drawingToolbar": {
+          "x": 1391,
+          "y": 100,
+          "w": 40,
+          "h": 619
+        },
+        "forecastControls": {
+          "x": 41,
+          "y": 100,
+          "w": 1350,
+          "h": 36
+        },
+        "drawingToolbarVisible": true,
+        "forecastControlsVisible": true,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "noHorizontalScroll": true,
+        "theme": "warm",
+        "activePanel": "لبه آماری",
+        "scannerRows": 0,
+        "scannerEvents": 0,
+        "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+        "feedTabs": [
+          {
+            "testid": "feed-tab-events",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-top50",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-indicators",
+            "selected": "false"
+          },
+          {
+            "testid": "feed-tab-edge",
+            "selected": "true"
+          }
+        ]
+      },
+      "tabs": {
+        "events": {
+          "panelTestId": "scanner-panel",
+          "panelVisible": true,
+          "activeLabel": "رویدادها",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "رویدادها",
+            "scannerRows": 20,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 137,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "top50": {
+          "panelTestId": "top50-panel",
+          "panelVisible": true,
+          "activeLabel": "۵۰ نماد",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "۵۰ نماد",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 392,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "indicators": {
+          "panelTestId": "indicators-panel",
+          "panelVisible": true,
+          "activeLabel": "اندیکاتورها",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "اندیکاتورها",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "true"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "false"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 321,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        },
+        "edge": {
+          "panelTestId": "edge-tab-panel",
+          "panelVisible": true,
+          "activeLabel": "لبه آماری",
+          "measurement": {
+            "viewport": {
+              "w": 1920,
+              "h": 1080
+            },
+            "chart": {
+              "x": 41,
+              "y": 136,
+              "w": 1350,
+              "h": 583
+            },
+            "chartRatio": 0.7031,
+            "rail": {
+              "x": 1432,
+              "y": 100,
+              "w": 280,
+              "h": 619
+            },
+            "activity": {
+              "x": 0,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "feed": {
+              "x": 0,
+              "y": 719,
+              "w": 1712,
+              "h": 361
+            },
+            "feedBody": {
+              "x": 0,
+              "y": 760,
+              "w": 1712,
+              "h": 320
+            },
+            "drawingToolbar": {
+              "x": 1391,
+              "y": 100,
+              "w": 40,
+              "h": 619
+            },
+            "forecastControls": {
+              "x": 41,
+              "y": 100,
+              "w": 1350,
+              "h": 36
+            },
+            "drawingToolbarVisible": true,
+            "forecastControlsVisible": true,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "noHorizontalScroll": true,
+            "theme": "warm",
+            "activePanel": "لبه آماری",
+            "scannerRows": 0,
+            "scannerEvents": 0,
+            "railCardText": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+            "feedTabs": [
+              {
+                "testid": "feed-tab-events",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-top50",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-indicators",
+                "selected": "false"
+              },
+              {
+                "testid": "feed-tab-edge",
+                "selected": "true"
+              }
+            ]
+          },
+          "census": {
+            "nodes": 57,
+            "min": 12,
+            "offenderCount": 0,
+            "offenders": []
+          }
+        }
+      },
+      "portal": {
+        "visible": true,
+        "header": "میزکار جامع (پنجره شناور پورتال)بستنلبه و الگو۲۰ نماد برترزون‌های SMCلبه آماری و SMC (وبملت)راهنما (؟)روند صعودیالگوی اخیر:چکش صعودیفروشندگان در ابتدای بازار سه",
+        "census": {
+          "nodes": 29,
+          "min": 12,
+          "offenderCount": 0,
+          "offenders": []
+        }
+      },
+      "census": {
+        "nodes": 57,
+        "min": 12,
+        "offenderCount": 0,
+        "offenders": []
+      }
+    }
+  },
+  "keyboard": {
+    "method": "real Tab key in headless Edge from blurred document",
+    "stamps": 140,
+    "activityStops": 8,
+    "activityTestIds": [
+      "activity-section-chart",
+      "activity-section-scanner",
+      "activity-section-indicators",
+      "activity-section-settings"
+    ],
+    "activityFocusVisible": true,
+    "feedTabStops": 8,
+    "feedTabTestIds": [
+      "feed-tab-events",
+      "feed-tab-top50",
+      "feed-tab-indicators",
+      "feed-tab-edge"
+    ],
+    "feedTabsFocusVisible": true,
+    "railCardStop": {
+      "testid": "pattern-card",
+      "tag": "section",
+      "ariaLabel": "کارت رویداد فعال ریل بازرس",
+      "text": "سر و شانهنزولیدر حال تشکیلکیفیت ",
+      "focusVisible": true
+    },
+    "firstActivityIndex": 25,
+    "railCardIndex": 54,
+    "firstFeedTabIndex": 55,
+    "reachedActivity": true,
+    "reachedFeedTabs": true,
+    "reachedRailCard": true
+  },
+  "checklist": {
+    "tabsOpened": {
+      "events": true,
+      "top50": true,
+      "indicators": true,
+      "edge": true
+    },
+    "portalOpened": true,
+    "drawingToolbarVisible": true,
+    "forecastControlsVisible": true,
+    "scannerRows": 20,
+    "scannerEvents": 0,
+    "railCard": "سر و شانهنزولیدر حال تشکیلکیفیت ساختار ۹۰هدف ۱۲۱۰ · حد ضرر ۱۶۸۳۷۹٪۱۴ از ۱۷ نمونه · بازهٔ ۶۸٪–۹۱٪کندل ۱: ۲٫۸٪کندل ۳: ۳٫۷٪کندل ۵: ۳٫۶٪کندلِ در حال تشکیل ≠ تأییدشد",
+    "railCardPresent": true
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageErrors": [],
+  "httpErrors": [
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%88%D8%A8%D9%85%D9%84%D8%AA/forecast?horizon=12&model=small&adjustment=3"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%88%D8%A8%D9%85%D9%84%D8%AA/edge?swing_period=5"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%88%D8%A8%D9%85%D9%84%D8%AA/indicators"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%88%D8%A8%D9%85%D9%84%D8%AA/indicators"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%88%D8%A8%D9%85%D9%84%D8%AA/edge?swing_period=5"
+    },
+    {
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%88%D8%A8%D9%85%D9%84%D8%AA/forecast?horizon=12&model=small&adjustment=3"
+    }
+  ],
+  "finishedAt": "2026-11-06T07:24:09.774Z"
+}

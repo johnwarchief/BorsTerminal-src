@@ -1,0 +1,28 @@
+{
+  "schema": "ra365-correction-pack-v1",
+  "correction_version": "ra365-live40-v1",
+  "created_at": "2026-11-06T12:52:55+00:00",
+  "mode": "authoritative",
+  "tool": "tools/build_live_reference_pack.py",
+  "reference_sha256": "866a1675bf1be2b6e0a170ff2b348cd15dbfb2019544d40bceffcb9156ff8a02",
+  "source": "rahavard_reference_live_2026-11-06",
+  "method": "reference_step_derivation + r32b base",
+  "files": {
+    "factors": "factors.jsonl",
+    "raw_ohlc": "raw_ohlc.jsonl"
+  },
+  "counts": {
+    "factor_replace_step": 7006,
+    "factor_suppress_step": 139,
+    "raw_fields": 0,
+    "factor_assets": 828,
+    "factor_symbols": 828
+  },
+  "ambiguous_symbols": {},
+  "as_of": "2026-11-04",
+  "semantics": {
+    "mode": "authoritative: for a covered symbol every product event is suppressed and the chain is built from the pack's replace_step rows",
+    "replace_step": "step applied to dates before effective_date; ratio is previous/current reference factor",
+    "scope": "r32b-v2 base (827 assets, 2020+) plus full-history live steps for 40 audit symbols"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "رنيك-1D": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {},
+      "strokeTotal": 0,
+      "labels": []
+    },
+    "rows": []
+  },
+  "رنيك-1W": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {
+        "#4f8f72": 2
+      },
+      "strokeTotal": 2,
+      "labels": [
+        "کف دوقلو"
+      ]
+    },
+    "rows": []
+  },
+  "رنيك-1M": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {},
+      "strokeTotal": 0,
+      "labels": []
+    },
+    "rows": []
+  },
+  "فولاد-1D": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {
+        "#4f8f72": 3
+      },
+      "strokeTotal": 3,
+      "labels": [
+        "سر و شانهٔ معکوس",
+        "گُوهٔ نزولی"
+      ]
+    },
+    "rows": []
+  },
+  "فولاد-1W": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {
+        "#b45a6a": 2
+      },
+      "strokeTotal": 2,
+      "labels": [
+        "سقف دوقلو"
+      ]
+    },
+    "rows": []
+  },
+  "خساپا-1D": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {
+        "#b45a6a": 2,
+        "#a89a6a": 2
+      },
+      "strokeTotal": 4,
+      "labels": [
+        "سقف دوقلو",
+        "مثلث متقارن"
+      ]
+    },
+    "rows": []
+  },
+  "شپنا-1D": {
+    "rowCount": 0,
+    "featured": null,
+    "draw": {
+      "strokes": {
+        "#b45a6a": 2,
+        "#a89a6a": 2
+      },
+      "strokeTotal": 4,
+      "labels": [
+        "سقف دوقلو",
+        "مثلث متقارن"
+      ]
+    },
+    "rows": []
+  }
+}

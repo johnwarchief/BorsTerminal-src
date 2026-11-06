@@ -1,0 +1,63 @@
+{
+  "realisticComfortable": [
+    {
+      "longTasks": 0,
+      "tbtMs": 0,
+      "maxLongTaskMs": 0,
+      "frames": 194,
+      "maxFrameGapMs": 25,
+      "over50msFrames": 0,
+      "heapMb": 30
+    },
+    {
+      "longTasks": 0,
+      "tbtMs": 0,
+      "maxLongTaskMs": 0,
+      "frames": 194,
+      "maxFrameGapMs": 21,
+      "over50msFrames": 0,
+      "heapMb": 26
+    },
+    {
+      "longTasks": 0,
+      "tbtMs": 0,
+      "maxLongTaskMs": 0,
+      "frames": 193,
+      "maxFrameGapMs": 37,
+      "over50msFrames": 0,
+      "heapMb": 35
+    }
+  ],
+  "realisticCompact": [
+    {
+      "longTasks": 0,
+      "tbtMs": 0,
+      "maxLongTaskMs": 0,
+      "frames": 194,
+      "maxFrameGapMs": 25,
+      "over50msFrames": 0,
+      "heapMb": 45
+    },
+    {
+      "longTasks": 0,
+      "tbtMs": 0,
+      "maxLongTaskMs": 0,
+      "frames": 193,
+      "maxFrameGapMs": 23,
+      "over50msFrames": 0,
+      "heapMb": 44
+    }
+  ],
+  "fullFlingComfortable": [
+    {
+      "longTasks": 18,
+      "tbtMs": 235,
+      "maxLongTaskMs": 102,
+      "frames": 50,
+      "maxFrameGapMs": 150,
+      "over50msFrames": 39,
+      "heapMb": 43
+    }
+  ],
+  "errors": []
+}

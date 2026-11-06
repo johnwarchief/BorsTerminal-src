@@ -1,0 +1,83 @@
+{
+  "phase": "technical-phase-c",
+  "date": "2026-11-06",
+  "head": "926f625d",
+  "uncommitted_files": 23,
+  "scope": {
+    "engine": [
+      "frontend-v2/src/features/technical/model/events/types.ts",
+      "frontend-v2/src/features/technical/model/events/config.ts",
+      "frontend-v2/src/features/technical/model/events/labels.ts",
+      "frontend-v2/src/features/technical/model/events/rsi.ts",
+      "frontend-v2/src/features/technical/model/events/channel.ts",
+      "frontend-v2/src/features/technical/model/events/pullback.ts",
+      "frontend-v2/src/features/technical/model/events/scan.ts"
+    ],
+    "ui": [
+      "frontend-v2/src/features/technical/overlays/eventOverlay.ts",
+      "frontend-v2/src/features/technical/ui/workspace/UnifiedEventList.tsx",
+      "frontend-v2/src/features/technical/ui/workspace/EventFeed.tsx",
+      "frontend-v2/src/features/technical/ui/workspace/InspectorRail.tsx",
+      "frontend-v2/src/features/technical/ui/KLineChartWrapper.tsx",
+      "frontend-v2/src/features/technical/model/technicalStore.ts",
+      "frontend-v2/src/features/technical/model/types.ts"
+    ]
+  },
+  "scan_contract": {
+    "window_bars": 500,
+    "budget_ms": 50,
+    "families": ["pattern", "channel", "divergence", "pullback", "breakout"],
+    "basis": "functional-adjusted EngineCandle series",
+    "no_lookahead": "confirmed pivots only (right=2/4)"
+  },
+  "tests": {
+    "event_engine": "7 passed",
+    "frontend_full": "94 files / 786 tests passed",
+    "typecheck": "tsc -b clean",
+    "build": "vite build ok (pre-existing >500kB chunk warning)"
+  },
+  "live": {
+    "symbol": "فارس",
+    "api": "GET http://127.0.0.1:8101/api/chart/فارس",
+    "status": "success",
+    "candles": 2974,
+    "adjust_events": 19,
+    "source": "rahavard-reference-correction+ledger+base-price-discontinuity",
+    "elapsed_s": 11.5,
+    "screenshots": [
+      "edge-1366x768.png",
+      "edge-1366x768-feed.png"
+    ],
+    "observed": [
+      "chart candles + regression channel lines",
+      "primary divergence label on chart (quality 87 in rail)",
+      "unified feed rows: RSI divergence types with status/quality",
+      "rail block: رویدادهای برجسته"
+    ]
+  },
+  "data_gate": {
+    "coverage_report": "D:/BorsTerminal-data/coverage-final.csv",
+    "coverage": {
+      "total": 5981,
+      "complete": 1492,
+      "sparse": 3448,
+      "inactive": 256,
+      "no_data": 785,
+      "failed": 0
+    },
+    "parity": {
+      "symbols": 40,
+      "factor_within_tol_pct": 100.0,
+      "mismatch": 0,
+      "live_chart_spot_checks": 6,
+      "live_chart_max_error_pct": 0.0,
+      "pack": "data/ra365_corrections/ra365-live40-v1"
+    }
+  },
+  "known_limits": [
+    "The 40-symbol full-history parity uses the versioned reference correction pack; the r32b base covers 827 assets from 2020+, so pre-2020 for the rest of the universe remains an explicit gap.",
+    "Raw close exact % (5-19%) is the last/closing basis difference, measured separately from the adjustment factor gate.",
+    "Channel event is represented in the feed/rail; the chart channel lines are drawn by the existing MultiModeChannel overlay. The new event overlay draws divergence/pullback/breakout primaries.",
+    "1920 viewport screenshot and the 15 symbols x 2 timeframes precision audit remain for Phase D."
+  ]
+}

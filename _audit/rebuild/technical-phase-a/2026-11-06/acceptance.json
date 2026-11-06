@@ -1,0 +1,32 @@
+{
+  "drawerOpened": true,
+  "card": "الگوی در حال تشکیل نیست",
+  "quality": null,
+  "rows": [
+    "pattern-row-ISLAND_REVERSAL:391:391",
+    "pattern-row-THREE_RISING_PEAKS:373:333-360-373",
+    "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+    "pattern-row-BROADENING_BOTTOM:364:328-333-348-360-364",
+    "pattern-row-DT:double-top-333-353",
+    "pattern-row-BROADENING_TOP:333:306-309-316-328-333",
+    "pattern-row-BROADENING_BOTTOM:328:261-306-309-316-328",
+    "pattern-row-THREE_RISING_PEAKS:316:252-306-316",
+    "pattern-row-BROADENING_TOP:306:232-239-252-261-306",
+    "pattern-row-THREE_RISING_PEAKS:306:232-252-306",
+    "pattern-row-DT:double-top-267-273",
+    "pattern-row-BROADENING_BOTTOM:261:220-232-239-252-261",
+    "pattern-row-BROADENING_TOP:232:164-192-197-220-232",
+    "pattern-row-BROADENING_TOP:197:151-162-164-192-197",
+    "pattern-row-DT:double-bottom-138-162",
+    "pattern-row-BROADENING_BOTTOM:162:133-136-138-151-162",
+    "pattern-row-BROADENING_TOP:151:124-133-136-138-151",
+    "pattern-row-DT:double-bottom-133-138",
+    "pattern-row-BROADENING_BOTTOM:133:107-113-115-124-133",
+    "pattern-row-BROADENING_TOP:124:104-107-113-115-124"
+  ],
+  "events": [],
+  "rawEnum": false,
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

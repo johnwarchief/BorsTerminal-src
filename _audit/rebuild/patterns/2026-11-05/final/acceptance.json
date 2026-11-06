@@ -1,0 +1,20 @@
+{
+  "symbol": "↵روزانههفت",
+  "drawerOpened": true,
+  "card": "الگوی در حال تشکیل نیست",
+  "rows": [
+    "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+    "pattern-row-DT:double-top-333-353",
+    "pattern-row-WEDGE_FALLING:333:309-316-328-333",
+    "pattern-row-DT:double-top-267-273",
+    "pattern-row-DT:double-bottom-138-162",
+    "pattern-row-DT:double-bottom-133-138",
+    "pattern-row-FLAG_BULL:115:39-83-104-107-113-115",
+    "pattern-row-DT:double-bottom-101-107",
+    "pattern-row-DT:double-top-31-45"
+  ],
+  "rules": "قواعدپرچم: لگ ≥ ۳×ATR · حداقل لگ ۳ کندل · عرض کانال ≤ ۳۵٪ لگپنانت: لگ ≥ ۳×ATR · همگرایی ≥ ۳۵٪مثلث: تحمل تخت‌بودن ۰٫۳۵×ATR · همگرایی ≥ ۳۰٪ · حداقل طول ۳ کندلمستطیل: تحمل ۰٫۵×ATR · گُوه: همگرایی ≥ ۳۰٪سر و شانه: سر ≥ ۰٫۵×ATR بالاتر · شانه‌ها ±۰٫۶×ATR · سه‌قلو: تحمل سطح ۰٫۵×ATRحداقل لمس هر خط ۲ · پیوت ۵ چپ / ۴ راست · دورهٔ ATR ۱۴تحمل لمس ۰٫۵×ATR · بافر ابطال ۰٫۵×ATR · افق سنجش ۱۰ کندل · حداقل نمونه ۸مهلت تمدید ۱ کندل · حداقل نقاط تمدید ۵ · حداقل هدف خنثی ۰٫۵×ATRحداقل طول بازگشتی ۶ کندل · حداقل نمونه",
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "profile": {
+    "brass": {
+      "census": [
+        [
+          "12px/400",
+          142
+        ],
+        [
+          "12px/500",
+          43
+        ],
+        [
+          "13px/400",
+          12
+        ],
+        [
+          "16px/500",
+          6
+        ],
+        [
+          "13px/500",
+          6
+        ],
+        [
+          "20px/500",
+          6
+        ]
+      ],
+      "minPx": 12
+    },
+    "warm": {
+      "census": [
+        [
+          "12px/400",
+          143
+        ],
+        [
+          "12px/500",
+          43
+        ],
+        [
+          "13px/400",
+          12
+        ],
+        [
+          "16px/500",
+          6
+        ],
+        [
+          "13px/500",
+          6
+        ],
+        [
+          "20px/500",
+          6
+        ]
+      ],
+      "minPx": 12
+    },
+    "vetoRibbon": "۲ از ۴ محور قبول· ۲ بی‌نظر/نامشخص· وتوی صنعتیخارج از غربال · امتیاز ۳/۵",
+    "vetoHeader": "جدول بنیادیالبرزبیمه و صندوق بازنشستگی به جزِ تأمین اجتماعیخارج از غربالدلیل: صنعت بیمه — حذف خودکارامتیاز ۳/۵دادهٔ بنیادی تا ۳۰ تیر ۱۴۰۵تنظیمات"
+  },
+  "table": {
+    "comfortable": {
+      "rootClass": "flex min-h-0 flex-1 flex-col text-[var(--fd-text)] fd-table",
+      "rowHeights": [
+        92
+      ],
+      "minRowHeight": 92,
+      "overflowingRows": 0,
+      "statusFontPx": "12px",
+      "statusWeight": "400",
+      "census": [
+        [
+          "12px/400",
+          252
+        ],
+        [
+          "12px/500",
+          90
+        ],
+        [
+          "16px/500",
+          1
+        ]
+      ]
+    },
+    "compact": {
+      "rootClass": "flex min-h-0 flex-1 flex-col text-[var(--fd-text)] fd-table fd-table--compact",
+      "rowHeights": [
+        44
+      ],
+      "minRowHeight": 44,
+      "overflowingRows": 0,
+      "statusFontPx": "11px",
+      "statusWeight": "400",
+      "census": [
+        [
+          "11px/500",
+          126
+        ],
+        [
+          "12px/400",
+          114
+        ],
+        [
+          "11px/400",
+          42
+        ],
+        [
+          "16px/500",
+          1
+        ]
+      ]
+    }
+  },
+  "errors": []
+}
