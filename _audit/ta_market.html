@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<meta name="robots" content="noindex,nofollow" />
+ 
+	<title>404 — صفحه پیدا نشد</title>
+	<style>
+ 
+		@font-face {
+			font-family: iransansx;
+			src: url('/fonts/IRANSansX-Regular.woff') format('woff');
+			font-weight: 400;
+			font-display: swap;
+		}
+
+		@font-face {
+			font-family: iransansx;
+			src: url('/fonts/IRANSansX-Bold.woff') format('woff');
+			font-weight: 700;
+			font-display: swap;
+		}
+
+		:root {
+			color-scheme: light dark;
+			--page: #eef1f6;
+			--glow: rgba(44, 95, 158, .16);
+			--surface: #fff;
+			--surface-sunk: #f5f7fa;
+			--border: #e2e6ed;
+			--border-strong: #ccd3dd;
+			--text: #1c2434;
+			--text-muted: #667085;
+			--text-soft: #8a95a6;
+			--accent: #2c5f9e;
+			--accent-strong: #1a3a6e;
+			--accent-soft: rgba(44, 95, 158, .1);
+			--danger: #d33a35;
+			--ring: rgba(44, 95, 158, .35);
+			--shadow: 0 18px 50px rgba(28, 39, 60, .12);
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			display: grid;
+			place-items: center;
+			min-height: 100vh;
+			min-height: 100dvh;
+			margin: 0;
+			padding: calc(24px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px))
+				calc(24px + env(safe-area-inset-bottom, 0px)) calc(20px + env(safe-area-inset-left, 0px));
+			direction: rtl;
+			background: var(--page);
+			background-image:
+				radial-gradient(90ch 60ch at 50% -20%, var(--glow), transparent 65%);
+			color: var(--text);
+			font-family: iransansx, Tahoma, system-ui, sans-serif;
+			line-height: 1.7;
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+		}
+
+		.error-card {
+			width: min(100%, 620px);
+			padding: 40px 36px 32px;
+			border: 1px solid var(--border);
+			border-radius: 18px;
+			background: var(--surface);
+			box-shadow: var(--shadow);
+			text-align: center;
+		}
+
+		.brand {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 26px;
+			color: var(--text-soft);
+			font-size: 15px;
+			text-decoration: none;
+			transition: color .15s ease;
+		}
+
+		.brand:hover { color: var(--accent); }
+
+		.brand-mark {
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: var(--accent);
+		}
+
+		/* Block-level so it starts its own line under the inline brand link. */
+		.status-badge {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 64px;
+			height: 64px;
+			margin: 0 auto 20px;
+			border-radius: 50%;
+			background: var(--accent-soft);
+			color: var(--accent);
+		}
+
+		.status-badge svg {
+			width: 30px;
+			height: 30px;
+			stroke: currentColor;
+			stroke-width: 1.8;
+			fill: none;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.status-code {
+			margin: 0;
+			color: var(--danger);
+			font-size: clamp(52px, 13vw, 84px);
+			font-weight: 700;
+			line-height: 1;
+			letter-spacing: 1px;
+			direction: ltr;
+		}
+
+		h1 {
+			margin: 16px 0 10px;
+			font-size: clamp(21px, 4.6vw, 28px);
+			font-weight: 700;
+			line-height: 1.5;
+			text-wrap: balance;
+		}
+
+		.description {
+			max-width: 46ch;
+			margin: 0 auto;
+			color: var(--text-muted);
+			font-size: 16px;
+			line-height: 2;
+		}
+
+		.actions {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 10px;
+			margin-top: 28px;
+		}
+
+		.action {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 46px;
+			padding: 10px 20px;
+			border: 1px solid var(--border-strong);
+			border-radius: 10px;
+			background: transparent;
+			color: var(--text);
+			font: inherit;
+			font-size: 15px;
+			text-decoration: none;
+			cursor: pointer;
+			transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+		}
+
+		.action:hover {
+			border-color: var(--accent);
+			color: var(--accent);
+		}
+
+		.action:focus-visible {
+			outline: none;
+			box-shadow: 0 0 0 3px var(--ring);
+		}
+
+		.action-primary {
+			border-color: var(--accent);
+			background: var(--accent);
+			color: #fff;
+		}
+
+		.action-primary:hover {
+			border-color: var(--accent-strong);
+			background: var(--accent-strong);
+			color: #fff;
+		}
+
+		.error-footnote {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: center;
+			gap: 6px 12px;
+			margin-top: 30px;
+			padding-top: 22px;
+			border-top: 1px solid var(--border);
+			color: var(--text-soft);
+			font-size: 14px;
+		}
+
+		.error-footnote a {
+			display: inline-flex;
+			align-items: center;
+			min-height: 34px;
+			padding: 4px 14px;
+			border: 1px solid var(--border-strong);
+			border-radius: 8px;
+			color: var(--text-muted);
+			text-decoration: none;
+			transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+		}
+
+		.error-footnote a:hover {
+			border-color: var(--danger);
+			background: rgba(211, 58, 53, .08);
+			color: var(--danger);
+		}
+
+		.error-footnote a:focus-visible {
+			outline: none;
+			box-shadow: 0 0 0 3px var(--ring);
+		}
+
+		@media (max-width: 520px) {
+			.error-card { padding: 30px 20px 26px; border-radius: 14px; }
+			.actions { display: grid; }
+			.action { width: 100%; }
+			.error-footnote { flex-direction: column; gap: 10px; }
+			.error-footnote a { width: 100%; justify-content: center; min-height: 42px; }
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			* { transition: none !important; }
+		}
+
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--page: #12161f;
+				--glow: rgba(44, 95, 158, .22);
+				--surface: #1c222c;
+				--surface-sunk: #232a35;
+				--border: #303845;
+				--border-strong: #414a59;
+				--text: #f1f3f7;
+				--text-muted: #b0b9c6;
+				--text-soft: #8d97a6;
+				--accent: #5b93d6;
+				--accent-strong: #74a6e2;
+				--accent-soft: rgba(91, 147, 214, .14);
+				--danger: #ef6f6a;
+				--ring: rgba(91, 147, 214, .4);
+				--shadow: 0 18px 50px rgba(0, 0, 0, .45);
+			}
+
+			.action-primary { color: #10151d; }
+			.action-primary:hover { color: #10151d; }
+		}
+	</style>
+</head>
+<body>
+	<main class="error-card">
+		<a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>تریدرزآرنا</a>
+
+		<div class="status-badge" aria-hidden="true">
+			<svg viewBox="0 0 24 24">
+				<circle cx="12" cy="12" r="9"></circle>
+				<path d="M12 7.8v4.6"></path>
+				<path d="M12 16.1h.01"></path>
+			</svg>
+		</div>
+
+		<p class="status-code">404</p>
+		<h1>صفحه پیدا نشد</h1>
+		<p class="description">ممکن است نشانی اشتباه باشد یا صفحه موردنظر حذف یا منتقل شده باشد.</p>
+
+		<div class="actions">
+			<a class="action action-primary" href="/">بازگشت به صفحه اصلی</a>
+			<button class="action" type="button" onclick="goBackSafely()">بازگشت به صفحه قبل</button>
+		</div>
+
+		<div class="error-footnote">
+			<span> در صورت مشاهده خطای پیاپی خروج از سایت را امتحان کنید </span>
+			<a href="/logout">خروج از سایت </a>
+		</div>
+	</main>
+
+	<script>
+		function goBackSafely() {
+			try {
+				var storedPage = window.sessionStorage.getItem('tradersArena:lastHealthyPage');
+				var currentPage = window.location.pathname + window.location.search + window.location.hash;
+				var storedUrl = storedPage ? new URL(storedPage, window.location.origin) : null;
+				if (storedUrl && storedUrl.origin === window.location.origin
+						&& storedPage.indexOf('//') !== 0 && storedPage !== currentPage) {
+					window.location.assign(storedUrl.pathname + storedUrl.search + storedUrl.hash);
+					return;
+				}
+			} catch (ignored) {
+				// Storage may be unavailable; browser history remains as a fallback.
+			}
+
+			if (window.history.length > 1) {
+				var pageWasLeft = false;
+				window.addEventListener('pagehide', function () { pageWasLeft = true; }, { once: true });
+				window.history.back();
+				window.setTimeout(function () {
+					if (!pageWasLeft)
+						window.location.assign('/');
+				}, 800);
+				return;
+			}
+			window.location.assign('/');
+		}
+	</script>
+</body>
+</html>
+

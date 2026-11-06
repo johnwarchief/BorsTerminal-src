@@ -1,5 +1,5 @@
 {
- "commit": "6ecce634",
+ "commit": "6a785e95",
  "python": "3.14.7",
  "ports": {
   "py": 8311,
@@ -13,32 +13,32 @@
  },
  "dropped_cases": [],
  "db": {
-  "market_sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+  "market_sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
   "frozen_ok": true,
   "go_market_unchanged": true,
   "root_before": {
    "market.db": {
-    "sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+    "sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
     "bytes": 276115456,
-    "mtime_ns": 1793529264568759500
+    "mtime_ns": 1793536438398357700
    },
    "user.db": {
-    "sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+    "sha256": "b9fc502f5d3937ca2c81cc3ab09318278f78b3782262f0e4a17db7d42555f490",
     "bytes": 782336,
-    "mtime_ns": 1793529302281616300
+    "mtime_ns": 1793536491208893700
    },
    "codal.db": null
   },
   "root_after": {
    "market.db": {
-    "sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+    "sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
     "bytes": 276115456,
-    "mtime_ns": 1793529264568759500
+    "mtime_ns": 1793536438398357700
    },
    "user.db": {
-    "sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+    "sha256": "b9fc502f5d3937ca2c81cc3ab09318278f78b3782262f0e4a17db7d42555f490",
     "bytes": 782336,
-    "mtime_ns": 1793529302281616300
+    "mtime_ns": 1793536491208893700
    },
    "codal.db": null
   },
@@ -227,5 +227,5 @@
   "frozen_copies": true,
   "sidecar_untouched": true
  },
- "measured_at": "2026-11-01T12:11:57Z"
+ "measured_at": "2026-11-01T12:38:11Z"
 }

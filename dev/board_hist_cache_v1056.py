@@ -484,6 +484,37 @@ def main():
         c2.commit()
         seed_symbol = c2.execute(
             "SELECT l_val18 FROM instruments WHERE ins_code=?", (code_s,)).fetchone()[0]
+
+    # آماده‌سازی داده‌های معین برای f_roobi و f_noqteh روی کپی موقت c2 جهت تضمین برابری دو مسیر در CI و لوکال
+    mk.ensure_board_history(c2)
+    roobi_cand = c2.execute(
+        "SELECT ins_code, allowed_min FROM market_watch "
+        "WHERE d_even=(SELECT MAX(d_even) FROM market_watch) AND allowed_min > 0 "
+        "  AND ins_code != ? LIMIT 1", (code_s if seed_symbol else "",)).fetchone()
+    if roobi_cand:
+        r_code, r_tmin = roobi_cand
+        c2.execute(
+            "UPDATE market_watch SET p_last=?, price_yesterday=?, "
+            "       buy_q1_cnt=5.0, buy_q1_vol=50000.0, z_tot_tran=100.0, q_tot_tran=10000.0 "
+            "WHERE ins_code=? AND d_even=(SELECT MAX(d_even) FROM market_watch)",
+            (r_tmin, r_tmin * 1.05, r_code))
+
+    noqteh_cand = c2.execute(
+        "SELECT b.ins_code, b.min_low_29, b.prior30_vol FROM board_hist_fv b "
+        "JOIN market_watch m ON m.ins_code = b.ins_code "
+        "WHERE m.d_even=(SELECT MAX(d_even) FROM market_watch) "
+        "  AND b.min_low_29 > 100 AND b.prior30_vol > 0 "
+        "  AND b.ins_code NOT IN (?, ?) LIMIT 1",
+        (code_s if seed_symbol else "", r_code if roobi_cand else "")).fetchone()
+    if noqteh_cand:
+        n_code, n_low, n_p30 = noqteh_cand
+        n_pc = round(n_low * 1.01)
+        c2.execute(
+            "UPDATE market_watch SET p_closing=?, p_last=?, price_yesterday=?, "
+            "       q_tot_tran=?, z_tot_tran=100.0 "
+            "WHERE ins_code=? AND d_even=(SELECT MAX(d_even) FROM market_watch)",
+            (n_pc, n_pc, round(n_pc * 0.99), max(10000.0, n_p30 * 1.5), n_code))
+    c2.commit()
     mk._HIST_CACHE_KEY = (None,)
     flags = {}
     recs_by_label = {}

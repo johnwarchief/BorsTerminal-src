@@ -1,0 +1,179 @@
+{
+ "commit": "10b7230a",
+ "python": "3.14.7",
+ "ports": {
+  "py": 8301,
+  "go": 8300,
+  "preferred_py": 8301,
+  "preferred_go": 8300,
+  "fell_back": false
+ },
+ "roles": {
+  "fs_rich": "دعبید",
+  "fs_empty": "طفزر816",
+  "tape_a": "15282093177363578",
+  "tape_b": "10105227348949681",
+  "watched_days": "4"
+ },
+ "dropped_cases": [],
+ "db": {
+  "market_sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+  "user_sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+  "user_sha256_after_batch": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+  "user_stable_during_batch": true,
+  "frozen_ok": true,
+  "go_market_unchanged": true,
+  "go_user_unchanged": true,
+  "root_before": {
+   "market.db": {
+    "sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+    "bytes": 276115456,
+    "mtime_ns": 1793529264568759500
+   },
+   "user.db": {
+    "sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+    "bytes": 782336,
+    "mtime_ns": 1793529302281616300
+   },
+   "codal.db": null
+  },
+  "root_after": {
+   "market.db": {
+    "sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+    "bytes": 276115456,
+    "mtime_ns": 1793529264568759500
+   },
+   "user.db": {
+    "sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+    "bytes": 782336,
+    "mtime_ns": 1793529302281616300
+   },
+   "codal.db": null
+  },
+  "root_untouched": true
+ },
+ "sidecar": {
+  "ok": true,
+  "problem": ""
+ },
+ "statuses": {
+  "pairs": [
+   "200/200",
+   "422/422"
+  ],
+  "count_422": 5,
+  "ok": true
+ },
+ "python_redirect": {
+  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b4-tkge42a0\\py\\market.db",
+  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b4-tkge42a0\\py\\user.db"
+ },
+ "contract": {
+  "passed": 25,
+  "failed": 0,
+  "cases": 25,
+  "max_delta": 0.0,
+  "report": "_audit\\parity\\B4-contract.json",
+  "ok": true,
+  "failed_cases": []
+ },
+ "content_problems": [],
+ "declared": {
+  "rows": [
+   {
+    "name": "screen-declared",
+    "path": "/api/fundamental/screen?limit=5",
+    "py": 200,
+    "go": 501,
+    "go_code": "NOT_PORTED",
+    "expect_py": 200,
+    "require_key": "data",
+    "key_seen": true,
+    "py_keys": [
+     "count",
+     "data",
+     "status",
+     "symbols"
+    ],
+    "ok": true,
+    "note": "go 501 / py 200 — خروجیِ api/screener.py، درِ B7"
+   },
+   {
+    "name": "coverage-declared",
+    "path": "/api/sync/codal/fts-coverage",
+    "py": 200,
+    "go": 501,
+    "go_code": "NOT_PORTED",
+    "expect_py": 200,
+    "require_key": "layers",
+    "key_seen": true,
+    "py_keys": [
+     "blocking_gap",
+     "engine",
+     "generated_at",
+     "layers",
+     "remediation",
+     "status",
+     "universe"
+    ],
+    "ok": true,
+    "note": "go 501 / py 200 — وضعیتِ حلقه‌ها، درِ B6"
+   },
+   {
+    "name": "pipeline-declared",
+    "path": "/api/sync/codal/pipeline",
+    "py": 200,
+    "go": 501,
+    "go_code": "NOT_PORTED",
+    "expect_py": 200,
+    "require_key": "queue",
+    "key_seen": true,
+    "py_keys": [
+     "cadence",
+     "catchup",
+     "checked_at",
+     "cursor",
+     "data_epoch",
+     "dirty_symbols",
+     "incomplete_extractions",
+     "instruments",
+     "last_attempt",
+     "last_data_update",
+     "last_successful_sync",
+     "lock",
+     "offline_gate",
+     "queue",
+     "undated_notices",
+     "worker"
+    ],
+    "ok": true,
+    "note": "go 501 / py 200 — وضعیتِ حلقه‌ها، درِ B6"
+   }
+  ],
+  "problems": [],
+  "ok": true
+ },
+ "answered_templates": [
+  "/api/fundamental/sectors",
+  "/api/fundamental/{symbol}",
+  "/api/fundamental/{symbol}/quarters",
+  "/api/tape-history"
+ ],
+ "checks": {
+  "contract": true,
+  "delta_zero": true,
+  "statuses_200_422": true,
+  "case_coverage": true,
+  "routes_4_of_4": true,
+  "content": true,
+  "declared_measured": true,
+  "tape_roles": true,
+  "quarters_roles": true,
+  "user_stable_during_batch": true,
+  "go_read_only": true,
+  "root_untouched": true,
+  "frozen_copies": true,
+  "sidecar_untouched": true
+ },
+ "measured_at": "2026-11-01T11:09:13Z"
+}

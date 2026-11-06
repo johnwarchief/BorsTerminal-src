@@ -751,8 +751,24 @@ conn.close()
 
 # ==================== گارد ۱۲: صحت روی دادهٔ واقعی (market.db) ===============
 if os.path.exists("market.db"):
-    conn = sqlite3.connect("file:market.db?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
+    raw_conn = sqlite3.connect("file:market.db?mode=ro", uri=True)
+    max_d = raw_conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
+    total_vol = raw_conn.execute(
+        "SELECT COALESCE(SUM(q_tot_tran), 0) FROM market_watch WHERE d_even=?", (max_d,)).fetchone()[0]
+    if total_vol > 0:
+        conn = raw_conn
+        conn.row_factory = sqlite3.Row
+    else:
+        # فیکسچور پایدار در حافظه: اگر آخرین روز ثبت‌شده هنوز آغاز نشده (پیش از گشایش بازار با گردش صفر)،
+        # آخرین نشستِ معامله‌شده واقعی مبنا قرار می‌گیرد تا آزمون در CI و لوکال کاملاً بازتولیدپذیر باشد.
+        last_traded = raw_conn.execute(
+            "SELECT MAX(d_even) FROM market_watch WHERE q_tot_tran > 0").fetchone()[0]
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        raw_conn.backup(conn)
+        raw_conn.close()
+        conn.execute("DELETE FROM market_watch WHERE d_even > ?", (last_traded,))
+        conn.commit()
     ME._CTX.clear()
     ls = ME.summary(conn)
     ck(len(ls["rows"]) == 10, "روی دادهٔ واقعی هم ۱۰ سطر")

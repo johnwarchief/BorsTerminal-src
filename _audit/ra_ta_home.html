@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html class="ta-page-index"  dir="rtl" lang="fa">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <meta name="theme-color" content="#1a3a6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Traders Arena">
+    <link rel="manifest" href="/manifest.webmanifest?v=1.2.1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/icon-180.png?v=1.2.1">
+    <link rel="stylesheet" href="/css/s/pwa.css?v=1.1.1">
+    <script src="/js/last-page.js?v=1.0.0"></script>
+    <script defer src="/js/pwa-register.js?v=1.1.0"></script>
+
+<meta name="_csrf" content="de16b29f-9924-449b-a2bd-d3315b20d486" />
+<meta name="_csrf_header" content="X-CSRF-TOKEN" />
+<link rel="icon" href="../../../images/favicon.ico" type="image">
+<link rel="stylesheet"  href="../../../css/s/font-awesome.6.5.2.min.css" />
+<link href="../../../js/cdn/dataTables.2.2.2.css" rel="stylesheet"> 
+<link rel="stylesheet" href="../../../css/s/apexcharts.3.35.3.min.css"/>
+<link rel="stylesheet" href="../../../css/s/style.1.2.12.css"/>
+<link rel="stylesheet" href="/css/s/page-guide.1.0.0.css"/>
+<script src="/js/session-recovery.js" data-session-status-url="/login/status" data-authenticated="false"></script>
+<script type="text/javascript" defer src="/js/page-guide.1.0.0.js"></script>
+<script type="text/javascript" src="../../../js/cdn/jquery.3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../js/cdn/farsiInputPlus.js"></script> 
+<script type="text/javascript" src="../../../js/cdn/theme.1.1.1.min.js"  ></script>
+<script type="text/javascript" src="../../../js/cdn/Draggable.min.js"  ></script>
+<script type="text/javascript" src="../../../js/cdn/sortable.1.15.6.js"  ></script>
+<script type="text/javascript" src="../../../js/cdn/TweenMax.min.js"  ></script>
+<script type="text/javascript" src="../../../js/cdn/sweetAlert.js"  ></script> 
+<script type="text/javascript" src="../../../js/cdn/dataTables.2.2.2.js" ></script>
+<script type="text/javascript" src="../../../js/cdn/fixedColumns.5.0.4.js"></script>
+<script type="text/javascript" src="../../../js/cdn/fixedHeader.3.4.0.js"></script>
+<script type="text/javascript" src="../../../js/cdn/apexcharts.3.35.3.min.js"  ></script>
+<script type="text/javascript" src="../../../js/cdn/lightweight-charts.5.0.7.min.js"  ></script>
+
+<script type="text/javascript" src="../../js/product/index.5.0.7.min.js"></script>
+
+
+<link rel="stylesheet" href="/css/s/group-homepage-tools.1.0.5.css"/>
+<link rel="stylesheet" href="/css/s/watch-export.css"/>
+<script type="text/javascript" defer src="/js/watch-export.js"></script>
+ 
+
+<link rel="stylesheet" href="/css/s/industry-table-tools.1.0.1.css"/>
+
+
+
+<meta name="description" content="نمایش زنده آمار کلیدی بازار بورس تهران و گروه های صنعت، سرانه های خرید و  فروش، نسبت های خریدار به فروشنده، ارزش معاملات سهام بورس و فرابورس ، بررسی تخصصی صندوق های سرمایه گذاری، ورود و خروج پول بورس، حجم های مشکوک بازدهی سهم ها و گروه ها به صورت لحظه ای ">
+ <meta name="keywords" content="  تحلیل جریانات نقدینگی ، تحلیل تکنیکال ، تریدرزآرنا ، بورس ، بازار سهام ، سوابق بازار ، فرابورس، تریدر ، ورود پول ، ارزش معاملات  بورس ، سرانه خرید سهام ، تحلیل بورس ">
+
+<title>Traders Arena</title>
+</head>
+<body >
+
+ 
+
+
+
+<script>template(); var colours = colorize();</script>
+
+<header  class="topnav">
+  
+<div  class="topnav-brand">
+    <img src="../../../images/tradersarena-logo.png">
+    <a href="/"><strong>تریدرز آرنا</strong></a>
+</div>
+
+<button  class="hamburger" id="hamburgerBtn" aria-label="منو">
+    <span></span><span></span><span></span>
+</button>
+<div  id="searchingparent" data-tour="symbol-search">
+    <input id="searching" type="text" placeholder="جستجوی نماد" Lang="fa-IR" autocomplete="off">
+    <table id="searchResult">
+      <tbody ></tbody>
+    </table>
+</div>
+
+  <div class="topnav-menu" id="topnavMenu">	
+   <div class="dropdown" id="extras" data-tour="extra-pages">
+<button class="dropbtn">صفحه های کاربردی<i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content" id="extras-content" >
+<a  href="/options-arena" >آپشن آرنا</a>
+<a href="/money-flow" >نمودارهای جریانات نقدینگی لحظه ای بازار</a>
+<a  href="/heatmap/market" >نقشه بازار </a>
+<a  href="/compare" >نمودار مقایسه چندین نماد</a>
+<a href="/extras/incognito-charts" >چارت ناشناخته (تست معامله گری) </a>
+<a href="/extras/tal" >معاملات پایانی (TAL) </a>
+<a href="/extras/tops" >لیست شرکت ها بر اساس فاصله تا سقف قیمت</a>
+<!--
+<a href="/extras/industries" >دیده بان صنایع </a>
+-->
+<a href="/extras/market-values" >لیست شرکت ها بر اساس ارزش بازار</a>
+<a href="/000/chart/price" >نمودار شاخص کل</a>
+<a href="/999/chart/price">نمودار شاخص هم وزن </a>
+<a href="/gold-funds/chart/price"> شاخص صندوق های طلا(هم وزن) </a>
+<a href="/silver-funds/chart/price"> شاخص صندوق های نقره(هم وزن) </a>
+<a href="/leveraged-funds/chart/price"> شاخص صندوق های اهرمی(هم وزن) </a>
+<a href="/market/histo-status" >بازدهی های دوره ای بازار</a>
+<a href="/extras/long-term-money-flow-filters" >فیلترهای جریان نقدینگی بلندمدت</a>
+      </div>
+</div>
+   <div class="dropdown " data-tour="watch">
+    <button class="dropbtn">دیده بان<i class="fas fa-angle-down arrow-icon"></i></button>
+    <div class="dropdown-content"  id="watch-content">
+		<a href="/market-watch-pro">دیده بان بازار پیشرفته</a>
+		<a href="/market-watch">دیده بان بازار نسخه سبک</a>
+		<a href="/pivot-watch" >دیده بان حمایت ها و مقاومت ها</a>
+		<a href="/signal-watch" >دیده بان جریانات نقدینگی بلندمدت</a>
+		<a href="/extras/techno-watch" >دیده بان  تکنیکال</a>
+		<a href="/extras/orders-watch" >دیده بان سفارش ها</a>
+	</div>
+</div>
+   <div class="dropdown" data-tour="history">
+<button class="dropbtn">سابقه معاملات<i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content"  id="history-content">
+
+
+<a href="/market/history?type=0">سوابق بازار(سهام،حق تقدم،صندوقهای سهامی،مختلط و درآمدثابت)</a>
+<a href="/market/history?type=1">سوابق بازار(سهام،حق تقدم،صندوقهای سهامی و مختلط )</a>
+<a href="/market/history?type=2">سوابق بازار(سهام و حق تقدم)</a>
+</div>
+</div>
+   <div class="dropdown" data-tour="money-flow">
+<button class="dropbtn">جریان نقدینگی
+<i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content" data-tour="money-flow" id="money-flow-content">
+<div class="menu-container">
+  
+ 
+  
+
+
+  <div class="menu-row">
+    <span class="menu-text">سهام، حق تقدم، صندوق سهامی و درآمدثابت</span>
+    <div class="menu-actions">
+      <a href="/chart/daily/market?type=0" class="menu-link simple">روزانه</a>
+      <a href="/market/chart?type=0" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+
+  <div class="menu-row">
+    <span class="menu-text">سهام، حق تقدم و صندوق سهامی</span>
+    <div class="menu-actions">
+      <a href="/chart/daily/market?type=1" class="menu-link simple">روزانه</a>
+      <a href="/market/chart?type=1" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+
+  <div class="menu-row">
+    <span class="menu-text">سهام و حق تقدم</span>
+    <div class="menu-actions">
+      <a href="/chart/daily/market?type=2" class="menu-link simple">روزانه</a>
+      <a href="/market/chart?type=2" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>  
+   <div class="dropdown compact" data-tour="options">
+<button class="dropbtn">آپشن
+   <i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content"  id="options-content">
+<a  href="/options-arena" >آپشن آرنا</a>
+<a  href="/options-arena/history" >سوابق بازار اختیار معامله</a>
+<a  href="/options-arena/watch" >دیده بان اختیار معامله</a>
+<a  href="/options-arena/strategy" >استراتژی ساز  اختیار معامله</a>
+</div>
+</div> 
+
+<a id="heatmaplink" href="/heatmap/market" >نقشه بازار  </a>
+ 
+
+
+
+
+
+
+ </div>
+ <div class="topnav-left">
+  <a id="shop" href="/shop/" class="nav-icon-link shop-link">
+      <i class="fas fa-crown"></i> <span>خرید اشتراک</span>
+  </a>
+ 
+   <a id="page-guide-btn" href="#" role="button" class="nav-icon-link customize-link tooltip" data-page-guide-id="index">
+      <i class="fas fa-circle-info"></i>
+      <span class="tooltiptext lower">راهنمای  این صفحه</span>
+  </a> 
+ 
+  
+  <a href="/help" class="nav-icon-link customize-link tooltip">
+      <i class="fas fa-book-open"></i>
+      <span class="tooltiptext lower">راهنمای سایت</span>
+  </a>
+
+  <a id="theme-toggle-btn" class="nav-icon-link customize-link tooltip">
+      <i id="theme-icon" class="far fa-sun"></i> <span class="tooltiptext lower">تغییر تم روشن/تیره/سبک(کلاسیک)</span>
+  </a>
+
+  <a id="customize" class="nav-icon-link customize-link tooltip" data-tour="customize">
+      <i class="fas fa-gear"></i>
+      <span class="tooltiptext lower">شخصی‌سازی</span>
+  </a>
+  
+   
+
+<button type="button" class="login nav-icon-link profile-link inline-login-open"
+	aria-haspopup="dialog" aria-controls="inline-login-modal">
+   <div class="avatar-container">
+        <i class="far fa-user-circle"></i>
+        
+</div>
+    <span>ورود/عضویت</span>
+</button>
+
+
+	<style>
+		.topnav .inline-login-open {
+			float: right;
+			margin: 0 5px;
+			background: transparent;
+			border: 0;
+			color: var(--topnav-link, var(--text-main, #fff));
+			cursor: pointer;
+			font-family: inherit;
+		}
+
+		.inline-login-overlay[hidden] {
+			display: none;
+		}
+
+		.inline-login-overlay {
+			position: fixed;
+			inset: 0;
+			z-index: 10000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 18px;
+			background: rgba(0, 0, 0, .58);
+			direction: rtl;
+		}
+
+		.inline-login-dialog {
+			position: relative;
+			width: min(100%, 390px);
+			padding: 24px;
+			border: 1px solid var(--box-border, #ddd);
+			border-radius: 14px;
+			background: var(--bg, #fff);
+			color: var(--text-main, #222);
+			box-shadow: 0 20px 55px rgba(0, 0, 0, .3);
+			text-align: right;
+		}
+
+		.inline-login-dialog,
+		.inline-login-dialog * {
+			box-sizing: border-box;
+			max-width: 100%;
+		}
+
+		.inline-login-title {
+			margin: 0 0 20px;
+			font-size: 20px;
+			text-align: center;
+		}
+
+		.inline-login-close {
+			position: absolute;
+			top: 8px;
+			left: 10px;
+			width: 36px;
+			height: 36px;
+			padding: 0;
+			border: 0;
+			border-radius: 50%;
+			background: transparent;
+			color: inherit;
+			font-size: 26px;
+			line-height: 1;
+			cursor: pointer;
+		}
+
+		.inline-login-field {
+			width: 100%;
+			margin: 0 0 12px;
+			padding: 11px 12px;
+			border: 1px solid var(--btn-border, #aaa);
+			border-radius: 8px;
+			background: var(--bg-input, #fff);
+			color: var(--text-main, #222);
+			font: inherit;
+			direction: rtl;
+		}
+
+		.inline-login-password {
+			position: relative;
+			margin-bottom: 12px;
+		}
+
+		.inline-login-password .inline-login-field {
+			display: block;
+			margin-bottom: 0;
+			padding-left: 44px;
+		}
+
+		.inline-login-password-toggle {
+			position: absolute;
+			top: 50%;
+			left: 8px;
+			transform: translateY(-50%);
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 34px;
+			height: 34px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: var(--text-sec, #666);
+			font-size: 16px;
+			cursor: pointer;
+		}
+
+		.inline-login-options {
+			display: flex;
+			align-items: center;
+			gap: 7px;
+			margin: 2px 0 14px;
+			font-size: 13px;
+		}
+
+		.inline-login-submit {
+			width: 100%;
+			padding: 11px 16px;
+			border: 1px solid var(--btn-border, #777);
+			border-radius: 8px;
+			background: var(--btn-bg, #b4d2f5);
+			color: var(--btn-text, #111);
+			font: inherit;
+			cursor: pointer;
+		}
+
+		.inline-login-submit:disabled {
+			opacity: .65;
+			cursor: wait;
+		}
+
+		.inline-login-error {
+			margin: 12px 0 0;
+			padding: 9px 10px;
+			border-radius: 7px;
+			background: #ffebee;
+			color: #b71c1c;
+			font-size: 13px;
+			text-align: center;
+		}
+
+		.inline-login-links {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			margin-top: 16px;
+			font-size: 13px;
+		}
+
+		.topnav .inline-login-links a {
+			float: none;
+			width: auto;
+			margin: 0;
+			padding: 0;
+			color: var(--text-main, #222);
+		}
+
+		@media (max-width: 520px) {
+			.inline-login-dialog {
+				padding: 22px 16px;
+			}
+		}
+
+		@media (max-width: 1000px) {
+			.topnav-left .inline-login-open {
+				float: none;
+				display: flex;
+				justify-content: center;
+				width: 100%;
+				margin: 0;
+				padding: 15px !important;
+			}
+		}
+	</style>
+
+	<div id="inline-login-modal" class="inline-login-overlay" hidden>
+		<div class="inline-login-dialog" role="dialog" aria-modal="true"
+			aria-labelledby="inline-login-title">
+			<button type="button" class="inline-login-close" aria-label="بستن">&times;</button>
+			<h2 id="inline-login-title" class="inline-login-title">ورود به حساب کاربری</h2>
+
+			<form class="inline-login-form" action="/login" method="post" data-status-url="/login/status" data-activation-url="/activate-account/check"><input type="hidden" name="_csrf" value="de16b29f-9924-449b-a2bd-d3315b20d486"/>
+				<input type="hidden" name="_csrf" value="de16b29f-9924-449b-a2bd-d3315b20d486">
+				<input class="inline-login-field" type="tel" name="phone" required
+					autocomplete="username" inputmode="tel" placeholder="شماره تلفن همراه">
+				<div class="inline-login-password">
+					<input class="inline-login-field" type="password" name="password" required
+						autocomplete="current-password" placeholder="رمز عبور">
+					<button type="button" class="inline-login-password-toggle"
+						aria-label="نمایش رمز عبور" aria-pressed="false">
+						<i class="far fa-eye" aria-hidden="true"></i>
+					</button>
+				</div>
+
+				<label class="inline-login-options">
+					<input type="checkbox" name="remember-me" checked>
+					<span>مرا به یاد داشته باش</span>
+				</label>
+
+				<button class="inline-login-submit" type="submit">ورود</button>
+				<div class="inline-login-error" role="alert" aria-live="polite" hidden></div>
+			</form>
+
+			<div class="inline-login-links">
+				<a href="/recover">فراموشی رمز عبور</a>
+				<a href="/signup">ثبت‌نام</a>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		(function () {
+			var modal = document.getElementById('inline-login-modal');
+			if (!modal || modal.dataset.initialized === 'true') return;
+
+			var initialOpenButton = document.querySelector('.inline-login-open');
+			if (!initialOpenButton) return;
+			modal.dataset.initialized = 'true';
+			document.body.appendChild(modal);
+
+			var activeOpenButton = initialOpenButton;
+			var closeButton = modal.querySelector('.inline-login-close');
+			var form = modal.querySelector('.inline-login-form');
+			var phoneInput = form.querySelector('input[name="phone"]');
+			var passwordInput = form.querySelector('input[name="password"]');
+			var passwordToggle = form.querySelector('.inline-login-password-toggle');
+			var submitButton = form.querySelector('.inline-login-submit');
+			var errorBox = form.querySelector('.inline-login-error');
+			var statusUrl = form.dataset.statusUrl;
+			var activationUrl = form.dataset.activationUrl;
+			var loginInProgress = false;
+			var navigationStarted = false;
+
+			function getLoginStatus() {
+				var separator = statusUrl.indexOf('?') === -1 ? '?' : '&';
+				return fetch(statusUrl + separator + '_=' + Date.now(), {
+					method: 'GET',
+					credentials: 'same-origin',
+					cache: 'no-store',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					}
+				}).then(function (response) {
+					if (!response.ok) throw new Error('Login status request failed');
+					return response.json();
+				}).then(function (result) {
+					return Boolean(result && result.authenticated);
+				});
+			}
+
+			function openModal(openButton) {
+				activeOpenButton = openButton || initialOpenButton;
+				modal.hidden = false;
+				document.body.style.overflow = 'hidden';
+				errorBox.hidden = true;
+				phoneInput.focus();
+				getLoginStatus().then(function (authenticated) {
+					if (authenticated) finishAuthenticatedLogin();
+				}).catch(function () {
+					// Opening the dialog must remain possible during a temporary status-check failure.
+				});
+			}
+
+			function closeModal() {
+				modal.hidden = true;
+				document.body.style.overflow = '';
+				if (activeOpenButton) activeOpenButton.focus();
+			}
+
+			function showError(message) {
+				errorBox.textContent = message;
+				errorBox.hidden = false;
+			}
+
+			function finishAuthenticatedLogin() {
+				navigationStarted = true;
+				window.location.reload();
+			}
+
+			function navigateTo(url) {
+				navigationStarted = true;
+				window.location.assign(url);
+			}
+
+			function formBody() {
+				return new URLSearchParams(new FormData(form));
+			}
+
+			function readJson(response) {
+				return response.text().then(function (text) {
+					if (!text) return null;
+					try {
+						return JSON.parse(text);
+					} catch (error) {
+						return null;
+					}
+				});
+			}
+
+			function delayedLoginStatus() {
+				return new Promise(function (resolve) {
+					window.setTimeout(resolve, 250);
+				}).then(getLoginStatus);
+			}
+
+			function reconcileAuthentication(failureMessage) {
+				return getLoginStatus().catch(function () {
+					return false;
+				}).then(function (authenticated) {
+					if (authenticated) return true;
+					return delayedLoginStatus().catch(function () {
+						return false;
+					});
+				}).then(function (authenticated) {
+					if (authenticated) {
+						finishAuthenticatedLogin();
+						return true;
+					}
+					showError(failureMessage);
+					return false;
+				});
+			}
+
+			document.addEventListener('click', function (event) {
+				var openButton = event.target.closest('.inline-login-open');
+				if (!openButton) return;
+				event.preventDefault();
+				openModal(openButton);
+			});
+			closeButton.addEventListener('click', closeModal);
+			passwordToggle.addEventListener('click', function () {
+				var passwordIsVisible = passwordInput.type === 'text';
+				passwordInput.type = passwordIsVisible ? 'password' : 'text';
+				passwordToggle.setAttribute('aria-pressed', String(!passwordIsVisible));
+				passwordToggle.setAttribute('aria-label',
+					passwordIsVisible ? 'نمایش رمز عبور' : 'مخفی کردن رمز عبور');
+				passwordToggle.querySelector('i').className = passwordIsVisible
+					? 'far fa-eye' : 'far fa-eye-slash';
+			});
+			modal.addEventListener('click', function (event) {
+				if (event.target === modal) closeModal();
+			});
+			document.addEventListener('keydown', function (event) {
+				if (event.key === 'Escape' && !modal.hidden) closeModal();
+			});
+
+			function checkInactiveAccount() {
+				return fetch(activationUrl, {
+					method: 'POST',
+					body: formBody(),
+					credentials: 'same-origin',
+					redirect: 'manual',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					}
+				}).then(function (response) {
+					if (!response.ok) return null;
+					return readJson(response);
+				}).then(function (result) {
+					if (result && result.action === 'activate' && result.redirect) {
+						navigateTo(result.redirect);
+						return true;
+					}
+					return false;
+				}).catch(function () {
+					// As on the standalone page, a failed optional activation check must not block login.
+					return false;
+				});
+			}
+
+			function submitLogin() {
+				return fetch(form.action, {
+					method: 'POST',
+					body: formBody(),
+					credentials: 'same-origin',
+					redirect: 'manual',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					}
+				}).then(function (response) {
+					return readJson(response).then(function (result) {
+						if (result && result.authenticated) {
+							finishAuthenticatedLogin();
+							return;
+						}
+						if (result && (result.code === 'CAPTCHA_REQUIRED' || result.captchaRequired)
+								&& result.redirect) {
+							navigateTo(result.redirect);
+							return;
+						}
+						if (result && (result.code === 'SESSION_LIMIT'
+								|| result.code === 'SESSION_AUTHENTICATION_FAILED') && result.redirect) {
+							navigateTo(result.redirect);
+							return;
+						}
+						if (result && result.message) {
+							showError(result.message);
+							return;
+						}
+
+						var message = response.status === 403
+							? 'نشست این صفحه منقضی شده است. صفحه را تازه‌سازی کنید و دوباره وارد شوید.'
+							: 'نتیجه ورود از سرور دریافت نشد. لطفاً دوباره تلاش کنید.';
+						return reconcileAuthentication(message);
+					});
+				}).catch(function () {
+					return reconcileAuthentication('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
+				});
+			}
+
+			form.addEventListener('submit', function (event) {
+				event.preventDefault();
+				if (loginInProgress) return;
+				loginInProgress = true;
+				errorBox.hidden = true;
+				submitButton.disabled = true;
+				submitButton.textContent = 'در حال ورود...';
+
+				getLoginStatus().catch(function () {
+					return false;
+				}).then(function (authenticated) {
+					if (authenticated) {
+						finishAuthenticatedLogin();
+						return;
+					}
+					return checkInactiveAccount().then(function (activationStarted) {
+						if (!activationStarted) return submitLogin();
+					});
+				}).catch(function () {
+					return reconcileAuthentication('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
+				}).finally(function () {
+					if (navigationStarted) return;
+					loginInProgress = false;
+					submitButton.disabled = false;
+					submitButton.textContent = 'ورود';
+				});
+			});
+		})();
+	</script>
+ 
+         
+  
+</div>
+	 
+</header> 
+<noscript>
+  <div style="background-color:yellow;font-size:28px;padding:30px">
+    جاوااسکریپت روی مرورگر شما فعال نیست. برای استفاده از امکانات سایت لطفا جاوااسکریپت را روی مرورگر خود فعال نمایید.
+  </div>
+</noscript>
+ 
+	
+<div class="tpg">
+<div class="tpindex">
+<span>شاخص کل بورس:</span>
+<span id="tpiw"  ></span>
+<span>تغییر:</span>
+<span id="tpiwc" dir="ltr" ></span>
+<span>درصد:</span>
+<span id="tpiwp" dir="ltr"  ></span>
+</div>
+
+<div class="tpindex tpa">
+<span>شاخص کل هم وزن:</span>
+<span id="tpia"  ></span>
+<span>تغییر:</span>
+<span id="tpiac" dir="ltr" ></span>
+<span>درصد:</span>
+<span id="tpiap" dir="ltr"  ></span>
+</div>
+<div id="homepage-history">
+
+ 
+<span class="tpindex tpa" >
+<select style="padding:2px;margin-left:10px;min-width: 150px;border:1px solid black;"
+ onchange="location = this.value;" data-tour="past">
+	<option style="font-weight:bold;"> نمایش صفحه آمارهای کلیدی روز های قبل</option>
+	<option value="/">صفحه اصلی سایت</option>
+	<option  value="/homepage/20260930">1405/07/08</option>
+	<option  value="/homepage/20260929">1405/07/07</option>
+	<option  value="/homepage/20260928">1405/07/06</option>
+	<option  value="/homepage/20260927">1405/07/05</option>
+	<option  value="/homepage/20260926">1405/07/04</option>
+	<option  value="/homepage/20260923">1405/07/01</option>
+	<option  value="/homepage/20260922">1405/06/31</option>
+	<option  value="/homepage/20260921">1405/06/30</option>
+	<option  value="/homepage/20260920">1405/06/29</option>
+	<option  value="/homepage/20260919">1405/06/28</option>
+	<option  value="/homepage/20260916">1405/06/25</option>
+	<option  value="/homepage/20260915">1405/06/24</option>
+	<option  value="/homepage/20260914">1405/06/23</option>
+	<option  value="/homepage/20260913">1405/06/22</option>
+	<option  value="/homepage/20260912">1405/06/21</option>
+	<option  value="/homepage/20260909">1405/06/18</option>
+	<option  value="/homepage/20260908">1405/06/17</option>
+	<option  value="/homepage/20260907">1405/06/16</option>
+	<option  value="/homepage/20260906">1405/06/15</option>
+	<option  value="/homepage/20260905">1405/06/14</option>
+	<option  value="/homepage/20260902">1405/06/11</option>
+	<option  value="/homepage/20260901">1405/06/10</option>
+	<option  value="/homepage/20260831">1405/06/09</option>
+	<option  value="/homepage/20260829">1405/06/07</option>
+	<option  value="/homepage/20260826">1405/06/04</option>
+	<option  value="/homepage/20260825">1405/06/03</option>
+	<option  value="/homepage/20260824">1405/06/02</option>
+	<option  value="/homepage/20260823">1405/06/01</option>
+	<option  value="/homepage/20260822">1405/05/31</option>
+	<option  value="/homepage/20260819">1405/05/28</option>
+	<option  value="/homepage/20260818">1405/05/27</option>
+	<option  value="/homepage/20260817">1405/05/26</option>
+	<option  value="/homepage/20260816">1405/05/25</option>
+	<option  value="/homepage/20260815">1405/05/24</option>
+	<option  value="/homepage/20260811">1405/05/20</option>
+	<option  value="/homepage/20260810">1405/05/19</option>
+	<option  value="/homepage/20260809">1405/05/18</option>
+	<option  value="/homepage/20260808">1405/05/17</option>
+	<option  value="/homepage/20260805">1405/05/14</option>
+	<option  value="/homepage/20260803">1405/05/12</option>
+	<option  value="/homepage/20260802">1405/05/11</option>
+	<option  value="/homepage/20260801">1405/05/10</option>
+	<option  value="/homepage/20260729">1405/05/07</option>
+	<option  value="/homepage/20260728">1405/05/06</option>
+	<option  value="/homepage/20260727">1405/05/05</option>
+	<option  value="/homepage/20260726">1405/05/04</option>
+	<option  value="/homepage/20260725">1405/05/03</option>
+	<option  value="/homepage/20260722">1405/04/31</option>
+	<option  value="/homepage/20260721">1405/04/30</option>
+	<option  value="/homepage/20260720">1405/04/29</option>
+	<option  value="/homepage/20260719">1405/04/28</option>
+	<option  value="/homepage/20260718">1405/04/27</option>
+	<option  value="/homepage/20260715">1405/04/24</option>
+	<option  value="/homepage/20260714">1405/04/23</option>
+	<option  value="/homepage/20260713">1405/04/22</option>
+	<option  value="/homepage/20260712">1405/04/21</option>
+	<option  value="/homepage/20260711">1405/04/20</option>
+	<option  value="/homepage/20260708">1405/04/17</option>
+	<option  value="/homepage/20260707">1405/04/16</option>
+	<option  value="/homepage/20260701">1405/04/10</option>
+	<option  value="/homepage/20260630">1405/04/09</option>
+	<option  value="/homepage/20260629">1405/04/08</option>
+	<option  value="/homepage/20260628">1405/04/07</option>
+	<option  value="/homepage/20260627">1405/04/06</option>
+	<option  value="/homepage/20260623">1405/04/02</option>
+	<option  value="/homepage/20260622">1405/04/01</option>
+	<option  value="/homepage/20260621">1405/03/31</option>
+	<option  value="/homepage/20260620">1405/03/30</option>
+	<option  value="/homepage/20260617">1405/03/27</option>
+	<option  value="/homepage/20260616">1405/03/26</option>
+	<option  value="/homepage/20260615">1405/03/25</option>
+	<option  value="/homepage/20260614">1405/03/24</option>
+	<option  value="/homepage/20260613">1405/03/23</option>
+	<option  value="/homepage/20260610">1405/03/20</option>
+	<option  value="/homepage/20260609">1405/03/19</option>
+	<option  value="/homepage/20260608">1405/03/18</option>
+	<option  value="/homepage/20260607">1405/03/17</option>
+	<option  value="/homepage/20260606">1405/03/16</option>
+	<option  value="/homepage/20260603">1405/03/13</option>
+	<option  value="/homepage/20260602">1405/03/12</option>
+	<option  value="/homepage/20260601">1405/03/11</option>
+	<option  value="/homepage/20260531">1405/03/10</option>
+	<option  value="/homepage/20260530">1405/03/09</option>
+	<option  value="/homepage/20260526">1405/03/05</option>
+	<option  value="/homepage/20260525">1405/03/04</option>
+	<option  value="/homepage/20260524">1405/03/03</option>
+	<option  value="/homepage/20260523">1405/03/02</option>
+	<option  value="/homepage/20260520">1405/02/30</option>
+	<option  value="/homepage/20260519">1405/02/29</option>
+	<option  value="/homepage/20260518">1405/02/28</option>
+	<option  value="/homepage/20260517">1405/02/27</option>
+	<option  value="/homepage/20260516">1405/02/26</option>
+	<option  value="/homepage/20260513">1405/02/23</option>
+	<option  value="/homepage/20260512">1405/02/22</option>
+	<option  value="/homepage/20260511">1405/02/21</option>
+	<option  value="/homepage/20260510">1405/02/20</option>
+	<option  value="/homepage/20260509">1405/02/19</option>
+	<option  value="/homepage/20260506">1405/02/16</option>
+	<option  value="/homepage/20260505">1405/02/15</option>
+	<option  value="/homepage/20260504">1405/02/14</option>
+	<option  value="/homepage/20260503">1405/02/13</option>
+	<option  value="/homepage/20260502">1405/02/12</option>
+	<option  value="/homepage/20260429">1405/02/09</option>
+	<option  value="/homepage/20260428">1405/02/08</option>
+	<option  value="/homepage/20260427">1405/02/07</option>
+	<option  value="/homepage/20260426">1405/02/06</option>
+	<option  value="/homepage/20260425">1405/02/05</option>
+	<option  value="/homepage/20260422">1405/02/02</option>
+	<option  value="/homepage/20260421">1405/02/01</option>
+	<option  value="/homepage/20260420">1405/01/31</option>
+	<option  value="/homepage/20260419">1405/01/30</option>
+	<option  value="/homepage/20260418">1405/01/29</option>
+	<option  value="/homepage/20260415">1405/01/26</option>
+	<option  value="/homepage/20260413">1405/01/24</option>
+	<option  value="/homepage/20260412">1405/01/23</option>
+	<option  value="/homepage/20260411">1405/01/22</option>
+	<option  value="/homepage/20260408">1405/01/19</option>
+	<option  value="/homepage/20260407">1405/01/18</option>
+	<option  value="/homepage/20260406">1405/01/17</option>
+	<option  value="/homepage/20260405">1405/01/16</option>
+	<option  value="/homepage/20260404">1405/01/15</option>
+	<option  value="/homepage/20260331">1405/01/11</option>
+	<option  value="/homepage/20260330">1405/01/10</option>
+	<option  value="/homepage/20260329">1405/01/09</option>
+	<option  value="/homepage/20260328">1405/01/08</option>
+	<option  value="/homepage/20260325">1405/01/05</option>
+	<option  value="/homepage/20260318">1404/12/27</option>
+	<option  value="/homepage/20260317">1404/12/26</option>
+	<option  value="/homepage/20260316">1404/12/25</option>
+	<option  value="/homepage/20260315">1404/12/24</option>
+	<option  value="/homepage/20260314">1404/12/23</option>
+	<option  value="/homepage/20260310">1404/12/19</option>
+	<option  value="/homepage/20260309">1404/12/18</option>
+	<option  value="/homepage/20260308">1404/12/17</option>
+	<option  value="/homepage/20260228">1404/12/09</option>
+	<option  value="/homepage/20260225">1404/12/06</option>
+	<option  value="/homepage/20260224">1404/12/05</option>
+	<option  value="/homepage/20260223">1404/12/04</option>
+	<option  value="/homepage/20260222">1404/12/03</option>
+	<option  value="/homepage/20260221">1404/12/02</option>
+	<option  value="/homepage/20260218">1404/11/29</option>
+	<option  value="/homepage/20260217">1404/11/28</option>
+	<option  value="/homepage/20260216">1404/11/27</option>
+	<option  value="/homepage/20260215">1404/11/26</option>
+	<option  value="/homepage/20260214">1404/11/25</option>
+	<option  value="/homepage/20260210">1404/11/21</option>
+	<option  value="/homepage/20260209">1404/11/20</option>
+	<option  value="/homepage/20260208">1404/11/19</option>
+	<option  value="/homepage/20260207">1404/11/18</option>
+	<option  value="/homepage/20260203">1404/11/14</option>
+	<option  value="/homepage/20260202">1404/11/13</option>
+	<option  value="/homepage/20260201">1404/11/12</option>
+	<option  value="/homepage/20260131">1404/11/11</option>
+	<option  value="/homepage/20260128">1404/11/08</option>
+	<option  value="/homepage/20260127">1404/11/07</option>
+	<option  value="/homepage/20260126">1404/11/06</option>
+	<option  value="/homepage/20260125">1404/11/05</option>
+	<option  value="/homepage/20260124">1404/11/04</option>
+	<option  value="/homepage/20260121">1404/11/01</option>
+	<option  value="/homepage/20260120">1404/10/30</option>
+	<option  value="/homepage/20260119">1404/10/29</option>
+	<option  value="/homepage/20260118">1404/10/28</option>
+	<option  value="/homepage/20260114">1404/10/24</option>
+	<option  value="/homepage/20260113">1404/10/23</option>
+	<option  value="/homepage/20260112">1404/10/22</option>
+	<option  value="/homepage/20260111">1404/10/21</option>
+	<option  value="/homepage/20260110">1404/10/20</option>
+	<option  value="/homepage/20260107">1404/10/17</option>
+	<option  value="/homepage/20260106">1404/10/16</option>
+	<option  value="/homepage/20260105">1404/10/15</option>
+	<option  value="/homepage/20260104">1404/10/14</option>
+	<option  value="/homepage/20251231">1404/10/10</option>
+	<option  value="/homepage/20251230">1404/10/09</option>
+	<option  value="/homepage/20251229">1404/10/08</option>
+	<option  value="/homepage/20251228">1404/10/07</option>
+	<option  value="/homepage/20251227">1404/10/06</option>
+	<option  value="/homepage/20251224">1404/10/03</option>
+	<option  value="/homepage/20251223">1404/10/02</option>
+	<option  value="/homepage/20251222">1404/10/01</option>
+	<option  value="/homepage/20251221">1404/09/30</option>
+	<option  value="/homepage/20251220">1404/09/29</option>
+	<option  value="/homepage/20251217">1404/09/26</option>
+	<option  value="/homepage/20251216">1404/09/25</option>
+	<option  value="/homepage/20251215">1404/09/24</option>
+	<option  value="/homepage/20251214">1404/09/23</option>
+	<option  value="/homepage/20251213">1404/09/22</option>
+	<option  value="/homepage/20251210">1404/09/19</option>
+	<option  value="/homepage/20251209">1404/09/18</option>
+	<option  value="/homepage/20251208">1404/09/17</option>
+	<option  value="/homepage/20251207">1404/09/16</option>
+	<option  value="/homepage/20251206">1404/09/15</option>
+	<option  value="/homepage/20251203">1404/09/12</option>
+	<option  value="/homepage/20251202">1404/09/11</option>
+	<option  value="/homepage/20251201">1404/09/10</option>
+	<option  value="/homepage/20251130">1404/09/09</option>
+	<option  value="/homepage/20251129">1404/09/08</option>
+	<option  value="/homepage/20251126">1404/09/05</option>
+	<option  value="/homepage/20251125">1404/09/04</option>
+	<option  value="/homepage/20251123">1404/09/02</option>
+	<option  value="/homepage/20251122">1404/09/01</option>
+	<option  value="/homepage/20251119">1404/08/28</option>
+	<option  value="/homepage/20251118">1404/08/27</option>
+	<option  value="/homepage/20251117">1404/08/26</option>
+	<option  value="/homepage/20251116">1404/08/25</option>
+	<option  value="/homepage/20251115">1404/08/24</option>
+	<option  value="/homepage/20251112">1404/08/21</option>
+	<option  value="/homepage/20251111">1404/08/20</option>
+	<option  value="/homepage/20251110">1404/08/19</option>
+	<option  value="/homepage/20251109">1404/08/18</option>
+	<option  value="/homepage/20251108">1404/08/17</option>
+	<option  value="/homepage/20251105">1404/08/14</option>
+	<option  value="/homepage/20251104">1404/08/13</option>
+	<option  value="/homepage/20251103">1404/08/12</option>
+	<option  value="/homepage/20251102">1404/08/11</option>
+	<option  value="/homepage/20251101">1404/08/10</option>
+	<option  value="/homepage/20251029">1404/08/07</option>
+	<option  value="/homepage/20251028">1404/08/06</option>
+	<option  value="/homepage/20251027">1404/08/05</option>
+	<option  value="/homepage/20251026">1404/08/04</option>
+	<option  value="/homepage/20251025">1404/08/03</option>
+	<option  value="/homepage/20251022">1404/07/30</option>
+	<option  value="/homepage/20251021">1404/07/29</option>
+	<option  value="/homepage/20251020">1404/07/28</option>
+	<option  value="/homepage/20251019">1404/07/27</option>
+	<option  value="/homepage/20251018">1404/07/26</option>
+	<option  value="/homepage/20251015">1404/07/23</option>
+	<option  value="/homepage/20251014">1404/07/22</option>
+	<option  value="/homepage/20251013">1404/07/21</option>
+	<option  value="/homepage/20251012">1404/07/20</option>
+	<option  value="/homepage/20251011">1404/07/19</option>
+	<option  value="/homepage/20251008">1404/07/16</option>
+	<option  value="/homepage/20251007">1404/07/15</option>
+	<option  value="/homepage/20251006">1404/07/14</option>
+	<option  value="/homepage/20251005">1404/07/13</option>
+	<option  value="/homepage/20251004">1404/07/12</option>
+	<option  value="/homepage/20251001">1404/07/09</option>
+	<option  value="/homepage/20250930">1404/07/08</option>
+	<option  value="/homepage/20250929">1404/07/07</option>
+	<option  value="/homepage/20250928">1404/07/06</option>
+	<option  value="/homepage/20250927">1404/07/05</option>
+	<option  value="/homepage/20250924">1404/07/02</option>
+	<option  value="/homepage/20250923">1404/07/01</option>
+	<option  value="/homepage/20250922">1404/06/31</option>
+	<option  value="/homepage/20250921">1404/06/30</option>
+	<option  value="/homepage/20250920">1404/06/29</option>
+	<option  value="/homepage/20250917">1404/06/26</option>
+	<option  value="/homepage/20250916">1404/06/25</option>
+	<option  value="/homepage/20250915">1404/06/24</option>
+	<option  value="/homepage/20250914">1404/06/23</option>
+	<option  value="/homepage/20250913">1404/06/22</option>
+	<option  value="/homepage/20250909">1404/06/18</option>
+	<option  value="/homepage/20250908">1404/06/17</option>
+	<option  value="/homepage/20250907">1404/06/16</option>
+	<option  value="/homepage/20250906">1404/06/15</option>
+	<option  value="/homepage/20250903">1404/06/12</option>
+	<option  value="/homepage/20250902">1404/06/11</option>
+	<option  value="/homepage/20250831">1404/06/09</option>
+	<option  value="/homepage/20250830">1404/06/08</option>
+	<option  value="/homepage/20250827">1404/06/05</option>
+	<option  value="/homepage/20250826">1404/06/04</option>
+	<option  value="/homepage/20250825">1404/06/03</option>
+	<option  value="/homepage/20250823">1404/06/01</option>
+	<option  value="/homepage/20250820">1404/05/29</option>
+	<option  value="/homepage/20250819">1404/05/28</option>
+	<option  value="/homepage/20250818">1404/05/27</option>
+	<option  value="/homepage/20250817">1404/05/26</option>
+	<option  value="/homepage/20250816">1404/05/25</option>
+	<option  value="/homepage/20250813">1404/05/22</option>
+	<option  value="/homepage/20250812">1404/05/21</option>
+	<option  value="/homepage/20250811">1404/05/20</option>
+	<option  value="/homepage/20250810">1404/05/19</option>
+	<option  value="/homepage/20250809">1404/05/18</option>
+	<option  value="/homepage/20250806">1404/05/15</option>
+	<option  value="/homepage/20250805">1404/05/14</option>
+	<option  value="/homepage/20250804">1404/05/13</option>
+	<option  value="/homepage/20250803">1404/05/12</option>
+	<option  value="/homepage/20250802">1404/05/11</option>
+	<option  value="/homepage/20250730">1404/05/08</option>
+	<option  value="/homepage/20250729">1404/05/07</option>
+	<option  value="/homepage/20250728">1404/05/06</option>
+	<option  value="/homepage/20250727">1404/05/05</option>
+	<option  value="/homepage/20250726">1404/05/04</option>
+	<option  value="/homepage/20250723">1404/05/01</option>
+	<option  value="/homepage/20250722">1404/04/31</option>
+	<option  value="/homepage/20250721">1404/04/30</option>
+	<option  value="/homepage/20250720">1404/04/29</option>
+	<option  value="/homepage/20250719">1404/04/28</option>
+	<option  value="/homepage/20250716">1404/04/25</option>
+	<option  value="/homepage/20250715">1404/04/24</option>
+	<option  value="/homepage/20250714">1404/04/23</option>
+	<option  value="/homepage/20250713">1404/04/22</option>
+	<option  value="/homepage/20250712">1404/04/21</option>
+	<option  value="/homepage/20250709">1404/04/18</option>
+	<option  value="/homepage/20250708">1404/04/17</option>
+	<option  value="/homepage/20250707">1404/04/16</option>
+	<option  value="/homepage/20250702">1404/04/11</option>
+	<option  value="/homepage/20250701">1404/04/10</option>
+	<option  value="/homepage/20250630">1404/04/09</option>
+	<option  value="/homepage/20250629">1404/04/08</option>
+	<option  value="/homepage/20250628">1404/04/07</option>
+	<option  value="/homepage/20250625">1404/04/04</option>
+	<option  value="/homepage/20250624">1404/04/03</option>
+	<option  value="/homepage/20250623">1404/04/02</option>
+	<option  value="/homepage/20250622">1404/04/01</option>
+	<option  value="/homepage/20250621">1404/03/31</option>
+	<option  value="/homepage/20250611">1404/03/21</option>
+	<option  value="/homepage/20250610">1404/03/20</option>
+	<option  value="/homepage/20250609">1404/03/19</option>
+	<option  value="/homepage/20250608">1404/03/18</option>
+	<option  value="/homepage/20250607">1404/03/17</option>
+	<option  value="/homepage/20250603">1404/03/13</option>
+	<option  value="/homepage/20250602">1404/03/12</option>
+	<option  value="/homepage/20250601">1404/03/11</option>
+	<option  value="/homepage/20250531">1404/03/10</option>
+	<option  value="/homepage/20250528">1404/03/07</option>
+	<option  value="/homepage/20250527">1404/03/06</option>
+	<option  value="/homepage/20250526">1404/03/05</option>
+	<option  value="/homepage/20250525">1404/03/04</option>
+	<option  value="/homepage/20250524">1404/03/03</option>
+	<option  value="/homepage/20250521">1404/02/31</option>
+	<option  value="/homepage/20250520">1404/02/30</option>
+	<option  value="/homepage/20250519">1404/02/29</option>
+	<option  value="/homepage/20250518">1404/02/28</option>
+	<option  value="/homepage/20250517">1404/02/27</option>
+	<option  value="/homepage/20250514">1404/02/24</option>
+	<option  value="/homepage/20250513">1404/02/23</option>
+	<option  value="/homepage/20250512">1404/02/22</option>
+	<option  value="/homepage/20250511">1404/02/21</option>
+	<option  value="/homepage/20250510">1404/02/20</option>
+	<option  value="/homepage/20250507">1404/02/17</option>
+	<option  value="/homepage/20250506">1404/02/16</option>
+	<option  value="/homepage/20250505">1404/02/15</option>
+	<option  value="/homepage/20250504">1404/02/14</option>
+	<option  value="/homepage/20250503">1404/02/13</option>
+	<option  value="/homepage/20250430">1404/02/10</option>
+	<option  value="/homepage/20250429">1404/02/09</option>
+	<option  value="/homepage/20250428">1404/02/08</option>
+	<option  value="/homepage/20250427">1404/02/07</option>
+	<option  value="/homepage/20250426">1404/02/06</option>
+	<option  value="/homepage/20250423">1404/02/03</option>
+	<option  value="/homepage/20250422">1404/02/02</option>
+	<option  value="/homepage/20250421">1404/02/01</option>
+	<option  value="/homepage/20250420">1404/01/31</option>
+	<option  value="/homepage/20250419">1404/01/30</option>
+	<option  value="/homepage/20250416">1404/01/27</option>
+	<option  value="/homepage/20250415">1404/01/26</option>
+	<option  value="/homepage/20250414">1404/01/25</option>
+	<option  value="/homepage/20250413">1404/01/24</option>
+	<option  value="/homepage/20250412">1404/01/23</option>
+	<option  value="/homepage/20250409">1404/01/20</option>
+	<option  value="/homepage/20250408">1404/01/19</option>
+	<option  value="/homepage/20250407">1404/01/18</option>
+	<option  value="/homepage/20250406">1404/01/17</option>
+	<option  value="/homepage/20250405">1404/01/16</option>
+	<option  value="/homepage/20250330">1404/01/10</option>
+	<option  value="/homepage/20250329">1404/01/09</option>
+	<option  value="/homepage/20250326">1404/01/06</option>
+	<option  value="/homepage/20250325">1404/01/05</option>
+	<option  value="/homepage/20250318">1403/12/28</option>
+	<option  value="/homepage/20250317">1403/12/27</option>
+	<option  value="/homepage/20250316">1403/12/26</option>
+	<option  value="/homepage/20250315">1403/12/25</option>
+	<option  value="/homepage/20250312">1403/12/22</option>
+	<option  value="/homepage/20250311">1403/12/21</option>
+	<option  value="/homepage/20250310">1403/12/20</option>
+	<option  value="/homepage/20250309">1403/12/19</option>
+	<option  value="/homepage/20250308">1403/12/18</option>
+	<option  value="/homepage/20250305">1403/12/15</option>
+	<option  value="/homepage/20250304">1403/12/14</option>
+	<option  value="/homepage/20250303">1403/12/13</option>
+	<option  value="/homepage/20250302">1403/12/12</option>
+	<option  value="/homepage/20250301">1403/12/11</option>
+	<option  value="/homepage/20250226">1403/12/08</option>
+	<option  value="/homepage/20250225">1403/12/07</option>
+	<option  value="/homepage/20250224">1403/12/06</option>
+	<option  value="/homepage/20250223">1403/12/05</option>
+	<option  value="/homepage/20250222">1403/12/04</option>
+	<option  value="/homepage/20250219">1403/12/01</option>
+	<option  value="/homepage/20250218">1403/11/30</option>
+	<option  value="/homepage/20250217">1403/11/29</option>
+	<option  value="/homepage/20250216">1403/11/28</option>
+	<option  value="/homepage/20250215">1403/11/27</option>
+	<option  value="/homepage/20250211">1403/11/23</option>
+	<option  value="/homepage/20250209">1403/11/21</option>
+	<option  value="/homepage/20250205">1403/11/17</option>
+	<option  value="/homepage/20250204">1403/11/16</option>
+	<option  value="/homepage/20250203">1403/11/15</option>
+	<option  value="/homepage/20250202">1403/11/14</option>
+	<option  value="/homepage/20250201">1403/11/13</option>
+	<option  value="/homepage/20250129">1403/11/10</option>
+	<option  value="/homepage/20250127">1403/11/08</option>
+	<option  value="/homepage/20250126">1403/11/07</option>
+	<option  value="/homepage/20250125">1403/11/06</option>
+	<option  value="/homepage/20250122">1403/11/03</option>
+	<option  value="/homepage/20250121">1403/11/02</option>
+	<option  value="/homepage/20250120">1403/11/01</option>
+	<option  value="/homepage/20250119">1403/10/30</option>
+	<option  value="/homepage/20250118">1403/10/29</option>
+	<option  value="/homepage/20250115">1403/10/26</option>
+	<option  value="/homepage/20250113">1403/10/24</option>
+	<option  value="/homepage/20250112">1403/10/23</option>
+	<option  value="/homepage/20250111">1403/10/22</option>
+	<option  value="/homepage/20250108">1403/10/19</option>
+	<option  value="/homepage/20250107">1403/10/18</option>
+	<option  value="/homepage/20250106">1403/10/17</option>
+	<option  value="/homepage/20250105">1403/10/16</option>
+	<option  value="/homepage/20250104">1403/10/15</option>
+	<option  value="/homepage/20250101">1403/10/12</option>
+	<option  value="/homepage/20241231">1403/10/11</option>
+	<option  value="/homepage/20241230">1403/10/10</option>
+	<option  value="/homepage/20241229">1403/10/09</option>
+	<option  value="/homepage/20241228">1403/10/08</option>
+	<option  value="/homepage/20241225">1403/10/05</option>
+	<option  value="/homepage/20241224">1403/10/04</option>
+	<option  value="/homepage/20241223">1403/10/03</option>
+	<option  value="/homepage/20241222">1403/10/02</option>
+	<option  value="/homepage/20241221">1403/10/01</option>
+	<option  value="/homepage/20241218">1403/09/28</option>
+	<option  value="/homepage/20241217">1403/09/27</option>
+	<option  value="/homepage/20241216">1403/09/26</option>
+	<option  value="/homepage/20241215">1403/09/25</option>
+	<option  value="/homepage/20241214">1403/09/24</option>
+	<option  value="/homepage/20241211">1403/09/21</option>
+	<option  value="/homepage/20241210">1403/09/20</option>
+	<option  value="/homepage/20241209">1403/09/19</option>
+	<option  value="/homepage/20241208">1403/09/18</option>
+	<option  value="/homepage/20241207">1403/09/17</option>
+	<option  value="/homepage/20241204">1403/09/14</option>
+	<option  value="/homepage/20241203">1403/09/13</option>
+	<option  value="/homepage/20241202">1403/09/12</option>
+	<option  value="/homepage/20241201">1403/09/11</option>
+	<option  value="/homepage/20241130">1403/09/10</option>
+	<option  value="/homepage/20241127">1403/09/07</option>
+	<option  value="/homepage/20241126">1403/09/06</option>
+	<option  value="/homepage/20241125">1403/09/05</option>
+	<option  value="/homepage/20241124">1403/09/04</option>
+	<option  value="/homepage/20241123">1403/09/03</option>
+	<option  value="/homepage/20241120">1403/08/30</option>
+	<option  value="/homepage/20241119">1403/08/29</option>
+	<option  value="/homepage/20241118">1403/08/28</option>
+	<option  value="/homepage/20241117">1403/08/27</option>
+	<option  value="/homepage/20241116">1403/08/26</option>
+	<option  value="/homepage/20241113">1403/08/23</option>
+	<option  value="/homepage/20241112">1403/08/22</option>
+	<option  value="/homepage/20241111">1403/08/21</option>
+	<option  value="/homepage/20241110">1403/08/20</option>
+	<option  value="/homepage/20241109">1403/08/19</option>
+	<option  value="/homepage/20241106">1403/08/16</option>
+	<option  value="/homepage/20241105">1403/08/15</option>
+	<option  value="/homepage/20241104">1403/08/14</option>
+	<option  value="/homepage/20241103">1403/08/13</option>
+	<option  value="/homepage/20241102">1403/08/12</option>
+	<option  value="/homepage/20241030">1403/08/09</option>
+	<option  value="/homepage/20241029">1403/08/08</option>
+	<option  value="/homepage/20241028">1403/08/07</option>
+	<option  value="/homepage/20241027">1403/08/06</option>
+	<option  value="/homepage/20241026">1403/08/05</option>
+	<option  value="/homepage/20241023">1403/08/02</option>
+	<option  value="/homepage/20241022">1403/08/01</option>
+	<option  value="/homepage/20241021">1403/07/30</option>
+	<option  value="/homepage/20241020">1403/07/29</option>
+	<option  value="/homepage/20241019">1403/07/28</option>
+	<option  value="/homepage/20241016">1403/07/25</option>
+	<option  value="/homepage/20241015">1403/07/24</option>
+	<option  value="/homepage/20241014">1403/07/23</option>
+	<option  value="/homepage/20241013">1403/07/22</option>
+	<option  value="/homepage/20241012">1403/07/21</option>
+	<option  value="/homepage/20241009">1403/07/18</option>
+	<option  value="/homepage/20241008">1403/07/17</option>
+	<option  value="/homepage/20241007">1403/07/16</option>
+	<option  value="/homepage/20241006">1403/07/15</option>
+	<option  value="/homepage/20241005">1403/07/14</option>
+	<option  value="/homepage/20241002">1403/07/11</option>
+	<option  value="/homepage/20241001">1403/07/10</option>
+	<option  value="/homepage/20240930">1403/07/09</option>
+	<option  value="/homepage/20240929">1403/07/08</option>
+	<option  value="/homepage/20240928">1403/07/07</option>
+	<option  value="/homepage/20240925">1403/07/04</option>
+	<option  value="/homepage/20240924">1403/07/03</option>
+	<option  value="/homepage/20240923">1403/07/02</option>
+	<option  value="/homepage/20240922">1403/07/01</option>
+	<option  value="/homepage/20240918">1403/06/28</option>
+	<option  value="/homepage/20240917">1403/06/27</option>
+	<option  value="/homepage/20240916">1403/06/26</option>
+	<option  value="/homepage/20240915">1403/06/25</option>
+	<option  value="/homepage/20240914">1403/06/24</option>
+	<option  value="/homepage/20240911">1403/06/21</option>
+	<option  value="/homepage/20240910">1403/06/20</option>
+	<option  value="/homepage/20240909">1403/06/19</option>
+	<option  value="/homepage/20240908">1403/06/18</option>
+	<option  value="/homepage/20240907">1403/06/17</option>
+	<option  value="/homepage/20240903">1403/06/13</option>
+	<option  value="/homepage/20240901">1403/06/11</option>
+	<option  value="/homepage/20240831">1403/06/10</option>
+	<option  value="/homepage/20240828">1403/06/07</option>
+	<option  value="/homepage/20240827">1403/06/06</option>
+	<option  value="/homepage/20240826">1403/06/05</option>
+	<option  value="/homepage/20240824">1403/06/03</option>
+	<option  value="/homepage/20240821">1403/05/31</option>
+	<option  value="/homepage/20240820">1403/05/30</option>
+	<option  value="/homepage/20240819">1403/05/29</option>
+	<option  value="/homepage/20240818">1403/05/28</option>
+	<option  value="/homepage/20240817">1403/05/27</option>
+	<option  value="/homepage/20240814">1403/05/24</option>
+	<option  value="/homepage/20240813">1403/05/23</option>
+	<option  value="/homepage/20240812">1403/05/22</option>
+	<option  value="/homepage/20240811">1403/05/21</option>
+	<option  value="/homepage/20240810">1403/05/20</option>
+	<option  value="/homepage/20240806">1403/05/16</option>
+	<option  value="/homepage/20240805">1403/05/15</option>
+	<option  value="/homepage/20240804">1403/05/14</option>
+	<option  value="/homepage/20240803">1403/05/13</option>
+	<option  value="/homepage/20240731">1403/05/10</option>
+	<option  value="/homepage/20240730">1403/05/09</option>
+	<option  value="/homepage/20240729">1403/05/08</option>
+	<option  value="/homepage/20240727">1403/05/06</option>
+	<option  value="/homepage/20240724">1403/05/03</option>
+	<option  value="/homepage/20240723">1403/05/02</option>
+	<option  value="/homepage/20240722">1403/05/01</option>
+	<option  value="/homepage/20240721">1403/04/31</option>
+	<option  value="/homepage/20240720">1403/04/30</option>
+	<option  value="/homepage/20240717">1403/04/27</option>
+	<option  value="/homepage/20240714">1403/04/24</option>
+	<option  value="/homepage/20240713">1403/04/23</option>
+	<option  value="/homepage/20240710">1403/04/20</option>
+	<option  value="/homepage/20240709">1403/04/19</option>
+	<option  value="/homepage/20240708">1403/04/18</option>
+	<option  value="/homepage/20240707">1403/04/17</option>
+	<option  value="/homepage/20240706">1403/04/16</option>
+	<option  value="/homepage/20240703">1403/04/13</option>
+	<option  value="/homepage/20240702">1403/04/12</option>
+	<option  value="/homepage/20240701">1403/04/11</option>
+	<option  value="/homepage/20240630">1403/04/10</option>
+	<option  value="/homepage/20240629">1403/04/09</option>
+	<option  value="/homepage/20240626">1403/04/06</option>
+	<option  value="/homepage/20240624">1403/04/04</option>
+	<option  value="/homepage/20240623">1403/04/03</option>
+	<option  value="/homepage/20240622">1403/04/02</option>
+	<option  value="/homepage/20240619">1403/03/30</option>
+	<option  value="/homepage/20240618">1403/03/29</option>
+	<option  value="/homepage/20240616">1403/03/27</option>
+	<option  value="/homepage/20240615">1403/03/26</option>
+	<option  value="/homepage/20240612">1403/03/23</option>
+	<option  value="/homepage/20240611">1403/03/22</option>
+	<option  value="/homepage/20240610">1403/03/21</option>
+	<option  value="/homepage/20240609">1403/03/20</option>
+	<option  value="/homepage/20240608">1403/03/19</option>
+	<option  value="/homepage/20240605">1403/03/16</option>
+	<option  value="/homepage/20240602">1403/03/13</option>
+	<option  value="/homepage/20240601">1403/03/12</option>
+	<option  value="/homepage/20240529">1403/03/09</option>
+	<option  value="/homepage/20240528">1403/03/08</option>
+	<option  value="/homepage/20240527">1403/03/07</option>
+	<option  value="/homepage/20240526">1403/03/06</option>
+	<option  value="/homepage/20240525">1403/03/05</option>
+	<option  value="/homepage/20240521">1403/03/01</option>
+	<option  value="/homepage/20240519">1403/02/30</option>
+	<option  value="/homepage/20240518">1403/02/29</option>
+	<option  value="/homepage/20240515">1403/02/26</option>
+	<option  value="/homepage/20240514">1403/02/25</option>
+	<option  value="/homepage/20240513">1403/02/24</option>
+	<option  value="/homepage/20240512">1403/02/23</option>
+	<option  value="/homepage/20240511">1403/02/22</option>
+	<option  value="/homepage/20240508">1403/02/19</option>
+	<option  value="/homepage/20240507">1403/02/18</option>
+	<option  value="/homepage/20240506">1403/02/17</option>
+	<option  value="/homepage/20240505">1403/02/16</option>
+	<option  value="/homepage/20240501">1403/02/12</option>
+	<option  value="/homepage/20240430">1403/02/11</option>
+	<option  value="/homepage/20240429">1403/02/10</option>
+	<option  value="/homepage/20240428">1403/02/09</option>
+	<option  value="/homepage/20240427">1403/02/08</option>
+	<option  value="/homepage/20240424">1403/02/05</option>
+	<option  value="/homepage/20240423">1403/02/04</option>
+	<option  value="/homepage/20240422">1403/02/03</option>
+	<option  value="/homepage/20240421">1403/02/02</option>
+	<option  value="/homepage/20240420">1403/02/01</option>
+	<option  value="/homepage/20240417">1403/01/29</option>
+	<option  value="/homepage/20240416">1403/01/28</option>
+	<option  value="/homepage/20240415">1403/01/27</option>
+	<option  value="/homepage/20240414">1403/01/26</option>
+	<option  value="/homepage/20240413">1403/01/25</option>
+	<option  value="/homepage/20240409">1403/01/21</option>
+	<option  value="/homepage/20240408">1403/01/20</option>
+	<option  value="/homepage/20240407">1403/01/19</option>
+	<option  value="/homepage/20240406">1403/01/18</option>
+	<option  value="/homepage/20240403">1403/01/15</option>
+	<option  value="/homepage/20240402">1403/01/14</option>
+	<option  value="/homepage/20240330">1403/01/11</option>
+	<option  value="/homepage/20240327">1403/01/08</option>
+	<option  value="/homepage/20240326">1403/01/07</option>
+	<option  value="/homepage/20240325">1403/01/06</option>
+	<option  value="/homepage/20240324">1403/01/05</option>
+	<option  value="/homepage/20240318">1402/12/28</option>
+	<option  value="/homepage/20240317">1402/12/27</option>
+	<option  value="/homepage/20240316">1402/12/26</option>
+	<option  value="/homepage/20240313">1402/12/23</option>
+	<option  value="/homepage/20240312">1402/12/22</option>
+	<option  value="/homepage/20240311">1402/12/21</option>
+	<option  value="/homepage/20240310">1402/12/20</option>
+	<option  value="/homepage/20240309">1402/12/19</option>
+	<option  value="/homepage/20240306">1402/12/16</option>
+	<option  value="/homepage/20240305">1402/12/15</option>
+	<option  value="/homepage/20240304">1402/12/14</option>
+	<option  value="/homepage/20240303">1402/12/13</option>
+	<option  value="/homepage/20240302">1402/12/12</option>
+	<option  value="/homepage/20240228">1402/12/09</option>
+	<option  value="/homepage/20240227">1402/12/08</option>
+	<option  value="/homepage/20240226">1402/12/07</option>
+	<option  value="/homepage/20240224">1402/12/05</option>
+	<option  value="/homepage/20240221">1402/12/02</option>
+	<option  value="/homepage/20240220">1402/12/01</option>
+	<option  value="/homepage/20240219">1402/11/30</option>
+	<option  value="/homepage/20240218">1402/11/29</option>
+	<option  value="/homepage/20240217">1402/11/28</option>
+	<option  value="/homepage/20240214">1402/11/25</option>
+	<option  value="/homepage/20240213">1402/11/24</option>
+	<option  value="/homepage/20240212">1402/11/23</option>
+	<option  value="/homepage/20240210">1402/11/21</option>
+	<option  value="/homepage/20240207">1402/11/18</option>
+	<option  value="/homepage/20240206">1402/11/17</option>
+	<option  value="/homepage/20240205">1402/11/16</option>
+	<option  value="/homepage/20240204">1402/11/15</option>
+	<option  value="/homepage/20240203">1402/11/14</option>
+	<option  value="/homepage/20240131">1402/11/11</option>
+	<option  value="/homepage/20240130">1402/11/10</option>
+	<option  value="/homepage/20240129">1402/11/09</option>
+	<option  value="/homepage/20240128">1402/11/08</option>
+	<option  value="/homepage/20240127">1402/11/07</option>
+	<option  value="/homepage/20240124">1402/11/04</option>
+	<option  value="/homepage/20240123">1402/11/03</option>
+	<option  value="/homepage/20240122">1402/11/02</option>
+	<option  value="/homepage/20240121">1402/11/01</option>
+	<option  value="/homepage/20240120">1402/10/30</option>
+	<option  value="/homepage/20240117">1402/10/27</option>
+	<option  value="/homepage/20240116">1402/10/26</option>
+	<option  value="/homepage/20240115">1402/10/25</option>
+	<option  value="/homepage/20240114">1402/10/24</option>
+	<option  value="/homepage/20240113">1402/10/23</option>
+	<option  value="/homepage/20240110">1402/10/20</option>
+	<option  value="/homepage/20240109">1402/10/19</option>
+	<option  value="/homepage/20240108">1402/10/18</option>
+	<option  value="/homepage/20240107">1402/10/17</option>
+	<option  value="/homepage/20240106">1402/10/16</option>
+	<option  value="/homepage/20240103">1402/10/13</option>
+	<option  value="/homepage/20240102">1402/10/12</option>
+	<option  value="/homepage/20240101">1402/10/11</option>
+	<option  value="/homepage/20231231">1402/10/10</option>
+	<option  value="/homepage/20231230">1402/10/09</option>
+	<option  value="/homepage/20231227">1402/10/06</option>
+	<option  value="/homepage/20231226">1402/10/05</option>
+	<option  value="/homepage/20231225">1402/10/04</option>
+	<option  value="/homepage/20231224">1402/10/03</option>
+	<option  value="/homepage/20231223">1402/10/02</option>
+	<option  value="/homepage/20231220">1402/09/29</option>
+	<option  value="/homepage/20231219">1402/09/28</option>
+	<option  value="/homepage/20231218">1402/09/27</option>
+	<option  value="/homepage/20231216">1402/09/25</option>
+	<option  value="/homepage/20231213">1402/09/22</option>
+	<option  value="/homepage/20231212">1402/09/21</option>
+	<option  value="/homepage/20231211">1402/09/20</option>
+	<option  value="/homepage/20231210">1402/09/19</option>
+	<option  value="/homepage/20231209">1402/09/18</option>
+	<option  value="/homepage/20231206">1402/09/15</option>
+	<option  value="/homepage/20231205">1402/09/14</option>
+	<option  value="/homepage/20231204">1402/09/13</option>
+	<option  value="/homepage/20231203">1402/09/12</option>
+	<option  value="/homepage/20231202">1402/09/11</option>
+	<option  value="/homepage/20231129">1402/09/08</option>
+	<option  value="/homepage/20231128">1402/09/07</option>
+	<option  value="/homepage/20231127">1402/09/06</option>
+	<option  value="/homepage/20231126">1402/09/05</option>
+	<option  value="/homepage/20231125">1402/09/04</option>
+	<option  value="/homepage/20231122">1402/09/01</option>
+	<option  value="/homepage/20231121">1402/08/30</option>
+	<option  value="/homepage/20231120">1402/08/29</option>
+	<option  value="/homepage/20231119">1402/08/28</option>
+	<option  value="/homepage/20231118">1402/08/27</option>
+	<option  value="/homepage/20231115">1402/08/24</option>
+	<option  value="/homepage/20231114">1402/08/23</option>
+	<option  value="/homepage/20231113">1402/08/22</option>
+	<option  value="/homepage/20231112">1402/08/21</option>
+	<option  value="/homepage/20231111">1402/08/20</option>
+	<option  value="/homepage/20231108">1402/08/17</option>
+	<option  value="/homepage/20231107">1402/08/16</option>
+	<option  value="/homepage/20231106">1402/08/15</option>
+	<option  value="/homepage/20231105">1402/08/14</option>
+	<option  value="/homepage/20231104">1402/08/13</option>
+	<option  value="/homepage/20231101">1402/08/10</option>
+	<option  value="/homepage/20231031">1402/08/09</option>
+	<option  value="/homepage/20231030">1402/08/08</option>
+	<option  value="/homepage/20231029">1402/08/07</option>
+	<option  value="/homepage/20231028">1402/08/06</option>
+	<option  value="/homepage/20231025">1402/08/03</option>
+	<option  value="/homepage/20231024">1402/08/02</option>
+	<option  value="/homepage/20231023">1402/08/01</option>
+	<option  value="/homepage/20231022">1402/07/30</option>
+	<option  value="/homepage/20231021">1402/07/29</option>
+	<option  value="/homepage/20231018">1402/07/26</option>
+	<option  value="/homepage/20231017">1402/07/25</option>
+	<option  value="/homepage/20231016">1402/07/24</option>
+	<option  value="/homepage/20231015">1402/07/23</option>
+	<option  value="/homepage/20231014">1402/07/22</option>
+	<option  value="/homepage/20231011">1402/07/19</option>
+	<option  value="/homepage/20231010">1402/07/18</option>
+	<option  value="/homepage/20231009">1402/07/17</option>
+	<option  value="/homepage/20231008">1402/07/16</option>
+	<option  value="/homepage/20231007">1402/07/15</option>
+	<option  value="/homepage/20231004">1402/07/12</option>
+	<option  value="/homepage/20231002">1402/07/10</option>
+	<option  value="/homepage/20231001">1402/07/09</option>
+	<option  value="/homepage/20230930">1402/07/08</option>
+	<option  value="/homepage/20230927">1402/07/05</option>
+	<option  value="/homepage/20230926">1402/07/04</option>
+	<option  value="/homepage/20230925">1402/07/03</option>
+	<option  value="/homepage/20230923">1402/07/01</option>
+	<option  value="/homepage/20230920">1402/06/29</option>
+	<option  value="/homepage/20230919">1402/06/28</option>
+	<option  value="/homepage/20230918">1402/06/27</option>
+	<option  value="/homepage/20230917">1402/06/26</option>
+	<option  value="/homepage/20230913">1402/06/22</option>
+	<option  value="/homepage/20230912">1402/06/21</option>
+	<option  value="/homepage/20230911">1402/06/20</option>
+	<option  value="/homepage/20230910">1402/06/19</option>
+	<option  value="/homepage/20230909">1402/06/18</option>
+	<option  value="/homepage/20230905">1402/06/14</option>
+	<option  value="/homepage/20230904">1402/06/13</option>
+	<option  value="/homepage/20230903">1402/06/12</option>
+	<option  value="/homepage/20230902">1402/06/11</option>
+	</select>
+</span> 
+</div>
+</div>
+
+
+
+
+
+<div class="container">
+
+
+		<div class="market-gridd" >
+			<div class="rightx" data-tour="intro">
+					<div class="grid-intro"  >
+					<div style="margin-top:5px;margin-bottom:10px;">
+					  خلاصه معاملات خرد سهام و صندوق ها 
+					 <span  style="font-size:12px;margin-right:30px;">آخرین به روزرسانی:</span>
+					 
+						<span id="time" style="font-size:12px;"></span>
+						 <span style="float:left;" id="label">			 
+							 							 
+							 
+							<i id="exception"class="fa fa-info-circle"   style="color:rgb(160,160,160);font-size:18px;cursor: pointer; "></i>
+							</span>
+					</div>					 
+						<table class="introZ borderless green " id="marketDetails">
+							<thead>
+								<tr>
+									<th></th>
+					<th>حجم معاملات<span class="market-details-unit">(میلیارد سهم) </span></th>
+					<th>ارزش معاملات<span class="market-details-unit">(میلیارد تومان)</span></th>
+					<th>سرانه خرید<span class="market-details-unit">(میلیون تومان)</span></th>
+					<th>سرانه فروش<span class="market-details-unit">(میلیون تومان)</span></th>
+					<th>قدرت خرید</th>
+					<th>ورود پول<span class="market-details-unit">(میلیارد تومان)</span></th>
+								</tr>
+								 
+							</thead>
+							<tbody id="marketDetailsBody">
+							</tbody>
+						</table>
+					</div> 
+			</div>
+          
+			 <div class="leftx" data-tour="status">
+			  <div id="status-title" style="margin-top:5px;margin-right:10px;font-size:14px;">محدوده قیمتی آخرین معاملات سهام،حق تقدم و ص.سهامی</div> 			   
+			 <div   class="watermarkplus">
+				<div  id="status" ></div>	  
+			 </div>
+			</div>
+		</div>
+
+		  <div  id="momentums"    >
+					<div class="parent" data-tour="orders">
+		  
+						<div id="percent" ></div>
+			 			<div id="orders"></div>
+						<span class="chart-source-mark" aria-label="نشانی وب‌سایت">tradersArena.ir</span>
+			 			 
+			 		</div>
+			 		
+			 			 <div class="parent rightx  " id ="clientTypes" data-tour="clientTypes">	
+							<div>
+							<span class="spanct client-types-title">حقیقی حقوقی:</span>
+							<span  class="spanct standby p0">بازار</span>
+							<span  class="spanct standby p1">سهام  و ص.سهامی</span>
+							<span  class="spanct standby p2">سهام</span>
+							<span  class="spanct standby p3">ص.سهامی</span>
+							<span  class="spanct standby p4">ص.درآمدثابت</span>
+							<span  class="spanct standby p5">50 نماد بزرگ</span>
+							<span  class="spanct standby p6">ص. اهرمی</span>
+							<span  class="spanct standby p7">ص. طلا</span>
+							<span  class="spanct standby p8">ص. نقره</span>
+							</div>
+							
+						<table id="marketRoles"  class=" borderless ">
+							<thead>
+								<tr  >
+									<th>تعداد خریداران</th>
+									<th>ارزش خرید</th>
+									<th>درصد خرید</th>
+									<th></th>
+									<th>درصد فروش</th>
+									<th>ارزش فروش</th>
+									<th>تعداد فروشندگان</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td id="rbc"></td>
+									<td id="rbv"></td>
+									<td id="rbp"></td>
+									<td>حقیقی</td>
+									<td id="rsp"></td>
+									<td id="rsv"></td>
+									<td id="rsc"></td>
+								</tr>
+								<tr>
+									<td id="lbc"></td>
+									<td id="lbv"></td>
+									<td id="lbp"></td>
+									<td>حقوقی</td>
+									<td id="lsp"></td>
+									<td id="lsv"></td>
+									<td id="lsc"></td>
+								</tr>
+
+
+							</tbody>
+						</table>
+						</div>
+		<div   class="parent featured" id="watch" style="direction:rtl;" data-tour="mainwatch">
+		<table id="mainWatchTable" style="width:100%;direction:rtl;overflow:visible;">
+		<thead>
+		<tr id="mwHeadersParent"> 
+		</tr>
+		</thead>
+		</table>		
+		</div>
+
+ 
+	<div class="modal" id="bidarInvatation">
+		<div class="modal-content" style="direction:rtl;">
+		<div style="margin:20px;padding:20px;border:2px solid gray;">
+			<span id="closebi" class="close">&times;</span>
+			<h3>امکان معامله از داخل تریدرزآرنا </h3>
+			<p>وبسایت تریدرزآرنا با همکاری کارگزاری اقتصاد بیدار امکان معامله در داخل سایت تریدرزآرنا را فراهم کرده است </p>
+			<p> برای فعال سازی این امکان بایستی ابتدا از طریق
+			 <a href="https://register.ebidar.com/?marketer=731">این لینک</a>
+			   در کارگزاری اقتصاد بیدار ثبت نام کنید</p>
+			   <p>پس از افتتاح حساب به صفحه کاربری خود مراجعه کنید.   با تکمیل پروفایل خود دسترسی به امکان معامله از داخل سایت برای شما امکان پذیر میشود.</p>
+			<h4>امکانات این طرح</h4>
+			<ul>
+			<li>۱- امکان معامله از داخل صفحه های مختلف وبسایت تریدرزآرنا</li>
+			<li>۲- کارگزاری معتبر، خوشنام و با رتبه الف</li>
+			<li>۳- دریافت سود رسوب حساب (پس از ثبت نام در طرح مربوطه)</li>
+			<li>۴- اعطای اعتبار در بدو ورود با ارسال گردش حساب برای کارگزاری</li>
+			<li>۵- برگشت کارمزد،اعتبار رایگان،بسته های تحلیلی و .. با توجه به امتیازات باشگاه مشتریان</li>
+			<li>۶- تمدید رایگان اشتراک یا تخفیف تهیه اشتراک تریدرزآرنا با توجه به گردش حساب</li>
+			<li>و چندین طرح مختلف به زودی</li>
+			</ul>
+			</div>
+			</div>
+		
+		</div>
+		
+
+ 
+
+
+		<div class="fullModal" id="items-table" role="dialog" aria-modal="true" aria-labelledby="items-table-title">
+		<div class="watchlist-symbol-dialog">
+			<div class="watchlist-symbol-dialog__header">
+				<div>
+					<strong id="items-table-title">افزودن نماد به دیده‌بان شخصی</strong>
+					<span>نام نماد یا شرکت را جستجو و سپس نتیجه موردنظر را انتخاب کنید.</span>
+				</div>
+				<button type="button" id="colseFullModal" aria-label="بستن پنجره"><i class="fa fa-x" aria-hidden="true"></i></button>
+			</div>
+			<div id="message" role="status" aria-live="polite" style="display:none;"></div>
+			<div class="watchlist-symbol-search">
+				<i class="fa fa-search" aria-hidden="true"></i>
+				<input id="searchingx" type="text" placeholder="جستجوی نماد" Lang="fa-IR" autocomplete="off">
+			</div>
+			<div class="watchlist-symbol-results">
+				<table id="searchResultmx">
+					<tbody id="srmtbodyx">
+					</tbody>
+				</table>
+			</div>
+		</div>
+		</div>
+
+		 	</div>
+
+ 
+
+ 
+ </div>
+
+<div class="fullModal group-fullscreen-builder group-template-overlay industry-template-overlay" id="industrySelectorModal" aria-hidden="true">
+<div class="modal-content group-builder-modal group-template-modal industry-builder-modal" role="dialog" aria-modal="true" aria-labelledby="industryTemplateTitle">
+<div class="group-builder-header">
+<div>
+<span class="group-builder-kicker">شخصی‌سازی دیده‌بان صنایع</span>
+<h3 id="industryTemplateTitle">طراحی قالب ستون‌ها</h3>
+</div>
+<button type="button" id="industry-vis-close" class="group-builder-close" aria-label="بستن طراحی قالب">&times;</button>
+</div>
+<div id="industryTemplateSelectorEdit" class="btn-group-12 group-builder-tabs"></div>
+<div class="btn-group-64 group-builder-actions">
+ <input type="text" id="industryTemplateName" placeholder="نام دلخواه قالب را وارد نمایید">
+<button type="button" class="btn group-builder-button" id="industry-save-vis">ذخیره تنظیمات</button>
+<button type="button" class="btn group-builder-button" id="industry-create-template">ساخت قالب جدید</button>
+<button type="button" class="btn group-builder-button group-builder-button--secondary" id="industry-reset">برگشت به تنظیمات پیش‌فرض</button>
+</div>
+<div class="group-filter-backup group-settings-backup" data-group-settings-backup>
+	<div class="group-settings-backup__heading">
+		<strong>مدیریت پشتیبان قالب‌ها و فیلترهای صنایع</strong>
+		<span>محدوده پشتیبان و روش بازیابی را هنگام انجام عملیات انتخاب می‌کنید.</span>
+	</div>
+	<div class="group-settings-backup__actions">
+		<button type="button" class="group-text-button" data-group-backup-action="save">انتخاب موارد و پشتیبان‌گیری</button>
+		<button type="button" class="group-text-button" data-group-backup-action="recover">انتخاب روش و بازیابی</button>
+		<button type="button" class="group-text-button group-text-button--danger" data-group-backup-action="delete">حذف پشتیبان سرور</button>
+	</div>
+	<div class="myalert group-settings-backup__message" data-group-backup-message role="status" aria-live="polite" hidden></div>
+</div>
+<div class="grix2080 group-builder-grid industry-column-picker">
+<div class="group-builder-panel industry-selected-panel">
+<div class="group-builder-panel__title">ستون‌های انتخاب‌شده</div>
+<div id="industryResultColumn" class="group-template-result"></div>
+</div>
+<div class="group-builder-panel industry-available-panel">
+<div class="group-builder-panel__title">ستون‌های قابل انتخاب</div>
+<div id="industryColumns" class="quarter group-template-columns"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="fullModal group-fullscreen-builder" id="groupFilterGenerator" aria-hidden="true" style="display:none">
+<div class="modal-content group-builder-modal group-filter-modal" role="dialog" aria-modal="true" aria-labelledby="groupFilterTitle">
+	<div class="group-builder-header">
+		<div>
+			<span class="group-builder-kicker">فیلتر شخصی دیده‌بان صنایع</span>
+			<h3 id="groupFilterTitle">ساخت و ذخیره فیلتر</h3>
+		</div>
+		<button type="button" id="groupHideFilter" class="group-builder-close" aria-label="بستن فیلتر">&times;</button>
+	</div>
+	<div id="groupFilterBuilderList" class="group-builder-tabs group-filter-builder-list" aria-label="فهرست فیلترهای شخصی"></div>
+	<div class="group-filter-actions group-builder-actions">
+		<button type="button" id="groupAddValueCondition" class="group-tool-button group-tool-button--secondary group-builder-button--secondary">شرط مقدار ستون</button>
+		<button type="button" id="groupAddColumnCondition" class="group-tool-button group-tool-button--secondary group-builder-button--secondary">مقایسه دو ستون</button>
+		<button type="button" id="groupAddComplexCondition" class="group-tool-button group-tool-button--secondary group-builder-button--secondary">شرط ترکیبی</button>
+		<input type="text" id="groupCustomFilterName" autocomplete="off" maxlength="60" placeholder="نام فیلتر">
+		<button type="button" id="groupSaveFilter" class="group-tool-button">ذخیره فیلتر</button>
+		<button type="button" id="groupDeleteFilter" class="group-tool-button group-tool-button--danger">حذف فیلتر</button>
+	</div>
+	<div id="groupFilterMessage" class="myalert" role="status" aria-live="polite" hidden></div>
+	<div class="group-filter-logic-hint">شرط‌های داخل هر بلاک AND و بلاک‌ها با هم OR هستند</div>
+	<div class="group-filter-table-wrap">
+		<table class="group-filter-table">
+			<thead>
+				<tr><th>عملیات</th><th>بلاک</th><th>عبارت فیلتر</th></tr>
+			</thead>
+			<tbody id="groupFilterConditions"></tbody>
+		</table>
+		<div id="groupFilterEmpty" class="group-filter-empty">برای شروع یکی از انواع شرط را انتخاب کنید.</div>
+	</div>
+	<div class="group-filter-backup group-settings-backup" data-group-settings-backup>
+		<div class="group-settings-backup__heading">
+			<strong>مدیریت پشتیبان قالب‌ها و فیلترهای صنایع</strong>
+			<span>محدوده پشتیبان و روش بازیابی را هنگام انجام عملیات انتخاب می‌کنید.</span>
+		</div>
+		<div class="group-settings-backup__actions">
+			<button type="button" id="groupBackupFilter" class="group-text-button" data-group-backup-action="save">انتخاب موارد و پشتیبان‌گیری</button>
+			<button type="button" id="groupRecoverFilter" class="group-text-button" data-group-backup-action="recover">انتخاب روش و بازیابی</button>
+			<button type="button" id="groupDeleteBackup" class="group-text-button group-text-button--danger" data-group-backup-action="delete">حذف پشتیبان سرور</button>
+		</div>
+		<div class="myalert group-settings-backup__message" data-group-backup-message role="status" aria-live="polite" hidden></div>
+	</div>
+</div>
+</div>
+<div id="categorizedColumnPicker" class="fullModal categorized-column-picker" aria-hidden="true" style="display:none">
+<div class="modal-content group-builder-modal categorized-column-picker-modal" role="dialog" aria-modal="true" aria-labelledby="categorizedColumnPickerTitle">
+	<div class="group-builder-header">
+		<div>
+			<span class="group-builder-kicker">انتخاب سریع و دسته‌بندی‌شده</span>
+			<h3 id="categorizedColumnPickerTitle">انتخاب ستون</h3>
+		</div>
+		<button type="button" id="categorizedColumnPickerClose" class="group-builder-close" aria-label="بستن انتخاب ستون">&times;</button>
+	</div>
+	<div class="categorized-column-search-wrap">
+		<i class="fa fa-search" aria-hidden="true"></i>
+		<input type="search" id="categorizedColumnPickerSearch" autocomplete="off" placeholder="جست‌وجوی نام ستون">
+	</div>
+	<div id="categorizedColumnPickerGroups" class="categorized-column-groups"></div>
+	<div id="categorizedColumnPickerEmpty" class="group-filter-empty" hidden>ستونی با این عبارت پیدا نشد.</div>
+</div>
+</div>
+<h2 > خلاصه معاملات صنایع بورس<span class="slim desktop">(جهت مشاهده دیده بان هر گروه روی نام آن گروه کلیک کنید.) </span></h2>
+
+<div class=" group-watch-toolbar industry-watch-toolbar">
+	<div class="group-watch-control industry-template-control">
+		<label for="industryTemplateSelector">قالب جدول</label>
+		<select id="industryTemplateSelector" aria-label="انتخاب قالب جدول صنایع"></select>
+		<button type="button" class="group-tool-button" id="industry-template">شخصی‌سازی جدول</button>
+	</div>
+
+	<div class="group-watch-control industry-filter-control">
+		<label for="groupFilterSelector">فیلتر شخصی</label>
+		<select id="groupFilterSelector" aria-label="انتخاب فیلتر صنایع"><option value="-1">بدون فیلتر شخصی</option></select>
+		<button type="button" id="groupMakeFilter" class="group-tool-button">ساخت فیلتر</button>
+	</div>
+
+	<div class="industry-mobile-search-export">
+		<label class="industry-mobile-search" for="industryMobileSearch">
+			<input id="industryMobileSearch" type="search" inputmode="search" autocomplete="off" placeholder="جستجو در جدول" aria-label="جستجو در جدول صنایع">
+		</label>
+		<div class="watch-export group-watch-export industry-export-actions" data-watch-export
+			 data-export-access-message="industry-watch-export-message"
+			 data-export-table="industriesTable" data-export-name="industries-watch" data-export-access="0">
+			<button type="button" class="watch-export-trigger" aria-expanded="false" aria-haspopup="true">
+				<i class="fa fa-download" aria-hidden="true"></i>
+				خروجی فایل
+			</button>
+			<div class="watch-export-menu" hidden>
+				<button type="button" data-export-format="excel">خروجی اکسل</button>
+				<button type="button" data-export-format="csv">خروجی CSV</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="industry-watch-export-message" class="myalert myalert-warning" role="alert" hidden>
+    قابلیت دانلود خروجی ویژه مشترکین طلایی میباشد.
+    <a href="/shop">خرید اشتراک‌</a>
+</div>
+
+<div id="industry-filter-access-message" class="myalert myalert-warning" role="alert" hidden>
+	<span data-subscriber-message>ساخت، ذخیره و اجرای فیلتر شخصی ویژه مشترکین نقره‌ای و طلایی است.</span>
+	<a href="/shop">خرید اشتراک‌</a>
+</div>
+
+
+<!-- 
+<a  id="pivot-watch" style="float:left;display:inline" class="symbol inner-link" 
+href="#" th:href="@{/extras/industries}" >مشاهده نسخه کامل جدول صنایع(دیده بان صنایع) </a>
+ -->					
+ 
+
+
+
+		<table class="sticky market" id="industriesTable" style="width: 100%" data-tour="industries" >
+								 
+			<thead>
+			<tr id = "HeadersParent"></tr>
+			</thead>
+
+		</table>
+
+		<br>
+ 
+
+ 
+
+
+	<div id="myModal" class="modal ">
+		<div class="modal-content introX borderless green">
+			<span id="close1" class="close">&times;</span>
+			 <label id="modal-title"></label>
+			<table id="except">
+				<tbody>
+				</tbody>
+			</table>
+		</div>
+	</div>
+		<div id="chart-modal" class="chart-modal">
+		<div style="background-color:rgba(255,255,255,0.8);padding:30px">
+			<span id="tempval1"  class="btn">خروج از نمایش نسبی</span>
+			<span id='tempval' class="btn mval">لحظه ای</span>
+			<span id='mt' class="btn transfer-moment">لحظه ای</span>
+			<span id="tempChartClose"   style="float:left;background-color:red;padding:5px 30px;" class="btn" >بستن</span>
+		</div>
+		<div id = "chart-modal-content" class="chart-modal-content totals">
+			<div id="tempChart">
+			 <span id="chart-modal-title" class="legend" style="margin:20px;font-size:18px;"></span>
+			<span class="legend" id="temp-title" style="margin:20px;margin-top:60px;font-size:18px;"></span>
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal" id="watchs" style="z-index:999999">
+		<div class="modal-content">
+			<span id="conf"></span>
+				<div id = "selectwatch" class="btn-group-6">					
+				</div>	
+		</div>
+	</div>
+
+		<div id="dmodal" class="modal ">
+
+		<div class="modal-content tree introX borderless green">
+			<span id="dclose" class="close">X</span>
+			 <label id="dmodal-title"></label>
+
+			<table class="sticky market" id="treemap" style="width: 100%">
+				<thead>
+				 <tr>
+					<th>نماد</th>
+					<th>حجم معاملات</th>
+					<th>ارزش معاملات</th>
+					<th>اولین</th>
+					<th>بیشترین</th>
+					<th>کمترین</th>
+					<th>آخرین</th>
+					<th>درصد</th>
+					<th>پایانی</th>
+					<th>درصد</th>
+					<th>سرانه خرید</th>
+					<th>سرانه فروش</th>
+					<th>قدرت خرید</th>
+					<th>ورود پول حقیقی</th>
+					<th>ارزش سفارش&zwnj;های خرید</th>
+					<th>ارزش سفارش&zwnj;های فروش</th>					
+				</tr>
+			</thead>
+			</table>
+		</div>
+	</div>
+
+		<div id="shopModal" class="modal ">
+		<div class="modal-content introX borderless green">
+		
+			<h3 class="myalert myalert-dark">دسترسی به این محتوا نیازمند تهیه اشتراک میباشد.
+			<span id="shopClose" class="close" style="color:red;float:left;margin-top:-10px;">&times;</span>	
+			</h3>
+			<div>
+				<div class="myalert myalert-success" > 
+				<span>اشتراک طلایی  یک ماهه 750,000 تومان</span> 
+				<a   href="/shop" target="_blank" class="sub-btn" style="color:white; float:left;">تهیه اشتراک</a>
+				
+				</div>
+			</div>
+			<div>
+				<div class="myalert myalert-success" > 
+				<span>اشتراک نقره ای  یک ماهه 500,000 تومان</span> 
+				<a   href="/shop" target="_blank" class="sub-btn" style="color:white; float:left;">تهیه اشتراک</a>
+				
+				</div>
+			</div>
+			<div>
+				<div class="myalert myalert-success" > 
+				<span>اشتراک طلایی سه ماهه 1,990,000 تومان</span> 
+				<a   href="/shop" target="_blank" class="sub-btn" style="color:white; float:left;">تهیه اشتراک</a>
+				
+				</div>
+			</div>
+			<div>
+				<div class="myalert myalert-success" > 
+				<span>اشتراک نقره ای سه ماهه 1,350,000 تومان</span> 
+				<a   href="/shop" target="_blank" class="sub-btn" style="color:white; float:left;">تهیه اشتراک</a>
+				
+				</div>
+			</div>
+			<div>
+				<div class="myalert myalert-success" > 
+				<span>اشتراک طلایی شش ماهه 3,600,000 تومان</span> 
+				<a   href="/shop" target="_blank" class="sub-btn" style="color:white; float:left;">تهیه اشتراک</a>
+				
+				</div>
+			</div>
+			<div>
+				<div class="myalert myalert-success" > 
+				<span>اشتراک طلایی سالانه 6,300,000 تومان</span> 
+				<a   href="/shop" target="_blank" class="sub-btn" style="color:white; float:left;">تهیه اشتراک</a>
+				
+				</div>
+			</div>
+
+		<h3 class="features-comparison-title">امکانات کاربران ویژه</h3>
+		<div class="features-comparison-wrap" tabindex="0" role="region"
+			aria-label="جدول مقایسه امکانات اشتراک‌ها">
+			<table class="features-comparison-table">
+				<thead>
+					<tr>
+						<th>عنوان</th>
+						<th>اشتراک رایگان</th>
+						<th>اشتراک نقره‌ای</th>
+						<th>اشتراک طلایی</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong>نمایش ندادن تبلیغات</strong></td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی به نمودارهای صفحه اصلی سایت (آمارهای کلیدی بازار)</td>
+						<td class="feat tooltip"><i class="fa fa-solid fa-circle-exclamation"></i><span class="tooltiptext">دسترسی محدود</span></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی به نمودارهای صفحه دیده‌بان هر صنعت</td>
+						<td class="feat tooltip"><i class="fa fa-solid fa-circle-exclamation"></i><span class="tooltiptext">دسترسی محدود</span></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>تحلیلگر تکنیکال</td>
+						<td class="feat tooltip"><i class="fa fa-circle-exclamation"></i><span class="tooltiptext">روزانه یک تحلیل رایگان</span></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی کامل به دیده‌بان بازار</td>
+						<td class="feat tooltip"><i class="fa fa-solid fa-circle-exclamation"></i><span class="tooltiptext">دسترسی محدود</span></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>نمودارهای لحظه‌ای جریانات نقدینگی سهم‌ها در طول بازار</td>
+						<td class="feat tooltip"><i class="fa fa-solid fa-circle-exclamation"></i><span class="tooltiptext">دسترسی محدود</span></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی به فیلترهای صفحه اصلی سایت (آمارهای کلیدی بازار)</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی به صفحه نمودارهای جریانات نقدینگی لحظه‌ای به تفکیک بخش‌های مختلف بازار</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>مشاهده نسخه آرشیوشده صفحه آمارهای کلیدی بازار در روزهای گذشته</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی به صفحه دیده‌بان حمایت‌ها و مقاومت‌ها</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دسترسی به صفحه دیده‌بان جریانات نقدینگی</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>صفحه تحلیلگر جریانات نقدینگی سهم‌ها</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>نمودارهای لحظه‌ای جریانات نقدینگی سهم‌ها برای ۳۰ روز گذشته</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دیده‌بان بازار پیشرفته</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>نمودارهای جریانات نقدینگی نمادها، گروه‌ها و بازار</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>دریافت خروجی اکسل از سوابق نمادها، گروه‌ها و بازار</td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-x"></i></td>
+						<td class="feat"><i class="fa fa-solid fa-check"></i></td>
+					</tr>
+					<tr>
+						<td>تعداد واچ‌لیست شخصی</td>
+						<td>۱ دیده‌بان</td>
+						<td>۲۰ دیده‌بان</td>
+						<td>۱۰۰ دیده‌بان</td>
+					</tr>
+					<tr>
+						<td>چارت ناشناخته</td>
+						<td>۱۰ نماد</td>
+						<td>دسترسی نامحدود</td>
+						<td>دسترسی نامحدود</td>
+					</tr>
+					<tr>
+						<td>نمودار مقایسه چند نماد</td>
+						<td>مقایسه ۴ نماد هم‌زمان</td>
+						<td>مقایسه ۱۲ نماد هم‌زمان</td>
+						<td>مقایسه ۱۲ نماد هم‌زمان</td>
+					</tr>
+					<tr>
+						<td>امکانات متنوع دیگر</td>
+						<td colspan="3">... به‌زودی</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	
+	 
+		</div>
+	</div>
+ 
+ 	
+<div class="modal" id="types">
+<div class="modal-content">
+ <div class="btn-group-3">
+<div id="backupSettings" class="log-btn">پشتیبان گیری از تنظیمات روی سرور</div>
+<div id="recoverSettings" class="log-btn">بازیابی تنطیمات  از  روی سرور</div>
+<div id="dropSettings" class="log-btn">حذف تنطیمات  از  روی سرور</div>
+ </div>
+	<div  class="group-dual" >
+	<div >
+	<div>
+	<div class="wrighttable" style="margin:20px;">
+	<table>
+	<tr><td >انتخاب سطرهایی که  در جدول خلاصه معاملات نمایش داده خواهند شوند</td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="market_vis">  بازار (سهام حق تقدم صندوق سهامی و درآمد ثابت)  </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="stocksAndFunds_vis">سهام حق تقدم  و صندوق های سهامی   </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="stocks_vis">سهام و حق تقدم	                   </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="funds_vis">صندوق های سهامی و مختلط	               </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="fixedIncomes_vis">صندوق های درآمد ثابت	           </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="leveragedFunds_vis">صندوق های اهرمی            </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="bigFifty_vis">پنجاه شرکت بزرگ 	               </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="commodityFunds_vis">صندوق های طلا             </td></tr>
+	<tr><td >  <input class="customize" type="checkbox" id="silverFunds_vis">صندوق های نقره             </td></tr>
+	</table>
+	</div>
+	<div class="wrighttable" style="margin:20px;">	
+	<input class="customize parenty" type="checkbox" id="ct_vis">نمایش جدول و نمودار اطلاعات حقیقی حقوقی بازار  
+ 	 <input class="customize parenty" type="checkbox" id="mw_vis">نمایش دیده بان شخصی </div>
+	<div class="wrighttable" style="margin:20px;">
+	<div class="parenty">در هر کجای سایت با فشردن همزمان دکمه های SHIFT + T  میتوانید تم سایت را تغییر داده و با فشردن هزمان دکمه های SHIFT + F میتوانید فونت اعداد را به لاتین یا فارسی تغییر دهید </div>  
+ 	<div class="parenty">
+	 	<span>انتخاب تم سایت:</span>
+  	 		<span style="margin-left:10px;" class="theme standby light" id="light" >تم روشن</span> 
+	 		                                              
+  			<span style="margin-left:10px;" class="theme standby dark" id="dark" >تم تیره</span> 
+  	 		                                              
+  	 		<span style="margin-left:10px;" class="theme standby auto" id="auto" >تم هماهنگ شونده</span> 
+			
+			 <span style="margin-left:10px;" class="standby auto" id="classic" >قالب کلاسیک </span>	 
+	 </div>
+	 
+	<div class="parenty">
+	 	<span>انتخاب شیوه نمایش اعداد:</span>
+  		<span class="standby farsi" style="margin-left:10px;" id="farsi" >نمایش اعداد با فونت فارسی</span> 
+  		<span class="standby latin" style="margin-left:10px;" id="latin" >نمایش اعداد با فونت لاتین</span> 
+	</div>
+	<div>
+	<label for="chartHeight">ارتفاع نمودارها</label>
+ 		<select id = "chartHeight">
+ 		<option >انتخاب کنید</option>
+ 		<option value="170">کوتاه</option>
+ 		<option value="200">نرمال</option>
+ 		<option value="230">کمی بلند</option>
+ 		<option value="260">بلند</option>
+ 		<option value="300">خیلی بلند</option>
+ 		</select>
+	</div>
+	<div class="parenty">
+		<span>بزرگ‌نمایی نمودارها:</span>
+		<button type="button" class="standby" id="chartZoomToggle" aria-pressed="true">زوم فعال است</button>
+	</div>
+	</div>
+	</div>
+	</div>
+	
+	<div class="wrighttable" >
+	<div >
+	<div class="parent" > انتخاب نمودارها (برای تغییر جایگاه هر نمودار سطر مربوطه را به بالا یا پایین بکشید)  </div>
+	<div id='selectorx'>
+	</div>
+	<div id='notSelectable'>
+	</div>
+	</div>
+	<div>  تعداد نمودارها در هر سطر:	
+			<input type="radio" id="dual"    name="colnum" value="2"><label for="dual">دو نمودار در هر سطر</label> 
+			<input type="radio" id="thriple" name="colnum" value="3"><label for="thriple">سه نمودار در هر سطر</label> 
+			<input type="radio" id="responsive" name="colnum" value="1"><label for="responsive">هماهنگ شونده با ابعاد نمایشگر</label> 
+	 </div>		
+ 
+	</div>
+ 
+
+
+	</div>
+	<div class="btn-group-4">
+	<div class="btn" style="cursor:pointer;background-color:royalBlue;color:white;margin:20px;"id="save-vis">ذخیره تنظیمات  </div>
+	<div class="btn" style="cursor:pointer;background-color:royalBlue;color:white;margin:20px;"id="vis-close">بستن</div>
+	<div class="btn" style="cursor:pointer;background-color:royalBlue;color:white;margin:20px;"id="reset">ریست کردن تنظیمات</div>
+	</div>
+</div>
+</div>
+		<div id="detailsModal" class="modal ">
+
+		<div class="modal-content introZ borderless ">
+			<span id="close2" class="close">&times;</span>
+						<label id="title"></label>
+						<table>
+							<thead>
+								<tr>
+									<th>تعداد خریداران</th>
+									<th>ارزش خرید</th>
+									<th>درصد خرید</th>
+									<th></th>
+									<th>درصد فروش</th>
+									<th>ارزش فروش</th>
+									<th>تعداد فروشندگان</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td id="rbcModal"></td>
+									<td id="rbvModal"></td>
+									<td id="rbpModal"></td>
+									<td>حقیقی</td>
+									<td id="rspModal"></td>
+									<td id="rsvModal"></td>
+									<td id="rscModal"></td>
+								</tr>
+								<tr>
+									<td id="lbcModal"></td>
+									<td id="lbvModal"></td>
+									<td id="lbpModal"></td>
+									<td>حقوقی</td>
+									<td id="lspModal"></td>
+									<td id="lsvModal"></td>
+									<td id="lscModal"></td>
+								</tr>
+							</tbody>
+						</table>
+		</div>
+	</div>
+	
+
+
+<script>
+	 /*<![CDATA[*/
+$(document).ready(function () { 
+	var auth = 0;
+  	var interval  = 120;	
+	var token = $("meta[name='_csrf']").attr("content"); 
+	var header = $("meta[name='_csrf_header']").attr("content");
+	var advertise =  null;
+	var show =   null;
+	var link = null;
+	var username = "anonymousUser";
+	const isAuthenticate = false;
+	var isTrader = false;
+	var localAddress = null;	 
+	market(username,auth,interval,header,token,show,link,localAddress,advertise,isAuthenticate,isTrader);  
+		});
+	 /*]]>*/
+</script>
+ 
+<footer   id="footerx" class="quadeq">
+    <img src="../../../images/tradersarena-logo.png" style="width:60px;height:auto;">
+
+    <div class="footer-info">
+        <p class="copyright">کلیه حقوق برای وبسایت تریدرز آرنا محفوظ می‌باشد.</p>
+        <p class="disclaimer">بازنشر اطلاعات سایت تنها با ذکر منبع مجاز می‌باشد.</p>
+    </div>
+
+    <div class="footer-socials">
+        <a href="https://t.me/Traders_Arena_ir" target="_blank" aria-label="Telegram">
+            <i class="fab fa-telegram telegram-icon tooltip">
+         <span  class="tooltiptext upper">کانال اخبار و آموزش ها</span>
+            </i>
+        </a>
+        <a href="https://t.me/TradersArenaReport" target="_blank" aria-label="Telegram">
+            <i class="fab fa-telegram telegram-report-icon tooltip">
+        <span class="tooltiptext upper">کانال تحلیل و گزارش های روزانه</span>
+            </i>
+        </a>
+        <a href="http://instagram.com/tradersarena.ir" target="_blank" aria-label="Instagram">
+ 
+            <i class="fab fa-instagram instagram-icon tooltip">
+                <span class="tooltiptext upper">اینستاگرام تریدرزآرنا </span>
+                </i>
+        </a>
+        <a href="http://aparat.com/tradersarena.ir" target="_blank" aria-label="Aparat" class="tooltip">
+ 
+ 
+            <img src="../../../images/aparat.png" style="width:30px;height:auto;"> 
+            <span class="tooltiptext upper">کانال آپارات تریدرزآرنا </span>
+ </a>
+         
+ 
+ 
+    </div>
+
+    <div class="footer-trust">
+        <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=542016&Code=84r2WD1GfMQtXGga2mGqCfez42YRwRE3' class="enamad-link">
+            <img id="enamad" referrerpolicy='origin'
+             src='../../../images/enamd.png' 
+             alt='اینماد تریدرز آرنا' code='https://trustseal.enamad.ir/logo.aspx?id=542016&Code=84r2WD1GfMQtXGga2mGqCfez42YRwRE3'>
+        </a>
+        
+        <span class="footer-phone">
+            <i class="fas fa-phone-alt"></i> شماره تماس: ۰۲۱۲۶۲۰۳۶۵۵
+        </span>
+    </div>
+</footer>
+
+
+  <script type="text/javascript" src="../../js/product/search.min.js"></script>
+  
+  
+ 
+ 
+
+</body>
+</html>
+

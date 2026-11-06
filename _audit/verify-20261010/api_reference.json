@@ -1,0 +1,607 @@
+{
+ "swing": {
+  "preset": "swing",
+  "chain": [
+   "f_clock",
+   "f_jet",
+   "f_susp"
+  ],
+  "as_of": 1791624914,
+  "as_of_str": "13:05:14",
+  "universe": {
+   "board": 5892,
+   "screened": 922,
+   "joined": 5890,
+   "duplicate_rows": 2,
+   "market": 5890,
+   "screening": 2781,
+   "excluded": 3109,
+   "exclusion_counts": {
+    "STOPPED": 17,
+    "FORBIDDEN_STATE": 119,
+    "NOT_LIVE_SESSION": 2973
+   },
+   "exclusion_labels": {
+    "STOPPED": "متوقف",
+    "FORBIDDEN_STATE": "ممنوع",
+    "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه"
+   }
+  },
+  "coverage": {
+   "tape": {
+    "pass": 1,
+    "reject": 2780,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "technical": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 1,
+    "unavailable": 0,
+    "not_required": 2780,
+    "not_in_universe": 3109
+   },
+   "fundamental": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 2781,
+    "not_in_universe": 3109
+   },
+   "handover": {
+    "pass": 0,
+    "reject": 2780,
+    "pending": 1,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   }
+  },
+  "stage_lists": {
+   "tape": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "technical": {
+    "count": 1,
+    "first8": [
+     "لبن"
+    ]
+   },
+   "fundamental": {
+    "count": 0,
+    "first8": []
+   },
+   "handover": {
+    "count": 0,
+    "first8": []
+   }
+  },
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": true,
+   "queued": 2043,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 40,
+   "last_ms": 0,
+   "error": null
+  },
+  "fund_mode": "standard",
+  "status": "success",
+  "tape_steps": [
+   {
+    "filter_id": "f_clock",
+    "label": "الگوی ساعت",
+    "input_count": 2781,
+    "matched_count": 23,
+    "removed_count": 2758,
+    "unmeasured_count": 0,
+    "status": "reject"
+   },
+   {
+    "filter_id": "f_jet",
+    "label": "فیلتر جت",
+    "input_count": 23,
+    "matched_count": 1,
+    "removed_count": 22,
+    "unmeasured_count": 0,
+    "status": "reject"
+   },
+   {
+    "filter_id": "f_susp",
+    "label": "حجم مشکوک",
+    "input_count": 1,
+    "matched_count": 1,
+    "removed_count": 0,
+    "unmeasured_count": 0,
+    "status": "pass"
+   }
+  ]
+ },
+ "trend": {
+  "preset": "trend",
+  "chain": [
+   "f_roobi",
+   "f_noqteh"
+  ],
+  "as_of": 1791624915,
+  "as_of_str": "13:05:15",
+  "universe": {
+   "board": 5892,
+   "screened": 922,
+   "joined": 5890,
+   "duplicate_rows": 2,
+   "market": 5890,
+   "screening": 2781,
+   "excluded": 3109,
+   "exclusion_counts": {
+    "STOPPED": 17,
+    "FORBIDDEN_STATE": 119,
+    "NOT_LIVE_SESSION": 2973
+   },
+   "exclusion_labels": {
+    "STOPPED": "متوقف",
+    "FORBIDDEN_STATE": "ممنوع",
+    "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه"
+   }
+  },
+  "coverage": {
+   "tape": {
+    "pass": 0,
+    "reject": 2781,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "technical": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 2781,
+    "not_in_universe": 3109
+   },
+   "fundamental": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 2781,
+    "not_in_universe": 3109
+   },
+   "handover": {
+    "pass": 0,
+    "reject": 2781,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   }
+  },
+  "stage_lists": {
+   "tape": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "technical": {
+    "count": 0,
+    "first8": []
+   },
+   "fundamental": {
+    "count": 0,
+    "first8": []
+   },
+   "handover": {
+    "count": 0,
+    "first8": []
+   }
+  },
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": true,
+   "queued": 2043,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 40,
+   "last_ms": 0,
+   "error": null
+  },
+  "fund_mode": "standard",
+  "status": "success",
+  "tape_steps": [
+   {
+    "filter_id": "f_roobi",
+    "label": "کف روبی صف فروش",
+    "input_count": 2781,
+    "matched_count": 15,
+    "removed_count": 2766,
+    "unmeasured_count": 0,
+    "status": "reject"
+   },
+   {
+    "filter_id": "f_noqteh",
+    "label": "نقطه زنی",
+    "input_count": 15,
+    "matched_count": 0,
+    "removed_count": 15,
+    "unmeasured_count": 0,
+    "status": "reject"
+   }
+  ]
+ },
+ "hourglass": {
+  "preset": "hourglass",
+  "chain": [],
+  "as_of": 1791624916,
+  "as_of_str": "13:05:16",
+  "universe": {
+   "board": 5892,
+   "screened": 922,
+   "joined": 5890,
+   "duplicate_rows": 2,
+   "market": 5890,
+   "screening": 2781,
+   "excluded": 3109,
+   "exclusion_counts": {
+    "STOPPED": 17,
+    "FORBIDDEN_STATE": 119,
+    "NOT_LIVE_SESSION": 2973
+   },
+   "exclusion_labels": {
+    "STOPPED": "متوقف",
+    "FORBIDDEN_STATE": "ممنوع",
+    "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه"
+   }
+  },
+  "coverage": {
+   "tape": {
+    "pass": 2781,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "technical": {
+    "pass": 0,
+    "reject": 41,
+    "pending": 2083,
+    "unavailable": 657,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "fundamental": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 2781,
+    "not_in_universe": 3109
+   },
+   "handover": {
+    "pass": 0,
+    "reject": 41,
+    "pending": 2083,
+    "unavailable": 657,
+    "not_required": 0,
+    "not_in_universe": 3109
+   }
+  },
+  "stage_lists": {
+   "tape": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "technical": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "fundamental": {
+    "count": 0,
+    "first8": []
+   },
+   "handover": {
+    "count": 0,
+    "first8": []
+   }
+  },
+  "tech_scan": {
+   "pending_symbols": 2083,
+   "running": true,
+   "queued": 2043,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 40,
+   "error": null
+  },
+  "fund_mode": "standard",
+  "status": "success",
+  "tape_steps": []
+ },
+ "custom": {
+  "preset": "custom",
+  "chain": [],
+  "as_of": 1791624917,
+  "as_of_str": "13:05:17",
+  "universe": {
+   "board": 5892,
+   "screened": 922,
+   "joined": 5890,
+   "duplicate_rows": 2,
+   "market": 5890,
+   "screening": 2781,
+   "excluded": 3109,
+   "exclusion_counts": {
+    "STOPPED": 17,
+    "FORBIDDEN_STATE": 119,
+    "NOT_LIVE_SESSION": 2973
+   },
+   "exclusion_labels": {
+    "STOPPED": "متوقف",
+    "FORBIDDEN_STATE": "ممنوع",
+    "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه"
+   }
+  },
+  "coverage": {
+   "tape": {
+    "pass": 2781,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "technical": {
+    "pass": 43,
+    "reject": 0,
+    "pending": 2081,
+    "unavailable": 657,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "fundamental": {
+    "pass": 34,
+    "reject": 0,
+    "pending": 9,
+    "unavailable": 0,
+    "not_required": 2738,
+    "not_in_universe": 3109
+   },
+   "handover": {
+    "pass": 34,
+    "reject": 0,
+    "pending": 2090,
+    "unavailable": 657,
+    "not_required": 0,
+    "not_in_universe": 3109
+   }
+  },
+  "stage_lists": {
+   "tape": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "technical": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "fundamental": {
+    "count": 43,
+    "first8": [
+     "آلومینا",
+     "الکتروماد",
+     "تفارس",
+     "تکیمیا",
+     "حپارسا",
+     "دبالک",
+     "ددانا",
+     "دزهراوی"
+    ]
+   },
+   "handover": {
+    "count": 34,
+    "first8": [
+     "آلومینا",
+     "الکتروماد",
+     "تفارس",
+     "تکیمیا",
+     "حپارسا",
+     "دبالک",
+     "ددانا",
+     "دزهراوی"
+    ]
+   }
+  },
+  "tech_scan": {
+   "pending_symbols": 2080,
+   "running": true,
+   "queued": 2043,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 40,
+   "error": null
+  },
+  "fund_mode": "standard",
+  "status": "success",
+  "tape_steps": []
+ },
+ "custom_fclock": {
+  "preset": "custom",
+  "chain": [
+   "f_clock"
+  ],
+  "as_of": 1791624919,
+  "as_of_str": "13:05:19",
+  "universe": {
+   "board": 5892,
+   "screened": 922,
+   "joined": 5890,
+   "duplicate_rows": 2,
+   "market": 5890,
+   "screening": 2781,
+   "excluded": 3109,
+   "exclusion_counts": {
+    "STOPPED": 17,
+    "FORBIDDEN_STATE": 119,
+    "NOT_LIVE_SESSION": 2973
+   },
+   "exclusion_labels": {
+    "STOPPED": "متوقف",
+    "FORBIDDEN_STATE": "ممنوع",
+    "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه"
+   }
+  },
+  "coverage": {
+   "tape": {
+    "pass": 23,
+    "reject": 2758,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   },
+   "technical": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 23,
+    "unavailable": 0,
+    "not_required": 2758,
+    "not_in_universe": 3109
+   },
+   "fundamental": {
+    "pass": 0,
+    "reject": 0,
+    "pending": 0,
+    "unavailable": 0,
+    "not_required": 2781,
+    "not_in_universe": 3109
+   },
+   "handover": {
+    "pass": 0,
+    "reject": 2758,
+    "pending": 23,
+    "unavailable": 0,
+    "not_required": 0,
+    "not_in_universe": 3109
+   }
+  },
+  "stage_lists": {
+   "tape": {
+    "count": 2781,
+    "first8": [
+     "آ س پ",
+     "آباد",
+     "آبارا07",
+     "آبنوس",
+     "آبی",
+     "آبی2",
+     "آتش",
+     "آتیمس"
+    ]
+   },
+   "technical": {
+    "count": 23,
+    "first8": [
+     "سصفها",
+     "ضخود8061",
+     "ضخود8062",
+     "ضخود8063",
+     "ضخود8064",
+     "ضخود9055",
+     "ضستا8058",
+     "ضستا8059"
+    ]
+   },
+   "fundamental": {
+    "count": 0,
+    "first8": []
+   },
+   "handover": {
+    "count": 0,
+    "first8": []
+   }
+  },
+  "tech_scan": {
+   "pending_symbols": 22,
+   "running": true,
+   "queued": 2043,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 40,
+   "error": null
+  },
+  "fund_mode": "standard",
+  "status": "success",
+  "tape_steps": [
+   {
+    "filter_id": "f_clock",
+    "label": "الگوی ساعت",
+    "input_count": 2781,
+    "matched_count": 23,
+    "removed_count": 2758,
+    "unmeasured_count": 0,
+    "status": "reject"
+   }
+  ]
+ }
+}

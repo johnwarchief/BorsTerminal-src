@@ -1,0 +1,14 @@
+import { pathToFileURL } from 'node:url';
+const PKG = process.env.JEV_BROWSER_DIR || 'C:/Users/PCMOD/.cline/plugins/_installed/official/jev-browser-b15ae305f536/package';
+const { chromium } = await import(pathToFileURL(`${PKG}/node_modules/playwright/index.mjs`).href);
+const b = await chromium.launch({ headless: true, executablePath: process.env.JEV_CHROME || undefined });
+const c = await b.newContext({ viewport: { width: 1366, height: 768 } });
+await c.addInitScript(() => { try { sessionStorage.setItem('bors_auth_session','true'); } catch {} });
+const p = await c.newPage();
+await p.goto('http://localhost:5173/#/' + (process.argv[2]||'master'), { waitUntil: 'domcontentloaded' });
+await p.waitForTimeout(Number(process.argv[3]||30000));
+const ids = await p.evaluate(() => Array.from(document.querySelectorAll('[data-testid]')).map(e => (e as HTMLElement).dataset.testid as string));
+console.log('TOTAL', ids.length);
+console.log(JSON.stringify(ids.filter(i => /funnel|stage|handover|chip|tape|watch|tab|dossier/i.test(i)).slice(0,60)));
+console.log('symbols in table:', await p.evaluate(() => Array.from(document.querySelectorAll('[data-testid^="funnel-why-"]')).length));
+await b.close();

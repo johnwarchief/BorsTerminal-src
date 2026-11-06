@@ -1,0 +1,790 @@
+{
+ "item": 3,
+ "started_at_local": "2026-10-10T14:08:15",
+ "console_errors": [],
+ "bad_responses": [],
+ "widths": {
+  "1600x900": {
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "panel": {
+    "sw": 467,
+    "cw": 467,
+    "rect": 469,
+    "symbol": "",
+    "text": "عمقِ پنج‌سطحی —بی‌زمانتقاضاعرضه"
+   },
+   "rows": null,
+   "gridCols": null,
+   "rowClips": [],
+   "cellClips": [],
+   "docOverflowX": 0,
+   "totalEls": 393,
+   "state": {
+    "chart": {
+     "symbol": "",
+     "text": "کندلِ روزانه—۴۰ نشستِ آخربدون داده",
+     "canvas": false
+    },
+    "ob": {
+     "symbol": "",
+     "text": "عمقِ پنج‌سطحی —بی‌زمانتقاضاعرضه",
+     "canvas": false
+    },
+    "sum": {
+     "symbol": "",
+     "text": "خلاصۀِ نماد——آخرین—تغییر—پایانیِ امروز—ابتدا / بیشترین / کمترین— / — / —حجم / ارزش— · - میلیارد ریالنسبتِ حجم—وضعیتِ معاملاتیموردی ثبت نشدهپنلِ معاملهاتصالِ ربا",
+     "canvas": false
+    },
+    "feedAge": "فید: لحظاتی پیش",
+    "clickedRow": null
+   }
+  },
+  "1366x768": {
+   "viewport": {
+    "w": 1366,
+    "h": 768
+   },
+   "panel": {
+    "sw": 389,
+    "cw": 389,
+    "rect": 391,
+    "symbol": "",
+    "text": "عمقِ پنج‌سطحی —بی‌زمانتقاضاعرضه"
+   },
+   "rows": null,
+   "gridCols": null,
+   "rowClips": [],
+   "cellClips": [],
+   "docOverflowX": 0,
+   "totalEls": 393,
+   "state": {
+    "chart": {
+     "symbol": "",
+     "text": "کندلِ روزانه—۴۰ نشستِ آخربدون داده",
+     "canvas": false
+    },
+    "ob": {
+     "symbol": "",
+     "text": "عمقِ پنج‌سطحی —بی‌زمانتقاضاعرضه",
+     "canvas": false
+    },
+    "sum": {
+     "symbol": "",
+     "text": "خلاصۀِ نماد——آخرین—تغییر—پایانیِ امروز—ابتدا / بیشترین / کمترین— / — / —حجم / ارزش— · - میلیارد ریالنسبتِ حجم—وضعیتِ معاملاتیموردی ثبت نشدهپنلِ معاملهاتصالِ ربا",
+     "canvas": false
+    },
+    "feedAge": "فید: لحظاتی پیش",
+    "clickedRow": null
+   }
+  },
+  "1280x720": {
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "panel": {
+    "sw": 361,
+    "cw": 361,
+    "rect": 363,
+    "symbol": "",
+    "text": "عمقِ پنج‌سطحی —بی‌زمانتقاضاعرضه"
+   },
+   "rows": null,
+   "gridCols": null,
+   "rowClips": [],
+   "cellClips": [],
+   "docOverflowX": 0,
+   "totalEls": 393,
+   "state": {
+    "chart": {
+     "symbol": "",
+     "text": "کندلِ روزانه—۴۰ نشستِ آخربدون داده",
+     "canvas": false
+    },
+    "ob": {
+     "symbol": "",
+     "text": "عمقِ پنج‌سطحی —بی‌زمانتقاضاعرضه",
+     "canvas": false
+    },
+    "sum": {
+     "symbol": "",
+     "text": "خلاصۀِ نماد——آخرین—تغییر—پایانیِ امروز—ابتدا / بیشترین / کمترین— / — / —حجم / ارزش— · - میلیارد ریالنسبتِ حجم—وضعیتِ معاملاتیموردی ثبت نشدهپنلِ معاملهاتصالِ ربا",
+     "canvas": false
+    },
+    "feedAge": "فید: لحظاتی پیش",
+    "clickedRow": null
+   }
+  }
+ },
+ "clicks": [
+  {
+   "row": {
+    "t": "watch-row-خساپ",
+    "text": "خساپ————-——بی‌ردیف✕"
+   },
+   "state": {
+    "chart": {
+     "symbol": "خساپ",
+     "text": "کندلِ روزانهخساپ۴۰ نشستِ آخربدون داده",
+     "canvas": false
+    },
+    "ob": {
+     "symbol": "خساپ",
+     "text": "عمقِ پنج‌سطحی خساپبی‌زمانتقاضاعرضهعمقِ پنج‌سطحی این نماد ذخیره نشده — بعد از نخستین همگام‌سازیِ تابلو می‌آید",
+     "canvas": false
+    },
+    "sum": {
+     "symbol": "خساپ",
+     "text": "خلاصۀِ نمادخساپبی‌ردیفِ تابلو—آخرین—تغییر—پایانیِ امروز—ابتدا / بیشترین / کمترین— / — / —حجم / ارزش— · - میلیارد ریالنسبتِ حجم—وضعیتِ معاملاتیموردی ثبت نشدهپنلِ",
+     "canvas": false
+    },
+    "feedAge": "فید: لحظاتی پیش",
+    "clickedRow": null
+   },
+   "panel_cw": 309,
+   "panel_sw": 309,
+   "cellClips": [],
+   "rowClips": [],
+   "ob_text": "عمقِ پنج‌سطحی خساپبی‌زمانتقاضاعرضهعمقِ پنج‌سطحی این نماد ذخیره نشده — بعد از نخستین همگام‌سازیِ تابلو می‌آید",
+   "rows": null
+  },
+  {
+   "row": {
+    "t": "watch-row-فولاد",
+    "text": "فولادفولاد مباركه اصفهان۴٬۱۰۰+۲.۸٪۴٬۱۰۰۸۳۲٬۴۱۱٬۴۱۵۳٬۴۱۳۷۳۰٬۳"
+   },
+   "state": {
+    "chart": {
+     "symbol": "فولاد",
+     "text": "کندلِ روزانهفولاد۴۰ نشستِ آخردر حال دریافتِ کندل…",
+     "canvas": false
+    },
+    "ob": {
+     "symbol": "فولاد",
+     "text": "عمقِ پنج‌سطحی فولادهمگامِ ساعتِ ۱۰:۲۲تقاضاعرضه۴٬۱۰۰۲٬۸۷۹٬۴۴۷٬۴۶۹۹۹۹۹۴٬۰۹۰۵٬۲۴۳٬۹۱۸۲۵۴٬۰۸۰۴۸۶٬۹۶۱۷۴٬۰۷۰۱٬۰۱۷٬۴۰۰۸۴٬۰۶۰۷۰۸٬۶۷۴۱۱——۰——۰——۰——۰——۰جمعِ تقاضا۲٬۸۹۰٬۸۸۳",
+     "canvas": false
+    },
+    "sum": {
+     "symbol": "فولاد",
+     "text": "خلاصۀِ نمادفولادزندهفولاد مباركه اصفهان · فلزات اساسيآخرین۴٬۱۰۰تغییر۲.۸٪پایانیِ امروز۴٬۱۰۰ابتدا / بیشترین / کمترین۴٬۱۰۰ / ۴٬۱۰۰ / ۴٬۱۰۰حجم / ارزش۸۳۲٬۴۱۱٬۴۱۵ · ۳",
+     "canvas": false
+    },
+    "feedAge": "فید: لحظاتی پیش",
+    "clickedRow": null
+   },
+   "panel_cw": 309,
+   "panel_sw": 309,
+   "cellClips": [
+    {
+     "text": "۴٬۱۰۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -103.78,
+     "overlapPrev": 38.88,
+     "sw": 33,
+     "cw": 33
+    },
+    {
+     "text": "۲٬۸۷۹٬۴۴۷٬۴۶۹",
+     "over": false,
+     "bleedRight": -42.88,
+     "bleedLeft": -26.09,
+     "overlapPrev": 110.56,
+     "sw": 74,
+     "cw": 74
+    },
+    {
+     "text": "۹۹۹۹",
+     "over": false,
+     "bleedRight": -120.56,
+     "bleedLeft": 4.27,
+     "overlapPrev": 104.05,
+     "sw": 26,
+     "cw": 26
+    },
+    {
+     "text": "۴٬۰۹۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -103.78,
+     "overlapPrev": 38.88,
+     "sw": 33,
+     "cw": 33
+    },
+    {
+     "text": "۵٬۲۴۳٬۹۱۸",
+     "over": false,
+     "bleedRight": -55.52,
+     "bleedLeft": -35.81,
+     "overlapPrev": 100.84,
+     "sw": 51,
+     "cw": 51
+    },
+    {
+     "text": "۲۵",
+     "over": false,
+     "bleedRight": -123.47,
+     "bleedLeft": -6,
+     "overlapPrev": 81.14,
+     "sw": 13,
+     "cw": 13
+    },
+    {
+     "text": "۴٬۰۸۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -103.78,
+     "overlapPrev": 38.88,
+     "sw": 33,
+     "cw": 33
+    },
+    {
+     "text": "۴۸۶٬۹۶۱",
+     "over": false,
+     "bleedRight": -63.41,
+     "bleedLeft": -37.13,
+     "overlapPrev": 99.53,
+     "sw": 42,
+     "cw": 42
+    },
+    {
+     "text": "۷",
+     "over": false,
+     "bleedRight": -130.06,
+     "bleedLeft": -6,
+     "overlapPrev": 73.25,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۴٬۰۷۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -103.78,
+     "overlapPrev": 38.88,
+     "sw": 33,
+     "cw": 33
+    },
+    {
+     "text": "۱٬۰۱۷٬۴۰۰",
+     "over": false,
+     "bleedRight": -58.81,
+     "bleedLeft": -32.52,
+     "overlapPrev": 104.14,
+     "sw": 51,
+     "cw": 51
+    },
+    {
+     "text": "۸",
+     "over": false,
+     "bleedRight": -130.06,
+     "bleedLeft": -6,
+     "overlapPrev": 77.84,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۴٬۰۶۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -103.78,
+     "overlapPrev": 38.88,
+     "sw": 33,
+     "cw": 33
+    },
+    {
+     "text": "۷۰۸٬۶۷۴",
+     "over": false,
+     "bleedRight": -60.11,
+     "bleedLeft": -40.42,
+     "overlapPrev": 96.23,
+     "sw": 42,
+     "cw": 42
+    },
+    {
+     "text": "۱۱",
+     "over": false,
+     "bleedRight": -123.47,
+     "bleedLeft": -6,
+     "overlapPrev": 76.55,
+     "sw": 13,
+     "cw": 13
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -127.95,
+     "overlapPrev": -127.95,
+     "sw": 9,
+     "cw": 9
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -68.44,
+     "bleedLeft": -66.31,
+     "overlapPrev": 70.36,
+     "sw": 8,
+     "cw": 8
+    },
+    {
+     "text": "۰",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 68.23,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -127.95,
+     "overlapPrev": -127.95,
+     "sw": 9,
+     "cw": 9
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -68.44,
+     "bleedLeft": -66.31,
+     "overlapPrev": 70.36,
+     "sw": 8,
+     "cw": 8
+    },
+    {
+     "text": "۰",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 68.23,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -127.95,
+     "overlapPrev": -127.95,
+     "sw": 9,
+     "cw": 9
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -68.44,
+     "bleedLeft": -66.31,
+     "overlapPrev": 70.36,
+     "sw": 8,
+     "cw": 8
+    },
+    {
+     "text": "۰",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 68.23,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -127.95,
+     "overlapPrev": -127.95,
+     "sw": 9,
+     "cw": 9
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -68.44,
+     "bleedLeft": -66.31,
+     "overlapPrev": 70.36,
+     "sw": 8,
+     "cw": 8
+    },
+    {
+     "text": "۰",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 68.23,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -127.95,
+     "overlapPrev": -127.95,
+     "sw": 9,
+     "cw": 9
+    },
+    {
+     "text": "—",
+     "over": false,
+     "bleedRight": -68.44,
+     "bleedLeft": -66.31,
+     "overlapPrev": 70.36,
+     "sw": 8,
+     "cw": 8
+    },
+    {
+     "text": "۰",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 68.23,
+     "sw": 7,
+     "cw": 7
+    }
+   ],
+   "rowClips": [
+    {
+     "sw": 153,
+     "cw": 143,
+     "w": 143,
+     "text": "۴٬۱۰۰۲٬۸۷۹٬۴۴۷٬۴۶۹۹۹۹۹"
+    }
+   ],
+   "ob_text": "عمقِ پنج‌سطحی فولادهمگامِ ساعتِ ۱۰:۲۲تقاضاعرضه۴٬۱۰۰۲٬۸۷۹٬۴۴۷٬۴۶۹۹۹۹۹۴٬۰۹۰۵٬۲۴۳٬۹۱۸۲۵۴٬۰۸۰۴۸۶٬۹۶۱۷۴٬۰۷۰۱٬۰۱۷٬۴۰۰۸۴٬۰۶۰۷۰۸٬۶۷۴۱۱——۰——۰——۰——۰——۰جمعِ تقاضا۲٬۸۹۰٬۸۸۳٬۶۳۸ (۱۰۰۵۱ سفارش)جمعِ عرضه۰ (۰ سفارش)قیمت‌ها ریال است. پنج ",
+   "rows": {
+    "sw": 289,
+    "cw": 289,
+    "n_li": 10
+   }
+  },
+  {
+   "row": {
+    "t": "watch-row-شپنا",
+    "text": "شپناپالايش نفت اصفهان۱۳٬۳۰۰۰.۰٪۱۳٬۷۱۰۵۵۰٬۰۶۳٬۶۰۲۷٬۳۴۱۰(سطر۱ "
+   },
+   "state": {
+    "chart": {
+     "symbol": "شپنا",
+     "text": "کندلِ روزانهشپنا۴۰ نشستِ آخردر حال دریافتِ کندل…",
+     "canvas": false
+    },
+    "ob": {
+     "symbol": "شپنا",
+     "text": "عمقِ پنج‌سطحی شپناهمگامِ ساعتِ ۱۱:۵۹تقاضاعرضه۱۳٬۳۰۰۸٬۸۸۷٬۶۶۵۸۱۷۱۳٬۲۹۰۳٬۸۹۵۲۱۳٬۱۵۰۶۰۰۱۱۳٬۱۴۰۱۵٬۹۹۸۱۱۳٬۰۹۰۱٬۵۲۲۱۱۳٬۳۰۰۵۲۷٬۶۱۱٬۱۳۰۶۷۸۵۱۳٬۳۱۰۲۳۸٬۹۷۷۸۱۳٬۳۲۰۲۱۰٬۶۰۴۱۱",
+     "canvas": false
+    },
+    "sum": {
+     "symbol": "شپنا",
+     "text": "خلاصۀِ نمادشپناآخرینِ نشستپالايش نفت اصفهان · فراورده هاي نفتي، كك و سوخت هسته ايآخرین۱۳٬۳۰۰تغییر۰.۰٪پایانیِ امروز۱۳٬۷۱۰ابتدا / بیشترین / کمترین۱۴٬۰۰۰ / ۱۴٬۰۰۰ ",
+     "canvas": false
+    },
+    "feedAge": "فید: لحظاتی پیش",
+    "clickedRow": null
+   },
+   "panel_cw": 309,
+   "panel_sw": 309,
+   "cellClips": [
+    {
+     "text": "۱۳٬۳۰۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.31,
+     "overlapPrev": 46.34,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۸٬۸۸۷٬۶۶۵",
+     "over": false,
+     "bleedRight": -55.95,
+     "bleedLeft": -35.38,
+     "overlapPrev": 101.28,
+     "sw": 51,
+     "cw": 51
+    },
+    {
+     "text": "۸۱۷",
+     "over": false,
+     "bleedRight": -116.89,
+     "bleedLeft": -6,
+     "overlapPrev": 80.7,
+     "sw": 20,
+     "cw": 20
+    },
+    {
+     "text": "۱۳٬۲۹۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.31,
+     "overlapPrev": 46.34,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۳٬۸۹۵",
+     "over": false,
+     "bleedRight": -73.73,
+     "bleedLeft": -39.97,
+     "overlapPrev": 96.69,
+     "sw": 29,
+     "cw": 29
+    },
+    {
+     "text": "۲",
+     "over": false,
+     "bleedRight": -130.06,
+     "bleedLeft": -6,
+     "overlapPrev": 62.92,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۱۳٬۱۵۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.31,
+     "overlapPrev": 46.34,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۶۰۰",
+     "over": false,
+     "bleedRight": -78.33,
+     "bleedLeft": -44.56,
+     "overlapPrev": 92.09,
+     "sw": 20,
+     "cw": 20
+    },
+    {
+     "text": "۱",
+     "over": false,
+     "bleedRight": -130.06,
+     "bleedLeft": -6,
+     "overlapPrev": 58.33,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۱۳٬۱۴۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.31,
+     "overlapPrev": 46.34,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۱۵٬۹۹۸",
+     "over": false,
+     "bleedRight": -70.44,
+     "bleedLeft": -36.67,
+     "overlapPrev": 99.98,
+     "sw": 36,
+     "cw": 36
+    },
+    {
+     "text": "۱",
+     "over": false,
+     "bleedRight": -130.06,
+     "bleedLeft": -6,
+     "overlapPrev": 66.22,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۱۳٬۰۹۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.31,
+     "overlapPrev": 46.34,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۱٬۵۲۲",
+     "over": false,
+     "bleedRight": -73.73,
+     "bleedLeft": -39.97,
+     "overlapPrev": 96.69,
+     "sw": 29,
+     "cw": 29
+    },
+    {
+     "text": "۱",
+     "over": false,
+     "bleedRight": -130.06,
+     "bleedLeft": -6,
+     "overlapPrev": 62.92,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۱۳٬۳۰۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.33,
+     "overlapPrev": 46.34,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۵۲۷٬۶۱۱٬۱۳۰",
+     "over": false,
+     "bleedRight": -50.34,
+     "bleedLeft": -27.83,
+     "overlapPrev": 108.84,
+     "sw": 65,
+     "cw": 65
+    },
+    {
+     "text": "۶۷۸۵",
+     "over": false,
+     "bleedRight": -118.84,
+     "bleedLeft": 2.53,
+     "overlapPrev": 94.86,
+     "sw": 26,
+     "cw": 26
+    },
+    {
+     "text": "۱۳٬۳۱۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.33,
+     "overlapPrev": -96.33,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۲۳۸٬۹۷۷",
+     "over": false,
+     "bleedRight": -67.16,
+     "bleedLeft": -33.39,
+     "overlapPrev": 103.28,
+     "sw": 42,
+     "cw": 42
+    },
+    {
+     "text": "۸",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 69.52,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۱۳٬۳۲۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.33,
+     "overlapPrev": -96.33,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۲۱۰٬۶۰۴",
+     "over": false,
+     "bleedRight": -63.86,
+     "bleedLeft": -36.69,
+     "overlapPrev": 99.98,
+     "sw": 42,
+     "cw": 42
+    },
+    {
+     "text": "۱۱",
+     "over": false,
+     "bleedRight": -123.48,
+     "bleedLeft": -6,
+     "overlapPrev": 72.81,
+     "sw": 13,
+     "cw": 13
+    },
+    {
+     "text": "۱۳٬۳۳۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.33,
+     "overlapPrev": -96.33,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۲۳۸٬۳۷۹",
+     "over": false,
+     "bleedRight": -67.16,
+     "bleedLeft": -33.39,
+     "overlapPrev": 103.28,
+     "sw": 42,
+     "cw": 42
+    },
+    {
+     "text": "۹",
+     "over": false,
+     "bleedRight": -130.08,
+     "bleedLeft": -6,
+     "overlapPrev": 69.52,
+     "sw": 7,
+     "cw": 7
+    },
+    {
+     "text": "۱۳٬۳۴۰",
+     "over": false,
+     "bleedRight": -6,
+     "bleedLeft": -96.33,
+     "overlapPrev": -96.33,
+     "sw": 40,
+     "cw": 40
+    },
+    {
+     "text": "۳۷۱٬۸۳۰",
+     "over": false,
+     "bleedRight": -63.86,
+     "bleedLeft": -36.69,
+     "overlapPrev": 99.98,
+     "sw": 42,
+     "cw": 42
+    },
+    {
+     "text": "۱۲",
+     "over": false,
+     "bleedRight": -123.48,
+     "bleedLeft": -6,
+     "overlapPrev": 72.81,
+     "sw": 13,
+     "cw": 13
+    }
+   ],
+   "rowClips": [
+    {
+     "sw": 151,
+     "cw": 143,
+     "w": 143,
+     "text": "۱۳٬۳۰۰۵۲۷٬۶۱۱٬۱۳۰۶۷۸۵"
+    }
+   ],
+   "ob_text": "عمقِ پنج‌سطحی شپناهمگامِ ساعتِ ۱۱:۵۹تقاضاعرضه۱۳٬۳۰۰۸٬۸۸۷٬۶۶۵۸۱۷۱۳٬۲۹۰۳٬۸۹۵۲۱۳٬۱۵۰۶۰۰۱۱۳٬۱۴۰۱۵٬۹۹۸۱۱۳٬۰۹۰۱٬۵۲۲۱۱۳٬۳۰۰۵۲۷٬۶۱۱٬۱۳۰۶۷۸۵۱۳٬۳۱۰۲۳۸٬۹۷۷۸۱۳٬۳۲۰۲۱۰٬۶۰۴۱۱۱۳٬۳۳۰۲۳۸٬۳۷۹۹۱۳٬۳۴۰۳۷۱٬۸۳۰۱۲جمعِ تقاضا۸٬۹۲۲٬۲۳۹ (۸۲۵ سفارش)",
+   "rows": {
+    "sw": 289,
+    "cw": 289,
+    "n_li": 10
+   }
+  }
+ ],
+ "href": "http://127.0.0.1:8002/#/portfolio",
+ "watch_rows_present": [],
+ "watch_rows_after_add": [
+  "watch-row-خساپ",
+  "watch-row-فولاد",
+  "watch-row-شپنا"
+ ],
+ "subtab_text": "دیده‌بان بازار",
+ "ended_at_local": "2026-10-10T14:09:11"
+}

@@ -1,0 +1,13 @@
+{
+ "item": "3b",
+ "started_at_local": "2026-10-10T14:10:04",
+ "console_errors": [],
+ "bad_responses": [],
+ "measure": {
+  "1366x768": {},
+  "1280x720": {},
+  "1920x1080": {}
+ },
+ "watch_rows": [],
+ "ended_at_local": "2026-10-10T14:10:13"
+}

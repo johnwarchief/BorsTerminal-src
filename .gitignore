@@ -14,6 +14,7 @@ __pycache__/
 .ruff_cache/
 
 # ---- محیط مجازی / خروجی بسته‌بندی ----
+Python/
 venv/
 venv_*/
 *venv/

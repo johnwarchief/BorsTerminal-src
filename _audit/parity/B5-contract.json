@@ -1,16 +1,16 @@
 {
- "commit": "6ecce634",
+ "commit": "6a785e95",
  "py_url": "http://127.0.0.1:8311",
  "go_url": "http://127.0.0.1:8310",
- "db_sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
- "db_mtime_ns": 1793529264568759500,
+ "db_sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
+ "db_mtime_ns": 1793536438398357700,
  "db_changed": false,
  "passed": 13,
  "failed": 0,
- "p50_py": 398.2057,
- "p95_py": 544.4904,
- "p50_go": 151.0533,
- "p95_go": 239.1811,
+ "p50_py": 314.1213,
+ "p95_py": 522.7172,
+ "p50_go": 175.2206,
+ "p95_go": 271.2975,
  "cases": [
   {
    "name": "watchlist-list-empty",
@@ -20,8 +20,8 @@
    "status_go": 200,
    "bytes_py": 51,
    "bytes_go": 52,
-   "ms_py": 42.3518,
-   "ms_go": 3.1688,
+   "ms_py": 39.0982,
+   "ms_go": 3.155,
    "pass": true,
    "max_delta": 0
   },
@@ -33,8 +33,8 @@
    "status_go": 200,
    "bytes_py": 398,
    "bytes_go": 399,
-   "ms_py": 544.4904,
-   "ms_go": 151.0533,
+   "ms_py": 522.7172,
+   "ms_go": 186.1269,
    "pass": true,
    "max_delta": 0
   },
@@ -46,8 +46,8 @@
    "status_go": 200,
    "bytes_py": 75275,
    "bytes_go": 75276,
-   "ms_py": 446.0154,
-   "ms_go": 175.2434,
+   "ms_py": 385.7203,
+   "ms_go": 206.3346,
    "pass": true,
    "max_delta": 0
   },
@@ -59,8 +59,8 @@
    "status_go": 200,
    "bytes_py": 3169,
    "bytes_go": 3170,
-   "ms_py": 400.3852,
-   "ms_go": 134.3369,
+   "ms_py": 392.8617,
+   "ms_go": 193.0422,
    "pass": true,
    "max_delta": 0
   },
@@ -72,8 +72,8 @@
    "status_go": 200,
    "bytes_py": 124015,
    "bytes_go": 124016,
-   "ms_py": 524.8076,
-   "ms_go": 239.1811,
+   "ms_py": 366.3508,
+   "ms_go": 271.2975,
    "pass": true,
    "max_delta": 0
   },
@@ -85,8 +85,8 @@
    "status_go": 200,
    "bytes_py": 75275,
    "bytes_go": 75276,
-   "ms_py": 398.2057,
-   "ms_go": 209.4611,
+   "ms_py": 331.1167,
+   "ms_go": 197.9234,
    "pass": true,
    "max_delta": 0
   },
@@ -98,7 +98,7 @@
    "status_go": 422,
    "bytes_py": 151,
    "bytes_go": 152,
-   "ms_py": 3.4073,
+   "ms_py": 3.4965,
    "ms_go": 0,
    "pass": true,
    "max_delta": 0
@@ -111,7 +111,7 @@
    "status_go": 422,
    "bytes_py": 148,
    "bytes_go": 149,
-   "ms_py": 2.4568,
+   "ms_py": 2.2663,
    "ms_go": 0,
    "pass": true,
    "max_delta": 0
@@ -124,8 +124,8 @@
    "status_go": 200,
    "bytes_py": 7231,
    "bytes_go": 7232,
-   "ms_py": 135.6817,
-   "ms_go": 84.8079,
+   "ms_py": 85.585,
+   "ms_go": 68.558,
    "pass": true,
    "max_delta": 0
   },
@@ -137,8 +137,8 @@
    "status_go": 200,
    "bytes_py": 138,
    "bytes_go": 139,
-   "ms_py": 126.6214,
-   "ms_go": 0.7359,
+   "ms_py": 101.5764,
+   "ms_go": 1.0806,
    "pass": true,
    "max_delta": 0
   },
@@ -150,8 +150,8 @@
    "status_go": 200,
    "bytes_py": 133,
    "bytes_go": 134,
-   "ms_py": 417.7999,
-   "ms_go": 191.6498,
+   "ms_py": 314.1213,
+   "ms_go": 175.2206,
    "pass": true,
    "max_delta": 0
   },
@@ -163,8 +163,8 @@
    "status_go": 200,
    "bytes_py": 6249,
    "bytes_go": 6250,
-   "ms_py": 412.3131,
-   "ms_go": 199.7134,
+   "ms_py": 301.027,
+   "ms_go": 165.3342,
    "pass": true,
    "max_delta": 0
   },
@@ -176,11 +176,11 @@
    "status_go": 200,
    "bytes_py": 6244,
    "bytes_go": 6245,
-   "ms_py": 394.14,
-   "ms_go": 177.6766,
+   "ms_py": 318.5273,
+   "ms_go": 178.8536,
    "pass": true,
    "max_delta": 0
   }
  ],
- "finished_at": "2026-11-01T12:11:55Z"
+ "finished_at": "2026-11-01T12:38:09Z"
 }
