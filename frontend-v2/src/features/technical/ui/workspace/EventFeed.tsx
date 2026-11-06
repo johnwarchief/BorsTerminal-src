@@ -161,7 +161,7 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
                     data-testid={`feed-tab-${panel}`}
                     aria-selected={isSelected}
                     onClick={() => selectPanel(panel)}
-                    className={`h-8 px-2 rounded-[var(--radius-sm)] text-xs whitespace-nowrap transition-colors ${
+                    className={`h-8 px-2 rounded-[var(--radius-md)] text-xs whitespace-nowrap transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                       isSelected
                         ? 'bg-panel-3 text-accent border border-accent/40 font-medium'
                         : 'text-text-3 border border-transparent hover:text-text hover:bg-panel-2'
@@ -190,7 +190,7 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
               aria-label="باز کردن در پنجره شناور"
               aria-haspopup="dialog"
               aria-expanded={isPortalOpen}
-              className="p-1 text-text-3 hover:text-accent rounded-[var(--radius-xs)] hover:bg-panel transition-colors"
+              className="p-1 text-text-3 hover:text-accent rounded-[var(--radius-md)] hover:bg-panel transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -208,7 +208,7 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
               // عنوانِ حالتِ بسته برای سازگاری با آزمون‌های موجود میزکار حفظ شده است.
               title={feedOpen ? 'جمع‌کردن فید رویدادها' : 'باز کردن سایدبار لبه آماری'}
               onClick={toggleFeed}
-              className="shrink-0 h-8 px-2 rounded-[var(--radius-sm)] border border-line bg-panel-2 text-xs text-text-2 hover:text-text hover:bg-panel-3 transition-colors"
+              className="shrink-0 h-8 px-2 rounded-[var(--radius-md)] border border-line bg-panel-2 text-xs text-text-2 hover:text-text hover:bg-panel-3 transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {feedOpen ? 'جمع‌کردن فید' : 'باز کردن فید'}
             </button>
@@ -216,8 +216,8 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
         </header>
 
         {/*
-          ارتفاع ثابت ۳۲۰px (h-80) در B1 اندازهٔ پذیرش است؛ هر پنل داخل همین
-          بدنه اسکرول می‌شود. واکنش‌گرایی این ارتفاع در B5 انجام می‌شود.
+          ارتفاع واکنش‌گرا: سقف ۳۲۰px برای ۱۰۸۰p و کفِ ~۳۰۷px در ۷۶۸p تا چارت
+          حداقل ۴۰٪ ارتفاع کادر را نگه دارد؛ پنل‌ها داخل همین بدنه اسکرول می‌شوند.
           بدنه در حالتِ بسته unmount نمی‌شود، فقط hidden می‌شود تا aria-controls معتبر بماند.
           B4-fix: هنگام باز بودن پنجرهٔ شناور، بدنه اصلاً رندر نمی‌شود تا فقط یک نمونه
           از پنل فعال (و وضعیت درونی ScannerFeed/CandleEdge) در DOM باشد؛ سربرگ و تب‌ها می‌مانند.
@@ -226,7 +226,7 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
           id="workspace-feed-body"
           data-testid="workspace-feed-body"
           hidden={!feedOpen}
-          className="relative h-80 border-t border-line overflow-hidden"
+          className="relative h-[min(20rem,40vh)] border-t border-line overflow-hidden"
         >
           {feedOpen && !isPortalOpen ? (
             <>
@@ -253,18 +253,22 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
                 role="dialog"
                 aria-modal="true"
                 aria-label="میزکار شناور پنل‌های تحلیل"
-                className="relative w-full max-w-4xl h-[85vh] bg-panel border border-line rounded-[var(--radius-md)] shadow-2xl overflow-hidden flex flex-col"
+                className="relative w-full max-w-4xl h-[85vh] bg-panel border border-line rounded-xl shadow-2xl overflow-hidden flex flex-col"
               >
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-line bg-panel-2">
-                  <span className="font-bold text-accent t-12">میزکار جامع (پنجره شناور پورتال)</span>
+                <div className="flex items-center justify-between px-4 py-2 border-b border-line bg-panel-2">
+                  <span className="text-xs font-medium text-accent">میزکار جامع (پنجره شناور پورتال)</span>
                   <button
                     type="button"
                     data-testid="portal-modal-close"
                     onClick={closePortal}
                     autoFocus
-                    className="px-2 py-0.5 rounded text-text-3 hover:text-text hover:bg-panel"
+                    className="flex items-center gap-1 h-8 px-2 rounded-[var(--radius-md)] text-xs text-text-3 hover:text-text hover:bg-panel transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
-                    ✕ بستن
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                    بستن
                   </button>
                 </div>
                 <div className="flex-1 overflow-hidden">{renderPanel(activePanel)}</div>

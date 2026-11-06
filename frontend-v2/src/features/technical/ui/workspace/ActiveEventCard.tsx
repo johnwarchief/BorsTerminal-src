@@ -25,17 +25,22 @@ export function ActiveEventCard({ pattern }: ActiveEventCardProps) {
   const gated = showPercent(estimate, PATTERN_CONFIG.formationMinResolved);
 
   return (
-    <section data-testid="pattern-card" className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3">
+    <section
+      data-testid="pattern-card"
+      aria-label="کارت رویداد فعال ریل بازرس"
+      tabIndex={0}
+      className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    >
       {pattern ? (
         <>
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="flex items-baseline gap-1">
-              <b className="text-[13px]">{KIND_FA[pattern.kind] ?? pattern.kind}</b>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+            <span className="flex flex-wrap items-baseline gap-1">
+              <span className="text-[13px] font-medium">{KIND_FA[pattern.kind] ?? pattern.kind}</span>
               <span className="text-[12px] text-[var(--text-2)]">{DIRECTION_FA[pattern.direction]}</span>
               {pattern.tier === 2 ? (
                 <span
                   data-testid="pattern-tier-2"
-                  className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-600"
+                  className="shrink-0 rounded-[var(--radius-md)] border border-amber-500/30 bg-amber-500/10 px-2 leading-5 text-xs text-amber-600"
                 >
                   کم‌بسامد
                 </span>
@@ -50,7 +55,7 @@ export function ActiveEventCard({ pattern }: ActiveEventCardProps) {
           <div className="mt-2 flex items-baseline gap-2">
             {gated != null && estimate ? (
               <>
-                <b className="text-[20px] tabular-nums">{faPct(gated)}</b>
+                <span className="text-[20px] font-medium tabular-nums">{faPct(gated)}</span>
                 <span className="text-[12px] text-[var(--text-3)]">
                   {toFaDigits(estimate.successes)} از {toFaDigits(estimate.resolved)} نمونه
                   {estimate.intervalLow != null && estimate.intervalHigh != null

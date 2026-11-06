@@ -29,11 +29,11 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({ testId, label, checked,
     aria-checked={checked}
     data-testid={testId}
     onClick={onToggle}
-    className="flex items-center justify-between gap-2 min-h-8 px-2 rounded-[var(--radius-sm)] border border-line bg-panel-2/50 text-xs text-text-2 hover:text-text hover:bg-panel-2 transition-colors"
+    className="flex items-center justify-between gap-2 min-h-8 px-2 rounded-[var(--radius-md)] border border-line bg-panel-2/50 text-xs text-text-2 hover:text-text hover:bg-panel-2 transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
   >
     <span className="truncate">{label}</span>
     <span
-      className={`shrink-0 px-1.5 py-0.5 rounded-[var(--radius-xs)] border text-xs ${
+      className={`shrink-0 px-2 leading-5 rounded-[var(--radius-md)] border text-xs ${
         checked
           ? 'bg-accent/15 text-accent border-accent/40 font-medium'
           : 'bg-panel text-text-3 border-line'
@@ -151,7 +151,7 @@ export const InspectorRail: React.FC<InspectorRailProps> = ({ className = '' }) 
           <>
             <ActiveEventCard pattern={lastForming} />
 
-            <div className="rounded-[var(--radius-sm)] border border-line bg-panel-2/50 p-3">
+            <div className="rounded-[var(--radius-md)] border border-line bg-panel-2/50 p-3">
               <div className="text-xs font-medium text-text mb-1">لایه‌ها و قواعد</div>
               <p className="text-xs leading-6 text-text-3">
                 کلیدهای روشن/خاموش لایه‌ها و دکمهٔ قواعد در تسک بعدی به همین ریل منتقل می‌شوند.

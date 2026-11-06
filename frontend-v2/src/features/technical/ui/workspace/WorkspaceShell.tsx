@@ -25,6 +25,8 @@ import { EventFeed } from './EventFeed';
 /**
  * قراردادِ چیدمان به‌صورت رشته‌های صریح نگه داشته می‌شود تا تست‌های پذیرش
  * بتوانند همان مقادیر §3 را ببینند (بدون بازنویسی در کلاس‌های دلخواه).
+ * B5: ستون‌ها از متغیرِ --ws-grid-columns می‌آیند؛ در عرض‌های ≤1440px ریل
+ * به ۲۴۰px باریک می‌شود تا سهمِ چارت از ویوپورت زیرِ ۶۰٪ نیفتد.
  */
 export const WORKSPACE_GRID_TEMPLATE_COLUMNS = '40px minmax(0,1fr) 280px';
 export const WORKSPACE_GRID_TEMPLATE_ROWS = '56px minmax(0,1fr) auto';
@@ -47,13 +49,13 @@ export const WorkspaceShell: React.FC<WorkspaceShellProps> = ({
   return (
     <div
       data-testid="workspace-shell"
-      className={`w-full h-full min-h-0 min-w-0 ${className}`}
+      className={`workspace-grid w-full h-full min-h-0 min-w-0 ${className}`}
       // شبکه عمداً LTR است تا نواحی با قرارداد §3 یکی بمانند
       // (فعالیت چپ، چارت مرکز، ریل راست). هر ناحیه خودش RTL است.
       dir="ltr"
       style={{
         display: 'grid',
-        gridTemplateColumns: WORKSPACE_GRID_TEMPLATE_COLUMNS,
+        gridTemplateColumns: `var(--ws-grid-columns, ${WORKSPACE_GRID_TEMPLATE_COLUMNS})`,
         gridTemplateRows: WORKSPACE_GRID_TEMPLATE_ROWS,
         gridTemplateAreas: WORKSPACE_GRID_TEMPLATE_AREAS,
       }}

@@ -31,15 +31,15 @@ function IndicatorRow({
     <div className="rounded-[var(--radius-xs)] border border-line/60 bg-panel-2/40">
       <div className="flex min-h-9 items-center justify-between gap-2 px-2 py-1">
         <div className="min-w-0 flex-1">
-          <div className="truncate t-10 font-medium text-text" title={name}>{name}</div>
-          <div className="truncate t-85 text-text-3" title={description}>{description}</div>
+          <div className="truncate text-xs font-medium text-text" title={name}>{name}</div>
+          <div className="truncate text-xs text-text-3" title={description}>{description}</div>
         </div>
         <button
           type="button"
           data-testid={testId}
           aria-pressed={enabled}
           onClick={onToggle}
-          className={`shrink-0 h-5 px-2 rounded-[var(--radius-xs)] t-85 border transition-colors ${
+          className={`shrink-0 h-5 px-2 rounded-[var(--radius-xs)] text-xs border transition-colors ${
             enabled
               ? 'bg-accent/15 text-accent border-accent/40 font-semibold'
               : 'bg-panel text-text-3 border-line hover:text-text'
@@ -71,13 +71,13 @@ export const IndicatorsPanel: React.FC = () => {
       <div className="flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-1.5">
           <div className="rounded-[var(--radius-xs)] border border-line bg-panel-2/50 px-2 py-1.5">
-            <div className="t-8 text-text-3 mb-1">پروفایل تشخیص</div>
+            <div className="text-xs text-text-3 mb-1">پروفایل تشخیص</div>
             <div className="flex gap-1">
               <button
                 type="button"
                 onClick={() => setDoubleTapProfile('precision')}
                 aria-pressed={doubleTapProfile === 'precision'}
-                className={`flex-1 h-6 rounded-[var(--radius-xs)] t-85 transition-colors ${
+                className={`flex-1 h-6 rounded-[var(--radius-xs)] text-xs transition-colors ${
                   doubleTapProfile === 'precision'
                     ? 'bg-accent/15 text-accent border border-accent/40'
                     : 'bg-panel text-text-3 border border-line hover:text-text'
@@ -89,7 +89,7 @@ export const IndicatorsPanel: React.FC = () => {
                 type="button"
                 onClick={() => setDoubleTapProfile('source')}
                 aria-pressed={doubleTapProfile === 'source'}
-                className={`flex-1 h-6 rounded-[var(--radius-xs)] t-85 transition-colors ${
+                className={`flex-1 h-6 rounded-[var(--radius-xs)] text-xs transition-colors ${
                   doubleTapProfile === 'source'
                     ? 'bg-accent/15 text-accent border border-accent/40'
                     : 'bg-panel text-text-3 border border-line hover:text-text'
@@ -100,18 +100,18 @@ export const IndicatorsPanel: React.FC = () => {
             </div>
           </div>
           <div className="rounded-[var(--radius-xs)] border border-line bg-panel-2/50 px-2 py-1.5">
-            <div className="t-8 text-text-3 mb-1">افق احتمال (کندل)</div>
+            <div className="text-xs text-text-3 mb-1">افق احتمال (کندل)</div>
             <input
               type="number"
               min={5}
               max={30}
               value={formationHorizon}
               onChange={(e) => setIndicatorParam('DoubleTap3D', 'formationHorizon', Number(e.target.value))}
-              className="w-full h-6 bg-panel border border-line rounded-[var(--radius-xs)] px-1 t-85 font-mono text-text text-center focus:outline-none"
+              className="w-full h-6 bg-panel border border-line rounded-[var(--radius-xs)] px-1 text-xs font-mono text-text text-center focus:outline-none"
             />
           </div>
         </div>
-        <span className="t-10 font-bold text-accent">اندیکاتورهای هوشمند پرایس‌اکشن و الگو</span>
+        <span className="text-xs font-bold text-accent">اندیکاتورهای هوشمند پرایس‌اکشن و الگو</span>
 
         {ADVANCED_INDICATORS_REGISTRY.map((ind) => {
           const isEnabled = activeUserIndicators.includes(ind.id);
@@ -126,7 +126,7 @@ export const IndicatorsPanel: React.FC = () => {
             >
               {ind.id === 'MultiModeChannel' && isEnabled && (
                 <div className="flex flex-col gap-1">
-                  <span className="t-8 text-text-3">حالت کانال</span>
+                  <span className="text-xs text-text-3">حالت کانال</span>
                   <div className="grid grid-cols-3 gap-1">
                     {(
                       [
@@ -140,7 +140,7 @@ export const IndicatorsPanel: React.FC = () => {
                         type="button"
                         data-testid={`channel-mode-btn-${m}`}
                         onClick={() => setChannelMode(m)}
-                        className={`h-6 px-1 rounded-[var(--radius-xs)] t-85 transition-colors ${
+                        className={`h-6 px-1 rounded-[var(--radius-xs)] text-xs transition-colors ${
                           channelMode === m
                             ? 'bg-accent/15 text-accent border border-accent/40'
                             : 'bg-panel text-text-3 border border-line hover:text-text'
@@ -154,12 +154,12 @@ export const IndicatorsPanel: React.FC = () => {
               )}
               {ind.id === 'MultiVariantRSI' && isEnabled && (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="t-8 text-text-3">فرمول RSI</span>
+                  <span className="text-xs text-text-3">فرمول RSI</span>
                   <select
                     data-testid="rsi-variant-select"
                     value={rsiVariant}
                     onChange={(e) => setRsiVariant(e.target.value as RsiVariant)}
-                    className="bg-panel text-text border border-line rounded px-1.5 py-0.5 t-85 focus:outline-none cursor-pointer"
+                    className="bg-panel text-text border border-line rounded px-1.5 py-0.5 text-xs focus:outline-none cursor-pointer"
                   >
                     <option value="standard">استاندارد ۱۴</option>
                     <option value="fibo">فیبوناچی ۸</option>
@@ -175,7 +175,7 @@ export const IndicatorsPanel: React.FC = () => {
 
       {/* بخش ۲: اندیکاتورهای تکمیلی و سفارشی */}
       <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-line/60">
-        <span className="t-10 font-bold text-accent">اندیکاتورهای تکمیلی و سفارشی</span>
+        <span className="text-xs font-bold text-accent">اندیکاتورهای تکمیلی و سفارشی</span>
 
         {USER_INDICATORS_REGISTRY.map((ind) => (
           <IndicatorRow

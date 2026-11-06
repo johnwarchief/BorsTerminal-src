@@ -84,7 +84,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({ className = '' }) => {
             // برای بخش فعال از aria-current استفاده می‌شود، نه aria-pressed.
             aria-current={isActive ? 'true' : undefined}
             onClick={() => handleSelect(item.id)}
-            className={`flex items-center justify-center w-8 h-8 rounded-[var(--radius-sm)] border transition-colors ${
+            className={`flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] border transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
               isActive
                 ? 'bg-panel-3 text-accent border-accent/40'
                 : 'bg-transparent text-text-3 border-transparent hover:text-text hover:bg-panel-2'

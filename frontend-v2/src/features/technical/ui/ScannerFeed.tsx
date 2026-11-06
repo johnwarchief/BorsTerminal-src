@@ -67,12 +67,12 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
                   data-testid={`pattern-row-${pattern.id}`}
                   onClick={() => setFocusPatternId(pattern.id)}
                   title="نمایش روی چارت"
-                  className="flex w-full items-baseline justify-between gap-2 border-b border-[var(--line)] bg-transparent py-2 text-start text-[12px]"
+                  className="flex w-full items-baseline justify-between gap-2 border-b border-[var(--line)] bg-transparent py-2 text-start text-[12px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span className="flex items-baseline gap-1">
                     {KIND_FA[pattern.kind] ?? pattern.kind}
                     {pattern.tier === 2 ? (
-                      <span className="rounded-full border border-amber-500/30 px-1 text-[11px] text-amber-600">
+                      <span className="shrink-0 rounded-[var(--radius-md)] border border-amber-500/30 px-2 leading-5 text-xs text-amber-600">
                         کم‌بسامد
                       </span>
                     ) : null}
@@ -92,7 +92,7 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
 
       <section className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between">
-          <b className="text-[13px] text-[var(--text)]">رویدادهای پولبک و ساختار</b>
+          <span className="text-[13px] font-medium text-[var(--text)]">رویدادهای پولبک و ساختار</span>
           <span className="text-[12px] text-[var(--text-3)]">
             {toFaDigits(pullbacks.length + chochs.length)} مورد
           </span>
@@ -119,7 +119,7 @@ export function ScannerFeed({ patterns, pullbacks, chochs }: ScannerFeedProps) {
       </section>
 
       <section data-testid="pattern-rules" className="rounded-xl border border-[var(--line)] p-3 text-[12px] text-[var(--text-3)]">
-        <b className="mb-2 block text-[13px] text-[var(--text)]">قواعد</b>
+        <span className="mb-2 block text-[13px] font-medium text-[var(--text)]">قواعد</span>
         <p className="leading-6">
           پرچم: لگ ≥ {faNum(PATTERN_CONFIG.flag.impulseLegAtrMin)}×ATR · حداقل لگ {faNum(PATTERN_CONFIG.flag.minLegBars, 0)} کندل · عرض کانال ≤ {faNum(PATTERN_CONFIG.flag.channelMaxWidthPct, 0)}٪ لگ
         </p>

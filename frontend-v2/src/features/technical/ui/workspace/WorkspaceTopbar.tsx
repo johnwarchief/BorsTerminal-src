@@ -71,7 +71,7 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
       {/* هویت میزکار */}
       <div className="flex items-center gap-2 shrink-0">
         <span aria-hidden className="w-2 h-2 rounded-full bg-accent" />
-        <h1 className="text-sm font-semibold text-accent whitespace-nowrap">میزکار تکنیکال</h1>
+        <h1 className="text-sm font-medium text-accent whitespace-nowrap">میزکار تکنیکال</h1>
       </div>
 
       <span aria-hidden className="h-6 w-px bg-line shrink-0" />
@@ -79,7 +79,8 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
       {/* نماد */}
       <form
         onSubmit={submitSymbol}
-        className="flex items-center gap-2 h-9 px-2 bg-panel-2 rounded-[var(--radius-sm)] border border-line focus-within:border-accent shrink-0"
+        data-testid="workspace-symbol-form"
+        className="flex items-center gap-2 h-9 px-2 bg-panel-2 rounded-[var(--radius-md)] border border-line focus-within:border-accent shrink-0"
       >
         <label htmlFor="workspace-symbol-input" className="text-xs text-text-3">
           نماد
@@ -96,7 +97,7 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
         <button
           type="submit"
           title="بارگذاری نماد"
-          className="px-1.5 h-6 rounded-[var(--radius-xs)] text-xs text-text-3 hover:text-accent hover:bg-panel transition-colors"
+          className="h-7 px-2 rounded-[var(--radius-md)] text-xs text-text-3 hover:text-accent hover:bg-panel transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           اعمال
         </button>
@@ -107,7 +108,7 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
         role="group"
         aria-label="تایم‌فریم"
         data-testid="workspace-timeframe"
-        className="flex items-center h-10 p-1 bg-panel-2 rounded-[var(--radius-sm)] border border-line shrink-0"
+        className="flex items-center h-9 p-1 bg-panel-2 rounded-[var(--radius-md)] border border-line shrink-0"
       >
         {TIMEFRAME_OPTIONS.map((tf) => {
           const isSelected = timeframe === tf.id;
@@ -119,7 +120,7 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
               aria-pressed={isSelected}
               title={tf.tooltipFa}
               onClick={() => setTimeframe(tf.id)}
-              className={`h-8 px-2 rounded-[var(--radius-xs)] text-xs transition-colors ${
+              className={`h-7 px-2 rounded-[var(--radius-md)] text-xs transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                 isSelected
                   ? 'bg-panel-3 text-accent font-medium'
                   : 'text-text-3 hover:text-text'
@@ -132,7 +133,10 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
       </div>
 
       {/* تعدیل */}
-      <div className="flex items-center gap-2 h-9 px-2 bg-panel-2 rounded-[var(--radius-sm)] border border-line shrink-0">
+      <div
+        data-testid="workspace-adjustment"
+        className="flex items-center gap-2 h-9 px-2 bg-panel-2 rounded-[var(--radius-md)] border border-line shrink-0"
+      >
         <label htmlFor="workspace-adjustment-select" className="text-xs text-text-3">
           تعدیل
         </label>
@@ -141,7 +145,7 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
           data-testid="workspace-adjustment-select"
           value={adjustmentMode}
           onChange={(e) => setAdjustmentMode(Number(e.target.value))}
-          className="bg-transparent text-xs text-text focus:outline-none cursor-pointer"
+          className="h-7 bg-transparent text-xs text-text cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {ADJUSTMENT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value} className="bg-panel-2 text-text">
@@ -156,13 +160,13 @@ export const WorkspaceTopbar: React.FC<WorkspaceTopbarProps> = ({ className = ''
         role="group"
         aria-label="نوع چارت"
         data-testid="chart-type-selector"
-        className="flex items-center h-10 p-1 bg-panel-2 rounded-[var(--radius-sm)] border border-line shrink-0"
+        className="flex items-center h-9 p-1 bg-panel-2 rounded-[var(--radius-md)] border border-line shrink-0"
       >
         {CHART_TYPES.map((type) => (
           <span
             key={type.id}
             title="نوع چارت فعلی میزکار؛ گزینه‌های بیشتر در تسک‌های بعدی"
-            className="h-8 px-2 flex items-center rounded-[var(--radius-xs)] text-xs bg-panel-3 text-accent font-medium"
+            className="h-7 px-2 flex items-center rounded-[var(--radius-md)] text-xs bg-panel-3 text-accent font-medium"
           >
             {type.labelFa}
           </span>

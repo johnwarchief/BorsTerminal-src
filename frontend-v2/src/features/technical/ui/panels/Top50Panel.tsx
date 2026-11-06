@@ -263,7 +263,7 @@ export const Top50Panel: React.FC<Top50PanelProps> = ({
               type="button"
               data-testid={`category-filter-${cat.id}`}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-2 py-0.5 rounded-[var(--radius-xs)] t-85 font-medium transition-colors shrink-0 ${
+              className={`px-2 py-0.5 rounded-[var(--radius-xs)] text-xs font-medium transition-colors shrink-0 ${
                 isCatActive
                   ? 'bg-accent/15 text-accent border border-accent/40 font-bold'
                   : 'bg-panel-2 text-text-3 border border-line hover:text-text hover:bg-panel-3'
@@ -286,13 +286,13 @@ export const Top50Panel: React.FC<Top50PanelProps> = ({
           value={symbolSearchQuery}
           onChange={(e) => setSymbolSearchQuery(e.target.value)}
           placeholder="جستجوی نماد، نام یا صنعت..."
-          className="w-full bg-transparent t-95 text-text focus:outline-none"
+          className="w-full bg-transparent text-xs text-text focus:outline-none"
         />
         {symbolSearchQuery && (
           <button
             type="button"
             onClick={() => setSymbolSearchQuery('')}
-            className="text-text-3 hover:text-text t-9 px-1"
+            className="text-text-3 hover:text-text text-xs px-1"
           >
             ✕
           </button>
@@ -301,7 +301,7 @@ export const Top50Panel: React.FC<Top50PanelProps> = ({
 
       {/* جدول ۵۰ نماد برتر با ستون سیگنال */}
       <div className="border border-line rounded-[var(--radius-sm)] overflow-hidden">
-        <table className="w-full text-right border-collapse t-9">
+        <table className="w-full text-right border-collapse text-xs">
           <thead className="bg-panel-2 text-text-3 border-b border-line sticky top-0 z-5 font-semibold">
             <tr>
               <th className="py-1.5 px-2 w-8 text-center">#</th>
@@ -342,12 +342,12 @@ export const Top50Panel: React.FC<Top50PanelProps> = ({
                   <td className="py-1.5 px-2 text-center text-text-3 font-mono">{toFaDigits(idx + 1)}</td>
                   <td className="py-1.5 px-2">
                     <div className="font-bold">{row.symbol}</div>
-                    <div className="t-8 text-text-3 truncate max-w-[110px]">{row.name || row.sector_name}</div>
+                    <div className="text-xs text-text-3 truncate max-w-[110px]">{row.name || row.sector_name}</div>
                   </td>
                   <td className="py-1.5 px-1.5 text-center" data-testid={`top50-signal-${row.symbol}`}>
                     <span
                       title={sig.title}
-                      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium font-sans truncate max-w-[90px] ${sig.badgeClass}`}
+                      className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium font-sans truncate max-w-[90px] ${sig.badgeClass}`}
                     >
                       {sig.text}
                     </span>
@@ -357,7 +357,7 @@ export const Top50Panel: React.FC<Top50PanelProps> = ({
                   </td>
                   <td className="py-1.5 px-2 text-center">
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                      className={`px-1.5 py-0.5 rounded text-xs font-mono font-bold ${
                         isPos
                           ? 'bg-emerald-500/15 text-emerald-400'
                           : isNeg

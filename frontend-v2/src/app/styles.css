@@ -351,6 +351,16 @@ html[data-theme='cool'] {
   }
 }
 
+/* ===== technical workspace shell (B5) =====
+   قفسهٔ ۲۸۰px در عرض‌های ≥1441px؛ زیرِ آن ریل به ۲۴۰px باریک می‌شود تا
+   سهمِ چارت از ویوپورتِ ۱۳۶۶px زیرِ ۶۰٪ نیفتد (حساب: 1366 − 208 سایدبار
+   − 40 فعالیت − 40 نوار رسم − 240 ریل = 838 → 61.3٪). */
+@media (max-width: 1440px) {
+  .workspace-grid {
+    --ws-grid-columns: 40px minmax(0, 1fr) 240px;
+  }
+}
+
 /* ===== base ===== */
 *,
 *::before,
