@@ -25,7 +25,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const DefaultURL = "https://cdn.tsetmc.com/api/ClosingPrice/GetMarketWatch" +
+const DefaultURL = "https://cdn.tsetmc.ir/api/ClosingPrice/GetMarketWatch" +
 	"?market=0&paperTypes[0]=1&paperTypes[1]=2&paperTypes[2]=3" +
 	"&paperTypes[3]=4&paperTypes[4]=5&paperTypes[5]=6&paperTypes[6]=7" +
 	"&paperTypes[7]=8&paperTypes[8]=9&showTraded=false" +

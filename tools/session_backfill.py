@@ -64,7 +64,7 @@ def main():
             (name,)).fetchall() if name else [head]
         for ins, vsym in variants:
             ins = str(ins)
-            url = f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceDaily/{ins}/{d_even}"
+            url = f"https://cdn.tsetmc.ir/api/ClosingPrice/GetClosingPriceDaily/{ins}/{d_even}"
             last_err = ""
             d = None
             for attempt in range(1, a.retries + 1):

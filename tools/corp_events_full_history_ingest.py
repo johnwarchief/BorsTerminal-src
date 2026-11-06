@@ -21,8 +21,8 @@ import time
 import urllib.request
 
 UA = "BorsTerminal-R16-research/1.0"
-PA_FLOW_URL = "https://cdn.tsetmc.com/api/ClosingPrice/GetPriceAdjustByFlow/%d/20000"
-SH_FLOW_URL = ("https://cdn.tsetmc.com/api/Instrument/"
+PA_FLOW_URL = "https://cdn.tsetmc.ir/api/ClosingPrice/GetPriceAdjustByFlow/%d/20000"
+SH_FLOW_URL = ("https://cdn.tsetmc.ir/api/Instrument/"
                "GetInstrumentShareChangeByFlow/%d/20000")
 CACHE = "D:/BorsTerminal-tmp/ra365_round16"
 PA_CACHE = ["price_adjust_20000.json", "price_adjust_flow2.json"]

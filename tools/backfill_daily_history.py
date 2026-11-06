@@ -32,7 +32,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import candle_contract  # noqa: E402
 
-BASE = "https://cdn.tsetmc.com/api"
+BASE = "https://cdn.tsetmc.ir/api"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120 Safari/537.36",
     "Accept": "application/json, text/plain, */*",

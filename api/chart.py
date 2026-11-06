@@ -36,6 +36,23 @@ import threading
 import time
 
 
+
+def _pin_tsetmc_cdn():
+    """Pin the good .ir CDN edge; the other A-record returns 404 for CSV."""
+    ip = os.environ.get("BORS_TSETMC_PIN_IP", "86.104.39.107").strip()
+    if not ip:
+        return
+    import socket as _socket
+    _orig = _socket.getaddrinfo
+    def _pinned(host, port, *a, **k):
+        if host == "cdn.tsetmc.ir":
+            host = ip
+        return _orig(host, port, *a, **k)
+    _socket.getaddrinfo = _pinned
+
+
+_pin_tsetmc_cdn()
+
 router = APIRouter()
 
 
@@ -2855,7 +2872,7 @@ def get_chart_tsetmc(symbol: str):
             sess = _rq.Session()
             sess.mount("https://", _rq.adapters.HTTPAdapter(max_retries=0))
             r = sess.get(
-                f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceDailyListCSV/{ins_code}/19900101",
+                f"https://cdn.tsetmc.ir/api/ClosingPrice/GetClosingPriceDailyListCSV/{ins_code}/19900101",
                 headers=hdr, timeout=(1.5, 3.0),
             )
         except Exception:

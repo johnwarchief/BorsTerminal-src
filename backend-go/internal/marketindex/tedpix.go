@@ -20,7 +20,7 @@ import (
 const (
 	TedpixInsCode     = "32097828799138957"
 	TedpixSymbol      = "شاخص کل"
-	IndexCDNTmpl      = "https://cdn.tsetmc.com/api/Index/GetIndexB2History/%s"
+	IndexCDNTmpl      = "https://cdn.tsetmc.ir/api/Index/GetIndexB2History/%s"
 	IndexSource       = "tsetmc:cdn/Index/GetIndexB2History"
 	IndexCacheTTL     = 600 * time.Second
 	IndexHTTPTimeout  = 25 * time.Second

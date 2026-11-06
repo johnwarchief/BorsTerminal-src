@@ -4,7 +4,7 @@ Split out of app.py in the same style as the other api/* modules. Provides the
 "whole-market" chart for the technical tab when no symbol is selected.
 
 Source of truth (verified live 2026-09-14):
-  https://cdn.tsetmc.com/api/Index/GetIndexB2History/{ins_code}
+  https://cdn.tsetmc.ir/api/Index/GetIndexB2History/{ins_code}
   -> {"indexB2":[{"insCode":.., "dEven":YYYYMMDD,
                   "xNivInuClMresIbs": <شاخص کل پایانی>,
                   "xNivInuPbMresIbs": <کمترین>,
@@ -19,21 +19,39 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 from bors_flags import ORJSONResponse
 import datetime
+import os
 import hashlib
 import candle_contract
 import price_basis
 import time
 
 
+
+def _pin_tsetmc_cdn():
+    """Pin the good .ir CDN edge; the other A-record returns 404 for CSV."""
+    ip = os.environ.get("BORS_TSETMC_PIN_IP", "86.104.39.107").strip()
+    if not ip:
+        return
+    import socket as _socket
+    _orig = _socket.getaddrinfo
+    def _pinned(host, port, *a, **k):
+        if host == "cdn.tsetmc.ir":
+            host = ip
+        return _orig(host, port, *a, **k)
+    _socket.getaddrinfo = _pinned
+
+
+_pin_tsetmc_cdn()
+
 router = APIRouter()
 
 # ins_code شاخص کل بورس تهران (TEDPIX) در TSETMC.
 # تایید شده از صفحه رسمی شاخص و از خود API:
 #   https://tsetmc.com/instInfo/32097828799138957
-#   https://cdn.tsetmc.com/api/Index/GetIndexB2History/32097828799138957
+#   https://cdn.tsetmc.ir/api/Index/GetIndexB2History/32097828799138957
 TEDPIX_INS_CODE = "32097828799138957"
 TEDPIX_SYMBOL = "شاخص کل"
-INDEX_CDN_TMPL = "https://cdn.tsetmc.com/api/Index/GetIndexB2History/{code}"
+INDEX_CDN_TMPL = "https://cdn.tsetmc.ir/api/Index/GetIndexB2History/{code}"
 INDEX_SOURCE = "tsetmc:cdn/Index/GetIndexB2History"
 
 # cache کوتاه‌مدت درون‌پروسه‌ای (سبک CHART_CACHE در api/chart.py) تا فشار به CDN کم شود.

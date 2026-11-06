@@ -18,7 +18,23 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-BASE = "https://cdn.tsetmc.com/api"
+def _pin_tsetmc_cdn():
+    """Pin the good .ir CDN edge; the other A-record returns 404 for CSV."""
+    ip = os.environ.get("BORS_TSETMC_PIN_IP", "86.104.39.107").strip()
+    if not ip:
+        return
+    import socket as _socket
+    _orig = _socket.getaddrinfo
+    def _pinned(host, port, *a, **k):
+        if host == "cdn.tsetmc.ir":
+            host = ip
+        return _orig(host, port, *a, **k)
+    _socket.getaddrinfo = _pinned
+
+
+_pin_tsetmc_cdn()
+
+BASE = "https://cdn.tsetmc.ir/api"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0",
     "Accept": "application/json, text/plain, */*",

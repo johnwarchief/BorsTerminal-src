@@ -177,7 +177,7 @@ def main():
         for ins in symbol_ins.values():
             con.execute("DELETE FROM fund_profit_events WHERE ins_code=?", (ins,))
         ins_code = symbol_ins[primary]
-        csv_url = ("https://cdn.tsetmc.com/api/ClosingPrice/"
+        csv_url = ("https://cdn.tsetmc.ir/api/ClosingPrice/"
                    f"GetClosingPriceDailyListCSV/{ins_code}/19900101")
         cache_path = (os.path.join(a.cache_dir, f"{ins_code}.csv")
                       if a.cache_dir else "")
