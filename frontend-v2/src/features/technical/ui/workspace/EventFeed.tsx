@@ -219,6 +219,8 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
           ارتفاع ثابت ۳۲۰px (h-80) در B1 اندازهٔ پذیرش است؛ هر پنل داخل همین
           بدنه اسکرول می‌شود. واکنش‌گرایی این ارتفاع در B5 انجام می‌شود.
           بدنه در حالتِ بسته unmount نمی‌شود، فقط hidden می‌شود تا aria-controls معتبر بماند.
+          B4-fix: هنگام باز بودن پنجرهٔ شناور، بدنه اصلاً رندر نمی‌شود تا فقط یک نمونه
+          از پنل فعال (و وضعیت درونی ScannerFeed/CandleEdge) در DOM باشد؛ سربرگ و تب‌ها می‌مانند.
         */}
         <div
           id="workspace-feed-body"
@@ -226,7 +228,7 @@ export const EventFeed: React.FC<EventFeedProps> = ({ activeSymbol, className = 
           hidden={!feedOpen}
           className="relative h-80 border-t border-line overflow-hidden"
         >
-          {feedOpen ? (
+          {feedOpen && !isPortalOpen ? (
             <>
               {activePanel !== 'edge' ? renderPanel(activePanel) : null}
 

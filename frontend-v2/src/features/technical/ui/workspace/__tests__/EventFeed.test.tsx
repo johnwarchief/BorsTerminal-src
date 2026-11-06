@@ -101,14 +101,24 @@ describe('EventFeed portal pop-out (B4)', () => {
     ['top50', 'top50-panel'],
     ['indicators', 'indicators-panel'],
     ['edge', 'edge-tab-panel'],
-  ])('renders the selected %s panel inside the floating portal', (panel, panelTestId) => {
+  ])('renders exactly one %s panel, inside the floating portal', (panel, panelTestId) => {
     renderFeed();
 
     fireEvent.click(screen.getByTestId(`feed-tab-${panel}`));
+    // پیش از پاپ‌اوت، پنل تنها در بدنهٔ فید است.
+    expect(screen.getAllByTestId(panelTestId)).toHaveLength(1);
+    expect(screen.getByTestId('workspace-feed-body').contains(screen.getByTestId(panelTestId))).toBe(true);
+
     fireEvent.click(screen.getByTestId('portal-modal-btn'));
 
     const portal = screen.getByTestId('portal-modal-backdrop');
     expect(within(portal).getByTestId(panelTestId)).toBeTruthy();
+    // B4-fix: بدنه هنگام باز بودن پورتال رندر نمی‌شود؛ پس هیچ زیردرخت/تست‌آی‌دی تکراری‌ای نیست.
+    expect(screen.getAllByTestId(panelTestId)).toHaveLength(1);
+    expect(screen.getByTestId('workspace-feed-body').contains(screen.getByTestId(panelTestId))).toBe(false);
+    // سربرگ و نوار تب‌ها همچنان دیده می‌شوند.
+    expect(screen.getByTestId('workspace-feed-tabs')).toBeTruthy();
+    expect(screen.getByTestId('portal-modal-btn')).toBeTruthy();
   });
 
   it('closes the portal with its close button', () => {
@@ -130,6 +140,36 @@ describe('EventFeed portal pop-out (B4)', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+  });
+
+  it('focuses the close button when the portal opens', () => {
+    renderFeed();
+
+    fireEvent.click(screen.getByTestId('portal-modal-btn'));
+
+    expect(document.activeElement).toBe(screen.getByTestId('portal-modal-close'));
+  });
+
+  it('returns focus to the portal trigger after closing with the close button', () => {
+    renderFeed();
+    const trigger = screen.getByTestId('portal-modal-btn');
+
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByTestId('portal-modal-close'));
+
+    expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('returns focus to the portal trigger after closing with Escape', () => {
+    renderFeed();
+    const trigger = screen.getByTestId('portal-modal-btn');
+
+    fireEvent.click(trigger);
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 });
 

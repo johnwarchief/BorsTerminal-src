@@ -214,14 +214,19 @@ describe('WorkspaceShell', () => {
     renderShell();
 
     fireEvent.click(screen.getByTestId('feed-tab-top50'));
+    expect(screen.getAllByTestId('top50-panel')).toHaveLength(1);
     fireEvent.click(screen.getByTestId('portal-modal-btn'));
 
     const portal = screen.getByTestId('portal-modal-backdrop');
     expect(within(portal).getByTestId('top50-panel')).toBeTruthy();
+    // B4-fix: پنل فعال در هر لحظه فقط یک نمونه دارد (یا در بدنه یا در پورتال).
+    expect(screen.getAllByTestId('top50-panel')).toHaveLength(1);
 
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(screen.queryByTestId('portal-modal-backdrop')).toBeNull();
+    // پس از بستن، همان تک‌پنل به بدنهٔ فید برمی‌گردد.
+    expect(screen.getAllByTestId('top50-panel')).toHaveLength(1);
   });
 
   it('collapsing the feed hides the panel but keeps the activity bar and header toggle (B4)', () => {
