@@ -480,3 +480,49 @@ func TestMarkerNilDB(t *testing.T) {
 		t.Fatal("mstatMarker(nil) reported a marker")
 	}
 }
+
+// TestNoLoopsSuppressesBackgroundRebuild تضمین می‌کند با پرچم noLoops هیچ Goroutine پس‌زمینه‌ای
+// برای بازسازی کش در حالت StaleOK شروع نمی‌شود.
+func TestNoLoopsSuppressesBackgroundRebuild(t *testing.T) {
+	raw, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = raw.Close() })
+	if _, err := raw.Exec("CREATE TABLE mstat_snap (d_even INTEGER, h_even INTEGER)"); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	s := NewWithOptions(raw, dir, nil, true) // noLoops = true
+	clk := &fakeClock{t: time.Date(2026, 10, 28, 10, 30, 0, 0, time.Local)}
+	s.clock = clk.Now
+
+	var n int32
+	fn := func() (map[string]any, error) {
+		atomic.AddInt32(&n, 1)
+		return map[string]any{"status": "ok", "n": atomic.LoadInt32(&n)}, nil
+	}
+
+	// فراخوانی اول (cold miss): باید مستقیماً compute شود
+	c1 := s.Call("test_no_loops", fn, Options{StaleOK: true})
+	if c1["status"] != "ok" || atomic.LoadInt32(&n) != 1 {
+		t.Fatalf("first call failed: status=%v n=%d", c1["status"], n)
+	}
+
+	// پیشروی زمان فراتر از TTL پیش‌فرض (45 ثانیه)
+	clk.Advance(DefaultTTL + time.Second)
+
+	// فراخوانی دوم با StaleOK=true: با noLoops=true کش کهنه باید برگردد و هیچ goroutine جدیدی اجرا نشود
+	c2 := s.Call("test_no_loops", fn, Options{StaleOK: true})
+	if c2["status"] != "ok" {
+		t.Fatalf("stale call failed: status=%v", c2["status"])
+	}
+
+	// صبر کوتاه برای اطمینان از عدم شروع goroutine پس‌زمینه
+	time.Sleep(50 * time.Millisecond)
+
+	if got := atomic.LoadInt32(&n); got != 1 {
+		t.Fatalf("noLoops failed: background rebuilder spawned! n = %d, want 1", got)
+	}
+}

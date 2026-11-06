@@ -45,12 +45,18 @@ type Service struct {
 	// memo همان _ASSESS/_STATE_MEMOِ درون‌فرآیندی است؛ با هر Service تازه
 	// صفر می‌شود و فقط رویِ cache-miss به‌روز می‌شود.
 	memo *verdictMemo
+
+	noLoops bool
 }
 
 func New(db *sql.DB, dataDir string, flags FlagSource) *Service {
+	return NewWithOptions(db, dataDir, flags, false)
+}
+
+func NewWithOptions(db *sql.DB, dataDir string, flags FlagSource, noLoops bool) *Service {
 	return &Service{db: db, dataDir: dataDir, flags: flags,
 		cache: map[string]entry{}, flights: map[string]chan struct{}{},
-		clock: time.Now, memo: newVerdictMemo()}
+		clock: time.Now, memo: newVerdictMemo(), noLoops: noLoops}
 }
 
 func (s *Service) Call(key string, fn func() (map[string]any, error), opt Options) map[string]any {
@@ -79,14 +85,18 @@ func (s *Service) Call(key string, fn func() (map[string]any, error), opt Option
 		return out
 	}
 	if ok && opt.StaleOK && now.Sub(hit.at) <= StaleMax {
-		if _, busy := s.flights[full]; !busy {
-			done := make(chan struct{})
-			s.flights[full] = done
-			s.mu.Unlock()
-			go func() {
-				defer s.finish(full, done)
-				s.store(full, s.compute(fn), s.clock())
-			}()
+		if !s.noLoops {
+			if _, busy := s.flights[full]; !busy {
+				done := make(chan struct{})
+				s.flights[full] = done
+				s.mu.Unlock()
+				go func() {
+					defer s.finish(full, done)
+					s.store(full, s.compute(fn), s.clock())
+				}()
+			} else {
+				s.mu.Unlock()
+			}
 		} else {
 			s.mu.Unlock()
 		}
