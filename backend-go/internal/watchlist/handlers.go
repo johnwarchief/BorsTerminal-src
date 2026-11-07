@@ -11,11 +11,16 @@ import (
 )
 
 type Handler struct {
-	store *Store
+	store    *Store
+	readOnly bool
 }
 
-func NewHandler(store *Store) *Handler {
-	return &Handler{store: store}
+func NewHandler(store *Store, readOnly ...bool) *Handler {
+	ro := false
+	if len(readOnly) > 0 {
+		ro = readOnly[0]
+	}
+	return &Handler{store: store, readOnly: ro}
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +47,13 @@ type postPayload struct {
 }
 
 func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
+	if h.readOnly {
+		httpapi.WriteJSON(w, http.StatusForbidden, map[string]any{
+			"status":  "error",
+			"message": "read-only mode",
+		})
+		return
+	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
 		httpapi.WriteJSON(w, http.StatusOK, map[string]any{
@@ -110,6 +122,13 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	if h.readOnly {
+		httpapi.WriteJSON(w, http.StatusForbidden, map[string]any{
+			"status":  "error",
+			"message": "read-only mode",
+		})
+		return
+	}
 	sym := r.PathValue("symbol")
 	if unescaped, err := url.PathUnescape(sym); err == nil && unescaped != "" {
 		sym = unescaped

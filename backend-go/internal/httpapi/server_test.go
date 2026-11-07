@@ -47,7 +47,7 @@ func TestNonAPIPathIsFastAPINotFound(t *testing.T) {
 }
 
 func TestKnownButUnportedIs501(t *testing.T) {
-	rec := serve(t, "GET", "/api/fts/config")
+	rec := serve(t, "GET", "/api/fundamental/screen")
 	if rec.Code != http.StatusNotImplemented {
 		t.Fatalf("status = %d", rec.Code)
 	}
@@ -55,7 +55,7 @@ func TestKnownButUnportedIs501(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	if body["status"] != "error" || body["code"] != "NOT_PORTED" || body["route"] != "GET /api/fts/config" {
+	if body["status"] != "error" || body["code"] != "NOT_PORTED" || body["route"] != "GET /api/fundamental/screen" {
 		t.Fatalf("body = %s", rec.Body.String())
 	}
 }

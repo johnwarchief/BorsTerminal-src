@@ -17,6 +17,7 @@ import (
 	"borsterminal/backend/internal/config"
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/export"
+	"borsterminal/backend/internal/ftsconfig"
 	"borsterminal/backend/internal/fundamental"
 	"borsterminal/backend/internal/funnel"
 	"borsterminal/backend/internal/httpapi"
@@ -92,7 +93,7 @@ func main() {
 		_ = ln.Close()
 		os.Exit(1)
 	}
-	wl := watchlist.NewHandler(wlStore)
+	wl := watchlist.NewHandler(wlStore, cfg.ReadOnly)
 
 	ntSvc := notifications.NewService(handles.Market)
 	nt := notifications.NewHandler(ntSvc)
@@ -103,6 +104,12 @@ func main() {
 	exp := export.NewService(handles.Market)
 	scr := screener.NewService(handles.Market, cfg.DataDir)
 	fn := funnel.NewService(handles.Market, cfg.DataDir)
+
+	ftsCfgStore, err := ftsconfig.NewStore(handles.User)
+	if err != nil {
+		slog.Error("fts config store init failed", "err", err)
+	}
+	ftsCfg := ftsconfig.NewHandler(ftsCfgStore, cfg.ReadOnly)
 
 	apiHandler := httpapi.NewWithServices(cfg, handles, httpapi.Services{
 		Market:        mkt,
@@ -117,6 +124,7 @@ func main() {
 		Export:        exp,
 		Screener:      scr,
 		Funnel:        fn,
+		FtsConfig:     ftsCfg,
 	})
 
 	tracker := NewRequestTracker()

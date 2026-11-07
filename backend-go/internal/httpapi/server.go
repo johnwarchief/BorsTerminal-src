@@ -144,6 +144,12 @@ type Funnel interface {
 	Trace(http.ResponseWriter, *http.Request)
 }
 
+// FtsConfig دو مسیرِ خواندن و ذخیرهٔ تنظیمات FTS در user.db.
+type FtsConfig interface {
+	Get(http.ResponseWriter, *http.Request)
+	Post(http.ResponseWriter, *http.Request)
+}
+
 // Services مجموعه‌ی کلیه سرویس‌های HTTP بورس‌ترمینال.
 type Services struct {
 	Market        Market
@@ -158,6 +164,7 @@ type Services struct {
 	Export        Export
 	Screener      Screener
 	Funnel        Funnel
+	FtsConfig     FtsConfig
 }
 
 func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications, sy Sync) http.Handler {
@@ -217,6 +224,11 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("GET /api/chart/{symbol}/forecast", srv.Chart.Forecast)
 		mux.HandleFunc("GET /api/chart/{symbol}/edge", srv.Chart.Edge)
 		mux.HandleFunc("GET /api/chart/{symbol}/indicators", srv.Chart.Indicators)
+	}
+	if srv.FtsConfig != nil {
+		mux.HandleFunc("GET /api/fts/config", srv.FtsConfig.Get)
+		mux.HandleFunc("POST /api/fts/config", srv.FtsConfig.Post)
+	} else if srv.Chart != nil {
 		// `/api/fts/config` درِ پایتون متعلق به api/market.py است و *پیش از*
 		// `/api/fts/{symbol}` ثبت می‌شود، پس «config» هیچ‌وقت نماد نیست. Go با
 		// الگویِ عام آن را می‌بلعید؛ این ثبتِ صریح همان ترتیب را بازمی‌گرداند.
