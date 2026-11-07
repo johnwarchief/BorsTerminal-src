@@ -121,19 +121,10 @@ function Build-Frontend {
 $ExeSpec = 'fts_terminal.spec'
 
 function Build-Exe {
-    Write-Host "[exe] PyInstaller ($ExeSpec)"
-    # پیش‌چکِ مفسر: یک دقیقه زودتر از چکِ پسازبیلد می‌گوید کدام پکیج در این
-    # مفسر نیست (بودجهٔ بیلد ~۲ دقیقه است و بیلدِ ناقص، ریلیزِ ناقص).
-    & $PY scripts\check_build_env.py
-    if ($LASTEXITCODE -ne 0) { Write-Error '[exe] build interpreter is missing a declared dependency. ABORT.'; exit 1 }
-    & $PY -m PyInstaller $ExeSpec --noconfirm --distpath "$DistRoot" --workpath "$root\build"
-    if ($LASTEXITCODE -ne 0) { Write-Error '[exe] PyInstaller failed. ABORT.'; exit 1 }
-    # قراردادِ onedir: _internal/ باید باشد، همهٔ api.* در hiddenimports،
-    # و پنجرهٔ بومی (webview/pythonnet) داخلِ باندل باشد.
-    if (-not (Test-DistBundle)) { Write-Error '[exe] onedir contract FAILED. ABORT.'; exit 1 }
-    Write-Host '[shell] Tauri window'
-    & $PY scripts\build_shell.py
-    if ($LASTEXITCODE -ne 0) { Write-Error '[shell] build failed. ABORT.'; exit 1 }
+    Write-Host "[build] running Go + V2 + Tauri production build (scripts/build_all.py)"
+    & $PY scripts\build_all.py
+    if ($LASTEXITCODE -ne 0) { Write-Error '[build] production build failed. ABORT.'; exit 1 }
+    if (-not (Test-DistBundle)) { Write-Error '[build] onedir contract FAILED. ABORT.'; exit 1 }
     if (-not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) {
         Write-Error '[shell] BorsTerminal_Shell.exe missing from bundle. ABORT.'; exit 1
     }
@@ -187,8 +178,7 @@ function Assert-DistFresh {
     if ($iss -match '(?m)^\s*#define\s+AppVersion\s+"([^"]+)"') { $issVer = $Matches[1] }
 
     $appVer = $null
-    $cfg = Join-Path $DistRoot 'BorsTerminal_Ultimate\_internal\bors_config.py'
-    if (-not (Test-Path $cfg)) { $cfg = Join-Path $DistRoot 'BorsTerminal_Ultimate\bors_config.py' }
+    $cfg = Join-Path $root 'bors_config.py'
     if (Test-Path $cfg) {
         $m = [regex]::Match((Get-Content $cfg -Raw), 'APP_VERSION\s*=\s*"([^"]+)"')
         if ($m.Success) { $appVer = $m.Groups[1].Value }

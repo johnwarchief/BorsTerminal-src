@@ -71,8 +71,13 @@ type Store struct {
 }
 
 func NewStore(db *sql.DB, dataDir string) (*Store, error) {
-	if _, err := db.Exec(ddl); err != nil {
-		return nil, fmt.Errorf("ensure user_watchlists table: %w", err)
+	if db != nil {
+		if _, err := db.Exec(ddl); err != nil {
+			errStr := strings.ToLower(err.Error())
+			if !strings.Contains(errStr, "readonly") && !strings.Contains(errStr, "read-only") {
+				return nil, fmt.Errorf("ensure user_watchlists table: %w", err)
+			}
+		}
 	}
 	return &Store{db: db, dataDir: dataDir}, nil
 }

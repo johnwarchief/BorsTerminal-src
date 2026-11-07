@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"os"
 	"path/filepath"
 	"strconv"
 )
@@ -9,22 +10,25 @@ import (
 const DefaultPort = 8198
 
 type Config struct {
-	Addr    string
-	DataDir string
-	// CalendarPath فایلِ static/calendar/cache.json است؛ پایتون آن را از APP_DIR
-	// می‌خواند، Go پیش‌فرض نسبیِ cwd و درزِ BORS_CALENDAR_PATH برایِ پاریتی/CI.
+	Addr         string
+	DataDir      string
 	CalendarPath string
+	StaticDir    string
 	ReadOnly     bool
 	NoLoops      bool
+	NoShell      bool
 }
 
 func Load(args []string, getenv func(string) string) (Config, error) {
 	fs := flag.NewFlagSet("borsd", flag.ContinueOnError)
 	port := fs.Int("port", DefaultPort, "listen port on 127.0.0.1")
 	dir := fs.String("db-dir", "", "directory holding market.db/user.db (default: BORS_DATA_DIR or .)")
+	staticDirArg := fs.String("static-dir", "", "directory holding frontend static assets (default: auto-detected)")
 	ro := fs.Bool("read-only", true, "open market.db read-only (phase A; default)")
 	rw := fs.Bool("read-write", false, "turn read-only off; market.db becomes writable (not phase A)")
 	noLoops := fs.Bool("no-loops", false, "do not start sync/fetch loops")
+	noShell := fs.Bool("no-shell", false, "do not launch desktop shell window")
+	serverOnly := fs.Bool("server-only", false, "run HTTP server without desktop shell")
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
 	}
@@ -47,12 +51,43 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+
+	// Auto-detect static frontend dir
+	staticDir := *staticDirArg
+	if staticDir == "" {
+		staticDir = getenv("BORS_STATIC_DIR")
+	}
+	if staticDir == "" {
+		candidates := []string{
+			filepath.Join(abs, "frontend"),
+			filepath.Join(".", "frontend"),
+			filepath.Join(".", "frontend-v2", "dist"),
+			filepath.Join("..", "frontend-v2", "dist"),
+		}
+		for _, c := range candidates {
+			if info, err := os.Stat(filepath.Join(c, "index.html")); err == nil && !info.IsDir() {
+				staticDir = c
+				break
+			}
+		}
+	}
+	var staticAbs string
+	if staticDir != "" {
+		if sAbs, err := filepath.Abs(staticDir); err == nil {
+			staticAbs = sAbs
+		}
+	}
+
+	isNoShell := *noShell || *serverOnly || getenv("BORS_NO_SHELL") == "1" || getenv("BORS_SERVER_ONLY") == "1"
+
 	return Config{
 		Addr:         "127.0.0.1:" + strconv.Itoa(*port),
 		DataDir:      abs,
 		CalendarPath: calAbs,
+		StaticDir:    staticAbs,
 		ReadOnly:     *ro && !*rw,
 		NoLoops:      *noLoops,
+		NoShell:      isNoShell,
 	}, nil
 }
 

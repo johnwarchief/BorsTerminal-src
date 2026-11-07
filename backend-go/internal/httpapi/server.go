@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -410,6 +412,23 @@ func (s *Server) apiGate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/api/") {
+		if s.cfg.StaticDir != "" && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+			cleanPath := filepath.Clean(strings.TrimPrefix(r.URL.Path, "/"))
+			targetFile := filepath.Join(s.cfg.StaticDir, cleanPath)
+			rel, err := filepath.Rel(s.cfg.StaticDir, targetFile)
+			if err == nil && !strings.HasPrefix(rel, "..") && cleanPath != "." {
+				if fi, err := os.Stat(targetFile); err == nil && !fi.IsDir() {
+					http.ServeFile(w, r, targetFile)
+					return
+				}
+			}
+			// SPA fallback: serve index.html for client-side routing
+			indexPath := filepath.Join(s.cfg.StaticDir, "index.html")
+			if _, err := os.Stat(indexPath); err == nil {
+				http.ServeFile(w, r, indexPath)
+				return
+			}
+		}
 		NotFound(w)
 		return
 	}

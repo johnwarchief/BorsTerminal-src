@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "bors-terminal"
-version = "1.0.88"
+version = "1.0.95"
 dependencies = [
  "log",
  "serde",

@@ -64,6 +64,15 @@ def fetch_json(url: str, timeout: float = 30.0) -> tuple[int, any, float]:
         return 500, str(e), (time.perf_counter() - t0) * 1000.0
 
 
+# Whitelist of deliberately retired/pruned Python debug/internal fields
+IMPROVEMENT_WHITELIST = {
+    "_debug_timing",
+    "_internal_ts",
+    "dbInvalidRows",
+    "adjustRejected",
+}
+
+
 def deep_compare(val_go, val_py, path=""):
     diffs = []
     if val_go is None and val_py is None:
@@ -72,10 +81,10 @@ def deep_compare(val_go, val_py, path=""):
     if (val_go is None and val_py in ("", [], {})) or (val_py is None and val_go in ("", [], {})):
         diffs.append({
             "path": path,
-            "category": "DOCUMENTED_IMPROVEMENT",
+            "category": "DOCUMENTED_VARIANCE",
             "go": val_go,
             "py": val_py,
-            "detail": "Null/Empty structural equivalence",
+            "detail": "Null/Empty representation variance",
         })
         return diffs
 
@@ -85,7 +94,7 @@ def deep_compare(val_go, val_py, path=""):
         else:
             diffs.append({
                 "path": path,
-                "category": "DOCUMENTED_IMPROVEMENT" if val_go is None or val_py is None else "DISCREPANCY",
+                "category": "DISCREPANCY",
                 "go": val_go,
                 "py": val_py,
                 "detail": f"Type mismatch: {type(val_go).__name__} vs {type(val_py).__name__}",
@@ -148,20 +157,29 @@ def deep_compare(val_go, val_py, path=""):
         for k in all_keys:
             sub_path = f"{path}.{k}" if path else k
             if k not in val_go:
-                diffs.append({
-                    "path": sub_path,
-                    "category": "DOCUMENTED_IMPROVEMENT",
-                    "go": None,
-                    "py": val_py[k],
-                    "detail": "Key omitted in Go (cleaner payload contract)",
-                })
+                if k in IMPROVEMENT_WHITELIST:
+                    diffs.append({
+                        "path": sub_path,
+                        "category": "DOCUMENTED_IMPROVEMENT",
+                        "go": None,
+                        "py": val_py[k],
+                        "detail": f"Retired legacy debug key omitted in Go ({k})",
+                    })
+                else:
+                    diffs.append({
+                        "path": sub_path,
+                        "category": "DISCREPANCY",
+                        "go": None,
+                        "py": val_py[k],
+                        "detail": f"Key omitted in Go ({k})",
+                    })
             elif k not in val_py:
                 diffs.append({
                     "path": sub_path,
-                    "category": "DOCUMENTED_IMPROVEMENT",
+                    "category": "DISCREPANCY",
                     "go": val_go[k],
                     "py": None,
-                    "detail": "Key added in Go (extended V2 contract)",
+                    "detail": f"Key added in Go ({k})",
                 })
             else:
                 diffs.extend(deep_compare(val_go[k], val_py[k], sub_path))
@@ -171,10 +189,10 @@ def deep_compare(val_go, val_py, path=""):
         if len(val_go) != len(val_py):
             diffs.append({
                 "path": f"{path}.length",
-                "category": "DOCUMENTED_IMPROVEMENT" if abs(len(val_go) - len(val_py)) <= 1 else "DISCREPANCY",
+                "category": "DISCREPANCY",
                 "go": len(val_go),
                 "py": len(val_py),
-                "detail": f"List length: {len(val_go)} vs {len(val_py)}",
+                "detail": f"List length mismatch: {len(val_go)} vs {len(val_py)}",
             })
         min_len = min(len(val_go), len(val_py))
         for i in range(min_len):
@@ -318,11 +336,27 @@ def audit_fundamental(go_base: str, py_base: str, symbol: str) -> dict:
             "freshness": {"go": freshness_go, "py": freshness_py},
         }
 
+        # Extract 5 fundamental axes explicitly
+        ind_go = data_go.get("indicators", {}) if isinstance(data_go, dict) else {}
+        ind_py = data_py.get("indicators", {}) if isinstance(data_py, dict) else {}
+        axes = {}
+        for ax_id in ["1", "2", "3", "4", "5"]:
+            g_ax = ind_go.get(ax_id, {})
+            p_ax = ind_py.get(ax_id, {})
+            axes[f"axis_{ax_id}"] = {
+                "go": g_ax,
+                "py": p_ax,
+                "diffs": deep_compare(g_ax, p_ax, f"indicators.{ax_id}"),
+            }
+        res["axes"] = axes
+
         if counts["DISCREPANCY"] == 0:
-            if counts["EPSILON_TOLERANCE"] == 0 and counts["DOCUMENTED_IMPROVEMENT"] == 0:
+            if counts["EPSILON_TOLERANCE"] == 0 and counts["DOCUMENTED_IMPROVEMENT"] == 0 and counts.get("DOCUMENTED_VARIANCE", 0) == 0:
                 res["verdict"] = "EXACT_MATCH"
-            elif counts["EPSILON_TOLERANCE"] > 0:
+            elif counts["EPSILON_TOLERANCE"] > 0 and counts["DOCUMENTED_IMPROVEMENT"] == 0 and counts.get("DOCUMENTED_VARIANCE", 0) == 0:
                 res["verdict"] = "EPSILON_TOLERANCE"
+            elif counts.get("DOCUMENTED_VARIANCE", 0) > 0:
+                res["verdict"] = "DOCUMENTED_VARIANCE"
             else:
                 res["verdict"] = "DOCUMENTED_IMPROVEMENT"
         else:
@@ -469,10 +503,20 @@ def run_5symbol_parity_audit():
             print("  [3/3] مقایسه ۵ محور بنیادی (/api/fundamental)...")
             fund_res = audit_fundamental(go_base, py_base, sym)
             sym_res["fundamental"] = fund_res
-            print(f"    وضعیت: {fund_res['verdict']} | شتاب Go: {fund_res.get('speedup')}x")
-            if "key_metrics" in fund_res:
-                km = fund_res["key_metrics"]
-                print(f"      حکم صنعت (Axis 5): Go={km['verdict']['go']} | Py={km['verdict']['py']} (Match: {km['verdict']['match']})")
+            print(f"    وضعیت کلی: {fund_res['verdict']} | شتاب Go: {fund_res.get('speedup')}x")
+            if "axes" in fund_res:
+                for ax_num, ax_name in [
+                    ("1", "محور ۱ (رشد فروش ماهانه)"),
+                    ("2", "محور ۲ (پایداری و روند EPS)"),
+                    ("3", "محور ۳ (حاشیه سود ناخالص)"),
+                    ("4", "محور ۴ (ارزش‌گذاری و اهرم)"),
+                    ("5", "محور ۵ (داوری صنعت و حکم FTS)"),
+                ]:
+                    ax_info = fund_res["axes"].get(f"axis_{ax_num}", {})
+                    ax_diff_count = len(ax_info.get("diffs", []))
+                    g_pass = ax_info.get("go", {}).get("pass")
+                    p_pass = ax_info.get("py", {}).get("pass")
+                    print(f"      {ax_name}: تطابق حکم={g_pass == p_pass} | اختلاف‌های جزئی={ax_diff_count}")
 
             audit_results["symbols"][sym] = sym_res
 

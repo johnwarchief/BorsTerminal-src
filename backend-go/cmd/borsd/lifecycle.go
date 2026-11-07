@@ -2,17 +2,22 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 )
+
+var ErrShutdownTimeout = errors.New("server shutdown: active requests did not drain within hard kill timeout")
 
 // RequestTracker ردگیری درخواست‌های در جریان و جلوگیری از پذیرش درخواست جدید پس از آغاز خاموشی را مدیریت می‌کند.
 type RequestTracker struct {
 	mu       sync.RWMutex
 	stopping bool
+	active   int64
 	wg       sync.WaitGroup
 }
 
@@ -31,8 +36,12 @@ func (t *RequestTracker) Wrap(next http.Handler) http.Handler {
 			return
 		}
 		t.wg.Add(1)
+		atomic.AddInt64(&t.active, 1)
 		t.mu.RUnlock()
-		defer t.wg.Done()
+		defer func() {
+			atomic.AddInt64(&t.active, -1)
+			t.wg.Done()
+		}()
 		next.ServeHTTP(w, r)
 	})
 }
@@ -42,6 +51,11 @@ func (t *RequestTracker) StopAccepting() {
 	t.mu.Lock()
 	t.stopping = true
 	t.mu.Unlock()
+}
+
+// ActiveCount تعداد درخواست‌های فعال در حال اجرا را برمی‌گرداند.
+func (t *RequestTracker) ActiveCount() int64 {
+	return atomic.LoadInt64(&t.active)
 }
 
 // WaitWithTimeout تا حداکثر مهلت داده‌شده برای تخلیهٔ Handlerهای فعال منتظر می‌ماند.
@@ -71,7 +85,8 @@ type ShutdownConfig struct {
 // ۳. اجرای srv.Shutdown(drainCtx) با مهلت تعیین‌شده
 // ۴. در صورت انقضای مهلت (مهلت ۵ ثانیه‌ای): اجرای srv.Close() برای بستن سوکت‌ها
 // ۵. انتظار کنترل‌شده برای تخلیه Handlerها با tracker.WaitWithTimeout()
-// ۶. فراخوانی closeResources دقیقاً پس از توقف کامل مسیرهای دسترسی
+// ۶. تضمین قطعی معماری: فراخوانی closeResources فقط و فقط زمانی که تمام Handlerها تخلیه شده باشند؛
+//    اگر Handler غیرهمکاری همچنان در جریان باشد، دیتابیس هرگز زیر پای آن بسته نمی‌شود.
 func RunServer(rootCtx context.Context, srv *http.Server, ln net.Listener, tracker *RequestTracker, cfg ShutdownConfig, closeResources func()) error {
 	if cfg.DrainTimeout <= 0 {
 		cfg.DrainTimeout = 5 * time.Second
@@ -102,10 +117,10 @@ func RunServer(rootCtx context.Context, srv *http.Server, ln net.Listener, track
 	case <-rootCtx.Done():
 	}
 
-	// ۱. توقف پذیرش جدید
+	// ۱. توقف پذیرش جدید (پاسخ فوری ۵۰۳ به درخواست‌های تازه)
 	tracker.StopAccepting()
 
-	// ۲. مهلت محترمانه
+	// ۲. مهلت محترمانه برای اتمام درخواست‌ها
 	drainCtx, cancelDrain := context.WithTimeout(context.Background(), cfg.DrainTimeout)
 	defer cancelDrain()
 
@@ -118,10 +133,14 @@ func RunServer(rootCtx context.Context, srv *http.Server, ln net.Listener, track
 	// ۴. انتظار کنترل‌شده برای اتمام Handlerهای فعال
 	drained := tracker.WaitWithTimeout(cfg.HardKillTimeout)
 	if !drained {
-		slog.Warn("some requests did not drain in time")
+		slog.Error("some requests did not drain in time; database handles kept open to prevent access to closed database",
+			"active_handlers", tracker.ActiveCount())
+		// تضمین قاطع: اگر هندلری همچنان در جریان است، هرگز دیتابیس را زیر پای آن نمی‌بندیم
+		// تا خطای 'database is closed' رخ ندهد.
+		return ErrShutdownTimeout
 	}
 
-	// ۵. بستن دیتابیس و سایر منابع فقط پس از توقف قطعی کلیه مسیرهای دسترسی
+	// ۵. بستن دیتابیس و سایر منابع فقط پس از توقف قطعی ۱۰۰٪ کلیه مسیرهای دسترسی
 	if closeResources != nil {
 		closeResources()
 	}

@@ -78,21 +78,33 @@ BANNED_PACKAGES = ("PySide6", "PyQt5", "PyQt6", "jedi", "IPython")
 
 def check_dist(dist_dir):
     """چکِ ۲: شکلِ onedir + محتوایِ باندل.
-
-    اجباری‌ها از یک باگِ واقعی می‌آیند: بیلد با مفسرِ بدونِ pywebview، EXEیِ
-    سالم‌نما می‌دهد که فقط به‌جای پنجرهٔ بومی، msedge --app باز می‌کند. نه
-    تستی قرمز می‌شود نه بیلدی می‌شکند؛ فقط کاربر، پنجره‌اش را از دست می‌دهد.
+    در معماری مرحله ۲ (Go + Frontend-V2 + Tauri):
+    باندل شامل BorsTerminal_Ultimate.exe و BorsTerminal_Shell.exe و frontend/index.html است و صفر پایتون دارد.
     """
     if not dist_dir or not os.path.isdir(dist_dir):
         print("  [skip] no dist dir given (--dist)")
         return True, None
     bundle = os.path.join(dist_dir, "BorsTerminal_Ultimate")
-    internal = os.path.join(bundle, "_internal")
     exe = os.path.join(bundle, "BorsTerminal_Ultimate.exe")
+    shell = os.path.join(bundle, "BorsTerminal_Shell.exe")
+    internal = os.path.join(bundle, "_internal")
+    html = os.path.join(bundle, "frontend", "index.html")
+
+    # بررسی حالت Go + Tauri (Stage 2 Production Bundle)
+    if os.path.isfile(exe) and os.path.isfile(shell) and os.path.isfile(html):
+        print("  [ok] Go + Tauri + Frontend-V2 shape: %s + %s + %s" % (
+            os.path.relpath(exe, _ROOT), os.path.relpath(shell, _ROOT), os.path.relpath(html, _ROOT)))
+        if os.path.isdir(internal):
+            print("  [FAIL] legacy Python _internal directory must not exist in Go production bundle")
+            return False, ["_internal directory present in Go bundle"]
+        print("  [ok] ZERO Python in production bundle (no _internal, no CPython runtime)")
+        return True, []
+
+    # بررسی حالت قدیمی PyInstaller
     if not (os.path.isdir(internal) and os.path.isfile(exe)):
         print("  [FAIL] not an onedir build: missing %s or %s" % (internal, exe))
         return False, None
-    print("  [ok] onedir shape: %s + %s" % (
+    print("  [ok] legacy onedir shape: %s + %s" % (
         os.path.relpath(exe, _ROOT), os.path.relpath(internal, _ROOT)))
 
     failures = []
@@ -106,9 +118,6 @@ def check_dist(dist_dir):
         if os.path.isdir(os.path.join(internal, pkg)):
             failures.append("excluded package shipped anyway: %s" % pkg)
             print("  [FAIL] excluded package shipped anyway: %s" % pkg)
-    # market.db.lzma اینجا چک نمی‌شود: کارِ PyInstaller نیست، بلکه مرحلهٔ
-    # بسته‌بندی (Build-Setup در release.ps1) کنارِ EXE می‌گذارد؛ همان‌جا هم
-    # بررسی می‌شود. زورِ این چک در این مرحله، هر بیلدِ سالم را FAIL می‌کرد.
     return not failures, failures
 
 

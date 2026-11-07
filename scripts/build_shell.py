@@ -21,11 +21,17 @@ def main():
     ap = argparse.ArgumentParser(description='Build the Tauri desktop shell')
     ap.add_argument('--dist', default=OUT)
     args = ap.parse_args()
-    if not shutil.which('cargo'):
+    cargo = shutil.which('cargo')
+    if not cargo:
+        cargo_home = os.path.expanduser('~/.cargo/bin/cargo.exe')
+        if os.path.isfile(cargo_home):
+            cargo = cargo_home
+            os.environ['PATH'] = os.path.dirname(cargo_home) + os.pathsep + os.environ.get('PATH', '')
+    if not cargo:
         print('[ERR] cargo not on PATH; install Rust or use --skip-shell')
         return 1
-    print('[shell] cargo build --release --locked')
-    rc = subprocess.call(['cargo', 'build', '--release', '--locked'], cwd=TAURI)
+    print(f'[shell] {cargo} build --release --locked')
+    rc = subprocess.call([cargo, 'build', '--release', '--locked'], cwd=TAURI)
     if rc != 0 or not os.path.isfile(EXE):
         print('[ERR] shell build failed')
         return 1

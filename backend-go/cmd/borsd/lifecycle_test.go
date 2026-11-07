@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -405,5 +406,140 @@ func TestResourceCloseOrder(t *testing.T) {
 	}
 	if len(order) != 2 || order[0] != "feed" || order[1] != "db" {
 		t.Fatalf("unexpected close order: %v", order)
+	}
+}
+
+// TestGracefulShutdownUncooperativeHandler تضمین می‌کند که اگر یک Handler غیرهمکار و طولانی
+// سیگنال لغو Context را نادیده بگیرد و پس از انقضای هر دو مهلت Drain و HardKill همچنان به کار
+// ادامه دهد، دیتابیس هرگز زیر پای آن بسته نخواهد شد و به دیتابیس بسته دسترسی پیدا نمی‌کند.
+func TestGracefulShutdownUncooperativeHandler(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tracker := NewRequestTracker()
+	mux := http.NewServeMux()
+
+	handlerStarted := make(chan struct{})
+	handlerFinished := make(chan struct{})
+
+	var dbTouchedAfterHardTimeout atomic.Bool
+	var dbClosedWhileHandlerActive atomic.Bool
+	var dbWasClosed atomic.Bool
+	var handlerSawClosedDB atomic.Bool
+
+	// شبیه‌سازی عملیات دیتابیس
+	queryDB := func() error {
+		if dbWasClosed.Load() {
+			handlerSawClosedDB.Store(true)
+			return errors.New("sql: database is closed")
+		}
+		return nil
+	}
+
+	// یک Handler کاملاً غیرهمکار که Context.Done را نادیده می‌گیرد و به کار ادامه می‌دهد
+	mux.HandleFunc("/uncooperative", func(w http.ResponseWriter, r *http.Request) {
+		close(handlerStarted)
+
+		// این هندلر عمداً لغو context را نادیده می‌گیرد و ۱۵۰ میلی‌ثانیه می‌خوابد
+		// (بسیار بیشتر از مجموع DrainTimeout و HardKillTimeout)
+		time.Sleep(150 * time.Millisecond)
+
+		// هندلر پس از منقضی شدن مهلت‌های خاموشی، تلاش می‌کند دیتابیس را بخواند
+		dbTouchedAfterHardTimeout.Store(true)
+		if dbWasClosed.Load() {
+			dbClosedWhileHandlerActive.Store(true)
+		}
+		if err := queryDB(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("done"))
+		close(handlerFinished)
+	})
+
+	srv := &http.Server{Handler: tracker.Wrap(mux)}
+	rootCtx, cancel := context.WithCancel(context.Background())
+
+	closeResources := func() {
+		dbWasClosed.Store(true)
+	}
+
+	serverDone := make(chan error, 1)
+	go func() {
+		serverDone <- RunServer(rootCtx, srv, ln, tracker, ShutdownConfig{
+			DrainTimeout:    30 * time.Millisecond,
+			HardKillTimeout: 40 * time.Millisecond,
+		}, closeResources)
+	}()
+
+	addr := ln.Addr().String()
+
+	// ۱. شروع درخواست غیرهمکار در کلاینت
+	go func() {
+		resp, err := http.Get("http://" + addr + "/uncooperative")
+		if err == nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	// صبر تا هندلر آغاز شود
+	<-handlerStarted
+
+	// ۲. ارسال سیگنال خاموشی سرور
+	cancel()
+
+	// ۳. سرور باید پس از اتمام مهلت‌ها با ErrShutdownTimeout خارج شود
+	//    و دیتابیس را نبندد چون هندلر هنوز فعال است
+	select {
+	case err := <-serverDone:
+		if !errors.Is(err, ErrShutdownTimeout) {
+			t.Fatalf("expected ErrShutdownTimeout, got %v", err)
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("server failed to exit within hard timeout")
+	}
+
+	// درخواست‌های جدید بلافاصله پس از شروع خاموشی ۵۰۳ می‌گیرند
+	respAfter, err := http.Get("http://" + addr + "/uncooperative")
+	if err == nil {
+		_ = respAfter.Body.Close()
+		if respAfter.StatusCode != http.StatusServiceUnavailable {
+			t.Fatalf("expected 503 after shutdown, got %d", respAfter.StatusCode)
+		}
+	}
+
+	// ۴. صبر برای اتمام طبیعی هندلر غیرهمکار
+	select {
+	case <-handlerFinished:
+	case <-time.After(1 * time.Second):
+		t.Fatal("uncooperative handler did not finish")
+	}
+
+	// ۵. اعتبارسنجی قطعی:
+	// الف) هندلر دیتابیس را لمس کرد
+	if !dbTouchedAfterHardTimeout.Load() {
+		t.Fatal("uncooperative handler did not attempt DB touch")
+	}
+	// ب) دیتابیس هرگز در حین فعالیت هندلر بسته نشد
+	if dbClosedWhileHandlerActive.Load() {
+		t.Fatal("CRITICAL: database was closed while uncooperative handler was still active!")
+	}
+	// ج) هندلر هرگز خطای بسته بودن دیتابیس ندید
+	if handlerSawClosedDB.Load() {
+		t.Fatal("CRITICAL: uncooperative handler observed closed database error!")
+	}
+	// د) closeResources در زمان فرار سرور فراخوانی نشد (جهت محافظت از هندلرهای فعال)
+	if dbWasClosed.Load() {
+		t.Fatal("resources were prematurely closed before handler finished")
+	}
+
+	// پس از اتمام کلیه هندلرها، منابع اکنون با ایمنی ۱۰۰٪ بسته می‌شوند
+	closeResources()
+	if !dbWasClosed.Load() {
+		t.Fatal("resources were not closed after handler completed")
 	}
 }
