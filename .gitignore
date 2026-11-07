@@ -64,7 +64,11 @@ frontend/src-tauri/target/
 *.7z
 
 # ---- مدل‌های هوش مصنوعی محلی (Kronos / Chronos) ----
-models/
+models/*
+!models/kronos/
+models/kronos/*
+!models/kronos/README.md
+agent-skills/**/models/
 *.safetensors
 *.onnx
 
@@ -235,6 +239,10 @@ market.db.meta.json
 /build_log.txt
 
 # اسکرچ دانلود/آزمایش ایجنت‌ها (wheel، HTML، سورس vendor) — بازتولیدشدنی
-_scratch/
+_scratch/*
+!_scratch/base_api_chart_a853cc75.py
 # تست‌های دیباگ موقت با نام zz_tmp
 backend-go/**/zz_tmp_*
+!backend-go/internal/fundamental/zz_tmp_insights_parity_test.go
+!market.db
+!models/kronos/README.md

@@ -18,6 +18,7 @@ live_screener.json
 *_buildmanifest.js
 *_chartpage.html
 !ra_chartpage.html
+!ra_ta_home.html
 ps_*.ps1
 ra365_session_host.port
 ra365_session_host.log
@@ -41,14 +42,15 @@ patch-*.sig
 setup-*.sig
 flash/
 preview/
-rebuild/
+perf/MIG_*
+perf/idle_probe_r4.json
+rebuild/S1/
 release1407_backup/
 ta_symbol_cache/
 market_parity_20261014/
 indicator-density/
 live-1405-07-20/
 live-ui/
-perf/
 txt/
 txt2/
 up1085/
@@ -60,6 +62,9 @@ gates_final_*.txt
 gates_tagged_*.txt
 gates_run_*.txt
 run_all_*.txt
+!run_all_1089c.txt
+!run_all_1089d.txt
+!perf/gates/run_all_tests.txt
 stage7_*.txt
 vitest_*.txt
 verify_*.txt
