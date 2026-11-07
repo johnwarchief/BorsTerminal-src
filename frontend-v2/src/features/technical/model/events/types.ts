@@ -20,8 +20,17 @@ export interface EventLine {
   style?: 'solid' | 'dashed';
 }
 
+export interface EventZone {
+  fromIndex: number;
+  toIndex: number;
+  top: number;
+  bottom: number;
+  color?: string;
+}
+
 export interface EventDrawing {
   lines?: EventLine[];
+  zone?: EventZone;
   label?: string;
   labelAt?: PatternPoint;
   color?: string;

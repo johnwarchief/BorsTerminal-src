@@ -22,7 +22,7 @@ export type PatternStatus = 'forming' | 'confirmed' | 'invalidated';
 export type PatternDirection = 'bullish' | 'bearish' | 'neutral';
 export type PatternFamily = 'continuation' | 'reversal';
 
-export interface PatternPoint { index: number; price: number; timestamp: number }
+export interface PatternPoint { index: number; price: number; timestamp?: number }
 export interface BoundaryLine { from: PatternPoint; to: PatternPoint }
 
 export interface ChartPattern {

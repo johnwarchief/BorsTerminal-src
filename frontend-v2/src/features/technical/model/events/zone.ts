@@ -164,7 +164,7 @@ function runStateMachine(
 export function detectSrRetest(
   candles: readonly EngineCandle[],
   config: SrRetestConfig,
-  offset = 0,
+  _offset = 0,
 ): SrRetestZone[] {
   const n = candles.length;
   const lastIndex = n - 1;

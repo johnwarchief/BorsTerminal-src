@@ -6,11 +6,11 @@ import type {
 } from 'klinecharts';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useTechnicalStore } from '../model/technicalStore';
-import type { ChartEvent, EventFamily, ScanResult } from '../model/events/types';
+import type { ChartEvent, ScanResult } from '../model/events/types';
 import { eventKindFa } from '../model/events/labels';
 
 export const EVENT_OVERLAY_ID = 'chart-events';
-const FAMILIES: EventFamily[] = ['divergence', 'pullback', 'breakout'];
+const FAMILIES: (keyof ScanResult['primary'])[] = ['channel', 'divergence', 'pullback', 'breakout'];
 
 const LINE_COLOR: Record<string, string> = {
   bullish: '#4f8f72',
@@ -92,6 +92,24 @@ export function eventFigures(
           size: 1.4,
           style: line.style ?? 'solid',
           dashedValue: [4, 3],
+        },
+      });
+    }
+    if (event.draw.zone) {
+      const z = event.draw.zone;
+      const p1 = px(params, z.fromIndex, z.top);
+      const p2 = px(params, z.toIndex, z.bottom);
+      figures.push({
+        type: 'rect',
+        attrs: {
+          x: Math.min(p1.x, p2.x),
+          y: Math.min(p1.y, p2.y),
+          width: Math.abs(p2.x - p1.x),
+          height: Math.abs(p2.y - p1.y),
+        },
+        styles: {
+          style: 'fill',
+          color: z.color ?? color,
         },
       });
     }

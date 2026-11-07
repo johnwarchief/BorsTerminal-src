@@ -99,8 +99,6 @@ export interface ChannelCandidate {
   metrics: ChannelMetrics;
 }
 
-const EPS = 1e-9;
-
 function lineValue(fromIndex: number, fromPrice: number, toIndex: number, toPrice: number, index: number): number {
   const span = toIndex - fromIndex;
   if (span === 0) return toPrice;

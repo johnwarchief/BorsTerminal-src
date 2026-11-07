@@ -288,6 +288,8 @@ export interface KLineChartWrapperProps {
   onChartReady?: (chart: Chart) => void;
 }
 
+const EMPTY_BARS: KLineData[] = [];
+
 const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   symbol,
   candles,
@@ -347,11 +349,12 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     if (chartQuery.data?.candles && chartQuery.data.candles.length > 0) {
       return toKlineBars(chartQuery.data.candles, chartQuery.data.factors, adjustmentMode);
     }
-    return [];
+    return EMPTY_BARS;
   }, [candles, chartQuery.data, adjustmentMode]);
 
   // تجمیع کندل‌ها بر پایه تایم‌فریم انتخابی (روزانه، هفتگی شنبه-چهارشنبه، ماهانه جلالی)
   const bars: KLineData[] = useMemo(() => {
+    if (rawBars.length === 0) return EMPTY_BARS;
     return aggregateCandles(rawBars, timeframe);
   }, [rawBars, timeframe]);
 
@@ -372,6 +375,7 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   const lastScanKeyRef = useRef<string>('');
   useEffect(() => {
     const scanKey = `${adjustmentMode}:${doubleTapProfile}:${symbol}:${timeframe}`;
+    if (bars.length === 0 && (lastPatternBarsRef.current?.length ?? 0) === 0 && lastScanKeyRef.current === scanKey) return;
     if (lastPatternBarsRef.current === bars && lastScanKeyRef.current === scanKey) return;
     lastPatternBarsRef.current = bars;
     lastScanKeyRef.current = scanKey;
