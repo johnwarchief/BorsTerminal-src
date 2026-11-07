@@ -51,7 +51,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	mkt := market.NewWithOptions(handles, cfg.DataDir, cfg.ReadOnly, cfg.NoLoops)
+	var liveFeed *live.Feed
 	// Only one TSE live loop may exist at a time (owner decision §9). The Go
 	// feed is opt-in so a Python live loop can stay the sole owner until the
 	// operator flips BORS_GO_LIVE=1 and stops it.
@@ -67,7 +71,8 @@ func main() {
 			feed.EnablePersistence(filepath.Join(cfg.DataDir, "market.db"), 5*time.Second)
 		}
 		mkt.Live = feed
-		go feed.Start(context.Background())
+		liveFeed = feed
+		feed.Start(rootCtx)
 		slog.Info("live TSE feed enabled", "interval", interval.String())
 	}
 	ms := mstat.NewWithOptions(handles.Market, cfg.DataDir, mkt, cfg.NoLoops)
@@ -78,6 +83,9 @@ func main() {
 	wlStore, err := watchlist.NewStore(handles.User, cfg.DataDir)
 	if err != nil {
 		slog.Error("watchlist store init failed", "err", err)
+		if liveFeed != nil {
+			_ = liveFeed.Close()
+		}
 		_ = ch.Close()
 		_ = fd.Close()
 		_ = handles.Close()
@@ -117,10 +125,10 @@ func main() {
 		Handler: tracker.Wrap(apiHandler),
 	}
 
-	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	closeAll := func() {
+		if liveFeed != nil {
+			_ = liveFeed.Close()
+		}
 		_ = ch.Close()
 		_ = fd.Close()
 		_ = ntSvc.Close()
@@ -132,7 +140,7 @@ func main() {
 
 	shutdownCfg := ShutdownConfig{
 		DrainTimeout:    5 * time.Second,
-		HardKillTimeout: 2 * time.Second,
+		HardKillTimeout: 5 * time.Second,
 	}
 
 	if err := RunServer(rootCtx, srv, ln, tracker, shutdownCfg, closeAll); err != nil {

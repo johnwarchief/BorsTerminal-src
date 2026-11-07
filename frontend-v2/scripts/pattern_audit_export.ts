@@ -9,7 +9,7 @@ import { aggregateCandles } from '@features/technical/model/timeframeAggregation
 import { detectAllPatterns } from '@features/technical/model/patterns/registry';
 import type { EngineCandle } from '@features/technical/model/doubleTapEngine';
 
-const BASE = 'http://127.0.0.1:8101';
+const BASE = process.env.BORS_BACKEND || 'http://127.0.0.1:8198';
 const SYMBOLS = [
   'فولاد', 'وبملت', 'شپنا', 'فارس', 'خودرو', 'شستا', 'فملي', 'وپاسار',
   'وغدير', 'نوري', 'پارسان', 'شتران', 'تاپيكو', 'شبندر', 'اخابر',

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -255,3 +256,154 @@ func (f *fakeResponseWriter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 func (f *fakeResponseWriter) WriteHeader(statusCode int) { f.code = statusCode }
+
+func TestGracefulShutdownWorkerContextCancelled(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tracker := NewRequestTracker()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("pong"))
+	})
+
+	srv := &http.Server{Handler: tracker.Wrap(mux)}
+	rootCtx, cancel := context.WithCancel(context.Background())
+
+	var workerCancelled atomic.Bool
+	var closedResources atomic.Bool
+	var workerClosedBeforeDB atomic.Bool
+
+	workerDone := make(chan struct{})
+
+	// شبیه‌سازی Worker پس‌زمینه که rootCtx دریافت می‌کند (مانند feed.Start(rootCtx))
+	go func() {
+		defer close(workerDone)
+		select {
+		case <-rootCtx.Done():
+			workerCancelled.Store(true)
+			// اطمینان از این‌که Worker پیش از بسته‌شدن دیتابیس لغو را دریافت می‌کند
+			if !closedResources.Load() {
+				workerClosedBeforeDB.Store(true)
+			}
+		case <-time.After(3 * time.Second):
+		}
+	}()
+
+	closeResources := func() {
+		closedResources.Store(true)
+	}
+
+	serverDone := make(chan error, 1)
+	go func() {
+		serverDone <- RunServer(rootCtx, srv, ln, tracker, ShutdownConfig{
+			DrainTimeout:    100 * time.Millisecond,
+			HardKillTimeout: 100 * time.Millisecond,
+		}, closeResources)
+	}()
+
+	addr := ln.Addr().String()
+	resp, err := http.Get("http://" + addr + "/ping")
+	if err != nil {
+		t.Fatalf("ping failed: %v", err)
+	}
+	_ = resp.Body.Close()
+
+	// ارسال سیگنال خاموشی
+	cancel()
+
+	select {
+	case <-workerDone:
+	case <-time.After(1 * time.Second):
+		t.Fatal("worker did not exit on rootCtx cancellation")
+	}
+
+	select {
+	case err := <-serverDone:
+		if err != nil {
+			t.Fatalf("server returned error: %v", err)
+		}
+	case <-time.After(1 * time.Second):
+		t.Fatal("server did not shut down in time")
+	}
+
+	if !workerCancelled.Load() {
+		t.Fatal("worker did not receive context cancellation")
+	}
+	if !workerClosedBeforeDB.Load() {
+		t.Fatal("worker observed resources already closed")
+	}
+	if !closedResources.Load() {
+		t.Fatal("resources were not closed")
+	}
+}
+
+func TestResourceCloseOrder(t *testing.T) {
+	var order []string
+	var mu sync.Mutex
+	record := func(name string) {
+		mu.Lock()
+		defer mu.Unlock()
+		order = append(order, name)
+	}
+
+	feedClosed := false
+	dbClosed := false
+
+	closeFeed := func() {
+		record("feed")
+		feedClosed = true
+	}
+	closeDB := func() {
+		if !feedClosed {
+			t.Error("DB closed before feed!")
+		}
+		record("db")
+		dbClosed = true
+	}
+
+	closeAll := func() {
+		closeFeed()
+		closeDB()
+	}
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tracker := NewRequestTracker()
+	srv := &http.Server{Handler: tracker.Wrap(http.NewServeMux())}
+	rootCtx, cancel := context.WithCancel(context.Background())
+
+	serverDone := make(chan error, 1)
+	go func() {
+		serverDone <- RunServer(rootCtx, srv, ln, tracker, ShutdownConfig{
+			DrainTimeout:    50 * time.Millisecond,
+			HardKillTimeout: 50 * time.Millisecond,
+		}, closeAll)
+	}()
+
+	cancel()
+
+	select {
+	case err := <-serverDone:
+		if err != nil {
+			t.Fatalf("server returned error: %v", err)
+		}
+	case <-time.After(1 * time.Second):
+		t.Fatal("server did not exit")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if !feedClosed || !dbClosed {
+		t.Fatalf("not all resources closed: %v", order)
+	}
+	if len(order) != 2 || order[0] != "feed" || order[1] != "db" {
+		t.Fatalf("unexpected close order: %v", order)
+	}
+}

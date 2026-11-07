@@ -7,7 +7,7 @@ import {
 } from '../src/features/technical/model/doubleTapEngine';
 import { getMarketCohort } from '../src/features/technical/model/doubletapCohort';
 
-const BASE = 'http://127.0.0.1:8101';
+const BASE = process.env.BORS_BACKEND || 'http://127.0.0.1:8198';
 
 async function main() {
   const board = await (await fetch(`${BASE}/api/market`)).json();

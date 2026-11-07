@@ -73,6 +73,13 @@ type ShutdownConfig struct {
 // ۵. انتظار کنترل‌شده برای تخلیه Handlerها با tracker.WaitWithTimeout()
 // ۶. فراخوانی closeResources دقیقاً پس از توقف کامل مسیرهای دسترسی
 func RunServer(rootCtx context.Context, srv *http.Server, ln net.Listener, tracker *RequestTracker, cfg ShutdownConfig, closeResources func()) error {
+	if cfg.DrainTimeout <= 0 {
+		cfg.DrainTimeout = 5 * time.Second
+	}
+	if cfg.HardKillTimeout <= 0 {
+		cfg.HardKillTimeout = 5 * time.Second
+	}
+
 	srv.BaseContext = func(net.Listener) context.Context {
 		return rootCtx
 	}

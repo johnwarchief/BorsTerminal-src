@@ -3,18 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 
-const backend = process.env.BORS_BACKEND || 'http://127.0.0.1:8101';
-const backendGo = process.env.BORS_BACKEND_GO;
-// مسیرهایِ تازهٔ مهاجرت (Go) می‌توانند جدا از بک‌اندِ پایتون پروکسی شوند؛
-// کلیدهایِ خاص باید پیش از '/api' بیایند. بی‌تنظیم‌بودنِ BORS_BACKEND_GO یعنی
-// همان رفتارِ تک‌بک‌اندیِ قبلی.
-const goProxy: Record<string, { target: string; changeOrigin: boolean }> = backendGo ? {
-  '/api/fundamental': { target: backendGo, changeOrigin: false },
-  // جدول غربالگری در S4b از پایتون می‌آید تا کلید کش آستانه‌ها معتبر بماند؛
-  // S4c با materializer مستقل Go برمی‌گردد.
-  '/api/market': { target: backendGo, changeOrigin: false },
-  '/api/sync/codal': { target: backendGo, changeOrigin: false },
-} : {};
+const backend = process.env.BORS_BACKEND || process.env.BORS_BACKEND_GO || 'http://127.0.0.1:8198';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -29,7 +18,6 @@ export default defineConfig({
     port: Number(process.env.BORS_VITE_PORT) || 5180,
     strictPort: true,
     proxy: {
-      ...goProxy,
       '/api': { target: backend, changeOrigin: false },
     },
   },
