@@ -1,0 +1,181 @@
+import { describe, expect, it } from 'vitest';
+import {
+  AXES,
+  epsChangeText,
+  epsChanges,
+  epsDeltaText,
+  epsYearsRequired,
+  formatAxisValue,
+  formatEpsTrend,
+  growthSubStatuses,
+  potentialPath,
+  potentialStatusOf,
+  statusOf,
+  thresholdOf,
+  trendArrow,
+  trendFa,
+  trendOf,
+  valueOf,
+  verdictFa,
+  type ScreenerRowLike,
+} from '@features/fundamental/lib/axisMeta';
+
+const row = {
+  symbol: 'رنيك', score: 3, verdict: 'WATCH',
+  i1_pass: false, i1_na: false, i2_pass: true, i2_na: false,
+  i3_pass: false, i3_na: false, i4_pass: true, i4_na: false,
+  i5_pass: true, i5_na: false,
+  rev_growth: 45.9, eps_series: [1119, 1615, 1672], eps_years_available: 3,
+  gross_margin: 11.5, sales_to_mcap: 1.15, profit_potential_pct: 13.2,
+  pricing_mode: 'neutral',
+} satisfies ScreenerRowLike;
+
+const thresholds = { growth_min: 60, margin_min: 40, v10_sales_to_mcap_min: 0.33, profit_potential_min: 40, v10_eps_years: 3 };
+
+describe('axis meta', () => {
+  it('has the five axes in order', () => {
+    expect(AXES.map((axis) => axis.key)).toEqual(['growth', 'eps', 'margin', 'sales', 'industry']);
+    expect(AXES.map((axis) => axis.num)).toEqual(['۱', '۲', '۳', '۴', '۵']);
+  });
+  it('derives pass/fail/na/unknown from the row flags', () => {
+    expect(statusOf(row, 'growth')).toBe('fail');
+    expect(statusOf(row, 'eps')).toBe('pass');
+    expect(statusOf({ ...row, i3_pass: null, i3_na: true }, 'margin')).toBe('na');
+    expect(statusOf({ ...row, i2_pass: null, i2_na: false }, 'eps')).toBe('unknown');
+  });
+  it('keeps the 1a verdict when 1b is not applicable', () => {
+    const gated = { ...row, i1b_applicable: false, i1b_pass: true };
+    expect(statusOf({ ...gated, i1_pass: true }, 'growth')).toBe('pass');
+    expect(statusOf({ ...gated, i1_pass: false }, 'growth')).toBe('fail');
+    // بدون حکمِ قطعیِ ۱الف، «بی‌نظر» درست است.
+    expect(statusOf({ ...gated, i1_pass: null }, 'growth')).toBe('na');
+  });
+  it('orders the growth precedence: 1a na, then 1b data gap, then not-applicable 1b', () => {
+    const gated = { ...row, i1b_applicable: false, i1b_pass: true, i1_pass: false };
+    // بی‌نظریِ ۱الف بر همهٔ حالت‌ها مقدم است.
+    expect(statusOf({ ...gated, i1_na: true }, 'growth')).toBe('na');
+    expect(statusOf({ ...gated, i1_na: true, i1b_data_gap: true }, 'growth')).toBe('na');
+    // شکافِ دادهٔ ۱ب بر حکمِ ۱الف مقدم است، حتی وقتی ۱ب قابل‌اعمال نیست.
+    expect(statusOf({ ...gated, i1b_data_gap: true }, 'growth')).toBe('unknown');
+    // ۱ب غیرقابل‌اعمال همیشه بی‌نظر می‌ماند؛ حکمِ ترکیبی از ۱الف می‌آید.
+    expect(growthSubStatuses({ ...gated, i1a_pass: false }).b).toBe('na');
+  });
+  it('reads the axis value and threshold', () => {
+    expect(valueOf(row, 'growth')).toBe(45.9);
+    expect(valueOf(row, 'eps')).toBe(1672);
+    expect(valueOf(row, 'industry')).toBe('neutral');
+    expect(thresholdOf(thresholds, 'growth')).toBe(60);
+    expect(thresholdOf(thresholds, 'sales')).toBe(40);
+  });
+  it('reads potential profit as axis 4 and keeps the sales path as evidence', () => {
+    expect(AXES.find((axis) => axis.key === 'sales')?.label).toBe('پتانسیل سود تا آخر سال');
+    expect(valueOf({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 1.15 }, 'sales')).toBe(13.2);
+    expect(thresholdOf(thresholds, 'sales')).toBe(40);
+    expect(formatAxisValue(13.2, 'sales')).toBe('+۱۳٫۲٪');
+    expect(potentialPath({ ...row, profit_potential_pct: 45, sales_to_mcap: 0.1 }, thresholds)).toBe('potential');
+    expect(potentialPath({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 1.15 }, thresholds)).toBe('sales');
+    expect(potentialPath({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 0.1 }, thresholds)).toBeNull();
+    expect(potentialStatusOf({ ...row, profit_potential_pct: 13.2 }, thresholds)).toBe('fail');
+  });
+  it('signs the axis-4 percentage and keeps unknown values honest', () => {
+    expect(formatAxisValue(-3.2, 'sales')).toBe('−۳٫۲٪');
+    expect(formatAxisValue(0, 'sales')).toBe('۰٫۰٪');
+    expect(formatAxisValue(null, 'sales')).toBe('—');
+    expect(potentialStatusOf({ ...row, profit_potential_pct: 40 }, thresholds)).toBe('pass');
+    expect(potentialStatusOf({ ...row, profit_potential_pct: null }, thresholds)).toBe('unknown');
+    expect(potentialStatusOf({ ...row, profit_potential_pct: 45 }, null)).toBe('unknown');
+    // ردیفِ بی‌مقدار/بی‌آستانه هیچ مسیرِ ساختگی نمی‌گیرد.
+    expect(potentialPath({ ...row, profit_potential_pct: null, sales_to_mcap: null }, thresholds)).toBeNull();
+    expect(potentialPath({ ...row, profit_potential_pct: 13.2, sales_to_mcap: 0.1 }, null)).toBeNull();
+  });
+  it('does not invent fallback thresholds', () => {
+    expect(thresholdOf({}, 'growth')).toBeNull();
+    expect(thresholdOf({}, 'sales')).toBeNull();
+    expect(thresholdOf(null, 'sales')).toBeNull();
+    expect(thresholdOf({ margin_min: 40 }, 'growth')).toBeNull();
+  });
+  it('localizes verdicts', () => {
+    expect(verdictFa('STRONG')).toBe('قوی');
+    expect(verdictFa('WATCH')).toBe('تحت نظر');
+    expect(verdictFa('REJECT')).toBe('رد');
+    expect(verdictFa('EXCLUDED')).toBe('خارج از غربال');
+    expect(verdictFa('FTS ندارد')).toBe('FTS ندارد');
+  });
+  it('derives the EPS trend from the whole finite series (R98/R105)', () => {
+    expect(trendOf([1119, 1615, 1672])).toBe('up');
+    expect(trendOf([1672, 1615])).toBe('down');
+    expect(trendOf([500, 500])).toBe('flat');
+    expect(trendOf([1672])).toBeNull();
+    expect(trendOf(null)).toBeNull();
+    expect(trendOf([null, null])).toBeNull();
+    // نقطهٔ null نادیده گرفته می‌شود و سریِ متناهی ملاک است.
+    expect(trendOf([100, null, 90])).toBe('down');
+    // R105: جهشِ دو نقطهٔ آخر روند را نمی‌سازد؛ کل سری باید هم‌جهت باشد.
+    expect(trendOf([1425, 454, 456])).toBe('flat');
+    expect(trendOf([1425, 454, 456])).not.toBe('up');
+    expect(trendOf([100, 200, 150])).toBe('flat');
+    expect(trendOf([300, 200, 100])).toBe('down');
+    expect(trendOf([100, 200, 300])).toBe('up');
+    expect(formatEpsTrend([1425, 454, 456])).toBe('۴۵۶ →');
+  });
+  it('renders trend arrows and Persian words (R98)', () => {
+    expect([trendArrow('up'), trendArrow('down'), trendArrow('flat'), trendArrow(null)])
+      .toEqual(['↑', '↓', '→', '']);
+    expect([trendFa('up'), trendFa('down'), trendFa('flat'), trendFa(null)])
+      .toEqual(['صعودی', 'نزولی', 'بی‌تغییر', 'نامشخص']);
+    expect(formatEpsTrend([1119, 1615, 1672])).toBe('۱۶۷۲ ↑');
+    expect(formatEpsTrend([1672, 1615])).toBe('۱۶۱۵ ↓');
+    expect(formatEpsTrend(null)).toBe('—');
+  });
+  it('reads the EPS years gate from the row and then the root thresholds (R99)', () => {
+    expect(epsYearsRequired({ eps_years_required: 2 }, thresholds)).toBe(2);
+    expect(epsYearsRequired({}, thresholds)).toBe(3);
+    expect(epsYearsRequired({}, { v10_eps_years: 1 })).toBe(1);
+    expect(epsYearsRequired({}, null)).toBeNull();
+  });
+  it('computes EPS period deltas and growth percentages (R-P1-3)', () => {
+    const changes = epsChanges([1119, 1615, 1672]);
+    expect(changes).toHaveLength(3);
+    expect(changes[0]).toBeNull();
+    expect(changes[1]).toBeCloseTo(44.325, 3);
+    expect(changes[2]).toBeCloseTo(3.529, 3);
+    expect(epsChangeText(changes[1])).toBe('+۴۴٫۳٪');
+    expect(epsChangeText(changes[2])).toBe('+۳٫۵٪');
+    expect(epsDeltaText(1119, 1615)).toBe('+۴۹۶');
+    expect(epsDeltaText(1615, 1672)).toBe('+۵۷');
+  });
+  it('signs EPS deltas with a single Persian minus and never fakes a value (R-P1-3)', () => {
+    expect(epsChanges([100, 90])[1]).toBeCloseTo(-10, 6);
+    expect(epsChangeText(-10)).toBe('−۱۰٪');
+    expect(epsChangeText(0)).toBe('۰٪');
+    expect(epsChangeText(null)).toBe('—');
+    expect(epsDeltaText(100, 90)).toBe('−۱۰');
+    expect(epsDeltaText(90, 100)).toBe('+۱۰');
+    // بدون تغییر علامت ندارد؛ نه `+-` و نه صفرِ ساختگی.
+    expect(epsDeltaText(100, 100)).toBe('۰');
+    expect(epsDeltaText(null, 100)).toBe('—');
+    expect(epsDeltaText(100, null)).toBe('—');
+    // مخرجِ صفر/منفی رشد نمی‌سازد؛ مقدارِ گم‌شده گم‌شده می‌ماند.
+    expect(epsChanges([0, 10, 20])).toEqual([null, null, 100]);
+    expect(epsChanges([-5, 10])).toEqual([null, null]);
+    expect(epsChanges([100, null, 120, 150])).toEqual([null, null, null, 25]);
+    expect(epsChanges(null)).toEqual([]);
+  });
+  it('prefers backend EPS growth only when it matches the series length (R-P1-3)', () => {
+    expect(epsChanges([1, 2, 3], [null, 50, -2.5])).toEqual([null, 50, -2.5]);
+    const computed = epsChanges([1119, 1615], [50]);
+    expect(computed[0]).toBeNull();
+    expect(computed[1]).toBeCloseTo(44.325, 3);
+  });
+  it('rounds EPS deltas before choosing the sign (R-P1-3)', () => {
+    // زیرِ نیم پس از گردکردن صفر است؛ «+۰»/«−۰» ساخته نمی‌شود.
+    expect(epsDeltaText(100, 100.4)).toBe('۰');
+    expect(epsDeltaText(100.4, 100)).toBe('۰');
+    expect(epsDeltaText(100, 100.6)).toBe('+۱');
+    expect(epsDeltaText(100.6, 100)).toBe('−۱');
+  });
+  it('keeps the first backend EPS period null even when the array starts with a value (R-P1-3)', () => {
+    expect(epsChanges([1, 2, 3], [10, 20, 30])).toEqual([null, 20, 30]);
+    expect(epsChanges([1, 2], [0, null])).toEqual([null, null]);
+  });
+});

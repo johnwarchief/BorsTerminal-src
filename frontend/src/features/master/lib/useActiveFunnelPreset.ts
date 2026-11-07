@@ -9,7 +9,7 @@ import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
 import type { TreePreset } from './ftsFunnel';
 
-const VALID: readonly TreePreset[] = ['swing', 'trend', 'hourglass', 'custom'];
+const VALID: readonly TreePreset[] = ['swing', 'trend', 'hourglass', 'custom', 'tech_first'];
 
 /** `fallback` آخرین مرجع است — درِ production افقِ سراسری (`horizon`). */
 export function useActiveFunnelPreset(fallback?: TreePreset): TreePreset {

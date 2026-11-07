@@ -1,0 +1,129 @@
+[
+ {
+  "verb": "POST",
+  "build_ms": 2131,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 16.4,
+  "cheap_during_n": 26,
+  "cheap_during_med": 8.3,
+  "cheap_during_max": 245.1,
+  "cheap_during_series": [
+   242,
+   9,
+   6,
+   8,
+   8,
+   10,
+   6,
+   10,
+   8,
+   8,
+   6,
+   10,
+   6,
+   25,
+   6,
+   8,
+   6,
+   6,
+   10,
+   6,
+   9,
+   6,
+   9,
+   160,
+   245,
+   12
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "build_ms": 638,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 8.7,
+  "cheap_during_n": 1,
+  "cheap_during_med": 310.0,
+  "cheap_during_max": 310.0,
+  "cheap_during_series": [
+   310
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "build_ms": 633,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 6.9,
+  "cheap_during_n": 2,
+  "cheap_during_med": 244.8,
+  "cheap_during_max": 318.8,
+  "cheap_during_series": [
+   171,
+   319
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "POST",
+  "build_ms": 655,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 6.2,
+  "cheap_during_n": 2,
+  "cheap_during_med": 262.2,
+  "cheap_during_max": 343.4,
+  "cheap_during_series": [
+   181,
+   343
+  ],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ }
+]

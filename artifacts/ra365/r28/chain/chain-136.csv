@@ -1,0 +1,2 @@
+﻿date,class,prod_ratio,ref_ratio,err,prod_factor,ref_factor,offset,product_close,ref_close,implied_ref_dps,events
+2026-07-14,RATIO_DIFF,0.634824,0.6352941176,0.00074055,1.0,1.0,1.0,5400.0,5400.0,3100.0,"[('base-price-discontinuity', 0.634824, None)]"

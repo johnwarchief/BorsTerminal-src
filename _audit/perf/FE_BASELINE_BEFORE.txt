@@ -1,0 +1,37 @@
+·  ورود انجام شد تا مسیرِ واقعیِ کاربر سنجیده شود (هیچ دادهٔ کاربری نوشته نشد)
+·  cold run 1: «دادهٔ قابل‌استفاده» تا 45000ms نرسید (route=/master)
+  [dev-8000] cold #1: FP=304ms FCP=304ms firstUseful=nullms longtasks=3 tbt=368 worst=306ms req=6 enc=1215KiB gz=1217KiB heap=23.6MB landing=#/master
+·  cold run 2: «دادهٔ قابل‌استفاده» تا 45000ms نرسید (route=/master)
+  [dev-8000] cold #2: FP=252ms FCP=252ms firstUseful=nullms longtasks=6 tbt=495 worst=365ms req=6 enc=1215KiB gz=1217KiB heap=41MB landing=#/master
+·  cold run 3: «دادهٔ قابل‌استفاده» تا 45000ms نرسید (route=/master)
+  [dev-8000] cold #3: FP=216ms FCP=252ms firstUseful=nullms longtasks=5 tbt=513 worst=399ms req=6 enc=1215KiB gz=1217KiB heap=24.5MB landing=#/master
+  [dev-8000] tab تابلوخوانی     pass0  click→ready=  1211ms  longtasks=2 tbt=189 worst=197 frames>100=1 req=2 enc=0KiB  heap=26.7MB dom=1451
+  [dev-8000] tab وضعیت بازار    pass0  click→ready= 12130ms  longtasks=13 tbt=490 worst=241 frames>100=5 req=21 enc=351KiB  heap=52.5MB dom=7473
+  [dev-8000] tab تکنیکال        pass0  click→ready=  2298ms  longtasks=2 tbt=57 worst=103 frames>100=1 req=5 enc=278KiB  heap=57.3MB dom=720
+  [dev-8000] tab بنیادی         pass0  click→ready=  1541ms  longtasks=1 tbt=127 worst=177 frames>100=1 req=5 enc=169KiB  heap=78.3MB dom=1689
+·  تب «استراتژی FTS»: آمادگی (route=/master marker=[data-testid="master-breadcrumb"], [data-testid="funnel-chain-row"]≥1 + settle) نرسید؛ پنجرۀ ۵s جای آن
+  [dev-8000] tab استراتژی FTS   pass0  click→ready= 35106ms  longtasks=2 tbt=58 worst=90 frames>100=1 req=1 enc=282KiB  heap=38.1MB dom=359
+  [dev-8000] tab تابلوخوانی     pass1  click→ready=  1024ms  longtasks=2 tbt=124 worst=158 frames>100=1 req=2 enc=0KiB  heap=36.9MB dom=1470
+  [dev-8000] tab وضعیت بازار    pass1  click→ready=  2031ms  longtasks=3 tbt=541 worst=526 frames>100=2 req=2 enc=159KiB  heap=47.9MB dom=7480
+  [dev-8000] tab تکنیکال        pass1  click→ready=  1834ms  longtasks=2 tbt=110 worst=157 frames>100=1 req=2 enc=164KiB  heap=60MB dom=891
+  [dev-8000] tab بنیادی         pass1  click→ready=  1103ms  longtasks=2 tbt=160 worst=206 frames>100=1 req=2 enc=0KiB  heap=63.9MB dom=1689
+·  تب «استراتژی FTS»: آمادگی (route=/master marker=[data-testid="master-breadcrumb"], [data-testid="funnel-chain-row"]≥1 + settle) نرسید؛ پنجرۀ ۵s جای آن
+  [dev-8000] tab استراتژی FTS   pass1  click→ready= 35126ms  longtasks=4 tbt=78 worst=86 frames>100=1 req=2 enc=282KiB  heap=38.9MB dom=359
+  [dev-8000] tab تابلوخوانی     pass2  click→ready=  1018ms  longtasks=2 tbt=74 worst=122 frames>100=1 req=2 enc=0KiB  heap=40.3MB dom=1471
+  [dev-8000] tab وضعیت بازار    pass2  click→ready=  2263ms  longtasks=3 tbt=619 worst=594 frames>100=2 req=4 enc=168KiB  heap=47MB dom=7480
+  [dev-8000] tab تکنیکال        pass2  click→ready=  1326ms  longtasks=1 tbt=138 worst=188 frames>100=1 req=16 enc=164KiB  heap=53.1MB dom=881
+  [dev-8000] tab بنیادی         pass2  click→ready=  1154ms  longtasks=2 tbt=101 worst=151 frames>100=1 req=3 enc=159KiB  heap=61.8MB dom=1689
+·  تب «استراتژی FTS»: آمادگی (route=/master marker=[data-testid="master-breadcrumb"], [data-testid="funnel-chain-row"]≥1 + settle) نرسید؛ پنجرۀ ۵s جای آن
+  [dev-8000] tab استراتژی FTS   pass2  click→ready= 35107ms  longtasks=3 tbt=63 worst=104 frames>100=1 req=1 enc=282KiB  heap=40MB dom=359
+  [dev-8000] symbol سپيدار    history=   237ms  longtasks=1 tbt=1 worst=51 frames>100ms=0 req=4 heap=42.4MB
+  [dev-8000] symbol دزهراوي   history=   654ms  longtasks=0 tbt=0 worst=0 frames>100ms=0 req=4 heap=54.2MB
+  [dev-8000] symbol البرز     history=   632ms  longtasks=0 tbt=0 worst=0 frames>100ms=0 req=4 heap=75.1MB
+  [dev-8000] symbol زگلدشت    history=   508ms  longtasks=0 tbt=0 worst=0 frames>100ms=0 req=4 heap=80.6MB
+  [dev-8000] symbol وتعاون    history=   303ms  longtasks=0 tbt=0 worst=0 frames>100ms=0 req=4 heap=78.5MB
+  [dev-8000] zoom 12×wheel: 487ms longtasks=0 worst=0 frames med/p95/max=17/33/33 >100ms=0
+  [dev-8000] drag-pan    : 451ms longtasks=0 worst=0 frames med/p95/max=17/17/17 >100ms=0
+  [dev-8000] heavy: status-tab open=1525ms scroll(12×600px)=561ms longtasks=3 tbt=645 worst=465 frames>100=2 req=8 heap=43.1MB dom=7478
+
+wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\BorsTerminal-src\_audit\perf\FE_BASELINE_DEV.json
+console errors: []
+net errors    : []

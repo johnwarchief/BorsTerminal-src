@@ -12,20 +12,16 @@
  */
 
 import { registerOverlay } from 'klinecharts';
+import { registerDoubleTapStoryOverlay } from './doubleTapOverlay';
 import type {
   OverlayTemplate,
   OverlayFigure,
   OverlayCreateFiguresCallbackParams,
   KLineData,
 } from 'klinecharts';
-import { toFaDigits } from '@shared/lib/fa';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useTechnicalStore } from '../model/technicalStore';
-import type {
-  DoubleTapPattern,
-  PullbackSignal,
-  CHoCHSignal,
-} from '../model/types';
+import type { PullbackSignal, CHoCHSignal } from '../model/types';
 
 function getIsLight(): boolean {
   try {
@@ -43,6 +39,11 @@ function getIsLight(): boolean {
  * اصلی سنجیده شد که همان اختلاف، میانگین شکلِ رسم‌شده را از ۷٫۱ به ۱۷٫۷ و
  * بدترین نماد را به ۱۱۰ شکل می‌برد. رجیستری و اورلی هر دو همین ثابت را می‌خوانند،
  * و تستِ overlays/__tests__/indicatorDefaultsDrift.test.ts واگرایی را می‌گیرد.
+ */
+/**
+ * پارامترهای منبع (پروفایل source) — همان مقادیرِ سنجیده‌شدهٔ اورلیِ تلگرام.
+ * پروفایل «دقت بالا» در `model/doubleTapEngine.ts` (DEFAULT_PRECISION_PARAMS)
+ * تعریف شده و پیش‌فرض محصول است؛ این ثابت برای گاردِ واگرایی و پروفایل منبع می‌ماند.
  */
 export const DOUBLE_TAP_DEFAULTS = {
   pivLeft: 6,
@@ -103,44 +104,8 @@ function num(value: unknown, fallback: number): number {
  * فقط یک پالت دارد و تصویرِ مرجع هم همان را می‌زند، پس تمِ روشن هم همین شش رنگ
  * را با آلفا می‌گیرد، نه هویۀ اختراع‌شده.
  */
-export const DOUBLE_TAP_INK = {
-  top: '#ff2079',
-  bottom: '#00f0ff',
-  win: '#39ff14',
-  loss: '#ff5f1f',
-  target: '#fff01f',
-  neck: '#bc13fe',
-  labelText: '#000000',
-};
 
-/** rgba از یک hex، برای پرِ Face‌های سه‌بعدی (سورس: fill_color = color.new(c, 55|85)) */
-function rgba(hex: string, alphaPct: number): string {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${(100 - alphaPct) / 100})`;
-}
 
-/**
- * برچسبِ مرجع یک جعبۀ رنگی با متنِ سیاه است (label.new(..., color = c, textcolor = #000000)),
- * نه متنِ رنگیِ بی‌پس‌زمینه. TextStyle در klinecharts خودش backgroundColor و padding
- * دارد، پس یک figure کافی است و مستطیلِ دستی لازم نیست.
- */
-function chip(bg: string, size = 10) {
-  return {
-    color: DOUBLE_TAP_INK.labelText,
-    backgroundColor: bg,
-    size,
-    weight: 'bold',
-    family: 'Vazirmatn, sans-serif',
-    paddingLeft: 6,
-    paddingRight: 6,
-    paddingTop: 3,
-    paddingBottom: 3,
-    borderRadius: 2,
-  };
-}
 
 // ----------------------------------------------------------------------------
 // توابع محاسباتی پایه (Pure & No-Repainting)
@@ -254,509 +219,6 @@ function calculateRSI(closes: number[], period = 14): number[] {
 // ۱. اندیکاتور Double Tap 3D Indicator (الگوهای M و W با استایل سه‌بعدی و انیمیشن)
 // ----------------------------------------------------------------------------
 
-export function registerDoubleTap3DOverlay(): void {
-  const template: OverlayTemplate = {
-    name: 'DoubleTap3D',
-    totalStep: 1,
-    needDefaultPointFigure: false,
-    needDefaultXAxisFigure: false,
-    needDefaultYAxisFigure: false,
-    createPointFigures: (params: OverlayCreateFiguresCallbackParams<unknown>): OverlayFigure[] => {
-      const { chart, bounding } = params;
-      const dataList = chart.getDataList();
-      const n = dataList.length;
-      if (n < 20) return [];
-
-      const stored = useTechnicalStore.getState().indicatorParams.DoubleTap3D ?? {};
-      const pivLeft = num(stored.pivLeft, DOUBLE_TAP_DEFAULTS.pivLeft);
-      const pivRight = num(stored.pivRight, DOUBLE_TAP_DEFAULTS.pivRight);
-      const tolAtr = num(stored.tolAtr, DOUBLE_TAP_DEFAULTS.tolAtr);
-      const minSpan = DOUBLE_TAP_DEFAULTS.minSpan;
-      const maxSpan = DOUBLE_TAP_DEFAULTS.maxSpan;
-      const minHeightAtr = num(stored.minHeightAtr, DOUBLE_TAP_DEFAULTS.minHeightAtr);
-
-      const atr = calculateATR(dataList, 14);
-      const figures: OverlayFigure[] = [];
-      const detectedPatterns: DoubleTapPattern[] = [];
-      /**
-       * ایندکسِ اولین شکلِ هر الگو در آرایۀ figures. چون همه figures.pushها داخل
-       * بلوکِ یک الگو رخ می‌دهند، این نشانگر اجازه می‌دهد رسمِ الگوهای قدیمی‌تر
-       * دور ریخته شود بی‌آنکه ساختار تابع عوض شود.
-       */
-      const patternMarks: Array<{ figureStart: number; barIndex: number }> = [];
-
-      // شناسایی پیوت‌های سقف و کف
-      const isPivotHigh = (idx: number): boolean => {
-        const h = dataList[idx].high;
-        for (let j = Math.max(0, idx - pivLeft); j <= Math.min(n - 1, idx + pivRight); j++) {
-          if (j !== idx && dataList[j].high > h) return false;
-        }
-        return true;
-      };
-
-      const isPivotLow = (idx: number): boolean => {
-        const l = dataList[idx].low;
-        for (let j = Math.max(0, idx - pivLeft); j <= Math.min(n - 1, idx + pivRight); j++) {
-          if (j !== idx && dataList[j].low < l) return false;
-        }
-        return true;
-      };
-
-      const pivotHighs: Array<{ index: number; price: number; timestamp: number }> = [];
-      const pivotLows: Array<{ index: number; price: number; timestamp: number }> = [];
-
-      for (let i = pivLeft; i < n - pivRight; i++) {
-        if (isPivotHigh(i)) {
-          pivotHighs.push({ index: i, price: dataList[i].high, timestamp: dataList[i].timestamp });
-        }
-        if (isPivotLow(i)) {
-          pivotLows.push({ index: i, price: dataList[i].low, timestamp: dataList[i].timestamp });
-        }
-      }
-
-      // الف) ستاپ سقف دوقلو M (Double Top)
-      for (let p = 0; p < pivotHighs.length - 1; p++) {
-        const p1 = pivotHighs[p];
-        const p2 = pivotHighs[p + 1];
-        const span = p2.index - p1.index;
-
-        if (span >= minSpan && span <= maxSpan) {
-          const currentAtr = atr[p2.index] || 1;
-          const diff = Math.abs(p1.price - p2.price);
-
-          if (diff <= tolAtr * currentAtr) {
-            // پیدا کردن کف میان دو سقف به عنوان خط گردن (Neckline)
-            let neckLow = Infinity;
-            let neckIdx = -1;
-            let neckTs = p1.timestamp;
-
-            for (let k = p1.index + 1; k < p2.index; k++) {
-              if (dataList[k].low < neckLow) {
-                neckLow = dataList[k].low;
-                neckIdx = k;
-                neckTs = dataList[k].timestamp;
-              }
-            }
-
-            const patternHeight = Math.max(p1.price, p2.price) - neckLow;
-            if (patternHeight >= minHeightAtr * currentAtr && neckIdx !== -1) {
-              const tp1 = neckLow - patternHeight;
-              const tp2 = neckLow - 1.618 * patternHeight;
-              const stopLoss = Math.max(p1.price, p2.price) + 0.25 * currentAtr;
-              const score = Math.min(95, Math.round(70 + (1 - diff / (tolAtr * currentAtr)) * 25));
-
-              const x1 = getX(params, p1.index, p1.timestamp);
-              const y1 = getY(params, p1.price);
-              const xNeck = getX(params, neckIdx, neckTs);
-              const yNeck = getY(params, neckLow);
-              const x2 = getX(params, p2.index, p2.timestamp);
-              const y2 = getY(params, p2.price);
-
-              // بررسی شکست خط گردن
-              let breakoutIdx = -1;
-              for (let b = p2.index + 1; b < n; b++) {
-                if (dataList[b].close < neckLow) {
-                  breakoutIdx = b;
-                  break;
-                }
-              }
-
-              // پیدا کردن کف قبل از قله اول به عنوان نقطه آغاز حرکت تکانه‌ای (P0)
-              let p0Low = Infinity;
-              let p0Idx = -1;
-              let p0Ts = p1.timestamp;
-              const p0Start = Math.max(0, p1.index - span);
-              for (let k = p0Start; k < p1.index; k++) {
-                if (dataList[k].low < p0Low) {
-                  p0Low = dataList[k].low;
-                  p0Idx = k;
-                  p0Ts = dataList[k].timestamp;
-                }
-              }
-              if (p0Idx === -1 || p0Low === Infinity) {
-                p0Idx = p0Start;
-                p0Low = neckLow;
-                p0Ts = dataList[p0Idx]?.timestamp ?? p1.timestamp;
-              }
-
-              // نقطه بازآزمایی و شکست بعد از قله دوم (P3)
-              const p3Idx = breakoutIdx !== -1 ? breakoutIdx : Math.min(n - 1, p2.index + Math.max(1, Math.round(span / 2)));
-              const p3Price = breakoutIdx !== -1 ? neckLow : (p2.price + neckLow) / 2;
-              const p3Ts = dataList[p3Idx]?.timestamp ?? p2.timestamp;
-
-              const p0Obj = { index: p0Idx, price: p0Low, timestamp: p0Ts };
-              const p3Obj = { index: p3Idx, price: p3Price, timestamp: p3Ts };
-              const x0 = getX(params, p0Idx, p0Ts);
-              const y0 = getY(params, p0Low);
-              const x3 = getX(params, p3Idx, p3Ts);
-              const y3 = getY(params, p3Price);
-
-              const patternStatus = breakoutIdx !== -1 ? 'active' : 'forming';
-              patternMarks.push({ figureStart: figures.length, barIndex: p1.index });
-              detectedPatterns.push({
-                id: `double-top-${p1.index}`,
-                type: 'DOUBLE_TOP',
-                origin: p0Obj,
-                peak1: p1,
-                neckline: { index: neckIdx, price: neckLow, timestamp: neckTs },
-                peak2: p2,
-                retest: p3Obj,
-                breakoutIndex: breakoutIdx !== -1 ? breakoutIdx : undefined,
-                target1: tp1,
-                target2: tp2,
-                stopLoss,
-                score,
-                height: patternHeight,
-                status: patternStatus,
-              });
-
-              // ۱. Faces سه‌بعدی: سورس دو چندضلعیِ پر می‌کشد
-              //    (topFace = fill 45%، sideFace = fill 15%)، نه فقط خط.
-              const legPts = [
-                { x: x0, y: y0 },
-                { x: x1, y: y1 },
-                { x: xNeck, y: yNeck },
-                { x: x2, y: y2 },
-                { x: x3, y: y3 },
-              ];
-              // روبانِ سه‌بعدی: باندِ نازکِ هم‌عرضِ مسیر، نه پرِ چندضلعیِ بسته.
-              // بستنِ مسیر، مثلثِ غول‌آسایی پر می‌کرد که کندل‌ها را می‌پوشاند؛
-              // مرجع یک روبانِ هم‌عرض در طولِ زیگزاگ می‌کشد.
-              const band = 7;
-              const lowerPts = legPts.map((pt) => ({ x: pt.x, y: pt.y + band }));
-              const sidePts = legPts.map((pt) => ({ x: pt.x + 5, y: pt.y + band }));
-
-              figures.push({
-                type: 'polygon',
-                attrs: { coordinates: [...legPts, ...sidePts.slice().reverse()] },
-                styles: { color: rgba(DOUBLE_TAP_INK.top, 85), borderSize: 0 },
-              });
-              figures.push({
-                type: 'polygon',
-                attrs: { coordinates: [...legPts, ...lowerPts.slice().reverse()] },
-                styles: { color: rgba(DOUBLE_TAP_INK.top, 55), borderColor: DOUBLE_TAP_INK.top, borderSize: 1 },
-              });
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: legPts },
-                styles: { color: DOUBLE_TAP_INK.top, size: 2.5, style: 'solid' },
-              });
-
-              // ۲. خط‌گردن افقی کامل با رنگ درخشان
-              const xStart = Math.min(x0, x1);
-              const xEnd = Math.min(bounding.width, Math.max(x2 + 80, x3 + 40, xNeck + 120));
-
-              figures.push({
-                type: 'line',
-                attrs: {
-                  coordinates: [
-                    { x: xStart, y: yNeck },
-                    { x: xEnd, y: yNeck },
-                  ],
-                },
-                styles: {
-                  color: DOUBLE_TAP_INK.neck,
-                  size: 2,
-                  style: 'dashed',
-                  dashedValue: [5, 3],
-                },
-              });
-
-              // برچسب الگو: جعبۀ رنگی با متنِ سیاه (label.new با textcolor = #000000)
-              figures.push({
-                type: 'text',
-                attrs: {
-                  x: x2,
-                  y: y2 - 10,
-                  text: `سقف دوقلو M (${toFaDigits(score)}٪)`,
-                  align: 'center',
-                  baseline: 'bottom',
-                },
-                styles: chip(DOUBLE_TAP_INK.top),
-              });
-
-              // ۳. هدف‌ها و حد ضرر با استایلِ خودِ سورس:
-              //    TP1 توپر · TP2 خط‌چین · SL نقطه‌چین، هر سه width = 2
-              const yTp1 = getY(params, tp1);
-              const yTp2 = getY(params, tp2);
-              const ySl = getY(params, stopLoss);
-              const tp1Text = `TP1 ${toFaDigits(Math.round(tp1))}`;
-              const tp2Text = `TP2 ${toFaDigits(Math.round(tp2))}`;
-              const slText = `SL ${toFaDigits(Math.round(stopLoss))}`;
-              // وقتی سه سطح نزدیک هم‌اند، برچسب‌ها روی هم می‌افتند؛ هر کدام ۶۲px
-              // عقب‌تر می‌نشیند و خطش هم با آن کوتاه می‌شود تا برچسب از خط جدا نشود.
-              const xTp1 = xEnd;
-              const xTp2 = Math.max(x2 + 30, xEnd - 62);
-              const xSl = Math.max(x2 + 30, xEnd - 124);
-
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: x2, y: yTp1 }, { x: xTp1, y: yTp1 }] },
-                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'solid' },
-              });
-              figures.push({
-                type: 'text',
-                attrs: { x: xTp1, y: yTp1 - 6, text: tp1Text, align: 'right', baseline: 'bottom' },
-                styles: chip(DOUBLE_TAP_INK.target, 9),
-              });
-
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: x2, y: yTp2 }, { x: xTp2, y: yTp2 }] },
-                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'dashed', dashedValue: [6, 4] },
-              });
-              figures.push({
-                type: 'text',
-                attrs: { x: xTp2, y: yTp2 - 6, text: tp2Text, align: 'right', baseline: 'bottom' },
-                styles: chip(DOUBLE_TAP_INK.target, 9),
-              });
-
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: x2, y: ySl }, { x: xSl, y: ySl }] },
-                styles: { color: DOUBLE_TAP_INK.loss, size: 2, style: 'dotted', dashedValue: [2, 3] },
-              });
-              figures.push({
-                type: 'text',
-                attrs: { x: xSl, y: ySl - 6, text: slText, align: 'right', baseline: 'bottom' },
-                styles: chip(DOUBLE_TAP_INK.loss, 9),
-              });
-            }
-          }
-        }
-      }
-
-      // ب) ستاپ کف دوقلو W (Double Bottom)
-      for (let p = 0; p < pivotLows.length - 1; p++) {
-        const t1 = pivotLows[p];
-        const t2 = pivotLows[p + 1];
-        const span = t2.index - t1.index;
-
-        if (span >= minSpan && span <= maxSpan) {
-          const currentAtr = atr[t2.index] || 1;
-          const diff = Math.abs(t1.price - t2.price);
-
-          if (diff <= tolAtr * currentAtr) {
-            let neckHigh = -Infinity;
-            let neckIdx = -1;
-            let neckTs = t1.timestamp;
-
-            for (let k = t1.index + 1; k < t2.index; k++) {
-              if (dataList[k].high > neckHigh) {
-                neckHigh = dataList[k].high;
-                neckIdx = k;
-                neckTs = dataList[k].timestamp;
-              }
-            }
-
-            const patternHeight = neckHigh - Math.min(t1.price, t2.price);
-            if (patternHeight >= minHeightAtr * currentAtr && neckIdx !== -1) {
-              const tp1 = neckHigh + patternHeight;
-              const tp2 = neckHigh + 1.618 * patternHeight;
-              const stopLoss = Math.min(t1.price, t2.price) - 0.25 * currentAtr;
-              const score = Math.min(95, Math.round(70 + (1 - diff / (tolAtr * currentAtr)) * 25));
-
-              const x1 = getX(params, t1.index, t1.timestamp);
-              const y1 = getY(params, t1.price);
-              const xNeck = getX(params, neckIdx, neckTs);
-              const yNeck = getY(params, neckHigh);
-              const x2 = getX(params, t2.index, t2.timestamp);
-              const y2 = getY(params, t2.price);
-
-              let breakoutIdx = -1;
-              for (let b = t2.index + 1; b < n; b++) {
-                if (dataList[b].close > neckHigh) {
-                  breakoutIdx = b;
-                  break;
-                }
-              }
-
-              // پیدا کردن سقف قبل از کف اول به عنوان نقطه آغاز حرکت ریزشی (T0)
-              let t0High = -Infinity;
-              let t0Idx = -1;
-              let t0Ts = t1.timestamp;
-              const t0Start = Math.max(0, t1.index - span);
-              for (let k = t0Start; k < t1.index; k++) {
-                if (dataList[k].high > t0High) {
-                  t0High = dataList[k].high;
-                  t0Idx = k;
-                  t0Ts = dataList[k].timestamp;
-                }
-              }
-              if (t0Idx === -1 || t0High === -Infinity) {
-                t0Idx = t0Start;
-                t0High = neckHigh;
-                t0Ts = dataList[t0Idx]?.timestamp ?? t1.timestamp;
-              }
-
-              // نقطه بازآزمایی و شکست بعد از کف دوم (T3)
-              const t3Idx = breakoutIdx !== -1 ? breakoutIdx : Math.min(n - 1, t2.index + Math.max(1, Math.round(span / 2)));
-              const t3Price = breakoutIdx !== -1 ? neckHigh : (t2.price + neckHigh) / 2;
-              const t3Ts = dataList[t3Idx]?.timestamp ?? t2.timestamp;
-
-              const t0Obj = { index: t0Idx, price: t0High, timestamp: t0Ts };
-              const t3Obj = { index: t3Idx, price: t3Price, timestamp: t3Ts };
-              const x0 = getX(params, t0Idx, t0Ts);
-              const y0 = getY(params, t0High);
-              const x3 = getX(params, t3Idx, t3Ts);
-              const y3 = getY(params, t3Price);
-
-              const patternStatus = breakoutIdx !== -1 ? 'active' : 'forming';
-              patternMarks.push({ figureStart: figures.length, barIndex: t1.index });
-              detectedPatterns.push({
-                id: `double-bottom-${t1.index}`,
-                type: 'DOUBLE_BOTTOM',
-                origin: t0Obj,
-                peak1: t1,
-                neckline: { index: neckIdx, price: neckHigh, timestamp: neckTs },
-                peak2: t2,
-                retest: t3Obj,
-                breakoutIndex: breakoutIdx !== -1 ? breakoutIdx : undefined,
-                target1: tp1,
-                target2: tp2,
-                stopLoss,
-                score,
-                height: patternHeight,
-                status: patternStatus,
-              });
-
-              // ۱. Faces سه‌بعدی کف دوقلو، هم‌شکلِ بلوکِ M ولی با cBot
-              const legPts = [
-                { x: x0, y: y0 },
-                { x: x1, y: y1 },
-                { x: xNeck, y: yNeck },
-                { x: x2, y: y2 },
-                { x: x3, y: y3 },
-              ];
-              // روبانِ سه‌بعدی کف: باند به سمتِ بالا
-              const band = 7;
-              const upperPts = legPts.map((pt) => ({ x: pt.x, y: pt.y - band }));
-              const sidePts = legPts.map((pt) => ({ x: pt.x + 5, y: pt.y - band }));
-
-              figures.push({
-                type: 'polygon',
-                attrs: { coordinates: [...legPts, ...sidePts.slice().reverse()] },
-                styles: { color: rgba(DOUBLE_TAP_INK.bottom, 85), borderSize: 0 },
-              });
-              figures.push({
-                type: 'polygon',
-                attrs: { coordinates: [...legPts, ...upperPts.slice().reverse()] },
-                styles: { color: rgba(DOUBLE_TAP_INK.bottom, 55), borderColor: DOUBLE_TAP_INK.bottom, borderSize: 1 },
-              });
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: legPts },
-                styles: { color: DOUBLE_TAP_INK.bottom, size: 2.5, style: 'solid' },
-              });
-
-              const xStart = Math.min(x0, x1);
-              const xEnd = Math.min(bounding.width, Math.max(x2 + 80, x3 + 40, xNeck + 120));
-
-              // خط‌گردن
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: xStart, y: yNeck }, { x: xEnd, y: yNeck }] },
-                styles: { color: DOUBLE_TAP_INK.neck, size: 2, style: 'dashed', dashedValue: [5, 3] },
-              });
-
-              // برچسب کف دوقلو W
-              const wText = `کف دوقلو W (${toFaDigits(score)}٪)`;
-              figures.push({
-                type: 'text',
-                attrs: { x: x2, y: y2 + 10, text: wText, align: 'center', baseline: 'top' },
-                styles: chip(DOUBLE_TAP_INK.bottom),
-              });
-
-              // ۳. هدف‌ها و حد ضرر با استایلِ سورس (برای W: هدف‌ها بالای خط‌گردن)
-              const yTp1 = getY(params, tp1);
-              const yTp2 = getY(params, tp2);
-              const ySl = getY(params, stopLoss);
-              const tp1Text = `TP1 ${toFaDigits(Math.round(tp1))}`;
-              const tp2Text = `TP2 ${toFaDigits(Math.round(tp2))}`;
-              const slText = `SL ${toFaDigits(Math.round(stopLoss))}`;
-              const xTp1 = xEnd;
-              const xTp2 = Math.max(x2 + 30, xEnd - 62);
-              const xSl = Math.max(x2 + 30, xEnd - 124);
-
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: x2, y: yTp1 }, { x: xTp1, y: yTp1 }] },
-                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'solid' },
-              });
-              figures.push({
-                type: 'text',
-                attrs: { x: xTp1, y: yTp1 + 6, text: tp1Text, align: 'right', baseline: 'top' },
-                styles: chip(DOUBLE_TAP_INK.target, 9),
-              });
-
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: x2, y: yTp2 }, { x: xTp2, y: yTp2 }] },
-                styles: { color: DOUBLE_TAP_INK.target, size: 2, style: 'dashed', dashedValue: [6, 4] },
-              });
-              figures.push({
-                type: 'text',
-                attrs: { x: xTp2, y: yTp2 + 6, text: tp2Text, align: 'right', baseline: 'top' },
-                styles: chip(DOUBLE_TAP_INK.target, 9),
-              });
-
-              figures.push({
-                type: 'line',
-                attrs: { coordinates: [{ x: x2, y: ySl }, { x: xSl, y: ySl }] },
-                styles: { color: DOUBLE_TAP_INK.loss, size: 2, style: 'dotted', dashedValue: [2, 3] },
-              });
-              figures.push({
-                type: 'text',
-                attrs: { x: xSl, y: ySl + 6, text: slText, align: 'right', baseline: 'top' },
-                styles: chip(DOUBLE_TAP_INK.loss, 9),
-              });
-            }
-          }
-        }
-      }
-
-      // به‌روزرسانی الگوهای شناسایی‌شده در استور جهت نمایش در سایدبار اسکنر با بررسی تغییرات
-      const prevPatterns = useTechnicalStore.getState().detectedDoubleTapPatterns;
-      const patternsChanged =
-        prevPatterns.length !== detectedPatterns.length ||
-        prevPatterns.some(
-          (p, i) =>
-            p.id !== detectedPatterns[i]?.id ||
-            p.status !== detectedPatterns[i]?.status ||
-            p.score !== detectedPatterns[i]?.score
-        );
-      if (patternsChanged) {
-        useTechnicalStore.getState().setDetectedDoubleTapPatterns(detectedPatterns);
-      }
-
-      /**
-       * سقفِ رسم، نه سقفِ تشخیص. استور همه را نگه می‌دارد تا تب «اسکنر الگوها»
-       * واقعی بماند؛ فقط آخرین N الگو روی چارت می‌ماند.
-       *
-       * «آخرین» یعنی به ترتیبِ زمانِ بازار، نه ترتیبِ حلقه. حلقه اول همهٔ سقف‌ها و
-       * بعد همهٔ کف‌ها را می‌سازد؛ با بریدنِ انتهای آرایه، هر سقفی حذف می‌شد تا
-       * وقتی کف‌ها به سقف برسند. سنجهٔ پیکسل دقیقاً همین را گرفت: در حالتِ
-       * سه‌الگویی فقط #00f0ff (کف) رسم می‌شد و #ff2079 صفر بود.
-       */
-      const cap = useTechnicalStore.getState().maxDrawnPatterns;
-      const ranges = capPatternFigures(patternMarks, figures.length, cap);
-      if (ranges.length) {
-        const kept: OverlayFigure[] = [];
-        for (const r of ranges) kept.push(...figures.slice(r.from, r.to));
-        figures.length = 0;
-        figures.push(...kept);
-      }
-
-      return figures;
-    },
-  };
-
-  try {
-    registerOverlay(template);
-  } catch {
-    // Idempotent
-  }
-}
 
 // ----------------------------------------------------------------------------
 // ۲. اندیکاتور SuperTrend Pullback Signals (سیگنال‌های پولبک و زون ارزش)
@@ -1687,7 +1149,7 @@ export const ADVANCED_INDICATORS_REGISTRY: AdvancedIndicatorMeta[] = [
     category: 'overlay',
     isDefault: true,
     defaultParams: { ...DOUBLE_TAP_DEFAULTS },
-    registerFn: registerDoubleTap3DOverlay,
+    registerFn: registerDoubleTapStoryOverlay,
   },
   {
     id: 'SuperTrendPullback',
@@ -1734,6 +1196,8 @@ export const ADVANCED_INDICATORS_REGISTRY: AdvancedIndicatorMeta[] = [
     registerFn: registerMultiVariantRSIOverlay,
   },
 ];
+
+export { registerDoubleTapStoryOverlay as registerDoubleTap3DOverlay } from './doubleTapOverlay';
 
 export function registerAllAdvancedIndicators(): void {
   for (const item of ADVANCED_INDICATORS_REGISTRY) {

@@ -1,0 +1,73 @@
+{
+ "finding": "TSETMC Index/GetInstEffect provides the official per-symbol effect on TEDPIX. The app now persists it and uses it for the positive/negative impact panels; the previous derived (pClose-yesterday)*shares estimate remains only as an explicitly labelled fallback.",
+ "observed_at": "2026-10-20T22:48:00+03:30",
+ "endpoint": "https://cdn.tsetmc.com/api/Index/GetInstEffect/0/1/500",
+ "fetched_rows": 352,
+ "saved_rows": 352,
+ "d_even": 20261020,
+ "top_positive": [
+  {
+   "symbol": "فارس",
+   "insCode": "25244329144808274",
+   "effect_points": 19849.77
+  },
+  {
+   "symbol": "وبملت",
+   "insCode": "778253364357513",
+   "effect_points": 4553.3
+  },
+  {
+   "symbol": "ومعادن",
+   "insCode": "58931793851445922",
+   "effect_points": 2361.26
+  },
+  {
+   "symbol": "واميد",
+   "insCode": "28615172230574394",
+   "effect_points": 2330.19
+  },
+  {
+   "symbol": "كگل",
+   "insCode": "35700344742885862",
+   "effect_points": 2261.15
+  }
+ ],
+ "top_negative": [
+  {
+   "symbol": "فملي",
+   "insCode": "35425587644337450",
+   "effect_points": -23364.04
+  },
+  {
+   "symbol": "فولاد",
+   "insCode": "46348559193224090",
+   "effect_points": -5343.9
+  },
+  {
+   "symbol": "شستا",
+   "insCode": "2400322364771558",
+   "effect_points": -4518.19
+  },
+  {
+   "symbol": "تاپيكو",
+   "insCode": "22560050433388046",
+   "effect_points": -4274.78
+  },
+  {
+   "symbol": "وغدير",
+   "insCode": "26014913469567886",
+   "effect_points": -4101.14
+  }
+ ],
+ "reconciliation": {
+  "sum_of_impacts": 19146.5,
+  "official_index_change": 18446.1,
+  "rel_diff_pct": 3.8,
+  "meaning": "The official list covers 352 instruments; the residual is coverage/weight outside this list, not a local formula."
+ },
+ "rules": {
+  "operational_db_written": false,
+  "isolated_db": "../.q3-live-run/market.db",
+  "missing_effect": "no row; fallback is explicit, never zero"
+ }
+}

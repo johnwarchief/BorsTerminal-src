@@ -121,8 +121,23 @@ def test_wiring():
         hid = t[t.index("hiddenimports"):]
         ck("'api.execution'" in hid, "۲ %s درِ hiddenimports 'api.execution' دارد" % spec)
     import api.execution as EX
+    # این سنجه پیش‌تر «adapter فقط mock است» را می‌خواند. آن ادعا از
+    # مأموریتِ ۱۴۰۵-۰۷-۲۴ دیگر درست نیست: آداپتورِ EasyTrader درِ کد وجود دارد.
+    # چیزی که قفل می‌ماند *پیش‌فرض* است، نه تنوعِ پیاده‌شده — و همان قفل سه
+    # بخش شد تا اگر روزی پیش‌فرض عوض شد، گارد فریاد بزند.
     ck(EX.DRY_RUN is True and EX.ADAPTER_KIND == "mock",
-       "۳ درِ EXE dry-run قفل و adapter فقط mock است")
+       "۳ پیش‌فرضِ EXE (بی‌متغیرِ محیطی): mock و dry-run قفل")
+    _snap = EX._settings_snapshot()
+    ck(EX.ADAPTER_KIND == EX._configured_adapter(_snap)
+       and EX._configured_adapter(_snap) == _snap.get("adapter", "mock"),
+       "۳ انتخابِ آداپتور ازِ همان دو منبعِ import: محیط، سپس تنظیمِ ذخیره‌شده",
+       EX._configured_adapter(_snap))
+    ck("easytrader" in EX.ALLOWED_ADAPTERS and "titan" not in EX.ALLOWED_ADAPTERS
+       and "onlineplus" not in EX.ALLOWED_ADAPTERS,
+       "۳ سکوی مجاز: mock/easytrader — Online-Plus/Titan درِ فهرست نیست "
+       "(رأیِ مالک ۱۴۰۵-۰۷-۲۴)")
+    ck(EX.LIVE_REQUESTED is False,
+       "۳ ترافیکِ زنده بی‌BORS_EXECUTION_LIVE خاموش است")
     body_has_dry = "dry_run" in re.sub(r"\"dry_run\"", "",
                                        open(os.path.join(ROOT, "api", "execution.py"),
                                           encoding="utf-8").read())
@@ -300,6 +315,20 @@ def test_http_door():
 
     tmp = GUARD_DB
     os.environ["BORS_EXECUTION_DB"] = tmp
+    # `_resolve_instrument` بانکِ محلیِ نماد را ازِ market.db می‌خواند و آن فایل
+    # درِ گیت نیست ⇒ درِ CI هر درخواستِ درِ با «NOT_ORDERABLE:resolution» رد می‌شد
+    # و سنجهٔ قفلِ توقف هیچ‌وقت اجرا نمی‌رسید. یکِ بانکِ موقتیِ تنها-ردیف همان
+    # مسیرِ SELECTِ واقعی را می‌دهد، بی‌وابستگی به بانکِ ۹۸ مگابایتیِ این ماشین.
+    bank = os.path.join(ROOT, "_audit", "ledger_guard_bank_%s.db" % os.getpid())
+    bc = sqlite3.connect(bank)
+    bc.execute("CREATE TABLE instruments (ins_code TEXT, isin TEXT, l_val18 TEXT,"
+               " updated_at TEXT)")
+    bc.execute("INSERT INTO instruments VALUES (?,?,?,?)",
+               (INS.ins_code, INS.isin, INS.symbol, "2026-10-15T09:00:00"))
+    bc.commit()
+    bc.close()
+    saved_db = EX.DB_PATH
+    EX.DB_PATH = bank
     app = FastAPI()
     app.include_router(EX.router)
     c = TestClient(app)
@@ -365,6 +394,11 @@ def test_http_door():
     ck(last and last["status"] == "unknown_result",
        "۱۵ بازیابی وضعیتی نمی‌سازد", str(last)[:80])
     fresh.close()
+    EX.DB_PATH = saved_db
+    try:
+        os.remove(bank)
+    except OSError:
+        pass
 
 
 # ── ۱۶) کنترلِ منفی: سنسور کور نیست ────────────────────────────────────────

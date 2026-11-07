@@ -71,8 +71,8 @@ export function TelegramCatalogList({ className = '' }: TelegramCatalogListProps
   return (
     <div className={`flex flex-col gap-2 ${className}`} data-testid="telegram-catalog-list">
       <div className="flex items-center justify-between gap-2">
-        <span className="t-10 font-bold text-accent">کاتالوگ تلگرام ({toFaDigits(TELEGRAM_CATALOG.length)})</span>
-        <span className="t-85 text-text-3 font-mono" data-testid="telegram-catalog-count">
+        <span className="text-xs font-bold text-accent">کاتالوگ تلگرام ({toFaDigits(TELEGRAM_CATALOG.length)})</span>
+        <span className="text-xs text-text-3 font-mono" data-testid="telegram-catalog-count">
           {toFaDigits(rows.length)} سطر
         </span>
       </div>
@@ -84,7 +84,7 @@ export function TelegramCatalogList({ className = '' }: TelegramCatalogListProps
         onChange={(e) => setQuery(e.target.value)}
         placeholder="جستجو در نام، توضیح یا فایل"
         aria-label="جستجو در کاتالوگ تلگرام"
-        className="h-7 w-full rounded-[var(--radius-xs)] border border-line bg-panel px-2 t-9 text-text placeholder:text-text-3 focus:outline-none focus:border-accent"
+        className="h-7 w-full rounded-[var(--radius-xs)] border border-line bg-panel px-2 text-xs text-text placeholder:text-text-3 focus:outline-none focus:border-accent"
       />
 
       <div
@@ -123,26 +123,26 @@ export function TelegramCatalogList({ className = '' }: TelegramCatalogListProps
               </button>
 
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="t-95 truncate font-bold text-text">{rowTitle(r)}</span>
+                <span className="text-xs truncate font-bold text-text">{rowTitle(r)}</span>
                 <span
                   data-testid={`telegram-caption-${r.id}`}
-                  className="t-85 line-clamp-1 text-text-3"
+                  className="text-xs line-clamp-1 text-text-3"
                 >
                   {r.captionEn || 'بدون کپشن'}
                 </span>
               </div>
 
-              <span dir="ltr" className="t-85 shrink-0 font-mono text-text-3">{r.dims}</span>
+              <span dir="ltr" className="text-xs shrink-0 font-mono text-text-3">{r.dims}</span>
 
               <div className="shrink-0" data-testid={`telegram-status-${r.id}`}>
                 {r.overlayId == null ? (
-                  <span className="t-85 text-text-3">پیاده‌سازی نشده</span>
+                  <span className="text-xs text-text-3">پیاده‌سازی نشده</span>
                 ) : (
                   <button
                     type="button"
                     data-testid={`toggle-indicator-${r.id}`}
                     onClick={() => toggle(r.overlayId as string)}
-                    className={`flex items-center gap-1 rounded-[var(--radius-xs)] border px-2 t-9 font-medium transition-colors ${
+                    className={`flex items-center gap-1 rounded-[var(--radius-xs)] border px-2 text-xs font-medium transition-colors ${
                       overlayOn
                         ? 'border-emerald-500/40 bg-emerald-500/20 font-bold text-emerald-400'
                         : 'border-line bg-panel text-text-3 hover:text-text'
@@ -158,7 +158,7 @@ export function TelegramCatalogList({ className = '' }: TelegramCatalogListProps
         })}
 
         {rows.length === 0 && (
-          <div className="p-4 t-9 text-center text-text-3">موردی با این عبارت یافت نشد.</div>
+          <div className="p-4 text-xs text-center text-text-3">موردی با این عبارت یافت نشد.</div>
         )}
       </div>
 
@@ -176,14 +176,14 @@ export function TelegramCatalogList({ className = '' }: TelegramCatalogListProps
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-2">
-              <span className="t-10 font-bold text-text">{rowTitle(openRow)}</span>
+              <span className="text-xs font-bold text-text">{rowTitle(openRow)}</span>
               <button
                 type="button"
                 ref={closeBtnRef}
                 data-testid="telegram-lightbox-close"
                 onClick={closeLightbox}
                 aria-label="بستنِ تصویر"
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--radius-xs)] t-10 text-text-3 hover:bg-panel-2 hover:text-text"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--radius-xs)] text-xs text-text-3 hover:bg-panel-2 hover:text-text"
               >
                 ×
               </button>
@@ -195,10 +195,10 @@ export function TelegramCatalogList({ className = '' }: TelegramCatalogListProps
             />
             <div className="flex flex-col gap-1">
               {openRow.captionEn && (
-                <p className="t-85 whitespace-pre-line leading-snug text-text-2">{openRow.captionEn}</p>
+                <p className="text-xs whitespace-pre-line leading-snug text-text-2">{openRow.captionEn}</p>
               )}
               {openRow.attachments.length > 0 && (
-                <span dir="ltr" className="t-85 font-mono text-text-3">{openRow.attachments.join('، ')}</span>
+                <span dir="ltr" className="text-xs font-mono text-text-3">{openRow.attachments.join('، ')}</span>
               )}
             </div>
           </div>

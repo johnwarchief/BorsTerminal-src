@@ -1,0 +1,163 @@
+{
+ "at": "2026-10-17 23:26:34",
+ "clock": "2026-10-17T10:00:00+03:30",
+ "arms": [
+  {
+   "arm": "before",
+   "viewport": [
+    1366,
+    768
+   ],
+   "clock": "2026-10-17T10:00:00+03:30",
+   "db_pristine": true,
+   "ready_s": 5.4,
+   "monitor_exit": 0,
+   "badge": {
+    "n": 13,
+    "fresh": {
+     "live": 13
+    },
+    "labels": {
+     "مستقیم — بازار باز": 13
+    },
+    "data_age_ms_min": 5039,
+    "data_age_ms_max": 20106,
+    "routes": {
+     "#/market": 13
+    }
+   },
+   "shots": [
+    "c0-0-market.png",
+    "cold-0.png",
+    "warm-0.png"
+   ]
+  },
+  {
+   "arm": "before",
+   "viewport": [
+    1600,
+    900
+   ],
+   "clock": "2026-10-17T10:00:00+03:30",
+   "db_pristine": true,
+   "ready_s": 4.1,
+   "monitor_exit": 0,
+   "badge": {
+    "n": 13,
+    "fresh": {
+     "live": 13
+    },
+    "labels": {
+     "مستقیم — بازار باز": 13
+    },
+    "data_age_ms_min": 5043,
+    "data_age_ms_max": 21014,
+    "routes": {
+     "#/market": 13
+    }
+   },
+   "shots": [
+    "c0-0-market.png",
+    "cold-0.png",
+    "warm-0.png"
+   ]
+  },
+  {
+   "arm": "after",
+   "viewport": [
+    1366,
+    768
+   ],
+   "clock": "2026-10-17T10:00:00+03:30",
+   "db_pristine": true,
+   "ready_s": 5.6,
+   "monitor_exit": 0,
+   "badge": {
+    "n": 13,
+    "fresh": {
+     "stale": 13
+    },
+    "labels": {
+     "کهنه — ردیفی از نشستِ جاری در تابلو نیست": 13
+    },
+    "data_age_ms_min": 5045,
+    "data_age_ms_max": 20118,
+    "routes": {
+     "#/market": 13
+    }
+   },
+   "shots": [
+    "c0-0-market.png",
+    "cold-0.png",
+    "warm-0.png"
+   ]
+  },
+  {
+   "arm": "after",
+   "viewport": [
+    1600,
+    900
+   ],
+   "clock": "2026-10-17T10:00:00+03:30",
+   "db_pristine": true,
+   "ready_s": 3.1,
+   "monitor_exit": 0,
+   "badge": {
+    "n": 13,
+    "fresh": {
+     "stale": 13
+    },
+    "labels": {
+     "کهنه — ردیفی از نشستِ جاری در تابلو نیست": 13
+    },
+    "data_age_ms_min": 5024,
+    "data_age_ms_max": 20110,
+    "routes": {
+     "#/market": 13
+    }
+   },
+   "shots": [
+    "c0-0-market.png",
+    "cold-0.png",
+    "warm-0.png"
+   ]
+  }
+ ],
+ "head_put": {
+  "frontend/src/shared/lib/feedFreshness.ts": "2e258ab8125011997b280b57561d0b96a92755dbd5bd4c2dbef4386304ed73b1",
+  "frontend/src/shared/components/FreshnessBadge.tsx": "0f3b634673ace36b332714d72790e1023135b7b908abd5a696d88db435ea93ad",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx": "584d9bea5a717d63a5d514baf6f3aa608c07c6ee3f72384cc26b08af8f0537df"
+ },
+ "build_head": {
+  "rc": 0,
+  "dur_s": 26.8,
+  "log": "build-head.txt",
+  "dist": {
+   "files_with_fix": [],
+   "index_mtime": "2026-10-17 23:27:00"
+  }
+ },
+ "fix_put": {
+  "frontend/src/shared/lib/feedFreshness.ts": "c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb",
+  "frontend/src/shared/components/FreshnessBadge.tsx": "dca05d9162c2288fc3356949dd940fccfcee0b85116d39471c8ac54e35810569",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx": "4608b581e0cfd78a709fc75954be77380f3a1602eaf50b2339d84cf97596d08c"
+ },
+ "build_fixed": {
+  "rc": 0,
+  "dur_s": 23.5,
+  "log": "build-fixed.txt",
+  "dist": {
+   "files_with_fix": [
+    "index-JYkNGBQN.js"
+   ],
+   "index_mtime": "2026-10-17 23:29:36"
+  }
+ },
+ "db_restored_after": true,
+ "src_final": {
+  "frontend/src/shared/lib/feedFreshness.ts": "c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb",
+  "frontend/src/shared/components/FreshnessBadge.tsx": "dca05d9162c2288fc3356949dd940fccfcee0b85116d39471c8ac54e35810569",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx": "4608b581e0cfd78a709fc75954be77380f3a1602eaf50b2339d84cf97596d08c"
+ },
+ "src_final_is_fixed": true
+}

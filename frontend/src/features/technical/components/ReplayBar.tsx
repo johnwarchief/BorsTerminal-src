@@ -22,7 +22,7 @@ export function ReplayBar({ total }: { total: number }) {
   if (!active) {
     return (
       <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-2.5" data-testid="replay-bar">
-        <span className="text-[11px] font-bold text-text-secondary">بازپخش</span>
+        <span className="text-3xs font-bold text-text-secondary">بازپخش</span>
         <button
           type="button"
           data-testid="replay-start"
@@ -32,7 +32,7 @@ export function ReplayBar({ total }: { total: number }) {
         >
           شروع بازپخش
         </button>
-        <span className="text-[10px] text-text-muted">
+        <span className="text-3xs text-text-muted">
           {total < 2 ? 'دادهٔ کافی برای بازپخش نیست' : 'شروع از آخرین کندل؛ سپس با اسلایدر به عقب برگردان و پخش کن'}
         </span>
       </div>
@@ -41,7 +41,7 @@ export function ReplayBar({ total }: { total: number }) {
 
   return (
     <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-2.5" data-testid="replay-bar">
-      <span className="text-[11px] font-bold text-text-secondary">بازپخش</span>
+      <span className="text-3xs font-bold text-text-secondary">بازپخش</span>
       <button
         type="button"
         data-testid="replay-play"
@@ -78,7 +78,7 @@ export function ReplayBar({ total }: { total: number }) {
       >
         آخرین کندل
       </button>
-      <label className="flex items-center gap-1 text-[10px] text-text-muted">
+      <label className="flex items-center gap-1 text-3xs text-text-muted">
         موقعیت
         <input
           type="range"
@@ -91,13 +91,13 @@ export function ReplayBar({ total }: { total: number }) {
           aria-label="انتخاب کندل بازپخش"
         />
       </label>
-      <label className="flex items-center gap-1 text-[10px] text-text-muted">
+      <label className="flex items-center gap-1 text-3xs text-text-muted">
         سرعت
         <select
           data-testid="replay-speed"
           value={speedMs}
           onChange={(e) => setSpeed(Number(e.target.value))}
-          className="rounded border border-border-c bg-bg-card px-1 py-0.5 text-[11px] text-text-secondary"
+          className="rounded border border-border-c bg-bg-card px-1 py-0.5 text-3xs text-text-secondary"
           aria-label="سرعت بازپخش"
         >
           {REPLAY_SPEEDS.map((ms) => (
@@ -107,14 +107,14 @@ export function ReplayBar({ total }: { total: number }) {
           ))}
         </select>
       </label>
-      <span className="num text-[10px] text-text-muted" data-testid="replay-progress">
+      <span className="num text-3xs text-text-muted" data-testid="replay-progress">
         کندل {toFaDigits(cur + 1)} از {toFaDigits(total)}
       </span>
       <button
         type="button"
         data-testid="replay-stop"
         onClick={stop}
-        className="mr-auto rounded-full border border-border-c px-2.5 py-0.5 text-[11px] text-text-muted hover:border-accent-red/50 hover:text-accent-red"
+        className="mr-auto rounded-full border border-border-c px-2.5 py-0.5 text-3xs text-text-muted hover:border-accent-red/50 hover:text-accent-red"
       >
         خروج از بازپخش
       </button>

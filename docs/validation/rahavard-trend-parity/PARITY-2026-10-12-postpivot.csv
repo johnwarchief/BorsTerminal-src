@@ -1,0 +1,15 @@
+symbol,ins_code,tf,shared_bars,rel_err_median,rel_err_p95,pivots_bors,pivots_on_ref,pivot_matched,pivot_rate,trend_bors,trend_basis_bors,trend_on_ref,labels_bors,labels_on_ref,last_pivot_time,human_label,verdict
+خودرو,65883838195688438,D,420,0.0,0.000258,66,66,66,1.0,up,recent-window,up,HL|HL|HH|LL,HL|HL|HH|LL,2026-09-27,up,match_human
+خودرو,65883838195688438,W,120,0.000258,0.000258,22,22,22,1.0,up,pivots,up,HL|LH|HL|HH,HL|LH|HL|HH,2026-09-12,up,match_human
+شپنا,7745894403636165,D,420,0.000263,0.000374,65,66,65,1.0,up,pivots,up,HH|LL|HH|HL,HH|LL|HH|HL,2026-09-23,up,match_human
+شپنا,7745894403636165,W,120,0.000263,0.000374,18,18,18,1.0,up,recent-window,up,LL|HH|HL|HL,LL|HH|HL|HL,2026-07-18,,label_stable_under_ref
+فنوال,57875847776839336,D,420,0.000582,0.000582,79,81,79,1.0,up,recent-window,up,LH|LE|HH|LL,LH|LE|HH|LL,2026-09-22,up,match_human
+فنوال,57875847776839336,W,120,0.000582,0.000582,17,17,17,1.0,up,pivots,up,HH|HH|HL|HL,HH|HH|HL|HL,2026-09-19,up,match_human
+فولاد,46348559193224090,D,420,4.8e-05,0.000148,74,74,74,1.0,up,pivots,up,HH|HL|LE|HL,HH|HL|LE|HL,2026-10-05,up,match_human
+فولاد,46348559193224090,W,120,0.000148,0.000241,18,18,18,1.0,up,pivots,up,HH|LL|HH|HL,HH|LL|HH|HL,2026-08-15,up,match_human
+مارون,53449700212786324,D,420,8.1e-05,0.00067,76,76,76,1.0,up,pivots,up,LH|HH|HL|HH,LH|HH|HL|HH,2026-10-03,up,match_human
+مارون,53449700212786324,W,120,0.00067,0.00067,21,21,21,1.0,up,recent-window,up,HH|LL|LH|HL,HH|LL|LH|HL,2026-07-18,,label_stable_under_ref
+وبملت,778253364357513,D,420,0.000156,0.00027,65,65,65,1.0,down,pivots,down,HH|LL|LH|LE,HH|LL|LH|LE,2026-10-05,up,logic_gap_vs_human_label
+وبملت,778253364357513,W,120,0.000156,0.00027,22,22,22,1.0,up,pivots,up,HL|HH|HL|HH,HL|HH|HL|HH,2026-09-12,up,match_human
+ولانا,66830065858417081,D,420,0.024459,0.024459,74,77,74,1.0,up,pivots,up,HL|HL|HH|HL,HL|HL|HH|HL,2026-10-05,contradictory,human_contradictory
+ولانا,66830065858417081,W,120,0.024459,0.024459,20,20,20,1.0,range,recent-window,range,LL|LH|LL|LH,LL|LH|LL|LH,2026-06-13,up,logic_gap_vs_human_label

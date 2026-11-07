@@ -1,0 +1,170 @@
+{
+ "route": "/market-status",
+ "base": "http://127.0.0.1:8000",
+ "ranAt": "2026-10-22T01:51:15.859Z",
+ "results": [
+  {
+   "requests": [
+    {
+     "url": "/api/market/closes",
+     "n": 1,
+     "maxMs": 325,
+     "sumMs": 325,
+     "enc": 31130
+    },
+    {
+     "url": "/api/mstat/histogram",
+     "n": 1,
+     "maxMs": 510,
+     "sumMs": 510,
+     "enc": 579
+    },
+    {
+     "url": "/api/live-stats",
+     "n": 1,
+     "maxMs": 32,
+     "sumMs": 32,
+     "enc": 973
+    },
+    {
+     "url": "/api/mstat/timeline",
+     "n": 1,
+     "maxMs": 900,
+     "sumMs": 900,
+     "enc": 3167
+    },
+    {
+     "url": "/api/mstat/treemap",
+     "n": 1,
+     "maxMs": 1076,
+     "sumMs": 1076,
+     "enc": 21043
+    },
+    {
+     "url": "/api/mstat/gold",
+     "n": 1,
+     "maxMs": 1591,
+     "sumMs": 1591,
+     "enc": 10513
+    },
+    {
+     "url": "/api/mstat/series",
+     "n": 1,
+     "maxMs": 1010,
+     "sumMs": 1010,
+     "enc": 5646
+    },
+    {
+     "url": "/api/index/tedpix",
+     "n": 1,
+     "maxMs": 5292,
+     "sumMs": 5292,
+     "enc": 136052
+    },
+    {
+     "url": "/api/watchlist",
+     "n": 1,
+     "maxMs": 2470,
+     "sumMs": 2470,
+     "enc": 51
+    },
+    {
+     "url": "/api/mstat/mainwatch",
+     "n": 2,
+     "maxMs": 2739,
+     "sumMs": 4841,
+     "enc": 34839
+    },
+    {
+     "url": "/api/mstat/industries",
+     "n": 1,
+     "maxMs": 2102,
+     "sumMs": 2102,
+     "enc": 3858
+    },
+    {
+     "url": "/api/mstat/smart-money",
+     "n": 1,
+     "maxMs": 2465,
+     "sumMs": 2465,
+     "enc": 2056
+    },
+    {
+     "url": "/api/mstat/summary",
+     "n": 1,
+     "maxMs": 3102,
+     "sumMs": 3102,
+     "enc": 1441
+    },
+    {
+     "url": "/api/mstat/depth",
+     "n": 1,
+     "maxMs": 2733,
+     "sumMs": 2733,
+     "enc": 536
+    },
+    {
+     "url": "/api/mstat/thermometer",
+     "n": 1,
+     "maxMs": 3706,
+     "sumMs": 3706,
+     "enc": 394
+    },
+    {
+     "url": "/api/mstat/clientsplit",
+     "n": 1,
+     "maxMs": 2728,
+     "sumMs": 2728,
+     "enc": 585
+    },
+    {
+     "url": "/api/mstat/phases",
+     "n": 1,
+     "maxMs": 5544,
+     "sumMs": 5544,
+     "enc": 474
+    },
+    {
+     "url": "/api/mstat/indexcards",
+     "n": 1,
+     "maxMs": 3909,
+     "sumMs": 3909,
+     "enc": 1197
+    },
+    {
+     "url": "/api/mstat/tops",
+     "n": 1,
+     "maxMs": 3908,
+     "sumMs": 3908,
+     "enc": 2972
+    },
+    {
+     "url": "/api/mstat/orderflows",
+     "n": 1,
+     "maxMs": 4217,
+     "sumMs": 4217,
+     "enc": 3043
+    },
+    {
+     "url": "/api/mstat/ownership",
+     "n": 1,
+     "maxMs": 4486,
+     "sumMs": 4486,
+     "enc": 3293
+    }
+   ],
+   "requestTotal": 22,
+   "encodedBytes": 263842,
+   "longtasks": 15,
+   "tbt": 1398,
+   "framesOver100": 18,
+   "heapMB": 36,
+   "run": 1,
+   "login": true,
+   "clickedNav": true,
+   "readyMs": 7043,
+   "fromGotoMs": 12502,
+   "errors": []
+  }
+ ]
+}

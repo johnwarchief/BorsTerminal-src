@@ -1,0 +1,704 @@
+{
+ "base": "http://localhost:5173",
+ "symbol": "فولاد",
+ "facts": {
+  "klinecharts_feed_ms": 42,
+  "klinecharts_rows": 24,
+  "klinecharts_states": {
+   "trend-daily": "فعال",
+   "trend-weekly-gate": "فعال",
+   "structure-points": "فعال",
+   "structure-points-weekly": "فعال",
+   "e3-zigzag": "منتشر نشده",
+   "e3-choch": "منتشر نشده",
+   "fib-belt-33-40": "فعال",
+   "fib-belt-618-70": "فعال",
+   "fib-levels": "فعال",
+   "jet": "فعال نیست",
+   "pullback": "فعال نیست",
+   "choch": "فعال نیست",
+   "double-bottom": "فعال نیست",
+   "range-box": "فعال",
+   "point-hunt": "فعال نیست",
+   "current-trigger": "فعال",
+   "third-peak": "فعال نیست",
+   "double-top": "فعال نیست",
+   "head-shoulders": "فعال نیست",
+   "hourglass": "فعال نیست",
+   "ma14-exit": "فعال نیست",
+   "hard-stop": "فعال",
+   "setup-history": "فعال",
+   "corp-actions": "فعال"
+  },
+  "klinecharts_freshness": "مبنا: tsetmc-adjusted · ۴۲۴۴ کندلِ تحلیل · آخرین کندل: 1405/07/20 · دریافت: ۲۲:۵۷",
+  "klinecharts_evidence": {
+   "rule": "قاعده: روند ساختاری صعودی/نزولی/خنثی — مرجع: docs/FTS-RULE-ALGORITHM-MAP.md",
+   "src": "دهانۀ payload: structure_points.D · ترسیم: marker",
+   "times": "کِی رخ داد: 2026-10-05کِی فهمیدیم: 2026-10-10"
+  },
+  "klinecharts_weekly_facts": {
+   "پیوت‌هایِ هفتگی": "۱۴ نقطه",
+   "آخرین برچسب": "LL",
+   "قیمتِ تأییدشده": "۲٬۱۸۲"
+  },
+  "klinecharts_legend": [
+   "structure-points",
+   "structure-points-weekly",
+   "fib-belt-33-40",
+   "fib-belt-618-70",
+   "range-box",
+   "current-trigger",
+   "corp-actions"
+  ],
+  "klinecharts_box_canvas_animates": true,
+  "klinecharts_box_canvas_count": 10,
+  "klinecharts_box_layer_count": {
+   "before": null,
+   "off": null,
+   "on": null
+  },
+  "klinecharts_box_canvas_bytes": {
+   "canvases": 10,
+   "off": [
+    20980,
+    20980,
+    4068,
+    4068,
+    19980,
+    19980,
+    2124,
+    2124,
+    8440,
+    8440
+   ],
+   "on": [
+    23464,
+    23464,
+    4068,
+    4068,
+    19980,
+    19980,
+    2124,
+    2124,
+    10168,
+    10168
+   ],
+   "changed_indexes": [
+    0,
+    1,
+    8,
+    9
+   ],
+   "animates": true
+  },
+  "klinecharts_sweep_canvas_count": 10,
+  "klinecharts_sweep_canvas_animates": false,
+  "klinecharts_sweep_no_own_switch": [
+   "trend-daily",
+   "trend-weekly-gate",
+   "fib-belt-33-40",
+   "fib-belt-618-70",
+   "current-trigger",
+   "hard-stop"
+  ],
+  "klinecharts_switch_matrix": {
+   "trend-daily": {
+    "state": "فعال",
+    "claim": false,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "trend-weekly-gate": {
+    "state": "فعال",
+    "claim": false,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "structure-points": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 6,
+    "moved": true,
+    "restored": null
+   },
+   "structure-points-weekly": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 6,
+    "moved": true,
+    "restored": null
+   },
+   "fib-belt-33-40": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "fib-belt-618-70": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "fib-levels": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 8,
+    "moved": true,
+    "restored": null
+   },
+   "jet": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "pullback": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 2,
+    "moved": true,
+    "restored": null
+   },
+   "choch": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "double-bottom": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "range-box": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 4,
+    "moved": true,
+    "restored": null
+   },
+   "point-hunt": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "current-trigger": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "third-peak": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "double-top": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "head-shoulders": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "hourglass": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "ma14-exit": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 0,
+    "moved": false,
+    "restored": null
+   },
+   "hard-stop": {
+    "state": "فعال",
+    "claim": false,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "setup-history": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 8,
+    "moved": true,
+    "restored": null
+   },
+   "corp-actions": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": 4,
+    "moved": true,
+    "restored": null
+   }
+  },
+  "klinecharts_sweep_skipped": [
+   "trend-daily:فعال",
+   "trend-weekly-gate:فعال",
+   "fib-belt-33-40:فعال",
+   "fib-belt-618-70:فعال",
+   "jet:فعال نیست",
+   "pullback:فعال نیست",
+   "choch:فعال نیست",
+   "double-bottom:فعال نیست",
+   "point-hunt:فعال نیست",
+   "current-trigger:فعال",
+   "third-peak:فعال نیست",
+   "double-top:فعال نیست",
+   "head-shoulders:فعال نیست",
+   "hourglass:فعال نیست",
+   "ma14-exit:فعال نیست",
+   "hard-stop:فعال"
+  ],
+  "klinecharts_e3_off_flag": false,
+  "klinecharts_e3_off_state": "منتشر نشده",
+  "klinecharts_e3_canvas_animates": false,
+  "klinecharts_e3_on_state": "فعال",
+  "klinecharts_e3_canvas_bytes": {
+   "off": 23463,
+   "on": 42915,
+   "animates": false
+  },
+  "klinecharts_e3_evidence": {
+   "rule": "قاعده: — خارج از قواعد جزوه؛ لایۀ مقایسۀ بی‌رأی (FTS-RULE-ALGORITHM-MAP: بدونِ مرجعِ عددی) — مرجع: docs/FTS-RULE-ALGORITHM-MAP.md",
+   "src": "دهانۀ payload: (/api/structure3 -> points) · ترسیم: segment + marker",
+   "times": "کِی رخ داد: 2026-09-21کِی فهمیدیم: 2026-09-23"
+  },
+  "klinecharts_e3_legend": [
+   "structure-points",
+   "structure-points-weekly",
+   "e3-zigzag",
+   "e3-choch",
+   "fib-belt-33-40",
+   "fib-belt-618-70",
+   "range-box",
+   "current-trigger",
+   "corp-actions"
+  ],
+  "klinecharts_wire_agreement": {
+   "url": {
+    "fts": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+    "e3": "/api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+   },
+   "fts": {
+    "status": "success",
+    "basis": "tsetmc-adjusted",
+    "bars": 4244,
+    "ref_close": 4290,
+    "pivots_D": 14,
+    "pivots_W": 14
+   },
+   "e3": {
+    "status": "success",
+    "basis": "tsetmc-adjusted",
+    "bars": 4244,
+    "ref_close": 4290,
+    "pivots": 671,
+    "choch": 85,
+    "official": false,
+    "voting": false
+   }
+  },
+  "ffc_feed_ms": 48,
+  "ffc_rows": 24,
+  "ffc_states": {
+   "trend-daily": "فعال",
+   "trend-weekly-gate": "فعال",
+   "structure-points": "فعال",
+   "structure-points-weekly": "فعال",
+   "e3-zigzag": "منتشر نشده",
+   "e3-choch": "منتشر نشده",
+   "fib-belt-33-40": "فعال",
+   "fib-belt-618-70": "فعال",
+   "fib-levels": "فعال",
+   "jet": "فعال نیست",
+   "pullback": "فعال نیست",
+   "choch": "فعال نیست",
+   "double-bottom": "فعال نیست",
+   "range-box": "فعال",
+   "point-hunt": "فعال نیست",
+   "current-trigger": "فعال",
+   "third-peak": "فعال نیست",
+   "double-top": "فعال نیست",
+   "head-shoulders": "فعال نیست",
+   "hourglass": "فعال نیست",
+   "ma14-exit": "فعال نیست",
+   "hard-stop": "فعال",
+   "setup-history": "فعال",
+   "corp-actions": "فعال"
+  },
+  "ffc_freshness": "مبنا: tsetmc-adjusted · ۴۲۴۴ کندلِ تحلیل · آخرین کندل: 1405/07/20 · دریافت: ۲۲:۵۸",
+  "ffc_evidence": {
+   "rule": "قاعده: روند ساختاری صعودی/نزولی/خنثی — مرجع: docs/FTS-RULE-ALGORITHM-MAP.md",
+   "src": "دهانۀ payload: structure_points.D · ترسیم: marker",
+   "times": "کِی رخ داد: 2026-10-05کِی فهمیدیم: 2026-10-10"
+  },
+  "ffc_weekly_facts": {
+   "پیوت‌هایِ هفتگی": "۱۴ نقطه",
+   "آخرین برچسب": "LL",
+   "قیمتِ تأییدشده": "۲٬۱۸۲"
+  },
+  "ffc_legend": [
+   "structure-points",
+   "structure-points-weekly",
+   "fib-belt-33-40",
+   "fib-belt-618-70",
+   "range-box",
+   "current-trigger",
+   "hard-stop",
+   "corp-actions"
+  ],
+  "ffc_box_canvas_animates": false,
+  "ffc_box_canvas_count": 6,
+  "ffc_box_layer_count": {
+   "before": 47,
+   "off": 46,
+   "on": 47
+  },
+  "ffc_box_canvas_bytes": {
+   "canvases": 6,
+   "off": [
+    37558,
+    37558,
+    7366,
+    7366,
+    37558,
+    37558
+   ],
+   "on": [
+    40146,
+    40146,
+    9147,
+    9147,
+    40146,
+    40146
+   ],
+   "changed_indexes": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "animates": false
+  },
+  "ffc_sweep_canvas_count": 6,
+  "ffc_sweep_canvas_animates": false,
+  "ffc_sweep_no_own_switch": [
+   "trend-daily",
+   "trend-weekly-gate",
+   "fib-belt-33-40",
+   "fib-belt-618-70",
+   "current-trigger",
+   "hard-stop"
+  ],
+  "ffc_switch_matrix": {
+   "trend-daily": {
+    "state": "فعال",
+    "claim": false,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "trend-weekly-gate": {
+    "state": "فعال",
+    "claim": false,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "structure-points": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": 28,
+    "pixels": 6,
+    "moved": true,
+    "restored": true
+   },
+   "structure-points-weekly": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": 28,
+    "pixels": 6,
+    "moved": true,
+    "restored": true
+   },
+   "fib-belt-33-40": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "fib-belt-618-70": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "fib-levels": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": -7,
+    "pixels": 6,
+    "moved": true,
+    "restored": true
+   },
+   "jet": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "pullback": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "choch": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "double-bottom": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "range-box": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": 1,
+    "pixels": 6,
+    "moved": true,
+    "restored": true
+   },
+   "point-hunt": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "current-trigger": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "third-peak": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "double-top": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "head-shoulders": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "hourglass": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "ma14-exit": {
+    "state": "فعال نیست",
+    "claim": true,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "hard-stop": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": null,
+    "pixels": null,
+    "moved": null,
+    "restored": null,
+    "no_own_switch": true
+   },
+   "setup-history": {
+    "state": "فعال",
+    "claim": false,
+    "layer_delta": 0,
+    "pixels": 0,
+    "moved": false,
+    "restored": true
+   },
+   "corp-actions": {
+    "state": "فعال",
+    "claim": true,
+    "layer_delta": 14,
+    "pixels": 4,
+    "moved": true,
+    "restored": true
+   }
+  },
+  "ffc_sweep_skipped": [
+   "trend-daily:فعال",
+   "trend-weekly-gate:فعال",
+   "fib-belt-33-40:فعال",
+   "fib-belt-618-70:فعال",
+   "jet:فعال نیست",
+   "pullback:فعال نیست",
+   "choch:فعال نیست",
+   "double-bottom:فعال نیست",
+   "point-hunt:فعال نیست",
+   "current-trigger:فعال",
+   "third-peak:فعال نیست",
+   "double-top:فعال نیست",
+   "head-shoulders:فعال نیست",
+   "hourglass:فعال نیست",
+   "ma14-exit:فعال نیست",
+   "hard-stop:فعال"
+  ],
+  "ffc_e3_off_flag": false,
+  "ffc_e3_off_state": "منتشر نشده",
+  "ffc_e3_canvas_animates": false,
+  "ffc_e3_on_state": "فعال",
+  "ffc_e3_canvas_bytes": {
+   "off": 40146,
+   "on": 63323,
+   "animates": false
+  },
+  "ffc_e3_status": "موتور ۳ (بی‌رأی): ۶۷۱ پیوت · موفق",
+  "ffc_e3_evidence": {
+   "rule": "قاعده: — خارج از قواعد جزوه؛ لایۀ مقایسۀ بی‌رأی (FTS-RULE-ALGORITHM-MAP: بدونِ مرجعِ عددی) — مرجع: docs/FTS-RULE-ALGORITHM-MAP.md",
+   "src": "دهانۀ payload: (/api/structure3 -> points) · ترسیم: segment + marker",
+   "times": "کِی رخ داد: 2026-09-21کِی فهمیدیم: 2026-09-23"
+  },
+  "ffc_e3_legend": [
+   "structure-points",
+   "structure-points-weekly",
+   "e3-zigzag",
+   "e3-choch",
+   "fib-belt-33-40",
+   "fib-belt-618-70",
+   "range-box",
+   "current-trigger",
+   "hard-stop",
+   "corp-actions"
+  ],
+  "ffc_wire_agreement": {
+   "url": {
+    "fts": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+    "e3": "/api/structure3/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+   },
+   "fts": {
+    "status": "success",
+    "basis": "tsetmc-adjusted",
+    "bars": 4244,
+    "ref_close": 4290,
+    "pivots_D": 14,
+    "pivots_W": 14
+   },
+   "e3": {
+    "status": "success",
+    "basis": "tsetmc-adjusted",
+    "bars": 4244,
+    "ref_close": 4290,
+    "pivots": 671,
+    "choch": 85,
+    "official": false,
+    "voting": false
+   }
+  }
+ },
+ "fails": []
+}

@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-06 15:02:13",
+  "latest_source_date": "2026-11-04",
+  "symbols": 1017,
+  "counts": {
+    "stale": 162,
+    "sparse": 507,
+    "complete": 317,
+    "no_data": 21,
+    "failed": 10
+  },
+  "report": "D:\\BorsTerminal-worktrees\\4axes-main-integration\\_audit\\rebuild\\candles\\coverage-20261106-1500.csv"
+}

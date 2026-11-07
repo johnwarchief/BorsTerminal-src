@@ -1,12 +1,5 @@
-import { useSearchParams } from 'react-router';
-import StrategyTreeOverview from '../ui/StrategyTreeOverview';
-import StrategyTreeStageView from '../ui/StrategyTreeStageView';
+import StrategyTreeWorkspace from '../ui/StrategyTreeWorkspace';
 
 export default function StrategyTreePage() {
-  const [params] = useSearchParams();
-  const page = params.get('page');
-  if (page === 'F' || page === 'T' || page === 'S' || page === 'M') {
-    return <StrategyTreeStageView zone={page} />;
-  }
-  return <StrategyTreeOverview />;
+  return <StrategyTreeWorkspace />;
 }

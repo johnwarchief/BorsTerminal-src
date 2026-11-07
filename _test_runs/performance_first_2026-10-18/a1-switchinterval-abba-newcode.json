@@ -1,0 +1,972 @@
+[
+ {
+  "round": 0,
+  "arm": "A",
+  "switchinterval_s": 0.005,
+  "db_pristine": true,
+  "ready_s": 5.8,
+  "pid": 11632,
+  "runs": {
+   "/api/mstat/phase": [
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 623,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 14.3,
+     "cheap_during_n": 2,
+     "cheap_during_med": 248.7,
+     "cheap_during_max": 375.4,
+     "cheap_during_series": [
+      375,
+      122
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 707,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 13.5,
+     "cheap_during_n": 2,
+     "cheap_during_med": 300.3,
+     "cheap_during_max": 424.5,
+     "cheap_during_series": [
+      176,
+      425
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 562,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 13.3,
+     "cheap_during_n": 1,
+     "cheap_during_med": 482.8,
+     "cheap_during_max": 482.8,
+     "cheap_during_series": [
+      483
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 657,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 15.9,
+     "cheap_during_n": 2,
+     "cheap_during_med": 274.3,
+     "cheap_during_max": 403.2,
+     "cheap_during_series": [
+      403,
+      145
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ],
+   "/api/update/version": [
+    {
+     "verb": "POST",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=5ms",
+     "build_ms": 989,
+     "x_cache": [
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 8.9,
+     "cheap_during_n": 4,
+     "cheap_during_med": 166.1,
+     "cheap_during_max": 334.7,
+     "cheap_during_series": [
+      106,
+      139,
+      335,
+      193
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=5ms",
+     "build_ms": 2276,
+     "x_cache": [
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT",
+      "MISS"
+     ],
+     "bytes": 7489048,
+     "cheap_before_med": 7.8,
+     "cheap_during_n": 25,
+     "cheap_during_med": 8.3,
+     "cheap_during_max": 432.0,
+     "cheap_during_series": [
+      100,
+      8,
+      17,
+      7,
+      10,
+      6,
+      10,
+      5,
+      11,
+      10,
+      8,
+      9,
+      7,
+      29,
+      7,
+      8,
+      18,
+      8,
+      8,
+      8,
+      8,
+      6,
+      155,
+      138,
+      432
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ]
+  },
+  "devtest": {
+   "rc": 1,
+   "fails": [
+    "FAIL ۲۰ GET: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  ← {'cheap_ms': 488, 'build_ms': 923}"
+   ],
+   "tail": [
+    "نتیجه: 22 سبز، 1 قرمز"
+   ]
+  }
+ },
+ {
+  "round": 1,
+  "arm": "B",
+  "switchinterval_s": 0.0005,
+  "db_pristine": true,
+  "ready_s": 4.1,
+  "pid": 14164,
+  "runs": {
+   "/api/mstat/phase": [
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 712,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 63.0,
+     "cheap_during_n": 6,
+     "cheap_during_med": 36.5,
+     "cheap_during_max": 87.6,
+     "cheap_during_series": [
+      37,
+      36,
+      31,
+      43,
+      35,
+      88
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 836,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 14.6,
+     "cheap_during_n": 7,
+     "cheap_during_med": 62.3,
+     "cheap_during_max": 106.5,
+     "cheap_during_series": [
+      107,
+      44,
+      62,
+      32,
+      36,
+      77,
+      106
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 590,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 14.8,
+     "cheap_during_n": 6,
+     "cheap_during_med": 31.1,
+     "cheap_during_max": 89.8,
+     "cheap_during_series": [
+      73,
+      32,
+      21,
+      30,
+      30,
+      90
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 796,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 13.9,
+     "cheap_during_n": 7,
+     "cheap_during_med": 49.2,
+     "cheap_during_max": 102.1,
+     "cheap_during_series": [
+      79,
+      102,
+      35,
+      49,
+      30,
+      23,
+      99
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ],
+   "/api/update/version": [
+    {
+     "verb": "POST",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 1158,
+     "x_cache": [
+      "HIT",
+      "HIT",
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489047,
+     "cheap_before_med": 7.4,
+     "cheap_during_n": 8,
+     "cheap_during_med": 17.8,
+     "cheap_during_max": 542.8,
+     "cheap_during_series": [
+      100,
+      15,
+      11,
+      17,
+      19,
+      35,
+      17,
+      543
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 2518,
+     "x_cache": [
+      "HIT",
+      "HIT",
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489048,
+     "cheap_before_med": 6.6,
+     "cheap_during_n": 30,
+     "cheap_during_med": 10.0,
+     "cheap_during_max": 506.4,
+     "cheap_during_series": [
+      68,
+      10,
+      8,
+      9,
+      6,
+      10,
+      7,
+      8,
+      8,
+      9,
+      6,
+      17,
+      27,
+      8,
+      8,
+      6,
+      10,
+      12,
+      8,
+      11,
+      6,
+      18,
+      19,
+      25,
+      22,
+      24,
+      21,
+      16,
+      85,
+      506
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ]
+  },
+  "devtest": {
+   "rc": 0,
+   "fails": [],
+   "tail": [
+    "نتیجه: 23 سبز، 0 قرمز"
+   ]
+  }
+ },
+ {
+  "round": 2,
+  "arm": "B",
+  "switchinterval_s": 0.0005,
+  "db_pristine": true,
+  "ready_s": 3.1,
+  "pid": 16412,
+  "runs": {
+   "/api/mstat/phase": [
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 714,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 64.7,
+     "cheap_during_n": 6,
+     "cheap_during_med": 33.7,
+     "cheap_during_max": 92.2,
+     "cheap_during_series": [
+      37,
+      26,
+      29,
+      30,
+      43,
+      92
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 772,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 15.6,
+     "cheap_during_n": 7,
+     "cheap_during_med": 52.6,
+     "cheap_during_max": 96.0,
+     "cheap_during_series": [
+      89,
+      26,
+      51,
+      28,
+      53,
+      70,
+      96
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 770,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 14.7,
+     "cheap_during_n": 7,
+     "cheap_during_med": 34.1,
+     "cheap_during_max": 149.0,
+     "cheap_during_series": [
+      149,
+      32,
+      34,
+      27,
+      32,
+      54,
+      83
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 1196,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 15.9,
+     "cheap_during_n": 10,
+     "cheap_during_med": 33.5,
+     "cheap_during_max": 195.9,
+     "cheap_during_series": [
+      108,
+      33,
+      30,
+      68,
+      28,
+      29,
+      18,
+      34,
+      88,
+      196
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ],
+   "/api/update/version": [
+    {
+     "verb": "POST",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 2048,
+     "x_cache": [
+      "HIT",
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489048,
+     "cheap_before_med": 127.1,
+     "cheap_during_n": 11,
+     "cheap_during_med": 29.1,
+     "cheap_during_max": 949.1,
+     "cheap_during_series": [
+      138,
+      29,
+      26,
+      29,
+      24,
+      20,
+      31,
+      30,
+      124,
+      27,
+      949
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=0.5ms",
+     "build_ms": 3510,
+     "x_cache": [
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 8.9,
+     "cheap_during_n": 41,
+     "cheap_during_med": 14.0,
+     "cheap_during_max": 667.3,
+     "cheap_during_series": [
+      105,
+      30,
+      15,
+      12,
+      9,
+      15,
+      12,
+      15,
+      15,
+      16,
+      16,
+      14,
+      9,
+      14,
+      14,
+      13,
+      7,
+      28,
+      12,
+      9,
+      10,
+      5,
+      9,
+      7,
+      10,
+      9,
+      7,
+      11,
+      9,
+      10,
+      8,
+      18,
+      24,
+      20,
+      35,
+      28,
+      29,
+      15,
+      23,
+      68,
+      667
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ]
+  },
+  "devtest": {
+   "rc": 0,
+   "fails": [],
+   "tail": [
+    "نتیجه: 23 سبز، 0 قرمز"
+   ]
+  }
+ },
+ {
+  "round": 3,
+  "arm": "A",
+  "switchinterval_s": 0.005,
+  "db_pristine": true,
+  "ready_s": 4.1,
+  "pid": 772,
+  "runs": {
+   "/api/mstat/phase": [
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 620,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 31.9,
+     "cheap_during_n": 2,
+     "cheap_during_med": 269.0,
+     "cheap_during_max": 520.0,
+     "cheap_during_series": [
+      520,
+      18
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 683,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 13.5,
+     "cheap_during_n": 1,
+     "cheap_during_med": 637.7,
+     "cheap_during_max": 637.7,
+     "cheap_during_series": [
+      638
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 599,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 15.1,
+     "cheap_during_n": 1,
+     "cheap_during_med": 528.6,
+     "cheap_during_max": 528.6,
+     "cheap_during_series": [
+      529
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "POST",
+     "cheap": "/api/mstat/phase",
+     "rig": "switchinterval=5ms",
+     "build_ms": 565,
+     "x_cache": [
+      "MISS"
+     ],
+     "bytes": 7489027,
+     "cheap_before_med": 13.5,
+     "cheap_during_n": 1,
+     "cheap_during_med": 518.0,
+     "cheap_during_max": 518.0,
+     "cheap_during_series": [
+      518
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ],
+   "/api/update/version": [
+    {
+     "verb": "POST",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=5ms",
+     "build_ms": 890,
+     "x_cache": [
+      "HIT",
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489047,
+     "cheap_before_med": 11.0,
+     "cheap_during_n": 5,
+     "cheap_during_med": 100.8,
+     "cheap_during_max": 337.1,
+     "cheap_during_series": [
+      82,
+      136,
+      101,
+      337,
+      30
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    },
+    {
+     "verb": "GET",
+     "cheap": "/api/update/version",
+     "rig": "switchinterval=5ms",
+     "build_ms": 2316,
+     "x_cache": [
+      "HIT",
+      "MISS",
+      "HIT",
+      "HIT",
+      "HIT",
+      "HIT"
+     ],
+     "bytes": 7489048,
+     "cheap_before_med": 6.7,
+     "cheap_during_n": 26,
+     "cheap_during_med": 8.4,
+     "cheap_during_max": 394.6,
+     "cheap_during_series": [
+      59,
+      8,
+      8,
+      6,
+      9,
+      7,
+      10,
+      6,
+      10,
+      6,
+      9,
+      7,
+      9,
+      7,
+      16,
+      27,
+      6,
+      8,
+      18,
+      9,
+      7,
+      8,
+      7,
+      298,
+      395,
+      41
+     ],
+     "tech_scan": {
+      "pending_symbols": 0,
+      "running": false,
+      "queued": 0,
+      "done": 0,
+      "failed": 0,
+      "in_flight": 0,
+      "last_ms": 0,
+      "error": null
+     }
+    }
+   ]
+  },
+  "devtest": {
+   "rc": 1,
+   "fails": [
+    "FAIL ۲۰ POST: درخواستِ ارزانِ هم‌زمان پشتِ ساختِ قیف نمی‌ماند (< نصفِ زمانِ ساخت)  ← {'cheap_ms': 557, 'build_ms': 968}"
+   ],
+   "tail": [
+    "نتیجه: 22 سبز، 1 قرمز"
+   ]
+  }
+ }
+]

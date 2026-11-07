@@ -1,0 +1,186 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "git_commit": "482863a54a6ac44d6b5165c6f67181175c628f32",
+ "started_at": "2026-10-22T22:50:47+0330",
+ "methods": "read-only GET/POST; POST body is the UI default funnel request",
+ "gets": {
+  "funnel registry": {
+   "path": "/api/funnel/registry",
+   "first_ms": 142.79,
+   "first_status": 200,
+   "first_raw": 25293,
+   "first_gz": 7688,
+   "first_etag": null,
+   "p50_ms": 7.63,
+   "p95_ms": 9.92,
+   "n": 30,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 25293,
+   "gzip_bytes": 7688
+  },
+  "funnel trace فولاد": {
+   "path": "/api/funnel/trace?symbol=%D9%81%D9%88%D9%84%D8%A7%D8%AF&preset=trend&chain=&fund_mode=standard&exceptions=%7B%7D&drop_suffix=true",
+   "first_ms": 517.06,
+   "first_status": 200,
+   "first_raw": 2500,
+   "first_gz": 1160,
+   "first_etag": null,
+   "p50_ms": 5.7,
+   "p95_ms": 6.36,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 2500,
+   "gzip_bytes": 1160
+  },
+  "fts plan فولاد": {
+   "path": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "first_ms": 2486.34,
+   "first_status": 200,
+   "first_raw": 28455,
+   "first_gz": 7768,
+   "first_etag": null,
+   "p50_ms": 261.25,
+   "p95_ms": 410.85,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 28455,
+   "gzip_bytes": 7768
+  },
+  "fts config": {
+   "path": "/api/fts/config",
+   "first_ms": 6.82,
+   "first_status": 200,
+   "first_raw": 1121,
+   "first_gz": 620,
+   "first_etag": null,
+   "p50_ms": 4.4,
+   "p95_ms": 40.04,
+   "n": 30,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 1121,
+   "gzip_bytes": 620
+  },
+  "key levels فولاد": {
+   "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/key-levels",
+   "first_ms": 263.69,
+   "first_status": 200,
+   "first_raw": 661,
+   "first_gz": 661,
+   "first_etag": null,
+   "p50_ms": 3.38,
+   "p95_ms": 4.31,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 661,
+   "gzip_bytes": 661
+  },
+  "market closes": {
+   "path": "/api/market/closes",
+   "first_ms": 28.46,
+   "first_status": 200,
+   "first_raw": 78512,
+   "first_gz": 31130,
+   "first_etag": "\"closes-0-20261014-160254-749ee1c7\"",
+   "p50_ms": 28.02,
+   "p95_ms": 43.91,
+   "n": 30,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 78512,
+   "gzip_bytes": 31130
+  },
+  "screener": {
+   "path": "/api/screener",
+   "first_ms": 546.2,
+   "first_status": 200,
+   "first_raw": 1203781,
+   "first_gz": 122599,
+   "first_etag": null,
+   "p50_ms": 205.03,
+   "p95_ms": 332.13,
+   "n": 10,
+   "statuses": [
+    200
+   ],
+   "digests": 1,
+   "raw_bytes": 1203781,
+   "gzip_bytes": 122599
+  }
+ },
+ "funnel_post": {
+  "path": "/api/funnel",
+  "body": {
+   "preset": "trend",
+   "chain": [],
+   "logic": "and",
+   "fund_mode": "standard",
+   "tech_chain": [],
+   "strategy_settings": {},
+   "exceptions": {},
+   "drop_suffix": true
+  },
+  "first_ms": 80.83,
+  "first_status": 200,
+  "first_raw": 7574466,
+  "first_gz": 388055,
+  "first_etag": "W/\"72b87222b72faa08\"",
+  "first_x_cache": "HIT",
+  "p50_ms": 56.11,
+  "p95_ms": 63.79,
+  "n": 10,
+  "statuses": [
+   200
+  ],
+  "digests": 0,
+  "raw_bytes": 7574466,
+  "gzip_bytes": 388055,
+  "etag": "W/\"72b87222b72faa08\"",
+  "conditional": {
+   "status": 412,
+   "ms": 5.65,
+   "raw": 0,
+   "gz": 0,
+   "etag": "W/\"72b87222b72faa08\""
+  }
+ },
+ "funnel_get": {
+  "path": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings=%7B%7D&exceptions=%7B%7D&drop_suffix=true",
+  "first_ms": 44.17,
+  "first_raw": 7574466,
+  "first_gz": 388055,
+  "first_etag": "W/\"72b87222b72faa08\"",
+  "p50_ms": 46.77,
+  "p95_ms": 74.86,
+  "n": 10,
+  "statuses": [
+   200
+  ],
+  "digests": 1,
+  "raw_bytes": 7574467,
+  "gzip_bytes": 388055,
+  "etag": "W/\"72b87222b72faa08\"",
+  "conditional": {
+   "status": 304,
+   "ms": 3.79,
+   "gz": 0,
+   "etag": "W/\"72b87222b72faa08\""
+  }
+ }
+}

@@ -1,10 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_LAYOUT, clampRatio, closeTile, findTile, isValidLayout, neighborOf,
+  DEFAULT_LAYOUT, MARKET_LIMITS, clampRatio, closeTile, findTile, isValidLayout, neighborOf,
   panelsInOrder, ratioFromPointer, splitTile, swapWithNeighbor, type LayoutNode,
 } from '@shared/workspace/layout';
+import { TECHNICAL_LIMITS } from '@shared/workspace/types';
 
 const ids = (root: LayoutNode) => panelsInOrder(root).map((item) => item.panel);
+
+type TP = 'chart' | 'inspector' | 'feed' | 'scanner' | 'fundamental';
+const leaf = (id: string, panel: TP): LayoutNode<TP> => ({ kind: 'tile', id, panel, follow: false });
+
+describe('layout limits', () => {
+  it('allows four technical panes and rejects a fifth', () => {
+    let root = leaf('t-chart', 'chart');
+    root = splitTile(root, 't-chart', 'row', 'inspector', TECHNICAL_LIMITS)!;
+    root = splitTile(root, 't-chart', 'col', 'feed', TECHNICAL_LIMITS)!;
+    root = splitTile(root, 't-chart', 'col', 'scanner', TECHNICAL_LIMITS)!;
+    expect(panelsInOrder(root)).toHaveLength(4);
+    expect(splitTile(root, 't-chart', 'col', 'fundamental', TECHNICAL_LIMITS)).toBeNull();
+  });
+
+  it('keeps the market two-tile limit as an explicit default', () => {
+    expect(MARKET_LIMITS).toEqual({ maxDepth: 3, maxTiles: 2 });
+    expect(splitTile(DEFAULT_LAYOUT, 't-board', 'col', 'watch')).toBeNull();
+  });
+});
 
 describe('layout tree', () => {
   it('reads panels right-to-left', () => {
@@ -12,9 +32,9 @@ describe('layout tree', () => {
   });
 
   it('allows adding watch back once it is closed and refuses a third tile', () => {
-    expect(splitTile(DEFAULT_LAYOUT, 't-board', 'col', 'watch', () => 't-x')).toBeNull();
+    expect(splitTile(DEFAULT_LAYOUT, 't-board', 'col', 'watch', MARKET_LIMITS, () => 't-x')).toBeNull();
     const closed = closeTile(DEFAULT_LAYOUT, 't-watch')!;
-    const next = splitTile(closed, 't-board', 'col', 'watch', () => 't-new');
+    const next = splitTile(closed, 't-board', 'col', 'watch', MARKET_LIMITS, () => 't-new');
     expect(next).not.toBeNull();
     expect(ids(next!).sort()).toEqual(['board', 'watch']);
   });

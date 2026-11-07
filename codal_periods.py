@@ -42,6 +42,7 @@ __all__ = [
     "CANON_RE", "VALID_GLOB", "DATED_SQL", "UNDATED_SQL", "dated_sql", "undated_sql",
     "latest_order_sql", "order_expr",
     "canonicalize", "from_title", "derive", "is_canonical", "is_undated",
+    "g2j_tuple", "j2g_date", "j_month_len",
     "ym", "fiscal_year", "desc_sort_key", "latest",
     "undated_counts", "tables",
     "pub_canon_sql", "pub_order_expr", "pub_key",
@@ -129,6 +130,105 @@ def canonicalize(raw) -> str | None:
     if not 1 <= mo <= 12 or not 1 <= d <= 31:
         return None
     return f"{y}/{mo:02d}/{d:02d}"
+
+
+def _g2j(gy, gm, gd):
+    g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+    gy2 = gy + 1 if gm > 2 else gy
+    days = 355666 + (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) \
+        + ((gy2 + 399) // 400) + gd + g_d_m[gm - 1]
+    jy = -1595 + (33 * (days // 12053))
+    days %= 12053
+    jy += 4 * (days // 1461)
+    days %= 1461
+    if days > 365:
+        jy += (days - 1) // 365
+        days = (days - 1) % 365
+    if days < 186:
+        jm = 1 + (days // 31)
+        jd = 1 + (days % 31)
+    else:
+        jm = 7 + ((days - 186) // 30)
+        jd = 1 + ((days - 186) % 30)
+    return jy, jm, jd
+
+
+def _j2g(jy, jm, jd):
+    jy += 1595
+    days = -355668 + (365 * jy) + ((jy // 33) * 8) + (((jy % 33) + 3) // 4) + jd
+    if jm < 7:
+        days += (jm - 1) * 31
+    else:
+        days += ((jm - 7) * 30) + 186
+    gy = 400 * (days // 146097)
+    days %= 146097
+    if days > 36524:
+        days -= 1
+        gy += 100 * (days // 36524)
+        days %= 36524
+        if days >= 365:
+            days += 1
+    gy += 4 * (days // 1461)
+    days %= 1461
+    if days > 365:
+        gy += (days - 1) // 365
+        days = (days - 1) % 365
+    gd = days + 1
+    leap = (gy % 4 == 0 and gy % 100 != 0) or (gy % 400 == 0)
+    sal_a = [31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    gm = 0
+    while gm < 12 and gd > sal_a[gm]:
+        gd -= sal_a[gm]
+        gm += 1
+    return gy, gm + 1, gd
+
+
+def j_month_len(jy, jm):
+    """طولِ ماهِ شمسی (۲۹..۳۱) — همان قاعدهٔ `dev/calendar_fetcher.py`.
+
+    ماه‌های ۱..۶ = ۳۱، ۷..۱۱ = ۳۰، و اسفند فقط با رفت‌وبرگشتِ `_j2g`/`_g2j`
+    سنجیده می‌شود: اگر ۳۰ اسفند پس از تبدیل رفت‌وبرگشت همان ۳۰ اسفند بماند،
+    سال کبیسه است؛ وگرنه ۲۹. هیچ جدولِ کبیسهٔ جداگانه‌ای نگه داشته نمی‌شود.
+    """
+    if jm <= 6:
+        return 31
+    if jm <= 11:
+        return 30
+    gy, gm, gd = _j2g(jy, 12, 30)
+    j2 = _g2j(gy, gm, gd)
+    return 30 if (j2[1] == 12 and j2[2] == 30) else 29
+
+
+def g2j_tuple(gy, gm, gd):
+    """میلادی ⇒ شمسی؛ برای مقایسهٔ دورهٔ آینده."""
+    return _g2j(int(gy), int(gm), int(gd))
+
+
+def j2g_date(raw):
+    """'1405/06/31[ 12:10:00]' ⇒ '2026-09-22[ 12:10:00]'؛ نامعتبر ⇒ None.
+
+    سخت‌گیریِ تقویمی: سال بیرونِ ۱۳۰۰..۱۵۰۰ و روزِ بزرگ‌تر از طولِ ماهِ شمسی
+    (`j_month_len`) رد می‌شود — «1405/07/31» و «2026-11-03» هر دو Noneاند،
+    نه تاریخی خیالی.
+    """
+    s = str(raw or "").translate(_DIGITS)
+    m = _LOOSE.search(s)
+    if not m:
+        return None
+    jy, jm, jd = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if not 1 <= jm <= 12 or not 1 <= jd <= 31:
+        return None
+    if not 1300 <= jy <= 1500:
+        return None
+    if jd > j_month_len(jy, jm):
+        return None
+    gy, gm, gd = _j2g(jy, jm, jd)
+    out = "%04d-%02d-%02d" % (gy, gm, gd)
+    tm = re.search(r"(?<!\d)(\d{1,2}):(\d{2})(?::(\d{2}))?", s)
+    if tm:
+        out += " %02d:%02d:%02d" % (int(tm.group(1)), int(tm.group(2)),
+                                    int(tm.group(3) or 0))
+    return out
 
 
 # «… منتهی به ۱۴۰۴/۱۲/۲۹ …» — برایِ ردیف‌هایی که datasourceِ کدال دوره نداشت

@@ -151,19 +151,31 @@ export function swingLows(lows: (number | null)[], order = 3): SwingPoint[] {
     ftsChoch/fibZones برای هم‌خوانی عددی با موتور بک‌اند. کندل‌های دارای null
     در پنجره، پیوت‌زنی نمی‌شوند (بک‌اند کندلِ ناقص ندارد). */
 
+/** اندیسِ بازگشتی همیشه درِ فضایِ *مطلقِ* آرایهٔ ورودی است (B6): پیش از این
+    شاخۀ swing نسبت به sliceِ نسبی می‌داد و شاخۀ fallback مطلق — دو فضایِ
+    ناسازگار در یک SwingPoint. اینجا برش با start ثبت و اندیسِ نسبی به مطلق
+    برگردانده می‌شود؛ داوریِ پیوت عوض نمی‌شود، فقط صندلیِ آن درست خوانده می‌شود. */
 export function majorResistance(highs: (number | null)[], lookback = 120): SwingPoint | null {
-  const swings = swingHighs(highs.slice(-lookback), 3);
-  if (swings.length > 0) return swings.reduce((a, b) => (b.price > a.price ? b : a));
-  const vals = highs.slice(-lookback).filter((v): v is number => v != null);
+  const start = Math.max(0, highs.length - lookback);
+  const swings = swingHighs(highs.slice(start), 3);
+  if (swings.length > 0) {
+    const top = swings.reduce((a, b) => (b.price > a.price ? b : a));
+    return { index: top.index + start, price: top.price };
+  }
+  const vals = highs.slice(start).filter((v): v is number => v != null);
   if (vals.length === 0) return null;
   return { index: highs.length - 1, price: Math.max(...vals) };
 }
 
-/** حمایت ماژور متناظر */
+/** حمایت ماژور متناظر — همان قراردادِ اندیسِ مطلق (B6) */
 export function majorSupport(lows: (number | null)[], lookback = 120): SwingPoint | null {
-  const swings = swingLows(lows.slice(-lookback), 3);
-  if (swings.length > 0) return swings.reduce((a, b) => (b.price < a.price ? b : a));
-  const vals = lows.slice(-lookback).filter((v): v is number => v != null);
+  const start = Math.max(0, lows.length - lookback);
+  const swings = swingLows(lows.slice(start), 3);
+  if (swings.length > 0) {
+    const bot = swings.reduce((a, b) => (b.price < a.price ? b : a));
+    return { index: bot.index + start, price: bot.price };
+  }
+  const vals = lows.slice(start).filter((v): v is number => v != null);
   if (vals.length === 0) return null;
   return { index: lows.length - 1, price: Math.min(...vals) };
 }

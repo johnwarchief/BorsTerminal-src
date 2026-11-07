@@ -1,0 +1,77 @@
+# ردیف‌هایِ زمان‌بندیِ بوت ازِ لاگِ خامِ dev (خودِ لاگ باِ .gitignore خارج است؛ اینِ برش شواهد است)
+
+===== _audit/perf/dev_backend.log =====
+11:INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+12:[startup] codal schema migrated (additive, idempotent)
+13:[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش (دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)
+14:[startup] screener warm thread spawned
+15:[startup] candle projection spawned (local-only, one pass)
+16:[market-sync] thread started
+18:[startup] market sync thread spawned
+20:[screener] loaded from disk cache
+27:[screener] cache warmed
+41:[market-sync] done
+42:[screener] cache miss, running heavy bulk scan...
+43:[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+65:[screener] saved to disk cache
+66:[screener] cache warmed
+
+===== _audit/perf/dev_backend_after.log =====
+10:[startup] codal schema migrated (additive, idempotent)
+11:[startup] market sync thread spawned
+12:[startup] screener warm thread spawned
+13:[startup] board refresh loop spawned (90s, session-windowed)
+14:[startup] board tick loop spawned (5s, session-windowed)
+15:[startup] pulse snapshot loop spawned (300s, session-windowed)
+16:[startup] candle projection spawned (local-only, one pass)
+18:INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+19:[startup] market sync already running — skip
+21:[startup] screener warm deferred to market sync
+22:[market-sync] thread started[startup] market sync thread spawned
+43:[market-sync] done
+45:[screener] cache miss, running heavy bulk scan...
+46:[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+48:[screener] saved to disk cache
+49:[screener] cache warmed
+
+===== _audit/perf/dev_backend_contend.log =====
+10:[startup] codal schema migrated (additive, idempotent)
+11:[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش (دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)
+12:[startup] screener warm thread spawned
+13:[startup] candle projection spawned (local-only, one pass)
+15:INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+17:[market-sync] thread started[startup] market sync thread spawned
+21:[startup] screener warm deferred to market sync
+22:[screener] cache miss, running heavy bulk scan...
+23:[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+74:[screener] saved to disk cache
+
+===== _audit/perf/dev_backend_contend2.log =====
+10:[startup] codal schema migrated (additive, idempotent)
+11:[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش (دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)
+12:[startup] screener warm thread spawned
+13:[startup] candle projection spawned (local-only, one pass)
+15:INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+16:[market-sync] thread started
+17:[startup] market sync thread spawnedStarting full market-watch fetch ...
+21:[startup] screener warm deferred to market sync
+22:[screener] cache miss, running heavy bulk scan...
+23:[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+118:[screener] saved to disk cache
+
+===== _audit/perf/dev_backend_final.log =====
+10:[startup] codal schema migrated (additive, idempotent)
+11:[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش (دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)
+12:[startup] screener warm thread spawned
+13:[startup] candle projection spawned (local-only, one pass)
+15:INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+17:[market-sync] thread started
+18:[startup] market sync thread spawnedStarting full market-watch fetch ...
+21:[startup] screener warm deferred to market sync
+45:[screener] loaded from disk cache
+137:[market-sync] done
+138:[screener] cache miss, running heavy bulk scan...
+140:[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+175:[screener] saved to disk cache
+176:[screener] cache warmed
+

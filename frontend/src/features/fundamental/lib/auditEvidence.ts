@@ -319,7 +319,9 @@ export function screenAuditEvidence(
       const actual = num(row.rev_growth);
       const ev = build1aEvidence(actual, num(cfg.growth_min), row.i1a_pass);
       if (actual == null) {
-        ev.reason = MISSING;
+        // دلیلِ شکاف را خودِ موتور می‌فرستد (`i1_reason` از axis1_state)؛
+        // متنِ عمومیِ «مقدار در پاسخ نیامده» فقط جانشین است (Task 4).
+        ev.reason = row.i1_reason || MISSING;
       }
       return ev;
     }
@@ -353,7 +355,9 @@ export function screenAuditEvidence(
       const actual = num(row.gross_margin);
       const ev = build3Evidence(actual, num(cfg.margin_min), row.i3_pass, row.i3_na === true);
       if (actual == null && row.i3_na !== true) {
-        ev.reason = MISSING;
+        // دلیلِ شکاف/N/A را خودِ موتور می‌فرستد (`i3_reason`)؛ متنِ عمومی
+        // «مقدار نیامده» فقط جانشین است (Task 10B2a1).
+        ev.reason = row.i3_reason || MISSING;
       }
       return ev;
     }
@@ -362,7 +366,7 @@ export function screenAuditEvidence(
       const actual = num(row.sales_to_mcap);
       const ev = build4Evidence(actual, num(cfg.v10_sales_to_mcap_min), row.i4_pass, row.i4_na === true);
       if (actual == null && row.i4_na !== true) {
-        ev.reason = MISSING;
+        ev.reason = row.i4_reason || MISSING;
       }
       return ev;
     }

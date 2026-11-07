@@ -147,6 +147,12 @@ def make_db():
               "title, period_months, period_end, revenue, gross_profit) "
               "VALUES (903,?,?,?,12,'1403/12/29',60.0,20.0)",
               (par[0][:-1].strip(), par[1], t902))
+    # خانوادۀ «بی‌شاهد»: پسونددار بی‌ردیفِ خود، پایۀ ردیفِ کدال دارد، و هیچ‌کدام
+    # ISIN ندارند — دقیقاً همان حالتی که رأیِ مالک ۲۰۶-۱-۱۷ ادغامش را بست.
+    c.execute("INSERT INTO financial_statements (tracing_no, symbol, company_name, title, "
+              "period_months, period_end, revenue, gross_profit) VALUES "
+              "(904,'بی‌شاهد','شرکت بی‌شاهد آزمون','صورت‌های مالی سال مالی منتهی به "
+              "۱۴۰۳/۱۲/۲۹ (حسابرسی شده)',12,'1403/12/29',400.0,120.0)")
     for tn, sym in ((1, "شهر فرش"), (2, "آباد"), (3, "خودرو")):
         c.execute("INSERT INTO codal_notices (tracing_no, symbol, title, publish_date) "
                   "VALUES (?,?,'اطلاعیه','۱۴۰۵/۰۷/۰۱ ۱۰:۰۰:۰۰')", (1000 + tn, sym))
@@ -159,6 +165,7 @@ def main() -> int:
     conn, path = make_db()
     try:
         section_layer(conn)
+        section_ruling_a(conn)
         section_paths(conn)
         section_regressions(conn)
     finally:
@@ -218,8 +225,11 @@ def section_layer(conn):
     ck(not cs and evc == "ambiguous",
        "T19 دو خطِ کلاسِ بی‌شاهد ⇒ الحاق ممنوع و اعلام می‌شود", (cs, evc))
     cs2, evc2 = SI.class_siblings(conn, "تازگی")
-    ck(set(cs2) == {"تازگی2"} and evc2 == "no-isin",
-       "T19ب خطِ کلاسِ یکتا پذیرفته می‌شود، با ردپایِ بی‌شاهد", (cs2, evc2))
+    ck(not cs2 and evc2 == "pending-review",
+       "T19ب خطِ کلاسِ یکتا بی‌شاهدِ ISIN ادغام نمی‌شود (رأیِ مالک)", (cs2, evc2))
+    ps2, pev2 = SI.pending_siblings(conn, "تازگی")
+    ck(set(ps2) == {"تازگی2"} and pev2 == "pending-review",
+       "T19ت نامزدِ ادغام‌نشده حذف نمی‌شود؛ درِ ردپا زنده می‌ماند", (ps2, pev2))
     cs3, evc3 = SI.class_siblings(conn, "آباد")
     ck(not cs3 and evc3 == "same-key",
        "T19پ خودِ پایه رویِ تابلو هست ⇒ الحاقِ خطِ کلاس لازم نیست", (cs3, evc3))
@@ -259,6 +269,45 @@ def section_layer(conn):
 
 
 # ── ب) هر دو مسیر، یک دید ──────────────────────────────────────────────────
+def section_ruling_a(conn):
+    """رأیِ مالک ۲۰۲۶-۱۰-۱۷: ادغامِ خودکار فقط با ISINِ معتبر؛ بی‌شاهد ⇒ pending.
+
+    چهار چیز ثابت می‌شود: (۱) ادغام بسته است، (۲) ردیفِ صادرکنندۀ دیگر به نمادِ
+    پسونددار نشت نمی‌کند، (۳) نامزد و علت درِ ردپا می‌مانند، (۴) با *اضافه‌شدنِ*
+    همان ISINِ مشترک ادغام باز می‌شود — پس درِ بسته از بی‌شاهدی است، نه از
+    خرابیِ عامِ لایه.
+    """
+    ex, ev = SI.line_variants(conn, "بی‌شاهد2")
+    ck(not ex and ev == "pending-review",
+       "T30 بی‌شاهدِ ISIN ⇒ الحاق نمی‌شود و ردپا این را می‌گوید", (ex, ev))
+    pred, params = SI.pred(conn, "symbol", "بی‌شاهد2")
+    n = conn.execute("SELECT COUNT(*) FROM financial_statements WHERE " + pred,
+                     params).fetchone()[0]
+    ck(n == 0,
+       "T31 ردیفِ «بی‌شاهد» (صادرکنندۀ دیگرِ احتمالی) به «بی‌شاهد2» نشت نمی‌کند",
+       {"rows_for_suffixed": n})
+    pend, pev = SI.pending_variants(conn, "بی‌شاهد2")
+    ck("بی‌شاهد" in [str(x) for x in pend] and pev == "pending-review",
+       "T32 نامزد درِ پاسخ می‌ماند (حذف نشده، فقط ادغام نشده)", (pend, pev))
+    ck(SI.evidence(conn, "بی‌شاهد2") == "pending-review",
+       "T33 «ادغامِ بسته‌شده» از «بی‌نامزد» درِ ردپا جداست",
+       SI.evidence(conn, "بی‌شاهد2"))
+    # کنترلِ منفی: همان دو خط با ISINِ هم‌قطار ⇒ ادغام باید باز شود
+    conn.executemany("INSERT INTO instruments (ins_code, l_val18, l_val30, isin, total_shares)"
+                     " VALUES (?,?,?,?,?)",
+                     [("21", "بی‌شاهد2", "شرکت بی‌شاهد آزمون", "IRO1BESH2001", 10.0),
+                      ("22", "بی‌شاهد", "شرکت بی‌شاهد آزمون", "IRO1BESH2001", 10.0)])
+    conn.commit()
+    SI.reset_cache(conn)
+    ex2, ev2 = SI.line_variants(conn, "بی‌شاهد2")
+    n2 = conn.execute("SELECT COUNT(*) FROM financial_statements WHERE " +
+                      SI.pred(conn, "symbol", "بی‌شاهد2")[0],
+                      SI.pred(conn, "symbol", "بی‌شاهد2")[1]).fetchone()[0]
+    ck(ev2 == "isin-agree" and "بی‌شاهد" in [str(x) for x in ex2] and n2 == 1,
+       "T34 دامِ سنسور: با شاهدِ ISIN همان الحاق باز می‌شود (بستگی به بی‌شاهدی است)",
+       (ev2, ex2, n2))
+
+
 def section_paths(conn):
     FE.register_sql(conn)
     for s in ("شهر فرش", "داریک", "احیا"):

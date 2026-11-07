@@ -46,6 +46,8 @@ def release_body(tag):
                     ln.strip().startswith(w) for w in want)
                 continue
             if hit:
+                if ln.strip().startswith("<!--") and ln.strip().endswith("-->"):
+                    continue  # علامتِ machine-readable برایِ آپدیترِ Tauri نمی‌رود
                 out.append(ln)
         if hit and any(x.strip() for x in out):
             return "\n".join(out).strip()
@@ -54,6 +56,42 @@ def release_body(tag):
     return "%s ساخته شد؛ %s موجود نیست." % (tag, RELEASE_NOTES_FILE)
 
 
+
+
+def _section_lines(tag):
+    """سطرهای بخشِ همان نسخه از docs/RELEASE_NOTES.md (بین دو سطر «## »).
+
+    یادداشتِ نسخه هم متنِ ریلیز است هم جایِ علامتِ وضعیتِ نسخه؛ هر دو خواننده از
+    یک برشِ واحد می‌آیند، نه دو جست‌وجویِ جدا که می‌توانند واگرا شوند.
+    """
+    path = os.path.join(ROOT, RELEASE_NOTES_FILE)
+    if not os.path.isfile(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    want = ("## " + tag, "## v" + tag.lstrip("v"), "## " + tag.lstrip("v"))
+    out, hit = [], False
+    for ln in text.splitlines():
+        if ln.startswith("## "):
+            if hit:
+                break
+            hit = ln.strip() in [w.strip() for w in want] or any(
+                ln.strip().startswith(w) for w in want)
+            continue
+        if hit:
+            out.append(ln)
+    return out
+
+
+def _prerelease_flag(tag):
+    """آیا بخشِ این نسخه در یادداشت‌ها علامتِ «prerelease» دارد؟
+
+    پر‌ریلیز یعنی ریلیز از «releases/latest» بیرون می‌ماند: هیچ کاربرِ نصب‌شده‌ای
+    خودکار به این نسخه کشیده نمی‌شود و فقط کسی که پیوندِ مستقیمِ همان تگ را باز
+    کند نصبش می‌کند. انتخاب درِ خودِ فایلِ یادداشت است، نه درِ CI یا متغیرِ
+    محیطیِ فراموش‌شدنی — تا چیزی که کاربر می‌خواند همان باشد که آپدیتر می‌کند.
+    """
+    return any("prerelease" in ln and ln.strip().startswith("<!--") for ln in _section_lines(tag))
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -81,6 +119,9 @@ RELEASE_BODY = release_body(TAG)
 # فقط بدنهٔ ریلیز پاکت HTML می‌گیرد؛ «notes»ِ latest.json عیناً به آپدیترِ Tauri
 # می‌رود و اگر تگ داشته باشد همان تگ را به کاربر نشان می‌دهد.
 RELEASE_BODY_RTL = '<div dir="rtl">\n\n%s\n\n</div>' % RELEASE_BODY
+PRE_RELEASE = _prerelease_flag(TAG)
+RELEASE_TITLE = RELEASE_NAME_TEMPLATE.format(tag=TAG) + ('' if not PRE_RELEASE else ' — Preview')
+print(f"[=] pre-release={PRE_RELEASE}  (releases/latest will not serve this tag to installed clients)")
 print(f"[=] ریلیزِ هدف: {TAG}  (RELEASE_TAG unset means bors_config.APP_VERSION)")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
@@ -381,10 +422,10 @@ def main():
         print(f"[+] در حال ساخت ریلیز {TAG} ...")
         payload = json.dumps({
             "tag_name": TAG,
-            "name": RELEASE_NAME_TEMPLATE.format(tag=TAG),
+            "name": RELEASE_TITLE,
             "body": RELEASE_BODY_RTL,
             "draft": False,
-            "prerelease": False
+            "prerelease": PRE_RELEASE
         }).encode("utf-8")
         req = urllib.request.Request(url_releases, data=payload, headers={**headers, "Content-Type": "application/json"})
         try:
@@ -397,6 +438,20 @@ def main():
             sys.exit(1)
     else:
         print(f"[*] ریلیز {TAG} از قبل وجود دارد. ID: {target_release['id']}")
+        if bool(target_release.get("prerelease")) != PRE_RELEASE:
+            # اجرایِ دوباره باید همان وضعیتی را بسازد که یادداشتِ نسخه اعلام کرده،
+            # وگرنه ریلیزِ موجود با پرچمِ دیگری بی‌سروصدا باقی می‌ماند.
+            _req = urllib.request.Request(
+                f"https://api.github.com/repos/{REPO}/releases/{target_release['id']}",
+                data=json.dumps({"prerelease": PRE_RELEASE}).encode("utf-8"),
+                headers={**headers, "Content-Type": "application/json"},
+                method="PATCH")
+            try:
+                with urllib.request.urlopen(_req):
+                    print(f"[*] release {TAG}: prerelease flag set to {PRE_RELEASE}")
+            except urllib.error.HTTPError as e:
+                print(f"[-] failed to set the prerelease flag on {TAG}: {e.code} {e.read().decode()}")
+                sys.exit(1)
 
     # ۳. حذف فایل‌های قدیمی با همین نام اگر قبلا آپلود شده‌اند
     upload_url_template = target_release["upload_url"]
@@ -687,26 +742,62 @@ def main():
     except Exception as e:
         print(f"[!] انتقالِ codal.db.lzma خطا داد (ریلیز متوقف نمی‌شود): {e!r}")
 
-    # latest.json از همان URLای که آپدیتِرِ کاربر می‌خواند (releases/latest)
-    # بررسی می‌شود: نسخه باید همین TAG باشد.
-    manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
-    remote_manifest_bytes = _fetch_remote(manifest_url)
-    if remote_manifest_bytes is None:
-        print("[-] latest.json از URLِ آپدیتِر دانلود نشد.")
-        verify_ok = False
-    else:
-        try:
-            remote_manifest = json.loads(remote_manifest_bytes.decode("utf-8", errors="replace"))
-        except Exception as e:
-            print(f"[-] latest.json از راه دور JSON نیست: {e!r}")
-            remote_manifest = {}
-        if remote_manifest.get("version") != TAG.lstrip("v"):
-            print(f"[-] latest.json از راه دور نسخهٔ {remote_manifest.get('version')!r} "
-                  f"دارد (انتظار: {TAG.lstrip('v')!r}).")
+    if PRE_RELEASE:
+        # دو راستی‌آزمایی برایِ این نوعِ ریلیز (pre-release):
+        # یک: latest.jsonِ مسیرِ مستقیمِ تگ باید همین نسخه را بگوید.
+        # دو: releases/latest هرگز نباید این نسخه را بگوید — اگر بگوید،
+        #     یعنی Preview خودکار به همهٔ مشتریانِ نصب‌شده رسیده است.
+        tag_manifest = _fetch_remote(
+            f"https://github.com/{REPO}/releases/download/{TAG}/latest.json")
+        if tag_manifest is None:
+            print("[-] latest.json from the explicit tag path could not be downloaded.")
             verify_ok = False
         else:
-            print(f"[✓] latest.json از URLِ آپدیتِر نسخهٔ {remote_manifest.get('version')} "
-                  f"را اعلام می‌کند.")
+            try:
+                _tm = json.loads(tag_manifest.decode("utf-8", errors="replace"))
+            except Exception as e:
+                print(f"[-] tag-path latest.json is not JSON: {e!r}")
+                _tm = {}
+            if _tm.get("version") != TAG.lstrip("v"):
+                print(f"[-] tag-path latest.json says {_tm.get('version')!r}, "
+                      f"expected {TAG.lstrip('v')!r}.")
+                verify_ok = False
+            else:
+                print(f"[+] tag-path latest.json serves version "
+                      f"{_tm.get('version')} (installer + {len(_tm.get('patches') or [])} patches).")
+        gate = _fetch_remote(f"https://github.com/{REPO}/releases/latest/download/latest.json")
+        served = "unreadable"
+        if gate is not None:
+            try:
+                served = json.loads(gate.decode("utf-8", errors="replace")).get("version")
+            except Exception:
+                pass
+        if served == TAG.lstrip("v"):
+            print("[-] pre-release marked, but releases/latest serves this version: "
+                  "installed clients would be force-updated.")
+            verify_ok = False
+        else:
+            print(f"[OK] releases/latest still serves {served!r} - no installed client "
+                  "is pulled into this pre-release.")
+    else:
+        manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
+        remote_manifest_bytes = _fetch_remote(manifest_url)
+        if remote_manifest_bytes is None:
+            print("[-] latest.json از URLِ آپدیتِر دانلود نشد.")
+            verify_ok = False
+        else:
+            try:
+                remote_manifest = json.loads(remote_manifest_bytes.decode("utf-8", errors="replace"))
+            except Exception as e:
+                print(f"[-] latest.json از راه دور JSON نیست: {e!r}")
+                remote_manifest = {}
+            if remote_manifest.get("version") != TAG.lstrip("v"):
+                print(f"[-] latest.json از راه دور نسخهٔ {remote_manifest.get('version')!r} "
+                      f"دارد (انتظار: {TAG.lstrip('v')!r}).")
+                verify_ok = False
+            else:
+                print(f"[✓] latest.json از URLِ آپدیتِر نسخهٔ {remote_manifest.get('version')} "
+                      f"را اعلام می‌کند.")
 
     if not verify_ok:
         print("[-] راستی‌آزماییِ پس از آپلود شکست خورد؛ ریلیز را دستی بررسی کن.")

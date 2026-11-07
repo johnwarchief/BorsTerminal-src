@@ -1,0 +1,53 @@
+C:\Users\STU\Documents\Qoder\2026-10-19\0af806b0\.q3-tooling\venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+
+── ۱) نشستِ راستی‌آزمایی‌نشده نمی‌تواند سفارش بفرستد ──
+ok   توکن + ترافیک ⇒ live است، اما هنوز *تأیید نشده*
+ok   بی‌authenticate هیچ تأییدی ثبت نشده
+ok   پیش ازِ POST دقیقاً یکِ پرسشِ فقط‌خواندنیِ فهرست می‌رود
+ok   و یکِ POST
+ok   پس ازِ پرسشِ موفق، توکن «تأییدشده» می‌شود
+ok   نشستِ بی‌اعتبار: صفر POST بهِ کارگزاری
+ok   توکنِ تازه تأیید را می‌اندازد (نیاز بهِ پرسشِ دوباره)
+ok   ترافیکِ فعال بدلِ دستِ ماست، نه RequestsTransport
+
+── ۲) عبارتِ تأیید درِ بک‌اند، نه یکِ boolean خام ──
+ok   بی‌عبارتِ تأیید، dispatchِ زنده باِ کدِ روشن رد می‌شود
+ok   و این رد شدن پیش ازِ هر ترافیک است
+ok   UI ازِ خودش می‌فهمد چه عبارتی لازم است (حدس نمی‌زند)
+ok   باِ همان عبارتِ اعلامی، دروازۀ عبارت باز می‌شود
+ok   عبارتِ ناقص/نزدیک رد می‌شود (برابریِ کامل، نه پیشوند)
+ok   بی‌اجرایِ زنده، گیتِ عبارت تمرین را نمی‌بندد
+
+── ۳/۴) نبودن درِ فهرست ≠ شکست، و سقفِ نبود ⇒ توقف ──
+ok   فهرستِ خالی سفارش را «مرد» نمی‌کند؛ ناشناخته می‌ماند
+ok   و دروازۀ «اول تعیین تکلیف» باِ reconcile بی‌نتیجه باز نمی‌شود
+ok   بی‌سقفِ ریسک، اجرایِ زنده fail-closed می‌ایستد
+ok   و هیچ POSTِ تازه‌ای بیرون نرفت
+
+── ۵) مسیرِ ناشناختهٔ /api/* JSON 404 است، نه HTMLِ ۲۰۰ ──
+C:\Users\STU\Documents\Qoder\2026-10-19\0af806b0\.q3-tooling\venv\Lib\site-packages\fastapi\routing.py:152: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+  response = await f(request)
+ok   کدِ ۴۰۴ (نه ۲۰۰)
+ok   بدنه JSON است باِ کدِ روشن، نه index.html
+ok   پاسخ HTML نیست
+ok   درِ شناخته‌شده دست‌نخورده می‌ماند
+ok   رفرشِ مسیرهایِ کلاینت ازِ این اصلاح آسیب نمی‌بیند
+
+── ۷) پیش‌نمایش و پروتکل‌سنجی ازِ دروازۀ ارسال مستقل‌اند ──
+ok   باِ دروازۀ ریسکِ بسته هم wire_preview ساخته می‌شود
+ok   و همان‌جا صریح اعلام می‌شود که سیم هنوز فرضیه است
+ok   probe فقط‌خواندنی است و درِ سفارش را لمس نمی‌کند
+
+── ۸) لغوِ زمان‌بندی: دروازۀ HTTP و قفلِ per-id ──
+ok   زمان‌بندی باِ عبارتِ درست ازِ دروازها می‌گذرد و پاسخ می‌دهد
+ok   دو درخواستِ هم‌زمانِ لغوِ یکِ شناسه ⇒ حداکثر یکِ «لغو شد»
+ok   هیچ‌کدام ۵۰۰ نمی‌دهد؛ دوم یا صادق می‌گوید دیر رسید یا ۴۰۴ِ صریح
+ok   لغو پیش ازِ مهلت یعنی هیچ POSTِ تازه‌ای برایِ آن قصد نرفته
+
+── ۹) آستانه‌هایِ paper/backtest ازِ کد خوانده می‌شوند، نه ازِ حدس ──
+ok   مقادیرِ پیش‌فرضِ صریحِ paper: {}
+ok   هیچ آستانه‌ای درِ این گارد اختراع نشد؛ آنچه درِ ماژول نیست test هم نمی‌شود
+ok   هیچ سوکتِ واقعی درِ دورِ tripwire باز نشد
+
+p0_gates_v1118: 33 passed / 0 failed / 0 skipped

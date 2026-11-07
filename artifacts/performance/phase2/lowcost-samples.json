@@ -1,0 +1,20 @@
+{
+ "funnelConditional": {
+  "n": 25,
+  "min": 24,
+  "p50": 33,
+  "p95": 153,
+  "max": 627,
+  "mean": 70
+ },
+ "scopedScreener": {
+  "n": 25,
+  "min": 33,
+  "p50": 61,
+  "p95": 216,
+  "max": 2103,
+  "mean": 156
+ },
+ "etag": "W/\"58029ffde404afb3\"",
+ "firstFunnelMs": 6150
+}

@@ -34,10 +34,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -45,6 +42,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -94,10 +92,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -105,6 +100,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -154,10 +150,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -165,6 +158,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -216,10 +210,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -227,6 +218,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -280,10 +272,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -291,6 +280,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 5,
@@ -344,10 +334,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -355,6 +342,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -408,10 +396,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -419,6 +404,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -471,10 +457,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -482,6 +465,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -532,8 +516,7 @@
     "industry_mode": "Exclude_Mandatory_Pricing",
     "mandatory_sectors": [
      "خودرو",
-     "نیروگاه",
-     "دارو"
+     "نیروگاه"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -541,6 +524,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -600,10 +584,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -611,6 +592,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -662,10 +644,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -673,6 +652,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -725,10 +705,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -736,6 +713,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -788,10 +766,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -799,6 +774,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 33.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 2.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -842,7 +818,9 @@
     "include_industries": [],
     "industry_mode": "Exclude_Mandatory_Pricing",
     "mandatory_sectors": [
-     "الف"
+     "خودرو",
+     "نیروگاه",
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -850,6 +828,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -903,10 +882,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -914,6 +890,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -966,10 +943,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -977,6 +951,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -1028,10 +1003,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -1039,6 +1011,7 @@
     "min_trade_val": 0.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,
@@ -1091,10 +1064,7 @@
     "mandatory_sectors": [
      "خودرو",
      "نیروگاه",
-     "قند و شکر",
-     "لاستیک",
-     "شوینده",
-     "بیمه"
+     "لاستیک"
     ],
     "margin_min": 20.0,
     "margin_optimal": 30.0,
@@ -1102,6 +1072,7 @@
     "min_trade_val": 2.0,
     "pharma_margin_exempt_min": 0.0,
     "profit_potential_min": 40.0,
+    "reject_insurance": true,
     "sales_to_mcap_ideal": 1.0,
     "sales_to_mcap_min": 0.33,
     "suspended_max_stale_sessions": 3,

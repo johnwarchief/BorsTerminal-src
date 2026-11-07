@@ -21,7 +21,8 @@ import time
 from collections import OrderedDict
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
+from starlette.concurrency import run_in_threadpool
 
 import funnel_engine as FE
 import funnel_registry as REG
@@ -81,9 +82,211 @@ def _cache_put(key: str, payload: dict, now: float) -> None:
         _FUNNEL_CACHE.move_to_end(key)
         while len(_FUNNEL_CACHE) > _FUNNEL_CACHE_MAX:
             _FUNNEL_CACHE.popitem(last=False)
+    # بدنهٔ سریال‌شدهٔ همین کلید می‌سوزد: آینهٔ پاسخ نباید از payloadِ تازه‌ترِ
+    # خودش کهنه‌تر بماند (وگرنه TTLِ بدنه رویِ TTLِ داده سوار می‌شد).
+    with _FUNNEL_BODY_LOCK:
+        for flag in ("F", "S"):
+            _FUNNEL_BODIES.pop(flag + key, None)
+
+
+# بدنهٔ سریال‌شدهٔ پاسخِ قیف. کشِ بالا دیکشنریِ پایتون را نگه می‌دارد، نه
+# سریالِ آن — پس هر پولینگ ۷٫۵ مگابایت را از نو dumps می‌کرد: در سنجشِ ریگِ
+# کنترلی با orjson فعال، p50 برابر ۹۶۳ میلی‌ثانیه در هر درخواستِ گرم، بی‌آنکه
+# هیچ داوریِ FTS عوض شده باشد. اینجا همان بایت‌ها تا پایانِ همان TTL دوباره
+# می‌روند، و If-None-Match آن‌ها را به صفر بایت می‌رساند.
+_FUNNEL_BODIES: "OrderedDict[str, tuple[bytes, str, float]]" = OrderedDict()
+_FUNNEL_BODIES_MAX = 6
+_FUNNEL_BODY_LOCK = threading.Lock()
+
+_ORJ = True
+try:
+    import orjson
+except Exception:      # نبودش اپ را نمی‌خواباند؛ فقط JSONِ استاندارد می‌ماند
+    _ORJ = False
+
+
+def _encode_funnel_body(payload: dict) -> tuple[bytes, str]:
+    """بدنه و etag، از همان کلاسِ پاسخی که فریم‌ورک امروز می‌سازد.
+
+    چرا `ORJSONResponse(...).body` و نه `orjson.dumps`ِ خام: مسیرِ قیف تا
+    پیشِ این دیکشنری را به `default_response_class` می‌سپارد؛ سریالِ خامِ
+    orjson گزینه‌هایِ همان کلاس را ندارد (رویِ numpy scalarها می‌شکند و
+    جداکننده‌ها فرق می‌کند). بدنهٔ کش‌شده باید *همان بایت‌ها* باشد، نه
+    «تقریباً همان». etag اثرِ انگشتِ خودِ بدنه است، نه زمانِ کش — و ضعیف
+    (`W/`)، چون پاسخِ ازِ‌کش همان بایت‌ها به‌علاوهٔ `cached_for_ms` است.
+    """
+    import hashlib
+    if _ORJ:
+        from fastapi.responses import ORJSONResponse
+        body = ORJSONResponse(payload).body
+    else:
+        from fastapi.responses import JSONResponse
+        body = JSONResponse(payload).body
+    return body, 'W/"' + hashlib.md5(body).hexdigest()[:16] + '"'
+
+
+def _with_age(body: bytes, age_s: float) -> bytes:
+    """همان `out["cached_for_ms"] = …`ِ `_run`، رویِ بایت‌ها: کلیدِ آخرِ شیء."""
+    return body[:-1] + b',"cached_for_ms":%d}' % max(0, int(age_s * 1000))
+
+
+def _inm_matches(field: str, etag: str) -> bool:
+    """مقایسهٔ ضعیفِ RFC 9110 §13.1.2، با فهرستِ ویرگولی و `*`."""
+    tag = etag[2:] if etag.startswith("W/") else etag
+    for part in field.split(","):
+        p = part.strip()
+        if p == "*" or (p[2:] if p.startswith("W/") else p) == tag:
+            return True
+    return False
+
+
+def _strategy_params(preset: str, tech_chain: list[str] | None,
+                     settings: dict[str, Any] | None):
+    """اعتبارسنجیِ یگانهٔ کارِ System 1 (زنجیرۀ تکنیکال + تنظیمِ استراتژی).
+
+    برمی‌گرداند `(خطا|None, tech_chainِ پاک‌شده, stgِ اعتبارسنجی‌شده)`. یک‌جا
+    نوشته شده چون هم `route` و هم `_run_entry` باید *پیش از* ساختِ کلیدِ کش از
+    همان بگذرند: `stg` پیش‌فرض‌هایِ بازشده را دارد، پس درخواستِ خالی و درخواستِ
+    «preset پیش‌فرض» یکِ کلید می‌گیرند و یکِ رأی.
+
+    انتخابِ ناشناخته بی‌صدا اصلاح نمی‌شود (رأیِ مالک ۱۴-۰۷-۲۷): کاربر پیام
+    می‌گیرد، نه داوریِ دیگری. پیش‌تر همین دو خط درِ بدنهٔ `_run` دست‌نویس بود.
+    """
+    tc = [str(x) for x in (tech_chain or [])]
+    unknown = [t for t in tc if t not in REG.TECH_BY_ID]
+    if unknown:
+        return ({"status": "error",
+                 "message": "فیلترِ تکنیکالِ ناشناخته: " + ", ".join(unknown)}, tc, {})
+    try:
+        stg = REG.validate_settings(preset, settings if isinstance(settings, dict) else None)
+    except KeyError as e:
+        return ({"status": "error",
+                 "message": f"تنظیمِ نامعتبر: {str(e).strip(chr(39))}"}, tc, {})
+    return (None, tc, stg)
+
+
+def _basics_error(preset: str, fund_mode: str, logic: str):
+    """سه بررسیِ اولِ System 1 به همان ترتیبِ پیشین: preset ← fund_mode ← logic.
+
+    چرا جدا شده: درِ دورِ ادغام، `_funnel_http` پارامترهایِ استراتژی را *پیش از*
+    `_run_entry` می‌سنجد؛ درخواستی که هم `fund_mode` غلط داشت و هم فیلترِ
+    تکنیکالِ ناشناخته، پیامِ دومی را می‌گرفت در حالی که پیش ازِ ادغام پیامِ اول
+    را می‌داد. ترتیبِ پیام، خودِ رابط است. `(خطا|None, logic`ِ نرمال‌شده) می‌دهد.
+    """
+    if preset not in REG.PRESET_BY_ID:
+        return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}, logic
+    if fund_mode not in ("hard", "standard", "exception"):
+        return {"status": "error", "message": f"fund_modeِ ناشناخته: {fund_mode}"}, logic
+    logic = (logic or "and").strip().lower()
+    if logic not in ("and", "or"):
+        return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}, logic
+    return None, logic
+
+
+def _funnel_http(request: Request, preset: str, chain: list[str], fund_mode: str,
+                 params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+                 full: bool = False, drop_suffix: bool = True,
+                 logic: str = "and", tech_chain: list[str] | None = None,
+                 settings: dict[str, Any] | None = None) -> Any:
+    """پاسخِ HTTP قیف، با بدنهٔ سریال‌شدهٔ کش‌خورده.
+
+    هیچ داوریِ FTS اینجا عوض نمی‌شود: payload همان payloadِ `_run` است و
+    بدنه تا همان لحظه‌ای زنده است که آن payload درِ کشِ دیکشنری زنده است
+    (زمانِ *ساختِ* payload + TTL، نه زمانِ سریال). بدنهٔ خطا هرگز کش نمی‌شود.
+    شرطی‌ها طبقِ RFC 9110 §13.1.2: etagِ هم‌خوان رویِ GET/HEAD ⇒ ۳۰۴، رویِ
+    هر روشِ دیگر ⇒ ۴۱۲ (رابط رویِ POST هرگز `If-None-Match` نمی‌فرستد).
+    """
+    err, logic = _basics_error(preset, fund_mode, logic)
+    if err is not None:
+        return _shape(err, None, False, full)
+    err, tc, stg = _strategy_params(preset, tech_chain, settings)
+    if err is not None:
+        # پاسخِ خطا هرگز درِ کشِ بدنه نمی‌نشیند (همان قاعدۀ پایین)
+        return _shape(err, None, False, full)
+    key = _cache_key(preset, chain, fund_mode, params, exceptions, drop_suffix, logic,
+                     tc, stg)
+    # پیش از ساختنِ امضا، ورودی‌هایِ ارزانِ کش‌شدنی را گرم می‌کنیم؛ وگرنه
+    # امضایِ اولین درخواست با screener/tech خالی ساخته می‌شود، `_run_entry`
+    # آن‌ها را پر می‌کند و درخواستِ بعدی کلیدِ تازه (بی‌دلیل) می‌گیرد.
+    try:
+        _screen_rows()
+    except Exception:
+        pass
+    try:
+        _tech_context()
+    except Exception:
+        pass
+    data_sig = _data_signature()
+    key += "|sig:" + data_sig
+    bkey = ("F" if full else "S") + key
+    built_here = False
+    with _FUNNEL_BODY_LOCK:
+        ent = _FUNNEL_BODIES.get(bkey)
+        if ent and time.time() - ent[2] < BODY_TTL_S:
+            _FUNNEL_BODIES.move_to_end(bkey)
+        else:
+            ent = None
+    if ent is None:
+        payload, built_ts, built_here = _run_entry(preset, chain, fund_mode, params, exceptions,
+                                                   drop_suffix=drop_suffix, logic=logic,
+                                                   tech_chain=tc, settings=stg,
+                                                   data_sig=data_sig)
+        if built_ts is None or payload.get("status") in ("error", "no_data"):
+            return _shape(payload, built_ts, built_here, full)
+        body, etag = _encode_funnel_body(payload if full else _strip(payload))
+        ent = (body, etag, built_ts)
+        with _FUNNEL_BODY_LOCK:
+            cur = _FUNNEL_BODIES.get(bkey)
+            if cur is None or cur[2] <= built_ts:
+                _FUNNEL_BODIES[bkey] = ent
+                _FUNNEL_BODIES.move_to_end(bkey)
+                while len(_FUNNEL_BODIES) > _FUNNEL_BODIES_MAX:
+                    _FUNNEL_BODIES.popitem(last=False)
+    body, etag, built_ts = ent
+    xc = "MISS" if built_here else "HIT"
+    inm = request.headers.get("if-none-match") if request is not None else None
+    if inm and _inm_matches(inm, etag):
+        if request.method in ("GET", "HEAD"):
+            return Response(status_code=304, headers={"ETag": etag, "X-Cache": "HIT-304"})
+        return Response(status_code=412, headers={"ETag": etag, "X-Cache": xc})
+    if not (built_here or full):
+        body = _with_age(body, time.time() - built_ts)
+    return Response(content=body, media_type="application/json",
+                    headers={"ETag": etag, "X-Cache": xc})
 # قیف رویِ همان ریتمِ تابلو تازه می‌شود؛ کشِ کوتاه جلویِ هر-کلیدِ Custom را
 # از دوباره‌خوانیِ ۳۷۰۰ ردیف می‌گیرد، بی‌آنکه حکمی را کهنه کند.
 TTL_S = 8.0
+# بدنهٔ سریال‌شده (۷٫۵MB) با کلیدِ «دادهٔ ورودی» جدا کش می‌شود. تغییرِ داده
+# بلافاصله کلید را عوض می‌کند؛ سقفِ ۳۰ثانیه‌ای فقط برایِ نوشتنِ بیرونی/زمانی
+# است. این سقف با TTLِ موتور یکی نیست: `_run` (مصرفِ اسکرینر) همان ۸s می‌ماند.
+BODY_TTL_S = 30.0
+
+
+def _data_signature() -> str:
+    """اثرِ دادهٔ ورودیِ قیف: تابلو، اسکرینر و زمینهٔ تکنیکال.
+
+    قیف هر ۲۰ثانیه پرسیده می‌شود ولی بدنهٔ ۷٫۵MB و محاسبهٔ ~۰٫۱–۱s را هر بار
+    از نو می‌ساخت، چون TTLِ ۸s پیش از پولینگِ بعدی تمام می‌شد. با این امضا،
+    پاسخ تا وقتی همان داده است دوباره استفاده می‌شود؛ هر sync/تیک/بازسازیِ
+    اسکرینر یا تازه‌شدنِ tech context کلید را عوض می‌کند. زمانِ دیوار داخلِ
+    امضا نیست؛ سقفِ `BODY_TTL_S` و نشانه‌هایِ داده تازگی را نگه می‌دارند.
+    """
+    import market_state as _MS
+    parts = [str(_MS.revision()), str(_MS.static_rev()), str(_MS.session_day())]
+    try:
+        from api.screener import _screener_cached
+        scan = _screener_cached() or {}
+        # زمانِ خودِ اسکن، نه key/tsِ کش: دو مسیرِ هم‌زمان (گرم‌کردن و درخواست)
+        # پیش از پر شدنِ کش، key/tsِ متفاوت می‌دیدند و دو بدنهٔ ۷٫۵MB می‌ساختند.
+        # `as_of` درِ همان payloadِ اسکن است و با هر بازسازی عوض می‌شود.
+        parts.append(str(scan.get("as_of") or ""))
+    except Exception:
+        parts.append("")
+    try:
+        parts.append(str(round(float(_TECH_CTX.get("ts") or 0.0), 3)))
+    except Exception:
+        parts.append("")
+    return "|".join(parts)
 
 
 def _board_snapshot() -> tuple[list[dict], int | None]:
@@ -103,8 +306,13 @@ def _board_snapshot() -> tuple[list[dict], int | None]:
         body = getattr(resp, "body", None) or b""
     if not body:
         return [], None
-    data = body if isinstance(body, dict) else json.loads(
-        body.decode("utf-8") if isinstance(body, bytes) else body)
+    # stdlib json.loads نگهِ GIL است (~۲۵۰-۳۷۰ms رویِ این ۶MB) و هر درخواستِ هم‌زمان پشتش می‌ماند.
+    if isinstance(body, dict):
+        data = body
+    elif _ORJ:
+        data = orjson.loads(body)
+    else:
+        data = json.loads(body.decode("utf-8") if isinstance(body, bytes) else body)
     if not isinstance(data, dict):
         return [], None
     rows = list(data.get("data") or [])
@@ -128,36 +336,90 @@ def _screen_rows() -> list[dict]:
 
 
 # ── زمینۀ تکنیکال: داوریِ ازپیش‌ساخته + امضایِ داده ──────────────────────
+# کلِ دیکشنری یکجا جایگزین می‌شود (نه update): خوانندهٔ نخِ دیگر scan و sigs را از یک بار می‌بیند.
 _TECH_CTX: dict[str, Any] = {"ts": 0.0, "scan": {}, "sigs": {}}
+_TECH_REFRESHING = threading.Lock()
+
+
+def _load_tech_context() -> dict[str, Any] | None:
+    import sqlite3
+
+    import funnel_tech_scan as SCAN
+    from bors_config import DB_PATH
+
+    global _TECH_CTX
+    now = time.time()
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    try:
+        ctx = {"ts": now, "scan": SCAN.stored(conn), "sigs": SCAN.sig_map(conn)}
+    except sqlite3.Error:
+        return None
+    finally:
+        conn.close()
+    _TECH_CTX = ctx
+    return ctx
+
+
+def _refresh_tech_context_bg() -> None:
+    try:
+        _load_tech_context()
+    finally:
+        _TECH_REFRESHING.release()
 
 
 def _tech_context(max_age_s: float = 60.0) -> tuple[dict, dict]:
     """ستون‌هایِ tech_* را از `funnel_tech_scan` می‌خواند، نه از پنجاه ردیفِ
     اولِ اسکرینر. امضا هم همان‌جا می‌گوید کدام نماد اصلاً سابقهٔ قیمتی دارد.
 
-    یک دقیقه کش: خواندنِ امضا رویِ ۴۳۳ هزار ردیف ~۰٫۴s است و هر پرسشِ قیف
-    لازم نیست دوباره بزند. رشتهٔ پس‌زمینه جدول را تازه می‌کند و این‌جا فقط
-    خوانده می‌شود — پس هیچ درخواستی منتظرِ داوری نمی‌ماند."""
-    import sqlite3
+    یک دقیقه کش. خواندنِ امضا (`sig_map`: GROUP BY رویِ ~۴۴۰ هزار ردیف) رویِ
+    بانکِ کاری ~۱٫۲۵s است و وقتی درونِ ساختِ قیف انجام می‌شد، هر دقیقه یک ساخت
+    ۰٫۴۷→۱٫۶۹s می‌شد. پس از نیمهٔ عمر، تازه‌سازی در پس‌زمینه شروع می‌شود و
+    ساختِ جاری همان زمینهٔ هنوز-معتبر را می‌گیرد؛ قراردادِ «حداکثر ۶۰ ثانیه»
+    دست نمی‌خورد چون از ۶۰ به بعد مسیر همان خواندنِ همزمانِ قبلی است."""
+    ctx = _TECH_CTX
+    age = time.time() - ctx["ts"]
+    if ctx["scan"] and age < max_age_s:
+        if age >= max_age_s / 2 and _TECH_REFRESHING.acquire(blocking=False):
+            threading.Thread(target=_refresh_tech_context_bg, name="funnel-tech-ctx", daemon=True).start()
+        return ctx["scan"], ctx["sigs"]
+    ctx = _load_tech_context()
+    # بانکِ نبوده یا قفل است: داوریِ ناقص بهتر از پاسخِ ساختگی نیست —
+    # موتور همان حالت‌هایِ صریح (PENDING/UNAVAILABLE) را می‌گوید.
+    return (ctx["scan"], ctx["sigs"]) if ctx else ({}, {})
 
+
+import funnel_tech_scan as _SCAN_MOD  # noqa: E402  (کلیدِ مقایسه درِ گارد)
+
+SCAN_SCHEMA_VERSION = _SCAN_MOD.SCHEMA_VERSION
+_STALE_QUEUE_CAP = 300
+
+
+def _stale_scan_symbols(tech_chain: list[str], payload: dict) -> list[str]:
+    """ردیف‌هایی که زیرِ قواعد یا ستون‌هایِ امروز ساخته نشده‌اند.
+
+    `_need_scan` فقط «ردیفِ ناکام» را صف می‌کرد، پس نمادی که رأیِ دیروزِ معتبر
+    دارد هرگز بازنشانی نمی‌شد و ستون‌هایِ تازه (شاهدِ فیبر) تا ابد خالی می‌ماندند
+    — سنجشِ زنده رویِ بیلدِ منتشرشده همان را نشان داد: ۹۹۶ ردیف، صفر شاهد.
+    فقط وقتی صف می‌کنیم که درخواستِ جاری فیلترِ تکنیکال داشته باشد، و سقفِ
+    هر درخواست محدود است تا بازِ برنامه سیلِ واکشیِ ۲۴۴۶ نماد نشود.
+    """
+    if not tech_chain:
+        return []
     import funnel_tech_scan as SCAN
-    from bors_config import DB_PATH
 
-    now = time.time()
-    if _TECH_CTX["scan"] and now - _TECH_CTX["ts"] < max_age_s:
-        return _TECH_CTX["scan"], _TECH_CTX["sigs"]
-    conn = sqlite3.connect(DB_PATH, timeout=30)
-    try:
-        scan = SCAN.stored(conn)
-        sigs = SCAN.sig_map(conn)
-    except sqlite3.Error:
-        # بانکِ نبوده یا قفل است: داوریِ ناقص بهتر از پاسخِ ساختگی نیست —
-        # موتور همان حالت‌هایِ صریح (PENDING/UNAVAILABLE) را می‌گوید.
-        return {}, {}
-    finally:
-        conn.close()
-    _TECH_CTX.update({"ts": now, "scan": scan, "sigs": sigs})
-    return scan, sigs
+    scan = _TECH_CTX.get("scan") or {}
+    if not scan:
+        return []
+    want: list[str] = []
+    for dec in (payload.get("trace") or {}).get("technical") or []:
+        sym = str(dec.get("symbol") or "")
+        row = scan.get(sym)
+        if not row:
+            continue
+        if (str(row.get("ruleset_version") or "") != REG.RULESET_VERSION
+                or str(row.get("schema_version") or "") != SCAN.SCHEMA_VERSION):
+            want.append(sym)
+    return want[:_STALE_QUEUE_CAP]
 
 
 def _need_scan(payload: dict) -> list[str]:
@@ -173,7 +435,14 @@ def _need_scan(payload: dict) -> list[str]:
 @router.get("/api/funnel/registry")
 def get_registry():
     """همان رجیستری که موتور می‌خواند — فهرستِ Custom از اینجا می‌آید."""
-    return REG.as_json()
+    out = REG.as_json()
+    # سطحِ اشباع و دورۀ RSI ساعت‌شنی فقط یک جا تعریف می‌شوند: تنظیمِ فعالِ خودِ
+    # موتور (`_fts_hourglass_settings`). فرانت باید همین را بخواند، نه عددِ دومِ
+    # خودش (رأیِ ۲۴: «مقدار فرانت جدا از موتور… مجاز نیست»).
+    from api.chart import _fts_hourglass_settings
+
+    out["hourglass_settings"] = _fts_hourglass_settings()
+    return out
 
 
 @router.get("/api/funnel/trace")
@@ -209,11 +478,44 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
             "as_of": payload.get("as_of")}
 
 
+def _json_dict_arg(raw: str, name: str):
+    """(شیء، خطا) برایِ پارامترهایِ JSONِ GET؛ نبودن/خالی ⇒ {}."""
+    txt = str(raw or "").strip()
+    if not txt:
+        return {}, None
+    try:
+        obj = json.loads(txt)
+    except Exception:
+        return {}, "%s: JSON نامعتبر" % name
+    if not isinstance(obj, dict):
+        return {}, "%s: باید شیءِ JSON باشد" % name
+    return obj, None
+
+
 @router.get("/api/funnel")
-def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard",
-               drop_suffix: bool = True, logic: str = "and"):
-    return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
-                 drop_suffix=drop_suffix, logic=logic)
+def get_funnel(request: Request, preset: str = "trend", chain: str = "",
+               fund_mode: str = "standard",
+               drop_suffix: bool = True, logic: str = "and", tech_chain: str = "",
+               weekly_mode: str = "", daily_mode: str = "", clock_delta_pct: str = "",
+               exceptions: str = "", strategy_settings: str = "", params: str = ""):
+    # تنظیمات هم ازِ GET می‌پذیرد تا لینکِ قابل‌اشتراک بماند؛ خالی یعنی پیش‌فرض.
+    # `exceptions`/`strategy_settings`/`params` برایِ برابریِ کامل با POST اضافه
+    # شده‌اند: رابط می‌تواند GETِ شرطی بفرستد و پاسخِ بدونِ‌تغییر ۳۰۴ِ صفر‌بایت
+    # بگیرد، به‌جایِ POSTِ ۷٫۵MB در هر ورود/پولینگ.
+    exc, e1 = _json_dict_arg(exceptions, "exceptions")
+    stg_obj, e2 = _json_dict_arg(strategy_settings, "strategy_settings")
+    prm, e3 = _json_dict_arg(params, "params")
+    if e1 or e2 or e3:
+        return _shape({"status": "error", "message": e1 or e2 or e3}, None, False, False)
+    exc = {str(k): [str(x) for x in (v or [])] for k, v in exc.items()}
+    stg = dict(stg_obj)
+    for k, v in (("weekly_mode", weekly_mode), ("daily_mode", daily_mode),
+                 ("clock_delta_pct", clock_delta_pct)):
+        if v:
+            stg[k] = v
+    return _funnel_http(request, preset, [c for c in chain.split(",") if c],
+                        fund_mode, prm, exc, drop_suffix=drop_suffix, logic=logic,
+                        tech_chain=[c for c in tech_chain.split(",") if c], settings=stg)
 
 
 @router.post("/api/funnel")
@@ -225,7 +527,12 @@ async def post_funnel(request: Request):
     drop_suffix = True if b.get("drop_suffix") is None else bool(b.get("drop_suffix"))
     # نبودِ `logic` = اشتراک (رفتارِ دیروز)؛ `or` صریح یعنی اجتماعِ چیپ‌هایِ تابلو.
     logic = str(b.get("logic") or "and")
-    return _run(
+    # ساختِ قیف (~۱ ثانیه CPU) رویِ threadpool، همان جایی که GET می‌رود: درِ
+    # `async def` حلقهٔ رویداد را می‌بست و هر درخواستِ دیگر — تابلو هم — پشتش
+    # می‌ماند (ریگ: `/api/update/version` ۵۴۲ms پشتِ ساختِ ۸۳۶ms).
+    return await run_in_threadpool(
+        _funnel_http,
+        request,
         str(b.get("preset") or "trend"),
         [str(x) for x in (b.get("chain") or [])],
         str(b.get("fund_mode") or "standard"),
@@ -234,6 +541,8 @@ async def post_funnel(request: Request):
         if isinstance(b.get("exceptions"), dict) else {},
         drop_suffix=drop_suffix,
         logic=logic,
+        tech_chain=[str(x) for x in (b.get("tech_chain") or [])],
+        settings=b.get("strategy_settings") if isinstance(b.get("strategy_settings"), dict) else {},
     )
 
 
@@ -247,37 +556,114 @@ def _strip(payload: dict) -> dict:
     return out
 
 
+def _cache_key(preset: str, chain: list[str], fund_mode: str,
+               params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+               drop_suffix: bool = True, logic: str = "and",
+               tech_chain: list[str] | None = None,
+               settings: dict[str, Any] | None = None) -> str:
+    """یگانه تعریفِ کلیدِ کش — route و `_run_entry` همان را می‌سازند، نه دو نسخهٔ
+    دست‌نویسِ جدا که روزی از هم واگن شوند. `full` درِ کلید نیست: شکلِ پاسخ
+    جدا نگه داشته می‌شود (پرچمِ F/S درِ کشِ بدنه).
+
+    دورِ ادغام: `tech_chain` و `settings` هم باید درِ کلید باشند (رأیِ مالک
+    ۱۴-۰۷-۲۷). بی‌این، پرسشِ «با فیلترِ تکنیکال» و «بی‌فیلتر» یکِ پاسخِ کش‌شده
+    می‌گرفتند — یعنی رأیِ کاربر ازِ انتخابِ خودش نمی‌آمد. `settings` باید
+    *پس از* اعتبارسنجی بدهیم تا پیش‌فرضِ بازشده و درخواستِ خالی یکِ کلید بگیرند.
+    """
+    return json.dumps([preset, chain, fund_mode, sorted(params.items()),
+                       sorted((k, sorted(v)) for k, v in exceptions.items()),
+                       bool(drop_suffix), logic, sorted(tech_chain or []),
+                       sorted((settings or {}).items())],
+                      ensure_ascii=False)
+
+
 def _run(preset: str, chain: list[str], fund_mode: str,
          params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
-         full: bool = False, drop_suffix: bool = True, logic: str = "and") -> dict:
-    if preset not in REG.PRESET_BY_ID:
-        return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}
-    if fund_mode not in ("hard", "standard", "exception"):
-        return {"status": "error", "message": f"fund_modeِ ناشناخته: {fund_mode}"}
+         full: bool = False, drop_suffix: bool = True, logic: str = "and",
+         tech_chain: list[str] | None = None,
+         settings: dict[str, Any] | None = None) -> dict:
+    payload, ts, built = _run_entry(preset, chain, fund_mode, params, exceptions,
+                                    drop_suffix=drop_suffix, logic=logic,
+                                    tech_chain=tech_chain, settings=settings,
+                                    data_sig=_data_signature())
+    return _shape(payload, ts, built, full)
+
+
+def _shape(payload: dict, ts: float | None, built: bool, full: bool) -> dict:
+    """شکلِ پاسخِ `_run`: کامل، یا بی‌`timeline` و — اگر ازِ کش آمده — با سنِ آن."""
+    if ts is None or full:
+        return payload
+    out = _strip(payload)
+    if not built:
+        out["cached_for_ms"] = max(0, int((time.time() - ts) * 1000))
+    return out
+
+
+# یک ساخت برای هر کلید: بی‌این قفل، شش GETِ هم‌زمانِ یک کلیدِ سرد شش بار
+# موتور را رویِ threadpool می‌دواندند (ریگ: شش MISS، ۴٫۱ ثانیه به‌جایِ ~۰٫۸).
+_BUILD_LOCKS: dict[str, threading.Lock] = {}
+_BUILD_LOCKS_GUARD = threading.Lock()
+
+
+def _build_lock(key: str) -> threading.Lock:
+    with _BUILD_LOCKS_GUARD:
+        lk = _BUILD_LOCKS.get(key)
+        if lk is None:
+            if len(_BUILD_LOCKS) > 64:
+                for k in [k for k, v in _BUILD_LOCKS.items() if not v.locked()]:
+                    del _BUILD_LOCKS[k]
+            lk = _BUILD_LOCKS[key] = threading.Lock()
+        return lk
+
+
+def _run_entry(preset: str, chain: list[str], fund_mode: str,
+               params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+               drop_suffix: bool = True, logic: str = "and",
+               tech_chain: list[str] | None = None,
+               settings: dict[str, Any] | None = None,
+               data_sig: str = "",
+               ) -> tuple[dict, float | None, bool]:
+    """(payloadِ کامل، زمانِ آغازِ ساختش، همین فراخوان ساختش؟) — خطا/`no_data` با زمانِ None."""
     # کلیدِ اشتراک/اجتماع (رأیِ مالک ۱۴۰۵-۰۷-۲۰): بی‌استثنایِ مقداریِ دیگر،
     # پیش‌فرض «and» است و کشِ دو حالت از هم جدا می‌ماند.
-    logic = (logic or "and").strip().lower()
-    if logic not in ("and", "or"):
-        return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}
-    key = json.dumps([preset, chain, fund_mode, sorted(params.items()),
-                      sorted((k, sorted(v)) for k, v in exceptions.items()),
-                      bool(drop_suffix), logic],
-                     ensure_ascii=False)
-    now = time.time()
-    hit = _cache_get(key, now)
+    err, logic = _basics_error(preset, fund_mode, logic)
+    if err is not None:
+        return err, None, False
+    # کارِ System 1: زنجیرۀ تکنیکال و تنظیمِ مستقلِ استراتژی (رأیِ مالک ۱۴-۰۷-۲۷).
+    # اعتبارسنجی درِ `_strategy_params` است تا route و همین‌جا یکِ ترجمان داشته باشند.
+    err, tc, stg = _strategy_params(preset, tech_chain, settings)
+    if err is not None:
+        return err, None, False
+    key = _cache_key(preset, chain, fund_mode, params, exceptions, drop_suffix, logic,
+                     tc, stg)
+    if data_sig:
+        key += "|sig:" + data_sig
+    hit = _cache_get(key, time.time())
     if hit:
-        cached = hit["payload"]
-        if full:
-            return cached
-        out = _strip(cached)
-        out["cached_for_ms"] = int((now - hit["ts"]) * 1000)
-        return out
-
+        return hit["payload"], hit["ts"], False
+    # بیرونِ قفل: درِ استارت‌آپ `_screener_cached` منتظرِ رشتهٔ گرم می‌ماند و همان
+    # رشته پیش از زدنِ رویداد `_run` همین کلید را صدا می‌زند — درونِ قفل بن‌بست تا ۳۰۰s.
+    # ترتیبِ تابلو→اسکرینر عمدی است: رشتهٔ گرم پس از sleep(1) خودش را اعلام می‌کند و
+    # اسکرینرِ زودتر از آن اسکنِ سنگینِ دوم و هم‌زمان می‌دود (ریگ: ۷۵s→۱۴۵s).
+    now = time.time()
     board, session = _board_snapshot()
     screen = _screen_rows()
+    with _build_lock(key):
+        hit = _cache_get(key, time.time())
+        if hit:
+            return hit["payload"], hit["ts"], False
+        return _build(key, preset, chain, fund_mode, params, exceptions,
+                      drop_suffix, logic, now, board, session, screen, tc, stg)
+
+
+def _build(key: str, preset: str, chain: list[str], fund_mode: str,
+           params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+           drop_suffix: bool, logic: str, now: float, board: list[dict],
+           session: int | None, screen: list[dict],
+           tech_chain: list[str], stg: dict[str, Any]) -> tuple[dict, float | None, bool]:
     if not board:
-        return {"status": "no_data", "message": "تابلو هنوز در این اجرا ساخته نشده",
-                "universe": {"board": 0, "screened": len(screen)}}
+        return ({"status": "no_data", "message": "تابلو هنوز در این اجرا ساخته نشده",
+                 "universe": {"board": 0, "screened": len(screen)}}, None, False)
     scan, sigs = _tech_context()
     uni_pri = _universe_priority()
     uni_st = _universe_status()
@@ -286,12 +672,14 @@ def _run(preset: str, chain: list[str], fund_mode: str,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
                               tech_scan=scan, tech_sigs=sigs, session_day=session,
                               universe_priority=uni_pri, universe_status=uni_st,
-                              drop_numeric_suffix=drop_suffix, tape_logic=logic)
+                              drop_numeric_suffix=drop_suffix, tape_logic=logic,
+                              tech_chain=tech_chain, settings=stg)
     except KeyError as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e)}, None, False
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین
     # درخواست تغییرِ وضعیت نمی‌دهد (منتظر نمی‌مانیم)، ولی پرسشِ بعدی رأی دارد.
-    todo = _need_scan(payload)
+    todo = list(dict.fromkeys(_need_scan(payload)
+                              + _stale_scan_symbols(tech_chain, payload)))
     if todo:
         import funnel_tech_scan as SCAN
         payload["tech_scan"] = {"pending_symbols": len(todo), **(SCAN.start_refresh(todo))}
@@ -299,4 +687,4 @@ def _run(preset: str, chain: list[str], fund_mode: str,
         import funnel_tech_scan as SCAN
         payload["tech_scan"] = {"pending_symbols": 0, **SCAN.bg_status()}
     _cache_put(key, payload, now)
-    return payload if full else _strip(payload)
+    return payload, now, True

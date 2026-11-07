@@ -10,7 +10,7 @@
 //      جدولِ مسلط، دلیلِ دیدنی، و حفظِ گام پس از بازگشت.
 import type { ReactElement } from 'react';
 import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
@@ -348,9 +348,9 @@ describe('زنجیرۀ Custom', () => {
     useScreenFilterStore.getState().setLogic('or');
     await ready('/master?stage=tape');
     expect(funnelCalls[funnelCalls.length - 1].logic).toBe('or');
-    expect(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], logic: 'or',
+    expect(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], techChain: [], logic: 'or',
                             fundMode: 'standard', exceptions: {}, dropSuffix: true }))
-      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], logic: 'and',
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], techChain: [], logic: 'and',
                                     fundMode: 'standard', exceptions: {}, dropSuffix: true }));
     useScreenFilterStore.getState().setLogic('and');
   });
@@ -430,7 +430,7 @@ describe('بازگشتِ Custom و چیپ‌هایِ زندهٔ نوارِ غر�
   });
 
   it('درخواستِ قیف logic را هم با خود می‌برد (کلیدِ کشِ بی‌logic گمراه‌کننده بود)', () => {
-    const k = funnelQueryKey({ preset: 'trend', chain: [], logic: 'and', fundMode: 'standard',
+    const k = funnelQueryKey({ preset: 'trend', chain: [], techChain: [], logic: 'and', fundMode: 'standard',
                                exceptions: {}, dropSuffix: true });
     expect(k).toContain('and');
   });
@@ -501,9 +501,37 @@ describe('پیش‌فرضِ دیدنیِ مرحلۀ تحویل (رأیِ مال�
     await waitFor(() => expect(funnelCalls.at(-1)?.drop_suffix).toBe(false));
     // خاموش‌کردن همِ پیش‌فرضِ همیشگیِ موتور نیست که بی‌درخواست بماند؛ کلیدِ کش
     // عوض می‌شود تا پاسخِ حالتِ دیگر رویِ جدول ننشیند.
-    expect(funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard',
+    expect(funnelQueryKey({ preset: 'custom', chain: [], techChain: [], logic: 'and', fundMode: 'standard',
                             exceptions: {}, dropSuffix: false }))
-      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard',
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], techChain: [], logic: 'and', fundMode: 'standard',
                                     exceptions: {}, dropSuffix: true }));
+  });
+
+  it('P2-R5: کلیک ردیف، preset/chain/tech را در URL پرونده نگه می‌دارد', async () => {
+    const Loc = () => {
+      const l = useLocation();
+      return <span data-testid="loc">{l.pathname + l.search}</span>;
+    };
+    const at = '/master?stage=handover&preset=custom&chain=f_susp&tech=f_weekly';
+    const view = withClient(
+      <>
+        <FtsFunnelStages preset="custom" onPresetChange={() => {}} />
+        <Loc />
+      </>,
+      at,
+    );
+    await waitFor(() => expect(view.container.querySelectorAll('[data-fkey]').length).toBeGreaterThan(0),
+                  { timeout: 4000 });
+    const row = view.container.querySelector<HTMLElement>('[data-fkey]')!;
+    const sym = row.getAttribute('data-fkey')!;
+    const symbolBtn = [...row.querySelectorAll('button')].find((b) => (b.textContent ?? '').includes(sym))!;
+    fireEvent.click(symbolBtn);
+    await waitFor(() => expect(screen.getByTestId('loc').textContent).toContain('/master/'));
+    const loc = decodeURIComponent(screen.getByTestId('loc').textContent ?? '');
+    expect(loc).toContain('/master/' + sym);
+    expect(loc).toContain('stage=handover');
+    expect(loc).toContain('preset=custom');
+    expect(loc).toContain('chain=f_susp');
+    expect(loc).toContain('tech=f_weekly');
   });
 });

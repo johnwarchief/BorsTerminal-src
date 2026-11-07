@@ -1,0 +1,16 @@
+{"at": "2026-10-17 22:53:19", "fix_sha": "525babf6671d33eaa4b502599c1497d8ecb2eb762e511c278435b167d57ca12b", "bug_sha": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db", "head_sha": "0867f8814f578a24ca67dff2e0b6af7e8d91bded61236553526f6197997e54fb", "variants": ["head", "fixed"], "post_timeout_s": 340.0, "env": {"BORS_NO_FETCH_LOOPS": "1", "PYTHONUNBUFFERED": "1"}, "screener_cache_orig_sha": "9d2b7a2367b8e0ece8d860c17937085cf2c51743c4a82bf7199aec78723247d1", "final_funnel_sha": "525babf6671d33eaa4b502599c1497d8ecb2eb762e511c278435b167d57ca12b", "db_restored_after": true, "screener_cache_restored": true}
+head ready 4.310591220855713 post1 {'http': 200, 'x_cache': 'MISS', 'status': 'success', 'bytes': 7488702, 'ms': 74768} post2 {'http': 200, 'x_cache': 'HIT', 'status': 'success', 'bytes': 7488702, 'ms': 218} screener {'http': 200, 'bytes': 1138786, 'ms': 1280}
+    (3.89, '[startup] screener warm thread spawned')
+    (4.91, '[screener] cache miss, running heavy bulk scan...')
+    (7.75, '[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10')
+    (75.79, '[screener] saved to disk cache')
+    (78.4, '[screener] cache warmed')
+fixed ready 4.658722400665283 post1 {'http': 200, 'x_cache': 'MISS', 'status': 'success', 'bytes': 7488712, 'ms': 144703} post2 {'http': 200, 'x_cache': 'HIT', 'status': 'success', 'bytes': 7488732, 'ms': 596} screener {'http': 200, 'bytes': 1139009, 'ms': 355}
+    (4.22, '[startup] screener warm thread spawned')
+    (4.82, '[screener] cache miss, running heavy bulk scan...')
+    (5.22, '[screener] cache miss, running heavy bulk scan...')
+    (9.07, '[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10')
+    (9.27, '[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10')
+    (139.74, '[screener] saved to disk cache')
+    (139.74, '[screener] saved to disk cache')
+    (149.97, '[screener] cache warmed')

@@ -1,40 +1,56 @@
 import {
-  MAX_DEPTH, MAX_TILES, PANEL_MIN,
-  type LayoutNode, type MoveDir, type SplitDir, type TilePanel,
+  MARKET_LIMITS, MAX_DEPTH, MAX_TILES, PANEL_MIN,
+  type LayoutLimits, type LayoutNode, type MoveDir, type SplitDir, type TilePanel,
 } from './types';
 
 export * from './types';
 
-export function panelsInOrder(node: LayoutNode): Array<{ id: string; panel: TilePanel; follow: boolean }> {
+export interface TileInfo<P extends string> {
+  id: string;
+  panel: P;
+  follow: boolean;
+}
+
+export function panelsInOrder<P extends string = TilePanel>(
+  node: LayoutNode<P>,
+): Array<TileInfo<P>> {
   if (node.kind === 'tile') return [{ id: node.id, panel: node.panel, follow: node.follow }];
   return [...panelsInOrder(node.first), ...panelsInOrder(node.second)];
 }
 
-export function findTile(node: LayoutNode, id: string): Extract<LayoutNode, { kind: 'tile' }> | null {
+export function findTile<P extends string = TilePanel>(
+  node: LayoutNode<P>, id: string,
+): Extract<LayoutNode<P>, { kind: 'tile' }> | null {
   if (node.kind === 'tile') return node.id === id ? node : null;
   return findTile(node.first, id) ?? findTile(node.second, id);
 }
 
-export function depthOf(node: LayoutNode): number {
+export function depthOf<P extends string = TilePanel>(node: LayoutNode<P>): number {
   if (node.kind === 'tile') return 1;
   return 1 + Math.max(depthOf(node.first), depthOf(node.second));
 }
 
-function tileCount(node: LayoutNode): number {
+function tileCount<P extends string>(node: LayoutNode<P>): number {
   return node.kind === 'tile' ? 1 : tileCount(node.first) + tileCount(node.second);
 }
 
-export function splitTile(
-  root: LayoutNode, tileId: string, dir: SplitDir, newPanel: TilePanel,
+/**
+ * یک برگ را به دو پنل می‌شکند. سقف‌های درخت (`limits`) صریح‌اند تا
+ * میزکار بازار و تکنیکال بدون منطق موازی، سقف‌های متفاوت داشته باشند.
+ */
+export function splitTile<P extends string = TilePanel>(
+  root: LayoutNode<P>, tileId: string, dir: SplitDir, newPanel: P,
+  limits: LayoutLimits = MARKET_LIMITS,
   makeId: (prefix: string) => string = defaultId,
-): LayoutNode | null {
-  if (tileCount(root) >= MAX_TILES) return null;
+): LayoutNode<P> | null {
+  if (tileCount(root) >= limits.maxTiles) return null;
   if (findTile(root, tileId) === null) return null;
   if (panelsInOrder(root).some((p) => p.panel === newPanel)) return null;
 
-  function walk(node: LayoutNode, depth: number): { node: LayoutNode; done: boolean } {
+  function walk(node: LayoutNode<P>, depth: number): { node: LayoutNode<P>; done: boolean } {
     if (node.kind === 'tile') {
-      if (node.id !== tileId || depth > MAX_DEPTH) return { node, done: false };
+      // شکافتنِ برگ در عمق d یک گرهٔ split در عمق d+1 می‌سازد.
+      if (node.id !== tileId || depth + 1 > limits.maxDepth) return { node, done: false };
       return {
         done: true,
         node: {
@@ -55,10 +71,17 @@ export function splitTile(
   return out.done ? out.node : null;
 }
 
-export function closeTile(root: LayoutNode, tileId: string): LayoutNode | null {
-  if (findTile(root, tileId)?.panel === 'board') return null;
+/**
+ * بستنِ برگ و جمع‌شدنِ والد. پنلِ محافظ پیش‌فرض `board` است تا رفتار
+ * میزکار بازار بدون تغییر بماند؛ میزکار تکنیکال `'chart'` می‌فرستد.
+ */
+export function closeTile<P extends string = TilePanel>(
+  root: LayoutNode<P>, tileId: string, protectedPanel?: P,
+): LayoutNode<P> | null {
+  const guarded = (protectedPanel ?? 'board') as P;
+  if (findTile(root, tileId)?.panel === guarded) return null;
 
-  function walk(node: LayoutNode): { node: LayoutNode | null } {
+  function walk(node: LayoutNode<P>): { node: LayoutNode<P> | null } {
     if (node.kind === 'tile') {
       return node.id === tileId ? { node: null } : { node };
     }
@@ -77,7 +100,7 @@ export function closeTile(root: LayoutNode, tileId: string): LayoutNode | null {
 
 interface Rect { x: number; y: number; w: number; h: number }
 
-function rects(node: LayoutNode, rect: Rect, out: Map<string, Rect>): void {
+function rects<P extends string>(node: LayoutNode<P>, rect: Rect, out: Map<string, Rect>): void {
   if (node.kind === 'tile') {
     out.set(node.id, rect);
     return;
@@ -93,13 +116,15 @@ function rects(node: LayoutNode, rect: Rect, out: Map<string, Rect>): void {
   }
 }
 
-function tileRects(root: LayoutNode): Map<string, Rect> {
+function tileRects<P extends string>(root: LayoutNode<P>): Map<string, Rect> {
   const out = new Map<string, Rect>();
   rects(root, { x: 0, y: 0, w: 1, h: 1 }, out);
   return out;
 }
 
-export function neighborOf(root: LayoutNode, tileId: string, dir: MoveDir): string | null {
+export function neighborOf<P extends string = TilePanel>(
+  root: LayoutNode<P>, tileId: string, dir: MoveDir,
+): string | null {
   const map = tileRects(root);
   const from = map.get(tileId);
   if (!from) return null;
@@ -126,16 +151,24 @@ export function neighborOf(root: LayoutNode, tileId: string, dir: MoveDir): stri
   return best ? best.id : null;
 }
 
-export function swapWithNeighbor(
-  root: LayoutNode, tileId: string, dir: MoveDir,
-): { root: LayoutNode; movedTo: string } | null {
+export function swapWithNeighbor<P extends string = TilePanel>(
+  root: LayoutNode<P>, tileId: string, dir: MoveDir,
+): { root: LayoutNode<P>; movedTo: string } | null {
   const target = neighborOf(root, tileId, dir);
   if (!target) return null;
+  return swapTiles(root, tileId, target);
+}
+
+/** جابه‌جایی مستقیم دو برگ (درگ/دراپ یا اکشن پالت)؛ شناسه‌های درخت ثابت می‌مانند. */
+export function swapTiles<P extends string = TilePanel>(
+  root: LayoutNode<P>, tileId: string, targetId: string,
+): { root: LayoutNode<P>; movedTo: string } | null {
+  if (tileId === targetId) return null;
   const a = findTile(root, tileId);
-  const b = findTile(root, target);
+  const b = findTile(root, targetId);
   if (!a || !b) return null;
 
-  function walk(node: LayoutNode): LayoutNode {
+  function walk(node: LayoutNode<P>): LayoutNode<P> {
     if (node.kind === 'tile') {
       if (node.id === a!.id) return { ...node, panel: b!.panel, follow: b!.follow };
       if (node.id === b!.id) return { ...node, panel: a!.panel, follow: a!.follow };
@@ -144,19 +177,19 @@ export function swapWithNeighbor(
     return { ...node, first: walk(node.first), second: walk(node.second) };
   }
 
-  return { root: walk(root), movedTo: target };
+  return { root: walk(root), movedTo: targetId };
 }
 
-function minExtent(node: LayoutNode, axis: 'w' | 'h'): number {
-  if (node.kind === 'tile') return PANEL_MIN[node.panel][axis];
+function minExtent<P extends string>(node: LayoutNode<P>, axis: 'w' | 'h'): number {
+  if (node.kind === 'tile') return PANEL_MIN[node.panel as TilePanel][axis];
   const sameAxis = (node.dir === 'row') === (axis === 'w');
   return sameAxis
     ? minExtent(node.first, axis) + minExtent(node.second, axis)
     : Math.max(minExtent(node.first, axis), minExtent(node.second, axis));
 }
 
-export function clampRatio(
-  node: LayoutNode, ratio: number, width: number, height: number,
+export function clampRatio<P extends string = TilePanel>(
+  node: LayoutNode<P>, ratio: number, width: number, height: number,
 ): number | null {
   if (node.kind !== 'split') return null;
   const total = node.dir === 'row' ? width : height;

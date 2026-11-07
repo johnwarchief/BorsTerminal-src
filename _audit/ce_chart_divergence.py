@@ -132,7 +132,7 @@ def one(conn, sym, cfg):
             "ma52_chart": hg.get("ma52"),
             "ma52_pct": pct(gates.get("ma52"), hg.get("ma52")),
             "rsi_ce7": None if gates.get("rsi7") is None else round(gates["rsi7"], 1),
-            "rsi_chart5": hg.get("weekly_rsi5"),
+            "rsi_chart5": hg.get("weekly_rsi"),
             "ce_bullish": gates.get("bullish"), "ce_weak": gates.get("weak"),
             "chart_trendW": tw.get("trend"), "chart_basis": tw.get("basis"),
             "chart_decision": mx.get("decision"),

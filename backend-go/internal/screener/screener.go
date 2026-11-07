@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -125,6 +126,9 @@ func (s *Service) GetScreener(ctx context.Context, symbolsStr, preset, chainStr 
 	}
 	res["data"] = filteredRows
 	res["count"] = len(filteredRows)
+	// as_of از کش هم بازنویسی می‌شود: کشِ ۱۲ساعته ممکن است as_ofِ قدیمی (یا
+	// epochِ پایتون) داشته باشد و روزِ نشست باید با تابلو هم‌قدم بماند.
+	res["as_of"] = s.boardAsOf(ctx)
 	if askedCount > 0 {
 		res["requested_symbols"] = askedCount
 	}
@@ -215,6 +219,18 @@ func (s *Service) loadScreenerData(ctx context.Context) (map[string]any, error) 
 		"count":     len(dataList),
 		"data":      dataList,
 		"max_score": 5,
-		"as_of":     time.Now().Format("2006-01-02"),
+		"as_of":     s.boardAsOf(ctx),
 	}, nil
+}
+
+// boardAsOf روزِ نشستِ تابلو را از market_watch می‌خواند؛ ساعتِ سیستم مرجعِ
+// تازگیِ دادهٔ بازار نیست. بی‌ردیف/NULL ⇒ nil (نه تاریخِ ساختگی).
+func (s *Service) boardAsOf(ctx context.Context) any {
+	var d sql.NullInt64
+	if err := s.marketDB.QueryRowContext(ctx,
+		"SELECT MAX(d_even) FROM market_watch").Scan(&d); err != nil || !d.Valid || d.Int64 == 0 {
+		return nil
+	}
+	raw := fmt.Sprintf("%08d", d.Int64)
+	return raw[:4] + "-" + raw[4:6] + "-" + raw[6:8]
 }

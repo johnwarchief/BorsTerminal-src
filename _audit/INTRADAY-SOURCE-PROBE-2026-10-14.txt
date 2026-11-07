@@ -1,0 +1,23 @@
+ins_code=43958695071423615  today=20261014
+
+[200]      824B text/html                    مرده        Trades/GetInstrumentTradesWithDate
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[200]      824B text/html                    مرده        Trades/GetInstrumentTradesWithDate(دیروز)
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[200]      824B text/html                    مرده        Trades/GetInstrumentTradesLastNUpdate
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[200]      824B text/html                    مرده        Trades/GetInstrumentTradesWithDate(مسیرِ path)
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[200]      824B text/html                    مرده        Chart/GetChartV2
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[200]      824B text/html                    مرده        Chart/GetChartData
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[404]        0B ?                            مرده        MarketData/GetMarketDataTwo?method=PostMarketData
+        ''
+[200]      824B text/html                    مرده        ClosingPrice/GetClosingPriceDailyListCSV(مراجعه به api/History)
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico?v=2" type="image/x-icon"'
+[404]        0B ?                            مرده        StaticData/GetInstrumentStatic
+        ''
+
+زنده‌هایِ دقیقه‌ای: هیچ
+تفسیر: اگر فهرست خالی است، هیچ سورسِ دقیقه‌ایِ قابلِ اتکایی از TSETMC دسترس نیست و کندلِ ۱m..۱h باید صریحاً «غیرقابل‌اعمال» بماند.

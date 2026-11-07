@@ -19,7 +19,7 @@ let overlays: Record<string, unknown>[] = [];
 const chartStub = () => ({
   setDataLoader: vi.fn(), setSymbol: vi.fn(), setPeriod: vi.fn(), setFormatter: vi.fn(),
   createIndicator: vi.fn(), removeIndicator: vi.fn(), setPaneOptions: vi.fn(),
-  setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideOverlay: vi.fn(),
+  setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideXAxis: vi.fn(), overrideOverlay: vi.fn(),
   createOverlay: vi.fn(() => 'ov-1'), removeOverlay: vi.fn(), resetData: vi.fn(),
   resize: vi.fn(), getConvertPictureUrl: vi.fn(() => ''),
   subscribeAction: vi.fn((type: string, cb: ClickCb) => {

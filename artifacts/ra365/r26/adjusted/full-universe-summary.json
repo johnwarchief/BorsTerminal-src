@@ -1,0 +1,30 @@
+{
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "product": "D:/BorsTerminal-tmp/r26_bench/frozen/product_live_final_v4.jsonl",
+ "cohort": "D:/BorsTerminal-tmp/ra365_round18/cohort.jsonl",
+ "assets_ref": 2595,
+ "assets_paired": 1964,
+ "rows": {
+  "adjusted": 1189336,
+  "adjusted_ok": 371587,
+  "factor": 1189336,
+  "factor_ok": 314665,
+  "raw": 1189336,
+  "raw_ok": 1185985
+ },
+ "adjusted_ok_pct": 31.2432,
+ "factor_ok_pct": 26.4572,
+ "raw_ok_pct": 99.7182,
+ "steps": {
+  "RATIO_DIFF": 3814,
+  "REF_ONLY": 709,
+  "EXTRA": 122
+ },
+ "error_rows": {
+  "RATIO_DIFF": 743019,
+  "REF_ONLY": 48145,
+  "UNATTRIBUTED": 5573,
+  "RAW_OR_BASIS": 2694,
+  "EXTRA": 18318
+ }
+}

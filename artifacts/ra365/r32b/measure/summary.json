@@ -1,0 +1,59 @@
+{
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "product": "D:/BorsTerminal-tmp/r32b/product_v2/shard0,D:/BorsTerminal-tmp/r32b/product_v2/shard1,D:/BorsTerminal-tmp/r32b/product_v2/shard2,D:/BorsTerminal-tmp/r32b/product_v2/shard3,D:/BorsTerminal-tmp/r32b/product_v2/shard4,D:/BorsTerminal-tmp/r32b/product_v2/shard5",
+ "pack": "",
+ "assets_paired": 1989,
+ "daily": {
+  "rows": 1194446,
+  "base_exact": 1194446,
+  "base_tol": 1194446,
+  "base_exact_pct": 100.0,
+  "base_tol_pct": 100.0,
+  "corrected_exact": 1194446,
+  "corrected_tol": 1194446,
+  "corrected_exact_pct": 100.0,
+  "corrected_tol_pct": 100.0,
+  "raw_bad_after": 0,
+  "raw_applied": 0,
+  "factor_residual": 0,
+  "daily_residual": 0
+ },
+ "W": {
+  "rows": 275776,
+  "comp_rows": 272918,
+  "comp_pass": 272915,
+  "comp_exact": 272915,
+  "noncomp_rows": 2858,
+  "noncomp_pass": 302
+ },
+ "M": {
+  "rows": 69268,
+  "comp_rows": 66491,
+  "comp_pass": 66491,
+  "comp_exact": 66491,
+  "noncomp_rows": 2777,
+  "noncomp_pass": 334
+ },
+ "W_baseline": {
+  "rows": 275776,
+  "comp_rows": 272918,
+  "comp_pass": 272915
+ },
+ "M_baseline": {
+  "rows": 69268,
+  "comp_rows": 66491,
+  "comp_pass": 66491
+ },
+ "noncomparable": {
+  "W": {
+   "rows": 2858,
+   "missing": 529,
+   "extra": 2458
+  },
+  "M": {
+   "rows": 2777,
+   "missing": 519,
+   "extra": 2384
+  }
+ }
+}

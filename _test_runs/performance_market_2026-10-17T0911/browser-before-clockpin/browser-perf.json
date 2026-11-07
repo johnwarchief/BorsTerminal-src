@@ -1,0 +1,538 @@
+{
+  "ran_at": "2026-10-17T12:51:50.056Z",
+  "base": "http://127.0.0.1:8020",
+  "window_s": 90,
+  "clock": "2026-10-17T10:00:00",
+  "ready_wait_s": 25,
+  "results": [
+    {
+      "label": "market-1366x768",
+      "route": "/market",
+      "viewport": "1366x768",
+      "window_s": 90,
+      "clock": "Sat Oct 17 2026 10:01:35 GMT+0330",
+      "ready_wait_s": 25,
+      "first_rows_ready": {
+        "rows": 25,
+        "ms": 4931
+      },
+      "requests_total": 31,
+      "requests_in_window": 24,
+      "requests_per_min": 16,
+      "transfer_bytes_total": 2387637,
+      "transfer_bytes_in_window": 1157325,
+      "responses_304": 0,
+      "responses_200": 24,
+      "requests_with_inm": 0,
+      "by_path": [
+        {
+          "path": "/api/funnel",
+          "n": 4,
+          "n_all": 5,
+          "bytes": 1153517,
+          "failed": 0,
+          "n200": 4,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "POST": 4
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 4
+          }
+        },
+        {
+          "path": "/api/market/delta",
+          "n": 17,
+          "n_all": 17,
+          "bytes": 2686,
+          "failed": 0,
+          "n200": 17,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 17
+          },
+          "xc": {},
+          "enc": {
+            "identity": 17
+          }
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 3,
+          "n_all": 4,
+          "bytes": 1122,
+          "failed": 0,
+          "n200": 3,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 3
+          },
+          "xc": {},
+          "enc": {
+            "identity": 3
+          }
+        },
+        {
+          "path": "/api/update/version",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/market",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/screener",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/watchlist",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 90,
+      "scrollBefore": 90,
+      "domNodes": 1447,
+      "rows": 25,
+      "banner": "مستقیم — بازار باز",
+      "perf": {
+        "longTasks": 19,
+        "longTotalMs": 2202,
+        "maxLongMs": 337,
+        "mutations": 266,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 4651,
+            "dur": 337
+          },
+          {
+            "at": 4989,
+            "dur": 194
+          },
+          {
+            "at": 198,
+            "dur": 151
+          },
+          {
+            "at": 4453,
+            "dur": 148
+          },
+          {
+            "at": 5184,
+            "dur": 146
+          }
+        ]
+      }
+    },
+    {
+      "label": "master-1366x768",
+      "route": "/master",
+      "viewport": "1366x768",
+      "window_s": 90,
+      "clock": "Sat Oct 17 2026 10:01:56 GMT+0330",
+      "ready_wait_s": 25,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 36,
+      "requests_in_window": 26,
+      "requests_per_min": 17.3,
+      "transfer_bytes_total": 2676766,
+      "transfer_bytes_in_window": 1445859,
+      "responses_304": 0,
+      "responses_200": 26,
+      "requests_with_inm": 0,
+      "by_path": [
+        {
+          "path": "/api/funnel",
+          "n": 5,
+          "n_all": 6,
+          "bytes": 1441893,
+          "failed": 0,
+          "n200": 5,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "POST": 5
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 5
+          }
+        },
+        {
+          "path": "/api/market/delta",
+          "n": 18,
+          "n_all": 22,
+          "bytes": 2844,
+          "failed": 0,
+          "n200": 18,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 18
+          },
+          "xc": {},
+          "enc": {
+            "identity": 18
+          }
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 3,
+          "n_all": 4,
+          "bytes": 1122,
+          "failed": 0,
+          "n200": 3,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 3
+          },
+          "xc": {},
+          "enc": {
+            "identity": 3
+          }
+        },
+        {
+          "path": "/api/update/version",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/market",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/screener",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 0,
+      "scrollBefore": 0,
+      "domNodes": 339,
+      "rows": 0,
+      "banner": "مستقیم — بازار باز",
+      "perf": {
+        "longTasks": 19,
+        "longTotalMs": 2259,
+        "maxLongMs": 563,
+        "mutations": 203,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 2934,
+            "dur": 563
+          },
+          {
+            "at": 2769,
+            "dur": 164
+          },
+          {
+            "at": 301,
+            "dur": 160
+          },
+          {
+            "at": 93999,
+            "dur": 143
+          },
+          {
+            "at": 70579,
+            "dur": 125
+          }
+        ]
+      }
+    },
+    {
+      "label": "market-1920x1080",
+      "route": "/market",
+      "viewport": "1920x1080",
+      "window_s": 90,
+      "clock": "Sat Oct 17 2026 10:01:33 GMT+0330",
+      "ready_wait_s": 25,
+      "first_rows_ready": {
+        "rows": 33,
+        "ms": 2495
+      },
+      "requests_total": 32,
+      "requests_in_window": 25,
+      "requests_per_min": 16.7,
+      "transfer_bytes_total": 2387822,
+      "transfer_bytes_in_window": 1157496,
+      "responses_304": 0,
+      "responses_200": 25,
+      "requests_with_inm": 0,
+      "by_path": [
+        {
+          "path": "/api/funnel",
+          "n": 4,
+          "n_all": 5,
+          "bytes": 1153530,
+          "failed": 0,
+          "n200": 4,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "POST": 4
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 4
+          }
+        },
+        {
+          "path": "/api/market/delta",
+          "n": 18,
+          "n_all": 18,
+          "bytes": 2844,
+          "failed": 0,
+          "n200": 18,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 18
+          },
+          "xc": {},
+          "enc": {
+            "identity": 18
+          }
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 3,
+          "n_all": 4,
+          "bytes": 1122,
+          "failed": 0,
+          "n200": 3,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 3
+          },
+          "xc": {},
+          "enc": {
+            "identity": 3
+          }
+        },
+        {
+          "path": "/api/update/version",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/market",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/screener",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        },
+        {
+          "path": "/api/watchlist",
+          "n": 0,
+          "n_all": 1,
+          "bytes": 0,
+          "failed": 0,
+          "n200": 0,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {},
+          "xc": {},
+          "enc": {}
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 400,
+      "scrollBefore": 400,
+      "domNodes": 2184,
+      "rows": 43,
+      "banner": "مستقیم — بازار باز",
+      "perf": {
+        "longTasks": 22,
+        "longTotalMs": 2690,
+        "maxLongMs": 426,
+        "mutations": 207,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 1499,
+            "dur": 426
+          },
+          {
+            "at": 2893,
+            "dur": 290
+          },
+          {
+            "at": 3527,
+            "dur": 195
+          },
+          {
+            "at": 251,
+            "dur": 172
+          },
+          {
+            "at": 1334,
+            "dur": 163
+          }
+        ]
+      }
+    }
+  ]
+}

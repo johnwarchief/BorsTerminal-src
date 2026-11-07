@@ -1,0 +1,8 @@
+# a1-si-solo-build.json pristine_all= True xcache= ['MISS']
+A all n=16 med=544.6 p95=2010.0 max=2165.4 | excl#6 n=14 med=539.9 p95=627.1 max=666.0 | #6 [2165.4, 1958.2] | POST med 547.9 GET med 532.0 | warmup [8735.3, 8433.7]
+B all n=16 med=611.5 p95=1953.9 max=1996.1 | excl#6 n=14 med=587.9 p95=759.4 max=761.9 | #6 [1996.1, 1939.8] | POST med 564.3 GET med 636.3 | warmup [9327.5, 9630.9]
+BOTH all n=32 med=568.7 p95=1975.3 max=2165.4 n_over_1000=4
+# a1-si-solo-build-after-techctx.json pristine_all= True xcache= ['MISS']
+A all n=16 med=551.2 p95=686.0 max=731.7 | excl#6 n=14 med=542.5 p95=676.5 max=731.7 | #6 [557.4, 670.8] | POST med 578.0 GET med 533.0 | warmup [10244.7, 8284.2]
+B all n=16 med=606.4 p95=754.2 max=815.1 | excl#6 n=14 med=592.6 p95=762.3 max=815.1 | #6 [596.9, 638.7] | POST med 575.2 GET med 592.6 | warmup [8041.1, 8263.1]
+BOTH all n=32 med=567.0 p95=732.7 max=815.1 n_over_1000=0

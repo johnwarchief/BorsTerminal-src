@@ -1,0 +1,958 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator("Institutional Liquidity & Macro Dealing Range [BSL/SSL + CVD]", shorttitle="Liq & Flow Matrix", overlay=true, 
+     max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_polylines_count=100, max_bars_back=500)
+
+// ============================================================================
+// SECTION 1: USER INPUTS & CONFIGURATION
+// ============================================================================
+
+// ── 01. Swing Liquidity Engine (BSL & SSL) ──────────────────────────────────
+string grp_liq          = "🎯 01. Swing Liquidity Engine (BSL & SSL)"
+int    swingLeft        = input.int(5, "Swing Pivot Lookback (Left)", minval=2, maxval=50, group=grp_liq,
+     tooltip="Number of bars to the left required to confirm a swing high/low.")
+int    swingRight       = input.int(5, "Swing Pivot Lookback (Right)", minval=1, maxval=30, group=grp_liq,
+     tooltip="Number of bars to the right required to confirm a swing high/low.")
+int    maxActiveLevels  = input.int(5, "Max Active Levels Each (BSL & SSL)", minval=1, maxval=20, group=grp_liq,
+     tooltip="Keeps the chart clean by limiting how many active liquidity lines are displayed at once.")
+
+string bslLabelText     = input.string("Buy Stops", "BSL Label Text", group=grp_liq,
+     tooltip="Custom text to display above Buy-Side Liquidity (e.g. 'Buy Stops', 'BSL', 'Buyside Liquidity').")
+string sslLabelText     = input.string("Sell Stops", "SSL Label Text", group=grp_liq,
+     tooltip="Custom text to display below Sell-Side Liquidity (e.g. 'Sell Stops', 'SSL', 'Sellside Liquidity').")
+
+// ── 02. Sweep Behavior & Cleanup ────────────────────────────────────────────
+string grp_sweep        = "⚡ 02. Liquidity Sweep Detection"
+string sweepMode        = input.string("Fade & Mark Swept", "Action When Swept", 
+     options=["Fade & Mark Swept", "Delete / Remove Line", "Keep Solid"], group=grp_sweep,
+     tooltip="• Fade & Mark Swept: Turns the line into a dashed/faded line and marks the sweep point.\n• Delete / Remove: Automatically removes the line as soon as price sweeps it, keeping chart 100% clean.\n• Keep Solid: Keeps line visible.")
+string sweepLabelStyle  = input.string("Clean (Update Line Text)", "Sweep Marker Style",
+     options=["Clean (Update Line Text)", "Marker on Sweep Candle", "Both"], group=grp_sweep,
+     tooltip="• Clean (Update Line Text): Updates the existing line label to 'Sell Stops (✕ Purged)' with zero overlapping.\n• Marker on Sweep Candle: Places a clean '✕' symbol at the sweeping candle's wick.\n• Both: Updates the line text and places a candle marker.")
+bool   detectWickSweeps = input.bool(true, "Detect Wick Sweeps (Liquidity Purge & Reclaim)", group=grp_sweep,
+     tooltip="Highlights when price wicks beyond BSL/SSL but closes back inside (classic ICT turtle soup / liquidity purge).")
+
+// ── 03. High Timeframe Major Liquidity (PDH / PDL / PWH / PWL) ──────────────
+string grp_htf          = "🏛️ 03. High-Timeframe Major Liquidity"
+bool   showPdhPdl       = input.bool(true, "Show Previous Day High & Low (PDH / PDL)", group=grp_htf)
+bool   showPwhPwl       = input.bool(false, "Show Previous Week High & Low (PWH / PWL)", group=grp_htf)
+
+// ── 04. Optional Fair Value Gaps & Inversion (FVG / iFVG) ────────────────────
+string grp_fvg          = "📦 04. Fair Value Gaps & Inversion (FVG / iFVG)"
+bool   showFvg          = input.bool(true, "Show Active FVG Zones", group=grp_fvg)
+bool   showCeMidpoint   = input.bool(true, "Show 50% Consequent Encroachment (CE) Line", group=grp_fvg,
+     tooltip="Draws the exact 50% midpoint line inside the imbalance box.")
+bool   showFvgLabels    = input.bool(true, "Show FVG & iFVG Text Labels", group=grp_fvg,
+     tooltip="Displays '+FVG' / '-FVG' on fresh gaps and '+iFVG' / '-iFVG' when inverted.")
+string fvgLabelPos      = input.string("Right Edge (Ahead of Price)", "FVG Label Alignment",
+     options=["Right Edge (Ahead of Price)", "Left Edge (Origin)"], group=grp_fvg,
+     tooltip="• Right Edge (Ahead of Price): Positions labels on the right projected edge of the box so candles NEVER cover or overlap the text.\n• Left Edge (Origin): Places labels at the candle where the gap originally formed.")
+string fvgLabelVAlign   = input.string("Top", "FVG Label Vertical Position",
+     options=["Top", "Bottom", "Center"], group=grp_fvg,
+     tooltip="Positions text at the Top or Bottom of the box so it never collides with the 50% CE midpoint line.")
+bool   showIfvg         = input.bool(true, "Track Inversion FVGs (iFVG)", group=grp_fvg,
+     tooltip="When price closes through an active FVG, it inverts into an iFVG (broken Bullish FVG becomes Bearish resistance; broken Bearish FVG becomes Bullish support).")
+int    maxFvgCount      = input.int(3, "Max Active FVGs", minval=1, maxval=10, group=grp_fvg)
+color  colBisi          = input.color(color.new(#80cbc4, 80), "Bullish FVG (BISI) Box", group=grp_fvg)
+color  colSibi          = input.color(color.new(#ffcc80, 80), "Bearish FVG (SIBI) Box", group=grp_fvg)
+color  colBullIfvg      = input.color(color.new(#089981, 75), "Bullish iFVG Box (Support)", group=grp_fvg)
+color  colBearIfvg      = input.color(color.new(#f23645, 75), "Bearish iFVG Box (Resistance)", group=grp_fvg)
+
+// ── 05. Supply & Demand Order Blocks (CVD Flow Engine) ───────────────────────
+string grp_sd           = "🌊 05. Supply & Demand Order Blocks (CVD Flow Engine)"
+bool   showSdZones      = input.bool(true, "Show S&D Order Block Zones", group=grp_sd,
+     tooltip="Detects institutional Supply & Demand base order blocks with momentum breakouts.")
+bool   showSdWave       = input.bool(true, "Show CVD Flow Wave (Inside Zone)", group=grp_sd,
+     tooltip="Draws a smoothed cumulative volume delta flow ribbon inside active order block zones.")
+int    sdAtrLen         = input.int(14, "Momentum ATR Length", minval=1, group=grp_sd)
+float  sdMomMult        = input.float(0.7, "Momentum Multiplier", minval=0.1, step=0.1, group=grp_sd,
+     tooltip="Breakout candle body must be >= this multiple of ATR. Default 0.7 captures clean institutional momentum for both buyers and sellers.")
+int    maxActiveSd      = input.int(5, "Max Active S&D Zones Each", minval=1, maxval=20, group=grp_sd,
+     tooltip="Controls how many active Demand and Supply zones can remain on chart simultaneously.")
+bool   showSdSignals    = input.bool(false, "Show S&D Breakout Signals (△ / ▽)", group=grp_sd,
+     tooltip="Displays clean triangle breakout signals under demand creation and above supply creation.")
+color  colDemand        = input.color(color.new(#089981, 88), "Demand Zone Fill", group=grp_sd)
+color  colDemandBorder  = input.color(color.new(#089981, 30), "Demand Border", group=grp_sd)
+color  colDemandWave    = input.color(color.new(#22c5af, 60), "Demand CVD Wave Fill", group=grp_sd)
+color  colSupply        = input.color(color.new(#f23645, 88), "Supply Zone Fill", group=grp_sd)
+color  colSupplyBorder  = input.color(color.new(#f23645, 30), "Supply Border", group=grp_sd)
+color  colSupplyWave    = input.color(color.new(#ef8844, 60), "Supply CVD Wave Fill", group=grp_sd)
+
+// ── 06. Visual Styling & Colors ─────────────────────────────────────────────
+string grp_style        = "🎨 06. Visual Styling & Colors"
+color  colBsl           = input.color(#787b86, "BSL (Buy Stops) Line Color", group=grp_style)
+color  colSsl           = input.color(#787b86, "SSL (Sell Stops) Line Color", group=grp_style)
+color  colSweepMarker   = input.color(#f57c00, "Sweep Marker Color", group=grp_style)
+string lineStyleStr     = input.string("Solid", "Active Line Style", options=["Solid", "Dashed", "Dotted"], group=grp_style)
+string lblSizeStr       = input.string("Small", "Label Font Size", options=["Tiny", "Small", "Normal"], group=grp_style)
+int    lineWidth        = input.int(1, "Line Width", minval=1, maxval=3, group=grp_style)
+
+// ── 07. Premium & Discount Dealing Range (Delta Volume Engine) ──────────────
+string grp_pd             = "⚖️ 07. Premium & Discount Dealing Range (Delta Volume Engine)"
+bool   showSR             = input.bool(true, "Show Premium & Discount Range", group=grp_pd,
+     tooltip="Visualizes the dealing range with Premium / Discount volume boundaries and Delta Volume analytics inspired by BigBeluga.")
+int    srPeriod           = input.int(50, "P&D Lookback Period", minval=10, step=10, group=grp_pd,
+     tooltip="Lookback period for calculating Support & Resistance dealing range and positive/negative volume delta.")
+int    srExtendRight      = input.int(35, "Extend Range to Right (Bars)", minval=5, maxval=100, group=grp_pd)
+float  atrMultiplier      = input.float(0.8, "ATR Zone Height Multiplier", minval=0.1, maxval=3.0, step=0.1, group=grp_pd,
+     tooltip="Controls the vertical thickness of the upper Premium and lower Discount boxes.")
+bool   showEqLine         = input.bool(true, "Show 50% Equilibrium (EQ) Line", group=grp_pd)
+bool   showMacro          = input.bool(false, "Show Macro Dealing Range", group=grp_pd,
+     tooltip="Draws wider macro High/Low boundary boxes over the macro lookback period.")
+int    macroPeriod        = input.int(200, "Macro Lookback Period", minval=20, step=10, group=grp_pd,
+     tooltip="Lookback period for Macro Highs/Lows and Macro Volume Delta.")
+bool   showDeltaTable     = input.bool(true, "Show Delta Volume Dashboard Table", group=grp_pd,
+     tooltip="Displays a clean dashboard in the top-right corner with Dealing Range and Macro Delta Volume %.")
+string tablePos           = input.string("Top Right", "Dashboard Position", 
+     options=["Top Right", "Bottom Right", "Top Left", "Bottom Left"], group=grp_pd)
+color  upColor            = input.color(#79c1f1, "Discount (Buyer) Color", group=grp_pd)
+color  downColor          = input.color(#f19579, "Premium (Seller) Color", group=grp_pd)
+color  colEqLine          = input.color(#787b86, "Equilibrium (EQ) Line Color", group=grp_pd)
+
+
+// ============================================================================
+// SECTION 2: HELPER FUNCTIONS & TYPES
+// ============================================================================
+
+f_lineStyle(string s) =>
+    switch s
+        "Dashed" => line.style_dashed
+        "Dotted" => line.style_dotted
+        =>          line.style_solid
+
+f_lblSize(string s) =>
+    switch s
+        "Tiny"   => size.tiny
+        "Normal" => size.normal
+        =>          size.small
+
+f_tablePos(string s) =>
+    switch s
+        "Top Left"      => position.top_left
+        "Bottom Left"   => position.bottom_left
+        "Bottom Right"  => position.bottom_right
+        =>                 position.top_right
+
+f_boxHAlign(string s) =>
+    s == "Left Edge (Origin)" ? text.align_left : text.align_right
+
+f_boxVAlign(string s) =>
+    switch s
+        "Bottom" => text.align_bottom
+        "Center" => text.align_center
+        =>          text.align_top
+
+type LiqLevel
+    line  ln
+    label lb
+    float price
+    int   startBar
+    bool  isBsl
+    bool  swept
+    int   sweepBar
+
+var LiqLevel[] activeBsl = array.new<LiqLevel>()
+var LiqLevel[] activeSsl = array.new<LiqLevel>()
+
+
+// ============================================================================
+// SECTION 3: SWING PIVOT DETECTION & LIQUIDITY REGISTRATION
+// ============================================================================
+
+float ph = ta.pivothigh(high, swingLeft, swingRight)
+float pl = ta.pivotlow(low, swingLeft, swingRight)
+
+int pivotBarHigh = bar_index - swingRight
+int pivotBarLow  = bar_index - swingRight
+
+// ── Register New Buy-Side Liquidity (BSL) ───────────────────────────────────
+if not na(ph)
+    int x1 = pivotBarHigh
+    int x2 = bar_index + 10
+    float p = high[swingRight]
+
+    line  ln = line.new(x1, p, x2, p, color = colBsl, width = lineWidth, style = f_lineStyle(lineStyleStr))
+    label lb = label.new(x1, p, bslLabelText, color = color.new(color.white, 100), 
+                         textcolor = colBsl, style = label.style_label_down, size = f_lblSize(lblSizeStr))
+
+    LiqLevel item = LiqLevel.new(ln, lb, p, x1, true, false, 0)
+    array.push(activeBsl, item)
+
+    // Keep array within user max limit
+    if array.size(activeBsl) > maxActiveLevels * 2
+        LiqLevel oldest = array.shift(activeBsl)
+        line.delete(oldest.ln)
+        label.delete(oldest.lb)
+
+// ── Register New Sell-Side Liquidity (SSL) ──────────────────────────────────
+if not na(pl)
+    int x1 = pivotBarLow
+    int x2 = bar_index + 10
+    float p = low[swingRight]
+
+    line  ln = line.new(x1, p, x2, p, color = colSsl, width = lineWidth, style = f_lineStyle(lineStyleStr))
+    label lb = label.new(x1, p, sslLabelText, color = color.new(color.white, 100), 
+                         textcolor = colSsl, style = label.style_label_up, size = f_lblSize(lblSizeStr))
+
+    LiqLevel item = LiqLevel.new(ln, lb, p, x1, false, false, 0)
+    array.push(activeSsl, item)
+
+    // Keep array within user max limit
+    if array.size(activeSsl) > maxActiveLevels * 2
+        LiqLevel oldest = array.shift(activeSsl)
+        line.delete(oldest.ln)
+        label.delete(oldest.lb)
+
+
+// ============================================================================
+// SECTION 4: REAL-TIME SWEEP TRACKING & EXTENSION
+// ============================================================================
+
+float atrVal = ta.atr(14)
+bool  anyBslSwept = false
+bool  anySslSwept = false
+
+// ── Check Active BSL (Buy Stops) ────────────────────────────────────────────
+if array.size(activeBsl) > 0
+    for i = array.size(activeBsl) - 1 to 0
+        LiqLevel lvl = array.get(activeBsl, i)
+        
+        if not lvl.swept
+            // Extend line to the right
+            line.set_x2(lvl.ln, bar_index + 5)
+            
+            // Check for sweep: price breaks above swing high
+            if high >= lvl.price
+                lvl.swept := true
+                lvl.sweepBar := bar_index
+                anyBslSwept := true
+                
+                // Check if it was a wick sweep (purged high and closed below)
+                bool isWickSweep = detectWickSweeps and (close < lvl.price)
+                
+                if sweepMode == "Delete / Remove Line"
+                    line.delete(lvl.ln)
+                    label.delete(lvl.lb)
+                    array.remove(activeBsl, i)
+                else if sweepMode == "Fade & Mark Swept"
+                    line.set_x2(lvl.ln, bar_index)
+                    line.set_style(lvl.ln, line.style_dashed)
+                    line.set_color(lvl.ln, color.new(colBsl, 65))
+                    
+                    // 1. Update line text cleanly so there is NO overlap
+                    if sweepLabelStyle == "Clean (Update Line Text)" or sweepLabelStyle == "Both"
+                        string updatedTxt = isWickSweep ? bslLabelText + " (✕ Purged)" : bslLabelText + " (✕ Swept)"
+                        label.set_text(lvl.lb, updatedTxt)
+                        label.set_textcolor(lvl.lb, isWickSweep ? colSweepMarker : color.new(colBsl, 50))
+                    else
+                        label.set_textcolor(lvl.lb, color.new(colBsl, 50))
+                    
+                    // 2. Separate candle marker (only when sufficiently away from origin bar)
+                    if (sweepLabelStyle == "Marker on Sweep Candle" or sweepLabelStyle == "Both") and isWickSweep
+                        if (bar_index > lvl.startBar + 2)
+                            label.new(bar_index, high + atrVal * 0.35, "✕ Purged", color = color.new(color.white, 100), 
+                                      textcolor = colSweepMarker, style = label.style_label_down, size = size.tiny)
+        else
+            // If already swept and keeping faded lines, remove very old ones
+            if (bar_index - lvl.sweepBar) > 200
+                line.delete(lvl.ln)
+                label.delete(lvl.lb)
+                array.remove(activeBsl, i)
+
+// ── Check Active SSL (Sell Stops) ───────────────────────────────────────────
+if array.size(activeSsl) > 0
+    for i = array.size(activeSsl) - 1 to 0
+        LiqLevel lvl = array.get(activeSsl, i)
+        
+        if not lvl.swept
+            // Extend line to the right
+            line.set_x2(lvl.ln, bar_index + 5)
+            
+            // Check for sweep: price drops below swing low
+            if low <= lvl.price
+                lvl.swept := true
+                lvl.sweepBar := bar_index
+                anySslSwept := true
+                
+                // Check if it was a wick sweep (purged low and closed above)
+                bool isWickSweep = detectWickSweeps and (close > lvl.price)
+                
+                if sweepMode == "Delete / Remove Line"
+                    line.delete(lvl.ln)
+                    label.delete(lvl.lb)
+                    array.remove(activeSsl, i)
+                else if sweepMode == "Fade & Mark Swept"
+                    line.set_x2(lvl.ln, bar_index)
+                    line.set_style(lvl.ln, line.style_dashed)
+                    line.set_color(lvl.ln, color.new(colSsl, 65))
+                    
+                    // 1. Update line text cleanly so there is NO overlap
+                    if sweepLabelStyle == "Clean (Update Line Text)" or sweepLabelStyle == "Both"
+                        string updatedTxt = isWickSweep ? sslLabelText + " (✕ Purged)" : sslLabelText + " (✕ Swept)"
+                        label.set_text(lvl.lb, updatedTxt)
+                        label.set_textcolor(lvl.lb, isWickSweep ? colSweepMarker : color.new(colSsl, 50))
+                    else
+                        label.set_textcolor(lvl.lb, color.new(colSsl, 50))
+                    
+                    // 2. Separate candle marker (only when sufficiently away from origin bar)
+                    if (sweepLabelStyle == "Marker on Sweep Candle" or sweepLabelStyle == "Both") and isWickSweep
+                        if (bar_index > lvl.startBar + 2)
+                            label.new(bar_index, low - atrVal * 0.35, "✕ Purged", color = color.new(color.white, 100), 
+                                      textcolor = colSweepMarker, style = label.style_label_up, size = size.tiny)
+        else
+            if (bar_index - lvl.sweepBar) > 200
+                line.delete(lvl.ln)
+                label.delete(lvl.lb)
+                array.remove(activeSsl, i)
+
+
+// ============================================================================
+// SECTION 5: HIGH-TIMEFRAME MAJOR LIQUIDITY (PDH / PDL & PWH / PWL)
+// ============================================================================
+
+// Daily HTF Fetch (Lookahead on with [1] for non-repainting stability)
+[pdh, pdl] = request.security(syminfo.tickerid, "D", [high[1], low[1]], lookahead = barmerge.lookahead_on)
+[pwh, pwl] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead = barmerge.lookahead_on)
+
+var line ln_pdh = na, var label lb_pdh = na
+var line ln_pdl = na, var label lb_pdl = na
+
+bool isNewDay = ta.change(time("D")) != 0
+var int dayStartBar = 0
+if isNewDay
+    dayStartBar := bar_index
+
+if showPdhPdl and not na(pdh)
+    int startX = dayStartBar
+    int endX   = bar_index + 15
+    
+    if na(ln_pdh)
+        ln_pdh := line.new(startX, pdh, endX, pdh, color = #42a5f5, width = 1, style = line.style_dashed)
+        lb_pdh := label.new(endX, pdh, "PDH (Major BSL)", color = color.new(color.white, 100), 
+                            textcolor = #42a5f5, style = label.style_label_left, size = size.tiny)
+        ln_pdl := line.new(startX, pdl, endX, pdl, color = #ef5350, width = 1, style = line.style_dashed)
+        lb_pdl := label.new(endX, pdl, "PDL (Major SSL)", color = color.new(color.white, 100), 
+                            textcolor = #ef5350, style = label.style_label_left, size = size.tiny)
+    else
+        line.set_xy1(ln_pdh, startX, pdh), line.set_xy2(ln_pdh, endX, pdh)
+        label.set_xy(lb_pdh, endX, pdh)
+        line.set_xy1(ln_pdl, startX, pdl), line.set_xy2(ln_pdl, endX, pdl)
+        label.set_xy(lb_pdl, endX, pdl)
+
+
+// ============================================================================
+// SECTION 6: FAIR VALUE GAPS (FVG / SIBI / BISI) & INVERSION (iFVG) WITH 50% CE
+// ============================================================================
+
+type FvgBox
+    box   bx
+    line  ln_ce
+    float top
+    float btm
+    float ce
+    bool  isBull
+    bool  isInverted
+    bool  mitigated
+
+var FvgBox[] activeFvgs = array.new<FvgBox>()
+
+// Alert tracker flags
+bool anyBullIfvg = false
+bool anyBearIfvg = false
+
+// Detect 3-bar Fair Value Gap
+bool isBullFvg = (low > high[2]) and (close[1] > high[2])
+bool isBearFvg = (high < low[2]) and (close[1] < low[2])
+
+if showFvg and isBullFvg
+    float top = low
+    float btm = high[2]
+    float ce  = (top + btm) / 2.0
+    int   x1  = bar_index - 1
+    int   x2  = bar_index + 10
+    string fvgTxt = showFvgLabels ? "+FVG" : ""
+    
+    box bx = box.new(x1, top, x2, btm, border_width = 0, bgcolor = colBisi,
+                     text = fvgTxt, text_size = size.tiny, text_color = color.new(#00897b, 10),
+                     text_halign = f_boxHAlign(fvgLabelPos), text_valign = f_boxVAlign(fvgLabelVAlign))
+    line ln = showCeMidpoint ? line.new(x1, ce, x2, ce, color = color.new(#00897b, 40), style = line.style_dashed) : na
+    
+    FvgBox f = FvgBox.new(bx, ln, top, btm, ce, true, false, false)
+    array.push(activeFvgs, f)
+    
+    if array.size(activeFvgs) > maxFvgCount * 2
+        FvgBox old = array.shift(activeFvgs)
+        box.delete(old.bx)
+        if not na(old.ln_ce)
+            line.delete(old.ln_ce)
+
+if showFvg and isBearFvg
+    float top = low[2]
+    float btm = high
+    float ce  = (top + btm) / 2.0
+    int   x1  = bar_index - 1
+    int   x2  = bar_index + 10
+    string fvgTxt = showFvgLabels ? "-FVG" : ""
+    
+    box bx = box.new(x1, top, x2, btm, border_width = 0, bgcolor = colSibi,
+                     text = fvgTxt, text_size = size.tiny, text_color = color.new(#e65100, 10),
+                     text_halign = f_boxHAlign(fvgLabelPos), text_valign = f_boxVAlign(fvgLabelVAlign))
+    line ln = showCeMidpoint ? line.new(x1, ce, x2, ce, color = color.new(#e65100, 40), style = line.style_dashed) : na
+    
+    FvgBox f = FvgBox.new(bx, ln, top, btm, ce, false, false, false)
+    array.push(activeFvgs, f)
+    
+    if array.size(activeFvgs) > maxFvgCount * 2
+        FvgBox old = array.shift(activeFvgs)
+        box.delete(old.bx)
+        if not na(old.ln_ce)
+            line.delete(old.ln_ce)
+
+// Update and mitigate active FVGs / iFVGs
+if showFvg and array.size(activeFvgs) > 0
+    for i = array.size(activeFvgs) - 1 to 0
+        FvgBox f = array.get(activeFvgs, i)
+        
+        if not f.mitigated
+            box.set_right(f.bx, bar_index + 8)
+            if not na(f.ln_ce)
+                line.set_x2(f.ln_ce, bar_index + 8)
+                
+            // Check inversion for fresh (uninverted) FVGs
+            if not f.isInverted
+                // Bullish FVG breached downwards -> Inverts to Bearish iFVG (Resistance)
+                if f.isBull and close < f.btm
+                    if showIfvg
+                        f.isInverted := true
+                        anyBearIfvg := true
+                        box.set_bgcolor(f.bx, colBearIfvg)
+                        box.set_border_width(f.bx, 1)
+                        box.set_border_color(f.bx, color.new(colBearIfvg, 20))
+                        if showFvgLabels
+                            box.set_text(f.bx, "-iFVG")
+                            box.set_text_color(f.bx, color.new(#ef5350, 10))
+                            box.set_text_halign(f.bx, f_boxHAlign(fvgLabelPos))
+                            box.set_text_valign(f.bx, f_boxVAlign(fvgLabelVAlign))
+                        if not na(f.ln_ce)
+                            line.set_color(f.ln_ce, color.new(#ef5350, 40))
+                    else
+                        f.mitigated := true
+                        box.set_right(f.bx, bar_index)
+                        if not na(f.ln_ce)
+                            line.set_x2(f.ln_ce, bar_index)
+                
+                // Bearish FVG breached upwards -> Inverts to Bullish iFVG (Support)
+                else if not f.isBull and close > f.top
+                    if showIfvg
+                        f.isInverted := true
+                        anyBullIfvg := true
+                        box.set_bgcolor(f.bx, colBullIfvg)
+                        box.set_border_width(f.bx, 1)
+                        box.set_border_color(f.bx, color.new(colBullIfvg, 20))
+                        if showFvgLabels
+                            box.set_text(f.bx, "+iFVG")
+                            box.set_text_color(f.bx, color.new(#26a69a, 10))
+                            box.set_text_halign(f.bx, f_boxHAlign(fvgLabelPos))
+                            box.set_text_valign(f.bx, f_boxVAlign(fvgLabelVAlign))
+                        if not na(f.ln_ce)
+                            line.set_color(f.ln_ce, color.new(#26a69a, 40))
+                    else
+                        f.mitigated := true
+                        box.set_right(f.bx, bar_index)
+                        if not na(f.ln_ce)
+                            line.set_x2(f.ln_ce, bar_index)
+            
+            // Check final invalidation for already-inverted iFVGs
+            else
+                // Bearish iFVG broken back up through top
+                if f.isBull and close > f.top
+                    f.mitigated := true
+                    box.set_right(f.bx, bar_index)
+                    if not na(f.ln_ce)
+                        line.set_x2(f.ln_ce, bar_index)
+                // Bullish iFVG broken back down through bottom
+                else if not f.isBull and close < f.btm
+                    f.mitigated := true
+                    box.set_right(f.bx, bar_index)
+                    if not na(f.ln_ce)
+                        line.set_x2(f.ln_ce, bar_index)
+
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+// ============================================================================
+// SECTION 7: INSTITUTIONAL SUPPLY & DEMAND WITH CVD FLOW (OPTION A + B)
+// ============================================================================
+
+type SdZone
+    box      bx
+    polyline poly
+    float    top
+    float    bot
+    int      startBar
+    bool     isDemand
+    bool     mitigated
+
+var SdZone[] activeDemandZones = array.new<SdZone>()
+var SdZone[] activeSupplyZones = array.new<SdZone>()
+
+// ATR calculation for momentum breakout
+float sdAtr = ta.atr(sdAtrLen)
+
+// Zone Detection (base candle = bar[2] or bar[3], breakout candle = bar[1])
+bool sdBaseBearish2 = close[2] <= open[2]
+bool sdBaseBearish3 = close[3] <= open[3]
+bool sdBaseBullish2 = close[2] >= open[2]
+bool sdBaseBullish3 = close[3] >= open[3]
+
+float sdBreakoutBody   = math.abs(close[1] - open[1])
+bool  sdBreakoutIsBull = close[1] > open[1]
+bool  sdBreakoutIsBear = close[1] < open[1]
+bool  sdHasMomentum    = sdBreakoutBody >= (sdMomMult * nz(sdAtr[1], high[1] - low[1]))
+
+bool isDemandBreakout = showSdZones and sdBreakoutIsBull and sdHasMomentum and (sdBaseBearish2 or sdBaseBearish3)
+bool isSupplyBreakout = showSdZones and sdBreakoutIsBear and sdHasMomentum and (sdBaseBullish2 or sdBaseBullish3)
+
+// Helper to calculate smoothed CVD wave and orderflow badge
+f_updateSdWave(int boxLeft, float zTop, float zBot, polyline oldPoly, bool isDemand, color waveBorderCol, color waveFillCol) =>
+    float boxH = zTop - zBot
+    
+    // Safety clamp lookback length (max 300 bars for speed and responsiveness)
+    int length = math.min(int(bar_index - boxLeft), 300)
+    length := math.max(0, math.min(length, bar_index - 1))
+    
+    // 1. Calculate cumulative delta, max absolute delta, and buyer/seller volume
+    float tempCumDelta = 0.0
+    float maxAbsDelta  = 0.0
+    float posVol       = 0.0
+    float negVol       = 0.0
+    
+    for k = length to 0
+        float c = close[k]
+        float o = open[k]
+        float v = nz(volume[k], 1.0)
+        float d = c > o ? v : (c < o ? -v : 0.0)
+        if c > o
+            posVol += v
+        else if c < o
+            negVol += v
+        tempCumDelta += d
+        maxAbsDelta := math.max(maxAbsDelta, math.abs(tempCumDelta))
+        
+    float totVol    = posVol + negVol
+    float buyerPct  = totVol > 0.0 ? (posVol / totVol) * 100.0 : 50.0
+    float sellerPct = totVol > 0.0 ? (negVol / totVol) * 100.0 : 50.0
+    
+    // 2. Generate smoothed CVD flow wave polyline (Option A)
+    polyline newPoly = na
+    if showSdWave
+        array<float> deltas = array.new<float>()
+        float runningDelta = 0.0
+        for k = length to 0
+            float c = close[k]
+            float o = open[k]
+            float v = nz(volume[k], 1.0)
+            float d = c > o ? v : (c < o ? -v : 0.0)
+            runningDelta += d
+            array.push(deltas, runningDelta)
+            
+        array<chart.point> pts = array.new<chart.point>()
+        int startIdx = bar_index - length
+        
+        // Start anchor
+        float anchorY = isDemand ? zBot : zTop
+        array.push(pts, chart.point.from_index(startIdx, anchorY))
+        
+        // Build smoothed coordinates
+        int deltaSize = array.size(deltas)
+        for j = 0 to deltaSize - 1
+            int   idx    = startIdx + j
+            float cd     = array.get(deltas, j)
+            float cdPrev = j > 0 ? array.get(deltas, j - 1) : cd
+            float cdNext = j < deltaSize - 1 ? array.get(deltas, j + 1) : cd
+            float smoothDelta = (cdPrev + cd + cdNext) / 3.0
+            
+            float y = anchorY
+            if isDemand
+                float ratio = maxAbsDelta > 0.0 ? math.max(0.0, smoothDelta / maxAbsDelta) : 0.0
+                y := zBot + ratio * boxH
+            else
+                float ratio = maxAbsDelta > 0.0 ? (smoothDelta < 0.0 ? math.abs(smoothDelta) / maxAbsDelta : 0.0) : 0.0
+                y := zTop - ratio * boxH
+            y := math.max(zBot, math.min(zTop, y))
+            array.push(pts, chart.point.from_index(idx, y))
+            
+        // End anchor
+        array.push(pts, chart.point.from_index(bar_index, anchorY))
+        
+        // Delete old polyline and create new closed ribbon
+        if not na(oldPoly)
+            polyline.delete(oldPoly)
+        newPoly := polyline.new(pts, closed = true, line_color = waveBorderCol, fill_color = waveFillCol, line_width = 1)
+    else if not na(oldPoly)
+        polyline.delete(oldPoly)
+        newPoly := na
+
+    string badge = isDemand ? 
+         ("Demand OB  |  CVD: " + (tempCumDelta >= 0 ? "+" : "") + str.tostring(tempCumDelta, format.volume) + " [" + str.tostring(buyerPct, "#") + "% Buyers]") :
+         ("Supply OB  |  CVD: " + (tempCumDelta >= 0 ? "+" : "") + str.tostring(tempCumDelta, format.volume) + " [" + str.tostring(sellerPct, "#") + "% Sellers]")
+
+    [newPoly, badge]
+
+// ── Demand Zone Creation ────────────────────────────────────────────────────
+if isDemandBreakout
+    int   demOffset = sdBaseBearish2 ? 2 : 3
+    float demTop    = high[demOffset]
+    float demBot    = low[demOffset]
+    int   demLeft   = bar_index - demOffset
+    
+    // Check overlap with active unmitigated demand zones
+    bool demOverlap = false
+    if array.size(activeDemandZones) > 0
+        for i = 0 to array.size(activeDemandZones) - 1
+            SdZone z = array.get(activeDemandZones, i)
+            if not z.mitigated and demBot <= z.top and demTop >= z.bot
+                demOverlap := true
+                break
+                
+    if not demOverlap
+        box b = box.new(
+             left          = demLeft,
+             top           = demTop,
+             right         = bar_index + 8,
+             bottom        = demBot,
+             bgcolor       = colDemand,
+             border_color  = colDemandBorder,
+             border_width  = 1,
+             extend        = extend.none,
+             text          = "Demand OB  |  Calculating...",
+             text_color    = chart.fg_color,
+             text_size     = size.tiny,
+             text_halign   = text.align_right,
+             text_valign   = text.align_top)
+             
+        SdZone newZ = SdZone.new(b, na, demTop, demBot, demLeft, true, false)
+        array.push(activeDemandZones, newZ)
+        
+        if showSdSignals
+            label.new(bar_index, low, text="△", yloc=yloc.belowbar, style=label.style_none, textcolor=colDemandBorder, size=size.small)
+
+// Trim excess demand zones
+if array.size(activeDemandZones) > maxActiveSd
+    SdZone oldZ = array.shift(activeDemandZones)
+    box.delete(oldZ.bx)
+    if not na(oldZ.poly)
+        polyline.delete(oldZ.poly)
+
+// ── Supply Zone Creation ────────────────────────────────────────────────────
+if isSupplyBreakout
+    int   supOffset = sdBaseBullish2 ? 2 : 3
+    float supTop    = high[supOffset]
+    float supBot    = low[supOffset]
+    int   supLeft   = bar_index - supOffset
+    
+    // Check overlap with active unmitigated supply zones
+    bool supOverlap = false
+    if array.size(activeSupplyZones) > 0
+        for i = 0 to array.size(activeSupplyZones) - 1
+            SdZone z = array.get(activeSupplyZones, i)
+            if not z.mitigated and supBot <= z.top and supTop >= z.bot
+                supOverlap := true
+                break
+                
+    if not supOverlap
+        box b = box.new(
+             left          = supLeft,
+             top           = supTop,
+             right         = bar_index + 8,
+             bottom        = supBot,
+             bgcolor       = colSupply,
+             border_color  = colSupplyBorder,
+             border_width  = 1,
+             extend        = extend.none,
+             text          = "Supply OB  |  Calculating...",
+             text_color    = chart.fg_color,
+             text_size     = size.tiny,
+             text_halign   = text.align_right,
+             text_valign   = text.align_bottom)
+             
+        SdZone newZ = SdZone.new(b, na, supTop, supBot, supLeft, false, false)
+        array.push(activeSupplyZones, newZ)
+        
+        if showSdSignals
+            label.new(bar_index, high, text="▽", yloc=yloc.abovebar, style=label.style_none, textcolor=colSupplyBorder, size=size.small)
+
+// Trim excess supply zones
+if array.size(activeSupplyZones) > maxActiveSd
+    SdZone oldZ = array.shift(activeSupplyZones)
+    box.delete(oldZ.bx)
+    if not na(oldZ.poly)
+        polyline.delete(oldZ.poly)
+
+// ── Cleanup if Disabled ─────────────────────────────────────────────────────
+if not showSdZones
+    if array.size(activeDemandZones) > 0
+        while array.size(activeDemandZones) > 0
+            SdZone z = array.pop(activeDemandZones)
+            box.delete(z.bx)
+            if not na(z.poly)
+                polyline.delete(z.poly)
+    if array.size(activeSupplyZones) > 0
+        while array.size(activeSupplyZones) > 0
+            SdZone z = array.pop(activeSupplyZones)
+            box.delete(z.bx)
+            if not na(z.poly)
+                polyline.delete(z.poly)
+
+// ── Demand Zones Animation & Mitigation ─────────────────────────────────────
+if showSdZones and array.size(activeDemandZones) > 0
+    for i = array.size(activeDemandZones) - 1 to 0
+        SdZone z = array.get(activeDemandZones, i)
+        // Check mitigation: candle closed below the bottom of the demand zone
+        if close <= z.bot
+            z.mitigated := true
+            box.delete(z.bx)
+            if not na(z.poly)
+                polyline.delete(z.poly)
+            array.remove(activeDemandZones, i)
+        else
+            [nPoly, badge] = f_updateSdWave(z.startBar, z.top, z.bot, z.poly, true, color.new(colDemandWave, 20), colDemandWave)
+            z.poly := nPoly
+            box.set_right(z.bx, bar_index + 8)
+            box.set_text(z.bx, badge)
+
+// ── Supply Zones Animation & Mitigation ─────────────────────────────────────
+if showSdZones and array.size(activeSupplyZones) > 0
+    for i = array.size(activeSupplyZones) - 1 to 0
+        SdZone z = array.get(activeSupplyZones, i)
+        // Check mitigation: candle closed above the top of the supply zone
+        if close >= z.top
+            z.mitigated := true
+            box.delete(z.bx)
+            if not na(z.poly)
+                polyline.delete(z.poly)
+            array.remove(activeSupplyZones, i)
+        else
+            [nPoly, badge] = f_updateSdWave(z.startBar, z.top, z.bot, z.poly, false, color.new(colSupplyWave, 20), colSupplyWave)
+            z.poly := nPoly
+            box.set_right(z.bx, bar_index + 8)
+            box.set_text(z.bx, badge)
+
+
+// ============================================================================
+// SECTION 8: PREMIUM & DISCOUNT DELTA VOLUME DEALING RANGE (BIGBELUGA ENGINE)
+// ============================================================================
+
+// Series calculations across all historical bars (preserves series state)
+float srHighSeries  = ta.highest(high, srPeriod)
+float srLowSeries   = ta.lowest(low, srPeriod)
+float macHighSeries = ta.highest(high, macroPeriod)
+float macLowSeries  = ta.lowest(low, macroPeriod)
+float atrCalcVal    = nz(ta.atr(100), high - low) * atrMultiplier
+
+// Persistent visual objects
+var box   srUpperBox  = na
+var box   srLowerBox  = na
+var box   midBox      = na
+var line  ln_eq_sr    = na
+var box   macUpperBox = na
+var box   macLowerBox = na
+var table deltaTable  = na
+
+if barstate.islast
+    // ── 1. S/R Premium & Discount Dealing Range ──────────────────────────────
+    if showSR
+        int srStartIdx = math.max(0, bar_index - srPeriod)
+        int srEndIdx   = bar_index + srExtendRight
+        float curSrHigh = srHighSeries
+        float curSrLow  = srLowSeries
+        
+        // Calculate positive (buyer) and negative (seller) volume across srPeriod
+        float posVolSR = 0.0
+        float negVolSR = 0.0
+        for int i = 0 to srPeriod - 1
+            float v = nz(volume[i], 1.0)
+            if close[i] > open[i]
+                posVolSR += v
+            else if close[i] < open[i]
+                negVolSR += v
+        
+        float totVolSR    = posVolSR + negVolSR
+        float deltaVolSR  = totVolSR > 0.0 ? ((posVolSR - negVolSR) / totVolSR) * 100.0 : 0.0
+        color deltaTxtCol = deltaVolSR >= 0.0 ? upColor : downColor
+        string deltaTxt   = "Delta Volume\n" + (deltaVolSR >= 0.0 ? "+" : "") + str.tostring(deltaVolSR, "#.#") + "%"
+        color premBgCol   = color.new(downColor, 88)
+        color discBgCol   = color.new(upColor, 88)
+        
+        // 1. Upper Premium Box (High + ATR to High)
+        if na(srUpperBox)
+            srUpperBox := box.new(srStartIdx, curSrHigh + atrCalcVal, srEndIdx, curSrHigh,
+                                  border_color = downColor, border_width = 1,
+                                  bgcolor = premBgCol,
+                                  text = "PREMIUM: " + str.tostring(negVolSR, format.volume),
+                                  text_size = size.small, text_color = chart.fg_color,
+                                  text_halign = text.align_center)
+        else
+            box.set_left(srUpperBox, srStartIdx), box.set_right(srUpperBox, srEndIdx)
+            box.set_top(srUpperBox, curSrHigh + atrCalcVal), box.set_bottom(srUpperBox, curSrHigh)
+            box.set_text(srUpperBox, "PREMIUM: " + str.tostring(negVolSR, format.volume))
+            box.set_border_color(srUpperBox, downColor)
+            box.set_bgcolor(srUpperBox, premBgCol)
+            
+        // 2. Lower Discount Box (Low to Low - ATR)
+        if na(srLowerBox)
+            srLowerBox := box.new(srStartIdx, curSrLow, srEndIdx, curSrLow - atrCalcVal,
+                                  border_color = upColor, border_width = 1,
+                                  bgcolor = discBgCol,
+                                  text = "DISCOUNT: " + str.tostring(posVolSR, format.volume),
+                                  text_size = size.small, text_color = chart.fg_color,
+                                  text_halign = text.align_center)
+        else
+            box.set_left(srLowerBox, srStartIdx), box.set_right(srLowerBox, srEndIdx)
+            box.set_top(srLowerBox, curSrLow), box.set_bottom(srLowerBox, curSrLow - atrCalcVal)
+            box.set_text(srLowerBox, "DISCOUNT: " + str.tostring(posVolSR, format.volume))
+            box.set_border_color(srLowerBox, upColor)
+            box.set_bgcolor(srLowerBox, discBgCol)
+            
+        // 3. Middle Dealing Range Box (High to Low, text only, NO background fill)
+        if na(midBox)
+            midBox := box.new(srStartIdx, curSrHigh, srEndIdx, curSrLow,
+                              border_color = na, border_width = 0,
+                              bgcolor = na,
+                              text = deltaTxt,
+                              text_size = size.normal, text_color = deltaTxtCol,
+                              text_halign = text.align_right, text_valign = text.align_bottom)
+        else
+            box.set_left(midBox, srStartIdx), box.set_right(midBox, srEndIdx)
+            box.set_top(midBox, curSrHigh), box.set_bottom(midBox, curSrLow)
+            box.set_bgcolor(midBox, na)
+            box.set_text(midBox, deltaTxt)
+            box.set_text_color(midBox, deltaTxtCol)
+            
+        // 4. 50% Equilibrium Line
+        float eqMid = (curSrHigh + curSrLow) / 2.0
+        if showEqLine
+            if na(ln_eq_sr)
+                ln_eq_sr := line.new(srStartIdx, eqMid, srEndIdx, eqMid,
+                                     color = colEqLine, width = 1, style = line.style_dashed)
+            else
+                line.set_xy1(ln_eq_sr, srStartIdx, eqMid)
+                line.set_xy2(ln_eq_sr, srEndIdx, eqMid)
+                line.set_color(ln_eq_sr, colEqLine)
+        else if not na(ln_eq_sr)
+            line.delete(ln_eq_sr)
+            ln_eq_sr := na
+    else
+        if not na(srUpperBox)
+            box.delete(srUpperBox), srUpperBox := na
+        if not na(srLowerBox)
+            box.delete(srLowerBox), srLowerBox := na
+        if not na(midBox)
+            box.delete(midBox), midBox := na
+        if not na(ln_eq_sr)
+            line.delete(ln_eq_sr), ln_eq_sr := na
+
+    // ── 2. Macro Dealing Range (Optional) ────────────────────────────────────
+    if showMacro
+        int macStartIdx  = math.max(0, bar_index - macroPeriod)
+        int macEndIdx    = bar_index + srExtendRight + 20
+        float curMacHigh = macHighSeries
+        float curMacLow  = macLowSeries
+        
+        float posVolMac = 0.0
+        float negVolMac = 0.0
+        for int i = 0 to macroPeriod - 1
+            float v = nz(volume[i], 1.0)
+            if close[i] > open[i]
+                posVolMac += v
+            else if close[i] < open[i]
+                negVolMac += v
+                
+        if na(macUpperBox)
+            macUpperBox := box.new(macStartIdx, curMacHigh + atrCalcVal, macEndIdx, curMacHigh,
+                                   border_color = downColor, border_width = 1,
+                                   bgcolor = color.new(downColor, 94),
+                                   text = "MACRO HIGH: " + str.tostring(negVolMac, format.volume),
+                                   text_size = size.small, text_color = chart.fg_color,
+                                   text_halign = text.align_right)
+        else
+            box.set_left(macUpperBox, macStartIdx), box.set_right(macUpperBox, macEndIdx)
+            box.set_top(macUpperBox, curMacHigh + atrCalcVal), box.set_bottom(macUpperBox, curMacHigh)
+            box.set_text(macUpperBox, "MACRO HIGH: " + str.tostring(negVolMac, format.volume))
+            
+        if na(macLowerBox)
+            macLowerBox := box.new(macStartIdx, curMacLow, macEndIdx, curMacLow - atrCalcVal,
+                                   border_color = upColor, border_width = 1,
+                                   bgcolor = color.new(upColor, 94),
+                                   text = "MACRO LOW: " + str.tostring(posVolMac, format.volume),
+                                   text_size = size.small, text_color = chart.fg_color,
+                                   text_halign = text.align_right)
+        else
+            box.set_left(macLowerBox, macStartIdx), box.set_right(macLowerBox, macEndIdx)
+            box.set_top(macLowerBox, curMacLow), box.set_bottom(macLowerBox, curMacLow - atrCalcVal)
+            box.set_text(macLowerBox, "MACRO LOW: " + str.tostring(posVolMac, format.volume))
+    else
+        if not na(macUpperBox)
+            box.delete(macUpperBox), macUpperBox := na
+        if not na(macLowerBox)
+            box.delete(macLowerBox), macLowerBox := na
+
+    // ── 3. Delta Volume Dashboard Table ──────────────────────────────────────
+    if showDeltaTable
+        float posVolSR = 0.0
+        float negVolSR = 0.0
+        for int i = 0 to srPeriod - 1
+            float v = nz(volume[i], 1.0)
+            if close[i] > open[i]
+                posVolSR += v
+            else if close[i] < open[i]
+                negVolSR += v
+        float totVolSR   = posVolSR + negVolSR
+        float deltaVolSR = totVolSR > 0.0 ? ((posVolSR - negVolSR) / totVolSR) * 100.0 : 0.0
+
+        float posVolMac = 0.0
+        float negVolMac = 0.0
+        for int i = 0 to macroPeriod - 1
+            float v = nz(volume[i], 1.0)
+            if close[i] > open[i]
+                posVolMac += v
+            else if close[i] < open[i]
+                negVolMac += v
+        float totVolMac   = posVolMac + negVolMac
+        float deltaVolMac = totVolMac > 0.0 ? ((posVolMac - negVolMac) / totVolMac) * 100.0 : 0.0
+
+        if na(deltaTable)
+            deltaTable := table.new(f_tablePos(tablePos), 2, 2, bgcolor = color.new(#131722, 20), border_color = color.new(#787b86, 60), border_width = 1)
+        
+        table.cell(deltaTable, 0, 0, text = "Range Delta (" + str.tostring(srPeriod) + "b)", text_color = #b2b5be, text_size = size.small, text_halign = text.align_left)
+        table.cell(deltaTable, 1, 0, text = (deltaVolSR >= 0.0 ? "+" : "") + str.tostring(deltaVolSR, "#.#") + "%", 
+                   text_color = deltaVolSR >= 0.0 ? upColor : downColor, text_size = size.small, text_halign = text.align_right)
+        table.cell(deltaTable, 0, 1, text = "Macro Delta (" + str.tostring(macroPeriod) + "b)", text_color = #b2b5be, text_size = size.small, text_halign = text.align_left)
+        table.cell(deltaTable, 1, 1, text = (deltaVolMac >= 0.0 ? "+" : "") + str.tostring(deltaVolMac, "#.#") + "%", 
+                   text_color = deltaVolMac >= 0.0 ? upColor : downColor, text_size = size.small, text_halign = text.align_right)
+    else if not na(deltaTable)
+        table.delete(deltaTable)
+        deltaTable := na
+
+
+// ============================================================================
+// SECTION 9: TRADINGVIEW ALERTS
+// ============================================================================
+
+alertcondition(anyBslSwept, "BSL Swept (Buy Stops Purged)", "Buy-Side Liquidity (Buy Stops) swept on {{ticker}} at {{high}}")
+alertcondition(anySslSwept, "SSL Swept (Sell Stops Purged)", "Sell-Side Liquidity (Sell Stops) swept on {{ticker}} at {{low}}")
+alertcondition(anyBullIfvg, "Bullish iFVG Inverted (Support)", "Price broke above a Bearish FVG, creating a Bullish iFVG support zone on {{ticker}}")
+alertcondition(anyBearIfvg, "Bearish iFVG Inverted (Resistance)", "Price broke below a Bullish FVG, creating a Bearish iFVG resistance zone on {{ticker}}")
+alertcondition(isDemandBreakout, "Demand OB Formed", "New institutional Demand Order Block detected on {{ticker}} at {{low}}")
+alertcondition(isSupplyBreakout, "Supply OB Formed", "New institutional Supply Order Block detected on {{ticker}} at {{high}}")
+
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

@@ -12,12 +12,13 @@
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { QUICK_FILTERS, QUICK_LABELS, type QuickFilter } from '@features/market/stores/tapeStore';
-import { MicroBadge, type MicroTone } from '@features/market/components/TapeTable';
+import { MicroBadge, type MicroTone } from '@features/market/components/MicroBadge';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { SymbolWatchAction } from '@features/portfolio/components/SymbolWatchAction';
@@ -27,14 +28,14 @@ import { useWatchlistAddMany } from '@shared/api/userWatchlist';
 import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { normalizeFa } from '@shared/lib/normalizeFa';
+import { fmtDate } from '@shared/lib/time';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
+import { ftsPlanQueryOptions } from '../api/useFtsPlan';
+import { keyLevelsQueryOptions } from '../api/useKeyLevels';
 import { FunnelErrorBanner } from './FunnelErrorBanner';
+import { FtsFilterPanel } from './FtsFilterPanel';
 import {
-  MODE_HINT,
-  MODE_LABEL,
-  MODE_PATH,
-  TAPE_FRESHNESS_LABEL,
   PRESET_ENTRY,
   STATUS_LABEL,
   STATUS_HINT,
@@ -47,9 +48,12 @@ import {
   type Funnel,
   type FunnelOptions,
   type StageStatus,
+  type TechFilterCount,
   type TreePreset,
+  type FunnelFlow,
 } from '../lib/ftsFunnel';
 import { useFtsFunnel } from '../api/useFtsFunnel';
+import { useFunnelRegistry, type RegistryTechFilter } from '../api/useFunnelRegistry';
 import {
   DEFAULT_FUND_FLOOR,
   FUND_FLOOR_MAX,
@@ -158,6 +162,22 @@ const MARK_DOT: Record<StageStatus, string> = {
 /** واژگانِ داوری از خودِ مدلِ canonical می‌آید — دو نسخهٔ برچسب نداریم. */
 const MARK_LABEL = STATUS_LABEL;
 
+/** نشان و رنگِ هر *شرط* درِ جدولِ تکنیکال — همان واژگانِ وضعیتِ گام درِ مقیاسِ
+ *  کوچک. «بی‌داده» با «رد» یکی نیست و با · / — جدا خوانده می‌شود. */
+const CHECK_GLYPH: Record<StageStatus, string> = {
+  pass: '✓', reject: '✗', pending: '…', unavailable: '—',
+  not_required: '·', not_in_universe: '·', not_applicable: '·',
+};
+const CHECK_TONE: Record<StageStatus, string> = {
+  pass: 'border-accent-green/40 bg-accent-green/10 text-accent-green',
+  reject: 'border-accent-red/40 bg-accent-red/10 text-accent-red',
+  pending: 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow',
+  unavailable: 'border-border-c bg-bg-secondary/60 text-text-muted',
+  not_required: 'border-border-c bg-bg-secondary/60 text-text-muted',
+  not_in_universe: 'border-border-c bg-bg-secondary/60 text-text-muted',
+  not_applicable: 'border-border-c bg-bg-secondary/60 text-text-muted',
+};
+
 /**
  * ستون‌هایِ هر مرحله — «هر بخش باید ستونِ مربوط به خودش را داشته باشد».
  * تا پیش از این چهار جدول یک سرستون مشترک داشتند (نماد/آخرین/تغییر٪/حجم-ماه/
@@ -167,7 +187,7 @@ const MARK_LABEL = STATUS_LABEL;
  */
 type ColKey =
   | 'symbol' | 'last' | 'chg' | 'vol' | 'pattern'
-  | 'weekly' | 'daily' | 'branch' | 'setup' | 'techPoints' | 'mark'
+  | 'weekly' | 'daily' | 'branch' | 'setup' | 'techPoints' | 'checks' | 'vdate' | 'mark'
   | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'why' | 'basket'
   | 'watch' | 'candle';
 
@@ -182,6 +202,8 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   branch: { label: 'شاخه', title: 'شاخه FTS بر اساس روند روزانه' },
   setup: { label: 'شواهد', title: 'ستاپ‌های فعال؛ فقط شواهد کمکی و نه گیت عبور' },
   techPoints: { label: 'امتیاز', title: 'امتیاز کمکی Ranking؛ روند هفتگی/روزانه اصل است و ستاپ‌ها فقط تا ۲ امتیاز کمکی دارند', end: true },
+  checks: { label: 'شرط‌ها', title: 'تک‌تکِ شرط‌هایِ اجراشدۀ این نماد درِ گامِ تکنیکال: گیتِ هفتگی، سپس انتخاب‌هایِ شما. نشانِ هر شرط حکمِ همان شرط است و متنِ کنارش دلیلِ موتور.' },
+  vdate: { label: 'تاریخِ داوری', title: 'زمانِ ساختِ همین داوری درِ اسکنِ تکنیکال (`funnel_tech_scan.as_of`). تاریخِ خودِ ماشه درِ بانکِ اسکن ذخیره نمی‌شود، پس اینجا عددی ساخته نمی‌شود.', end: true },
   mark: { label: 'داوری', title: 'حکم این مرحله بر اساس روند هفتگی سپس روزانه', end: true },
   ind1: { label: IND_COLUMNS[0].label, title: IND_COLUMNS[0].full, end: true },
   ind2: { label: IND_COLUMNS[1].label, title: IND_COLUMNS[1].full, end: true },
@@ -217,14 +239,14 @@ const PATTERN_TONE: Record<string, MicroTone> = {
   'کف‌روب': 'emerald',
   'نقطه': 'amber',
   'نقطه‌زنی': 'amber',
-  'کد به کد': 'violet',
+  'ورود پول هوشمند و کد به کد': 'violet',
   'صف+': 'green',
   'صف−': 'red',
 };
 
 const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
   tape: ['symbol', 'last', 'chg', 'vol', 'candle', 'pattern', 'why'],
-  technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'mark', 'why'],
+  technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'checks', 'vdate', 'mark', 'why'],
   fundamental: ['symbol', 'ind1', 'ind2', 'ind3', 'ind4', 'ind5', 'score', 'why'],
   // گامِ تحویل دو ستونِ روندِ روزانه و شاخه را کم داشت، در حالی که همان داده
   // درِ پاسخِ سرور هست (`daily`/`branch`) و درِ گامِ تکنیکال هم نشان داده می‌شود؛
@@ -250,7 +272,8 @@ const COL_W: Record<ColKey, number> = {
   // ۱۶۸ پیکسل می‌خواست و ۱۵۰ می‌گرفت؛ «امتیاز» و «علامت» کوتاه‌ترین ستون‌های
   // همین جدول‌اند. «دلیل» عمداً دست‌نخورده است — متن‌های ۳۳۵ و ۸۳۶ پیکسلی با
   // هیچ تقسیمی رویِ یک خط جا نمی‌شوند و شکلشان رأیِ مالک را می‌خواهد.
-  weekly: 11, daily: 11, branch: 19, setup: 17, techPoints: 6, mark: 11,
+  weekly: 10, daily: 10, branch: 14, setup: 13, techPoints: 5, mark: 10,
+  checks: 26, vdate: 11,
   ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18, watch: 12,
   why: 22, candle: 5,
 };
@@ -358,6 +381,46 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
       return <td className="truncate px-2 py-1 text-start text-2xs text-text-secondary">{e.setups || '—'}</td>;
     case 'techPoints':
       return <td className="px-2 py-1 text-end text-2xs font-bold text-text-primary"><span className="num">{e.technicalPoints != null ? toFaDigits(e.technicalPoints) : '—'}</span></td>;
+    case 'checks': {
+      // تک‌تکِ شرط‌هایِ اجراشدۀ همین نماد، به همان ترتیبی که موتور اجرا کرده
+      // (گیتِ هفتگی همیشه اول). حکم و دلیل از خودِ گام می‌آید؛ اینجا هیچ شرطی
+      // دوباره حساب نمی‌شود و «بی‌شرط» یعنی کاربر چیزی انتخاب نکرده است.
+      return (
+        <td className="px-2 py-1 text-start">
+          <span data-testid={`funnel-tech-checks-${e.symbol}`}
+                className="flex min-w-0 items-center gap-1 overflow-hidden">
+            {e.techChecks.length
+              ? e.techChecks.map((c) => (
+                  <span key={c.filterId}
+                        data-testid={`funnel-tech-check-${e.symbol}-${c.filterId}`}
+                        title={`${c.label} · ${c.column}${c.value != null ? ` = ${c.value}` : ' بدونِ مقدار'} — ${c.humanReason}${c.source ? ` (${c.source})` : ''}`}
+                        className={`inline-flex shrink-0 items-center gap-0.5 truncate rounded-md border px-1 py-0.5 text-3xs font-black ${c.measure?.retracePct != null ? 'max-w-[22ch]' : 'max-w-[13ch]'} ${CHECK_TONE[c.status] ?? CHECK_TONE.unavailable}`}>
+                    <span aria-hidden>{CHECK_GLYPH[c.status] ?? '—'}</span>
+                    <span className="truncate font-bold">{c.label}</span>
+                    {/* رأیِ مالک ۱۴۰-۰۷-۲۷: «مقدارِ اصلاح» و «نقاطِ مبنایِ محاسبه»
+                        باید درِ جدول دیده شوند، نه فقط خوردنِ یکِ برچسب. عمقِ
+                        اصلاح این‌جا می‌آید؛ مبدأ/مقصدِ موج درِ title همان سطر. */}
+                    {c.measure?.retracePct != null ? (
+                      <span className="num-text shrink-0 font-black"
+                            data-testid={`funnel-fib-pct-${e.symbol}-${c.filterId}`}>
+                        {fmtPct(c.measure.retracePct)}
+                      </span>
+                    ) : null}
+                  </span>
+                ))
+              : <span className="text-2xs text-text-muted">بی‌شرط</span>}
+          </span>
+        </td>
+      );
+    }
+    case 'vdate':
+      return (
+        <td className="num truncate px-2 py-1 text-end text-2xs text-text-muted"
+            data-testid={`funnel-tech-date-${e.symbol}`}
+            title="زمانِ ساختِ همین داوری درِ اسکنِ تکنیکال — تاریخِ خودِ ماشه درِ بانکِ اسکن ذخیره نمی‌شود">
+          {e.techVerdictAt != null ? fmtDate(e.techVerdictAt * 1000) : '—'}
+        </td>
+      );
     case 'mark':
       return <td className="truncate px-2 py-1 text-end text-2xs font-bold" title={why ?? undefined}>{mark ? MARK_LABEL[mark] : '—'}</td>;
     case 'ind1':
@@ -443,11 +506,14 @@ function StageCard({
   active,
   opts,
   emptyWhy,
+  flow = 'tape_first',
   collapsed = false,
   onToggle,
 }: {
   stage: FunnelStage;
   index: number;
+  /** ترتیبِ اجرا از موتور؛ متنِ درِ تکنیکال باید بگوید اینجا گامِ اول است یا دوم */
+  flow?: FunnelFlow;
   wide: number;
   showMark: 'tech' | 'fund' | 'handover' | null;
   onPick: (s: string) => void;
@@ -465,9 +531,17 @@ function StageCard({
   // ردیف‌هایِ مردود نیست.
   const passedRows = useMemo(() => stage.entries.filter((e) => e.status[stage.key] === 'pass'),
                              [stage]);
+  // «چرا رد شد» درِ همان گام قابلِ بازرسی باشد (بندِ مأموریت: نتیجهٔ هر شرط و
+  // دلیلِ عبور یا رد). پیش‌فرضِ جدول فقط عبوری‌ها می‌مانند (رأیِ مالک
+  // ۱۴۰۵-۰۷-۱۹)؛ این فقط دیدِ دوم است، نه داوریِ دوم — ردیف‌ها از همان
+  // entriesِ سرور می‌آیند و چیزی دوباره حساب نمی‌شود.
+  const [allVerdicts, setAllVerdicts] = useState(false);
+  const scopeRows = allVerdicts && stage.key === 'technical'
+    ? stage.entries
+    : passedRows;
   // ترتیبِ نمایش (عبور_then_زنده) — خروجیِ موتور، فقط رو‌به‌رو شده.
-  const rows = useMemo(() => orderStageRows(stage.key, passedRows),
-                       [stage.key, passedRows]);
+  const rows = useMemo(() => orderStageRows(stage.key, scopeRows),
+                       [stage.key, scopeRows]);
   useFlip({ root: bodyRef, deps: [rows.map((r) => r.symbol).join(' ')] });
   // نوارِ کاهش = سهمِ عبوری‌هایِ همین گام از کلِ جامعۀ ورودی. پیش‌تر عرضش
   // «ردیفِ این مرحله ÷ پهن‌ترین مرحله» بود؛ وقتی هر چهار مرحله کلِ universe را
@@ -477,7 +551,11 @@ function StageCard({
   const cols = STAGE_COLS[stage.key];
   const techScreens = useFunnelPrefsStore((s) => s.techScreens);
   const setTechScreens = useFunnelPrefsStore((s) => s.setTechScreens);
-  const rule = stage.key === 'fundamental' ? fundRule(opts) : STAGE_RULE[stage.key];
+  const rule = stage.key === 'fundamental'
+    ? fundRule(opts)
+    : (stage.key === 'technical' && flow === 'tech_first')
+      ? 'گامِ اول: گیتِ روندِ هفتگی رویِ کلِ جامعۀ غربالگری اجرا می‌شود و شرط‌هایِ انتخابیِ شما رأیِ همین گام را عوض می‌کند؛ ماندگان به تابلوخوانی می‌رسند.'
+      : STAGE_RULE[stage.key];
 
   // «چه چیزی همین حالا عوض شد»: ردیف‌هایِ داورى‌تازه و جابه‌جاییِ شمارِ گام.
   // هیچ عددِ تازه‌ای ساخته نمی‌شود — فقط دورۀ پیشین با این دور مقایسه می‌شود.
@@ -547,6 +625,11 @@ function StageCard({
             {collapsed ? '▼' : '▲'}
           </button>
         ) : null}
+        <span className="num rounded-full bg-bg-secondary/70 px-2 py-0.5 text-2xs font-bold text-text-secondary"
+              data-testid={`funnel-input-${stage.key}`}
+              title="چند نماد واردِ این گام شد — از خودِ موتور">
+          {toFaDigits(stage.input)} ورودی
+        </span>
         <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary"
               title="تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام حکم دارند؛ بدنهٔ جدول فقط عبوری‌ها را می‌شمارد (رأیِ مالک ۱۴۰۵-۰۷-۱۹) و بقیه درِ همین خطِ شمارش و درِ بازرسیِ نماد خوانده می‌شوند">
           {toFaDigits(stage.ruled)} نماد
@@ -623,6 +706,28 @@ function StageCard({
             حذف نشدند — نوارِ بالایِ همین صفحه، با عددِ نامزدِ هر فیلتر. */}
         {/* کنترلِ درِ تکنیکال کنارِ همین مرحله نشسته است، نه در منویِ سراسری. */}
         {stage.key === 'technical' ? (
+          <span className="flex items-center gap-1" role="group"
+                aria-label="محدوۀ جدولِ تکنیکال" data-testid="funnel-tech-scope">
+            {([false, true] as const).map((on) => (
+              <button key={String(on)} type="button"
+                      data-testid={on ? 'funnel-tech-scope-all' : 'funnel-tech-scope-pass'}
+                      aria-pressed={allVerdicts === on}
+                      onClick={() => setAllVerdicts(on)}
+                      title={on
+                        ? 'همۀ داوری‌هایِ همین گام، با نتیجهٔ هر شرط و دلیلش'
+                        : 'فقط نمادهایی که از این در عبور کرده‌اند'}
+                      className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
+                        allVerdicts === on
+                          ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                          : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60'                      }`}>
+                {on
+                  ? `همه (${toFaDigits(stage.entries.length + stage.pending.length)})`
+                  : 'فقط عبوری‌ها'}
+              </button>
+            ))}
+          </span>
+        ) : null}
+        {stage.key === 'technical' ? (
           <span
             className="flex items-center gap-1"
             role="group"
@@ -639,8 +744,8 @@ function StageCard({
                 title={on ? TECH_SCREEN_HINT.on : TECH_SCREEN_HINT.off}
                 className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
                   techScreens === on
-                    ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+                    ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
+                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
                 }`}
               >
                 {on ? TECH_SCREEN_LABEL.on : TECH_SCREEN_LABEL.off}
@@ -660,13 +765,25 @@ function StageCard({
       ) : null}
 
       {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
-          باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
+          باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل.
+          ارتفاعِ ثابت فقط وقتی جدول ردیف دارد لازم است؛ بی‌ردیف، همان ارتفاعِ
+          خالی صفحه را می‌خورد و «خالی» شبیه «خطا» می‌شد (مأموریتِ ۲۰۲۶-۱۰-۱۸). */}
       {collapsed ? null : (<>
-      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto overflow-x-auto" data-testid={`funnel-scroll-${stage.key}`}>
+      <div ref={bodyRef}
+           className={`relative overflow-y-auto overflow-x-auto ${
+             rows.length ? 'h-[calc(100dvh-420px)] min-h-[300px]' : 'h-auto'}`}
+           data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
-          <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
-            {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
-          </p>
+          <div className="px-3 py-2.5" data-testid={`funnel-empty-${stage.key}`}>
+            <p className="text-xs font-bold text-text-secondary">
+              {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
+            </p>
+            <p className="num mt-1 text-2xs text-text-muted" data-testid={`funnel-empty-tally-${stage.key}`}>
+              درِ این گام: {toFaDigits(stage.summary.reject)} رد · {toFaDigits(stage.summary.pending)} سنجیده‌نشده
+              · {toFaDigits(stage.summary.unavailable)} بی‌منبع — از {toFaDigits(stage.ruled)} نمادِ داوری‌شده.
+              فیلترها را شل کنید یا گامِ بعدی را ببینید.
+            </p>
+          </div>
         ) : (
           <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
             {/* `min-w-[720px]` + اسکرولِ افقیِ همان ظرف: درِ ۳۹۰px ستونِ نماد به
@@ -895,6 +1012,29 @@ export function StageRow({
    *  `SymbolSelectBox` درِ تابلو رعایت می‌کند و افزودنِ ستونِ جدید grid را کج کرد. */
   selectable?: boolean;
 }) {
+  // Prefetch فقط با قصدِ کاربر (hover/focus با تأخیرِ کوتاه): `MasterPage` برایِ
+  // هر نماد دو endpointِ گران می‌زند؛ اگر کاربر رویِ ردیف می‌ماند، همان را پیش
+  // از کلیک گرم می‌کنیم. حرکتِ سریعِ ماوس هیچ درخواستی نمی‌سازد (debounce) —
+  // ۳۰۰ms یعنی عبورِ عادی رویِ ردیف‌ها هنوز بی‌درخواست است و فقط توقفِ واقعی
+  // پیش‌بارگیری می‌کند (P2-R4: سرورِ تک‌کاره با /api/ftsِ گران نباید سیل بگیرد).
+  const qc = useQueryClient();
+  const warmTimer = useRef<number | null>(null);
+  const cancelWarm = () => {
+    if (warmTimer.current != null) {
+      window.clearTimeout(warmTimer.current);
+      warmTimer.current = null;
+    }
+  };
+  const warm = (sym: string) => {
+    cancelWarm();
+    if (!sym) return;
+    warmTimer.current = window.setTimeout(() => {
+      warmTimer.current = null;
+      void qc.prefetchQuery(ftsPlanQueryOptions(sym)).catch(() => {});
+      void qc.prefetchQuery(keyLevelsQueryOptions(sym)).catch(() => {});
+    }, 300);
+  };
+  useEffect(() => cancelWarm, []);
   const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
   const mark = showMark ? entry.status[key] : entry.status[stageKey] || null;
   const why = entry.why[stageKey] || null;
@@ -905,9 +1045,14 @@ export function StageRow({
   return (
     <tr
       data-fkey={entry.symbol}
+      data-verdict={mark ?? undefined}
       data-changed={changed ? '1' : undefined}
       className={`group border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
       title={rowTitle}
+      onMouseEnter={() => warm(entry.symbol)}
+      onMouseLeave={cancelWarm}
+      onFocus={() => warm(entry.symbol)}
+      onBlur={cancelWarm}
     >
       <td className="px-2 py-1 text-start">
         {/* دو خط: خطِ اول خودِ نماد (همیشه کامل)، خطِ دوم برچسبِ وضعیت.
@@ -932,7 +1077,7 @@ export function StageRow({
               {entry.assemblyVeto ? (
                 <span
                   data-testid={`funnel-assembly-veto-${entry.symbol}`}
-                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
+                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-3xs font-bold text-accent-red"
                   title={entry.assemblyWhy}
                 >
                   وتوی مجمع
@@ -944,7 +1089,7 @@ export function StageRow({
               {entry.fundCaveat ? (
                 <span
                   data-testid={`funnel-fund-caveat-${entry.symbol}`}
-                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-[9px] font-bold text-accent-yellow"
+                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-3xs font-bold text-accent-yellow"
                   title={entry.why.fundamental || 'عبور با ملاحظات'}
                 >
                   عبور با ملاحظات
@@ -983,7 +1128,7 @@ function TapeStagePrefs({ picked, counts, filters }: {
   return (
     <span
       data-testid="funnel-tape-prefs"
-      className="sticky top-[var(--pinned-h)] z-20 -mx-1 flex flex-wrap items-center justify-end gap-1 rounded-lg bg-bg-card/95 px-1 py-0.5 backdrop-blur-sm"
+      className="flex flex-wrap items-center justify-start gap-1"
       role="group"
       aria-label="فیلترهای ورودی غربالگری"
     >
@@ -1002,12 +1147,14 @@ function TapeStagePrefs({ picked, counts, filters }: {
                 + `؛ ${toFaDigits(c.removed)} رد، ${toFaDigits(c.unmeasured)} بی‌حکم`
                 + (c.universe ? ` (کلِّ جامعۀ غربالگری: ${toFaDigits(c.universe)})` : '')
               : `${QUICK_LABELS[f]} — شمارشِ نامزد از سرور نرسید`}
-            className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
+            className={`rounded-md border px-2 py-1 text-xs font-bold transition-colors ${
               on
                 ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60'
+                : 'border-border-c bg-bg-card text-text-secondary hover:border-accent-blue/60'
             }`}
           >
+            {/* حالت باِ شکل هم خوانده شود، نه فقط باِ رنگ (مأموریتِ ۲۰۲۶-۱۰-۱۸) */}
+            <span aria-hidden className="me-1">{on ? '✓' : '○'}</span>
             {QUICK_LABELS[f]}
             <span className="num ms-1 font-black opacity-95">
               {c ? `(${toFaDigits(c.matched)})` : '(—)'}
@@ -1031,19 +1178,119 @@ function TapeStagePrefs({ picked, counts, filters }: {
             : `اشتراک (AND): نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
         className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
           logic === 'or'
-            ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+            ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
+            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
         }`}
       >
         {logic === 'or' ? 'اجتماع' : 'اشتراک'}
       </button>
-      <span className="num text-3xs text-text-muted">ورودی: {toFaDigits(picked)}</span>
+      <span className="num text-2xs font-bold text-text-secondary">ورودی: {toFaDigits(picked)}</span>
     </span>
   );
 }
 
 /** پیچ‌هایِ درِ بنیادی — سخت‌گیریِ جزوه کم نمی‌شود، حقِ انتخاب دستِ خودِ مالک است.
     درونِ <header> همان مرحله می‌نشیند، پس جعبه و عنوانِ تکراری ندارد. */
+/** چیپ‌هایِ شرطِ تکنیکال. فهرست، نام، نقش و منبعِ هر شرط از
+ *  `GET /api/funnel/registry` می‌آید و عددِ کنارش از شمارشِ خودِ موتور درِ همان
+ *  گام (`stages.technical.filter_counts`). کلیک یک `tech_chain`ِ تازه می‌سازد و
+ *  درخواستِ تازه می‌زند — پس این انتخابگرِ تزئینی نیست.
+ *
+ *  `applied` صریح گفته می‌شود: درِ ترتیبِ جزوه (`tape_first`) موتور این شرط‌ها
+ *  را اجرا نمی‌کند، پس نباید هم‌رنگِ حالتِ فعال دیده شوند. */
+/** تنظیماتِ مستقلِ همین استراتژی — ازِ رجیستری خوانده می‌شود، پس رابط چیزی
+ *  اختراع نمی‌کند: اگر رجیستری برایِ preset پیچی تعریف نکرده باشد، این ردیف
+ *  اصلاً ساخته نمی‌شود. مقدارِ نشان‌داده‌شده همان `strategy_settingsِ` خودِ
+ *  موتور است (پاسخِ داوری)، نه stateِ محلیِ رابط — تا «تنظیم» و «عددِ اجراشده»
+ *  دو نسخه از یک قاعده نشوند.
+ */
+function StrategySettingsRow({ funnel, registry, preset }: {
+  funnel: Funnel; registry: ReturnType<typeof useFunnelRegistry>; preset: string;
+}) {
+  const defs = registry.strategySettings[preset] ?? [];
+  const setSetting = useFunnelPrefsStore((s) => s.setStrategySetting);
+  if (!defs.length) return null;
+  const applied = funnel.strategySettings || {};
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1"
+         role="group" aria-label="تنظیماتِ این استراتژی"
+         data-testid="funnel-strategy-settings">
+      <span className="text-2xs font-bold text-text-secondary">تنظیماتِ این استراتژی:</span>
+      {defs.map((st) => {
+        const value = applied[st.setting_id] ?? st.default;
+        return (
+          <label key={st.setting_id} className="flex items-center gap-1.5 text-2xs"
+                 title={`${st.description ?? ''}${st.effect ? ` | اثر: ${st.effect}` : ''}${st.source ? ` | ${st.source}` : ''}`}>
+            <span className="font-bold text-text-secondary">{st.label}</span>
+            <select value={value} data-testid={`funnel-setting-${st.setting_id}`}
+                    onChange={(e) => setSetting(preset, st.setting_id, e.target.value)}
+                    className="num rounded-md border border-border-c bg-bg-primary px-1.5 py-0.5 text-2xs text-text-primary">
+              {st.choices.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function TechFilterChips({
+  active, counts, filters, groups, applied, onToggle,
+}: {
+  active: string[];
+  counts: Record<string, TechFilterCount>;
+  filters: RegistryTechFilter[];
+  groups: Record<string, string[]>;
+  applied: boolean;
+  onToggle: (id: string) => void;
+}) {
+  const gateIds = new Set(groups.gate ?? []);
+  const gate = filters.filter((f) => gateIds.has(f.filter_id));
+  const rest = filters.filter((f) => !gateIds.has(f.filter_id));
+  const chosen = new Set(active);
+  return (
+    <div className="flex flex-wrap items-center gap-1" role="group"
+         aria-label="شرط‌هایِ تکنیکال" data-testid="funnel-tech-chips">
+      <span className="text-2xs font-bold text-text-secondary">شرط‌هایِ تکنیکال:</span>
+      {gate.map((f) => (
+        <span key={f.filter_id} data-testid={`funnel-tech-gate-${f.filter_id}`}
+              title={`گیتِ اجباریِ این استراتژی — انتخابی نیست. ${f.description ?? ''}${f.source ? ` (${f.source})` : ''}`}
+              className="rounded-full border border-accent-blue/50 bg-accent-blue/10 px-2 py-0.5 text-2xs font-black text-accent-blue">
+          {f.name}
+        </span>
+      ))}
+      {rest.map((f) => {
+        const on = chosen.has(f.filter_id);
+        const c = counts[f.filter_id];
+        const roleHint = f.role === 'risk'
+          ? 'ریسک: اگر این شاهد رویِ نماد ثبت شده باشد، نماد رد می‌شود؛ نبودش «پاک است».'
+          : 'ورود: فقط نمادی که این شاهد را دارد عبور می‌کند.';
+        return (
+          <button key={f.filter_id} type="button" aria-pressed={on} disabled={!applied}
+                  data-testid={`funnel-tech-chip-${f.filter_id}`}
+                  onClick={() => onToggle(f.filter_id)}
+                  title={`${f.description ?? ''} — ${roleHint}${f.source ? ` · منبع: ${f.source}` : ''}${
+                    c ? ` · عبور ${toFaDigits(c.pass)}، رد ${toFaDigits(c.reject)}، بلاتکلیف ${toFaDigits(c.pending)}، بی‌داده ${toFaDigits(c.unavailable)}`
+                      : ' · هنوز رویِ این جامعۀ ورودی اجرا نشده'}${applied ? '' : ' · درِ ترتیبِ جزوه اجرا نمی‌شود'}`}
+                  className={`rounded-full border px-2.5 py-1 text-2xs font-bold transition-all ${
+                    !applied
+                      ? 'border-border-c/60 bg-bg-card/40 text-text-muted/60'
+                      : on
+                        ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                        : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
+                  }`}>
+            <span aria-hidden className="me-1">{!applied ? '–' : (on ? '✓' : '○')}</span>
+            {f.name}
+            {c ? <span className="num ms-1 opacity-70">{toFaDigits(c.pass)}</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: boolean }) {
   const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
   const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
@@ -1053,7 +1300,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
 
   const chip = (on: boolean) =>
     `rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
-      on ? 'border-accent-amber bg-accent-amber/15 text-accent-amber' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+      on ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
     }`;
 
   return (
@@ -1106,7 +1353,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
           data-testid="funnel-prefs-reset"
           onClick={reset}
           title="بازگردانی تنظیمات به پیش‌فرض FTS"
-          className="text-3xs font-bold text-text-muted underline hover:text-accent-amber"
+          className="text-3xs font-bold text-text-muted underline hover:text-accent-yellow"
         >
           بازگردانی به پیش‌فرض FTS
         </button>
@@ -1200,11 +1447,17 @@ export function FtsFunnelStages({
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
+  const location = useLocation();
   const [snap] = useState(readFunnelSnap);
   // «خارج از جامعۀ غربالگری» بسته است تا جدولِ گام‌ها با این ردیف‌ها شلوغ
   // نشود؛ خطِ خلاصه خودش Z را می‌گوید و همین دکمه علتِ تک‌تکشان را باز می‌کند.
   const [showExcluded, setShowExcluded] = useState(false);
-  const [activeState] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
+  // منطقِ اشتراک/اجتماع درِ همان `bors.screen.logic.v1` است که چیپ‌هایِ تبِّ تابلو
+  // هم می‌خوانند — فقط برایِ نوشتنِ متنِ پنل اینجا خوانده می‌شود.
+  const screenLogic = useScreenFilterStore((s) => s.logic);
+  // P2-R5: نمایِ چهارتایی فقط در گامِ «تحویل» رندر می‌شود؛ گامِ فعال همان
+  // تحویل است، نه اسنپ‌شاتِ قبلی — وگرنه کلیکِ ردیف `stage=tape` در URL
+  // می‌نوشت و «بازگشت» کاربر را از تحویل به گامِ اول می‌برد.
   // رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه جدولِ اول بسته‌اند و «نمادهای عبوری» (تحویل) باز —
   // چیزی که کاربر می‌خواهد ببیند همان آخری است، نه اینکه چهار جدول را اسکرول کند.
   // درِ حالتِ مسیریافته (`only`) همان یک کارت باز می‌ماند، چون کاربر صریح
@@ -1218,7 +1471,7 @@ export function FtsFunnelStages({
   // درِ حالتِ مسیریافته (`only`) گامِ واقعی همان `only` است، نه stateِ داخلیِ
   // این کامپوننت (که از snapshotِ قدیم پر شده). بی‌این، کلیکِ سطر درِ گامِ
   // تکنیکال آدرسِ `?stage=tape` می‌ساخت و بازگشت کاربر را یک گام عقب می‌برد.
-  const active = only ?? activeState;
+  const active: FunnelStageKey = only ?? 'handover';
   // کلیکِ سطر یک گذرِ واقعی است، نه فقط یک استور: URL نماد را نگه می‌دارد تا
   // «← بازگشت» و دکمۀ عقبِ مرورگر هر دو به همان قیف برسند (Round M §۱۰).
   const pick = (s: string) => {
@@ -1231,14 +1484,22 @@ export function FtsFunnelStages({
     // گامِ فعال درِ URL می‌ماند: بی‌این «بازگشت» کاربر را از گام چهارم به گام
     // اول می‌انداخت (snapshot تنها برایِ اسکرول نوشته شده بود، و همان هم درِ
     // اسکرولِ صفر پاک می‌شد).
-    navigate(`/master/${encodeURIComponent(s)}?stage=${active}`);
+    // P2-R5: بقیۀِ query هم می‌ماند. بی‌این، `preset`/`chain`/`tech` هنگامِ
+    // ورود به پروندۀ نماد از URL می‌افتادند و MasterPage قیف را با presetِ
+    // ذخیره‌شده/افق می‌گرفت — یعنی یک کلیدِ کشِ دوم، یک `/api/funnel` کاملِ
+    // ۷٫۵MB و ۵–۱۰MB heap اضافه برایِ همان لحظه — و «جای نماد در چهار در»
+    // ممکن بود از جدولی که کاربر دیده بود بخواند.
+    const qs = new URLSearchParams(location.search);
+    qs.set('stage', active);
+    qs.delete('symbol');
+    navigate(`/master/${encodeURIComponent(s)}?${qs.toString()}`);
   };
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tape, tech, scan, refreshing, screenFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
-  const setMode = useFunnelPrefsStore((s) => s.setMode);
-
+  const { funnel, tech, scan, refreshing, screenFilters, techFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
+  // نام/نقش/منبعِ هر شرطِ تکنیکال از رجیستریِ همان سرور — نه از یک فهرستِ دستی.
+  const registry = useFunnelRegistry();
   // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
   // تا سطر به اندازه نگه داشته نشده، تلاشِ بعدی رندر دوباره می‌آزماید.
   const scrollRestored = useRef(false);
@@ -1262,13 +1523,20 @@ export function FtsFunnelStages({
     }
   }, [snap, funnel]);
 
-  const stages = ORDER.map((k) => funnel.stages[k]);
-  const shownKeys = only ? [only] : ORDER;
+  // ترتیبِ کارت‌ها همان `stageOrderِ` مدل است (از `flowِ` موتور). ORDER فقط
+  // پشتیبانِ پاسخِ بی‌`flow` است.
+  const order = funnel.stageOrder?.length ? funnel.stageOrder : ORDER;
+  const stages = order.map((k) => funnel.stages[k]);
+  const shownKeys = only ? [only] : order;
   // شمارشِ واقعیِ درِ تحویل: «چند تا واقعاً» — نه اینکه برایِ رسیدن به ۱۰ نماد
   // ضعیف اضافه شود. هدف‌هایِ جزوه فقط مرجعِ کناری‌اند.
   const hc = funnel.counts.handover;
   const wide = Math.max(1, funnel.total);
-  const marks: ('tech' | 'fund' | 'handover' | null)[] = [null, 'tech', 'fund', 'handover'];
+  // نشانۀ هر کارت به *نامِ* گام وصل است، نه به خانۀ آن درِ فهرست: با عوض‌شدنِ
+  // ترتیب، «داوریِ بنیادی» نباید رویِ کارتِ تکنیکال بنشیند.
+  const MARK_OF: Record<FunnelStageKey, 'tech' | 'fund' | 'handover' | null> = {
+    tape: null, technical: 'tech', fundamental: 'fund', handover: 'handover',
+  };
 
   // «چرا خالی است» باید خودش را بگوید، وگرنه مرحلۀ خالی با مرحلۀ خراب یکی
   // به‌نظر می‌رسد: «هیچ‌کدام به این در نرسید» با «همه رد شدند» یکی نیست.
@@ -1278,7 +1546,9 @@ export function FtsFunnelStages({
     tape: funnel.total ? null : 'هیچ نمادی درِ جامعۀ غربالگریِ این روز نبود (تابلو یا وضعیتِ رسمیِ نمادها اجازهٔ غربال نداد).',
     technical: funnel.stages.technical.entries.length
       ? null
-      : 'مرحلۀ تابلو خالی بود تا تکنیکال چیزی برای داوری داشته باشد.',
+      : funnel.flow === 'tech_first'
+        ? 'جامعۀ غربالگری این نشست خالی بود؛ تکنیکال چیزی برایِ داوری نداشت.'
+        : 'مرحلۀ تابلو خالی بود تا تکنیکال چیزی برای داوری داشته باشد.',
     fundamental: fund.entries.length
       ? null
       : fund.unmeasured
@@ -1308,113 +1578,52 @@ export function FtsFunnelStages({
   return (
     <section className="flex flex-col gap-2">
       {error ? <FunnelErrorBanner onRetry={retry} blocking={!hasData} /> : null}
-      {/* سرستونِ غربالگری سمتِ راست می‌ایستد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): عنوانِ صفحه،
-          دو حالتِ کشف، تازگیِ تابلو و ساعتِ محاسبه. خطِ شمارش‌ها پایین‌تر همان
-          لبۀِ چپ را نگه می‌دارد (رأیِ ۱۴۰۵-۰۷-۲۰). */}
-      <div className="flex flex-wrap items-center justify-start gap-2">
-        <h2 className="text-sm font-black text-text-primary">غربالگری FTS</h2>
-        {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
-            جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
-        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="حالتِ کشفِ نماد" data-testid="funnel-mode-picker">
-          {(['reverse', 'review'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={mode === m}
-              data-testid={`funnel-mode-${m}`}
-              title={MODE_HINT[m] + ' — ' + MODE_PATH[m]}
-              onClick={() => setMode(m)}
-              className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
-                mode === m
-                  ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                  : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
-              }`}
-            >
-              {MODE_LABEL[m]}
-            </button>
-          ))}
-          <span
-            className="rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
-            data-testid="funnel-tape-freshness"
-            title="تازگیِ خوراکِ تابلو — دادهٔ آخرین روز معاملاتی جایِ زنده خوانده نمی‌شود"
-          >
-            {TAPE_FRESHNESS_LABEL[tape]}
-          </span>
-          {/* آخرین محاسبۀِ *موفق* از خودِ سرور (`as_of`) — ساعتِ همان ماشین. بی‌این،
-              «در حال محاسبه» هیچ نقطۀِ پایانی نداشت و کاربر نمی‌دانست عددی که می‌بیند
-              متعلق به کِی است (بندِ «وضعیت پردازش و تازگی» مأموریت). */}
-          <span
-            className="num rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
-            data-testid="funnel-as-of"
-            title="زمانِ داوریِ این پاسخ درِ سرور"
-          >
-            {funnel.asOf
-              ? `محاسبه: ${new Date(funnel.asOf * 1000).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}`
-              : 'محاسبه: گزارش نشده'}
-          </span>
-        </div>
-      </div>
-      {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
-          / Not-required با عددِ خودِ بازار. این پنج از `coverage`ِ بک‌اند می‌آیند،
-          یعنی شمارشِ **کلِ جامعۀ غربالگری** درِ هر گام — پس جمعشان همان Y است
-          و نمادی بی‌حکم نمی‌ماند. هدف‌هایِ جزوه (۵۰ و ۱۰ و ۵-۷) فقط مرجعِ کناری‌اند
-          و هیچ‌جا گیتِ عبور نیستند.
-          `justify-end` با رأیِ مالک (۱۴۰۵-۰۷-۲۰) آمده: درِ RTL لبۀِ پایانِ خطِ
-          اصلی سمتِ چپِ صفحه است — سرستون و شمارش‌ها باید آن‌جا بایستند. */}
-      <div
-        className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-3xs font-bold text-text-muted"
-        data-testid="funnel-counts"
-      >
-        <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
-        <span data-testid="funnel-count-pending">در انتظار: {toFaDigits(hc.pending)}</span>
-        <span data-testid="funnel-count-reject">رد: {toFaDigits(hc.reject)}</span>
-        <span data-testid="funnel-count-unavailable">بی‌داده: {toFaDigits(hc.unavailable)}</span>
-        <span data-testid="funnel-count-not-required" title={STATUS_HINT.not_required}>
-          لازم نبود: {toFaDigits(hc.not_required)}
-        </span>
-        {/* دو جامعۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶): تابلو ≠ غربالگری. Z درِ این خطِ
-            خلاصه می‌نشیند نه درِ جدولِ گام‌ها، و بازشونده است تا علتِ هر نماد
-            (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. سه عدد درِ یک خانۀ
-            مرزی‌اند و «|» و «/» متنِ جداکننده حذف شد: درِ RTL آن‌ها لبهٔ
-            جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
-        <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
-        <span className="text-text-secondary" data-testid="funnel-universe-market"
-              title="تک‌تکِ نمادهایِ امروزِ تابلو (ردیفِ تکراری یکی‌شده)">
-          جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
-        </span>
-        <span className="text-accent-blue" data-testid="funnel-universe-screening"
-              title="فقط نمادهایِ زنده/واجدِ شرایط — همان که جدولِ چهار گام از آن ساخته می‌شود">
-          واجدِ غربالگری: {toFaDigits(funnel.total)}
-        </span>
-        <button
-          type="button"
-          data-testid="funnel-universe-excluded"
-          aria-expanded={showExcluded}
-          onClick={() => setShowExcluded((v) => !v)}
-          title="این نمادها رد نشده‌اند و «سنجیده نشده» هم نیستند: اصلاً عضو جامعۀ غربالگری نیستند"
-          className={`rounded-full px-1.5 py-0.5 transition-colors ${
-            showExcluded ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted hover:text-text-primary'
-          }`}
-        >
-          خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
-        </button>
-        </span>
-        {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
-            پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
-        {refreshing && funnel.total > 0 ? (
-          <span
-            data-testid="funnel-refreshing"
-            className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
-            title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
-          >
-            در حالِ به‌روزرسانی
-          </span>
-        ) : null}
-      </div>
       {/* چیپ‌هایِ فیلتر + کلیدِ اشتراک/اجتماع، با نامزدِ زندهٔ هر فیلتر — نوارِ
           بالایِ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۰). */}
-      <TapeStagePrefs picked={funnel.counts.tape.pass} counts={funnel.filterCounts}
-                      filters={screenFilters} />
+      <FtsFilterPanel
+        activeCount={screenFilters.active.length
+          + (funnel.flow === 'tech_first' ? techFilters.active.length : 0)}
+        sourceLabel={screenFilters.source === 'chain' ? 'زنجیرۀِ خودِ شما'
+          : (screenFilters.active.length ? 'چیپ‌هایِ روشنِ تابلو'
+            : (preset === 'custom' ? 'زنجیرۀِ Custom خالی است' : PRESET_ENTRY[preset].label))}
+        logicLabel={screenFilters.active.length
+          ? (screenLogic === 'or'
+            ? `اجتماع (OR): یکی از ${toFaDigits(screenFilters.active.length)} کافی است`
+            : `اشتراک (AND): همهٔ ${toFaDigits(screenFilters.active.length)} لازم‌اند`)
+          : 'هیچ فیلتری روشن نیست — کلِ جامعۀ غربالگری داوری می‌شود'}
+        onClearAll={screenFilters.active.length
+          ? () => { [...screenFilters.active].forEach((f) => screenFilters.toggle(f)); }
+          : undefined}
+        groups={[
+          { key: 'tape', label: 'فیلترهایِ تابلوخوانی',
+            hint: 'هر چیپ یکِ شرطِ اضافه؛ عددِ کنارش نامزدِ زندهٔ همان شرط است',
+            node: (
+              <TapeStagePrefs picked={funnel.counts.tape.pass} counts={funnel.filterCounts}
+                              filters={screenFilters} />
+            ) },
+          ...((funnel.flow === 'tech_first' || techFilters.active.length > 0)
+            && registry.techFilters.length
+            ? [{
+                key: 'technical',
+                label: 'شرط‌هایِ تکنیکال',
+                hint: 'گیتِ روندِ هفتگی انتخابی نیست؛ موتور همیشه پیش ازِ این شرط‌ها '
+                  + 'آن را داوری می‌کند. اگر ترتیبِ جزوه برگشته باشد این چیپ‌ها بی‌اثر '
+                  + 'نشان داده می‌شوند، نه پنهان.',
+                node: (
+                  <TechFilterChips active={techFilters.active}
+                                   counts={funnel.techFilterCounts}
+                                   filters={registry.techFilters}
+                                   groups={registry.techGroups}
+                                   applied={funnel.flow === 'tech_first'}
+                                   onToggle={techFilters.toggle} />
+                ),
+              }]
+            : []),
+        ]}
+        advanced={(funnel.flow === 'tech_first' || techFilters.active.length > 0)
+          ? <StrategySettingsRow funnel={funnel} registry={registry} preset={preset} />
+          : undefined}
+      />
       {showExcluded ? <OutOfUniversePanel funnel={funnel} onPick={pick} /> : null}
       {/* فهرستِ چهار گام این‌جا حذف شد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): «بالاش همین هست
           که انتخاب می‌کنیم کدام صفحه» — ناوبریِ `FtsProcessStepper` بالایِ همین
@@ -1449,15 +1658,6 @@ export function FtsFunnelStages({
             اعمال‌نشده درِ سرور
           </span>
         ) : null}
-        <span className="ms-auto text-3xs text-text-muted">
-          {/* منبعِ فعلیِ زنجیره صریح گفته می‌شود: درِ Custom چیپ‌ها زنجیرۀِ خودِ
-              شخص را کم و زیاد می‌کنند، درِ بقیۀ اشخاص چیپ‌هایِ تبِّ تابلو. */}
-          ورودیِ غربالگری:{' '}
-          {screenFilters.active.length
-            ? `${screenFilters.source === 'chain' ? 'زنجیرۀِ خودِ شما' : 'چیپ‌هایِ روشنِ تابلو'} (${toFaDigits(screenFilters.active.length)})`
-            : (preset === 'custom' ? 'زنجیرۀِ Custom خالی است' : PRESET_ENTRY[preset].label)} ·{' '}
-          از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
-        </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،
             و «هنوز اسکن نشده» با هر دوی آنها یکی نیست. اسکن درِ پس‌زمینه می‌رود،
             پس سرخطِ پیشرفتِ خودش را می‌گیرد — و وقتی در حالِ ساختن است همین خط
@@ -1488,13 +1688,76 @@ export function FtsFunnelStages({
 
 
       <div className="flex flex-col gap-2">
+        {/* نوارِ جدولِ نتایج: عنوان و شمارش‌ها یک‌جا (رأیِ مالک ۱۴۰۵-۰۷-۲۹)؛
+            شمارش‌ها پیش‌تر بالایِ پنلِ فیلتر بودند و صفحه را دو تکه می‌کردند. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
+             data-testid="funnel-results-toolbar">
+          <h2 className="text-sm font-black text-text-primary" data-testid="funnel-results-title">
+            نتایجِ گامِ جاری{only ? ` — ${STAGE_TITLE[only]}` : ''}
+            <span className="num ms-2 text-2xs font-bold text-text-secondary"
+                  data-testid="funnel-results-count">
+              {toFaDigits(shownKeys.length ? (funnel.counts[shownKeys[0] as FunnelStageKey]?.pass ?? 0) : 0)} نماد
+            </span>
+          </h2>
+          <div
+            className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-2xs font-bold text-text-secondary"
+            data-testid="funnel-counts"
+          >
+            <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
+            <span data-testid="funnel-count-pending">در انتظار: {toFaDigits(hc.pending)}</span>
+            <span data-testid="funnel-count-reject">رد: {toFaDigits(hc.reject)}</span>
+            <span data-testid="funnel-count-unavailable">بی‌داده: {toFaDigits(hc.unavailable)}</span>
+            <span data-testid="funnel-count-not-required" title={STATUS_HINT.not_required}>
+              لازم نبود: {toFaDigits(hc.not_required)}
+            </span>
+            {/* دو جامعۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶): تابلو ≠ غربالگری. Z درِ این خطِ
+                خلاصه می‌نشیند نه درِ جدولِ گام‌ها، و بازشونده است تا علتِ هر نماد
+                (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. سه عدد درِ یک خانۀ
+                مرزی‌اند و «|» و «/» متنِ جداکننده حذف شد: درِ RTL آن‌ها لبهٔ
+                جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
+            <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
+            <span className="text-text-secondary" data-testid="funnel-universe-market"
+                  title="تک‌تکِ نمادهایِ امروزِ تابلو (ردیفِ تکراری یکی‌شده)">
+              جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
+            </span>
+            <span className="text-accent-blue" data-testid="funnel-universe-screening"
+                  title="فقط نمادهایِ زنده/واجدِ شرایط — همان که جدولِ چهار گام از آن ساخته می‌شود">
+              واجدِ غربالگری: {toFaDigits(funnel.total)}
+            </span>
+            <button
+              type="button"
+              data-testid="funnel-universe-excluded"
+              aria-expanded={showExcluded}
+              onClick={() => setShowExcluded((v) => !v)}
+              title="این نمادها رد نشده‌اند و «سنجیده نشده» هم نیستند: اصلاً عضو جامعۀ غربالگری نیستند"
+              className={`rounded-full px-1.5 py-0.5 transition-colors ${
+                showExcluded ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
+            </button>
+            </span>
+            {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
+                پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
+            {refreshing && funnel.total > 0 ? (
+              <span
+                data-testid="funnel-refreshing"
+                className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+                title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
+              >
+                در حالِ به‌روزرسانی
+              </span>
+            ) : null}
+          </div>
+        </div>
         {stages.map((s, i) => (shownKeys.includes(s.key) ? (
           <StageCard
             key={s.key}
             stage={s}
             index={i}
+            flow={funnel.flow}
             wide={wide}
-            showMark={marks[i]}
+            showMark={MARK_OF[s.key]}
             onPick={pick}
             active={active === s.key}
             opts={opts}

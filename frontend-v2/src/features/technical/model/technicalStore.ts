@@ -14,11 +14,16 @@ import type {
   TechnicalState,
   ChannelMode,
   RsiVariant,
-  DrawerTab,
+  WorkspacePanel,
+  WorkspaceSection,
   DoubleTapPattern,
   PullbackSignal,
   CHoCHSignal,
 } from './types';
+// R-PAT-3: نوع‌ها فقط برای امضای اسلایس؛ بدون import زمان‌اجرایی و بدون چرخه.
+import type { ChartPattern } from './patterns/types';
+import type { EngineCandle } from './doubleTapEngine';
+import type { ScanResult } from './events/types';
 
 export const DEFAULT_ACTIVE_INDICATORS = [
   'DoubleTap3D',
@@ -51,17 +56,23 @@ const INITIAL_STATE = {
 
   channelMode: 'regression' as ChannelMode,
   rsiVariant: 'smooth_ma' as RsiVariant,
+  doubleTapProfile: 'precision' as 'precision' | 'source',
   indicatorParams: {} as Record<string, Record<string, number>>,
-  maxDrawnPatterns: 3,
-  isLeftDrawerOpen: true,
-  leftDrawerWidth: 460,
-  activeDrawerTab: 'top50' as DrawerTab,
+  maxDrawnPatterns: 1,
+  isLeftDrawerOpen: false,
+  activePanel: 'events' as WorkspacePanel,
+  activeSection: 'chart' as WorkspaceSection,
   detectedDoubleTapPatterns: [] as DoubleTapPattern[],
   detectedPullbackSignals: [] as PullbackSignal[],
   detectedCHoCHSignals: [] as CHoCHSignal[],
+  detectedPatterns: [] as ChartPattern[],
+  showTier2Patterns: false,
+  scanResult: null as ScanResult | null,
+  focusPatternId: null as string | null,
+  chartCandles: [] as EngineCandle[],
 };
 
-export const useTechnicalStore = create<TechnicalState>((set) => ({
+export const useTechnicalStore = create<TechnicalState>((set, get) => ({
   ...INITIAL_STATE,
 
   setTimeframe: (tf: string) => set({ timeframe: tf }),
@@ -100,6 +111,7 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
         detectedDoubleTapPatterns: [],
         detectedPullbackSignals: [],
         detectedCHoCHSignals: [],
+        scanResult: null,
         predictionData: null,
         candleEdgeData: null,
       };
@@ -137,6 +149,8 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
 
   setRsiVariant: (variant: RsiVariant) => set({ rsiVariant: variant }),
 
+  setDoubleTapProfile: (profile) => set({ doubleTapProfile: profile }),
+
   setIndicatorParam: (indicatorId, key, value) =>
     set((state) => ({
       indicatorParams: {
@@ -158,10 +172,12 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
 
   toggleLeftDrawer: () => set((state) => ({ isLeftDrawerOpen: !state.isLeftDrawerOpen })),
 
-  setLeftDrawerWidth: (width: number) =>
-    set({ leftDrawerWidth: Math.min(Math.max(width, 360), 650) }),
+  // R-PB-1: فید همان پرچمِ کشو را باز/بسته می‌کند؛ پرچمِ دوم وجود ندارد.
+  toggleFeed: () => get().toggleLeftDrawer(),
 
-  setActiveDrawerTab: (tab: DrawerTab) => set({ activeDrawerTab: tab }),
+  setActivePanel: (panel: WorkspacePanel) => set({ activePanel: panel }),
+
+  setActiveSection: (section: WorkspaceSection) => set({ activeSection: section }),
 
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) =>
     set({ detectedDoubleTapPatterns: patterns }),
@@ -172,8 +188,27 @@ export const useTechnicalStore = create<TechnicalState>((set) => ({
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) =>
     set({ detectedCHoCHSignals: signals }),
 
+  setDetectedPatterns: (patterns: ChartPattern[]) => set({ detectedPatterns: patterns }),
+
+  toggleTier2Patterns: () => set((state) => ({ showTier2Patterns: !state.showTier2Patterns })),
+
+  setScanResult: (result: ScanResult | null) => set({ scanResult: result }),
+
+  setFocusPatternId: (id: string | null) => set({ focusPatternId: id }),
+
+  setChartCandles: (candles: EngineCandle[]) => set({ chartCandles: candles }),
+
   enableDefaultIndicators: () =>
     set({ activeUserIndicators: [...DEFAULT_ACTIVE_INDICATORS] }),
 
   reset: () => set(INITIAL_STATE),
 }));
+
+/**
+ * R-PB-1: `feedOpen` نامِ خوانشیِ همان `isLeftDrawerOpen` است، نه یک پرچمِ دوم.
+ * مصرف‌کننده‌های فید باید از این انتخابگر استفاده کنند تا دو منبعِ حقیقت نسازیم.
+ */
+export const selectFeedOpen = (state: TechnicalState): boolean => state.isLeftDrawerOpen;
+
+/** هوکِ خوانشِ وضعیتِ بازبودنِ فید؛ همان پرچمِ کشو. */
+export const useFeedOpen = (): boolean => useTechnicalStore(selectFeedOpen);

@@ -1,0 +1,1035 @@
+{
+  "meta": {
+    "baseUrl": "http://127.0.0.1:7093/",
+    "themeList": [
+      "brass",
+      "warm"
+    ],
+    "viewports": [
+      "1366x768",
+      "1920x1080"
+    ],
+    "symbols": [
+      "رنيك",
+      "فولاد",
+      "خساپا"
+    ],
+    "timeframes": [
+      "1D",
+      "1W"
+    ],
+    "kindsSource": "data-testid of [data-testid^=\"pattern-row-\"] (list is capped at 20 rows) + row text",
+    "capturedAt": "2026-11-05T13:46:24.356Z"
+  },
+  "combos": [
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1D",
+      "viewport": "1366x768",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 7,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+          "text": "سر و شانهبازگشتی · باطل‌شده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+          "text": "سر و شانهبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-344-358",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "HEAD_SHOULDERS": 2,
+        "DOUBLE_TOP": 4,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+        "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+        "pattern-row-DT:double-top-344-358",
+        "pattern-row-FLAG_BULL:309:254-278-292-297-303-309",
+        "pattern-row-DT:double-top-180-187",
+        "pattern-row-DT:double-top-94-111",
+        "pattern-row-DT:double-top-12-20"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1D-1366x768-brass-window.png",
+        "ranik-1D-1366x768-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1D",
+      "viewport": "1366x768",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 7,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+          "text": "سر و شانهبازگشتی · باطل‌شده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+          "text": "سر و شانهبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-344-358",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "HEAD_SHOULDERS": 2,
+        "DOUBLE_TOP": 4,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+        "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+        "pattern-row-DT:double-top-344-358",
+        "pattern-row-FLAG_BULL:309:254-278-292-297-303-309",
+        "pattern-row-DT:double-top-180-187",
+        "pattern-row-DT:double-top-94-111",
+        "pattern-row-DT:double-top-12-20"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1D-1366x768-warm-window.png",
+        "ranik-1D-1366x768-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1W",
+      "viewport": "1366x768",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-DT:double-bottom-77-86",
+          "text": "کف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "کف دوقلو"
+        }
+      ],
+      "kinds": {
+        "DOUBLE_BOTTOM": 1
+      },
+      "rowIds": [
+        "pattern-row-DT:double-bottom-77-86"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1W-1366x768-brass-window.png",
+        "ranik-1W-1366x768-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1W",
+      "viewport": "1366x768",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-DT:double-bottom-77-86",
+          "text": "کف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "کف دوقلو"
+        }
+      ],
+      "kinds": {
+        "DOUBLE_BOTTOM": 1
+      },
+      "rowIds": [
+        "pattern-row-DT:double-bottom-77-86"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1W-1366x768-warm-window.png",
+        "ranik-1W-1366x768-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1D",
+      "viewport": "1366x768",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 8,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+          "text": "سر و شانهٔ معکوسبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانهٔ معکوس"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-333-353",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-267-273",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "INVERSE_HEAD_SHOULDERS": 1,
+        "DOUBLE_TOP": 3,
+        "DOUBLE_BOTTOM": 3,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+        "pattern-row-DT:double-top-333-353",
+        "pattern-row-DT:double-top-267-273",
+        "pattern-row-DT:double-bottom-138-162",
+        "pattern-row-DT:double-bottom-133-138",
+        "pattern-row-FLAG_BULL:115:39-83-104-107-113-115",
+        "pattern-row-DT:double-bottom-101-107",
+        "pattern-row-DT:double-top-31-45"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1D-1366x768-brass-window.png",
+        "foolad-1D-1366x768-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1D",
+      "viewport": "1366x768",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 8,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+          "text": "سر و شانهٔ معکوسبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانهٔ معکوس"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-333-353",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-267-273",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "INVERSE_HEAD_SHOULDERS": 1,
+        "DOUBLE_TOP": 3,
+        "DOUBLE_BOTTOM": 3,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+        "pattern-row-DT:double-top-333-353",
+        "pattern-row-DT:double-top-267-273",
+        "pattern-row-DT:double-bottom-138-162",
+        "pattern-row-DT:double-bottom-133-138",
+        "pattern-row-FLAG_BULL:115:39-83-104-107-113-115",
+        "pattern-row-DT:double-bottom-101-107",
+        "pattern-row-DT:double-top-31-45"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1D-1366x768-warm-window.png",
+        "foolad-1D-1366x768-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1W",
+      "viewport": "1366x768",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 2,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-WEDGE_RISING:77:34-49-69-77",
+          "text": "گُوهٔ صعودیادامه‌دهنده · باطل‌شده—",
+          "kindLabel": "گُوهٔ صعودی"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-17-34",
+          "text": "سقف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "WEDGE_RISING": 1,
+        "DOUBLE_TOP": 1
+      },
+      "rowIds": [
+        "pattern-row-WEDGE_RISING:77:34-49-69-77",
+        "pattern-row-DT:double-top-17-34"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1W-1366x768-brass-window.png",
+        "foolad-1W-1366x768-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1W",
+      "viewport": "1366x768",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 2,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-WEDGE_RISING:77:34-49-69-77",
+          "text": "گُوهٔ صعودیادامه‌دهنده · باطل‌شده—",
+          "kindLabel": "گُوهٔ صعودی"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-17-34",
+          "text": "سقف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "WEDGE_RISING": 1,
+        "DOUBLE_TOP": 1
+      },
+      "rowIds": [
+        "pattern-row-WEDGE_RISING:77:34-49-69-77",
+        "pattern-row-DT:double-top-17-34"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1W-1366x768-warm-window.png",
+        "foolad-1W-1366x768-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1D",
+      "viewport": "1366x768",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-TRIANGLE_SYM:70:20-56-66-70",
+          "text": "مثلث متقارنادامه‌دهنده · تأییدشده—",
+          "kindLabel": "مثلث متقارن"
+        }
+      ],
+      "kinds": {
+        "TRIANGLE_SYM": 1
+      },
+      "rowIds": [
+        "pattern-row-TRIANGLE_SYM:70:20-56-66-70"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1D-1366x768-brass-window.png",
+        "khasapa-1D-1366x768-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1D",
+      "viewport": "1366x768",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-TRIANGLE_SYM:70:20-56-66-70",
+          "text": "مثلث متقارنادامه‌دهنده · تأییدشده—",
+          "kindLabel": "مثلث متقارن"
+        }
+      ],
+      "kinds": {
+        "TRIANGLE_SYM": 1
+      },
+      "rowIds": [
+        "pattern-row-TRIANGLE_SYM:70:20-56-66-70"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1D-1366x768-warm-window.png",
+        "khasapa-1D-1366x768-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1W",
+      "viewport": "1366x768",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 0,
+      "firstThreeRows": [],
+      "kinds": {},
+      "rowIds": [],
+      "noRowsMessage": "الگویی در این فیلتر نیست",
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1W-1366x768-brass-window.png",
+        "khasapa-1W-1366x768-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1W",
+      "viewport": "1366x768",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 0,
+      "firstThreeRows": [],
+      "kinds": {},
+      "rowIds": [],
+      "noRowsMessage": "الگویی در این فیلتر نیست",
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1W-1366x768-warm-window.png",
+        "khasapa-1W-1366x768-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1D",
+      "viewport": "1920x1080",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 7,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+          "text": "سر و شانهبازگشتی · باطل‌شده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+          "text": "سر و شانهبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-344-358",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "HEAD_SHOULDERS": 2,
+        "DOUBLE_TOP": 4,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+        "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+        "pattern-row-DT:double-top-344-358",
+        "pattern-row-FLAG_BULL:309:254-278-292-297-303-309",
+        "pattern-row-DT:double-top-180-187",
+        "pattern-row-DT:double-top-94-111",
+        "pattern-row-DT:double-top-12-20"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1D-1920x1080-brass-window.png",
+        "ranik-1D-1920x1080-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1D",
+      "viewport": "1920x1080",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 7,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+          "text": "سر و شانهبازگشتی · باطل‌شده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+          "text": "سر و شانهبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانه"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-344-358",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "HEAD_SHOULDERS": 2,
+        "DOUBLE_TOP": 4,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-HEAD_SHOULDERS:437:405-419-424-433-437",
+        "pattern-row-HEAD_SHOULDERS:381:358-361-369-375-381",
+        "pattern-row-DT:double-top-344-358",
+        "pattern-row-FLAG_BULL:309:254-278-292-297-303-309",
+        "pattern-row-DT:double-top-180-187",
+        "pattern-row-DT:double-top-94-111",
+        "pattern-row-DT:double-top-12-20"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1D-1920x1080-warm-window.png",
+        "ranik-1D-1920x1080-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1W",
+      "viewport": "1920x1080",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-DT:double-bottom-77-86",
+          "text": "کف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "کف دوقلو"
+        }
+      ],
+      "kinds": {
+        "DOUBLE_BOTTOM": 1
+      },
+      "rowIds": [
+        "pattern-row-DT:double-bottom-77-86"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1W-1920x1080-brass-window.png",
+        "ranik-1W-1920x1080-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "رنيك",
+      "symbolKey": "ranik",
+      "timeframe": "1W",
+      "viewport": "1920x1080",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-DT:double-bottom-77-86",
+          "text": "کف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "کف دوقلو"
+        }
+      ],
+      "kinds": {
+        "DOUBLE_BOTTOM": 1
+      },
+      "rowIds": [
+        "pattern-row-DT:double-bottom-77-86"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۱۴,۷۶۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "ranik-1W-1920x1080-warm-window.png",
+        "ranik-1W-1920x1080-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1D",
+      "viewport": "1920x1080",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 8,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+          "text": "سر و شانهٔ معکوسبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانهٔ معکوس"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-333-353",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-267-273",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "INVERSE_HEAD_SHOULDERS": 1,
+        "DOUBLE_TOP": 3,
+        "DOUBLE_BOTTOM": 3,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+        "pattern-row-DT:double-top-333-353",
+        "pattern-row-DT:double-top-267-273",
+        "pattern-row-DT:double-bottom-138-162",
+        "pattern-row-DT:double-bottom-133-138",
+        "pattern-row-FLAG_BULL:115:39-83-104-107-113-115",
+        "pattern-row-DT:double-bottom-101-107",
+        "pattern-row-DT:double-top-31-45"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1D-1920x1080-brass-window.png",
+        "foolad-1D-1920x1080-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1D",
+      "viewport": "1920x1080",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 8,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+          "text": "سر و شانهٔ معکوسبازگشتی · تأییدشده—",
+          "kindLabel": "سر و شانهٔ معکوس"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-333-353",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-267-273",
+          "text": "سقف دوقلوبازگشتی · باطل‌شده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "INVERSE_HEAD_SHOULDERS": 1,
+        "DOUBLE_TOP": 3,
+        "DOUBLE_BOTTOM": 3,
+        "FLAG_BULL": 1
+      },
+      "rowIds": [
+        "pattern-row-INVERSE_HEAD_SHOULDERS:364:328-333-348-360-364",
+        "pattern-row-DT:double-top-333-353",
+        "pattern-row-DT:double-top-267-273",
+        "pattern-row-DT:double-bottom-138-162",
+        "pattern-row-DT:double-bottom-133-138",
+        "pattern-row-FLAG_BULL:115:39-83-104-107-113-115",
+        "pattern-row-DT:double-bottom-101-107",
+        "pattern-row-DT:double-top-31-45"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1D-1920x1080-warm-window.png",
+        "foolad-1D-1920x1080-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1W",
+      "viewport": "1920x1080",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 2,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-WEDGE_RISING:77:34-49-69-77",
+          "text": "گُوهٔ صعودیادامه‌دهنده · باطل‌شده—",
+          "kindLabel": "گُوهٔ صعودی"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-17-34",
+          "text": "سقف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "WEDGE_RISING": 1,
+        "DOUBLE_TOP": 1
+      },
+      "rowIds": [
+        "pattern-row-WEDGE_RISING:77:34-49-69-77",
+        "pattern-row-DT:double-top-17-34"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1W-1920x1080-brass-window.png",
+        "foolad-1W-1920x1080-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "فولاد",
+      "symbolKey": "foolad",
+      "timeframe": "1W",
+      "viewport": "1920x1080",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 2,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-WEDGE_RISING:77:34-49-69-77",
+          "text": "گُوهٔ صعودیادامه‌دهنده · باطل‌شده—",
+          "kindLabel": "گُوهٔ صعودی"
+        },
+        {
+          "testid": "pattern-row-DT:double-top-17-34",
+          "text": "سقف دوقلوبازگشتی · تأییدشده—",
+          "kindLabel": "سقف دوقلو"
+        }
+      ],
+      "kinds": {
+        "WEDGE_RISING": 1,
+        "DOUBLE_TOP": 1
+      },
+      "rowIds": [
+        "pattern-row-WEDGE_RISING:77:34-49-69-77",
+        "pattern-row-DT:double-top-17-34"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۴,۲۹۰ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "foolad-1W-1920x1080-warm-window.png",
+        "foolad-1W-1920x1080-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1D",
+      "viewport": "1920x1080",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-TRIANGLE_SYM:70:20-56-66-70",
+          "text": "مثلث متقارنادامه‌دهنده · تأییدشده—",
+          "kindLabel": "مثلث متقارن"
+        }
+      ],
+      "kinds": {
+        "TRIANGLE_SYM": 1
+      },
+      "rowIds": [
+        "pattern-row-TRIANGLE_SYM:70:20-56-66-70"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1D-1920x1080-brass-window.png",
+        "khasapa-1D-1920x1080-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1D",
+      "viewport": "1920x1080",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 1,
+      "firstThreeRows": [
+        {
+          "testid": "pattern-row-TRIANGLE_SYM:70:20-56-66-70",
+          "text": "مثلث متقارنادامه‌دهنده · تأییدشده—",
+          "kindLabel": "مثلث متقارن"
+        }
+      ],
+      "kinds": {
+        "TRIANGLE_SYM": 1
+      },
+      "rowIds": [
+        "pattern-row-TRIANGLE_SYM:70:20-56-66-70"
+      ],
+      "noRowsMessage": null,
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1D-1920x1080-warm-window.png",
+        "khasapa-1D-1920x1080-warm-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1W",
+      "viewport": "1920x1080",
+      "theme": "brass",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 0,
+      "firstThreeRows": [],
+      "kinds": {},
+      "rowIds": [],
+      "noRowsMessage": "الگویی در این فیلتر نیست",
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1W-1920x1080-brass-window.png",
+        "khasapa-1W-1920x1080-brass-chart.png"
+      ],
+      "errors": []
+    },
+    {
+      "symbol": "خساپا",
+      "symbolKey": "khasapa",
+      "timeframe": "1W",
+      "viewport": "1920x1080",
+      "theme": "warm",
+      "cardText": "الگوی در حال تشکیل نیست",
+      "rowCount": 0,
+      "firstThreeRows": [],
+      "kinds": {},
+      "rowIds": [],
+      "noRowsMessage": "الگویی در این فیلتر نیست",
+      "rulesPresent": true,
+      "tabSelected": "true",
+      "livePriceText": "۵۸۳ریال",
+      "chartCanvasCount": 6,
+      "shots": [
+        "khasapa-1W-1920x1080-warm-window.png",
+        "khasapa-1W-1920x1080-warm-chart.png"
+      ],
+      "errors": []
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "requestFailures": [],
+  "network4xx": [
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D8%B1%D9%86%D9%8A%D9%83/forecast?horizon=12&model=small&adjustment=3"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D8%B1%D9%86%D9%8A%D9%83/edge?swing_period=5"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D8%B1%D9%86%D9%8A%D9%83/indicators"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/forecast?horizon=12&model=small&adjustment=3"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/edge?swing_period=5"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/indicators"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7/forecast?horizon=12&model=small&adjustment=3"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7/edge?swing_period=5"
+    },
+    {
+      "viewport": "1920x1080",
+      "status": 404,
+      "url": "http://127.0.0.1:7093/api/chart/%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7/indicators"
+    }
+  ],
+  "screenshots": [
+    "ranik-1D-1366x768-brass-window.png",
+    "ranik-1D-1366x768-brass-chart.png",
+    "ranik-1D-1366x768-warm-window.png",
+    "ranik-1D-1366x768-warm-chart.png",
+    "ranik-1W-1366x768-brass-window.png",
+    "ranik-1W-1366x768-brass-chart.png",
+    "ranik-1W-1366x768-warm-window.png",
+    "ranik-1W-1366x768-warm-chart.png",
+    "foolad-1D-1366x768-brass-window.png",
+    "foolad-1D-1366x768-brass-chart.png",
+    "foolad-1D-1366x768-warm-window.png",
+    "foolad-1D-1366x768-warm-chart.png",
+    "foolad-1W-1366x768-brass-window.png",
+    "foolad-1W-1366x768-brass-chart.png",
+    "foolad-1W-1366x768-warm-window.png",
+    "foolad-1W-1366x768-warm-chart.png",
+    "khasapa-1D-1366x768-brass-window.png",
+    "khasapa-1D-1366x768-brass-chart.png",
+    "khasapa-1D-1366x768-warm-window.png",
+    "khasapa-1D-1366x768-warm-chart.png",
+    "khasapa-1W-1366x768-brass-window.png",
+    "khasapa-1W-1366x768-brass-chart.png",
+    "khasapa-1W-1366x768-warm-window.png",
+    "khasapa-1W-1366x768-warm-chart.png",
+    "ranik-1D-1920x1080-brass-window.png",
+    "ranik-1D-1920x1080-brass-chart.png",
+    "ranik-1D-1920x1080-warm-window.png",
+    "ranik-1D-1920x1080-warm-chart.png",
+    "ranik-1W-1920x1080-brass-window.png",
+    "ranik-1W-1920x1080-brass-chart.png",
+    "ranik-1W-1920x1080-warm-window.png",
+    "ranik-1W-1920x1080-warm-chart.png",
+    "foolad-1D-1920x1080-brass-window.png",
+    "foolad-1D-1920x1080-brass-chart.png",
+    "foolad-1D-1920x1080-warm-window.png",
+    "foolad-1D-1920x1080-warm-chart.png",
+    "foolad-1W-1920x1080-brass-window.png",
+    "foolad-1W-1920x1080-brass-chart.png",
+    "foolad-1W-1920x1080-warm-window.png",
+    "foolad-1W-1920x1080-warm-chart.png",
+    "khasapa-1D-1920x1080-brass-window.png",
+    "khasapa-1D-1920x1080-brass-chart.png",
+    "khasapa-1D-1920x1080-warm-window.png",
+    "khasapa-1D-1920x1080-warm-chart.png",
+    "khasapa-1W-1920x1080-brass-window.png",
+    "khasapa-1W-1920x1080-brass-chart.png",
+    "khasapa-1W-1920x1080-warm-window.png",
+    "khasapa-1W-1920x1080-warm-chart.png"
+  ]
+}

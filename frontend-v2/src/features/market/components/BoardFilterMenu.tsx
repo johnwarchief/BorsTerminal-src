@@ -4,6 +4,7 @@ import { faNum } from '@shared/lib/fa';
 import type { BoardFilterValues, DirectionFilter } from '../lib/boardFilters';
 
 const POLL_OPTIONS = [
+  { ms: 1_000, label: '۱ ثانیه' },
   { ms: 5_000, label: '۵ ثانیه' },
   { ms: 15_000, label: '۱۵ ثانیه' },
   { ms: 60_000, label: '۱ دقیقه' },

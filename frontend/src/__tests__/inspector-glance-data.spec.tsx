@@ -8,7 +8,6 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { SymbolInspector } from '@widgets/SymbolInspector';
-import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
 import { fmtInt, fmtPct } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
 import { FUNNEL_FIXTURE, REGISTRY_FIXTURE } from './fixtures/funnelApi';
@@ -39,7 +38,7 @@ function mountBoard(rows: MarketRow[]) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: Infinity } },
   });
-  qc.setQueryData(MARKET_FEED_KEY, { status: 'success', data: rows, count: rows.length });
+  for (const r of rows) qc.setQueryData(['market-row', r.symbol], { status: 'success', row: r, rev: 1 });
   return qc;
 }
 

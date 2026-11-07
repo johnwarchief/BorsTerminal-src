@@ -135,12 +135,12 @@ func a45Bt(valueMrl any) float64 {
 
 // ── متن‌هایِ سالانه‌سازی (کاربر می‌بیند؛ یکِ کدپوینت هم نباید جابه‌جا شود) ────
 const (
-	a45BasisOpRevenue      = "درآمد عملیاتیِ صورت مالی سالانه — جایگزینِ «فروش» برایِ طبقه"
-	a45BasisTplPartial     = "تجمیعی %02d/%d × ۱۲÷%d (=×%.2f)"
-	a45BasisTplFull        = "تجمیعی ۱۲ ماهِ کاملِ سال مالی %d (×۱٫۰)"
-	a45BasisNoMonthly      = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
-	a45BasisBadUnit        = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
-	a45BasisSalesNa        = "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)"
+	a45BasisOpRevenue  = "درآمد عملیاتیِ صورت مالی سالانه — جایگزینِ «فروش» برایِ طبقه"
+	a45BasisTplPartial = "تجمیعی %02d/%d × ۱۲÷%d (=×%.2f)"
+	a45BasisTplFull    = "تجمیعی ۱۲ ماهِ کاملِ سال مالی %d (×۱٫۰)"
+	a45BasisNoMonthly  = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
+	a45BasisBadUnit    = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
+	a45BasisSalesNa    = "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)"
 )
 
 // a45AnnualizeRows عینِ `fts_engine.annualize_rows` — خالصِ سالانه‌سازی، **یک**
@@ -337,25 +337,25 @@ func (s *Service) a45AnnualStatements(ctx context.Context, symbol string,
 		audited := a45IsAudited(t)
 		otherEntity := titleEntitySuffix(t) != ""
 		cand := map[string]any{
-			"period_end":     r["period_end"],
-			"fiscal_year":    yr,
-			"period_months":  int64(*months),
-			"months_source":  monthsSrc,
-			"title":          t,
-			"audited":        audited,
-			"consolidated":   consolidated,
-			"other_entity":   otherEntity,
-			"conflicts":      a45RowConflicts(r["period_end"], t, int64(*months)),
-			"unit_norm":      r["unit_norm"],
-			"unit_valid":     a45UnitIsValid(r["unit_norm"]),
-			"tracing_no":     tracingNo,
-			"company_name":   strOr(r["company_name"]),
-			"amended":        a45IsAmendment(t),
-			"revenue":        a45Fn(r["revenue"]),
-			"gross_profit":   a45Fn(r["gross_profit"]),
+			"period_end":       r["period_end"],
+			"fiscal_year":      yr,
+			"period_months":    int64(*months),
+			"months_source":    monthsSrc,
+			"title":            t,
+			"audited":          audited,
+			"consolidated":     consolidated,
+			"other_entity":     otherEntity,
+			"conflicts":        a45RowConflicts(r["period_end"], t, int64(*months)),
+			"unit_norm":        r["unit_norm"],
+			"unit_valid":       a45UnitIsValid(r["unit_norm"]),
+			"tracing_no":       tracingNo,
+			"company_name":     strOr(r["company_name"]),
+			"amended":          a45IsAmendment(t),
+			"revenue":          a45Fn(r["revenue"]),
+			"gross_profit":     a45Fn(r["gross_profit"]),
 			"operating_profit": a45Fn(r["operating_profit"]),
-			"net_profit":     a45Fn(r["net_profit"]),
-			"basic_eps":      a45Fn(r["basic_eps"]),
+			"net_profit":       a45Fn(r["net_profit"]),
+			"basic_eps":        a45Fn(r["basic_eps"]),
 		}
 		rank := statementRank(otherEntity, consolidated, rowCompleteness(cand), tracingNo)
 		cur, has := byYear[yr]
@@ -489,6 +489,12 @@ var (
 		"واسطه گری", "واسطه‌گری", "نهادهای مالی واسط"}
 	a45SvcTokensSrc = []string{"خدمات", "حمل", "ترابری", "فناوري", "فناوری", "مخابرات",
 		"بازرگاني", "بازرگانی", "پخش", "رستوران", "گردش"}
+	// a45NonCompanyTokensSrc عینِ `fts_engine.NON_COMPANY_TOKENS`: نشانه‌هایِ
+	// غیرشرکتِ عملیاتی — صندوق/اوراق/حق تقدم و نهادهایِ عمومی. بیمه در
+	// classifyIdentity پیش از این فهرست وتو می‌شود (صنعتش «صندوق» دارد).
+	a45NonCompanyTokensSrc = []string{"صندوق", "اوراق", "اختيار", "اختیار",
+		"حق تقدم", "حق‌تقدم", "خیریه", "شهرداری", "فدراسیون", "موسسه",
+		"پرورشگاه", "وقف", "بنیاد"}
 )
 
 // a45HoldNorm عینِ `fts_engine._hold_norm`: norm_fa + حذفِ فاصله. بی‌این‌گام
@@ -512,6 +518,7 @@ var (
 	a45FinTokens           = a45NormList(a45FinTokensSrc, normFa)
 	a45HoldTokens          = a45NormList(a45HoldTokensSrc, normFa)
 	a45SvcTokens           = a45NormList(a45SvcTokensSrc, normFa)
+	a45NonCompanyTokens    = a45NormList(a45NonCompanyTokensSrc, normFa)
 )
 
 func a45HoldNormStr(s string) string { return strings.ReplaceAll(normFa(s), " ", "") }
@@ -555,7 +562,7 @@ var a45ProfileLabels = map[string]string{
 }
 
 const (
-	a45BasisFund = "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها"
+	a45BasisFund    = "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها"
 	a45BasisHolding = "هلدینگ/سرمایه‌گذاری/بانکی — درآمد عملیاتی از پرتفوی، سود " +
 		"تسهیلات/سپرده و سرمایه‌گذاری‌ها (بدون «فروش کالا» و تناژ فیزیکی)"
 	a45BasisFinancial = "مالی/بانکی — جمع درآمد تسهیلات اعطایی + سپرده‌گذاری + " +
@@ -589,8 +596,17 @@ func a45CompanyProfile(sector, companyName string) map[string]any {
 	if applicable {
 		note, pricing = a45VolumeNoteYes, a45PricingNoteYes
 	}
+	// دلیلِ N/Aِ شاخص ۳ باید کلاس را دقیق بگوید: بانک زیرِ kind=holding است
+	// ولی «سرمایه‌گذاری/هلدینگ» خواندش غلط است (fts_engine.company_profile:2014-2024).
+	marginClass := kind
+	label := a45ProfileLabels[kind]
+	if kind == "holding" && a45AnyTokenIn(a45MarginBankTokens, both) {
+		marginClass = "bank"
+		label = "بانک / مؤسسهٔ اعتباری"
+	}
 	return map[string]any{
-		"kind": kind, "label": a45ProfileLabels[kind], "revenue_basis": basis,
+		"kind": kind, "margin_class": marginClass,
+		"label": label, "revenue_basis": basis,
 		"volume_applicable": applicable, "volume_note": note, "pricing_note": pricing,
 	}
 }
@@ -774,9 +790,10 @@ func a45GetOrMissing(m map[string]any, key string, def any) any {
 // ── لایۀ ۴: داوری ───────────────────────────────────────────────────────────
 
 const (
-	a45ReasonNaExempt = "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A)."
-	a45ReasonNoMcap   = "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."
-	a45ReasonNoSales  = "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست " +
+	a45ReasonNaExempt = "این نماد از شرط «نسبت فروش به ارزش بازار» معاف است " +
+		"(طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A)."
+	a45ReasonNoMcap  = "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."
+	a45ReasonNoSales = "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست " +
 		"(گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به " +
 		"ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است."
 	a45MarginLabelGross = "حاشیهٔ سود ناخالص"
@@ -793,10 +810,10 @@ const (
 // طبقاتِ مالی که «سود ناخالص» ندارند.
 //
 // دو نکته که وکتورهایِ `valuation.json` (۲۸۰ کیس) ملاکشان‌اند:
-//   * مقایسه با عددِ **خام** (`pot_raw`) است نه `potential_pct`ِ گرد شده (قاعدۀ
+//   - مقایسه با عددِ **خام** (`pot_raw`) است نه `potential_pct`ِ گرد شده (قاعدۀ
 //     R4 درِ پلن) — با عددِ گرد شده پتانسیلِ ۳۹٫۹۶٪ «≥ ۴۰٪» می‌شد و کارت با
 //     موتور نمی‌خواند؛
-//   * حاشیۀ صفر `_f(...) or None` است ⇒ «حاشیه نداریم»، و
+//   - حاشیۀ صفر `_f(...) or None` است ⇒ «حاشیه نداریم»، و
 //     `_sane(sales_ratio, -1000, 1000)` بیرونِ بازه ⇒ null (بدون حذفِ بی‌صدا).
 func Ind4Valuation(annual, gm map[string]any, marketCapRials any,
 	th map[string]any, exempt bool) map[string]any {
@@ -809,7 +826,9 @@ func Ind4Valuation(annual, gm map[string]any, marketCapRials any,
 		return map[string]any{
 			"available": false, "na": true, "exempt": true, "pass": false,
 			"potential_pass": false, "sales_pass": false, "rule_ref": "F-04",
-			"reason": a45ReasonNaExempt,
+			"acceptance_path": nil, "annualize_months": int64(0),
+			"annualize_label": "",
+			"reason":          a45ReasonNaExempt,
 		}
 	}
 	mcap := toF(marketCapRials)
@@ -818,16 +837,18 @@ func Ind4Valuation(annual, gm map[string]any, marketCapRials any,
 	// شاهدِ مقیاس ندارد (شتهران، هلد لیان).
 	noSales := len(annual) == 0 || toF(annual["annual_sales_mrl"]) <= 0
 	if noSales || mcap <= 0 {
-		gapCause, reason := "market_cap", a45ReasonNoMcap
+		gapCause := "market_cap"
 		if noSales {
-			gapCause, reason = "annual_sales", a45ReasonNoSales
+			gapCause = "annual_sales"
 		}
 		return map[string]any{
 			"available": false, "na": true, "gap_cause": gapCause,
-			"pass": false, "potential_pass": false, "sales_pass": false,
-			"mcap_ht": pyround.Round(mcap/1e13, 2),
+			"pass": nil, "potential_pass": false, "sales_pass": false,
+			"mcap_ht":             pyround.Round(mcap/1e13, 2),
 			"potential_threshold": potentialMin, "sales_threshold": salesMin,
-			"reason": reason,
+			"acceptance_path": nil, "annualize_months": int64(0),
+			"annualize_label": "",
+			"reason":          a45ReasonNoMcap,
 		}
 	}
 	annMrl := toF(annual["annual_sales_mrl"])
@@ -875,25 +896,28 @@ func Ind4Valuation(annual, gm map[string]any, marketCapRials any,
 	}
 	return map[string]any{
 		"available": true, "mcap_ht": pyround.Round(mcap/1e13, 2),
-		"annual_sales_bt":  annual["annual_sales_bt"],
-		"months_used":      annual["months_used"],
-		"scale_factor":     annual["scale_factor"],
-		"annualize_basis":  annual["basis"],
-		"reconciled":       annual["reconciled"],
-		"fs_unit":          a45GetOrMissing(annual, "fs_unit", nil),
-		"fs_unit_label":    a45GetOrMissing(annual, "fs_unit_label", nil),
-		"unit_unverified":  truthy(annual["unit_unverified"]),
-		"sales_to_mcap":    salesToMcap,
-		"sales_threshold":  salesMin,
-		"sales_pass":       salesPass,
-		"margin_used_pct":  margin,
-		"margin_basis":     marginBasis,
-		"margin_label":     marginLabel,
+		"annual_sales_bt":     annual["annual_sales_bt"],
+		"months_used":         annual["months_used"],
+		"scale_factor":        annual["scale_factor"],
+		"annualize_basis":     annual["basis"],
+		"reconciled":          annual["reconciled"],
+		"fs_unit":             a45GetOrMissing(annual, "fs_unit", nil),
+		"fs_unit_label":       a45GetOrMissing(annual, "fs_unit_label", nil),
+		"unit_unverified":     truthy(annual["unit_unverified"]),
+		"sales_to_mcap":       salesToMcap,
+		"sales_threshold":     salesMin,
+		"sales_pass":          salesPass,
+		"margin_used_pct":     margin,
+		"margin_basis":        marginBasis,
+		"margin_label":        marginLabel,
 		"est_gross_profit_bt": estGp,
-		"potential_pct":    potPct,
+		"potential_pct":       potPct,
 		"potential_threshold": potentialMin,
-		"potential_pass":   potPass,
-		"rule_ref":         "F-04", "gate": "OR",
+		"potential_pass":      potPass,
+		"rule_ref":            "F-04", "gate": "OR",
+		"acceptance_path":  cardAcceptancePath(salesPass, potPass),
+		"annualize_months": ax1IntOf(annual["months_used"]),
+		"annualize_label":  cardAnnualizeLabel(ax1IntOf(annual["months_used"])),
 		"pass":             salesPass || potPass,
 		"reason":           reason,
 	}
@@ -922,6 +946,10 @@ var a45SectorCuts = []string{"به جز", "به استثنا", "به حذف"}
 // a45BankTokens عینِ چهار نوشتارِ استثنایِ بانک درِ اوراکل (دو نوشتارِ ک/ك و دو
 // نوشتارِ ی/ي — «بانك» با k عربی درِ نامِ صنعتِ تابلو نشسته است).
 var a45BankTokens = []string{"بانک", "بانك", "اعتباری", "اعتباري"}
+
+// a45MarginBankTokens عینِ `_BANK_TOKENS`ِ اوراکل (فقط دو نوشتارِ بانک) برایِ
+// متنِ N/Aِ شاخص ۳؛ با فهرستِ بالا (که استثنایِ قیمت‌گذاری هم دارد) یکی نیست.
+var a45MarginBankTokens = []string{"بانک", "بانك"}
 
 // a45SectorCore عینِ `fts_engine.sector_core`: تطبیق رویِ «هستۀ» برچسبِ صنعت، بی
 // بندِ «به جز …» — وگرنه استثنایِ داخلِ نام، خودِ نام را دستوری می‌کند.
@@ -1254,21 +1282,21 @@ func a45DashOrSector(sector string) string {
 const (
 	a45MsGapHint = "با گرفتنِ دیتابیس تازهٔ کدال (دکمهٔ «دیتابیس کدال» در جدول غربالگری) " +
 		"گزارش‌های ماهانهٔ جاافتاده اضافه می‌شود."
-	a45Gap1bWhy        = "رشد ریالی محاسبه نشد تا رشد تولیدی بررسی شود."
-	a45Gap1bFix        = "با همگام‌سازیِ گزارش فعالیت ماهانه (مخرجِ همان دورهٔ سال قبل) " +
+	a45Gap1bWhy = "رشد ریالی محاسبه نشد تا رشد تولیدی بررسی شود."
+	a45Gap1bFix = "با همگام‌سازیِ گزارش فعالیت ماهانه (مخرجِ همان دورهٔ سال قبل) " +
 		"این محور ساخته می‌شود."
 	a45Gap1bMissingFix = "گزارش ماهانهٔ سال قبل لازم است."
 	a45Gap2NaWhy       = "مبنایِ غیرتلفیقیِ سه‌سالهٔ کامل موجود نیست."
 	a45Gap2NaFix       = "این شکاف با گرفتنِ دیتابیسِ تازهٔ کدال بسته نمی‌شود: " +
 		"صورتِ سود و زیانِ غیرتلفیقیِ آن سال‌ها منتشر نشده است."
-	a45Gap2Fix         = "با گرفتنِ دیتابیس تازهٔ کدال، صورت‌های ۱۲ماههٔ سال‌های " +
+	a45Gap2Fix = "با گرفتنِ دیتابیس تازهٔ کدال، صورت‌های ۱۲ماههٔ سال‌های " +
 		"قدیمی‌ترِ همین نماد اضافه می‌شود."
-	a45Gap2SoftFix     = "با انتشار صورت ۱۲ماههٔ سال مالی جاری، داوری قطعی میشود."
-	a45Gap3Why         = "سود ناخالصِ سالِ مرجع در کدال نیست."
-	a45Gap3Fix         = "با همگام‌سازی کدال بررسی مجدد می‌شود."
-	a45Gap4UnitWhy     = "واحدِ پولِ ردیفِ مرجعِ کدال اعلام نشده، پس مقیاسِ این عدد " +
+	a45Gap2SoftFix = "با انتشار صورت ۱۲ماههٔ سال مالی جاری، داوری قطعی میشود."
+	a45Gap3Why     = "سود ناخالصِ سالِ مرجع در کدال نیست."
+	a45Gap3Fix     = "با همگام‌سازی کدال بررسی مجدد می‌شود."
+	a45Gap4UnitWhy = "واحدِ پولِ ردیفِ مرجعِ کدال اعلام نشده، پس مقیاسِ این عدد " +
 		"راستی‌آزمایی نشد (گیتِ واحد بی‌شاهد اجرا شد)."
-	a45Gap4UnitFix     = "با همگام‌سازیِ تازهٔ کدال، ستونِ واحدِ همان صورتِ مالی " +
+	a45Gap4UnitFix = "با همگام‌سازیِ تازهٔ کدال، ستونِ واحدِ همان صورتِ مالی " +
 		"پر می‌شود و مقایسه برقرار می‌گردد."
 	a45Gap4ReconcileWhy = "سالانه‌سازی ×۱۲÷م با گیتِ fts_engine سازگار نشد؛ " +
 		"فروش سالانهٔ کدال جانشین شد."
@@ -1359,7 +1387,7 @@ func V10DataGaps(res map[string]any) []map[string]any {
 	return gaps
 }
 
-// a45Or عینِ `x or y` — ارزشِ کاذب (از جمله '' و ۰ و None) به پیش‌فرض می‌رسد.
+// a45Or عینِ `x or y` — ارزشِ کاذب (از جمله ” و ۰ و None) به پیش‌فرض می‌رسد.
 func a45Or(v any, def any) any {
 	if isFalsy(v) {
 		return def

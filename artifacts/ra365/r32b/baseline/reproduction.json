@@ -1,0 +1,92 @@
+{
+ "contract": "Round 26/31 frozen; same pairing, re-anchoring, tolerance and denominators",
+ "code_only": {
+  "daily": {
+   "rows": 1194446,
+   "row_ok": 771499,
+   "row_pct": 64.5905,
+   "mismatch": 422947
+  },
+  "weekly": {
+   "rows": 275776,
+   "row_ok": 176162,
+   "row_pct": 63.8787
+  },
+  "monthly": {
+   "rows": 69268,
+   "row_ok": 43011,
+   "row_pct": 62.0936
+  },
+  "exact_ohlc": {
+   "rows": 1194446,
+   "exact": 306955,
+   "pct": 25.6985
+  },
+  "raw_literal_pct": 99.8482,
+  "coverage": {
+   "D": {
+    "paired": 1194446,
+    "ref_only": 35826,
+    "product_only": 939725
+   },
+   "W": {
+    "paired": 275776,
+    "ref_only": 8174,
+    "product_only": 240337
+   },
+   "M": {
+    "paired": 69268,
+    "ref_only": 2068,
+    "product_only": 62573
+   }
+  },
+  "assets_paired": 1989
+ },
+ "data_arm": {
+  "daily": {
+   "rows": 1194446,
+   "row_ok": 781081,
+   "row_pct": 65.3927,
+   "mismatch": 413365
+  },
+  "weekly": {
+   "rows": 275776,
+   "row_ok": 178290,
+   "row_pct": 64.6503
+  },
+  "monthly": {
+   "rows": 69268,
+   "row_ok": 43503,
+   "row_pct": 62.8039
+  },
+  "coverage": {
+   "D": {
+    "paired": 1194446,
+    "ref_only": 35826,
+    "product_only": 939725
+   },
+   "W": {
+    "paired": 275776,
+    "ref_only": 8174,
+    "product_only": 240337
+   },
+   "M": {
+    "paired": 69268,
+    "ref_only": 2068,
+    "product_only": 62573
+   }
+  }
+ },
+ "mission_spec_values": {
+  "exact_ohlc": 306955,
+  "daily_tolerance_pct": 64.5905,
+  "weekly_tolerance_pct": 63.8787,
+  "monthly_tolerance_pct": 62.0936,
+  "daily_mismatch_rows": 413365
+ },
+ "finding": "The 413,365 row count belongs to the data-arm (65.3927%); at the code-only 64.5905% baseline the mismatch count is 422,947. Both arms were reproduced exactly and are reported separately; the session-anomaly data stays isolated.",
+ "reproduction": {
+  "code_only": "EXACT MATCH on 64.5905 / 63.8787 / 62.0936 and exact 306,955",
+  "data_arm": "EXACT MATCH on 65.3927 / 64.6503 / 62.8039 and 413,365"
+ }
+}

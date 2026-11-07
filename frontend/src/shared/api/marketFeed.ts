@@ -162,10 +162,15 @@ export function marketFeedOptions<T = MarketFeed>(
 }
 
 /** همان تابلو، بی‌درخواستِ دوم: مصرف‌کننده‌هایِ فرعی با select از این می‌خوانند. */
-export function useMarketFeedShared<T>(select: (f: MarketFeed) => T, pollMs = 5_000) {
+export function useMarketFeedShared<T>(
+  select: (f: MarketFeed) => T,
+  pollMs = 5_000,
+  enabled = true,
+) {
   return useQuery<MarketFeed, Error, T>(
     marketFeedOptions<T>(pollMs, false, {
       select,
+      enabled,
       // پولینگِ این مشاهده‌گر نه؛ صاحبِ ریتم، تابلو است. بیرونِ ساعتِ بازار
       // که هیچ ناظرِ فعالی نیست، خودِ همین کوئری با ریتمِ آرام تازه می‌شود.
       refetchInterval: () => effectivePollMs(Math.max(pollMs, 60_000)),

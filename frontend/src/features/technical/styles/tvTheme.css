@@ -111,6 +111,28 @@
 }
 .tv-workbench [data-testid='nn-chart-host'] [class*='toolbar'] > *,
 .tv-workbench [data-testid='nn-chart-host'] [class*='Toolbar'] > * { min-width: 0; flex: 0 1 auto; }
+
+/* نوارِ ابزارِ چارت: هیچ کنترلی زیرِ عرضِ متنِ خودش فشرده نمی‌شود.
+   قاعدۀِ بالا (`min-width:0` + `flex:0 1 auto` روی همهٔ فرزندان) با نیتِ درستِ
+   «بی‌فضایِ مرده و بی‌اسکرولِ اضافه» نوشته شده بود، ولی رویِ این ردیف اثرش
+   همپوشانی بود: متنِ nowrapِ دکمه از جعبه‌اش بیرون می‌زد و رویِ دکمهٔ کناری
+   می‌نشست. سنجشِ ۱۴۰-۰۷-۲۷ (`_audit/chart_toolbar_geometry.js`): ۵ همپوشانی وِ
+   ۵ برچسبِ بریده درِ ۱۳۶×۷۶۸ وِ ۲ همپوشانی درِ ۱۶۰۰×۹۰۰ — نمونه: «نوع تعدیل
+   قیمت» × «پنل اندیکاتورها» ۱۶۲ پیکسلِ مربع. `overflow-x:auto`ِ خودِ نوار هم
+   با `overflow:visible !important`ِ بالا بی‌اثر می‌شد، پس راهِ فرارِ منو حفظ
+   می‌ماند و ردیف به‌جای اسکرول، تا می‌خورد. */
+.tv-workbench [data-testid='nn-chart-host'] header.nn-top-toolbar {
+  flex-wrap: wrap !important;
+  height: auto !important;
+  max-height: none !important;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  row-gap: 2px;
+}
+.tv-workbench [data-testid='nn-chart-host'] header.nn-top-toolbar > * {
+  min-width: max-content !important;
+  flex-shrink: 0 !important;
+}
 .tv-workbench [data-testid='nn-chart-host'] button,
 .tv-workbench [data-testid='nn-chart-host'] label,
 .tv-workbench [data-testid='nn-chart-host'] span { white-space: nowrap; }

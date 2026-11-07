@@ -1,0 +1,41 @@
++2250 req GET  /api/update/version 
++2250 req GET  /api/notifications/feed?limit=60 
++2252 req GET  /api/selection/portfolio 
++2431 res  200 /api/update/version 73
++2698 res  200 /api/selection/portfolio 374
++2908 req GET  /api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true 
++2909 req GET  /api/funnel/registry 
++2909 req GET  /api/market/closes 
++2909 res  200 /api/funnel/registry 7688
++3296 res  200 /api/market/closes 31130
++3806 res  200 /api/notifications/feed?limit=60 4820
++4341 req GET  /api/selection/portfolio 
++4348 req GET  /api/watchlist 
++4350 req GET  /api/market/row?symbol=فولاد 
++4350 req GET  /api/fts/فولاد 
++4350 req GET  /api/chart/فولاد/key-levels 
++4352 res  200 /api/market/row?symbol=فولاد 799
++4352 req GET  /api/tape-history?codes=46348559193224090&days=5 
++4489 res  200 /api/watchlist 51
++4720 res  200 /api/tape-history?codes=46348559193224090&days=5 265
++4723 res  200 /api/selection/portfolio 374
++5103 req GET  /api/market 
++5104 req GET  /api/chart/فولاد 
++5104 req GET  /api/index/tedpix?limit=0 
++5105 req GET  /api/fundamental/فولاد 
++5369 res  200 /api/index/tedpix?limit=0 136061
++5610 req GET  /api/fts/config 
++6208 res  200 /api/market 1220692
++6659 res  200 /api/fts/config 620
++7938 res  200 /api/fts/فولاد 7768
++8064 res  200 /api/chart/فولاد/key-levels 661
++8583 res  200 /api/fundamental/فولاد 7100
++8701 res  200 /api/chart/فولاد 201580
++9991 res  200 /api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true 388041
++10297 MARK-switch    
++10406 req GET  /api/chart/خودرو 
++10406 req GET  /api/fts/خودرو 
++10407 req GET  /api/fundamental/خودرو 
++13369 res  200 /api/fts/خودرو 7503
++14008 res  200 /api/chart/خودرو 245295
++14153 res  200 /api/fundamental/خودرو 7252

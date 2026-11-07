@@ -46,6 +46,9 @@ function saneTemplate(raw: unknown): ChartTemplate | null {
     indicators,
     timeframe: optStr(t.timeframe),
     candleType: optStr(t.candleType),
+    // رشته بیرونِ این برچسبِ حالتِ سری است و اینجا دست‌نخورده می‌ماند: کوچکتِ
+    // حالت‌هایِ کهنه یکِ نقطه دارد (`migrateAdjustmentMode` درِ lib/adjustments،
+    // خوانده‌شدۀِ `applyTemplate`) — دو جا دو نقشه، همان واگراییِ همیشگی را می‌سازد.
     adjustment: optStr(t.adjustment),
     priceScale: optStr(t.priceScale),
     createdAt: typeof t.createdAt === 'number' && Number.isFinite(t.createdAt) ? t.createdAt : Date.now(),

@@ -1,0 +1,30 @@
+﻿symbol,status,window_to,src_daily,our_daily,src_weekly,our_weekly,src_bars,our_bars,depth_delta,extreme_overlap,price_rel_pct_max,src_majors,our_majors,dir_equal,weekly_equal,extremes_equal,newest_extremes_equal,why
+خودرو,NOT_COMPARABLE,,,,,,,,,,,,,,,,,db rows in window < 120 (78)
+درهآور,PARTIAL_SAME_DIRECTION,2026-10-11,down,down,up,up,601,424,177,0.6,0.0,105,71,True,True,False,True,"same direction; deciding set differs (source has 177 more daily bars, overlap 0.60)"
+سرود,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,390,211,0.6,0.0,107,75,True,True,False,False,"same direction; deciding set differs (source has 211 more daily bars, overlap 0.60)"
+سصفها,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,404,197,0.6,0.182,95,62,True,True,False,False,"same direction; deciding set differs (source has 197 more daily bars, overlap 0.60)"
+سغرب,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,414,187,0.6,0.0,106,71,True,True,False,True,"same direction; deciding set differs (source has 187 more daily bars, overlap 0.60)"
+شاملا,MISMATCH_STRUCTURE,2026-10-11,up,up,up,up,601,440,161,0.333,,96,72,True,True,False,False,"same direction; deciding set differs (source has 161 more daily bars, overlap 0.33)"
+شبهرن,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,423,178,0.6,0.004,87,65,True,True,False,True,"same direction; deciding set differs (source has 178 more daily bars, overlap 0.60)"
+شراز,PARTIAL_SAME_DIRECTION,2026-10-03,up,up,up,up,601,441,160,0.6,0.0,93,66,True,True,False,True,"same direction; deciding set differs (source has 160 more daily bars, overlap 0.60)"
+شستا,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,449,152,0.6,0.0,97,76,True,True,False,True,"same direction; deciding set differs (source has 152 more daily bars, overlap 0.60)"
+شنفت,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,432,169,0.6,0.0,89,60,True,True,False,True,"same direction; deciding set differs (source has 169 more daily bars, overlap 0.60)"
+شپنا,PARTIAL_SAME_DIRECTION,2026-10-03,up,up,up,up,601,439,162,0.6,0.0,94,66,True,True,False,True,"same direction; deciding set differs (source has 162 more daily bars, overlap 0.60)"
+طلا,MATCH,2026-10-11,up,up,up,up,643,496,147,1.0,0.0,118,92,True,True,True,True,
+فارس,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,400,201,0.6,0.0,86,58,True,True,False,True,"same direction; deciding set differs (source has 201 more daily bars, overlap 0.60)"
+فافق,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,407,194,0.6,0.0,92,53,True,True,False,False,"same direction; deciding set differs (source has 194 more daily bars, overlap 0.60)"
+فجام,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,379,222,0.6,0.0,85,46,True,True,False,True,"same direction; deciding set differs (source has 222 more daily bars, overlap 0.60)"
+فخاس,MATCH,2026-10-11,up,up,up,up,601,433,168,1.0,0.0,91,63,True,True,True,True,
+فزر,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,428,173,0.333,0.0,103,75,True,True,False,True,"same direction; deciding set differs (source has 173 more daily bars, overlap 0.33)"
+فنوال,MATCH,2026-10-11,up,up,up,up,601,430,171,1.0,0.0,104,75,True,True,True,True,
+فولاد,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,389,212,0.6,0.0,104,68,True,True,False,True,"same direction; deciding set differs (source has 212 more daily bars, overlap 0.60)"
+فولاژ,MISMATCH_STRUCTURE,2026-10-11,up,up,up,up,601,438,163,0.333,,99,59,True,True,False,False,"same direction; deciding set differs (source has 163 more daily bars, overlap 0.33)"
+قصفها,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,431,170,0.6,0.0,100,76,True,True,False,True,"same direction; deciding set differs (source has 170 more daily bars, overlap 0.60)"
+لخزر,MISMATCH_STRUCTURE,2026-10-11,up,up,up,up,601,400,201,0.143,0.0,102,71,True,True,False,False,"same direction; deciding set differs (source has 201 more daily bars, overlap 0.14)"
+مارون,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,385,216,0.6,0.21,87,52,True,True,False,True,"same direction; deciding set differs (source has 216 more daily bars, overlap 0.60)"
+هجرت,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,400,201,0.6,0.0,111,72,True,True,False,False,"same direction; deciding set differs (source has 201 more daily bars, overlap 0.60)"
+وبصادر,PARTIAL_SAME_DIRECTION,2026-10-11,down,down,up,up,601,403,198,0.6,0.0,112,73,True,True,False,True,"same direction; deciding set differs (source has 198 more daily bars, overlap 0.60)"
+وبملت,PARTIAL_SAME_DIRECTION,2026-10-11,down,down,up,up,601,437,164,0.6,0.0,95,69,True,True,False,True,"same direction; deciding set differs (source has 164 more daily bars, overlap 0.60)"
+ولانا,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,368,233,0.6,0.0,105,61,True,True,False,False,"same direction; deciding set differs (source has 233 more daily bars, overlap 0.60)"
+ولراز,MISMATCH_STRUCTURE,2026-10-11,up,up,up,up,601,352,249,0.333,0.0,87,37,True,True,False,False,"same direction; deciding set differs (source has 249 more daily bars, overlap 0.33)"
+ومعادن,PARTIAL_SAME_DIRECTION,2026-10-11,up,up,up,up,601,425,176,0.6,0.0,93,71,True,True,False,True,"same direction; deciding set differs (source has 176 more daily bars, overlap 0.60)"

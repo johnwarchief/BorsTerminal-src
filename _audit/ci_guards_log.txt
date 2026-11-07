@@ -1,0 +1,711 @@
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	﻿2026-10-15T14:03:43.4480203Z Current runner version: '2.337.0'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4499515Z ##[group]Runner Image Provisioner
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4500225Z Hosted Compute Agent
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4500690Z Version: 20261012.601
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4501265Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4501809Z Build Date: 2026-10-12T17:48:21Z
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4502286Z Worker ID: {93ca7440-d92e-43fd-9965-6f8ff71b65d0}
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4502777Z Region: centralus
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4503189Z Cloud: Azure
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4503570Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4504653Z ##[group]Operating System
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4505082Z Ubuntu
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4505437Z 24.04.5
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4506098Z LTS
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4506514Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4506912Z ##[group]Runner Image
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4507369Z Image: ubuntu-24.04
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4507763Z Version: 20261012.334.1
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4508711Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4509780Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4510441Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4511271Z ##[group]GITHUB_TOKEN Permissions
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4513187Z Contents: read
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4513828Z Metadata: read
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4514276Z Packages: read
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4514670Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4516420Z Secret source: Actions
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4517109Z Cache mode: write
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4517599Z Prepare workflow directory
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4764513Z Prepare all required actions
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.4800784Z Getting action download info
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.7171435Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.7999851Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:43.9562520Z Complete job name: offline guard suites (python dev/run_all_tests.py)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0165422Z ##[group]Run actions/checkout@v4
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0166357Z with:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0166771Z   repository: johnwarchief/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0169577Z   token: ***
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0170002Z   ssh-strict: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0170373Z   ssh-user: git
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0170759Z   persist-credentials: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0171160Z   clean: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0171539Z   sparse-checkout-cone-mode: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0171995Z   fetch-depth: 1
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0172356Z   fetch-tags: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0172724Z   show-progress: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0173109Z   lfs: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0173474Z   submodules: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0173894Z   set-safe-directory: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0174309Z   allow-unsafe-pr-checkout: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0174831Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0932796Z Syncing repository: johnwarchief/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0934441Z ##[group]Getting Git version info
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0935151Z Working directory is '/home/runner/work/BorsTerminal-src/BorsTerminal-src'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0936382Z [command]/usr/bin/git version
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.0993235Z git version 2.55.0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1011225Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1032890Z Temporarily overriding HOME='/home/runner/work/_temp/10200f78-22f8-46c7-866f-dbfb9005942c' before making global git config changes
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1034653Z Adding repository directory to the temporary git global config as a safe directory
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1036361Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/BorsTerminal-src/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1073206Z Deleting the contents of '/home/runner/work/BorsTerminal-src/BorsTerminal-src'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1076175Z ##[group]Initializing the repository
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1079261Z [command]/usr/bin/git init /home/runner/work/BorsTerminal-src/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1179675Z hint: Using 'master' as the name for the initial branch. This default branch name
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1180992Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1181835Z hint: to use in all of your new repositories, which will suppress this warning,
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1182738Z hint: call:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1183318Z hint:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1183885Z hint: 	git config --global init.defaultBranch <name>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1184543Z hint:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1185155Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1186221Z hint: 'development'. The just-created branch can be renamed via this command:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1187093Z hint:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1187565Z hint: 	git branch -m <name>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1188093Z hint:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1188731Z hint: Disable this message with "git config set advice.defaultBranchName false"
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1189833Z Initialized empty Git repository in /home/runner/work/BorsTerminal-src/BorsTerminal-src/.git/
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1191765Z [command]/usr/bin/git remote add origin https://github.com/johnwarchief/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1231213Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1232063Z ##[group]Disabling automatic garbage collection
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1233572Z [command]/usr/bin/git config --local gc.auto 0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1260242Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1261164Z ##[group]Setting up auth
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1265523Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1299441Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1587028Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1611630Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1757383Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1780784Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1925419Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1956524Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1957292Z ##[group]Fetching the repository
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:44.1963599Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c18ae16f2faeb6983f13c3965f042ee5d93619b7:refs/remotes/origin/mission/easytrader-adapter-2026-10-15
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2372375Z From https://github.com/johnwarchief/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2374952Z  * [new ref]         c18ae16f2faeb6983f13c3965f042ee5d93619b7 -> origin/mission/easytrader-adapter-2026-10-15
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2381171Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2382991Z ##[group]Determining the checkout info
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2384897Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2386038Z [command]/usr/bin/git sparse-checkout disable
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2430342Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2455157Z ##[group]Checking out the ref
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.2459166Z [command]/usr/bin/git checkout --progress --force -B mission/easytrader-adapter-2026-10-15 refs/remotes/origin/mission/easytrader-adapter-2026-10-15
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5266114Z Switched to a new branch 'mission/easytrader-adapter-2026-10-15'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5269801Z branch 'mission/easytrader-adapter-2026-10-15' set up to track 'origin/mission/easytrader-adapter-2026-10-15'.
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5280836Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5318840Z [command]/usr/bin/git log -1 --format=%H
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5338042Z c18ae16f2faeb6983f13c3965f042ee5d93619b7
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5554531Z ##[group]Run actions/setup-python@v5
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5554882Z with:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5555211Z   python-version: 3.12
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5555482Z   cache: pip
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5555973Z   check-latest: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5557886Z   token: ***
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5558153Z   update-environment: true
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5558505Z   allow-prereleases: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5558782Z   freethreaded: false
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.5559041Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.6563316Z ##[group]Installed versions
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.6635232Z (node:2081) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.6636528Z (Use `node --trace-deprecation ...` to show where the warning was created)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.6637145Z Successfully set up CPython (3.12.15)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.6637917Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:46.7874236Z [command]/opt/hostedtoolcache/Python/3.12.15/x64/bin/pip cache dir
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.0358407Z /home/runner/.cache/pip
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.1883437Z pip cache is not found
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2008856Z ##[group]Run python -m pip install --upgrade pip
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2009387Z ^[[36;1mpython -m pip install --upgrade pip^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2009763Z ^[[36;1mpip install -r requirements.txt^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2169502Z shell: /usr/bin/bash -e {0}
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2169901Z env:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2170198Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2170588Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib/pkgconfig
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2170969Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2171330Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2171712Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2172067Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.2172364Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:47.6775871Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages (26.2.1)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.2202458Z Collecting fastapi (from -r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.2982595Z   Downloading fastapi-0.143.2-py3-none-any.whl.metadata (26 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.3377793Z Collecting uvicorn (from -r requirements.txt (line 2))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.3512153Z   Downloading uvicorn-0.54.0-py3-none-any.whl.metadata (6.6 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.3812013Z Collecting requests (from -r requirements.txt (line 3))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.3913398Z   Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.4183764Z Collecting httpx (from -r requirements.txt (line 4))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.4283896Z   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.6221644Z Collecting numpy==2.0.2 (from -r requirements.txt (line 6))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.6324872Z   Downloading numpy-2.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (60 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.7498244Z Collecting pandas==2.2.3 (from -r requirements.txt (line 7))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.7605456Z   Downloading pandas-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (89 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.9734775Z Collecting orjson (from -r requirements.txt (line 10))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:48.9839981Z   Downloading orjson-3.13.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (42 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.1854931Z Collecting pywebview (from -r requirements.txt (line 12))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.1960932Z   Downloading pywebview-6.2.1-py3-none-any.whl.metadata (4.9 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.2243681Z Collecting pythonnet (from -r requirements.txt (line 13))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.2349543Z   Downloading pythonnet-3.2.1-cp311.cp312.cp313.cp314.cp315-none-any.whl.metadata (6.5 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.2571713Z Collecting openpyxl==3.1.5 (from -r requirements.txt (line 19))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.2671711Z   Downloading openpyxl-3.1.5-py2.py3-none-any.whl.metadata (2.5 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.2942466Z Collecting python-docx==1.2.0 (from -r requirements.txt (line 20))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.3042794Z   Downloading python_docx-1.2.0-py3-none-any.whl.metadata (2.0 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.4060452Z Collecting reportlab==5.0.1 (from -r requirements.txt (line 21))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.4162942Z   Downloading reportlab-5.0.1-py3-none-any.whl.metadata (1.6 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.4381357Z Collecting python-dateutil>=2.8.2 (from pandas==2.2.3->-r requirements.txt (line 7))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.4483896Z   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.4858798Z Collecting pytz>=2020.1 (from pandas==2.2.3->-r requirements.txt (line 7))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.4964175Z   Downloading pytz-2026.5-py2.py3-none-any.whl.metadata (22 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.5304606Z Collecting tzdata>=2022.7 (from pandas==2.2.3->-r requirements.txt (line 7))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.5405615Z   Downloading tzdata-2026.5-py2.py3-none-any.whl.metadata (1.4 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.5600533Z Collecting et-xmlfile (from openpyxl==3.1.5->-r requirements.txt (line 19))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.5702235Z   Downloading et_xmlfile-2.0.0-py3-none-any.whl.metadata (2.7 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.7528090Z Collecting lxml>=3.1.0 (from python-docx==1.2.0->-r requirements.txt (line 20))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.7631865Z   Downloading lxml-6.1.3-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl.metadata (3.3 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.7848798Z Collecting typing_extensions>=4.9.0 (from python-docx==1.2.0->-r requirements.txt (line 20))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.7949928Z   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.9183103Z Collecting pillow>=9.0.0 (from reportlab==5.0.1->-r requirements.txt (line 21))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:49.9288526Z   Downloading pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.0336404Z Collecting charset-normalizer (from reportlab==5.0.1->-r requirements.txt (line 21))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.0441898Z   Downloading charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (46 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.0748572Z Collecting starlette>=0.46.0 (from fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.0850773Z   Downloading starlette-1.8.0-py3-none-any.whl.metadata (6.6 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.1850816Z Collecting pydantic>=2.9.0 (from fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.1954062Z   Downloading pydantic-2.14.1-py3-none-any.whl.metadata (133 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.2206813Z Collecting typing-inspection>=0.4.2 (from fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.2308391Z   Downloading typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.2500736Z Collecting annotated-doc>=0.0.2 (from fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.2600977Z   Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.2861985Z Collecting opentelemetry-api>=1.44.0 (from fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.2963228Z   Downloading opentelemetry_api-1.45.1-py3-none-any.whl.metadata (1.4 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.3188335Z Collecting click>=7.0 (from uvicorn->-r requirements.txt (line 2))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.3290320Z   Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.3480986Z Collecting h11>=0.8 (from uvicorn->-r requirements.txt (line 2))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.3581450Z   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.3813046Z Collecting idna<4,>=2.5 (from requests->-r requirements.txt (line 3))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.3913568Z   Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.4166047Z Collecting urllib3<3,>=1.26 (from requests->-r requirements.txt (line 3))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.4265928Z   Downloading urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.4495136Z Collecting certifi>=2023.5.7 (from requests->-r requirements.txt (line 3))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.4596340Z   Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.4845301Z Collecting anyio (from httpx->-r requirements.txt (line 4))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.4948186Z   Downloading anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.5173279Z Collecting httpcore==1.* (from httpx->-r requirements.txt (line 4))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.5274014Z   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.5495925Z Collecting proxy_tools (from pywebview->-r requirements.txt (line 12))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.5597340Z   Downloading proxy_tools-0.1.0.tar.gz (3.0 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:50.5648169Z   Installing build dependencies: started
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.1710867Z   Installing build dependencies: finished with status 'done'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.1715449Z   Getting requirements to build wheel: started
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.4601215Z   Getting requirements to build wheel: finished with status 'done'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.4608528Z   Preparing metadata (pyproject.toml): started
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.6730401Z   Preparing metadata (pyproject.toml): finished with status 'done'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.6958178Z Collecting bottle (from pywebview->-r requirements.txt (line 12))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.7061151Z   Downloading bottle-0.13.4-py2.py3-none-any.whl.metadata (1.6 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.7280455Z Collecting clr_loader<0.4.0,>=0.3.1 (from pythonnet->-r requirements.txt (line 13))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.7384008Z   Downloading clr_loader-0.3.1-py3-none-any.whl.metadata (1.4 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.8231553Z Collecting cffi>=1.17 (from clr_loader<0.4.0,>=0.3.1->pythonnet->-r requirements.txt (line 13))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.8334513Z   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.8552172Z Collecting pycparser (from cffi>=1.17->clr_loader<0.4.0,>=0.3.1->pythonnet->-r requirements.txt (line 13))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.8655403Z   Downloading pycparser-3.11-py3-none-any.whl.metadata (8.2 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.8977605Z Collecting annotated-types>=0.6.0 (from pydantic>=2.9.0->fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:51.9079154Z   Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.4084832Z Collecting pydantic-core==2.50.1 (from pydantic>=2.9.0->fastapi->-r requirements.txt (line 1))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.4189180Z   Downloading pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.5 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.4414532Z Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas==2.2.3->-r requirements.txt (line 7))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.4516529Z   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.4708945Z Downloading numpy-2.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (19.2 MB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.6590589Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.2/19.2 MB 107.6 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.6707765Z Downloading pandas-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.7 MB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.7523690Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 156.1 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.7631016Z Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.7759955Z Downloading python_docx-1.2.0-py3-none-any.whl (252 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.7886995Z Downloading reportlab-5.0.1-py3-none-any.whl (2.0 MB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8011853Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 159.7 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8113227Z Downloading fastapi-0.143.2-py3-none-any.whl (144 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8282723Z Downloading uvicorn-0.54.0-py3-none-any.whl (87 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8404989Z Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8526393Z Downloading charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (257 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8654905Z Downloading idna-3.20-py3-none-any.whl (69 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8778092Z Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.8900497Z Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9033775Z Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9155026Z Downloading orjson-3.13.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (130 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9278668Z Downloading pywebview-6.2.1-py3-none-any.whl (525 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9330004Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 525.5/525.5 kB 87.8 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9451894Z Downloading pythonnet-3.2.1-cp311.cp312.cp313.cp314.cp315-none-any.whl (222 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9596603Z Downloading clr_loader-0.3.1-py3-none-any.whl (55 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9717481Z Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9836270Z Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:52.9958936Z Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.0088408Z Downloading click-8.5.0-py3-none-any.whl (125 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.0210624Z Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.0471355Z Downloading lxml-6.1.3-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl (5.2 MB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.0765598Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.2/5.2 MB 180.2 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.0869307Z Downloading opentelemetry_api-1.45.1-py3-none-any.whl (60 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.0994626Z Downloading pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.1478607Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 143.8 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.1581305Z Downloading pydantic-2.14.1-py3-none-any.whl (488 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.1711451Z Downloading pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.2 MB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.1787990Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 321.5 MB/s  0:00:00
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.1889240Z Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2010506Z Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2146713Z Downloading pytz-2026.5-py2.py3-none-any.whl (506 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2280847Z Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2400595Z Downloading starlette-1.8.0-py3-none-any.whl (79 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2526445Z Downloading anyio-4.15.1-py3-none-any.whl (132 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2693003Z Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2830011Z Downloading typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.2956622Z Downloading tzdata-2026.5-py2.py3-none-any.whl (347 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.3083278Z Downloading bottle-0.13.4-py2.py3-none-any.whl (103 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.3206164Z Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.3328741Z Downloading pycparser-3.11-py3-none-any.whl (51 kB)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.4595899Z Building wheels for collected packages: proxy_tools
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.4601922Z   Building wheel for proxy_tools (pyproject.toml): started
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.6111211Z   Building wheel for proxy_tools (pyproject.toml): finished with status 'done'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.6113815Z   Created wheel for proxy_tools: filename=proxy_tools-0.1.0-py3-none-any.whl size=2936 sha256=c8d8db1bc9eba0e7a4f89f76340069b502f124fbef54d756d2956228b7918389
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.6114765Z   Stored in directory: /home/runner/.cache/pip/wheels/07/37/12/f3390260c831aa68c3835d6ec2e10d8da094b5fc0ac32feb14
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.6126560Z Successfully built proxy_tools
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:03:53.6810520Z Installing collected packages: pytz, proxy_tools, bottle, urllib3, tzdata, typing_extensions, six, pycparser, pillow, orjson, numpy, lxml, idna, h11, et-xmlfile, click, charset-normalizer, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, requests, reportlab, pywebview, python-docx, python-dateutil, pydantic-core, opentelemetry-api, openpyxl, httpcore, cffi, anyio, starlette, pydantic, pandas, httpx, clr_loader, pythonnet, fastapi
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:02.8089512Z 
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:02.8114019Z Successfully installed annotated-doc-0.0.5 annotated-types-0.8.0 anyio-4.15.1 bottle-0.13.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.2 click-8.5.0 clr_loader-0.3.1 et-xmlfile-2.0.0 fastapi-0.143.2 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.20 lxml-6.1.3 numpy-2.0.2 openpyxl-3.1.5 opentelemetry-api-1.45.1 orjson-3.13.0 pandas-2.2.3 pillow-12.3.0 proxy_tools-0.1.0 pycparser-3.11 pydantic-2.14.1 pydantic-core-2.50.1 python-dateutil-2.9.0.post0 python-docx-1.2.0 pythonnet-3.2.1 pytz-2026.5 pywebview-6.2.1 reportlab-5.0.1 requests-2.34.2 six-1.17.0 starlette-1.8.0 typing-inspection-0.4.4 typing_extensions-4.16.0 tzdata-2026.5 urllib3-2.8.0 uvicorn-0.54.0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1292756Z ##[group]Run set +e
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1293057Z ^[[36;1mset +e^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1293373Z ^[[36;1mpython dev/run_all_tests.py 2>&1 | tee "$RUNNER_TEMP/guards.log"^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1293752Z ^[[36;1mrc=${PIPESTATUS[0]}^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1294032Z ^[[36;1mif [ "$rc" -ne 0 ]; then^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1294302Z ^[[36;1m  echo "===== tail of guard output ====="^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1294602Z ^[[36;1m  tail -n 60 "$RUNNER_TEMP/guards.log"^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1294948Z ^[[36;1m  tail -n 10 "$RUNNER_TEMP/guards.log" | while IFS= read -r l; do^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1295267Z ^[[36;1m    echo "::error title=guards::$l"^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1295554Z ^[[36;1m  done^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1295922Z ^[[36;1mfi^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1296185Z ^[[36;1mexit "$rc"^[[0m
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1332360Z shell: /usr/bin/bash -e {0}
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1332655Z env:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1332941Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1333458Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib/pkgconfig
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1333838Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1334190Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1334542Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.15/x64
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1334866Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.15/x64/lib
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:03.1335185Z ##[endgroup]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8920812Z   OK   structure / undefined-names              rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8921680Z   OK   FTS filter isolation                     rc=0 | 23/23
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8922222Z   OK   codal FTS pipeline + ADB fallback + session window rc=0 | 53 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8922852Z   OK   calendar py<->js categories              rc=0 | 24 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8923415Z   FAIL chart API guard: installed klinecharts v10 exports, no dead legacy path rc=1 | 10/18
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8924058Z          FAIL klinecharts exports registerOverlay()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8924542Z          PASS source imports registerOverlay from klinecharts
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8925032Z          FAIL klinecharts exports registerIndicator()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8925468Z          PASS source imports registerIndicator from klinecharts
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8926081Z          PASS archive/legacy_static/vendor/klinecharts.min.js is gone
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8926690Z          PASS no shipped source reads legacy_static (none)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8927120Z          PASS no candle.candle.* (v10 is candle.bar.*)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8927497Z          PASS no rvToggleLogScale (dead v9 helper)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8927945Z          PASS no crosshair mode 'strong_magnet' (not a v10 key)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8928479Z          FAIL negative control: sensor flags a genuinely-absent export
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8929013Z        
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8929349Z        10/18 passed
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8929968Z   OK   m141/liquidity parity + anti-N+1         rc=0 | 21 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8930533Z   OK   ADB retry/reconnect + wifi restore       rc=0 | 26/26
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8931063Z   OK   triple-confirmation confidence engine    rc=0 | 39 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8932294Z   OK   soft pass/warn/fail/nodata — no hard vetoes rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8933054Z   OK   confidence_engine weekly bucket == chart Saturday bucket rc=0 | 16 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8933670Z   OK   mstat dashboard computed from local market.db rc=0 | 187 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8934588Z   OK   mainwatch rows carry the tape flags, never a fabricated one rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8935893Z   FAIL watchlist store + triple matrix + parity rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8936400Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8945348Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/watchlist_matrix_v973.py", line 286, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8946382Z            _mc = sqlite3.connect('file:market.db?mode=ro', uri=True)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8946950Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8947471Z        sqlite3.OperationalError: unable to open database file
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8948047Z   OK   patch/update system guard                rc=0 | 55/55
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8948824Z   OK   make_patch --from arg parsing            rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8949622Z   OK   delta patch select/apply + fallback      rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8950334Z   OK   fund sheet: سود سهام هرگز «فروش» نمی‌شود rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8950980Z   OK   API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8951734Z   OK   صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8952505Z   OK   هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8953323Z   OK   قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8954190Z   OK   هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8954919Z   OK   سنِ دادهٔ ریلیز سنجیده می‌شود: کهنه=هشدار، کهنه‌تر از baseline=رد rc=0 | 38/38
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8955475Z   OK   ادغامِ کدال: محلیِ تازه‌تر هرگز بازنویسی نمی‌شود rc=0 | 30/30
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8956438Z   OK   ادغامِ market.db: دادهٔ بازارِ کاربر با ارتقا له نمی‌شود rc=0 | 22/22
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8957114Z   OK   پاک‌سازیِ chunkهایِ مردهٔ frontend، با درختِ ساختگی rc=0 | 8/8
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8957842Z   OK   چارتِ یکتا: هر متدِ Chart باید در باندلِ خودش باشد و باندلِ دومی نباشد rc=0 | 3/3
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8958810Z   OK   blank published total refuses a component line for فروش rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8959828Z   OK   board cache is stale-while-revalidate, single-flight, honest on failure rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8960793Z   OK   live 5s board tick: one request, shared row map, closed-window refuses to write rc=0 | 23/23
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8961774Z   OK   server FTS reads the full adjusted series the chart draws, not the starved raw table rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8962669Z   OK   FTS analysis cache key carries the price basis (with a negative control) rc=0 | 9/9
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8963571Z   OK   weekly gate + weekly hourglass stay frozen (measured on real bank rows) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8964614Z   OK   canonical adjustment: mode semantics split, single scaled series, honest fallback rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8966009Z   OK   chart fib belts and setup markers come from the one server engine, over the current wave rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8966726Z   OK   repo hygiene / dead-code stays gone      rc=0 | 123/123
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8967199Z   OK   FTS v10 EPS evidence ladder + partial table row rc=0 | 57/57
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8967871Z   OK   technical setups stay three-state (null != false) and each rule matches the notebook rc=0 | 38/38
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8969061Z   OK   Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority rc=0 | 0/0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8970005Z   OK   FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak rc=0 | 17/17
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8970940Z   OK   trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved rc=0 | 8/8
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8972367Z   FAIL candle integrity + published-TSETMC parity along feed → engine → chart rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8973156Z        ??? ?) integrity? ???? ???? ??? ????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8973506Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8974263Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/_audit/candle_integrity_roundj.py", line 49, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8975181Z            rows = con.execute("SELECT symbol, date, open, high, low, close, volume, last, value, src "
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8976117Z                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8976691Z        sqlite3.OperationalError: no such table: price_history
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8977238Z   OK   TSETMC market-cap source of truth + risk filters rc=0 | 72/72
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8978166Z   FAIL screener<->card parity + ind-4 exemption engine vs card rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8978744Z            res = S.get_screener()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8979130Z                  ^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8979847Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/screener.py", line 328, in get_screener
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8980433Z            payload = _screener_cached()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8980832Z                      ^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8981452Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/screener.py", line 395, in _screener_cached
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8982048Z            rows = fts_engine.bulk_scan(conn, cfg=cfg)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8982487Z                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8983075Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/fts_engine.py", line 2562, in bulk_scan
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8983760Z            for sym, pe, pm, title, rev, gp, op, np_, eps, cn, un, tn in conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8984236Z                                                                         ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8984757Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8985659Z   FAIL scan_symbol == bulk_scan on every symbol + raw-threshold boundary rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8986603Z        ? ????? ??? ?????? ? pass=False ? ????? ???? (??????? ??? ?? ????????)   ? (0.33, False)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8987298Z          ? ???????? ??? ?????? ? pass=False ? ????? ????   ? (40.0, False)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8987758Z          ? ????? ?????? ?? ??????? ?? ?? ???? ??? ??????? (???? ????? ?????)   ? pct=40.0 pass=False
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8988395Z          ? ????? ?????? ?? ????? ?????? ?? ??? ??????? ? ???? ???? ?? ???? ??????   ? ratio=0.33 sales_pass=False
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8988890Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8989635Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/fts_engine_paths_parity_v1076.py", line 83, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8990455Z            bulk = {r["symbol_norm"]: r for r in F.bulk_scan(conn, cfg=cfg)}
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8990983Z                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8991698Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/fts_engine.py", line 2562, in bulk_scan
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8992465Z            for sym, pe, pm, title, rev, gp, op, np_, eps, cn, un, tn in conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:30.8992994Z                                                                         ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4158316Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4159019Z   OK   materialized fts_results == live evaluate_v10, field by field rc=0 | 109/109
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4159643Z   OK   indicator-3 no-data is 'not measured', never 'rejected' (both cache paths) rc=0 | 10/10
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4160263Z   FAIL codal logic contract F-01..F-05 (amendment) rc=1 | 3 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4160719Z        PASS F-01a ?????? ???????? ????? ??????? ??????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4161362Z          PASS F-01a ?????? ???????? ???? ?? ??????? ?????? (?/? ????)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4161733Z          PASS F-01a ????? ????? ????? ?????? ????? ???????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4162127Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4162894Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_logic_guard.py", line 184, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4163336Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4163604Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4164238Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_logic_guard.py", line 58, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4164740Z            cons = conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4165036Z                   ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4165396Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4166060Z   OK   FTS v2.2 db contract: writer/reader/schema agree rc=0 | 36 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4166579Z   OK   all six version anchors state the same release rc=0 | 1 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4167094Z   OK   FTS guide defaults: FE drawer mirrors the server rc=0 | 70 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4167631Z   OK   hourglass RSI period, oversold threshold and MA52 mode are configurable rc=0 | 17 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4168181Z   OK   weekly downtrend/neutral is a hard veto; no-data is not rc=0 | 12 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4168762Z   OK   assembly veto: fresh outside the cache, no-data is not a veto rc=0 | 42 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4169831Z   OK   weekly trend verdict from live pivots or the recent window, never a stale pivot rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4170543Z   OK   FTS engine publishes no made-up numbers (week, fib, stop, MA52, na) rc=0 | 1 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4171158Z   OK   market.db re-extracts on a new bundled baseline rc=0 | 11 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4171725Z   OK   pack refuses a baseline with fewer rows than the committed one rc=0 | 25/25
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4172429Z   OK   derived columns at insert (backfill selftest) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4173173Z   FAIL incremental sync: new symbol + new monthly report rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4173998Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4174629Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/incremental_sync_resilience.py", line 250, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4175105Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4175338Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4176113Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/incremental_sync_resilience.py", line 60, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4176917Z            fs_before = conn.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4177429Z                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4177905Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4178511Z   FAIL R1/R2 housekeeping: dedupe + prev-year backfill rc=1 | 0 pass / 1 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4179241Z        [FAIL] market.db.lzma not found: /home/runner/work/BorsTerminal-src/BorsTerminal-src/market.db.lzma
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4179950Z   OK   onedir build contract: hiddenimports + shape rc=0 | 1 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4180694Z   OK   live board audit: zero-volume / no-CT edge cases rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4181249Z   OK   Windows + GPU/software-render guard      rc=0 | 23 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4181713Z   OK   log has a clock and survives a hard death rc=0 | 12 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4182083Z   OK   candle fidelity: geometry repair + anchored adjustment rc=0 | 23/23
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4182539Z   OK   live candle: session date, both chart endpoints, cache untouched rc=0 | 46/46
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4183255Z   OK   candles from the board table + geometry repair + no prune-before-fetch rc=0 | 41/41
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4183840Z   OK   last/closing are separate columns; no fabricated last, anchor untouched rc=0 | 19/19
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4184481Z   OK   single price resolver (last|closing) + adjustment anchor invariance rc=0 | 45/45
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4184974Z   OK   no history pruning, incremental sync, idempotent second run rc=0 | 13/13
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4185444Z   OK   one candle contract: shared geometry, writer priority, same numbers from every source rc=0 | 22/22
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4186168Z   OK   adjustment also from restated close on zero-volume rows; four negative controls rc=0 | 14/14
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4186643Z   OK   one notice = one extraction; shared period never blocks another symbol rc=0 | 75/75
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4187294Z   FAIL one canonical period rule; SQL and Python agree; every consumer sees one count rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4188179Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_period_canonical_v1075.py", line 337, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4188779Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4189077Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4189513Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_period_canonical_v1075.py", line 331, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4190349Z            test_real_db()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4191001Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_period_canonical_v1075.py", line 266, in test_real_db
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4191630Z            return test_one_number(conn, "market.db ?????")
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4192020Z                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4192674Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_period_canonical_v1075.py", line 222, in test_one_number
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4193505Z            for sym in {r[0] for r in conn.execute("SELECT DISTINCT symbol FROM financial_statements")}:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4194068Z                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4194546Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4195711Z   FAIL one reference-row rule for quarters; digit script never decides; losers preserved rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4196607Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4197338Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_reference_select_v1088.py", line 579, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4198046Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4198362Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4198974Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_reference_select_v1088.py", line 573, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4199585Z            fn()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4200264Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_reference_select_v1088.py", line 367, in t8_real_bank_spot_check
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4200973Z            syms = [r["symbol"] for r in conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4201330Z                                         ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4201794Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4202212Z   OK   notice identity = tracing_no; re-ingest never adds or deletes a row rc=0 | 13/13
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4202685Z   FAIL notebook numeric examples reproduce; its two internal conflicts stay open rc=1 | 35/45
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4203082Z          ? 5) industry_table_p06.png   ? size=0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4203350Z          ? 5) four_dimensions_p06.png   ? size=0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4203640Z          ? 5) ?????? ????????? ?????? ??? ???? ???
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4203906Z        
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4204120Z        ? ?????? ???? (?????? ???? ????)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4204493Z          ? ?????? ????: ?? ????? ?????? ?? ????? ?????? ???????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4204756Z          ? ?????? ????: ???? ??????? ???? ?????? ????? ???? ??????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4205057Z          ? ?????? ????: `pct` ???? ?? ?? ???? ??????? ?? ?????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4205331Z          ? ?????? ????: `fa` ???? ????? ?? ???? ??????? (????????? ???)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4205670Z          ? ?????? ????: `fa` ???? ????? ???? ???? ?? ???????? ? ?? ???????? ?????? fa ?? ???? ASCII ????? ???????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4206202Z        
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4206474Z        fts_notebook_examples_v1089: 35 passed / 10 failed
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4207096Z   FAIL newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4207534Z        
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4207772Z        ? 4) ?????? SQL ? ????? ?????? ???? ?? ?????? ??????? ????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4208050Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4208547Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_publish_date_v1089.py", line 256, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4208984Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4209197Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4209594Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_publish_date_v1089.py", line 246, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4210060Z            t4_sql_python_agreement(os.path.abspath(a.db).replace("\\", "/"))
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4210575Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_publish_date_v1089.py", line 137, in t4_sql_python_agreement
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4211126Z            for (raw,) in c.execute("SELECT DISTINCT publish_date FROM codal_notices"):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4211474Z                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4211823Z        sqlite3.OperationalError: no such table: codal_notices
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4212242Z   OK   one canonical symbol-identity layer; ISIN gate; card and bulk see the same rows rc=0 | 52/52
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4212876Z   FAIL one money-unit definition; per-row scale; unitless never becomes a fabricated rial number rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4213338Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4213829Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_unit_scale_v1090.py", line 268, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4214299Z            raise SystemExit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4214545Z                             ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4214935Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/codal_unit_scale_v1090.py", line 229, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4215412Z            n_rows, n_syms = c.execute("SELECT COUNT(*), COUNT(DISTINCT symbol) FROM "
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:04:47.4215961Z                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9944863Z        sqlite3.OperationalError: no such table: financial_statements
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9946308Z   FAIL five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9946811Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9947420Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/fts_indicator_contract_v1091.py", line 197, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9947889Z            raise SystemExit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9948192Z                             ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9948637Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/fts_indicator_contract_v1091.py", line 74, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9949123Z            mcap, sector, total, _info = F._fts_market_ctx(conn, sym)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9949468Z                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9949929Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/fundamental.py", line 2553, in _fts_market_ctx
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9950412Z            row = conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9950666Z                  ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9950943Z        sqlite3.OperationalError: no such table: instruments
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9951374Z   OK   durable codal queue: states, checkpoint, backoff, claim race, restart recovery rc=0 | 42/42
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9951950Z   OK   automatic codal notice discovery: durable id checkpoint, late/revision/no-dup/network-failure rc=0 | 45/45
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9952579Z   OK   instrument universe ledger: new/rename/id-change/deactivated/removed, non-company classes held out rc=0 | 39/39
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9953165Z   OK   ui-independent scheduler: dynamic wakeup, crawler-busy yield, single worker, deferred recalc, offline CLI rc=0 | 47/47
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9953785Z   OK   incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds rc=0 | 27/27
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9954401Z   OK   process probe: ttl + stale-while-revalidate + single-flight, endpoint payload and semantics unchanged rc=0 | 12/12
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9955023Z   OK   mstat panels: stale-while-revalidate + stale cap + single-flight, errors never cached, 3 negative controls rc=0 | 16/16
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9955590Z   OK   watchlist export: real xlsx/csv round-trip, numeric cells, nulls, provenance sheet, input gates rc=0 | 33/33
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9956322Z   OK   per-capita sell reaches the wire: drop-list, shared zero-denominator rule, schema and export column rc=0 | 16/16
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9956860Z   OK   the identity guard really detects the six historical defects (mutation control) rc=0 | 9/9
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9957309Z   OK   board-class digit suffix resolves only with ISIN evidence rc=0 | 9/9
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9957774Z   OK   fresh data invalidates the dependent caches; no crawler child in the frozen build rc=0 | 19/19
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9958257Z   OK   indicator math: MA divisor, Wilder RSI seed, and FTS last/closing are oracle-exact rc=0 | 28/28
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9958733Z   OK   pulse scopes match tradersarena + no half-written market total rc=0 | 66/66
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9959144Z   OK   tape filters: five formulas match the notebook rc=0 | 221/221
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9959529Z   OK   tape smart-money: two new file filters, one canonical judge rc=0 | 48/48
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9960077Z   OK   tape flag history: per-day record, no double count, honest gaps rc=0 | 40/40
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9960451Z   OK   fts trend fixtures: weekly gate beats daily setup rc=0 | 23/23
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9960847Z   OK   tsetmc p0: native client values, corporate events, state rc=0 | 165/165
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9961429Z   OK   real/legal share: value basis, both sides independent, no volume estimate rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9962153Z   OK   screener candidate = tape∧technicalfundamental pass; no bypass door rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9962912Z   FAIL notification centre: codal-only source, explainable levels, dedupe rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9963321Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9965522Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/test_notifications_v1.py", line 155, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9966199Z            real["count"])
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9966480Z            ~~~~^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9966777Z        KeyError: 'count'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9967386Z   OK   session phase from the official market state; no verdict without a phase rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9968221Z   OK   time-aware market state: staged verdict, one-sided partial liquidity, no lookahead rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9969036Z   OK   portable mode: explicit marker, isolated data/port, never spawns the installer rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9969746Z   OK   single writer: one backend per market.db rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9970368Z   OK   funnel registry: every txt filter pinned to its source rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9970933Z   OK   funnel engine: ordered intersection, weekly gate, fund modes rc=0 | 12 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9971462Z   OK   funnel presets: distinct chains, gates AND distinct engine output rc=0 | 12/12
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9971986Z   OK   live trading-status universe: executed vs quoted, dedupe, staleness rc=0 | 17/17
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9972646Z   OK   user watchlist CRUD: get() on a missing row, upsert identity, cap layering rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9973445Z   FAIL trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9973983Z          ok   ?) ????? ????????/????? ? `na`? ????????? ???? UP/DOWN ?????? ???????
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9974303Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9974779Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/fts_trend_pit_v1.py", line 211, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9975448Z            raise SystemExit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9975897Z                             ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9976456Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/fts_trend_pit_v1.py", line 137, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9977028Z            syms = pick_symbols(conn, a.symbols)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9977375Z                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9977976Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/fts_trend_pit_v1.py", line 81, in pick_symbols
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9978579Z            rows = conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9978891Z                   ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9979254Z        sqlite3.OperationalError: no such table: price_history
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9979739Z   OK   sarkhati: broker contract on mock, no blind retry rc=0 | 20/20
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9980270Z   OK   sarkhati: monotonic-anchored scheduler + clock quality rc=0 | 32/32
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9980820Z   OK   sarkhati: phased latency probe, no fabricated estimate rc=0 | 21/21
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9981249Z   OK   sarkhati: dry-run default, reconcile-only after unknown, limits rc=0 | 44/44
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9981924Z   FAIL sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door rc=1 | 45/47
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9982319Z        45 passed / 2 failed
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9982930Z        /opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9983647Z          from starlette.testclient import TestClient as TestClient  # noqa
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9983975Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9984504Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/execution_ledger_v1108.py", line 444, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9984976Z            fn()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9985370Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/execution_ledger_v1108.py", line 366, in test_http_door
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9986114Z            ex = EX._SERVICE.execute(EX._SERVICE.prepare(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9986410Z                                     ^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9986835Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/execution_service.py", line 358, in prepare
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9987397Z            raise ExecutionError(_code_for(p), "preflight failed", checks=p.checks)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9987785Z        execution_service.ExecutionError: NOT_ORDERABLE: preflight failed
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9988277Z   FAIL easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend rc=1 | 1 pass / 1 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9988678Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9988911Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9989339Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 952, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9989753Z            part_door()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9990188Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 820, in part_door
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9990620Z            _with_easytrader(happy)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9991060Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 546, in _with_easytrader
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9991535Z            fn(adapter, broker, ledger)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9992214Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 591, in happy
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9992916Z            ck((prep["wire_preview"] or {}).get("order", {}).get("symbolIsin")
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9993340Z                ~~~~^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9993676Z        KeyError: 'wire_preview'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9994375Z   OK   bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session rc=0 | 68/68
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9995193Z   OK   trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery rc=0 | 54/54
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:09.9996052Z   OK   harness: guard outputs are actually counted, silence is reported as silence rc=0 | 33/33
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9828193Z   OK   persian text: no stray CJK, no eaten section digit rc=0 | 4/4
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9828889Z   OK   sarkhati: order state + queue position, never a fabricated zero rc=0 | 24/24
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9829768Z   FAIL board history windows: materialized == inline rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9830219Z        table instruments is gone from the schema source ? guard is stale
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9830731Z   OK   hot state: field-aware diff, RAM==SQL board, honest delta rc=0 | 51/51
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9831419Z   FAIL sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9832344Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 760, in _board_frame
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9833127Z            df = _board_query_frame(conn)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9833420Z                 ^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9833993Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 692, in _board_query_frame
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9834510Z            ensure_board_history(conn)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9835054Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 591, in ensure_board_history
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9835699Z            sig = _history_signature(conn)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9836203Z                  ^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9836826Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 527, in _history_signature
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9837545Z            row = conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9837841Z                  ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9838215Z        sqlite3.OperationalError: no such table: market_watch
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9838772Z   OK   board freshness: session day + abstaining market pulse rc=0 | 24/24
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9839332Z   OK   portfolio weights: value-based + no fake zero rc=0 | 77/77
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9839862Z   OK   boot page: real download/extract progress, RTL page, handoff + error rc=0 | 0/0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9840625Z   OK   fixture: fts_v10 payloads                rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9841189Z   OK   FTS v10 fundamental table UI render (headless) rc=0 | 17 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9841751Z   OK   FTS CODAL settings panel: validate + storage + apply rc=0 | 45 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9842079Z 
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9842243Z 91 suite counted, 43 silent (exit-code only)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9852639Z   silent: structure / undefined-names, soft pass/warn/fail/nodata — no hard vetoes, mainwatch rows carry the tape flags, never a fabricated one, watchlist store + triple matrix + parity, make_patch --from arg parsing, delta patch select/apply + fallback, fund sheet: سود سهام هرگز «فروش» نمی‌شود, API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست, صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر), هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs), قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی), هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب), blank published total refuses a component line for فروش, board cache is stale-while-revalidate, single-flight, honest on failure, server FTS reads the full adjusted series the chart draws, not the starved raw table, weekly gate + weekly hourglass stay frozen (measured on real bank rows), canonical adjustment: mode semantics split, single scaled series, honest fallback, chart fib belts and setup markers come from the one server engine, over the current wave, candle integrity + published-TSETMC parity along feed → engine → chart, screener<->card parity + ind-4 exemption engine vs card, scan_symbol == bulk_scan on every symbol + raw-threshold boundary, weekly trend verdict from live pivots or the recent window, never a stale pivot, derived columns at insert (backfill selftest), incremental sync: new symbol + new monthly report, live board audit: zero-volume / no-CT edge cases, one canonical period rule; SQL and Python agree; every consumer sees one count, one reference-row rule for quarters; digit script never decides; losers preserved, newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace, one money-unit definition; per-row scale; unitless never becomes a fabricated rial number, five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded, real/legal share: value basis, both sides independent, no volume estimate, screener candidate = tape∧technicalfundamental pass; no bypass door, notification centre: codal-only source, explainable levels, dedupe, session phase from the official market state; no verdict without a phase, time-aware market state: staged verdict, one-sided partial liquidity, no lookahead, portable mode: explicit marker, isolated data/port, never spawns the installer, single writer: one backend per market.db, funnel registry: every txt filter pinned to its source, user watchlist CRUD: get() on a missing row, upsert identity, cap layering, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, board history windows: materialized == inline, sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding, fixture: fts_v10 payloads
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9860547Z 
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9864550Z FAILED: chart API guard: installed klinecharts v10 exports, no dead legacy path, watchlist store + triple matrix + parity, candle integrity + published-TSETMC parity along feed → engine → chart, screener<->card parity + ind-4 exemption engine vs card, scan_symbol == bulk_scan on every symbol + raw-threshold boundary, codal logic contract F-01..F-05 (amendment), incremental sync: new symbol + new monthly report, R1/R2 housekeeping: dedupe + prev-year backfill, one canonical period rule; SQL and Python agree; every consumer sees one count, one reference-row rule for quarters; digit script never decides; losers preserved, notebook numeric examples reproduce; its two internal conflicts stay open, newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace, one money-unit definition; per-row scale; unitless never becomes a fabricated rial number, five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded, notification centre: codal-only source, explainable levels, dedupe, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door, easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend, board history windows: materialized == inline, sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9881483Z ===== tail of guard output =====
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9906166Z   OK   sarkhati: phased latency probe, no fabricated estimate rc=0 | 21/21
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9906837Z   OK   sarkhati: dry-run default, reconcile-only after unknown, limits rc=0 | 44/44
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9907361Z   FAIL sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door rc=1 | 45/47
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9907742Z        45 passed / 2 failed
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9908363Z        /opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9909343Z          from starlette.testclient import TestClient as TestClient  # noqa
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9909791Z        Traceback (most recent call last):
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9910531Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/execution_ledger_v1108.py", line 444, in <module>
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9911040Z            fn()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9911446Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/execution_ledger_v1108.py", line 366, in test_http_door
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9912109Z            ex = EX._SERVICE.execute(EX._SERVICE.prepare(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9912454Z                                     ^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9912883Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/execution_service.py", line 358, in prepare
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9913382Z            raise ExecutionError(_code_for(p), "preflight failed", checks=p.checks)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9913766Z        execution_service.ExecutionError: NOT_ORDERABLE: preflight failed
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9914249Z   FAIL easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend rc=1 | 1 pass / 1 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9914667Z            sys.exit(main())
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9914936Z                     ^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9915333Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 952, in main
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9915903Z            part_door()
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9916350Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 820, in part_door
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9916906Z            _with_easytrader(happy)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9917481Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 546, in _with_easytrader
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9917930Z            fn(adapter, broker, ledger)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9918333Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/dev/easytrader_adapter_v1113.py", line 591, in happy
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9918823Z            ck((prep["wire_preview"] or {}).get("order", {}).get("symbolIsin")
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9919217Z                ~~~~^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9919467Z        KeyError: 'wire_preview'
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9920054Z   OK   bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session rc=0 | 68/68
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9920710Z   OK   trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery rc=0 | 54/54
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9921246Z   OK   harness: guard outputs are actually counted, silence is reported as silence rc=0 | 33/33
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9921747Z   OK   persian text: no stray CJK, no eaten section digit rc=0 | 4/4
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9922381Z   OK   sarkhati: order state + queue position, never a fabricated zero rc=0 | 24/24
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9923141Z   FAIL board history windows: materialized == inline rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9923677Z        table instruments is gone from the schema source ? guard is stale
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9924113Z   OK   hot state: field-aware diff, RAM==SQL board, honest delta rc=0 | 51/51
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9924689Z   FAIL sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding rc=1 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9925269Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 760, in _board_frame
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9925667Z            df = _board_query_frame(conn)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9926143Z                 ^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9926570Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 692, in _board_query_frame
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9927051Z            ensure_board_history(conn)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9927476Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 591, in ensure_board_history
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9927876Z            sig = _history_signature(conn)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9928152Z                  ^^^^^^^^^^^^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9928577Z          File "/home/runner/work/BorsTerminal-src/BorsTerminal-src/api/market.py", line 527, in _history_signature
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9929027Z            row = conn.execute(
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9929268Z                  ^^^^^^^^^^^^^
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9929793Z        sqlite3.OperationalError: no such table: market_watch
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9930270Z   OK   board freshness: session day + abstaining market pulse rc=0 | 24/24
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9930781Z   OK   portfolio weights: value-based + no fake zero rc=0 | 77/77
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9931305Z   OK   boot page: real download/extract progress, RTL page, handoff + error rc=0 | 0/0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9932023Z   OK   fixture: fts_v10 payloads                rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9932576Z   OK   FTS v10 fundamental table UI render (headless) rc=0 | 17 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9933144Z   OK   FTS CODAL settings panel: validate + storage + apply rc=0 | 45 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9933443Z 
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9933601Z 91 suite counted, 43 silent (exit-code only)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9940786Z   silent: structure / undefined-names, soft pass/warn/fail/nodata — no hard vetoes, mainwatch rows carry the tape flags, never a fabricated one, watchlist store + triple matrix + parity, make_patch --from arg parsing, delta patch select/apply + fallback, fund sheet: سود سهام هرگز «فروش» نمی‌شود, API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست, صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر), هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs), قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی), هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب), blank published total refuses a component line for فروش, board cache is stale-while-revalidate, single-flight, honest on failure, server FTS reads the full adjusted series the chart draws, not the starved raw table, weekly gate + weekly hourglass stay frozen (measured on real bank rows), canonical adjustment: mode semantics split, single scaled series, honest fallback, chart fib belts and setup markers come from the one server engine, over the current wave, candle integrity + published-TSETMC parity along feed → engine → chart, screener<->card parity + ind-4 exemption engine vs card, scan_symbol == bulk_scan on every symbol + raw-threshold boundary, weekly trend verdict from live pivots or the recent window, never a stale pivot, derived columns at insert (backfill selftest), incremental sync: new symbol + new monthly report, live board audit: zero-volume / no-CT edge cases, one canonical period rule; SQL and Python agree; every consumer sees one count, one reference-row rule for quarters; digit script never decides; losers preserved, newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace, one money-unit definition; per-row scale; unitless never becomes a fabricated rial number, five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded, real/legal share: value basis, both sides independent, no volume estimate, screener candidate = tape∧technicalfundamental pass; no bypass door, notification centre: codal-only source, explainable levels, dedupe, session phase from the official market state; no verdict without a phase, time-aware market state: staged verdict, one-sided partial liquidity, no lookahead, portable mode: explicit marker, isolated data/port, never spawns the installer, single writer: one backend per market.db, funnel registry: every txt filter pinned to its source, user watchlist CRUD: get() on a missing row, upsert identity, cap layering, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, board history windows: materialized == inline, sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding, fixture: fts_v10 payloads
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9950730Z 
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9955088Z FAILED: chart API guard: installed klinecharts v10 exports, no dead legacy path, watchlist store + triple matrix + parity, candle integrity + published-TSETMC parity along feed → engine → chart, screener<->card parity + ind-4 exemption engine vs card, scan_symbol == bulk_scan on every symbol + raw-threshold boundary, codal logic contract F-01..F-05 (amendment), incremental sync: new symbol + new monthly report, R1/R2 housekeeping: dedupe + prev-year backfill, one canonical period rule; SQL and Python agree; every consumer sees one count, one reference-row rule for quarters; digit script never decides; losers preserved, notebook numeric examples reproduce; its two internal conflicts stay open, newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace, one money-unit definition; per-row scale; unitless never becomes a fabricated rial number, five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded, notification centre: codal-only source, explainable levels, dedupe, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door, easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend, board history windows: materialized == inline, sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9973793Z ##[error]  OK   portfolio weights: value-based + no fake zero rc=0 | 77/77
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9980638Z ##[error]  OK   boot page: real download/extract progress, RTL page, handoff + error rc=0 | 0/0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9982301Z ##[error]  OK   fixture: fts_v10 payloads                rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9983517Z ##[error]  OK   FTS v10 fundamental table UI render (headless) rc=0 | 17 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9984731Z ##[error]  OK   FTS CODAL settings panel: validate + storage + apply rc=0 | 45 pass / 0 fail
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9986773Z ##[error]91 suite counted, 43 silent (exit-code only)
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:17.9999918Z ##[error]  silent: structure / undefined-names, soft pass/warn/fail/nodata — no hard vetoes, mainwatch rows carry the tape flags, never a fabricated one, watchlist store + triple matrix + parity, make_patch --from arg parsing, delta patch select/apply + fallback, fund sheet: سود سهام هرگز «فروش» نمی‌شود, API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست, صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر), هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs), قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی), هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب), blank published total refuses a component line for فروش, board cache is stale-while-revalidate, single-flight, honest on failure, server FTS reads the full adjusted series the chart draws, not the starved raw table, weekly gate + weekly hourglass stay frozen (measured on real bank rows), canonical adjustment: mode semantics split, single scaled series, honest fallback, chart fib belts and setup markers come from the one server engine, over the current wave, candle integrity + published-TSETMC parity along feed → engine → chart, screener<->card parity + ind-4 exemption engine vs card, scan_symbol == bulk_scan on every symbol + raw-threshold boundary, weekly trend verdict from live pivots or the recent window, never a stale pivot, derived columns at insert (backfill selftest), incremental sync: new symbol + new monthly report, live board audit: zero-volume / no-CT edge cases, one canonical period rule; SQL and Python agree; every consumer sees one count, one reference-row rule for quarters; digit script never decides; losers preserved, newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace, one money-unit definition; per-row scale; unitless never becomes a fabricated rial number, five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded, real/legal share: value basis, both sides independent, no volume estimate, screener candidate = tape∧technicalfundamental pass; no bypass door, notification centre: codal-only source, explainable levels, dedupe, session phase from the official market state; no verdict without a phase, time-aware market state: staged verdict, one-sided partial liquidity, no lookahead, portable mode: explicit marker, isolated data/port, never spawns the installer, single writer: one backend per market.db, funnel registry: every txt filter pinned to its source, user watchlist CRUD: get() on a missing row, upsert identity, cap layering, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, board history windows: materialized == inline, sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding, fixture: fts_v10 payloads
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0015156Z ##[error]FAILED: chart API guard: installed klinecharts v10 exports, no dead legacy path, watchlist store + triple matrix + parity, candle integrity + published-TSETMC parity along feed → engine → chart, screener<->card parity + ind-4 exemption engine vs card, scan_symbol == bulk_scan on every symbol + raw-threshold boundary, codal logic contract F-01..F-05 (amendment), incremental sync: new symbol + new monthly report, R1/R2 housekeeping: dedupe + prev-year backfill, one canonical period rule; SQL and Python agree; every consumer sees one count, one reference-row rule for quarters; digit script never decides; losers preserved, notebook numeric examples reproduce; its two internal conflicts stay open, newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace, one money-unit definition; per-row scale; unitless never becomes a fabricated rial number, five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded, notification centre: codal-only source, explainable levels, dedupe, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door, easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend, board history windows: materialized == inline, sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0021481Z ##[error]Process completed with exit code 1.
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0144396Z Post job cleanup.
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0797177Z [command]/usr/bin/git version
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0833484Z git version 2.55.0
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0864960Z Temporarily overriding HOME='/home/runner/work/_temp/09b67f9a-67dd-49a7-ba35-996c1099dec7' before making global git config changes
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0865886Z Adding repository directory to the temporary git global config as a safe directory
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0869790Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/BorsTerminal-src/BorsTerminal-src
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0899100Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.0927281Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1089081Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1109334Z http.https://github.com/.extraheader
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1121980Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1162490Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1325935Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1350284Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1625538Z Cleaning up orphan processes
+offline guard suites (python dev/run_all_tests.py)	UNKNOWN STEP	2026-10-15T14:05:18.1863744Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

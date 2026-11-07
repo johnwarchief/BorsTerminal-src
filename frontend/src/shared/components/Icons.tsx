@@ -112,6 +112,16 @@ export function StatusIcon({ className, size = 16 }: IconProps) {
   );
 }
 
+/** رعدِ «سرخطی» — نشانۀِ ناوبریِ تبِّ سفارشِ سریع. هیچ شمارۀِ «پیشیِ صف» یا
+ *  ادعایِ سرعتی درِ این SVG نیست؛ فقط شکل. */
+export function BoltIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M13 2 4 14h6l-1 8 9-12h-6z" />
+    </svg>
+  );
+}
+
 /** زنگولۀِ مرکزِ اعلان — فقط نشانۀِ ناوبری است؛ شمارۀِ ناخوانده درِ خودِ
  *  ناوبری وِژه می‌گیرد، نه درِ این SVG. */
 export function BellIcon({ className, size = 16 }: IconProps) {
@@ -154,6 +164,35 @@ export function LoaderIcon({ className, size = 14 }: IconProps) {
   return (
     <svg {...SVG_PROPS} className={`animate-spin ${className ?? ''}`} width={size} height={size}>
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+// سه نشانۀِ خطِ جریانِ «سرخطی» (SarkhatiPipeline). تا پیش از این جایِ اینها
+// یونیکدِ ✓ ✕ ? درِ متنِ فارسی می‌نشست — وزنِ قلمِ آن علامت‌ها باِ بقیۀِ آیکون‌ها
+// یکی نیست و درِ فارسی جابه‌جا چاپ می‌شوند. اینجا همان viewBox/سروکِ ۲ است.
+export function CheckIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="m5 13 4 4L19 7" />
+    </svg>
+  );
+}
+
+export function LockIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+export function HelpIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M9.2 9a2.9 2.9 0 1 1 4.2 2.6c-.9.5-1.4 1.1-1.4 2.1v.5" />
+      <path d="M12 18.4h.01" />
     </svg>
   );
 }

@@ -1,0 +1,30 @@
+{
+ "schema": "ra365-correction-pack-v1",
+ "correction_version": "ra365-r32b-v1",
+ "created_at": "2026-10-25T17:22:36+00:00",
+ "tool": "tools/ra365_round32b_audit.py",
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "reference_types": [
+  "type0:raw",
+  "type7:functional"
+ ],
+ "product": "D:/BorsTerminal-tmp/r29_bench/full_shard0,D:/BorsTerminal-tmp/r29_bench/full_shard1,D:/BorsTerminal-tmp/r29_bench/full_shard2,D:/BorsTerminal-tmp/r29_bench/full_shard3,D:/BorsTerminal-tmp/r29_bench/full_shard4,D:/BorsTerminal-tmp/r29_bench/full_shard5",
+ "assets_paired": 1989,
+ "factor_corrections": {
+  "replace_step": 6529,
+  "suppress_step": 139
+ },
+ "raw_field_corrections": {
+  "close": 1587,
+  "last": 457,
+  "low_raw": 503,
+  "low": 511,
+  "open": 904,
+  "high_raw": 770,
+  "high": 751
+ },
+ "factor_correction_semantics": "replace_step: suppress every product event on effective_date and insert one step with target_ratio; suppress_step: suppress product events on effective_date. The target ratio is derived from the frozen reference factor (type7/type0) and verified against open/high/low/close; max_field_dev records the worst field deviation. Corrections are applied after the canonical event chain, before chain_factors.",
+ "raw_correction_semantics": "Per-field historical value from the frozen reference type0 bar. Applied to the displayed candle only, after factor computation; corporate events are never rewritten by raw corrections.",
+ "usage": "Derived factor steps and sparse per-field corrections only; the raw reference series is not redistributed. Source is the owner-authenticated frozen Rahavard snapshot."
+}

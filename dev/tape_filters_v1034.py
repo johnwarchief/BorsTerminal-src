@@ -504,8 +504,19 @@ def main():
 
     screen_ts = read(os.path.join(ROOT, "frontend", "src", "features", "fundamental", "ui",
                                   "FtsScreenTable.tsx"))
-    ck("r.tech_jet === true" in screen_ts and "jet: base.filter((r) => r.i1_pass" not in screen_ts,
-       "چیپ «نامزدهای ستاپ جت» واقعاً ستاپِ جت را می‌شمارد، نه شاخص ۱ را")
+    # Task 9: بج/چیپ‌هایِ تکنیکال (ساعت شنی، جت، وتوی روند، کاندیدِ قیف) از جدولِ
+    # بنیادی حذف شدند؛ فیلدهایشان در useFtsScreen برایِ تبِ تکنیکال می‌ماند.
+    # بازگشتِ هر خوانشِ تکنیکال یا چیپِ «نامزدهای ستاپ جت» باید همین‌جا قرمز شود.
+    tech_reads = [f for f in ("tech_jet", "tech_hourglass", "tech_matrix_desc",
+                              "tech_matrix_decision", "funnel_candidate")
+                  if f in screen_ts]
+    ck(not tech_reads and "نامزدهای ستاپ جت" not in screen_ts
+       and "strategicPreset === 'jet'" not in screen_ts,
+       "جدولِ بنیادی هیچ فیلدِ تکنیکال نمی‌خواند و چیپ/پریستِ جت را ندارد (Task 9)",
+       "leaked=" + ",".join(tech_reads))
+    ck("pickAssemblyBadge" in screen_ts and "pickCapitalBadge" in screen_ts
+       and "row-assembly-veto-badge" in screen_ts,
+       "بجِ مجمع و برچسبِ افزایش سرمایه در جدولِ بنیادی مانده‌اند (Task 9)")
 
     # ── ۱۰) پنجرۀ [ih]: منبع، نوشتنِ اتمی، و سِنٍّ صادق ────────────────────
     # هر چه بالا ساختارِ درست است، ولی اگر جدولِ [ih] خالی بماند یا نیمه‌کاره

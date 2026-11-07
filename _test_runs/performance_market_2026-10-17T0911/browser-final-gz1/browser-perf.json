@@ -1,0 +1,512 @@
+{
+  "ran_at": "2026-10-17T12:24:39.678Z",
+  "base": "http://127.0.0.1:8020",
+  "window_s": 90,
+  "results": [
+    {
+      "label": "market-1366x768",
+      "route": "/market",
+      "viewport": "1366x768",
+      "window_s": 90,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 7,
+      "requests_per_min": 4.7,
+      "transfer_bytes_total": 2124415,
+      "responses_304": 0,
+      "requests_with_inm": 0,
+      "by_path": [
+        {
+          "path": "/api/market",
+          "n": 1,
+          "bytes": 1503653,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {
+            "HIT": 1
+          },
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/funnel",
+          "n": 1,
+          "bytes": 468374,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "POST": 1
+          },
+          "xc": {
+            "MISS": 1
+          },
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/screener",
+          "n": 1,
+          "bytes": 145165,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 1,
+          "bytes": 6725,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 1,
+          "bytes": 374,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        },
+        {
+          "path": "/api/update/version",
+          "n": 1,
+          "bytes": 73,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        },
+        {
+          "path": "/api/watchlist",
+          "n": 1,
+          "bytes": 51,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 90,
+      "scrollBefore": 90,
+      "domNodes": 1447,
+      "rows": 0,
+      "perf": {
+        "longTasks": 12,
+        "longTotalMs": 2022,
+        "maxLongMs": 559,
+        "mutations": 68,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 1980,
+            "dur": 559
+          },
+          {
+            "at": 3189,
+            "dur": 381
+          },
+          {
+            "at": 1792,
+            "dur": 185
+          },
+          {
+            "at": 3571,
+            "dur": 160
+          },
+          {
+            "at": 780,
+            "dur": 158
+          }
+        ]
+      }
+    },
+    {
+      "label": "master-1366x768",
+      "route": "/master",
+      "viewport": "1366x768",
+      "window_s": 90,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 6,
+      "requests_per_min": 4,
+      "transfer_bytes_total": 2124353,
+      "responses_304": 0,
+      "requests_with_inm": 0,
+      "by_path": [
+        {
+          "path": "/api/market",
+          "n": 1,
+          "bytes": 1503653,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {
+            "STALE": 1
+          },
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/funnel",
+          "n": 1,
+          "bytes": 468363,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "POST": 1
+          },
+          "xc": {
+            "MISS": 1
+          },
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/screener",
+          "n": 1,
+          "bytes": 145165,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 1,
+          "bytes": 6725,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 1,
+          "bytes": 374,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        },
+        {
+          "path": "/api/update/version",
+          "n": 1,
+          "bytes": 73,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 0,
+      "scrollBefore": 0,
+      "domNodes": 337,
+      "rows": 0,
+      "perf": {
+        "longTasks": 8,
+        "longTotalMs": 1329,
+        "maxLongMs": 435,
+        "mutations": 34,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 4169,
+            "dur": 435
+          },
+          {
+            "at": 222,
+            "dur": 191
+          },
+          {
+            "at": 4003,
+            "dur": 163
+          },
+          {
+            "at": 429,
+            "dur": 141
+          },
+          {
+            "at": 3685,
+            "dur": 128
+          }
+        ]
+      }
+    },
+    {
+      "label": "market-1920x1080",
+      "route": "/market",
+      "viewport": "1920x1080",
+      "window_s": 90,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 8,
+      "requests_per_min": 5.3,
+      "transfer_bytes_total": 2124466,
+      "responses_304": 0,
+      "requests_with_inm": 0,
+      "by_path": [
+        {
+          "path": "/api/market",
+          "n": 1,
+          "bytes": 1503653,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {
+            "STALE": 1
+          },
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/funnel",
+          "n": 1,
+          "bytes": 468374,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "POST": 1
+          },
+          "xc": {
+            "MISS": 1
+          },
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/screener",
+          "n": 1,
+          "bytes": 145165,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 1,
+          "bytes": 6725,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "gzip": 1
+          }
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 1,
+          "bytes": 374,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        },
+        {
+          "path": "/api/watchlist",
+          "n": 2,
+          "bytes": 102,
+          "failed": 0,
+          "n200": 2,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 2
+          },
+          "xc": {},
+          "enc": {
+            "identity": 2
+          }
+        },
+        {
+          "path": "/api/update/version",
+          "n": 1,
+          "bytes": 73,
+          "failed": 0,
+          "n200": 1,
+          "n304": 0,
+          "n_other": 0,
+          "revalidated": 0,
+          "methods": {
+            "GET": 1
+          },
+          "xc": {},
+          "enc": {
+            "identity": 1
+          }
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 400,
+      "scrollBefore": 400,
+      "domNodes": 2184,
+      "rows": 0,
+      "perf": {
+        "longTasks": 11,
+        "longTotalMs": 1747,
+        "maxLongMs": 432,
+        "mutations": 91,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 4690,
+            "dur": 432
+          },
+          {
+            "at": 5123,
+            "dur": 283
+          },
+          {
+            "at": 281,
+            "dur": 199
+          },
+          {
+            "at": 4495,
+            "dur": 171
+          },
+          {
+            "at": 5682,
+            "dur": 159
+          }
+        ]
+      }
+    }
+  ]
+}

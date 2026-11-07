@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { fmtInt } from '@shared/lib/fa';
+import { fmtInt, toFaDigits } from '@shared/lib/fa';
 import type { MarketRow } from '@shared/types/market';
 import { computeFeedStatus } from '@shared/lib/feedFreshness';
 import { csvBlobParts, csvFilename, csvTextWithMeta, saveBlob } from '@shared/lib/tableExport';
@@ -76,10 +76,15 @@ export function BoardPanel({ selectedKey, onSelect, onActivate, onFocusSearch }:
     status: board.status,
     dataUpdatedAt: board.dataUpdatedAt,
     dataChangedAt: board.data?.rev_at,
+    sourceUpdatedAt: board.data?.meta?.live_at ?? null,
     liveCount: board.data?.live_count,
     totalCount: board.data?.count,
     now: Date.now(),
   }), [board.status, board.dataUpdatedAt, board.data]);
+  const lastTick = board.data?.meta?.h_even ?? null;
+  const lastTickLabel = lastTick == null
+    ? null
+    : `${String(lastTick).padStart(6, '0').slice(0, 2)}:${String(lastTick).padStart(6, '0').slice(2, 4)}:${String(lastTick).padStart(6, '0').slice(4, 6)}`;
 
   function pickProfile(next: ProfileKey) {
     setProfile(next);
@@ -250,6 +255,11 @@ export function BoardPanel({ selectedKey, onSelect, onActivate, onFocusSearch }:
           <i className={clsx('h-1.5 w-1.5 flex-none rounded-full', feedStatus.tone)} aria-hidden />
           <span className="max-w-[380px] truncate">{feedStatus.label}</span>
         </span>
+        {lastTickLabel ? (
+          <span data-testid="board-last-tick" className="num text-text-2" title="آخرین تیکِ منبعِ TSE در overlay زنده">
+            آخرین تیک {toFaDigits(lastTickLabel)}
+          </span>
+        ) : null}
         <span dir="ltr">/api/market</span>
         <span>·</span>
         <span>ارزش = میلیارد ریال</span>

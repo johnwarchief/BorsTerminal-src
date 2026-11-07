@@ -1,0 +1,290 @@
+{
+ "schema": "ra365-round32f-formula-audit-v1",
+ "pack": {
+  "path": "data/ra365_corrections/ra365-r32b-v2/factors.jsonl",
+  "sha256": "2194b4dfaaaf851f1256c8227963e089ee1503accc134a22057515fb346dc716",
+  "rows": 6770,
+  "steps": 6631
+ },
+ "official": {
+  "pa": {
+   "rows": 11025,
+   "instruments": 1075,
+   "range": [
+    "2008-11-26",
+    "2026-10-24"
+   ],
+   "files": {
+    "pa_flow1.json": "d532ae20315c101896cdc2a92f6ee2633ab0fbce8b282fc2dc40e7a400080ad3",
+    "pa_flow2.json": "d2232f3efdd387e9f8c9040f356aaa25958523753cb214c67faac8d0149e471d"
+   }
+  },
+  "sh": {
+   "rows": 3592,
+   "instruments": 891,
+   "range": [
+    "2008-12-06",
+    "2026-10-26"
+   ],
+   "files": {
+    "sh_flow1.json": "8ccbd26da38836cad6aabdf6f91b5143ab4388fe4aa141b32e635accbba087b3",
+    "sh_flow2.json": "8e302649460e44697eea8465aec29f7ceb0fc792e012f2c6385022a24231325e"
+   }
+  }
+ },
+ "fund_db": {
+  "db": "fund_test.db",
+  "rows": 2033,
+  "instruments": 49,
+  "files": {
+   "fund_test.db": "f99caefc13c66d49cc98cf991ab026430fe38642fc2af5623391b7180e06f3c5"
+  }
+ },
+ "tolerance_days": 7,
+ "agreement_tolerance": 1e-06,
+ "totals": {
+  "n": 6631,
+  "gt1e-4": 1135,
+  "no_official": 2557,
+  "sh_hit": 1194,
+  "le1e-4": 981,
+  "le1e-6": 809,
+  "pa_hit": 3047,
+  "sh_agree": 661,
+  "exact": 3333,
+  "pa_agree": 90,
+  "no_prod": 373,
+  "fund_hit": 992
+ },
+ "families": {
+  "dps": {
+   "n": 3045,
+   "gt1e-4": 87,
+   "pa_hit": 2861,
+   "exact": 2827,
+   "no_official": 181,
+   "le1e-6": 124,
+   "sh_hit": 87,
+   "pa_agree": 10,
+   "le1e-4": 7
+  },
+  "fund_dps": {
+   "n": 1122,
+   "gt1e-4": 207,
+   "no_official": 1117,
+   "fund_hit": 992,
+   "le1e-4": 787,
+   "exact": 127,
+   "sh_hit": 5,
+   "le1e-6": 1
+  },
+  "share": {
+   "n": 921,
+   "le1e-6": 570,
+   "sh_hit": 663,
+   "sh_agree": 654,
+   "exact": 344,
+   "no_official": 255,
+   "le1e-4": 2,
+   "gt1e-4": 5,
+   "pa_hit": 6
+  },
+  "base_gap": {
+   "n": 549,
+   "gt1e-4": 470,
+   "no_official": 167,
+   "sh_hit": 380,
+   "le1e-4": 72,
+   "le1e-6": 7,
+   "pa_hit": 49,
+   "sh_agree": 4
+  },
+  "unproven_gap": {
+   "n": 448,
+   "le1e-4": 103,
+   "no_official": 447,
+   "le1e-6": 38,
+   "exact": 15,
+   "gt1e-4": 291,
+   "no_prod": 1,
+   "pa_hit": 1
+  },
+  "no_event": {
+   "n": 372,
+   "no_prod": 372,
+   "no_official": 370,
+   "pa_hit": 1,
+   "sh_hit": 1
+  },
+  "pa": {
+   "n": 108,
+   "le1e-6": 69,
+   "pa_hit": 98,
+   "pa_agree": 80,
+   "no_official": 10,
+   "gt1e-4": 13,
+   "sh_hit": 9,
+   "exact": 20,
+   "le1e-4": 6,
+   "sh_agree": 2
+  },
+  "dps+share": {
+   "n": 37,
+   "gt1e-4": 35,
+   "no_official": 9,
+   "pa_hit": 20,
+   "sh_hit": 22,
+   "le1e-4": 2,
+   "sh_agree": 1
+  },
+  "base_gap+dps": {
+   "n": 18,
+   "gt1e-4": 18,
+   "sh_hit": 18,
+   "pa_hit": 7
+  },
+  "base_gap+share": {
+   "n": 7,
+   "gt1e-4": 7,
+   "sh_hit": 6,
+   "no_official": 1,
+   "pa_hit": 1
+  },
+  "base_gap+pa": {
+   "n": 2,
+   "gt1e-4": 2,
+   "pa_hit": 2,
+   "sh_hit": 2
+  },
+  "pa+share": {
+   "n": 1,
+   "le1e-4": 1,
+   "sh_hit": 1
+  },
+  "dps+pa": {
+   "n": 1,
+   "le1e-4": 1,
+   "pa_hit": 1
+  }
+ },
+ "fund_comparison": {
+  "official_vs_product_agree": 991,
+  "fund_steps_with_official": 992,
+  "official_vs_reference_agree": 122
+ },
+ "fund_samples": [
+  {
+   "symbol": "سخند",
+   "date": "2020-07-06",
+   "reference": 0.8609065973726006,
+   "product": 0.8380672270025122,
+   "official": 0.8380672268907563,
+   "product_diff": 1.1175593783718796e-10,
+   "reference_diff": 0.022839370481844257
+  },
+  {
+   "symbol": "ارمغان",
+   "date": "2020-05-05",
+   "reference": 0.9175016700066767,
+   "product": 0.9099772210682445,
+   "official": 0.9099772209567198,
+   "product_diff": 1.1152467838115854e-10,
+   "reference_diff": 0.007524449049956861
+  },
+  {
+   "symbol": "امين شهر",
+   "date": "2026-06-20",
+   "reference": 0.9783139251098251,
+   "product": 0.9831937314379094,
+   "official": 0.9831937314239395,
+   "product_diff": 1.3969936318858345e-11,
+   "reference_diff": 0.004879806314114443
+  },
+  {
+   "symbol": "امين يكم",
+   "date": "2020-06-21",
+   "reference": 0.9520281868280762,
+   "product": 0.9480938414131098,
+   "official": 0.9480938416422288,
+   "product_diff": 2.291189460379428e-10,
+   "reference_diff": 0.003934345185847454
+  },
+  {
+   "symbol": "امين شهر",
+   "date": "2026-09-07",
+   "reference": 0.9876881947375831,
+   "product": 0.9914303903,
+   "official": 0.9914303902845111,
+   "product_diff": 1.5488943461150484e-11,
+   "reference_diff": 0.0037421955469280066
+  },
+  {
+   "symbol": "گنجينه",
+   "date": "2020-05-23",
+   "reference": 0.9477879276374696,
+   "product": 0.9443755366886525,
+   "official": 0.9443755366854307,
+   "product_diff": 3.2217561951597418e-12,
+   "reference_diff": 0.003412390952038824
+  },
+  {
+   "symbol": "امين شهر",
+   "date": "2025-07-26",
+   "reference": 0.9879101899827282,
+   "product": 0.9913223140128717,
+   "official": 0.9913223140495868,
+   "product_diff": 3.671507542435393e-11,
+   "reference_diff": 0.003412124066858646
+  },
+  {
+   "symbol": "امين شهر",
+   "date": "2025-11-15",
+   "reference": 0.9904351984696315,
+   "product": 0.9936948297664288,
+   "official": 0.9936948297604036,
+   "product_diff": 6.0251803546407245e-12,
+   "reference_diff": 0.0032596312907721137
+  },
+  {
+   "symbol": "كارين",
+   "date": "2021-10-23",
+   "reference": 0.9837678307919326,
+   "product": 0.9865144205522817,
+   "official": 0.9865144207106998,
+   "product_diff": 1.5841816747297344e-10,
+   "reference_diff": 0.002746589918767195
+  },
+  {
+   "symbol": "پارند",
+   "date": "2020-07-06",
+   "reference": 0.9829828222828707,
+   "product": 0.9806745672039833,
+   "official": 0.9806745670009116,
+   "product_diff": 2.0307167059030462e-10,
+   "reference_diff": 0.002308255281959104
+  },
+  {
+   "symbol": "سخند",
+   "date": "2023-01-07",
+   "reference": 0.9837678307919333,
+   "product": 0.9817255510046325,
+   "official": 0.9817255510023258,
+   "product_diff": 2.3067103782636877e-12,
+   "reference_diff": 0.0020422797896074707
+  },
+  {
+   "symbol": "پارند",
+   "date": "2021-08-09",
+   "reference": 0.9792401096748914,
+   "product": 0.981225646590575,
+   "official": 0.9812256464753808,
+   "product_diff": 1.151941875221496e-10,
+   "reference_diff": 0.001985536800489407
+  }
+ ],
+ "notes": [
+  "prod_ratio is the product's own step at the reference date; it is the formula output before the correction pack.",
+  "pa_hit/sh_hit count official rows within tolerance_days; pa_agree/sh_agree require the official ratio to match the reference within agreement_tolerance.",
+  "fund_dps steps compare the portal's (P-D)/P with the product step and the reference step; the portal convention is market-price based."
+ ]
+}

@@ -33,7 +33,8 @@ sys.path.insert(0, ROOT)
 
 import codal_fetcher as CF                                  # noqa: E402
 import codal_periods as CP                                  # noqa: E402
-import fts_engine as FE                                     # noqa: E402
+import fts_engine as FE
+import bors_fixture_db as FX                     # noqa: E402                                     # noqa: E402
 import api.fundamental as fundamental                       # noqa: E402
 
 PASS = FAIL = 0
@@ -344,16 +345,16 @@ def t7_stability_and_shape():
 
 def t8_real_bank_spot_check():
     """سنجشِ سراسریِ همان قاعده رویِ بانکِ کاری (فقط‌خواندنی). نبودش در CI ⇒ SKIPِ صریح."""
-    db = os.path.join(ROOT, "market.db")
-    if not os.path.isfile(db):
+    _ro = FX.market_db_ro(ROOT)
+    if _ro is None:
         print("SKIP  ۸ بانکِ کاری نبود — سنجشِ رویِ دادهٔ واقعی خوانده نشد")
         return
-    uri = "file:%s?mode=ro" % db.replace("\\", "/")
+    db = None
 
     def ro():
-        c = sqlite3.connect(uri, uri=True, timeout=30)
-        c.row_factory = sqlite3.Row
-        return c
+        # هر فراخوان اتصالِ تازه می‌گیرد؛ مصرف‌کننده آن را می‌بندد، پس یکِ
+        # اتصالِ مشترک نمی‌تواند وسطِ کار بسته شود. هیچ‌وقت فایل نمی‌سازد.
+        return FX.market_db_ro(ROOT)
 
     orig = fundamental.get_db
     fundamental.get_db = ro

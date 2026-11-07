@@ -49,8 +49,16 @@ from api import api_router
 # callable» → 500 می‌شود. در نبودِ orjson به JSONResponse استاندارد برگرد.
 app = FastAPI(title="BorsAgent Modern Terminal",
               default_response_class=(ORJSONResponse or JSONResponse))
-# GZip: responses >1KB are compressed -- /api/market 4.2MB -> ~450KB
-app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+# GZip: پاسخ‌هایِ >۱KB فشرده می‌شوند. سطحِ فشرده‌سازی از ۵ به ۱ افتاد، چون
+# سنجشِ همین شب (۱۴۰۵-۰۷-۲۵، ریگِ کنترلیِ ۸۰۲۰ با orjson): یکِ پولینگِ کش‌خوردهٔ
+# `/api/market` با سطحِ ۵ از ۵۱ میلی‌ثانیه به ۱۴۹ میلی‌ثانیه رفت — ۹۸ میلی‌ثانیه
+# CPUِ خالصِ همین‌ماشینِ چهارهسته‌ای، در ازایِ ۶٫۳MB → ۸۵۳KB رویِ سیمی که
+# هرگز از ماشین بیرون نمی‌رود (`loopback_guard` پایینِ همین فایل هر میزبانِ
+# غیرمحلی را ۴۰۳ می‌کند). با سطحِ ۱ همان بدنه بعدِ inflate بایت‌به‌بایت یکی
+# است و حجمِ سیم بیشترِ سودِ سطحِ ۵ را نگه می‌دارد. `BORS_GZIP_LEVEL` برایِ
+# هر سنجشِ مقایسه‌ای باز است؛ عددِ پیش‌فرض همان چیزی است که اپِ نصبی لازم دارد.
+app.add_middleware(GZipMiddleware, minimum_size=1024,
+                   compresslevel=int(os.environ.get("BORS_GZIP_LEVEL", "1")))
 
 
 # میزبان‌هایی که «همین ماشین» شمرده می‌شوند. '::1' در برخی مسیرها با کروشه
@@ -172,9 +180,11 @@ def _fetch_loops_enabled() -> bool:
     رویِ نسخۀِ dev (پورتِ دوم) نیاز است، ولی آن اجرا هم همان `market.db` و همان
     IPِ نسخۀِ نصب‌شده را می‌گیرد؛ دو حلقۀِ تیکِ ۵ثانیه‌ای رویِ یکِ IP یعنی ۴۲۹ و
     یعنی «اعدادِ دیر عوض می‌شوند» درِ همانِ نشستِ واقعیِ مالک. با این درب، dev
-    فقط می‌خواند و چیزی از TSETMC نمی‌گیرد.
+    فقط می‌خواند و چیزی از TSETMC نمی‌گیرد. داوری در `bors_flags.fetch_loops_enabled`
+    است تا مسیرهایِ بیرونِ این فایل (ترمیمِ تاریخچه در api/chart.py) همان درب را ببینند.
     """
-    return (os.environ.get("BORS_NO_FETCH_LOOPS") or "").strip().lower() not in ("1", "true", "yes")
+    import bors_flags
+    return bors_flags.fetch_loops_enabled()
 
 
 @app.on_event("startup")
@@ -237,6 +247,9 @@ def _startup_sync_market():
             threading.Thread(target=_sync_market_on_start, daemon=True).start()
             print("[startup] market sync thread spawned")
         else:
+            # هیچ سینکی در کار نیست ⇒ گرم‌کردنِ اسکرینر نباید پشتِ داوریِ سینک بماند
+            import api._sync_market as _SM
+            _SM.mark_sync_not_scheduled()
             print("[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش "
                   "(دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)")
     except Exception as e:
@@ -247,6 +260,13 @@ def _startup_sync_market():
         try:
             import time as _t
             _t.sleep(1)          # شروع سریع در ترد پس‌زمینه
+            # PERF-S6: اگر همگام‌سازیِ بوت در کار است، سینک درِ پایانِ خودش
+            # اسکرینر را بازمی‌سازد؛ گرم‌کردنِ هم‌زمان یعنی دوِ بیلدِ کاملِ
+            # `bulk_scan` و بیلدِ اول دور ریخته می‌شود.
+            import api._sync_market as _SM
+            if _SM.screener_warm_should_skip():
+                print("[startup] screener warm deferred to market sync")
+                return
             from api.screener import warm_screener_cache
             warm_screener_cache()
         except Exception as _e:
@@ -256,6 +276,24 @@ def _startup_sync_market():
         print("[startup] screener warm thread spawned")
     except Exception as _e:
         print(f"[startup] screener warm thread failed: {_e}")
+
+    # PERF-R1: اولین بازِ «وضعیت بازار» ۱۹ پنلِ سرد را در چهار موجِ مرورگر
+    # می‌سازد (سنجش: ۷٫۸s تا آمادگی). گرم‌کردنِ همان کلیدها در پس‌زمینهٔ بوت
+    # همان کار را از مسیرِ تعاملِ کاربر برمی‌دارد؛ TTL و داده عوض نمی‌شود.
+    def _warm_mstat():
+        try:
+            import time as _t
+            _t.sleep(2)
+            from api.market_status import warm_mstat_cache
+            warm_mstat_cache()
+            print("[startup] mstat panel cache warmed")
+        except Exception as _e:
+            print(f"[startup] mstat warm failed: {_e}")
+    try:
+        threading.Thread(target=_warm_mstat, daemon=True).start()
+        print("[startup] mstat warm thread spawned")
+    except Exception as _e:
+        print(f"[startup] mstat warm thread failed: {_e}")
 
     # ── تازۀ‌سازیِ خودکارِ تابلو در ساعتِ بازار ──────────────────────────
     # اندازه‌گیری ۱۴۰۵-۰۷-۰۴: برنامه ۰۷:۲۱ (پیش از بازگشایی) اجرا شده بود و تا
@@ -397,6 +435,117 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] candle projection failed: {_e}")
 
+    # ── بروزرسانیِ خودکارِ کدال در بوت: یک تصمیمِ واحد (Task 6 + 8a) ─────────
+    # Task Scheduler روزانه ۱۸:۳۰ اجرا می‌کند و StartWhenAvailable اجرایِ
+    # ازدست‌رفته را پس از روشن‌شدن جبران می‌کند؛ این نخ لایۀِ دوم است. تصمیم
+    # در should_start_catchup (خالص) گرفته می‌شود: در حالتِ سورس/تست فقط با
+    # BORS_CODAL_AUTOUPDATE=1، هرگز با BORS_NO_FETCH_LOOPS=1، نه وقتی
+    # codal_auto_pause هست، و نه وقتی آخرین تلاش کمتر از ۶ ساعت پیش بوده
+    # (تلاشِ ناموفقِ تازه نباید هر بار کلِ خطِ لوله را دوباره اجرا کند). قفلِ
+    # کهنهٔ codal_auto.lock هم تا ۶ ساعت در codal_auto_update.py می‌ماند؛
+    # همین cooldown از اسپاونِ پشتِ‌سرهم در آن پنجره جلوگیری می‌کند.
+    #
+    # Task 8a در همین بوت یک مسیرِ mergeِ دوم (snapshotِ امضاشده) اضافه کرد.
+    # orchestrator نامِ پروسهٔ codal_fetcher ندارد و _codal_running() آن را
+    # نمی‌بیند، پس دو نخِ مستقل می‌توانستند هم‌زمان همان سه جدول را merge کنند.
+    # تصمیمِ بوت حالا انحصاری است: اگر جبران واقعاً اسپاون شود، auto_check این
+    # بوت هرگز شروع نمی‌شود؛ در غیرِ این صورت auto_check درِ خودش را می‌سنجد.
+    def _codal_auto_catchup_allowed():
+        """دروازهٔ خالصِ Task 6؛ هیچ اسپاون/شبکه‌ای ندارد."""
+        try:
+            import bors_config as _bc
+            from api._sync_codal import read_auto_status, should_start_catchup
+            script = os.path.join(APP_DIR, "dev", "codal_auto_update.py")
+            script_exists = os.path.isfile(script)
+            paused = os.path.exists(os.path.join(APP_DIR, "codal_auto_pause"))
+            allowed = should_start_catchup(
+                read_auto_status(),
+                frozen=bool(getattr(_bc, "_FROZEN", False)),
+                env=os.environ,
+                fetch_loops_enabled=_fetch_loops_enabled(),
+                paused=paused,
+                script_exists=script_exists)
+            if not allowed:
+                if not script_exists:
+                    print("[startup] codal auto-update script not found; catch-up skipped")
+                else:
+                    print("[startup] codal auto-update catch-up skipped "
+                          "(guard/pause/cooldown/fresh)")
+            return allowed
+        except Exception as _e:
+            print(f"[startup] codal auto-update decision failed: {_e}")
+            return False
+
+    # مسیرِ نسبی + cwd ریشهٔ مخزن: همان فرمانی که Task Scheduler ثبت می‌کند.
+    # Popen هرگز wait نمی‌شود؛ خروجی به DEVNULL می‌رود تا هندلِ لوله باز
+    # نماند و بوت معطل نشود. True فقط وقتی پروسه واقعاً بالا آمده باشد.
+    def _codal_auto_catchup():
+        try:
+            subprocess.Popen([sys.executable, "dev/codal_auto_update.py",
+                              "--mode", "daily"],
+                             cwd=APP_DIR,
+                             stdin=subprocess.DEVNULL,
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            print("[startup] codal auto-update catch-up spawned")
+            return True
+        except Exception as _e:
+            print(f"[startup] codal auto-update catch-up failed: {_e}")
+            return False
+
+    # منبع، تگِ دادهٔ ``data-codal`` است نه ``latest`` ریلیزِ برنامه. این تابع
+    # فقط ``codal.meta.json`` را می‌خواند و اگر دورهٔ FS/MS جلوتر بود، همان
+    # workerِ امضاشده/merge را شروع می‌کند؛ هیچ خزنده/جستجویی صدا زده نمی‌شود.
+    def _codal_auto_check():
+        try:
+            from api._sync_codal import auto_check
+            result = auto_check()
+            print("[startup] codal auto-check: checked=%r update=%r started=%r"
+                  % (result.get("checked"), result.get("update"),
+                     result.get("started")))
+            return result
+        except Exception as _e:
+            print(f"[startup] codal auto-check failed: {_e}")
+            return None
+
+    # درِ همان Task 6 است (should_auto_check خالص): سورس/dev فقط با
+    # BORS_CODAL_AUTOUPDATE=1، نصبِ frozen خودش opt-in، و هرگز با
+    # BORS_NO_FETCH_LOOPS=1. دروازه فقط وقتی می‌رسد که جبران اسپاون نشده باشد.
+    def _codal_auto_check_allowed():
+        try:
+            import bors_config as _bc
+            from api._sync_codal import should_auto_check
+            allowed = should_auto_check(
+                frozen=bool(getattr(_bc, "_FROZEN", False)),
+                env=os.environ,
+                fetch_loops_enabled=_fetch_loops_enabled())
+            if not allowed:
+                print("[startup] codal auto-check skipped (guard/opt-in)")
+            return allowed
+        except Exception as _e:
+            print(f"[startup] codal auto-check decision failed: {_e}")
+            return False
+
+    def _codal_boot_sync():
+        """تنها نقطهٔ تصمیمِ بوت: جبران اول؛ auto_check فقط اگر اسپاون نشد."""
+        try:
+            from api._sync_codal import boot_sync
+            action = boot_sync(_codal_auto_catchup_allowed,
+                               _codal_auto_check_allowed,
+                               _codal_auto_catchup,
+                               _codal_auto_check)
+            if action == "":
+                print("[startup] codal startup sync skipped (guards)")
+        except Exception as _e:
+            print(f"[startup] codal startup sync failed: {_e}")
+    try:
+        if _fetch_loops_enabled():
+            threading.Thread(target=_codal_boot_sync, daemon=True).start()
+            print("[startup] codal startup sync thread spawned (single decision)")
+    except Exception as _e:
+        print(f"[startup] codal startup sync thread failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():
@@ -410,7 +559,17 @@ app.include_router(api_router())
 
 @app.get("/{full_path:path}", include_in_schema=False)
 def spa_catch_all(full_path: str):
-    """فایل موجود در dist سرو می‌شود؛ هر مسیر دیگر -> index.html (رفرش SPA سالم)."""
+    """فایل موجود در dist سرو می‌شود؛ هر مسیر دیگر -> index.html (رفرش SPA سالم).
+
+    استثنایِ صریح: `api/…` ناشناخته هرگز index.html نمی‌شود. صفحۀ SPA باِ ۲۰۰
+    برایِ یکِ درِ بسته یعنی کلاینت «موفق» ببیند و JSON نبیند — بدترین شکلِ خطا
+    برایِ مصرف‌کنندهٔ برنامه‌ای. مسیرهایِ شناخته‌شده درِ `include_router` جلوتر
+    می‌گیرند، پس اینجا فقطِ همان درهایِ بسته می‌آیند.
+    """
+    if full_path == "api" or full_path.startswith("api/"):
+        return JSONResponse(status_code=404, content={
+            "status": "error", "code": "UNKNOWN_ROUTE",
+            "detail": "چنین اندپوینتی ثبت نشده: /%s" % full_path})
     idx = _get_index_html()
     if idx and full_path:
         candidate = os.path.normpath(os.path.join(_FRONTEND_DIST, full_path))

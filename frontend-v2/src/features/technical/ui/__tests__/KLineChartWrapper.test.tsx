@@ -16,9 +16,11 @@ import {
   KLineChartWrapper,
   formatJalaliDate,
   ensureAllOverlaysRegistered,
+  CLASSIC_PATTERNS_OVERLAY_ID,
 } from '../KLineChartWrapper';
 import { useTechnicalStore } from '../../model/technicalStore';
 import { useUiStore } from '@shared/stores/uiStore';
+import type { ChartPattern } from '../../model/patterns/types';
 import type { Candle, PredictionData, PriceZone } from '../../model/types';
 
 // ثبت چارتهای ساخته‌شده جهت بازرسی در تست‌ها
@@ -50,6 +52,7 @@ vi.mock('klinecharts', () => {
         removeOverlay: vi.fn(() => true),
         overrideYAxis: vi.fn(),
         scrollToRealTime: vi.fn(),
+        scrollToDataIndex: vi.fn(),
         setFormatter: vi.fn(),
         getFormatter: vi.fn(),
         getDataList: vi.fn(() => [
@@ -80,6 +83,22 @@ const SAMPLE_CANDLES: Candle[] = [
   { timestamp: 1730086400000, open: 1020, high: 1100, low: 1010, close: 1080, volume: 75000 },
   { timestamp: 1730172800000, open: 1080, high: 1120, low: 1060, close: 1090, volume: 60000 },
 ];
+
+/** الگوی نمونهٔ تست‌های اورلی/فوکوس؛ شناسه در هر تست بازنویسی می‌شود. */
+const patternFixture: ChartPattern = {
+  id: 'FLAG_BULL:4:1-2-3-4',
+  kind: 'FLAG_BULL',
+  direction: 'bullish',
+  family: 'continuation',
+  anchor: { index: 4, price: 105, timestamp: 1_730_000_000_000 },
+  points: [{ index: 4, price: 105, timestamp: 1_730_000_000_000 }],
+  upper: { from: { index: 2, price: 106, timestamp: 0 }, to: { index: 4, price: 106, timestamp: 0 } },
+  lower: { from: { index: 2, price: 104, timestamp: 0 }, to: { index: 4, price: 104, timestamp: 0 } },
+  target: 110,
+  stopLoss: 100,
+  quality: 60,
+  status: 'forming',
+};
 
 const SAMPLE_PREDICTION: PredictionData = {
   symbol: 'FOOLAD',
@@ -171,6 +190,103 @@ describe('KLineChartWrapper Component', () => {
         name: 'segment',
       })
     );
+  });
+
+  it('instantiates the ClassicPatterns overlay with a stable id after a detection update', () => {
+    render(<KLineChartWrapper symbol="FOOLAD" candles={SAMPLE_CANDLES} />);
+    const chart = mockCharts[0];
+    const detected: ChartPattern = {
+      id: 'FLAG_BULL:4:1-2-3-4',
+      kind: 'FLAG_BULL',
+      direction: 'bullish',
+      family: 'continuation',
+      anchor: { index: 4, price: 105, timestamp: 1_730_000_000_000 },
+      points: [{ index: 4, price: 105, timestamp: 1_730_000_000_000 }],
+      upper: { from: { index: 2, price: 106, timestamp: 0 }, to: { index: 4, price: 106, timestamp: 0 } },
+      lower: { from: { index: 2, price: 104, timestamp: 0 }, to: { index: 4, price: 104, timestamp: 0 } },
+      target: 110,
+      stopLoss: 100,
+      quality: 60,
+      status: 'forming',
+    };
+
+    act(() => {
+      useTechnicalStore.getState().setDetectedPatterns([detected]);
+    });
+
+    // ثبت اورلی بدون نمونه‌سازی هیچ شکلی رسم نمی‌کند؛ باید remove + create شود.
+    expect(chart.removeOverlay).toHaveBeenCalledWith({ name: 'ClassicPatterns' });
+    expect(chart.createOverlay).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'ClassicPatterns',
+        id: CLASSIC_PATTERNS_OVERLAY_ID,
+      })
+    );
+  });
+
+  it('keeps a single ClassicPatterns instance: every update replaces it instead of stacking', () => {
+    const { rerender } = render(<KLineChartWrapper symbol="FOOLAD" candles={SAMPLE_CANDLES} />);
+    const chart = mockCharts[0];
+    const creates = () => chart.createOverlay.mock.calls
+      .map((arg: any[], i: number) => ({ arg: arg[0], order: chart.createOverlay.mock.invocationCallOrder[i] }))
+      .filter((c: any) => c.arg?.name === 'ClassicPatterns');
+    const removals = () => chart.removeOverlay.mock.calls
+      .map((arg: any[], i: number) => ({ arg: arg[0], order: chart.removeOverlay.mock.invocationCallOrder[i] }))
+      .filter((r: any) => r.arg?.name === 'ClassicPatterns');
+
+    // چارت تازه یک نمونه می‌سازد؛ شناسهٔ ثابت است.
+    expect(creates()).toHaveLength(1);
+    expect(creates()[0].arg).toMatchObject({ name: 'ClassicPatterns', id: 'classic-patterns' });
+
+    const first = { ...patternFixture, id: 'FIRST' };
+    act(() => {
+      useTechnicalStore.getState().setDetectedPatterns([first]);
+    });
+    // جایگزینی: حذف پیش از ساخت، نه ساختِ دوم روی نمونهٔ زنده.
+    expect(creates()).toHaveLength(2);
+    expect(removals()).toHaveLength(2);
+    expect(removals().at(-1)!.order).toBeLessThan(creates().at(-1)!.order);
+
+    // رندر دوبارهٔ React (بدون تغییر تشخیص) اورلی تازه نمی‌سازد.
+    rerender(<KLineChartWrapper symbol="FOOLAD" candles={SAMPLE_CANDLES} />);
+    expect(creates()).toHaveLength(2);
+    expect(removals()).toHaveLength(2);
+
+    act(() => {
+      useTechnicalStore.getState().setDetectedPatterns([{ ...patternFixture, id: 'SECOND' }]);
+    });
+    expect(creates()).toHaveLength(3);
+    expect(removals()).toHaveLength(3);
+    expect(removals().at(-1)!.order).toBeLessThan(creates().at(-1)!.order);
+  });
+
+  it('scrolls the chart to the focused pattern anchor and clears the focus id', () => {
+    render(<KLineChartWrapper symbol="FOOLAD" candles={SAMPLE_CANDLES} />);
+    const chart = mockCharts[0];
+    const detected: ChartPattern = {
+      id: 'DOUBLE_TOP:42:1-2-3-4',
+      kind: 'DOUBLE_TOP',
+      direction: 'bearish',
+      family: 'reversal',
+      anchor: { index: 42, price: 105, timestamp: 0 },
+      points: [{ index: 42, price: 105, timestamp: 0 }],
+      upper: { from: { index: 30, price: 106, timestamp: 0 }, to: { index: 42, price: 106, timestamp: 0 } },
+      lower: { from: { index: 30, price: 104, timestamp: 0 }, to: { index: 42, price: 104, timestamp: 0 } },
+      target: 100,
+      stopLoss: 110,
+      quality: 60,
+      status: 'confirmed',
+    };
+
+    act(() => {
+      useTechnicalStore.getState().setDetectedPatterns([detected]);
+    });
+    act(() => {
+      useTechnicalStore.getState().setFocusPatternId(detected.id);
+    });
+
+    expect(chart.scrollToDataIndex).toHaveBeenCalledWith(42);
+    expect(useTechnicalStore.getState().focusPatternId).toBeNull();
   });
 
   it('adds and removes prediction cone overlay when showPredictionCone is toggled', () => {

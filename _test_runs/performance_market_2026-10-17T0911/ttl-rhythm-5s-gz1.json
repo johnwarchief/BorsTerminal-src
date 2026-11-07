@@ -1,0 +1,115 @@
+{
+ "mode": "rhythm",
+ "rhythm_s": 5.0,
+ "polls": 10,
+ "x_cache_counts": {
+  "MISS": 5,
+  "HIT": 5
+ },
+ "distinct_etags": 5,
+ "distinct_as_of": 5,
+ "ms_list": [
+  2221.4,
+  39.6,
+  1064.4,
+  32.4,
+  779.5,
+  47.7,
+  999.5,
+  34.4,
+  826.5,
+  26.5
+ ],
+ "rows": [
+  {
+   "offset_s": 0.0,
+   "ms": 2221.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"06d54f34f102fe8e\"",
+   "as_of": "1792238376"
+  },
+  {
+   "offset_s": 7.23,
+   "ms": 39.6,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"06d54f34f102fe8e\"",
+   "as_of": "1792238376"
+  },
+  {
+   "offset_s": 12.27,
+   "ms": 1064.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"c6ff8d047dd3f806\"",
+   "as_of": "1792238387"
+  },
+  {
+   "offset_s": 18.33,
+   "ms": 32.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"c6ff8d047dd3f806\"",
+   "as_of": "1792238387"
+  },
+  {
+   "offset_s": 23.37,
+   "ms": 779.5,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"b487e37ba8218977\"",
+   "as_of": "1792238398"
+  },
+  {
+   "offset_s": 29.15,
+   "ms": 47.7,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"b487e37ba8218977\"",
+   "as_of": "1792238398"
+  },
+  {
+   "offset_s": 34.2,
+   "ms": 999.5,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"05129f6ff1a2ae0e\"",
+   "as_of": "1792238409"
+  },
+  {
+   "offset_s": 40.2,
+   "ms": 34.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"05129f6ff1a2ae0e\"",
+   "as_of": "1792238409"
+  },
+  {
+   "offset_s": 45.24,
+   "ms": 826.5,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"727da3d76795bc65\"",
+   "as_of": "1792238420"
+  },
+  {
+   "offset_s": 51.06,
+   "ms": 26.5,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "HIT",
+   "etag": "\"727da3d76795bc65\"",
+   "as_of": "1792238420"
+  }
+ ]
+}

@@ -2,6 +2,7 @@ package fundamental
 
 import (
 	"net/http"
+	"strings"
 
 	"borsterminal/backend/internal/httpapi"
 )
@@ -48,4 +49,36 @@ func (s *Service) Card(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpapi.WriteJSON(w, status, body)
+}
+
+// Freshness عینِ `api_fundamental_freshness`: فهرستِ نمادها (حداکثر ۲۰۰) یا
+// پیش‌فرضِ ۲۰۰ نمادِ اولِ تابلویِ سهام. بدنه از FreshnessBody با کشِ ۶۰ثانیه.
+func (s *Service) Freshness(w http.ResponseWriter, r *http.Request) {
+	raw := strings.TrimSpace(r.URL.Query().Get("symbols"))
+	var syms []string
+	if raw == "" {
+		rows, err := s.rows(r.Context(),
+			"SELECT l_val18 FROM instruments WHERE COALESCE(paper_type,1)=1"+
+				" ORDER BY l_val18 LIMIT 200", nil)
+		if err != nil {
+			httpapi.WriteJSON(w, http.StatusInternalServerError,
+				map[string]any{"status": "error", "message": err.Error()})
+			return
+		}
+		for _, row := range rows {
+			syms = append(syms, strOr(row["l_val18"]))
+		}
+	} else {
+		syms = strings.Split(raw, ",")
+	}
+	if len(syms) > 200 {
+		syms = syms[:200]
+	}
+	body, err := s.FreshnessBody(r.Context(), syms)
+	if err != nil {
+		httpapi.WriteJSON(w, http.StatusInternalServerError,
+			map[string]any{"status": "error", "message": err.Error()})
+		return
+	}
+	httpapi.WriteJSON(w, http.StatusOK, body)
 }

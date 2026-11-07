@@ -2,11 +2,11 @@
  * frontend-v2/src/features/technical/ui/TechnicalWorkspace.tsx
  *
  * میزکار پیشرفته تکنیکال و کوانت (S2 Advanced Technical Workspace):
- * - ترکیب کامل کامپوننت‌های تعاملی با استایل برنجی (Brass Theme)
- * - نوار ابزار رسم عمودی در سمت راست (DrawingToolbar)
- * - نوار کنترل‌های پیش‌بینی هوش مصنوعی Kronos/Chronos در بالای چارت (ForecastControls)
+ * - پوستهٔ تازهٔ TradingView-style (B1): نوار بالا، نوار فعالیت، چارت مرکزی، ریل بازرس و فید
+ * - نوار ابزار رسم عمودی (DrawingToolbar) و کنترل‌های پیش‌بینی Kronos/Chronos (ForecastControls)
+ *   همچنان سوار و در جای فعلی‌شان داخل ناحیهٔ چارت می‌مانند
  * - هسته مرکزی چارت کانواسی KLineCharts با فریم‌ریت بالا (KLineChartWrapper)
- * - سایدبار تاشوی تحلیل لبه آماری و پرایس‌اکشن نهادی (CandleEdgeCard)
+ * - پنل‌های تحلیلی در فید میزبان‌اند و دکمهٔ پاپ‌اوت/پورتال در سربرگ فید است (B4)
  * - هماهنگی خودکار با اندپوینت‌های بک‌اند:
  *   - GET /api/chart/{symbol}/forecast?horizon=...
  *   - GET /api/chart/{symbol}/edge
@@ -21,10 +21,7 @@ import {
   useCandleEdgeQuery,
   useIndicatorsQuery,
 } from '../api/useTechnicalQueries';
-import { DrawingToolbar } from './DrawingToolbar';
-import { ForecastControls } from './ForecastControls';
-import { WideWorkspaceDrawer } from './WideWorkspaceDrawer';
-import { KLineChartWrapper } from './KLineChartWrapper';
+import { WorkspaceShell } from './workspace/WorkspaceShell';
 
 export interface TechnicalWorkspaceProps {
   symbol?: string;
@@ -45,8 +42,6 @@ const TechnicalWorkspaceInner: React.FC<TechnicalWorkspaceProps> = ({
   className = '',
 }) => {
   // استور تکنیکال
-  const isLeftDrawerOpen = useTechnicalStore((s) => s.isLeftDrawerOpen);
-  const toggleLeftDrawer = useTechnicalStore((s) => s.toggleLeftDrawer);
   const selectedSymbol = useTechnicalStore((s) => s.selectedSymbol);
   const setSelectedSymbol = useTechnicalStore((s) => s.setSelectedSymbol);
   const forecastHorizon = useTechnicalStore((s) => s.forecastHorizon);
@@ -100,29 +95,10 @@ const TechnicalWorkspaceInner: React.FC<TechnicalWorkspaceProps> = ({
     <div
       data-testid="technical-workspace"
       aria-label="میزکار تحلیل تکنیکال"
-      className={`flex w-full h-full overflow-hidden bg-bg text-text select-none relative ${className}`}
+      className={`w-full h-full overflow-hidden bg-bg text-text select-none relative ${className}`}
       dir="rtl"
     >
-      {/* ۱. نوار ابزار رسم عمودی در سمت راست */}
-      <DrawingToolbar />
-
-      {/* ۲. ناحیه مرکزی چارت کانواسی و کنترل‌های بالایی */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden border-x border-line min-w-0">
-        {/* کنترل‌های بالای چارت */}
-        <ForecastControls />
-
-        {/* بستر کانواسی نمودار KLineCharts */}
-        <div className="flex-1 w-full h-full relative overflow-hidden bg-bg">
-          <KLineChartWrapper symbol={activeSymbol} />
-        </div>
-      </div>
-
-      {/* ۳. سایدبار عریض چپ: ۵۰ نماد برتر، کاتالوگ اندیکاتورها، مدهای کانال، اسکنر و لبه آماری */}
-      <WideWorkspaceDrawer
-        activeSymbol={activeSymbol}
-        isOpen={isLeftDrawerOpen}
-        onToggleOpen={toggleLeftDrawer}
-      />
+      <WorkspaceShell activeSymbol={activeSymbol} />
     </div>
   );
 };

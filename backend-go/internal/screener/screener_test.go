@@ -52,6 +52,13 @@ func setupTestDB(t *testing.T) *sql.DB {
 			sector_name TEXT
 		);
 
+		CREATE TABLE market_watch (
+			ins_code TEXT,
+			d_even INTEGER
+		);
+		INSERT INTO market_watch VALUES ('A', 20261102);
+		INSERT INTO market_watch VALUES ('B', 20261103);
+
 		-- درج داده‌های تستی تاریخچه قیمت
 		INSERT INTO price_history VALUES ('فولاد', '2026-10-28', 5000, 5100, 4950, 5050, 1000000, 5060);
 		-- روز تکراری با حجم کمتر (باید حذف شود)
@@ -178,5 +185,20 @@ func TestScreenerHTTPHandlers(t *testing.T) {
 
 	if wScr.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", wScr.Code)
+	}
+}
+
+func TestGetScreenerAsOf(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+	svc := NewService(db, t.TempDir())
+	for i := 0; i < 2; i++ { // بارِ دوم از کش می‌آید و as_of باید همان بماند
+		res, err := svc.GetScreener(context.Background(), "", "trend", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res["as_of"] != "2026-11-03" {
+			t.Fatalf("call %d as_of=%v want 2026-11-03", i+1, res["as_of"])
+		}
 	}
 }

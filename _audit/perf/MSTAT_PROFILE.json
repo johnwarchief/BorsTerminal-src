@@ -1,0 +1,545 @@
+{
+ "db_mb": 233.209856,
+ "table_rows": {
+  "market_watch": 5986,
+  "instruments": 5981,
+  "client_type": 103707,
+  "client_type_value": 2531,
+  "daily_prices": 122391,
+  "price_history": 441568,
+  "mstat_snap": 1472
+ },
+ "warm": {
+  "load_snapshot_ms": 391.60740000079386,
+  "max_ms": 495.1535000000149,
+  "snapshot_sql": [
+   {
+    "sql": "SELECT ins_code, q_tot_tran FROM daily_prices WHERE d_even < ? AND q_tot_t",
+    "ms_total": 330.65,
+    "calls": 3,
+    "rows": 18249
+   },
+   {
+    "sql": "SELECT m.ins_code, i.l_val18, i.l_val30, i.sector_code, i.sector_name, m.p",
+    "ms_total": 153.1,
+    "calls": 3,
+    "rows": 10302
+   },
+   {
+    "sql": "SELECT ins_code, buy_i_vol, buy_n_vol, buy_ddd_vol, buy_count_i, buy_count",
+    "ms_total": 73.87,
+    "calls": 3,
+    "rows": 7092
+   },
+   {
+    "sql": "SELECT MAX(d_even) FROM client_type WHERE d_even<=?",
+    "ms_total": 53.9,
+    "calls": 3,
+    "rows": 3
+   },
+   {
+    "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+    "ms_total": 8.67,
+    "calls": 3,
+    "rows": 3
+   },
+   {
+    "sql": "SELECT MAX(h_even) FROM market_watch WHERE d_even=?",
+    "ms_total": 2.95,
+    "calls": 3,
+    "rows": 3
+   },
+   {
+    "sql": "SELECT MAX(d_even) FROM market_watch",
+    "ms_total": 2.65,
+    "calls": 3,
+    "rows": 3
+   },
+   {
+    "sql": "SELECT ins_code, buy_i_val, buy_n_val, sell_i_val, sell_n_val, buy_ddd_val",
+    "ms_total": 1.22,
+    "calls": 3,
+    "rows": 0
+   },
+   {
+    "sql": "PRAGMA table_info(market_watch)",
+    "ms_total": 1.21,
+    "calls": 6,
+    "rows": 216
+   },
+   {
+    "sql": "PRAGMA database_list",
+    "ms_total": 0.12,
+    "calls": 3,
+    "rows": 3
+   }
+  ],
+  "enrich_ms": 2.7145000058226287
+ },
+ "warm_panels": {
+  "mstat.summary": {
+   "med_ms": 80.0,
+   "max_ms": 89.9,
+   "err": null
+  },
+  "mstat.thermometer": {
+   "med_ms": 14.7,
+   "max_ms": 15.1,
+   "err": null
+  },
+  "mstat.histogram": {
+   "med_ms": 16.0,
+   "max_ms": 16.2,
+   "err": null
+  },
+  "mstat.depth": {
+   "med_ms": 10.9,
+   "max_ms": 12.6,
+   "err": null
+  },
+  "mstat.client_split": {
+   "med_ms": 12.5,
+   "max_ms": 12.9,
+   "err": null
+  },
+  "mstat.mainwatch": {
+   "med_ms": 49.3,
+   "max_ms": 49.7,
+   "err": null
+  },
+  "mstat.industries": {
+   "med_ms": 9.2,
+   "max_ms": 11.9,
+   "err": null
+  },
+  "mstat.smart_money": {
+   "med_ms": 366.6,
+   "max_ms": 367.3,
+   "err": null
+  },
+  "mstat.timeline": {
+   "med_ms": 29.4,
+   "max_ms": 33.7,
+   "err": null
+  },
+  "mstat.phases": {
+   "med_ms": 365.9,
+   "max_ms": 368.7,
+   "err": null
+  },
+  "panels.treemap": {
+   "med_ms": 23.1,
+   "max_ms": 30.5,
+   "err": null
+  },
+  "panels.tops": {
+   "med_ms": 47.8,
+   "max_ms": 49.0,
+   "err": null
+  },
+  "panels.orderflows": {
+   "med_ms": 44.7,
+   "max_ms": 45.4,
+   "err": null
+  },
+  "panels.ownership": {
+   "med_ms": 26.7,
+   "max_ms": 30.0,
+   "err": null
+  },
+  "panels.indexcards": {
+   "med_ms": 6.9,
+   "max_ms": 7.7,
+   "err": null
+  },
+  "panels.gold": {
+   "med_ms": 19.4,
+   "max_ms": 22.0,
+   "err": null
+  }
+ },
+ "warm_panel_sum_ms": 1123.3,
+ "cold_panels": {
+  "mstat.summary": {
+   "med_ms": 79.4,
+   "sql": [
+    {
+     "sql": "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch WHERE ",
+     "ms_total": 6.84,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 5.27,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT MAX(d_even) FROM market_watch",
+     "ms_total": 0.91,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT d_even, updated_at, market_state, market_state_title, activity_h_ev",
+     "ms_total": 0.23,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT d_even, market_value FROM market_totals ORDER BY d_even DESC LIMIT ",
+     "ms_total": 0.16,
+     "calls": 1,
+     "rows": 5
+    }
+   ],
+   "err": null
+  },
+  "mstat.thermometer": {
+   "med_ms": 10.5,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.2,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.03,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.histogram": {
+   "med_ms": 16.4,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.41,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.03,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.depth": {
+   "med_ms": 12.1,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.58,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.04,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.client_split": {
+   "med_ms": 11.1,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.54,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.04,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.mainwatch": {
+   "med_ms": 37.6,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.67,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.05,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.industries": {
+   "med_ms": 10.1,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.66,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.04,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.smart_money": {
+   "med_ms": 323.1,
+   "sql": [
+    {
+     "sql": "SELECT d_even, ins_code, q_tot_cap FROM daily_prices WHERE q_tot_cap > 0 A",
+     "ms_total": 96.08,
+     "calls": 1,
+     "rows": 24084
+    },
+    {
+     "sql": "SELECT DISTINCT d_even FROM daily_prices ORDER BY d_even DESC LIMIT ?",
+     "ms_total": 32.7,
+     "calls": 1,
+     "rows": 15
+    },
+    {
+     "sql": "SELECT ins_code, paper_type, l_val30, l_val18, sector_name FROM instrument",
+     "ms_total": 18.72,
+     "calls": 1,
+     "rows": 5981
+    },
+    {
+     "sql": "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch WHERE ",
+     "ms_total": 6.35,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.42,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.timeline": {
+   "med_ms": 35.4,
+   "sql": [
+    {
+     "sql": "SELECT h_even, agg FROM mstat_snap WHERE d_even=? AND h_even>=? AND h_even",
+     "ms_total": 12.24,
+     "calls": 1,
+     "rows": 127
+    },
+    {
+     "sql": "SELECT MAX(d_even) FROM market_watch",
+     "ms_total": 2.39,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT MAX(d_even) FROM mstat_snap",
+     "ms_total": 0.18,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "mstat.phases": {
+   "med_ms": 355.9,
+   "sql": [
+    {
+     "sql": "SELECT h_even, agg FROM mstat_snap WHERE d_even=? AND h_even>=? AND h_even",
+     "ms_total": 10.57,
+     "calls": 1,
+     "rows": 127
+    },
+    {
+     "sql": "SELECT MAX(d_even) FROM mstat_snap",
+     "ms_total": 0.17,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "panels.treemap": {
+   "med_ms": 28.2,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 4.31,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.05,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "panels.tops": {
+   "med_ms": 61.1,
+   "sql": [
+    {
+     "sql": "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch WHERE ",
+     "ms_total": 6.42,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.79,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT d_even, market_value FROM market_totals ORDER BY d_even DESC LIMIT ",
+     "ms_total": 0.16,
+     "calls": 1,
+     "rows": 5
+    },
+    {
+     "sql": "SELECT d_even, idx_last, idx_change, idx_pct, ew_last, ew_change, ew_pct F",
+     "ms_total": 0.13,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.04,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "panels.orderflows": {
+   "med_ms": 49.9,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.63,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.03,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "panels.ownership": {
+   "med_ms": 36.5,
+   "sql": [
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 4.47,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.05,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "panels.indexcards": {
+   "med_ms": 8.9,
+   "sql": [
+    {
+     "sql": "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch WHERE ",
+     "ms_total": 7.88,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "SELECT d_even, idx_last, idx_change, idx_pct, ew_last, ew_change, ew_pct, ",
+     "ms_total": 0.27,
+     "calls": 1,
+     "rows": 13
+    },
+    {
+     "sql": "SELECT d_even, market_value FROM market_totals ORDER BY d_even DESC LIMIT ",
+     "ms_total": 0.17,
+     "calls": 1,
+     "rows": 5
+    },
+    {
+     "sql": "PRAGMA table_info(market_index)",
+     "ms_total": 0.08,
+     "calls": 1,
+     "rows": 14
+    },
+    {
+     "sql": "SELECT d_even, idx_last, idx_change, idx_pct, ew_last, ew_change, ew_pct F",
+     "ms_total": 0.08,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  },
+  "panels.gold": {
+   "med_ms": 26.3,
+   "sql": [
+    {
+     "sql": "SELECT symbol, date, close FROM price_history WHERE symbol IN (?,?,?,?,?,?",
+     "ms_total": 15.55,
+     "calls": 1,
+     "rows": 4733
+    },
+    {
+     "sql": "SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat",
+     "ms_total": 3.45,
+     "calls": 1,
+     "rows": 1
+    },
+    {
+     "sql": "PRAGMA database_list",
+     "ms_total": 0.04,
+     "calls": 1,
+     "rows": 1
+    }
+   ],
+   "err": null
+  }
+ },
+ "cold_panel_sum_ms": 1102.6,
+ "board": {
+  "med_ms": 1484.9,
+  "max_ms": 7028.2,
+  "errors": []
+ },
+ "mstat_call_miss_ms": 5.8,
+ "mstat_call_hit_ms": 5.3,
+ "get_db_ms": 4.5
+}

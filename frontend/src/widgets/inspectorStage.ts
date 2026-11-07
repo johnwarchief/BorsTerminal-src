@@ -20,8 +20,20 @@ export function stageIndexForPath(pathname: string): number | null {
 
 /** تابلوخوانی نماد را در مسیر نمی‌خواهد؛ سه مرحلۀ بعدی بله */
 export function stageHref(index: number, symbol: string): string {
-  const stage = INSPECTOR_STAGES[index];
+  return stageHrefOf(INSPECTOR_STAGES[index], symbol);
+}
+
+export function stageHrefOf(stage: InspectorStage | undefined, symbol: string): string {
   if (!stage) return '/market';
   if (stage.key === 'tape' || !symbol) return stage.base;
   return `${stage.base}/${encodeURIComponent(symbol)}`;
+}
+
+/** کلیدِ مرحلۀ همان مسیر (تبِ فعال) — بی‌وابستگی به ترتیبِ اجرا. */
+export function stageKeyForPath(pathname: string): string | null {
+  const base = '/' + (pathname.split('/')[1] ?? '');
+  if (base === '/portfolio' || base === '/strategy-tree') {
+    return INSPECTOR_STAGES[INSPECTOR_STAGES.length - 1].key;
+  }
+  return INSPECTOR_STAGES.find((s) => s.base === base)?.key ?? null;
 }

@@ -1,0 +1,21 @@
+  PASS backend default is RSI(7)
+  PASS oversold threshold defaults to 30
+  PASS MA52 mode defaults to below
+  PASS valid settings persist through POST handler
+  PASS engine reads RSI period 7 from saved settings
+  PASS analysis returns active RSI period and threshold
+  PASS weekly_rsi همان مقدارِ دورۀ فعال است و rsi_period همراهِ آن می‌آید
+  PASS aliasِ گمراه‌کنندهٔ weekly_rsi5 از payload بیرون رفت (رأیِ مالک 2026-10-18)
+  PASS MA52 is only computed with at least 52 weekly bars
+  PASS changed RSI period and threshold apply to engine output
+  PASS above mode matches actual price-vs-MA52 geometry
+  PASS below mode matches actual price-vs-MA52 geometry
+  PASS either mode disables direction comparison but retains MA52 context
+  PASS non-integer RSI periods are rejected
+  PASS out-of-range oversold thresholds are rejected
+  PASS unknown MA52 modes are rejected
+  PASS insufficient MA52 history returns UNKNOWN, not false
+  PASS server 900s cache is keyed by active hourglass settings
+
+18 checks, 0 failures
+HOURGLASS USER SETTINGS OK

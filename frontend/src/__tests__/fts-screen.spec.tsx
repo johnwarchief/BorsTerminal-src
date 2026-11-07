@@ -116,6 +116,34 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     expect(scoreTd.className).not.toContain('text-center');
   });
 
+  it('شاخص ۴: برچسبِ سالانه‌سازی با ارقامِ فارسی و نسخهٔ sr-only در دسترس است', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ i4_acceptance_path: 'sales_to_mcap', annualize_label: 'سالانه‌شده از دورهٔ 6 ماهه' })]}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('fts-i4-path').textContent).toContain('مسیر اول');
+    const cell = screen.getAllByTestId('fts-screen-row')[0].querySelectorAll('td')[4];
+    // متنِ دیدنی و sr-only هر دو فارسی‌اند؛ raw ASCII «6» به کاربر نمی‌رسد.
+    expect(cell.textContent).toContain('سالانه‌شده از دورهٔ ۶ ماهه');
+    expect(cell.textContent).not.toContain('دورهٔ 6 ماهه');
+    expect(cell.querySelector('.sr-only')?.textContent).toContain('۶');
+  });
+
+  it('شاخص ۴ بی‌مسیر: برچسبِ سالانه‌سازی تنها سطرِ راهنما و فارسی است', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ i4_pass: false, i4_acceptance_path: null, annualize_label: 'سالانه‌شده از دورهٔ 6 ماهه' })]}
+        onSelect={() => {}}
+      />,
+    );
+    const hint = screen.getByTestId('fts-i4-annualize');
+    expect(hint.textContent).toContain('۶');
+    expect(hint.textContent).not.toContain('6');
+    expect(hint.getAttribute('title')).toContain('۶');
+  });
+
   it('سورت امتیاز از بیشترین به کمترین', () => {
     render(
       <FtsScreenTable

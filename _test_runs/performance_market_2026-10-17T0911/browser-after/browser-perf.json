@@ -1,0 +1,292 @@
+{
+  "ran_at": "2026-10-17T07:30:27.593Z",
+  "base": "http://127.0.0.1:8020",
+  "window_s": 90,
+  "results": [
+    {
+      "label": "market-1366x768",
+      "route": "/market",
+      "viewport": "1366x768",
+      "window_s": 90,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 54,
+      "requests_per_min": 36,
+      "transfer_bytes_total": 5879485,
+      "by_path": [
+        {
+          "path": "/api/funnel",
+          "n": 9,
+          "bytes": 4216203,
+          "failed": 0
+        },
+        {
+          "path": "/api/market",
+          "n": 1,
+          "bytes": 1503653,
+          "failed": 0
+        },
+        {
+          "path": "/api/screener",
+          "n": 1,
+          "bytes": 145164,
+          "failed": 0
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 1,
+          "bytes": 6725,
+          "failed": 0
+        },
+        {
+          "path": "/api/market/delta",
+          "n": 34,
+          "bytes": 5372,
+          "failed": 0
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 6,
+          "bytes": 2244,
+          "failed": 0
+        },
+        {
+          "path": "/api/update/version",
+          "n": 1,
+          "bytes": 73,
+          "failed": 0
+        },
+        {
+          "path": "/api/watchlist",
+          "n": 1,
+          "bytes": 51,
+          "failed": 0
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 90,
+      "scrollBefore": 90,
+      "domNodes": 1447,
+      "rows": 0,
+      "perf": {
+        "longTasks": 27,
+        "longTotalMs": 3323,
+        "maxLongMs": 399,
+        "mutations": 331,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 5797,
+            "dur": 399
+          },
+          {
+            "at": 6198,
+            "dur": 283
+          },
+          {
+            "at": 307,
+            "dur": 180
+          },
+          {
+            "at": 153857,
+            "dur": 148
+          },
+          {
+            "at": 175129,
+            "dur": 146
+          }
+        ]
+      }
+    },
+    {
+      "label": "master-1366x768",
+      "route": "/master",
+      "viewport": "1366x768",
+      "window_s": 90,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 54,
+      "requests_per_min": 36,
+      "transfer_bytes_total": 5879591,
+      "by_path": [
+        {
+          "path": "/api/funnel",
+          "n": 9,
+          "bytes": 4216201,
+          "failed": 0
+        },
+        {
+          "path": "/api/market",
+          "n": 1,
+          "bytes": 1503653,
+          "failed": 0
+        },
+        {
+          "path": "/api/screener",
+          "n": 1,
+          "bytes": 145165,
+          "failed": 0
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 1,
+          "bytes": 6725,
+          "failed": 0
+        },
+        {
+          "path": "/api/market/delta",
+          "n": 35,
+          "bytes": 5530,
+          "failed": 0
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 6,
+          "bytes": 2244,
+          "failed": 0
+        },
+        {
+          "path": "/api/update/version",
+          "n": 1,
+          "bytes": 73,
+          "failed": 0
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 0,
+      "scrollBefore": 0,
+      "domNodes": 338,
+      "rows": 0,
+      "perf": {
+        "longTasks": 31,
+        "longTotalMs": 3688,
+        "maxLongMs": 633,
+        "mutations": 240,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 1536,
+            "dur": 633
+          },
+          {
+            "at": 2880,
+            "dur": 195
+          },
+          {
+            "at": 203,
+            "dur": 186
+          },
+          {
+            "at": 132760,
+            "dur": 183
+          },
+          {
+            "at": 1366,
+            "dur": 165
+          }
+        ]
+      }
+    },
+    {
+      "label": "market-1920x1080",
+      "route": "/market",
+      "viewport": "1920x1080",
+      "window_s": 90,
+      "first_rows_ready": {
+        "rows": 0,
+        "ms": null
+      },
+      "requests_total": 56,
+      "requests_per_min": 37.3,
+      "transfer_bytes_total": 5879681,
+      "by_path": [
+        {
+          "path": "/api/funnel",
+          "n": 9,
+          "bytes": 4216194,
+          "failed": 0
+        },
+        {
+          "path": "/api/market",
+          "n": 1,
+          "bytes": 1503653,
+          "failed": 0
+        },
+        {
+          "path": "/api/screener",
+          "n": 1,
+          "bytes": 145160,
+          "failed": 0
+        },
+        {
+          "path": "/api/notifications/feed",
+          "n": 1,
+          "bytes": 6725,
+          "failed": 0
+        },
+        {
+          "path": "/api/market/delta",
+          "n": 35,
+          "bytes": 5530,
+          "failed": 0
+        },
+        {
+          "path": "/api/selection/portfolio",
+          "n": 6,
+          "bytes": 2244,
+          "failed": 0
+        },
+        {
+          "path": "/api/watchlist",
+          "n": 2,
+          "bytes": 102,
+          "failed": 0
+        },
+        {
+          "path": "/api/update/version",
+          "n": 1,
+          "bytes": 73,
+          "failed": 0
+        }
+      ],
+      "console_errors": [],
+      "scrollAfter": 400,
+      "scrollBefore": 400,
+      "domNodes": 2184,
+      "rows": 0,
+      "perf": {
+        "longTasks": 30,
+        "longTotalMs": 3958,
+        "maxLongMs": 675,
+        "mutations": 286,
+        "parseMs": [],
+        "worstLongTasks": [
+          {
+            "at": 1329,
+            "dur": 675
+          },
+          {
+            "at": 2313,
+            "dur": 428
+          },
+          {
+            "at": 2744,
+            "dur": 236
+          },
+          {
+            "at": 1113,
+            "dur": 207
+          },
+          {
+            "at": 265,
+            "dur": 194
+          }
+        ]
+      }
+    }
+  ]
+}

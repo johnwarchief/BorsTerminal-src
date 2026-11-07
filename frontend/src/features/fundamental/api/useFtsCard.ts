@@ -51,6 +51,11 @@ const Indicator1MonetarySchema = z
     unit_note: z.string().nullish(),
     ref_period_end: z.string().nullish(),
     remediation: z.string().nullish(),
+    /** مبنایِ رشد (Task 2/4): None = مسیرِ ماهانهٔ YTD؛ `fs_interim`/
+     *  `fs_annual` = صورتِ مالی؛ `fs_unavailable` = شکافِ صورتِ مالی.
+     *  بی‌این کلید، zod آن را بی‌صدا دور می‌ریخت و کارت نمی‌توانست بگوید
+     *  رشد از کدام مسیر آمده (و شکافِ ماهانه/صورتِ مالی را تفکیک کند). */
+    basis: z.string().nullish(),
   })
   .nullish();
 
@@ -90,6 +95,9 @@ const Indicator1Schema = z
     monetary: Indicator1MonetarySchema,
     volume: Indicator1VolumeSchema,
     pass: z.boolean().nullish(),
+    /** دلیلِ حکمِ محور ۱ از `axis1_state` — همان متنی که جدول در `i1_reason`
+     *  می‌گیرد. شکاف = None + همین دلیل، نه False. */
+    reason: z.string().nullish(),
   })
   .nullish();
 
@@ -135,6 +143,9 @@ const Indicator2Schema = z
     /** برچسبِ هر اسلات (audited_year_end / consolidated_unaudited / …) */
     evidence: z.array(z.string()).nullish(),
     evidence_tier: z.string().nullish(),
+    /** برچسبِ شاهدِ EPS (Task 5) — همان پنج مقدارِ قرارداد؛ کارت و دریل‌دان
+     *  آن را زیرِ سلولِ EPS می‌نویسند و سری نمایشی را نگه می‌دارند. */
+    evidence_label: z.string().nullish(),
     reason: z.string().nullish(),
     interim: z
       .object({
@@ -177,6 +188,9 @@ const Indicator3Schema = z
     band: z.string().nullish(),
     na: z.boolean().nullish(),
     reason: z.string().nullish(),
+    /** طبقهٔ نمایشیِ حاشیه (Task 6): below_floor | floor | standard | good؛
+     *  null یعنی حاشیه ساخته نشده (N/A). ۵۰٪ فقط برچسب است، نه دروازه. */
+    margin_tier: z.string().nullish(),
   })
   .nullish();
 
@@ -199,6 +213,14 @@ const Indicator4Schema = z
     potential_threshold: z.number().nullish(),
     potential_pass: z.boolean().nullish(),
     pass: z.boolean().nullish(),
+    /** مسیرِ پذیرشِ شاخص ۴ (Task 7): «فروش÷ارزش بازار» (مسیر اول) یا
+     *  «پتانسیل سود ۴۰٪» (مسیر دومِ سند v2.1)؛ null یعنی معاف/بی‌داده/بی‌مسیر.
+     *  فقط نامِ مسیر است — آستانه‌ها و دروازهٔ OR دست‌نخورده‌اند. */
+    acceptance_path: z.enum(['sales_to_mcap', 'profit_potential']).nullish(),
+    /** ماه‌هایِ مبنایِ سالانه‌سازی؛ ۰ یعنی دوره‌ای برایِ سالانه‌سازی نیست. */
+    annualize_months: z.number().nullish(),
+    /** «سالانه‌شده از دورهٔ N ماهه» از خودِ موتور؛ خالی یعنی بی‌دوره. */
+    annualize_label: z.string().nullish(),
     na: z.boolean().nullish(),
     exempt: z.boolean().nullish(),
     // چرا سنجیده نشد: «معافیتِ F-04» با «بی‌فروشِ سالانۀ راستی‌آزمایی‌شده» با

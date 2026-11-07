@@ -1,0 +1,19 @@
+CPU: Intel(R) Core(TM) i7-2630QM CPU @ 2.00GHz
+Cores: 4  Threads: 8
+CurrentClockMHz: 2001  MaxClockMHz: 2001
+Voltage: 0
+RAM_GB_Total: 7.91
+RAM_GB_Free: 2.81
+Commit_GB_Limit: 12.66
+Commit_GB_Free: 4.03
+OS: Microsoft Windows 11 Pro 10.0.28000 build 28000
+Model: ASUSTeK Computer Inc. K53SV
+PHYS: TOSHIBA MQ01ABD100V -63 media=HDD sizeGB=932 bus=ATA health=Healthy spindown= reads= writes=
+PHYS: ADATA SU650 media=SSD sizeGB=224 bus=ATA health=Healthy spindown= reads= writes=
+LOGICAL: C: sizeGB=161.7 freeGB=19
+LOGICAL: D: sizeGB=931.5 freeGB=362.7
+MAP:  ->  ->  []
+MAP:  ->  ->  []
+BatteryStatus: 2 (1=AC, 2=battery)  Charge: 98
+PowerPlan: 
+Processors_active: 

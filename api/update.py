@@ -97,7 +97,6 @@ def _portable_zip_url(manifest: dict, latest: str) -> str:
 # AppId در installer/bors_setup.iss (کروشه‌های بیرونی توسط Inno حذف می‌شوند)
 APP_ID = "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}"
 APP_EXE = "BorsTerminal_Ultimate.exe"
-SHELL_EXE = "BorsTerminal_Shell.exe"
 
 CACHE_DIR = os.path.join(tempfile.gettempdir(), "bors_update")
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -294,47 +293,22 @@ def _app_exe_path():
     return None
 
 
-def _install_batch_lines(pid, app_exe, installer, flags):
-    """خطوطِ batchِ نصب: منتظرِ مرگِ پایتون و پوسته، سپس setup و اجرای دوباره.
+# CREATE_NO_WINDOW، بدونِ DETACHED_PROCESS — دلیل در _spawn_install.
+WATCHDOG_CREATIONFLAGS = 0x08000000
 
-    پوستهٔ Tauri هم باید بمیرد؛ وگرنه Inno فایلِ قفل‌شدهٔ
-    BorsTerminal_Shell.exe را نمی‌تواند جایگزین کند. انتظار سقف دارد (۱۵ بار
-    ~۲ ثانیه) تا یک پوستهٔ معلق نصب را برایِ همیشه متوقف نکند.
+
+def _wait_for_exit_line(pid):
+    """خطِ انتظارِ پایانِ پروسه در فایلِ دستورِ نگهبان.
+
+    انتظار با ``Wait-Process`` است، نه «tasklist | find». در 2026-10-23 روی
+    یک نصبِ واقعی، حلقهٔ قدیمی با findِ منتظرِ stdin قفل شد: برنامه بسته شد،
+    نصب هرگز شروع نشد و برنامه هم برنگشت. فرمانِ تازه stdin را صریح به nul
+    می‌بندد و به PATH وابسته نیست.
     """
-    lines = [
-        "@echo off",
-        "chcp 65001 >nul",
-        ":wait",
-        'tasklist /fi "PID eq %d" 2>nul | find "%d" >nul' % (pid, pid),
-        "if errorlevel 1 goto waitshell",
-        "ping -n 2 127.0.0.1 >nul",
-        "goto wait",
-        ":waitshell",
-        "set /a SHELL_TRIES=0",
-        ":waitshell_loop",
-        'tasklist /fi "IMAGENAME eq %s" 2>nul | find /I "%s" >nul'
-        % (SHELL_EXE, SHELL_EXE),
-        "if errorlevel 1 goto run",
-        "set /a SHELL_TRIES+=1",
-        "if %SHELL_TRIES% GEQ 15 goto run",
-        "ping -n 2 127.0.0.1 >nul",
-        "goto waitshell_loop",
-        ":run",
-        # /WAIT: تا نصبِ کامل منتظر می‌مانیم تا فایل‌ها جایگزین شوند و بعد
-        # نسخهٔ جدید را اجرا کنیم. اگر کاربر UAC را رد کند، نصب نمی‌شود ولی
-        # نسخهٔ قدیمی هنوز سالم است و دوباره باز می‌شود.
-        'start /WAIT "" "%s" %s' % (installer, " ".join(flags)),
-    ]
-    if app_exe:
-        lines += [
-            'if not exist "%s" goto end' % app_exe,
-            # start "" (بدون /WAIT): برنامه باز می‌شود و چوپان تمام می‌شود.
-            # چوپان با اعتبارِ کاربرِ عادی اجرا شده، پس برنامه هم بدون
-            # elevation بالا می‌آید — مثلِ اجرای دستی از منوی استارت.
-            'start "" "%s"' % app_exe,
-        ]
-    lines += [":end", 'del "%~f0"']
-    return lines
+    powershell = r"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+    return ('"%s" -NoProfile -ExecutionPolicy Bypass -Command'
+            ' "Wait-Process -Id %d -Timeout 60 -ErrorAction SilentlyContinue"'
+            ' <nul >nul 2>&1' % (powershell, pid))
 
 
 def _spawn_install(installer, flags):
@@ -349,14 +323,38 @@ def _spawn_install(installer, flags):
     """
     pid = os.getpid()
     bat_path = os.path.join(CACHE_DIR, "bors_install.cmd")
-    lines = _install_batch_lines(pid, _app_exe_path(), installer, flags)
+    app_exe = _app_exe_path()
+    lines = [
+        "@echo off",
+        "chcp 65001 >nul",
+        _wait_for_exit_line(pid),
+        ":run",
+        # /WAIT: تا نصبِ کامل منتظر می‌مانیم تا فایلها جایگزین شوند و بعد
+        # نسخهٔ جدید را اجرا کنیم. اگر کاربر UAC را رد کند، نصب نمی‌شود ولی
+        # نسخهٔ قدیمی هنوز سالم است و دوباره باز می‌شود.
+        'start /WAIT "" "%s" %s' % (installer, " ".join(flags)),
+    ]
+    if app_exe:
+        lines += [
+            'if not exist "%s" goto end' % app_exe,
+            # start "" (بدون /WAIT): برنامه باز می‌شود و چوپان تمام می‌شود.
+            # چوپان با اعتبارِ کاربرِ عادی اجرا شده، پس برنامه هم بدون
+            # elevation بالا می‌آید — مثلِ اجرای دستی از منوی استارت.
+            'start "" "%s"' % app_exe,
+        ]
+    lines += [":end", 'del "%~f0"']
     # chcp 65001 در خطِ اول (ASCII خالص) خطوطِ بعدی را UTF-8 می‌کند تا مسیرهای
-    # غیرلاتین (مثل پروفایلِ کاربر) درست بمانند.
-    with open(bat_path, "w", encoding="utf-8", newline="\r\n") as f:
+    # غیرلاتین (مثل پروفایلِ کاربر) درست بمانند. newline="" تا CRLFِ خودمان
+    # دوباره ترجمه نشود و هر سطر یک \r\r\n نگیرد (که delِ آخرِ فایل را می‌شکست).
+    with open(bat_path, "w", encoding="utf-8", newline="") as f:
         f.write("\r\n".join(lines) + "\r\n")
-    creationflags = 0x00000008 | 0x08000000        # DETACHED_PROCESS | CREATE_NO_WINDOW
+    # فقط CREATE_NO_WINDOW؛ با DETACHED_PROCESS، فرزندِ بدونِ کنسول،
+    # powershell/find را در حالتِ انتظارِ stdin بی‌پایان نگه می‌دارد (همان
+    # قفلِ 2026-10-23). CREATE_NO_WINDOW یک کنسولِ پنهانِ مستقل می‌دهد که با
+    # مرگِ برنامه زنده می‌ماند؛ آزمونِ dev/installer_watchdog_guard.py همین
+    # پرچم را واقعاً اجرا می‌کند.
     subprocess.Popen(["cmd", "/c", bat_path],
-                     creationflags=creationflags, close_fds=True)
+                     creationflags=WATCHDOG_CREATIONFLAGS, close_fds=True)
     threading.Thread(target=_delayed_exit, args=(2.0,), daemon=True).start()
 
 

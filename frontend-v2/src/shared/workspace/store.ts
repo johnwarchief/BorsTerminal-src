@@ -152,7 +152,7 @@ export const useWorkspace = create<WorkspaceStore>()(
           if (next) patch(next);
         },
         close: (tileId) => {
-          const next = closeTile(get().workspaces[0].layout, tileId);
+          const next = closeTile(get().workspaces[0].layout, tileId, 'board');
           if (next) patch(next);
         },
         swap: (tileId, dir) => {

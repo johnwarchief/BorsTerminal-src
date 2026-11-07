@@ -93,6 +93,68 @@ def ensure_market_schema(conn: sqlite3.Connection) -> None:
         pass
 
 
+# ── اسکیمایِ idempotent یک‌بار به‌ازایِ هر (فایل، schema_version) ───────────
+# پیش از این هر `get_db()` چند CREATE IF NOT EXISTS + PRAGMA table_info + ALTER
+# را دوباره اجرا می‌کرد (سنجشِ ۱۴۰۵-۰۷-۳۰: p50 ۷٫۹ms و ۲٫۱۷ ثانیه CPU برایِ ۳۰۰
+# اتصال). داده هیچ تغییری نمی‌داد، ولی هر پنلِ mstat و هر درخواستِ API این
+# هزینه را می‌پرداخت. `PRAGMA schema_version` ارزان است و فقط با DDL عوض
+# می‌شود؛ پس اگر خودِ بانک مهاجرت کند (یا فایلِ تازه جایگزین شود) کلید عوض
+# می‌شود و بررسی یک‌بار دیگر اجرا می‌شود. PRAGMAهایِ اتصال و UDFها سرِ جایِ
+# خودشان‌اند: آن‌ها مخصوصِ هر connection‌اند.
+_SCHEMA_READY: set = set()
+_SCHEMA_READY_LOCK = threading.Lock()
+_SCHEMA_READY_MAX = 8
+
+
+def _schema_version(conn) -> int | None:
+    try:
+        return int(conn.execute("PRAGMA schema_version").fetchone()[0])
+    except Exception:
+        return None
+
+
+def _ensure_market_schema_once(conn) -> None:
+    key = (DB_PATH, _schema_version(conn))
+    with _SCHEMA_READY_LOCK:
+        if key in _SCHEMA_READY:
+            return
+        # قفل تا پایانِ بررسی نگه داشته می‌شود: اولین درخواست‌هایِ هم‌زمان
+        # نباید همان DDL را چند بار اجرا کنند (همان شکلِ stampede که در
+        # mstat دیده شد). بعد از این، فقط یک lookup از set است.
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_ct_ins_deven ON client_type(ins_code, d_even)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_ph_sym_date2 ON price_history(symbol, date DESC)")
+        except Exception:
+            pass
+        ensure_market_schema(conn)
+        ensure_selection_schema(conn)
+        try:
+            import watchlist_store
+            watchlist_store.ensure_table(conn)
+        except Exception:
+            pass
+        try:
+            import mstat_engine
+            mstat_engine.ensure_schema(conn)
+        except Exception:
+            pass
+        _SCHEMA_READY.add((DB_PATH, _schema_version(conn)))
+
+
+def _ensure_user_schema_once(conn) -> None:
+    key = (USER_DB_PATH, _schema_version(conn))
+    with _SCHEMA_READY_LOCK:
+        if key in _SCHEMA_READY:
+            return
+        try:
+            import watchlist_store
+            watchlist_store.ensure_table(conn)
+        except Exception:
+            pass
+        ensure_selection_schema(conn)
+        _SCHEMA_READY.add((USER_DB_PATH, _schema_version(conn)))
+
+
 def get_db():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail="Database market.db not found.")
@@ -116,31 +178,7 @@ def get_db():
     except Exception:
         pass
     # ایندکسهای پرفورمنس (یک‌بار، idempotent)
-    try:
-        conn.execute("CREATE INDEX IF NOT EXISTS ix_ct_ins_deven ON client_type(ins_code, d_even)")
-        conn.execute("CREATE INDEX IF NOT EXISTS ix_ph_sym_date2 ON price_history(symbol, date DESC)")
-    except Exception:
-        pass
-    ensure_market_schema(conn)
-    # v9.0 — جدول سبک تصمیمات سبد (Accept/Reject/Monitor). idempotent و هم‌جای
-    # ایندکسها؛ با «هر اتصال» تضمین میشود موجود است بدون نیاز به مایگریشن جدا.
-    ensure_selection_schema(conn)
-    # v9.7.3 — واچ‌لیست کاربر. همان الگوی بالا: idempotent و همراه هر اتصال،
-    # بدون مایگریشن جدا. DDL داخل watchlist_store است تا تست‌ها بدون FastAPI
-    # بتوانند همان جدول را بسازند.
-    try:
-        import watchlist_store
-        watchlist_store.ensure_table(conn)
-    except Exception:
-        pass
-    # v9.7.5 فاز ۱ — ستون‌های عمق/paper_type و جدول نقطه‌های تایم‌لاین. همان
-    # الگوی «همراه هر اتصال»: درخواستِ mstat روی بانکِ نسخهٔ قبلی هم کار می‌کند
-    # (فقط آن پنل‌ها «بی‌داده» می‌شوند، نه ۵۰۰).
-    try:
-        import mstat_engine
-        mstat_engine.ensure_schema(conn)
-    except Exception:
-        pass
+    _ensure_market_schema_once(conn)
     return conn
 
 
@@ -160,14 +198,8 @@ def get_user_db() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
 
-    # ساخت جداول کاربر (idempotent)
-    try:
-        import watchlist_store
-        watchlist_store.ensure_table(conn)
-    except Exception:
-        pass
-
-    ensure_selection_schema(conn)
+    # ساخت جداول کاربر (idempotent، یک‌بار به‌ازایِ هر schema_version)
+    _ensure_user_schema_once(conn)
 
     # migration یک‌باره از market.db به user.db
     # (برای کاربرانی که نسخهٔ قبلی نصب داشتند)

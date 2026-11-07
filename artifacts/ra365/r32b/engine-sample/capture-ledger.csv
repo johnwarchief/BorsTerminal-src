@@ -1,0 +1,4 @@
+﻿ra_asset_id,symbol,ins_code,state,candles,events,source,csv_sha256,error
+6,غدشت,2434703913394836,SUCCESS,3112,23,rahavard-reference-correction+base-price-discontinuity,a7e83e0084d0e47d75b17dd4b6ab1f01d41e6f47134ea8fdf64e993c48e18a92,
+107,كپارس,9698674686691945,SUCCESS,3594,21,rahavard-reference-correction+ledger+base-price-discontinuity,dc33c1bef7496404ff6d311b786071839c9d03928c7534f63c4d4c0835c9c305,
+113,سصوفي,13227300125161435,SUCCESS,4273,22,rahavard-reference-correction+ledger+base-price-discontinuity,a45c9727f62f3c15ba0737128c7f307d68e0a3edf0d7b74f1380659b45119b4e,

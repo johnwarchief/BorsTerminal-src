@@ -13,6 +13,13 @@
 //ِ بسته از فید خبری نشد، تازه‌سازی خوابیده است).
 import { CLOSED_POLL_MS, isMarketOpen } from './marketHours';
 
+/**
+ * فیدِ زندهٔ TSE هر ۱٫۵ ثانیه نظرسنجی می‌شود ولی تیکِ منبع هر ۹–۱۱ ثانیه
+ * عوض می‌شود (سنجشِ زندهٔ ۱۴۰۵/۰۸/۱۳). ۳۰ ثانیه ≈ سه تیکِ ازدست‌رفته؛
+ * بعد از آن، «درخواست‌ها می‌رسند» دیگر به‌معنای «منبع تازه است» نیست.
+ */
+export const SOURCE_STALL_MS = 30_000;
+
 export type Connection = 'error' | 'connecting' | 'ok';
 export type Freshness = 'live' | 'closed' | 'stale' | 'unknown';
 
@@ -26,6 +33,9 @@ export type FeedFreshnessInput = {
    *  چرا لازم شد: هر دورِ «unchanged» هم `dataUpdatedAt` را نو می‌کند، پس با
    *  سنجشِ زنده ۹۴۵ ثانیه بی‌تغییریِ revision، نشانگر «لحظاتی پیش» می‌گفت. */
   dataChangedAt?: number | null;
+  /** زمانِ آخرین دریافتِ موفقِ *منبع* (epoch ms) — `meta.live_at`ِ بک‌اند.
+   *  null یعنی بک‌اند این را گزارش نمی‌کند و رفتارِ قبلی می‌ماند. */
+  sourceUpdatedAt?: number | null;
   /** چند ردیف به نشستِ جاری تعلق دارند (`is_live`)؛ null یعنی گزارش نشده. */
   liveCount?: number | null;
   /** کلِ ردیفها؛ برایِ بافت. */
@@ -50,6 +60,8 @@ export type FeedStatus = {
   /** سنِ آخرینِ عوض‌شدنِ *داده*؛ null یعنی هنوز داده‌ای نبوده. این عدد با
    *  `ageMs` فرق دارد: «درخواست رسید» پاسخِ HTTP است، «عدد عوض شد» بازار. */
   dataAgeMs?: number | null;
+  /** سنِ آخرین دریافتِ موفقِ منبع؛ null یعنی بک‌اند گزارش نکرده است. */
+  sourceAgeMs?: number | null;
 };
 
 /**
@@ -70,6 +82,8 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   // درستش موجود نباشد — و آن را درِ `dataAgeSource` صادقانه می‌گوییم.
   const changedKnown = s.dataChangedAt != null && s.dataChangedAt > 0;
   const dataAgeMs = changedKnown ? Math.max(0, s.now - (s.dataChangedAt as number)) : ageMs;
+  const sourceKnown = s.sourceUpdatedAt != null && s.sourceUpdatedAt > 0;
+  const sourceAgeMs = sourceKnown ? Math.max(0, s.now - (s.sourceUpdatedAt as number)) : null;
 
   if (s.status === 'error') {
     return {
@@ -97,31 +111,34 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
 
   // بازار باز: آیا ردیفهایِ همان نشستِ جاری (is_live) حاضر‌اند؟
   const liveKnown = s.liveCount != null;
-  const stalled = dataAgeMs != null && dataAgeMs > CLOSED_POLL_MS;
+  const sourceStalled = sourceAgeMs != null && sourceAgeMs > SOURCE_STALL_MS;
+  const stalled = sourceStalled || (dataAgeMs != null && dataAgeMs > CLOSED_POLL_MS);
 
   if (!liveKnown) {
     return {
-      connection: 'ok', freshness: 'unknown', pulse: false, ageMs, dataAgeMs,
+      connection: 'ok', freshness: 'unknown', pulse: false, ageMs, dataAgeMs, sourceAgeMs,
       tone: 'bg-text-muted', label: 'متصل — تازگیِ داده نامشخص',
     };
   }
   if ((s.liveCount ?? 0) === 0) {
     return {
-      connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
+      connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs, sourceAgeMs,
       tone: 'bg-accent-yellow', label: 'کهنه — ردیفی از امروزِ تابلو در دسترس نیست',
     };
   }
   if (stalled) {
     return {
-      connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
+      connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs, sourceAgeMs,
       tone: 'bg-accent-yellow',
-      label: changedKnown
-        ? 'ایستاده — هیچ عددی از تازۀِ این پنجره عوض نشده (درخواست‌ها می‌رسند)'
-        : 'کهنه — به‌روزرسانیِ تابلو متوقف شده',
+      label: sourceStalled
+        ? 'کهنه — فیدِ زنده از منبع تازه نمی‌شود'
+        : changedKnown
+          ? 'ایستاده — هیچ عددی از تازۀِ این پنجره عوض نشده (درخواست‌ها می‌رسند)'
+          : 'کهنه — به‌روزرسانیِ تابلو متوقف شده',
     };
   }
   return {
-    connection: 'ok', freshness: 'live', pulse: true, ageMs, dataAgeMs,
+    connection: 'ok', freshness: 'live', pulse: true, ageMs, dataAgeMs, sourceAgeMs,
     tone: 'bg-accent-green', label: 'مستقیم — بازار باز',
   };
 }

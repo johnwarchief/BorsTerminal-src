@@ -27,6 +27,7 @@ from requests.adapters import HTTPAdapter
 
 # تنها تعریفِ «واحدِ پول» — `_classify_unit` به این واگرد می‌کند تا نوشتنِ مقیاس
 # و خواندنِ مقیاس یک مجموعه باشند (`codal_units` stdlib-only است، بی‌چرخه).
+import codal_captcha
 import codal_units as CU
 from urllib3.util.retry import Retry
 
@@ -96,6 +97,13 @@ REJECTED_SECTORS = (
 
 _LAST_429 = False
 _CONSEC_429 = 0          # consecutive final-429 symbols (WAF gate)
+
+# چالش رسمی 429: فقط با --captcha روشن می‌شود. اجرای خودکار بدون آن دقیقاً
+# مثل قبل backoff می‌کند؛ کد از فایل/ورودی اپراتور می‌آید و یک‌بار مصرف است.
+_CAPTCHA_ENABLED = False
+_CAPTCHA_CODE_FILE = None
+_CAPTCHA_PROMPT = None
+_CAPTCHA_ATTEMPTED = False
 POLITE = False           # پروفایل بدون-IP-روتاریشن: بین هر درخواست مکث امن (میانگین ~1.7s)
 # --no-tether از CLI ست میشود؛ پیش‌فرضِ ماژول لازم است تا make_session برای
 # فراخوانِ کتابخانه‌ای (api/, dev/, probeها) NameError ندهد.
@@ -766,6 +774,7 @@ CREATE TABLE IF NOT EXISTS fts_results (
 #   empty       باز شد و عددِ قابل‌استخراج نداشت (ok=0) — شکست نیست
 #   failed      خطای گذرا (شبکه/نرخ) — با next_attempt_at دوباره تلاش می‌شود
 #   unresolved  بودجۀ تلاش تمام شده یا ورودیِ ضروری وجود ندارد — تصمیمِ انسان
+#   quarantined ردیف از گیتِ ردیفی رد شد (دادهٔ خراب) — پایان‌یافته، بدونِ تلاشِ دوباره
 # `error_kind` علت را از هم جدا می‌کند (خطای شبکه ≠ خطای استخراج ≠ فقدان ورودی ≠
 # هویت نامطمئن ≠ تناقض دوره/واحد ≠ اصلاحیه) تا «چرا» درِ رابط قابل‌نمایش باشد.
 _LEDGER_QUEUE_COLS = [
@@ -779,14 +788,15 @@ _LEDGER_QUEUE_COLS = [
     ("updated_at", "TEXT"),
     ("finished_at", "TEXT"),
 ]
-LEDGER_DONE_STATES = ("done", "empty", "unresolved")
+LEDGER_DONE_STATES = ("done", "empty", "unresolved", "quarantined")
 # `state IS NULL` = ردیفهایِ پیش از این مهاجرت: همان‌ها که `ok` دارند پایان‌یافته
 # شمرده می‌شوند (رفتارِ دیروز، بی‌بازگشتِ بی‌دلیل به صف).
 # تنها تعریفِ «این اطلاعیه تمام شد» — `derived_state`، `pending_notices`،
 # `codal_pipeline` و گاردها همه همین را می‌خوانند؛ شرطِ دوم نوشته نمی‌شود.
 def ledger_terminal_sql(alias=None):
     col = f"{alias}.state" if alias else "state"
-    return ("(%s IS NULL OR %s IN ('done','empty','unresolved'))" % (col, col))
+    return ("(%s IS NULL OR %s IN ('done','empty','unresolved','quarantined'))"
+            % (col, col))
 
 
 LEDGER_TERMINAL_SQL = ledger_terminal_sql()
@@ -1090,8 +1100,17 @@ def backfill_derived(conn, verbose=True):
 _CB_TOTAL, _CB_DONE, _CB_SYM = 0, 0, ""
 
 # ---------------------------------------------------------------- notice list
+def enable_captcha(code_file=None, prompt=None):
+    """روشن‌کردن چالش رسمی 429 برای اجرای دستی/کد فایل."""
+    global _CAPTCHA_ENABLED, _CAPTCHA_CODE_FILE, _CAPTCHA_PROMPT, _CAPTCHA_ATTEMPTED
+    _CAPTCHA_ENABLED = True
+    _CAPTCHA_CODE_FILE = code_file
+    _CAPTCHA_PROMPT = prompt
+    _CAPTCHA_ATTEMPTED = False
+
+
 def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
-    global _CONSEC_429
+    global _CONSEC_429, _CAPTCHA_ATTEMPTED
     """Fetch one page with robust exponential backoff on rate-limit (429).
     On 429 sleeps 30s, then 60s, then 120s (up to `max_429_retries` retries),
     then gives up and returns None (the caller stops the run gracefully).
@@ -1121,6 +1140,14 @@ def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
             time.sleep(random.uniform(2.5, 5.0))
             continue
         if r.status_code in (429, 403):
+            if _CAPTCHA_ENABLED and not _CAPTCHA_ATTEMPTED:
+                _CAPTCHA_ATTEMPTED = True
+                print(f"  page {page}: {r.status_code} → چالش رسمی کدال ...", flush=True)
+                if codal_captcha.solve_captcha(
+                        s, code_file=_CAPTCHA_CODE_FILE, prompt=_CAPTCHA_PROMPT):
+                    print(f"  page {page}: چالش تأیید شد؛ همان صفحه دوباره ...", flush=True)
+                    continue
+                print(f"  page {page}: چالش کامل نشد؛ بازگشت به backoff معمول", flush=True)
             # v9.8.1 — 403 (بن/WAF قطعی) هم مثل 429 با چرخش IP برخورد میکند؛
             # پیش‌تر 403 بی‌صدا به raise_for_status می‌افتاد و کل صفحه دور
             # ریخته میشد بدون هیچ تلاشی برای IP تازه.
@@ -2910,7 +2937,9 @@ def discover_notices(conn, watermarks=None, cats=DISCOVERY_FEED_CATS,
     تولید را با فیدِ ساختگی بزند (الگوی `run_cycle`)، نه یکِ پیادۀ دوم.
 
     خروجی: `found, new, pages, items=[(tn,'fs'|'ms')], floors={cat: tn},
-    max_tn, newest, blocked, incomplete, error_kind`.
+    max_tn, newest, blocked, incomplete, budget_exhausted, error_kind`.
+    `budget_exhausted` یعنی ناقص‌بودن از تمام‌شدنِ سقفِ صفحه است، نه بلاکِ
+    شبکه (`blocked`).
     """
     now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     real_fetch = fetch is None
@@ -3005,6 +3034,12 @@ def discover_notices(conn, watermarks=None, cats=DISCOVERY_FEED_CATS,
         conn.executemany(NOTICE_UPSERT, rows_new)
         conn.commit()
     out["items"] = pend
+    # «بودجهٔ صفحه تمام شد» را از «شبکه بلاک شد» جدا می‌کند: در حالتِ اول
+    # ادامه‌دادنِ کشف (با پاسِ عمیق) بی‌خطر است و breaker نباید latch شود؛ در
+    # حالتِ دوم منبع پاسخ نداده و شکاف واقعی است.
+    out["budget_exhausted"] = bool(
+        any(not v.get("done") for v in out["per_cat"].values())
+        and not out["blocked"])
     if real_fetch and session is not None:
         try:
             session.close()
@@ -3013,7 +3048,8 @@ def discover_notices(conn, watermarks=None, cats=DISCOVERY_FEED_CATS,
     return out
 
 
-def feed_sync(mode="update", optimized=False, catchup=None):
+def feed_sync(mode="update", optimized=True, catchup=None, cats=None,
+              pages_per_cat=None):
     """Smart GLOBAL-FEED sync — جایگزین جستجوی نماد-به-نماد.
 
     کشف 2026-08-27 (browser-verified): search.codal.ir/api/search/v2/q با
@@ -3027,6 +3063,13 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     mode="discover": FromDate=1400/01/01 (پنج سال اخیر) → همهٔ اطلاعیههای
                      مالی که نداریم مستقیم دانلود/استخراج میشوند — جایگزین
                      چرخهٔ ۲۱۳۲ پراب خالی discovery قدیم (96.6% empty).
+
+    cats:            دسته‌هایِ فید (پیش‌فرض ``["1", "3"]``). هیچ فیلترِ
+                     دیگری اضافه نمی‌شود.
+    pages_per_cat:   سقفِ صفحه برایِ هر دسته؛ ``None`` = پیش‌فرضِ ۸ صفحه در
+                     حالتِ optimized و ۵۰ صفحه در غیرِ آن. عدد یا نگاشتِ
+                     ``{cat: pages}`` پذیرفته می‌شود. ``POLITE`` همچنان
+                     چرخشِ IP را کامل خاموش می‌کند (مسیرِ بدونِ ADB).
     """
     global _BACKOFF_UNTIL, _BACKOFF_EVENTS
     _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
@@ -3039,6 +3082,28 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     # دامنهٔ درستِ ضدتکرار (زوجِ نماد+دوره، نه دورۀ سراسری) — دلیلش درِ docstringِ
     # `derived_state` و با شمارشِ بانک سنجیده شده است.
     processed, fs_done, ms_done = derived_state(conn)
+    cats = [str(c) for c in (cats or ("1", "3"))]
+    if not cats:
+        cats = ["1", "3"]
+    if pages_per_cat is None:
+        page_budget = 8 if optimized else 50
+    elif isinstance(pages_per_cat, dict):
+        page_budget = 8 if optimized else 50
+    else:
+        try:
+            page_budget = max(1, int(pages_per_cat))
+        except (TypeError, ValueError):
+            page_budget = 8 if optimized else 50
+
+    def _pages_for(cat):
+        """سقفِ صفحهٔ همین دسته؛ نگاشتِ اختیاری، وگرنه سقفِ سراسری."""
+        if isinstance(pages_per_cat, dict):
+            try:
+                return max(1, int(pages_per_cat.get(str(cat), page_budget)))
+            except (TypeError, ValueError):
+                return page_budget
+        return page_budget
+
     if mode == "update":
         # نشانکِ increment: «تازۀ‌ترین تاریخِ واقعیِ بانک».
         # پیش از این همین‌جا `SELECT MAX(publish_date)` می‌خواند و می‌گرفت — ولی
@@ -3049,10 +3114,6 @@ def feed_sync(mode="update", optimized=False, catchup=None):
         # اینجا همان ترجمۀ خودِ فایل اعمال می‌شود و بیشینه عددی گرفته می‌شود.
         max_dt = newest_publish_date(conn)
         from_date = max_dt or "1400/01/01"
-        cats = ["1", "3"]
-        page_budget = 50
-        if optimized:
-            page_budget = 8   # بهینه: فقط آخرین صفحه‌های فید (تغییرپذیر) — ۶ برابر درخواست کمتر
         # تعداد نمادهای موجود که بروزرسانی می‌شوند (پوشش ۵ شاخصی)
         n_syms = conn.execute(
             "SELECT COUNT(DISTINCT symbol) FROM financial_statements").fetchone()[0]
@@ -3061,8 +3122,6 @@ def feed_sync(mode="update", optimized=False, catchup=None):
             label += " [حالت بهینه: فقط داده‌های تغییرپذیر]"
     else:
         from_date = "1400/01/01"
-        cats = ["1", "3"]
-        page_budget = 120
         n_syms = conn.execute(
             "SELECT COUNT(DISTINCT symbol) FROM financial_statements").fetchone()[0]
         label = f"کشف از فید سراسری (۵ سال اخیر) — {n_syms} نماد موجود"
@@ -3071,17 +3130,18 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     sess = make_session()
     counters = {"notices": 0, "fs": 0, "ms": 0, "pages": 0, "retry": 0,
                 "catchup": 0, "catchup_rows": 0}
-    total_pages = page_budget * len(cats)
+    total_pages = sum(_pages_for(c) for c in cats)
     write_progress("codal_sync", f"{label} — شروع...", total_pages, 0, "")
     for cat in cats:
         page = 1
         cat_notices = 0
-        while page <= page_budget:
+        while page <= _pages_for(cat):
             c = _control_cmd()
             if c == "stop":
                 write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
                 print("=== Feed sync stopped by user ===", flush=True)
-                return
+                counters["stopped"] = True
+                return counters
             while c == "pause":
                 write_progress("codal_paused",
                                f"اسکن در حال مکث است (دسته {cat}، صفحه {page}) — برای ادامه دکمه ادامه را بزنید",
@@ -3090,7 +3150,8 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                 c = _control_cmd()
                 if c == "stop":
                     write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
-                    return
+                    counters["stopped"] = True
+                    return counters
             q = feed_query(cat, page, from_date)
             _jitter()
             letters = fetch_page(sess, page, q, quiet=False, max_429_retries=2)
@@ -3101,6 +3162,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                 write_progress("codal_stopped",
                                f"اسکن متوقف شد: محدودیت موقت Codal (429) — بعداً دوباره امتحان کنید",
                                100, page, "")
+                counters["blocked"] = True
                 break
             if not letters:
                 print(f"  [feed] cat{cat} page {page}: empty — end of feed", flush=True)
@@ -3147,7 +3209,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                   f"(fs={counters['fs']} ms={counters['ms']} new={counters['notices']})",
                   flush=True)
             write_progress("codal_sync",
-                           f"{label} — دسته {cat} صفحه {page}/{page_budget} | {counters['notices']} اطلاعیهٔ جدید، "
+                           f"{label} — دسته {cat} صفحه {page}/{_pages_for(cat)} | {counters['notices']} اطلاعیهٔ جدید، "
                            f"FS: {counters['fs']}، ماهانه: {counters['ms']}",
                            total_pages, counters["pages"] + page, "")
             # مرز دادههای شناختهشده: فقط اگر این صفحه کاملاً تکراری باشد (هر ۲۵ رکورد known)
@@ -3188,6 +3250,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
             write_progress("codal_done",
                            f"جبران تمام شد: {nfmt(counters['catchup'])} ردیفِ مشتقِ تازه "
                            f"از {nfmt(counters['catchup_rows'])} گزارشِ معوق", 1, 1, "")
+    return counters
 
 
 def _repair_periods_from_titles(conn):

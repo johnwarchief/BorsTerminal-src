@@ -133,6 +133,7 @@ describe('useTechnicalStore', () => {
         target2: 700,
         stopLoss: 1050,
         score: 85,
+        quality: 85,
         height: 100,
         status: 'active',
       },
@@ -165,26 +166,25 @@ describe('useTechnicalStore', () => {
     ]);
   });
 
-  it('manages channel modes, RSI variants, drawer width, and tabs', () => {
+  it('manages channel modes, RSI variants, and the feed flag', () => {
     useTechnicalStore.getState().setChannelMode('retest_channel');
     expect(useTechnicalStore.getState().channelMode).toBe('retest_channel');
 
     useTechnicalStore.getState().setRsiVariant('smooth_ma');
     expect(useTechnicalStore.getState().rsiVariant).toBe('smooth_ma');
 
-    // تست محدودسازی عرض سایدبار بین ۳۶۰ و ۶۵۰
-    useTechnicalStore.getState().setLeftDrawerWidth(200);
-    expect(useTechnicalStore.getState().leftDrawerWidth).toBe(360);
-
-    useTechnicalStore.getState().setLeftDrawerWidth(900);
-    expect(useTechnicalStore.getState().leftDrawerWidth).toBe(650);
-
-    useTechnicalStore.getState().setActiveDrawerTab('scanner');
-    expect(useTechnicalStore.getState().activeDrawerTab).toBe('scanner');
-
-    expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(true);
-    useTechnicalStore.getState().toggleLeftDrawer();
+    // فید/کشو پیش‌فرض بسته است تا چارت قهرمان بماند.
     expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(false);
+    useTechnicalStore.getState().toggleLeftDrawer();
+    expect(useTechnicalStore.getState().isLeftDrawerOpen).toBe(true);
+  });
+
+  it('sets and clears the focused pattern id (spec §7.3)', () => {
+    expect(useTechnicalStore.getState().focusPatternId).toBeNull();
+    useTechnicalStore.getState().setFocusPatternId('FLAG_BULL:4:1-2-3-4');
+    expect(useTechnicalStore.getState().focusPatternId).toBe('FLAG_BULL:4:1-2-3-4');
+    useTechnicalStore.getState().setFocusPatternId(null);
+    expect(useTechnicalStore.getState().focusPatternId).toBeNull();
   });
 
   it('resets state back to initial values', () => {

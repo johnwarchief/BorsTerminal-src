@@ -22,6 +22,7 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 
 router = APIRouter()
@@ -99,13 +100,426 @@ def sync_codal_fts_refresh(mode: str = Query("monthly")):
 # گیر می‌کند؛ snapshot امضانشدهٔ ریلیز تنها منبعِ قابل اتکا برای کاربر است.
 # اگر دانلود بلاک شود، همان مکانیزم چرخش IP سلولی codal_fetcher (ADB
 # airplane-mode toggle) فعال می‌شود — گوشیِ tether شده IP تازه می‌گیرد.
+#
+# Task 8a: منبع، تگِ دادهٔ پایدارِ ``data-codal`` است نه ``latest`` ریلیزِ
+# برنامه — snapshot نباید به نسخهٔ اپ Coupling شود و دکمهٔ دستی هم باید همان
+# فایلِ امضاشدهٔ auto-check را بگیرد، پس نامِ ``CODAL_DB_URL`` حفظ شده و فقط
+# مقصدش عوض شده است. ``.sig`` کنارش روی همان تگ است.
 # ---------------------------------------------------------------------------
-CODAL_DB_URL = ("https://github.com/johnwarchief/BorsTerminal/releases/"
-                "latest/download/codal.db.lzma")
+CODAL_DATA_TAG = "data-codal"
+CODAL_BASE = ("https://github.com/johnwarchief/BorsTerminal/releases/download/"
+              + CODAL_DATA_TAG)
+CODAL_DB_URL = CODAL_BASE + "/codal.db.lzma"
+CODAL_META_URL = CODAL_BASE + "/codal.meta.json"
+CODAL_CAL_URL = CODAL_BASE + "/calendar.json"
 CODAL_DB_STATUS_PATH = os.path.join(WORK_DIR, "codal_db_status.json")
 _CODAL_TABLES = ("codal_notices", "financial_statements", "monthly_sales")
 _dbdl_lock = threading.Lock()
 _dbdl_running = False
+
+# قفلِ متقابل با orchestrator روزانهٔ Task 6 (dev/codal_auto_update.py).
+# آن پروسه نامِ ``codal_fetcher`` ندارد و feed_sync را in-process صدا می‌زند،
+# پس ``_codal_running()`` نمی‌بیندش؛ تنها نشانه‌هایش قفل/وضعیتِ خودش است.
+# همان قاعدهٔ کهنگیِ ۶ساعتهٔ خودِ orchestrator اعمال می‌شود.
+ORCHESTRATOR_LOCK_STALE_SECONDS = 6 * 3600
+_ORCHESTRATOR_TERMINAL_STAGES = frozenset({
+    "done", "dry_run_ok", "paused", "locked", "client_busy",
+    "backup_failed", "fetch_failed", "validation_failed", "merge_failed",
+    "materialize_failed", "snapshot_failed", "sign_failed", "publish_failed",
+    "failed",
+})
+
+
+CATCHUP_OPT_IN_ENV = "BORS_CODAL_AUTOUPDATE"
+CATCHUP_COOLDOWN_HOURS = 6.0
+_FUTURE_SKEW_SECONDS = 300          # timestampِ آیندهٔ دور = خراب/اختلافِ ساعت
+_TRUTHY = ("1", "true", "yes", "on")
+
+
+def _parse_iso(raw):
+    """ISO timestamp → datetime؛ خالی/date-only/نامعتبر → None.
+
+    date-only (``2026-10-21``) عمداً timestamp شمرده نمی‌شود: fromisoformat
+    آن را نیمه‌شب می‌فهمد و «امروزِ نیمه‌شب» می‌تواند یک اجرایِ کهنه را تازه
+    جا بزند. نویسندهٔ وضعیت همیشه ساعت را می‌نویسد.
+    """
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    raw = raw.strip()
+    if "T" not in raw and " " not in raw:
+        return None
+    if raw.endswith(("Z", "z")):       # ISO-Z → offset؛ fromisoformat پیش از 3.11 نه
+        raw = raw[:-1] + "+00:00"
+    try:
+        return datetime.datetime.fromisoformat(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _age_seconds(raw, now=None):
+    """سنِ raw نسبت به now (ثانیه)؛ None یعنی خالی/نامعتبر/غیرقابلِ‌مقایسه.
+
+    aware/naive مخلوط هم پذیرفته می‌شود: اگر یک طرف tzinfo داشته باشد و طرفِ
+    دیگر نه، منطقۀ طرفِ aware به طرفِ naive چسبانده می‌شود تا مقایسه هرگز
+    ``TypeError: can't subtract offset-naive and offset-aware`` ندهد.
+    """
+    stamp = _parse_iso(raw)
+    if stamp is None:
+        return None
+    if now is None:
+        now = (datetime.datetime.now(stamp.tzinfo) if stamp.tzinfo is not None
+               else datetime.datetime.now())
+    if stamp.tzinfo is not None and now.tzinfo is None:
+        now = now.replace(tzinfo=stamp.tzinfo)
+    elif stamp.tzinfo is None and now.tzinfo is not None:
+        stamp = stamp.replace(tzinfo=now.tzinfo)
+    try:
+        return (now - stamp).total_seconds()
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def should_auto_update(last_success_iso, now=None, max_age_hours=24):
+    """آیا اجرایِ خودکارِ کدال کهنه است؟ (خالص، stdlib، بدونِ شبکه)
+
+    None/خالی/تاریخِ نامعتبر/date-only → True (محافظه‌کارانه: یک اجرایِ اضافی
+    بهتر از دادهٔ کهنه است). تازۀ کمتر از max_age_hours → False؛ کهنه‌تر →
+    True. timestampِ آیندهٔ دور (بیش از ۵ دقیقه اختلافِ ساعت/فایلِ خراب) هم
+    قابلِ اتکا نیست → True. timestampهایِ aware و naive (و مخلوطِ آن‌ها) بدونِ
+    استثنا مقایسه می‌شوند.
+    """
+    age = _age_seconds(last_success_iso, now)
+    if age is None:
+        return True
+    if age < -_FUTURE_SKEW_SECONDS:
+        return True
+    try:
+        return bool(age > float(max_age_hours) * 3600.0)
+    except (TypeError, ValueError, OverflowError):
+        return True
+
+
+def recently_attempted(status, now=None, cooldown_hours=CATCHUP_COOLDOWN_HOURS):
+    """آیا آخرین تلاش در پنجرهٔ cooldown است؟ (خالص، بدونِ I/O)
+
+    ``started_at`` در هر تلاش — موفق یا ناموفق — نوشته می‌شود؛ در نبودش
+    ``updated_at`` همان نقش را دارد. اگر last_success کهنه باشد ولی تلاشِ
+    تازه‌ای شکست خورده باشد، اجرایِ دوباره فقط درخواستِ تکراری به کدال
+    می‌فرستد (سقفِ درخواست). timestampهایِ aware/naive/نامعتبر نباید استثنا
+    بدهند: نامعتبر → cooldown ندارد (اجازهٔ تلاش)؛ آیندهٔ دور (اختلافِ ساعت یا
+    فایلِ خراب) هم قابلِ اتکا نیست.
+    """
+    if not isinstance(status, dict):
+        return False
+    raw = status.get("started_at") or status.get("updated_at")
+    age = _age_seconds(raw, now)
+    if age is None or age < -_FUTURE_SKEW_SECONDS:
+        return False
+    try:
+        return bool(age <= float(cooldown_hours) * 3600.0)
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
+def _env_enabled(env, name):
+    """آیا env[name] یکی از مقادیرِ صریحِ 1/true/yes/on است؟"""
+    try:
+        value = (env or {}).get(name)
+    except AttributeError:
+        return False
+    return str(value or "").strip().lower() in _TRUTHY
+
+
+def should_start_catchup(status, frozen, env=None, fetch_loops_enabled=True,
+                         paused=False, script_exists=True, now=None,
+                         max_age_hours=24,
+                         cooldown_hours=CATCHUP_COOLDOWN_HOURS):
+    """آیا نخِ استارت مجاز است ``dev/codal_auto_update.py`` را بالا بیاورد؟ (خالص)
+
+    همهٔ درها باید باز باشند:
+      ۱) حالتِ سورس فقط با opt-inِ صریحِ ``BORS_CODAL_AUTOUPDATE=1``؛ نصبِ
+         frozen/portable خودش opt-in است. این در هارنس‌هایِ تستی/توسعه‌ای که
+         app را بدونِ ``BORS_NO_FETCH_LOOPS`` بالا می‌آورند، واکشیِ واقعی
+         نمی‌سازد.
+      ۲) ``_fetch_loops_enabled()`` (``BORS_NO_FETCH_LOOPS=1`` خاموشش می‌کند).
+      ۳) نه paused (فایلِ ``codal_auto_pause``).
+      ۴) ``last_success`` کهنه (``should_auto_update``) و آخرین تلاش بیرون از
+         cooldownِ ۶ساعته (``recently_attempted``) — تلاشِ ناموفقِ تازه دوباره
+         کلِ خطِ لوله را اجرا نمی‌کند.
+      ۵) اسکریپت موجود باشد؛ بیلدِ frozen پوشهٔ ``dev/`` را همراه ندارد.
+
+    تابع هیچ I/O ندارد: status/env/زمان/وجودِ اسکریپت همه ورودی‌اند.
+    """
+    if not fetch_loops_enabled or paused or not script_exists:
+        return False
+    if not frozen and not _env_enabled(env, CATCHUP_OPT_IN_ENV):
+        return False
+    if recently_attempted(status, now=now, cooldown_hours=cooldown_hours):
+        return False
+    last_success = status.get("last_success") if isinstance(status, dict) else None
+    return bool(should_auto_update(last_success, now=now,
+                                   max_age_hours=max_age_hours))
+
+
+def should_auto_check(frozen, env=None, fetch_loops_enabled=True):
+    """آیا نخِ استارت مجاز است یک‌بار ``auto_check`` را صدا بزند؟ (خالص)
+
+    همان درِ Task 6: در حالتِ سورس فقط با opt-inِ صریحِ
+    ``BORS_CODAL_AUTOUPDATE=1``؛ نصبِ frozen/portable خودش opt-in است؛ و
+    ``_fetch_loops_enabled()`` (``BORS_NO_FETCH_LOOPS=1``) همیشه و بر هر
+    opt-in مقدم است. هیچ I/O ندارد، پس هارنس‌هایِ تست/توسعه بدونِ هیچ
+    درخواستی همین تابع را می‌سنجند.
+    """
+    if not fetch_loops_enabled:
+        return False
+    return bool(frozen) or _env_enabled(env, CATCHUP_OPT_IN_ENV)
+
+
+def read_auto_status():
+    """خواندنِ WORK_DIR/codal_auto_status.json؛ هر خطا → {}.
+
+    مسیر درِ هر فراخوانی از WORK_DIR ساخته می‌شود (نه یک ثابتِ import-time)،
+    تا تست بتواند WORK_DIR را به پوشۀِ موقت بچسباند و مسیرِ واقعی لمس نشود.
+    """
+    try:
+        with open(os.path.join(WORK_DIR, "codal_auto_status.json"),
+                  "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:                                      # noqa: BLE001
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _orchestrator_busy():
+    """آیا orchestrator روزانهٔ Task 6 همین حالا مشغول است؟ (بدونِ شبکه/I/O سنگین)
+
+    دو نشانهٔ مستقل، هر دو با قاعدهٔ کهنگیِ ۶ساعتهٔ خودِ orchestrator:
+      ۱) ``WORK_DIR/codal_auto.lock`` تازه — قفل را در کلِ اجرا نگه می‌دارد
+         (کپیِ staging، واکشی، merge، انتشار)؛
+      ۲) ``WORK_DIR/codal_auto_status.json`` با مرحلهٔ غیرِپایانی و timestampِ
+         تازه — برایِ پنجره‌ای که قفل هنوز نوشته نشده یا وضعیت از قفل
+         جدا مانده است.
+
+    بدونِ این در، ``_codal_running()`` orchestrator را نمی‌بیند (نامِ پروسه
+    ``codal_auto_update.py`` است و ``feed_sync`` درونِ همان پروسه اجرا می‌شود)
+    و دو مسیر می‌توانند همان سه جدول را هم‌زمان merge کنند. ``monthly_sales``
+    ستونِ ``fetched_at`` ندارد، پس mergeِ دوم می‌تواند ردیفِ قدیمی‌تر را
+    بنویسد؛ SQLite جلویِ خرابی را می‌گیرد، نه رگرسیونِ داده را.
+    """
+    try:
+        lock_age = time.time() - os.path.getmtime(
+            os.path.join(WORK_DIR, "codal_auto.lock"))
+    except OSError:
+        lock_age = None
+    if (lock_age is not None
+            and -_FUTURE_SKEW_SECONDS <= lock_age <= ORCHESTRATOR_LOCK_STALE_SECONDS):
+        return True
+    status = read_auto_status()
+    stage = str(status.get("stage") or "").strip().lower()
+    if not stage or stage in _ORCHESTRATOR_TERMINAL_STAGES:
+        return False
+    age = _age_seconds(status.get("updated_at") or status.get("started_at"))
+    return (age is not None
+            and -_FUTURE_SKEW_SECONDS <= age <= ORCHESTRATOR_LOCK_STALE_SECONDS)
+
+
+def boot_sync(decide_catchup, decide_auto_check, spawn_catchup, run_auto_check):
+    """یک تصمیمِ واحد در بوت؛ دو مسیرِ merge هرگز با هم شروع نمی‌شوند.
+
+    ``decide_catchup``/``decide_auto_check`` دروازه‌هایِ خالصِ Task 6/8a هستند.
+    اگر تصمیمِ جبران true باشد و ``spawn_catchup`` پروسه را واقعاً بالا
+    بیاورد، دروازهٔ auto-check حتی ارزیابی هم نمی‌شود (نه فقط شروع دانلود).
+    فقط شکستِ spawn (هیچ orchestratorی بالا نیامده) اجازه می‌دهد auto-check
+    اجرا شود؛ این استثنا مسیرِ ``dev/``ِ خراب را قفل نمی‌کند.
+
+    خروجی: ``"catchup"`` / ``"auto_check"`` / ``""``. هیچ استثنایی از دو
+    دروازه یا spawn بیرون نمی‌زند؛ استثنای ``run_auto_check`` به فراخوان
+    می‌رسد تا خودش لاگ/مدیریت کند.
+    """
+    try:
+        catchup = bool(decide_catchup())
+    except Exception:                                      # noqa: BLE001
+        catchup = False
+    if catchup:
+        try:
+            if spawn_catchup():
+                return "catchup"
+        except Exception:                                  # noqa: BLE001
+            pass
+    try:
+        check = bool(decide_auto_check())
+    except Exception:                                      # noqa: BLE001
+        check = False
+    if check:
+        run_auto_check()
+        return "auto_check"
+    return ""
+
+
+def _period_key(value):
+    """'1405/06/31' → (1405, 6, 31)؛ هر چیزِ دیگر → None (بدونِ استثنا).
+
+    دوره‌ها در هر سه سازنده به شکلِ ``YYYY/MM/DD`` نوشته می‌شوند ولی ورودیِ
+    این مقایسه از فایلِ وضعیت و متایِ گیت‌هاب می‌آید — هر دو بیرونی‌اند.
+    مقایسه رویِ تاپلِ عددی است نه رشته، وگرنه '1405/6/31' و '1405/06/31'
+    دو دورهٔ متفاوت شمرده می‌شدند و '1405/10/01' کوچک‌تر از '1405/6/31'.
+    """
+    if not isinstance(value, str):
+        return None
+    parts = value.strip().replace("-", "/").split("/")
+    if len(parts) != 3:
+        return None
+    try:
+        year, month, day = (int(p) for p in parts)
+    except (TypeError, ValueError):
+        return None
+    if year < 1000 or not 1 <= month <= 12 or not 1 <= day <= 31:
+        return None
+    return (year, month, day)
+
+
+def should_update(local, remote):
+    """آیا snapshotِ tag داده از دادهٔ محلی تازه‌تر است؟ (خالص، بدونِ شبکه)
+
+    فقط دوره‌هایِ FS/MS مقایسه می‌شوند (رأیِ مالک: معیارِ تازگی، دوره است نه
+    published_at). قواعد:
+      * ``local`` نبود/دیکشنری نبود → True؛
+      * مقدارِ remote نامعتبر/خالی برایِ یک کلید → همان کلید نادیده گرفته
+        می‌شود (دادهٔ بی‌معنا هرگز دانلود را قلقلک نمی‌دهد)؛
+      * مقدارِ local نامعتبر ولی remote معتبر → True (محافظه‌کارانه).
+    هیچ ورودی‌ای استثنا نمی‌دهد.
+    """
+    if not isinstance(remote, dict):
+        return False
+    if not isinstance(local, dict) or not local:
+        return True
+    for key in ("latest_financial_period", "latest_monthly_period"):
+        remote_key = _period_key(remote.get(key))
+        if remote_key is None:
+            continue
+        local_key = _period_key(local.get(key))
+        if local_key is None or remote_key > local_key:
+            return True
+    return False
+
+
+# جدول → کلیدِ متا. همان دو جدولی که دوره‌شان در متایِ snapshot می‌آید.
+_DB_MAX_TABLES = (("financial_statements", "latest_financial_period"),
+                  ("monthly_sales", "latest_monthly_period"))
+# کشِ MAX(period_end) با کلیدِ (path, mtime, size): db-status هر ۲ ثانیه
+# پولینگ می‌شود و هر بار اسکنِ جدول‌هایِ صدها-هزار-ردیفی پذیرفتنی نیست.
+_db_period_cache = {"hit": (None, {})}
+
+
+def _db_max_periods(db_path):
+    """MAX(period_end) جدول‌هایِ FS/MS از خودِ بانک — فقط-خواندنی.
+
+    ``mode=ro`` عمداً انتخاب شده: این تابع درِ نخِ استارت و درِ GET وضعیت
+    اجرا می‌شود و هرگز نباید journal/lock یا mtime رویِ بانکِ عملیاتی بگذارد.
+    نبودِ فایل/جدول/ستون → همان کلید غایب، بدونِ استثنا.
+    """
+    path = str(db_path or "")
+    try:
+        stat = os.stat(path)
+        key = (os.path.abspath(path), stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return {}
+    cached = _db_period_cache.get("hit") or (None, {})
+    if cached[0] == key:
+        return dict(cached[1])
+    out = {}
+    con = None
+    try:
+        con = sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro",
+                              uri=True, timeout=10)
+        for table, field in _DB_MAX_TABLES:
+            try:
+                row = con.execute(
+                    'SELECT MAX(period_end) FROM "%s"' % table).fetchone()
+            except sqlite3.Error:
+                continue
+            if row and row[0]:
+                out[field] = row[0]
+    except (sqlite3.Error, OSError, ValueError):
+        return {}
+    finally:
+        if con is not None:
+            try:
+                con.close()
+            except Exception:
+                pass
+    _db_period_cache["hit"] = (key, dict(out))
+    return out
+
+
+def _local_meta():
+    """دوره‌هایِ محلی برایِ مقایسه با متایِ tag داده (بدونِ شبکه).
+
+    اولویت با ``codal_auto_status.json`` است (نتیجهٔ آخرین اجرایِ خودکار:
+    ``latest_periods`` یا کلیدهایِ هم‌نام). اگر آن نبود/ناقص بود، خودِ
+    ``market.db`` فقط-خواندنی خوانده می‌شود — بدونِ این fallback، محلی همیشه
+    «خالی» می‌ماند و هر بوت دوباره کلِ snapshot را می‌کشید (رأیِ مالک).
+    """
+    st = read_auto_status()
+    periods = st.get("latest_periods")
+    if not isinstance(periods, dict):
+        periods = {}
+    fs = st.get("latest_financial_period") or periods.get("financial")
+    ms = st.get("latest_monthly_period") or periods.get("monthly")
+    source = "status" if (fs or ms) else ""
+    if _period_key(fs) is None or _period_key(ms) is None:
+        db = _db_max_periods(DB_PATH)
+        if _period_key(fs) is None and _period_key(
+                db.get("latest_financial_period")) is not None:
+            fs = db.get("latest_financial_period")
+            source = (source + "+db") if source == "status" else "db"
+        if _period_key(ms) is None and _period_key(
+                db.get("latest_monthly_period")) is not None:
+            ms = db.get("latest_monthly_period")
+            source = (source + "+db") if source == "status" else "db"
+    return {"latest_financial_period": fs or None,
+            "latest_monthly_period": ms or None,
+            "source": source}
+
+
+def _meta_cache_path():
+    """مسیرِ کشِ متایِ snapshot؛ مثل read_auto_status درِ هر فراخوانی از WORK_DIR."""
+    return os.path.join(WORK_DIR, "codal_meta.json")
+
+
+def _write_meta_cache(meta):
+    """آخرین متایِ دیدهٔ گیت‌هاب را ذخیره کن تا db-status بی‌شبکه هم نشانش دهد."""
+    try:
+        payload = dict(meta)
+        payload["checked_at"] = datetime.datetime.now().isoformat(
+            timespec="seconds")
+        path = _meta_cache_path()
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False)
+        os.replace(tmp, path)
+    except Exception:                                      # noqa: BLE001
+        pass
+
+
+def read_meta_cache():
+    """آخرین متایِ snapshot که auto_check دیده؛ نبود/خرابی → {}."""
+    try:
+        with open(_meta_cache_path(), "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:                                      # noqa: BLE001
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _freshness():
+    """تازگیِ دادهٔ محلی برایِ db-status: دوره‌ها + آخرین اجرایِ موفقِ خودکار."""
+    local = _local_meta()
+    status = read_auto_status()
+    return {"latest_financial_period": local.get("latest_financial_period"),
+            "latest_monthly_period": local.get("latest_monthly_period"),
+            "source": local.get("source", ""),
+            "last_success": status.get("last_success") or ""}
 
 
 def _write_db_status(stage, percent=0.0, detail="", error=""):
@@ -207,9 +621,48 @@ def _apply_codal_merge(db_path, tmp_db):
         main.close()
 
 
-def _codal_db_worker(dest_lzma, tmp_db):
+def _download_calendar(dest_path=None):
+    """کشِ تقویم را از tag داده می‌گیرد؛ True = جایگزین شد. هرگز raise نمی‌کند.
+
+    ``WORK_DIR/calendar.json`` اولین ورودیِ ``api.chart`` است، پس محتوایِ
+    دانلودشده ورودیِ بیرونی/نامعتمد است: فقط dictی که ``events``ش لیست باشد
+    پذیرفته می‌شود؛ بعد در فایلِ ``.part`` نوشته و اتمیک جایگزین می‌شود تا
+    پاسخِ نیمه‌کاره/HTML هرگز تقویمِ موجود را خالی نکند. شکست بی‌صداست و
+    اجرایِ موفقِ بعدی دوباره تلاش می‌کند — تقویم هرگز merge را برنمی‌گرداند.
+    """
+    path = dest_path or os.path.join(WORK_DIR, "calendar.json")
+    part = path + ".part"
+    try:
+        resp = requests.get(CODAL_CAL_URL, timeout=(10, 30),
+                            headers={"User-Agent": "BorsTerminal-CodalDB"})
+        resp.raise_for_status()
+        payload = resp.json()
+        if not isinstance(payload, dict) or not isinstance(
+                payload.get("events"), list):
+            return False
+        with open(part, "wb") as fh:
+            fh.write(resp.content)
+        os.replace(part, path)
+        return True
+    except Exception:                                      # noqa: BLE001
+        try:
+            os.remove(part)
+        except OSError:
+            pass
+        return False
+
+
+def _codal_db_worker(dest_lzma, tmp_db, auto=False):
     global _dbdl_running
     try:
+        # ۰) گاردِ متقابل با orchestrator روزانهٔ Task 6. بینِ _start_db_worker
+        #    (که خودش همین را زیرِ _dbdl_lock می‌بیند) و شروعِ این نخ، جبران
+        #    می‌تواند قفل بگیرد؛ پس پیش از هر دانلودی دوباره می‌پرسیم.
+        if _orchestrator_busy():
+            _write_db_status(
+                "skipped", 0.0,
+                "بروزرسانی خودکار روزانهٔ کدال در حال اجراست؛ دانلود شروع نشد.")
+            return
         # ۱) دانلود با retry + چرخش IP (rotate_ip_via_adb خودش gate دارد:
         #    adb_config.json enabled + دستگاه متصل + حداقل فاصلهٔ ۱۲۰ ثانیه)
         attempt = 0
@@ -217,8 +670,10 @@ def _codal_db_worker(dest_lzma, tmp_db):
         while True:
             attempt += 1
             try:
-                _write_db_status("downloading", 0.0,
-                                 "دریافت codal.db.lzma از گیت‌هاب (تلاش %d)" % attempt)
+                _write_db_status(
+                    "downloading", 0.0,
+                    ("دریافت خودکار codal.db.lzma (تلاش %d)" if auto
+                     else "دریافت codal.db.lzma از گیت‌هاب (تلاش %d)") % attempt)
                 with requests.get(CODAL_DB_URL, stream=True, timeout=(10, 60),
                                   headers={"User-Agent": "BorsTerminal-CodalDB"}) as resp:
                     resp.raise_for_status()
@@ -283,6 +738,16 @@ def _codal_db_worker(dest_lzma, tmp_db):
         #    (مثلاً has_operating_sales که بعد از ساخته‌شدن snapshot اضافه شده)
         #    بی‌صدا به NULL برمی‌گردد و کاربر پیام «موفق» می‌بیند. UPSERT فقط
         #    ستون‌های مشترک را لمس می‌کند و بقیه را دست‌نخورده می‌گذارد.
+        #
+        #    بازبینیِ دوم دقیقاً پیش از merge: دانلود/راستی‌آزمایی می‌تواند
+        #    دقیقه‌ها طول بکشد و orchestrator در همین فاصله شروع شود؛ تکیه بر
+        #    دروازهٔ اول یک TOCTOU است. اگر قفل/وضعیتِ orchestrator تازه باشد،
+        #    بدونِ merge رها می‌کنیم و دادهٔ فعلی دست‌نخورده می‌ماند.
+        if _orchestrator_busy():
+            _write_db_status(
+                "skipped", 0.0,
+                "بروزرسانی خودکار روزانهٔ کدال در حال اجراست؛ ادغام انجام نشد.")
+            return
         _write_db_status("merging", 0.0, "ادغام در market.db")
         stats, stale = _apply_codal_merge(DB_PATH, tmp_db)
         # payloadِ اسکرینر از همین جدول‌ها ساخته می‌شود و TTL‑ش ۱۲ ساعت است (به‌علاوه
@@ -301,6 +766,15 @@ def _codal_db_worker(dest_lzma, tmp_db):
             _write_db_status(
                 "merging", 0.5,
                 "snapshot قدیمی است؛ ستون‌های تازه حفظ شدند: " + " | ".join(stale))
+
+        # ۳٫۵) تقویمِ tag داده — best-effort و فقط بعد از mergeِ موفق. شکستِ
+        #      تقویم نه ردیفی را برمی‌گرداند نه stage را error می‌کند؛ try/exceptِ
+        #      خودش لازم است چون این بلوک داخلِ tryِ بزرگِ worker است و هر
+        #      استثنا آن را «خطا در بروزرسانی» نشان می‌داد.
+        try:
+            _download_calendar()
+        except Exception as _ce:      # noqa: BLE001 — هرگز merge را عقب نمی‌زند
+            print(f"[codal-db] calendar refresh failed: {_ce}")
 
         # پیامِ پایان باید صادقانه باشد. پیش‌تر فقط ردیف‌های *درج‌شده* شمرده
         # می‌شدند، پس هر حالتی که ردیفِ تازه‌ای نداشت (از جمله به‌روزرسانیِ درجا)
@@ -338,22 +812,93 @@ def _codal_db_worker(dest_lzma, tmp_db):
             _dbdl_running = False
 
 
-@router.post("/api/sync/codal/db-download")
-def sync_codal_db_download():
-    """بروزرسانی دیتابیس کدال فقط از snapshot گیت‌هاب (بدون خزندهٔ زندهٔ codal.ir)."""
+def _start_db_worker(auto=False):
+    """نخِ دانلود/ادغام را یک‌بار بالا بیاورد؛ "" = شروع شد، وگرنه دلیل.
+
+    همان درهایِ مسیرِ دستی: دانلودِ دوم ممنوع، merge هم‌زمان با اسکنِ زندهٔ
+    کدال (دو نویسنده رویِ همان جدول‌ها = ۴۲۹ دائمی) ممنوع، و merge هم‌زمان با
+    orchestrator روزانهٔ Task 6 ممنوع. پرچمِ ``auto`` فقط متنِ وضعیت را
+    «دریافت خودکار» می‌کند؛ ایمنیِ مسیر یکی است.
+    """
     global _dbdl_running
     with _dbdl_lock:
         if _dbdl_running:
-            return {"status": "already_running",
-                    "message": "دانلود دیتابیس کدال در حال اجراست — صبر کنید."}
+            return "running"
         if _codal_running():
-            # merge همزمان با اسکن زنده = دو نویسنده روی جدول‌های کدال؛ ممنوع
-            return {"status": "already_running",
-                    "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود."}
+            return "scanning"
+        if _orchestrator_busy():
+            return "orchestrator"
         _dbdl_running = True
     dest = os.path.join(WORK_DIR, "codal_snapshot.db.lzma")
     tmp = os.path.join(WORK_DIR, "codal_snapshot.db")
-    threading.Thread(target=_codal_db_worker, args=(dest, tmp), daemon=True).start()
+    try:
+        threading.Thread(target=_codal_db_worker, args=(dest, tmp),
+                         kwargs={"auto": auto}, daemon=True).start()
+    except Exception:                                      # noqa: BLE001
+        with _dbdl_lock:
+            _dbdl_running = False
+        return "thread_failed"
+    return ""
+
+
+def auto_check(timeout=(10, 30)):
+    """یک‌بار متایِ tag داده را بخوان و در صورتِ نیاز دریافت را شروع کن.
+
+    فقط ``CODAL_META_URL`` خوانده می‌شود؛ دانلودِ امضاشده/merge همان
+    ``_codal_db_worker`` است. هر خطایِ شبکه/JSON → ``checked: False`` بدونِ
+    استثنا: بالا آمدنِ برنامه هرگز نباید به دسترس‌پذیریِ گیت‌هاب گره بخورد.
+    خزندهٔ زنده/جستجو در این مسیر صدا زده نمی‌شود.
+    """
+    try:
+        resp = requests.get(CODAL_META_URL, timeout=timeout,
+                            headers={"User-Agent": "BorsTerminal-CodalDB"})
+        resp.raise_for_status()
+        remote = resp.json()
+    except Exception:                                      # noqa: BLE001
+        return {"checked": False, "update": False, "meta": None}
+    if not isinstance(remote, dict) or not remote:
+        return {"checked": False, "update": False, "meta": None}
+    _write_meta_cache(remote)
+    local = _local_meta()
+    update = should_update(local, remote)
+    started = False
+    skipped = ""
+    if update:
+        # دروازهٔ اول پیش از شروعِ دانلود؛ _start_db_worker هم زیرِ قفل دوباره
+        # همین را می‌بیند و worker پیش از merge بارِ سوم. هیچ‌کدام تنها مرجع نیست.
+        if _orchestrator_busy():
+            skipped = "orchestrator"
+        else:
+            reason = _start_db_worker(auto=True)
+            started = reason == ""
+            if reason == "orchestrator":
+                skipped = reason
+    result = {"checked": True, "update": update, "meta": remote,
+              "local": local, "started": started}
+    if skipped:
+        result["skipped"] = skipped
+    return result
+
+
+@router.post("/api/sync/codal/db-download")
+def sync_codal_db_download():
+    """بروزرسانی دیتابیس کدال فقط از snapshot گیت‌هاب (بدون خزندهٔ زندهٔ codal.ir)."""
+    reason = _start_db_worker()
+    if reason == "running":
+        return {"status": "already_running",
+                "message": "دانلود دیتابیس کدال در حال اجراست — صبر کنید."}
+    if reason == "scanning":
+        # merge همزمان با اسکن زنده = دو نویسنده روی جدول‌های کدال؛ ممنوع
+        return {"status": "already_running",
+                "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود."}
+    if reason == "orchestrator":
+        # orchestrator روزانه (Task 6) کلِ خطِ staging/merge را در دست دارد؛
+        # دومین نویسنده رویِ همان سه جدول ممنوع — دادهٔ فعلی دست‌نخورده می‌ماند.
+        return {"status": "already_running",
+                "message": "بروزرسانی خودکار روزانهٔ کدال در حال اجراست — صبر کنید."}
+    if reason:
+        return {"status": "error",
+                "message": "شروع دانلود دیتابیس کدال ممکن نشد."}
     return {"status": "success",
             "message": "دانلود دیتابیس کدال از گیت‌هاب آغاز شد.",
             "url": CODAL_DB_URL}
@@ -361,7 +906,7 @@ def sync_codal_db_download():
 
 @router.get("/api/sync/codal/db-status")
 def sync_codal_db_status():
-    """وضعیت زندهٔ دانلود/ادغام برای دکمهٔ بروزرسانی جدول بنیادی."""
+    """وضعیت زندهٔ دانلود/ادغام + متایِ آخرین snapshot + تازگیِ دادهٔ محلی."""
     st = _safe_read_json(CODAL_DB_STATUS_PATH) or {}
     with _dbdl_lock:
         running = _dbdl_running
@@ -371,7 +916,9 @@ def sync_codal_db_status():
                    "percent": st.get("percent", 0.0),
                    "detail": st.get("detail", ""),
                    "error": st.get("error", ""),
-                   "ts": st.get("ts", "")}}
+                   "ts": st.get("ts", ""),
+                   "meta": read_meta_cache(),
+                   "freshness": _freshness()}}
 
 
 @router.get("/api/sync/status")

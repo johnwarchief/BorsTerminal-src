@@ -9,7 +9,10 @@
 
 این گارد چهار چیز را الزامی می‌کند:
   ۱) تک‌مرجع بودن طبقهٔ صندوق (fts_engine.fund_class_match) در سه مسیر؛
-  ۲) برابریِ «applicable» بین bulk_scan و کارت (company_profile) روی تمامِ بانک؛
+  ۲) برابریِ «applicable» بین bulk_scan و خودِ کارت (`evaluate_v10`، نه
+     `company_profile`) روی تمامِ بانک، و — تصمیمِ مالک (Task 1) — حذفِ کاملِ
+     صندوق‌ها از جدولِ غربالگری در حالی که کارتِ جزئیات همچنان «FTS ندارد»
+     می‌دهد؛ بیمه هم شرکت است نه صندوق؛
   ۳) حکمِ NOT_APPLICABLE در /api/fundamental/screen و نبودِ آن برای تولیدی‌ها؛
   ۴) اینکه امتیازِ عددی در bulk_scan دست‌نخورده مانده (sort نمی‌شکند) در حالی
      که کارت امتیازِ صندوق را None می‌دهد.
@@ -93,39 +96,98 @@ def main():
             k = fts_engine.sym_key(sym)
             if k and k not in name_of:
                 name_of[k] = cn or ""
+        # صنعتِ هر نماد — همان نقشه‌ای که bulk_scan از instruments می‌سازد.
+        sector_of = {}
+        for sym, sec in conn.execute("SELECT l_val18, COALESCE(sector_name, '') "
+                                     "FROM instruments"):
+            k = fts_engine.norm_fa(sym)
+            if k and k not in sector_of:
+                sector_of[k] = sec or ""
         bad = []
-        n_na = 0
+        # مقایسه با خودِ کارت (`evaluate_v10`)، نه با predicateِ پیش از Task 1:
+        # باگی که ۲۶ شرکتِ بی‌صنعت را در جدول «شرکت» و در کارت «FTS ندارد»
+        # می‌دید فقط از همین مسیر دیده می‌شود. نقشه‌های کل‌بازاری یک‌بار ساخته
+        # می‌شوند تا این حلقه به ازای هر ردیف کوئریِ تازه نزند.
+        m141m = fts_engine.m141_map(conn)
+        liqm = fts_engine.avg_trade_value_hmt(conn)
+        total_mcap = fts_engine.mstat_engine.market_total_rials(conn)[0]
+        card_errors = []
         for r in rows:
             key = r["symbol_norm"]
-            want = fundamental.company_profile(r.get("sector_name", ""),
-                                               name_of.get(key, ""))["kind"] != "fund"
-            if bool(r.get("applicable", True)) != want:
-                bad.append((r["symbol"], want, r.get("applicable")))
-            if not want:
-                n_na += 1
-        chk(not bad, "bulk_scan ⇄ card agree on every symbol", bad[:4])
-        chk(n_na > 50, "the fund class is actually present in the bank", n_na)
+            try:
+                res = fundamental.evaluate_v10(
+                    conn, key, r.get("mcap") or 0.0, total_mcap,
+                    r.get("sector_name", ""), company_name=name_of.get(key, ""),
+                    has_instrument=True, m141_map=m141m, liq_map=liqm)
+            except Exception as exc:
+                # هیچ استثنایی پنهان نمی‌شود: کارت باید هر ردیفِ جدول را داوری
+                # کند. پیش از Task 3 این‌جا یک استثنای ZeroDivision رویِ «لبن»
+                # با میان‌برِ identity-only پوشانده می‌شد؛ حالا خودِ ۱ب کمیتِ
+                # −۱۰۰٪ را تعریف‌شده (وتو با دلیل) می‌داند و این شاخه فقط
+                # نگهبانِ رگرسیون است، نه مجوزِ ردکردنِ داوری.
+                card_errors.append((r["symbol"], type(exc).__name__))
+                continue
+            if (bool(r.get("applicable", True)) != bool(res.get("applicable"))
+                    or res.get("verdict") == "FTS ندارد"):
+                bad.append((r["symbol"], r.get("applicable"),
+                            res.get("applicable"), res.get("verdict")))
+        chk(not bad, "bulk_scan ⇄ card agree on every symbol (applicable/verdict)",
+            bad[:4])
+        chk(not card_errors,
+            "the card evaluates every bulk row without a crash", card_errors[:4])
+
+        # جهانِ مالک (Task 1، تصمیمِ مالک): صندوق‌ها از جدول *حذف* می‌شوند، نه
+        # اینکه با «FTS ندارد» در آن بمانند. guard پیش از این حضورِ >۵۰ صندوق
+        # را در خروجی می‌خواست؛ حالا غیبتشان را می‌خواهد.
+        annual_keys = set()
+        for (sym,) in conn.execute("SELECT DISTINCT symbol FROM financial_statements "
+                                   "WHERE period_months>=12"):
+            k = fts_engine.norm_fa(sym)
+            if k:
+                annual_keys.add(k)
+        fund_keys = {k for k in annual_keys
+                     if fts_engine.classify_identity(
+                         k, sector_of.get(k, ""), name_of.get(k, ""), True)["kind"] == "fund"}
+        row_keys = {r["symbol_norm"] for r in rows}
+        chk(len(fund_keys) > 50, "the fund class is actually present in the bank",
+            len(fund_keys))
+        chk(not (fund_keys & row_keys), "funds are absent from the FTS table",
+            sorted(fund_keys & row_keys)[:3])
         # طبقه‌بندی باید از صنعت *یا* نامِ شرکت بیاید، نه فقط یکی‌شان
-        _secn = lambda r: fts_engine._hold_norm(r["sector_name"] or "")
-        by_sector = [r for r in rows if "صندوق" in _secn(r)
-                     and not fts_engine.is_insurance_sector(r["sector_name"] or "")]
-        by_name = [r for r in rows
-                   if "صندوق" in fts_engine._hold_norm(name_of.get(r["symbol_norm"], ""))
-                   and "صندوق" not in _secn(r)]
-        chk(by_sector and by_name, "both evidence paths are exercised",
+        by_sector = [k for k in fund_keys
+                     if "صندوق" in fts_engine._hold_norm(sector_of.get(k, ""))
+                     and not fts_engine.is_insurance_sector(sector_of.get(k, ""))]
+        by_name = [k for k in fund_keys
+                   if "صندوق" in fts_engine._hold_norm(name_of.get(k, ""))
+                   and "صندوق" not in fts_engine._hold_norm(sector_of.get(k, ""))]
+        chk(bool(by_sector) and bool(by_name), "both evidence paths are exercised",
             (len(by_sector), len(by_name)))
-        chk(all(r["applicable"] is False for r in by_sector + by_name),
-            "every fund evidence row is marked not-applicable")
-        # رأی ۱ در برابرِ رأی ۱۵: صنعتِ «صندوق بازنشستگی» (۱۲۹ نماد) کلمهٔ
-        # «صندوق» را در نامش دارد ولی صندوقِ سرمایه‌گذاری نیست — شرکتِ
-        # عملیاتیِ دارایِ صورتِ مالی است و حکمش وتویِ بیمه است نه «FTS ندارد».
-        # بی‌این قفل، بیمه آسیا و بیمه اتکایی امین بی‌صدا از پنج‌شاخصه خارج
-        # می‌شدند (نامِ صنعتشان «بيمه وصندوق بازنشستگي» است).
-        by_ins = [r for r in rows if "صندوق" in _secn(r)
-                  and fts_engine.is_insurance_sector(r["sector_name"] or "")]
-        chk(bool(by_ins) and all(r["applicable"] is not False for r in by_ins),
-            "an insurance sector is never FTS-inapplicable for the word fund",
-            [r["symbol"] for r in by_ins if r["applicable"] is False][:3])
+        chk(not ((set(by_sector) | set(by_name)) & row_keys),
+            "every fund evidence row is absent from the table")
+        # رأی ۱ در برابرِ رأی ۱۵: صنعتِ «بيمه وصندوق بازنشستگي» کلمهٔ «صندوق»
+        # را در نامش دارد ولی صندوقِ سرمایه‌گذاری نیست — شرکتِ عملیاتی است و
+        # وتویِ بیمه جایش risk_gates (Task 8) است، نه جهانِ نمادها. پس نه در
+        # جدول حذف می‌شود و نه کارت به او «FTS ندارد» می‌دهد.
+        ins_keys = [k for k, s in sector_of.items()
+                    if fts_engine.is_insurance_sector(s)]
+        ins_bad = [k for k in ins_keys
+                   if fts_engine.classify_identity(
+                       k, sector_of.get(k, ""), name_of.get(k, ""), True)["kind"] != "company"]
+        chk(bool(ins_keys) and not ins_bad,
+            "an insurance sector is a company, never fund/non-company",
+            (len(ins_keys), ins_bad[:3]))
+        # کارتِ جزئیات برای صندوق همچنان «FTS ندارد» می‌دهد (خروج فقط از جدول).
+        if fund_keys:
+            fk = sorted(fund_keys)[0]
+            res = fundamental.evaluate_v10(
+                conn, fk, sector=sector_of.get(fk, ""),
+                company_name=name_of.get(fk, ""))
+            chk(res.get("applicable") is False and res.get("verdict") == "FTS ندارد"
+                and res.get("identity_kind") == "fund",
+                "the card still says FTS ندارد for a fund",
+                {k: res.get(k) for k in ("applicable", "verdict", "identity_kind")})
+        else:
+            chk(False, "a fund symbol exists for the card check", 0)
         chk_conn = conn
     else:
         chk_conn = None

@@ -33,8 +33,19 @@ import { registerSMCOverlays } from '../overlays/smcOverlays';
 import { registerAllUserIndicators } from '../overlays/userIndicators';
 import { registerCorporateEventsOverlay } from '../overlays/corporateEventsOverlay';
 import { registerAllAdvancedIndicators } from '../overlays/advancedTradingIndicators';
+import { registerPatternOverlay } from '../overlays/patternOverlay';
+import { EVENT_OVERLAY_ID, registerEventOverlay } from '../overlays/eventOverlay';
+import { scanChart } from '../model/events/scan';
+import {
+  DEFAULT_PRECISION_PARAMS,
+  DEFAULT_SOURCE_PARAMS,
+  detectDoubleTapPatterns,
+  type EngineCandle,
+} from '../model/doubleTapEngine';
 import { OSCILLATOR_NAMES, oscillatorPaneId, registerOscillatorIndicators } from '../indicators/oscillatorIndicators';
-import { AnimatedPatternOverlay } from './AnimatedPatternOverlay';
+import { PatternSpotlightLayer } from './PatternSpotlightLayer';
+import { classicToSpotlight, doubleTapToSpotlight } from '../model/spotlight/adapter';
+import { selectSpotlightPattern } from '../model/spotlight/select';
 import type { Candle } from '../model/types';
 
 // ----------------------------------------------------------------------------
@@ -50,9 +61,17 @@ export function ensureAllOverlaysRegistered(): void {
   registerAllUserIndicators();
   registerCorporateEventsOverlay();
   registerAllAdvancedIndicators();
+  registerPatternOverlay();
+  registerEventOverlay();
   registerOscillatorIndicators();
   overlaysRegistered = true;
 }
+
+// ----------------------------------------------------------------------------
+// شناسهٔ پایدارِ اورلی الگوهای کلاسیک روی چارت
+// ----------------------------------------------------------------------------
+
+export const CLASSIC_PATTERNS_OVERLAY_ID = 'classic-patterns';
 
 // ----------------------------------------------------------------------------
 // تنظیمات تم برنجی (Brass Aesthetics) چارت KLineCharts
@@ -278,8 +297,6 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<Chart | null>(null);
   const [activeChartInstance, setActiveChartInstance] = useState<Chart | null>(null);
-  const pulseBadgeRef = useRef<HTMLDivElement>(null);
-  const prevPriceRef = useRef<number | null>(null);
 
   // استیت‌های استور تکنیکال
   const activeTool = useTechnicalStore((s) => s.activeDrawingTool);
@@ -291,6 +308,9 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   const channelMode = useTechnicalStore((s) => s.channelMode);
   const rsiVariant = useTechnicalStore((s) => s.rsiVariant);
   const detectedDoubleTapPatterns = useTechnicalStore((s) => s.detectedDoubleTapPatterns);
+  const detectedPatterns = useTechnicalStore((s) => s.detectedPatterns);
+  const chartCandles = useTechnicalStore((s) => s.chartCandles);
+  const doubleTapProfile = useTechnicalStore((s) => s.doubleTapProfile);
   const adjustmentMode = useTechnicalStore((s) => s.adjustmentMode);
   const showCorporateEvents = useTechnicalStore((s) => s.showCorporateEvents);
   const isMagnetMode = useTechnicalStore((s) => s.isMagnetMode);
@@ -339,6 +359,73 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
   barsRef.current = bars;
 
   const lastCandle = bars.length > 0 ? bars[bars.length - 1] : null;
+
+  const setChartCandles = useTechnicalStore((s) => s.setChartCandles);
+  const setDetectedPatterns = useTechnicalStore((s) => s.setDetectedPatterns);
+  const setDetectedDoubleTapPatterns = useTechnicalStore((s) => s.setDetectedDoubleTapPatterns);
+  const setScanResult = useTechnicalStore((s) => s.setScanResult);
+
+  // R-PAT-26: تشخیص الگوها همان‌جا که سری کندل زندگی می‌کند انجام می‌شود؛
+  // نه فچ تازه، نه محاسبهٔ موازی در میزکار. با تغییر نکردن هویت آرایه از محاسبهٔ دوباره صرف‌نظر می‌کنیم.
+  // adjustmentMode در dependencyهاست تا تغییر حالت تعدیل، اسکن را دوباره اجرا کند (spec §3.5).
+  const lastPatternBarsRef = useRef<KLineData[] | null>(null);
+  const lastScanKeyRef = useRef<string>('');
+  useEffect(() => {
+    const scanKey = `${adjustmentMode}:${doubleTapProfile}:${symbol}:${timeframe}`;
+    if (lastPatternBarsRef.current === bars && lastScanKeyRef.current === scanKey) return;
+    lastPatternBarsRef.current = bars;
+    lastScanKeyRef.current = scanKey;
+    const engineCandles: EngineCandle[] = bars.map((bar) => ({
+      timestamp: bar.timestamp,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume,
+    }));
+    setChartCandles(engineCandles);
+    const result = scanChart(engineCandles, {
+      symbol,
+      timeframe,
+      adjustmentMode,
+    });
+    setScanResult(result);
+    setDetectedPatterns(
+      result.events
+        .filter((event) => event.pattern)
+        .map((event) => event.pattern!),
+    );
+    // منبع واحد W/M همین موتور است؛ لایهٔ اسپات‌لایت و آمار ری p12 از همین آرایه می‌خوانند.
+    setDetectedDoubleTapPatterns(
+      detectDoubleTapPatterns(
+        engineCandles,
+        doubleTapProfile === 'source' ? DEFAULT_SOURCE_PARAMS : DEFAULT_PRECISION_PARAMS,
+      ),
+    );
+  }, [
+    bars,
+    setChartCandles,
+    setDetectedPatterns,
+    setDetectedDoubleTapPatterns,
+    setScanResult,
+    symbol,
+    timeframe,
+    adjustmentMode,
+    doubleTapProfile,
+  ]);
+
+  // یک الگوی اصلی برای اسپات‌لایت: W/M از موتور دوقلو، بقیهٔ ردهٔ ۱ از الگوهای کلاسیک.
+  // DOUBLE_TOP/DOUBLE_BOTTOM کلاسیک حذف می‌شوند تا هیچ رسم/برچسب تکراری ساخته نشود.
+  const spotlightPrimary = useMemo(() => {
+    const lastIndex = Math.max(0, chartCandles.length - 1);
+    const models = [
+      ...detectedDoubleTapPatterns.map(doubleTapToSpotlight),
+      ...detectedPatterns
+        .filter((pattern) => pattern.kind !== 'DOUBLE_TOP' && pattern.kind !== 'DOUBLE_BOTTOM')
+        .map(classicToSpotlight),
+    ];
+    return selectSpotlightPattern(models, lastIndex);
+  }, [detectedDoubleTapPatterns, detectedPatterns, chartCandles.length]);
 
   // ۱. راه‌اندازی و نابودی چارت با ایمنی کامل از نشتی حافظه DOM
   useEffect(() => {
@@ -438,22 +525,82 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     chart.resetData();
   }, [bars]);
 
-  // ۳. پالس زنده تیک قیمت با CSS شتاب‌یافته و احترام به prefers-reduced-motion
+  // ۲٫۱. اورلی الگوهای کلاسیک: ثبت یک‌باره کافی نیست؛ باید ساخته شود (spec §7.2).
+  // یک نمونهٔ پایدار با شناسهٔ ثابت بعد از راه‌اندازی چارت ساخته می‌شود و با هر
+  // تشخیصِ تازه حذف و بازساخته می‌شود تا ارقام بازکشیده شوند. اشتراک استور
+  // دستی است تا تغییر تشخیص موجِ رندر تازه نسازد (و حلقهٔ bars → ست → bars نشود).
+  // وابستگی به symbol (نه state چارت) تضمین می‌کند هر چارت تازه دقیقاً یک‌بار sync شود.
   useEffect(() => {
-    if (!lastCandle) return;
-    const currentPrice = lastCandle.close;
-
-    if (prevPriceRef.current !== null && prevPriceRef.current !== currentPrice) {
-      const badgeEl = pulseBadgeRef.current;
-      if (badgeEl) {
-        badgeEl.classList.remove('kline-price-pulse-active');
-        // بازخوانی reflow بدون ری‌رندر ری‌اکت
-        void badgeEl.offsetWidth;
-        badgeEl.classList.add('kline-price-pulse-active');
+    const chart = chartRef.current;
+    if (!chart) return;
+    // klinecharts فقط وقتی createPointFigures را صدا می‌زند که دست‌کم یک نقطه داشته باشد.
+    const sync = () => {
+      try {
+        // ابتدا نمونهٔ قبلی (هم‌نام یا هم‌شناسه) برداشته می‌شود: هیچ‌وقت دو اورلی زنده نمی‌ماند.
+        chart.removeOverlay({ name: 'ClassicPatterns' });
+        chart.createOverlay({
+          name: 'ClassicPatterns',
+          id: CLASSIC_PATTERNS_OVERLAY_ID,
+          points: [{ dataIndex: 0 }],
+          lock: true,
+          zLevel: 5,
+        });
+      } catch {
+        // ایمنی در زمان تست
       }
-    }
-    prevPriceRef.current = currentPrice;
-  }, [lastCandle?.close]);
+    };
+    sync();
+    return useTechnicalStore.subscribe((state, prev) => {
+      if (state.detectedPatterns !== prev.detectedPatterns) sync();
+    });
+  }, [symbol]);
+
+  // ۲٫۱.ب. اورلی رویدادهای واحد (واگرایی/پولبک/شکست)؛ الگو و کانال اورلی خودشان را دارند.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const sync = () => {
+      try {
+        chart.removeOverlay({ name: 'ChartEvents' });
+        chart.createOverlay({
+          name: 'ChartEvents',
+          id: EVENT_OVERLAY_ID,
+          points: [{ dataIndex: 0 }],
+          lock: true,
+          zLevel: 5,
+        });
+      } catch {
+        // ایمنی در زمان تست
+      }
+    };
+    sync();
+    return useTechnicalStore.subscribe((state, prev) => {
+      if (state.scanResult !== prev.scanResult) sync();
+    });
+  }, [symbol]);
+
+  // ۲٫۲. فوکوس روی الگوی انتخاب‌شده از فهرست (spec §7.3): پیمایش چارت به لنگر و پاک‌کردن شناسه.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const focus = (id: string | null) => {
+      if (!id) return;
+      const target = useTechnicalStore.getState().detectedPatterns.find((p) => p.id === id);
+      if (target) {
+        try {
+          chart.scrollToDataIndex(target.anchor.index);
+        } catch {
+          // ایمنی در زمان تست
+        }
+      }
+      useTechnicalStore.getState().setFocusPatternId(null);
+    };
+    focus(useTechnicalStore.getState().focusPatternId);
+    return useTechnicalStore.subscribe((state, prev) => {
+      if (state.focusPatternId !== prev.focusPatternId) focus(state.focusPatternId);
+    });
+  }, [activeChartInstance]);
+
 
   // ۴. مدیریت ابزار رسم فعال (Drawing Tool Activation)
   useEffect(() => {
@@ -603,6 +750,9 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
     }
   }, [activeUserIndicators, channelMode, rsiVariant]);
 
+  // W/M حالا از اسکنِ خود چارت (منبع واحد detectDoubleTapPatterns) می‌آید؛
+  // خاموش‌کردن اندیکاتور DoubleTap3D فقط رسم تفصیلیِ canvas را می‌بندد، نه اسپات‌لایت/آمار را.
+
   // ۸. همگام‌سازی و مدیریت رویدادهای تعدیلی و شرکتی رهاورد ۳۶۵ (M مجمع، D سود نقدی، E افزایش سرمایه)
   useEffect(() => {
     if (chartQuery.data?.corporateEvents) {
@@ -645,7 +795,6 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
       {/* پالس زنده نشانگر آخرین قیمت با CSS شتاب‌یافته سخت‌افزاری */}
       {lastCandle && (
         <div
-          ref={pulseBadgeRef}
           data-testid="live-price-pulse"
           className={`absolute top-3 left-4 z-10 flex items-center gap-2 px-2.5 py-1 rounded border text-xs shadow-md pointer-events-none ${
             isLight
@@ -654,7 +803,7 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
           }`}
           style={{ willChange: 'transform' }}
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="font-semibold text-text-primary text-[11px] font-mono">
             {toFaDigits(lastCandle.close.toLocaleString('en-US'))}
           </span>
@@ -662,81 +811,8 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
         </div>
       )}
 
-      {/* استایل‌های شتاب‌یافته CSS برای انیمیشن پالس زنده و الگوهای W و M */}
       <style>{`
-        @keyframes klinePriceTickPulse {
-          0% { transform: scale(1) translateZ(0); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-          50% { transform: scale(1.05) translateZ(0); filter: brightness(1.15); box-shadow: 0 0 12px 2px rgba(234, 179, 8, 0.35); }
-          100% { transform: scale(1) translateZ(0); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-        }
-        .kline-price-pulse-active {
-          animation: klinePriceTickPulse 320ms cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes doubleTapNecklinePulse {
-          0%, 100% {
-            stroke-opacity: 0.55;
-            filter: drop-shadow(0 0 2px #bc13fe);
-          }
-          50% {
-            stroke-opacity: 1;
-            filter: drop-shadow(0 0 10px #bc13fe) drop-shadow(0 0 16px rgba(188, 19, 254, 0.7));
-          }
-        }
-        @keyframes doubleTapHalo {
-          0% {
-            r: 3px;
-            opacity: 0.9;
-          }
-          50% {
-            r: 9px;
-            opacity: 0.25;
-          }
-          100% {
-            r: 13px;
-            opacity: 0;
-          }
-        }
-        @keyframes doubleTapLegFlow {
-          from {
-            stroke-dashoffset: 40;
-          }
-          to {
-            stroke-dashoffset: 0;
-          }
-        }
-        @keyframes doubleTapBadgeFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-        }
-        .double-tap-neckline-animated {
-          animation: doubleTapNecklinePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        .double-tap-halo-animated {
-          animation: doubleTapHalo 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-        }
-        .double-tap-leg-animated {
-          stroke-dasharray: 6 3;
-          animation: doubleTapLegFlow 1.8s linear infinite;
-        }
-        .double-tap-badge-animated {
-          animation: doubleTapBadgeFloat 3s ease-in-out infinite;
-        }
-        .kline-drawings-hidden .klinecharts-overlay {
-          display: none !important;
-          opacity: 0 !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .kline-price-pulse-active,
-          .double-tap-neckline-animated,
-          .double-tap-halo-animated,
-          .double-tap-leg-animated,
-          .double-tap-badge-animated {
-            animation: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-            filter: none !important;
-          }
-        }
+        .kline-drawings-hidden .klinecharts-overlay { display: none !important; opacity: 0 !important; }
       `}</style>
 
       {/* دکمه‌های مقیاس لگاریتمی (log) و تنظیم خودکار (auto) به سبک Quantower و TradingView */}
@@ -787,11 +863,10 @@ const KLineChartInner: React.FC<KLineChartWrapperProps> = ({
         </button>
       </div>
 
-      {/* لایه انیمیشن وب برای الگوهای سقف و کف دوقلو W و M */}
-      <AnimatedPatternOverlay
+      {/* لایهٔ اسپات‌لایت ۳D الگوی اصلی (W/M از موتور دوقلو، بقیه از الگوهای کلاسیک) */}
+      <PatternSpotlightLayer
         chart={activeChartInstance || chartRef.current}
-        patterns={detectedDoubleTapPatterns}
-        active={activeUserIndicators.includes('DoubleTap3D')}
+        primary={spotlightPrimary}
         isLight={isLight}
       />
 

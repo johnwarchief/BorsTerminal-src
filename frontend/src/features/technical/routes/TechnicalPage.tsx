@@ -15,6 +15,7 @@ import type { EngineBar } from '../engine';
 import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
+import { useStructure3 } from '../api/useStructure3';
 import { technicalSignal } from '../signals/technicalSignals';
 import { weeklyFromFts } from '../lib/weeklyFromFts';
 import { corpEventChipLabel, recentCorpEvents } from '../lib/corpEvents';
@@ -23,14 +24,16 @@ import { FtsSettingsTrigger } from '../../fundamental/ui/FtsSettingsDrawer';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
+import { FtsLayerLegend } from '../components/FtsLayerLegend';
 import { PatternToggles } from '../components/PatternToggles';
+import { epochToJalali } from '../lib/jalaliDate';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import { ReplayBar } from '../components/ReplayBar';
 import { ComparePanel } from '../components/ComparePanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnTedipx } from '../nahayatnegar/lib/useNnData';
-import { applyAdjustmentToCandles, mapBackendAdjustEvents } from '../nahayatnegar/lib/adjustments';
+import { applyAdjustmentToCandles, FFC_ADJUSTMENT_MODE } from '../nahayatnegar/lib/adjustments';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { usePriceAlertWatch } from '../lib/usePriceAlertWatch';
 import { PriceAlertBanner } from '../nahayatnegar/components/PriceAlertBanner';
@@ -64,15 +67,6 @@ export default function TechnicalPage() {
   // آستانه گذاشته، نه فقط نمادِ بازِ چارت.
   usePriceAlertWatch(marketData?.data);
 
-  // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت.
-  // هنگام خروج از تب، حالت را به «خودکار» برمی‌گردانیم تا سایدبار روی سایر تب‌ها بماند.
-  useEffect(() => {
-    useUiStore.getState().setSidebarCollapsed(true);
-    return () => {
-      useUiStore.getState().setSidebarCollapsed(null);
-    };
-  }, []);
-
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ftsSettingsOpen, setFtsSettingsOpen] = useState(false);
@@ -105,17 +99,25 @@ export default function TechnicalPage() {
     refetch: feed.refetch,
   };
   const analysis = useFtsAnalysis(viewSymbol);
+  // موتورِ سوم: لایۀ مقایسۀ بی‌رأی، پیش‌فرض خاموش. تا کاربر روشن نکند درخواستی
+  // نمی‌رود (`enabled`)، پس «رجیستریِ زنده» بی‌مصرفِ شبکه نمی‌شود.
+  const showStructure3 = useFtsConfigStore((s) => s.view?.showStructure3 === true);
+  const e3 = useStructure3(viewSymbol, showStructure3);
   const gate = useFundGate(enforceRiskGates ? viewSymbol : '');
 
   // سیگنالِ تکنیکال باید همان سریِ تعدیل‌شده‌ای را ببیند که چارت می‌رسمد و موتورِ
   // FTSِ سرور تحلیل می‌کند. پیش‌تر روی کندلِ خام می‌دوید: دو طرفِ یک افزایشِ سرمایه
   // دو مقیاسِ قیمتی‌اند، پس MA/مقاومت/فیبو قاطی می‌شد (شاهد: کايزد ۵۸۱۰ ← ۲۶۴۲).
   const adjustEvents = feed.data?.adjustEvents;
+  // ضریبِ هر کندل را سرور می‌شمارد (`api/chart.py::_canonical_adjustment`)؛ این
+  // آرایه تنها ورودیِ مقیاسِ قیمت درِ مرورگر است. `adjustEvents` فقط برایِ آمارِ
+  // شمارشیِ داک نگه داشته می‌شود، نه برایِ محاسبۀِ دوم.
+  const adjustFactors = feed.data?.factors;
   // نشانگرِ رویدادِ شرکتی (تک‌منبعِ canonical) — درِ هر دو موتور از همین یکی می‌خواند
   const corpEvents = feed.data?.corporateEvents;
   const candles = useMemo(
-    () => applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined'),
-    [feed.candles, adjustEvents],
+    () => applyAdjustmentToCandles(feed.candles, adjustFactors ?? [], FFC_ADJUSTMENT_MODE),
+    [feed.candles, adjustFactors],
   );
 
   // موتورِ دوم (FFC): همان کندلِ تعدیل‌شده، همان تجمیع، همان تحلیلِ سرور -- فقط
@@ -126,6 +128,9 @@ export default function TechnicalPage() {
   const storeTimeframe = useFtsConfigStore((s) => s.timeframe);
   const storeChartType = useFtsConfigStore((s) => s.chartType);
   const storePriceScale = useFtsConfigStore((s) => s.priceScale);
+  // افسانۀ گوشۀ چارت (همان کلیدِ تب «خط وضعیت» در تنظیمات) حالا دو موتور را
+  // یکی می‌پوشاند: لایه‌های FTS از رجیستری خوانده می‌شوند، نه از stateِ چارت.
+  const showChartLegend = useFtsConfigStore((s) => s.view?.showLegend !== false);
   const theme = useUiStore((s) => s.theme);
   const engineBars = useMemo<EngineBar[]>(
     () =>
@@ -145,6 +150,10 @@ export default function TechnicalPage() {
       : storeChartType === 'ohlc' ? 'bars'
       : storeChartType === 'heikin_ashi' ? 'heikin'
       : 'candles';
+
+  // تاریخِ آخرین کندلِ دید (جلالی، همان که رویِ محور خوانده می‌شود) — خطِ
+  // «تازگیِ» پنلِ لایه‌ها. بی‌کندل هیچ تاریخی ساخته نمی‌شود.
+  const lastBarDate = candles.length > 0 ? epochToJalali(candles[candles.length - 1].timestamp) : null;
 
   // رأیِ هفتگی از همان موتورِ FTSِ سرور می‌آید و داخلِ سیگنال منتشر می‌شود؛ گیتِ
   // وتوی هفتگیِ تبِ مستر و سایدبارِ چپ فقط از همین می‌خوانند. پیش‌تر هیچ‌کس این
@@ -239,20 +248,44 @@ export default function TechnicalPage() {
 
   return (
     <div className="tv-workbench flex h-[calc(100dvh-3rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
-      <TechnicalSidebar active={activeLevels} symbol={viewSymbol} onSelect={selectSymbol} />
+      <TechnicalSidebar
+        active={activeLevels}
+        symbol={viewSymbol}
+        onSelect={selectSymbol}
+        ftsContext={{
+          fts: analysis.data?.fts ?? null,
+          status: analysis.data?.status ?? null,
+          message: analysis.data?.message ?? null,
+          isLoading: analysis.isLoading,
+          isError: analysis.isError,
+          basis: analysis.data?.analysis_basis ?? null,
+          bars: analysis.data?.bars ?? null,
+          lastBarDate,
+          fetchedAtMs: analysis.dataUpdatedAt > 0 ? analysis.dataUpdatedAt : null,
+          adjustmentEvents: adjustEvents?.length ?? null,
+          e3: e3.data ?? null,
+        }}
+      />
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
-          <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
-            <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
-          </div>
+          {/* موتورِ دوم نوارِ ابزار ندارد؛ همان‌جا شناور می‌ماند. درِ مسیرِ klinecharts
+              این کنترل داخلِ نوارِ ابزار رندر می‌شود — پیش از این همینجا رویِ بوم شناور
+              بود و دکمۀ «تنظیمات چارت» را می‌پوشاند (۳۶۸px² هم‌پوشانی سنجیده‌شده). */}
+          {chartEngine === 'ffc' && (
+            <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
+              <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
+            </div>
+          )}
           {chartEngine === 'ffc' ? (
             <div className="h-full w-full overflow-hidden" data-testid="ffc-chart-host">
               <FtsEngineChart
                 engineId="ffc"
                 bars={engineBars}
                 fts={analysis.data?.fts ?? null}
+                refClose={analysis.data?.ref_close ?? null}
+                e3={e3.data ?? null}
                 corpEvents={corpEvents}
                 dark={theme !== 'light'}
                 logScale={storePriceScale === 'logarithm'}
@@ -286,17 +319,29 @@ export default function TechnicalPage() {
                   initialName={boardRow?.name || viewSymbol}
                   boardRow={boardRow}
                   fts={analysis.data?.fts ?? null}
+                  e3={e3.data ?? null}
                   replayActive={replayActive}
                   chartEngine={chartEngine}
                   onEngineChange={setChartEngine}
                   onToggleReplay={() => (replayActive ? stopReplay() : startReplay(Math.max(0, nn.data.length - 1)))}
                   onOpenSettings={() => setSettingsOpen(true)}
+                  settingsSlot={<FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />}
                   onSymbolChange={(s) => selectSymbol(s.symbol)}
                 />
               </Suspense>
             </div>
           )}
           <PriceAlertBanner rows={marketData?.data} />
+          {showChartLegend ? (
+            <div className="absolute bottom-9 start-3 z-40" data-testid="fts-legend-host">
+              <FtsLayerLegend
+                fts={analysis.data?.fts ?? null}
+                engineId={chartEngine}
+                adjustmentEvents={adjustEvents?.length ?? null}
+                e3={e3.data ?? null}
+              />
+            </div>
+          ) : null}
         </div>
 
         <FtsDock

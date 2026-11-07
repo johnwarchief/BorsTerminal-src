@@ -23,6 +23,7 @@ a = Analysis(
         ('app.py', '.'),
         ('bootstrap_first_run.py', '.'),
         ('codal_fetcher.py', '.'),
+        ('codal_captcha.py', '.'),
         ('fts_engine.py', '.'),
         ('mstat_engine.py', '.'),
         ('fts_thresholds.json', '.'),
@@ -30,6 +31,12 @@ a = Analysis(
         ('tsetmc_p0_schema.py', '.'),
         ('watchlist_store.py', '.'),
         ('api', 'api'),
+        # بستهٔ تصحیحِ نسخه‌دارِ RA365 (factors + raw_ohlc).  بدونِ این entry،
+        # نسخهٔ نصب‌شده بسته را نمی‌بیند و تعدیل به زنجیرهٔ قدیم برمی‌گردد.
+        ('data/ra365_corrections', 'data/ra365_corrections'),
+        # پلِ تاریخیِ W/M (Round 32D): فقط کندل‌های هفتگی/ماهانهٔ کلیدهای
+        # غیرقابل‌مقایسه؛ سریِ خام روزانه در آن نیست.
+        ('data/ra365_calendar', 'data/ra365_calendar'),
         # آپدیتِ درون‌برنامه‌ای: bors_minisign در ریشهٔ ریپو است و فقط از داخلِ
         # api.update استفاده می‌شود که خود درونِ تابعِ api_router ایمپورت
         # می‌شود → اسکنِ ایستایِ PyInstaller آن را نمی‌بیند، پس صریحاً باندل
@@ -47,6 +54,7 @@ a = Analysis(
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
                    'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'orjson',
+                   'adjustment_corrections', 'wm_calendar',
                    'pandas', 'numpy', 'sqlite3',
                    # v9.8.1: app.py was split verbatim into the api/ package; the
                    # frozen build MUST bundle these or the EXE dies with
@@ -59,6 +67,11 @@ a = Analysis(
                    # سطح-بال import می‌کنند. مثل tape_flags صریح فهرست می‌شود: نبودنش
                    # EXE را روی اولین درخواستِ چارت می‌کشد.
                    'price_basis', 'candle_contract',
+                   # مأموریتِ ماژور (۱۴۰۵-۰۷-۲۷): `major_swings` درجۀبندیِ سقف/کفِ
+                   # ماژور است و api/chart آن را سطح-بال import می‌کند؛ مثلِ دو
+                   # ماژولِ بالا صریح فهرست می‌شود — نبودنش EXE را رویِ اولین
+                   # درخواستِ چارت/قیف می‌کشد.
+                   'major_swings',
                    # دورِ قیف (1405-07-16): `funnel_registry` تک‌منبعِ فیلترها و
                    # presetهاست و api/funnel آن را سطح-بال import می‌کند؛ مثلِ بقیۀ
                    # ماژول‌هایِ ریشه صریح فهرست می‌شود وگرنه EXE رویِ اولین درخواستِ
@@ -78,13 +91,17 @@ a = Analysis(
                    # codal_fetcher (`_classify_unit`) و api.fundamental (ضریب‌های
                    # نمایش) سطح-بال importش می‌کنند. بی‌این خط EXE رویِ اولین
                    # درخواستِ بنیادی ModuleNotFoundError می‌دهد.
-                   'codal_units',
+                   'codal_units', 'codal_captcha',
                    # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴):
                    # `codal_pipeline` صف/checkpoint/قفلِ worker است و `app.py`
                    # (حلقۀ استارتاپ) و `api/_sync_codal.py` (دستۀ چرخه و سلامت)
                    # سطح-بال importش می‌کنند؛ بی‌این خط EXE رویِ اولین چرخه
-                   # ModuleNotFoundError می‌دهد.
-                   'codal_pipeline',
+                   # ModuleNotFoundError می‌دهد. `codal_cadence` (پنجرهٔ انتشار و
+                   # فاصلهٔ شبکه) و `codal_row_gate` (گیتِ ردیفی/قرنطینه) در دورِ
+                   # به‌روزرسانیِ رویدادمحورِ ۵ محور تازه شدند و سطح-بال از
+                   # `codal_pipeline` خوانده می‌شوند — مثلِ بقیهٔ ماژول‌هایِ ریشه
+                   # صریح فهرست می‌شوند تا به حدسِ اسکنِ ایستا سپرده نشوند.
+                   'codal_pipeline', 'codal_cadence', 'codal_row_gate',
                    # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
                    # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
                    # api._core / api.fundamental / api.chart / api.screener و
@@ -126,6 +143,15 @@ a = Analysis(
                    # می‌کنند (test_tsetmc درِ بدنهٔ تابع، پس ایستیک‌اسکن نمی‌بیند).
                    # نبودنش EXE را روی اولین تیکِ زنده می‌کشد.
                    'market_state',
+                   # دورِ ادغامِ System 2 (۱۴۰۵-۰۷-۲۸): سه ماژولِ ریشۀ تازه که هر
+                   # کدام سطح-بال ازِ دروازۀ API خوانده می‌شوند —
+                   # `adjustment_engine` و `corporate_ledger` از `api/chart.py:11,13`
+                   # و `mstat_panels` از `api/market_status.py:18`. نبودنِ هر سه
+                   # خودِ import آن دروازۀ API را می‌کشد، یعنی EXE روی اولین
+                   # /api/chart یا /api/market-status می‌میرد. ایستیک‌اسکن احتمالاً
+                   # پیدایشان می‌کند، ولی قاعدۀ مخزن این است: چیزی که درِ بستهٔ
+                   # نهایی کشنده است، به حدسِ اسکن سپرده نشود.
+                   'adjustment_engine', 'corporate_ledger', 'mstat_panels',
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
                    'api.screener',
@@ -156,6 +182,30 @@ a = Analysis(
                    # خودِ execution_contract/mock/service/timing/latency/ledger در
                    # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان.
                    'api.execution',
+                   # آداپتورِ EasyTrader (مأموریتِ ۱۴۰۵-۰۷-۲۴): سطح-بال است و اسکن
+                   # ایستا باید پیدایش کند — ولی قاعدۀ مخزن این است که چیزی که
+                   # درِ EXE کشنده است، به حدسِ اسکن سپرده نشود. بی‌این خط، بیلدِ
+                   # منجمد رویِ اولین /api/execution/status با ModuleNotFoundError
+                   # می‌میرد و گاردِ HTTPِ محلی هیچ‌وقت این را نمی‌بیند.
+                   'execution_easytrader',
+                   'execution_connect',
+                   # تنظیمِ اتصال (مأموریتِ ۱۴۰۵-۰۷-۲۹): درِ بدنهٔ تابع import می‌شود
+                   # تا انتخابِ آداپتور از خودِ برنامه هم ممکن باشد؛ بی‌این خط
+                   # بیلدِ منجمد رویِ اولین /api/execution/status می‌میرد.
+                   'execution_settings',
+                   # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
+                   # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
+                   # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.
+                   # سه ماژولِ بعدی سطح‌بالِ خودِ api/bot.py‌اند و اسکن باید
+                   # پیدایشان کند — اینجا هم فهرست شده‌اند چون قاعدۀ مخزن این
+                   # است: چیزی که درِ بستهٔ نهایی کشنده است، به حدس سپرده نشود.
+                   'api.bot', 'bot_signals', 'paper_trading', 'trade_sim',
+                   'backtest_engine',
+                   # مرحلۀ ۲ دورِ تطبیقِ دوم: `/api/structure3` موتورِ سوم را به‌عنوان
+                   # رابطِ بی‌رأی منتشر می‌کند و `structure_engine3` را سطح-بال import
+                   # می‌کند؛ `api_router` هم ماژول را درِ بدنهٔ تابع import می‌کند، پس
+                   # هر دو صریح فهرست می‌شوند (گاردِ dev/onedir_contract_v11.py).
+                   'api.structure3', 'structure_engine3',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ

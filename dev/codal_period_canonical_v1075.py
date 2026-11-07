@@ -35,6 +35,7 @@ sys.path.insert(0, ROOT)
 
 import codal_periods as CP  # noqa: E402
 import codal_fetcher as CF  # noqa: E402
+import bors_fixture_db as FX                    # noqa: E402
 
 PASS = FAIL = 0
 
@@ -258,10 +259,11 @@ def test_one_number(conn, label):
 
 def test_real_db():
     print("\n— ۵-ب) بانکِ کاریِ خواندنی (اگر هست)")
-    if not os.path.exists(CF.DB_PATH):
-        print("  · market.db نیست — این بخش رد شد")
+    _probe = FX.market_db_ro(ROOT)
+    if _probe is None:
+        FX.note_skip("5b bank-kari", "market.db absent or lacks instruments/financial_statements/monthly_sales")
         return None
-    conn = sqlite3.connect(CF.DB_PATH, timeout=30, isolation_level=None)
+    conn = _probe
     try:
         return test_one_number(conn, "market.db واقعی")
     finally:

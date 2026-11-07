@@ -47,7 +47,7 @@ export function MarketPage() {
   const pollMs = useMarketPrefs((state) => state.pollMs);
   const setFilters = useMarketPrefs((state) => state.setFilters);
   const board = useBoard(pollMs);
-  const snapshot = useMarketSnapshot(pollMs);
+  const snapshot = useMarketSnapshot(5_000);
   const rows = useMemo(() => board.data?.data ?? [], [board.data]);
   const [boardDay, setBoardDay] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('symbol');

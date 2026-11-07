@@ -177,8 +177,11 @@ describe('پنلِ معامله: قراردادِ بی‌سفارشِ واقعی
     const before = fetchMock.mock.calls.length;
     await waitFor(() => expect(screen.getByTestId('watch-order-qty')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    // رقمِ فارسی باید رویِ سطر بماند: sanitationِ پیشین با `\d` (که درِ JS فقط
+    // لاتین است) عددِ خودش را می‌بلعید و «۱۰۰» به '' می‌رسید — یعنی همان
+    // چیزی که این آزمون تصادفاً سبز می‌کرد.
+    expect(screen.getByTestId('watch-order-qty')).toHaveValue('۱۰۰');
     fireEvent.click(screen.getByTestId('watch-order-buy'));
-    expect(screen.getByTestId('watch-order-qty')).toHaveValue('');
     expect(fetchMock.mock.calls.length).toBe(before);
   });
 });

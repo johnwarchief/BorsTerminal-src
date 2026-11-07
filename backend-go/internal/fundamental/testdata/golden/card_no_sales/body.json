@@ -9,7 +9,7 @@
  "excluded": false,
  "exclusion_reasons": [],
  "passes": {
-  "1_growth": false,
+  "1_growth": null,
   "2_eps_trend": false,
   "3_gross_margin": false,
   "4_sales_to_mcap": false,
@@ -50,6 +50,7 @@
  },
  "profile": {
   "kind": "production",
+  "margin_class": "production",
   "label": "تولیدی / صادراتی",
   "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
   "volume_applicable": true,
@@ -60,9 +61,9 @@
   "1": {
    "monetary": {
     "monetary_pct": null,
+    "basis": null,
     "pass": false,
     "data_gap": true,
-    "series": [],
     "threshold": 40.0,
     "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
     "reason": "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.",
@@ -90,7 +91,8 @@
     "reason": "رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست.",
     "rule_ref": "F-01b"
    },
-   "pass": false
+   "pass": null,
+   "reason": "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است."
   },
   "2": {
    "eps_series": null,
@@ -104,6 +106,7 @@
    "consolidated_used": false,
    "low_quality_track": false,
    "soft_gap": false,
+   "evidence_label": "دادهٔ ناکافی",
    "reason": "هیچ صورت مالیِ معتبری با EPS ثبت نشده.",
    "partial": false,
    "available_periods": 0,
@@ -129,6 +132,8 @@
    "threshold": 20.0,
    "ideal_threshold": 30.0,
    "optimal": false,
+   "na_kind": "data",
+   "margin_tier": null,
    "data_gap": true,
    "reason": "صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.",
    "remediation": "با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.",
@@ -138,13 +143,16 @@
    "available": false,
    "na": true,
    "gap_cause": "annual_sales",
-   "pass": false,
+   "pass": null,
    "potential_pass": false,
    "sales_pass": false,
    "mcap_ht": 0.3,
    "potential_threshold": 40.0,
    "sales_threshold": 0.33,
-   "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+   "acceptance_path": null,
+   "annualize_months": 0,
+   "annualize_label": "",
+   "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
    "annual": null,
    "market_cap_source": "mw",
    "market_cap_error": null,
@@ -221,7 +229,7 @@
    "step": "۴",
    "title": "لایهٔ ۴ — پتانسیل سود سالانه به ارزش بازار",
    "type": "warning",
-   "text": "⚠️ فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است."
+   "text": "⚠️ دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."
   },
   {
    "step": "۵",
@@ -442,10 +450,7 @@
   "mandatory_sectors": [
    "خودرو",
    "نیروگاه",
-   "قند و شکر",
-   "لاستیک",
-   "شوینده",
-   "بیمه"
+   "لاستیک"
   ],
   "free_sectors": [
    "سیمان",
@@ -461,6 +466,7 @@
    "نفت",
    "محصولات فلزی"
   ],
+  "reject_insurance": true,
   "watchlist_max": 50,
   "mcap_min_hmt": 0.0,
   "holdings_sales_na": true,
@@ -487,5 +493,51 @@
  },
  "ref_symbol": null,
  "ref_reason": null,
+ "freshness": {
+  "symbol": "کدبه‌کد09",
+  "as_of": null,
+  "axes": {
+   "1_growth": {
+    "as_of": null,
+    "source": "monthly_sales",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   },
+   "2_eps_trend": {
+    "as_of": null,
+    "source": "financial_statements",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   },
+   "3_gross_margin": {
+    "as_of": null,
+    "source": "financial_statements",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   },
+   "4_sales_to_mcap": {
+    "as_of": "2026-10-14",
+    "source": "monthly_sales+market_watch",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "missing",
+    "reason": ""
+   },
+   "5_industry": {
+    "as_of": "2026-10-14",
+    "source": "instruments",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "fresh",
+    "reason": ""
+   }
+  }
+ },
  "fs_count": 0
 }

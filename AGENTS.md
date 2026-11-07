@@ -4,7 +4,7 @@
 اگر روی ماشینِ تازه‌ای clone کردید، **همین فایل + پوشۀ `skills/`** باید برای کار کافی باشد؛
 چیزِ دیگری از حافظۀ ماشینِ من لازم نباشد. (استثنائات در بندِ «چی در گیت نیست».)
 
-**پیش از استفاده از دستورهای مستندات، `docs/README.md` را هم بخوانید.** آن فایل تقدم منابع FTS را روشن می‌کند و اسناد handoff/roadmap تاریخ‌دار را از وضعیت جاری جدا می‌کند. `docs/AGENT-INDEX.md` نقشهٔ کدِ تولیدشده است؛ آن را دستی ویرایش نکنید.
+**پیش از استفاده از دستورهای مستندات، `docs/README.md` را هم بخوانید.** آن فایل تقدم منابع FTS را روشن می‌کند و اسناد handoff/roadmap تاریخ‌دار را از وضعیت جاری جدا می‌کند. `docs/AGENT-INDEX.md` نقشهٔ کدِ تولیدشده است؛ آن را دستی ویرایش نکنید. برای هر تغییر دیداری یا بازطراحی فرانت‌اند، `DESIGN.md` و اسکیل `skills/bors-frontend-design/SKILL.md` را هم پیش از کدنویسی بخوانید.
 
 ## ساختارِ ریپو
 
@@ -20,7 +20,8 @@
 | `scripts/` | زنجیرۀ بیلد و انتشار (`build_all.py`, `check_release_db.py`, `make_patch.py`, `publish_github_release.py`) |
 | `installer/` | Inno Setup (`bors_setup.iss`) و خروجیِ نصاب در `installer/out/` |
 | `docs/` | جزوۀ روش‌شناسی FTS (`docs/fts-notes/`)، SPECها، `PLAN-remaining.md`، `RELEASE_NOTES.md`، و نقشۀ کدِ هر ایجنت (`docs/AGENT-INDEX.md` — با `python tools/build_agent_index.py` بازتولید می‌شود) |
-| `skills/` | هشت اسکیلِ قراردادِ کار — جدولِ زمان‌بندی‌شان در `skills/README.md`؛ مهارت‌هایِ متدولوژی در `.agents/skills/` |
+| `DESIGN.md` | مرجع سراسری جهت بصری و معیار پذیرش رابط؛ برای تغییرهای UI لازم‌القراءة است |
+| `skills/` | ده اسکیلِ قراردادِ کار — جدولِ زمان‌بندی‌شان در `skills/README.md` |
 
 ## فرمان‌ها
 
@@ -48,10 +49,9 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
 
 ## نام‌گذاریِ بیلد و ریلیز (همان چیزی که CI انتظار دارد)
 
-- هفت لنگرِ نسخه باید یکی باشند: `bors_config.APP_VERSION`, `frontend/package.json`,
+- شش لنگرِ نسخه باید یکی باشند: `bors_config.APP_VERSION`, `frontend/package.json`,
   `frontend/package-lock.json` (`version` و `packages[""].version`),
-  `frontend/src-tauri/tauri.conf.json`, `frontend/src-tauri/Cargo.toml`,
-  `installer/bors_setup.iss` (`#define AppVersion`).
+  `frontend/src-tauri/tauri.conf.json`, `installer/bors_setup.iss` (`#define AppVersion`).
   بعد از هر bump `python dev/version_anchor_guard.py` را اجرا کنید.
 - تگ: `vX.Y.Z` (نقطه‌چین، بدونِ `release/`). بیلد روی تگ در `johnwarchief/BorsTerminal-src`
   (remote `github`) می‌دود و خروجی‌ها را در `johnwarchief/BorsTerminal` منتشر می‌کند.
@@ -71,7 +71,8 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
 - اگر Laya هنوز آماده نیست، از Playwright/CDP و probeهای زندهٔ موجود برای راستی‌آزمایی استفاده کنید و وضعیت مهاجرت را صادقانه `UNVERIFIED` بنویسید؛ اجرای Jev فقط fallback مقایسه‌ای است، نه مدرکِ مهاجرت.
 - متغیرهای `JEV_BROWSER_DIR`، `JEV_CHROME`، `tools/pilot_ctl.py` و `tools/jev_ui_check.mts` را تا وقتی جایگزین آزمایش و تأیید نشده حذف یا rename نکنید.
 
-راهنماهای سنجش: `skills/bors-live-ui-check/`, `skills/canvas-chart-live-pixel-check/`, `skills/bors-installed-vs-dev-diagnosis/`.
+راهنماهای میراثی: `skills/bors-dual-jev-verification/`, `skills/bors-jev-verification/`, `skills/bors-live-ui-check/`,
+`skills/canvas-chart-live-pixel-check/`, `skills/bors-installed-vs-dev-diagnosis/`.
 
 ## قیدهایِ شکست‌پذیر (اگر نشکنند، کار تمام است)
 

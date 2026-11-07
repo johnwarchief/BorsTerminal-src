@@ -863,39 +863,26 @@ func TestAx1BoundaryFromVectors(t *testing.T) {
 // نگه می‌دارد. بی‌این تفکیک، صفرِ واقعی «بی‌داده» خوانده می‌شد.
 func TestAx1ZeroRevenueStaysZero(t *testing.T) {
 	v := ax1LoadVectors(t)
-	ctx := context.Background()
-	s := ax1OpenFixture(t)
 
-	zeroRows, verified := 0, 0
-	for _, c := range v.Ind1a {
-		hasZero := false
-		for _, item := range ax1AsSlice(c.Out["series"]) {
-			row := ax1AsMap(item)
+	// `ind1a` دیگر `series` منتشر نمی‌کند (فیلد در S4a از قرارداد حذف شد)؛
+	// شکلِ صفر/تهی مستقیم رویِ همان مبدل و ردیف‌هایِ خامِ monthly سنجیده می‌شود.
+	zeroRows := 0
+	for _, c := range v.Monthly {
+		for _, row := range ax1MsSeries(c.Rows) {
 			if f, ok := ax1Num(row["monthly_revenue"]); ok && f == 0 {
 				zeroRows++
-				hasZero = true
-			}
-		}
-		if !hasZero {
-			continue
-		}
-		got, err := s.Ind1aMonetaryGrowth(ctx, c.Symbol, ax1SeriesFor(v, c.Symbol), nil,
-			ax1ProfileFor(v, c.Symbol))
-		if err != nil {
-			t.Fatalf("%s: ind1a: %v", c.Symbol, err)
-		}
-		for _, g := range ax1AsSlice(got["series"]) {
-			if f, ok := ax1Num(ax1AsMap(g)["monthly_revenue"]); ok && f == 0 {
-				verified++
 			}
 		}
 	}
 	if zeroRows == 0 {
-		t.Error("فیکسچر ردیفِ monthly_revenue=0 ندارد — گرامِ صفر/nil سنجیده نشد")
+		t.Error("فیکسچر ردیفِ monthly_revenue=0 ندارد — گرامِ صفر سنجیده نشد")
 	}
-	if verified != zeroRows {
-		t.Errorf("ردیفِ صفر: اوراکل %d و خروجیِ Go %d — صفر نباید nil شود", zeroRows, verified)
+	nilOut := ax1MsSeries([][]any{{1404, 6, nil, nil, nil, nil}})[0]
+	if nilOut["monthly_revenue"] != nil || nilOut["ytd_revenue"] != nil ||
+		nilOut["ytd_revenue_prev"] != nil || nilOut["period_end"] != nil {
+		t.Fatalf("ردیفِ تهی باید null بماند: %v", nilOut)
 	}
+
 	// خودِ تبدیل: صفر می‌ماند، nil و رشتهٔ خالی می‌روند (قواعدِ `_num_or_none`).
 	for _, tc := range []struct {
 		in   any

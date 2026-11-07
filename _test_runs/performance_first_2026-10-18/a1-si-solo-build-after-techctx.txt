@@ -1,0 +1,4 @@
+0 A si=5ms warm (10244.7, 'MISS') [646.7, 731.7, 564.6, 513.8, 593.3, 540.0, 557.4, 514.7] ['MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS']
+1 B si=0.5ms warm (8041.1, 'MISS') [501.1, 501.6, 815.1, 569.4, 483.1, 665.2, 596.9, 655.2] ['MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS']
+2 B si=0.5ms warm (8263.1, 'MISS') [649.3, 615.9, 472.1, 650.2, 733.9, 481.5, 638.7, 531.7] ['MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS']
+3 A si=5ms warm (8284.2, 'MISS') [498.0, 545.1, 463.6, 525.9, 591.3, 581.9, 670.8, 500.0] ['MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS', 'MISS']

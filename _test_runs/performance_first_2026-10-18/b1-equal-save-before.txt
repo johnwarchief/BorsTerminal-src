@@ -1,0 +1,31 @@
+$ C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python.exe dev/perf_output_equal_v1.py save --base http://127.0.0.1:8020 --tag before-perf-first
+  market               200     7396ms  bytes= 6,101,215  rows=5981
+  live-stats           200       16ms  bytes=       972  rows=—
+  mstat-summary        200      771ms  bytes=     3,515  rows=10
+  mstat-histogram      200       38ms  bytes=     1,474  rows=—
+  mstat-thermometer    200       41ms  bytes=       357  rows=—
+  mstat-depth          200       27ms  bytes=       503  rows=—
+  mstat-clientsplit    200       27ms  bytes=       553  rows=—
+  mstat-phase          200       24ms  bytes=       607  rows=—
+  mstat-mainwatch      200      513ms  bytes=    72,561  rows=120
+  mstat-industries     200       35ms  bytes=    13,001  rows=46
+  mstat-smart-money    200      519ms  bytes=     2,668  rows=—
+  mstat-timeline       200       72ms  bytes=     9,713  rows=—
+  mstat-phases         200      420ms  bytes=       398  rows=—
+  mstat-treemap        200       90ms  bytes=    82,827  rows=220
+  mstat-tops           200      100ms  bytes=     7,890  rows=—
+  mstat-orderflows     200       87ms  bytes=     8,895  rows=—
+  mstat-ownership      200       57ms  bytes=    10,078  rows=—
+  mstat-indexcards     200       35ms  bytes=     1,674  rows=—
+  mstat-gold           200       70ms  bytes=    38,832  rows=19
+  mstat-series         200       19ms  bytes=     3,170  rows=3
+  mstat-board          200     2483ms  bytes=   219,487  rows=—
+  screener             200     1307ms  bytes= 1,060,269  rows=922
+  funnel-registry      200       30ms  bytes=    10,618  rows=—
+  fts-config           200       12ms  bytes=     1,020  rows=—
+  chart-foulad         200     2592ms  bytes= 1,132,866  rows=4246
+  index-tedpix         200     1661ms  bytes=   743,357  rows=4307
+  watchlist            200       19ms  bytes=        51  rows=0
+saved 'before-perf-first' -> C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_golden\before-perf-first.json.gz
+
+EXIT=0

@@ -8,6 +8,13 @@ checks the arithmetic, the acceptance thresholds and the veto rules against
 hand-computed expectations. The sample numbers in the spec are used only as
 fixtures.
 
+HISTORICAL v2.1 REFERENCE -- NOT THE RUNTIME CONTRACT.
+This file is a frozen arithmetic fixture for the v2.1 wording. Runtime truth
+lives in fts_engine.py / api/fundamental.py and the owner rulings; the offline
+gate is dev/run_all_tests.py (which does not register this file). Where v2.1
+and the running product disagree, the divergence log below is a historical
+snapshot, not a claim about current behaviour.
+
 Run:  python dev/fts_formula_tests_v2.py
 Exit: 0 if every check passes, 1 otherwise.
 """
@@ -182,6 +189,12 @@ def eps_trend_ok(series):
 INSURANCE_TOKENS = ("بیمه", "بازنشستگی")
 FREE_21 = ("سیمان", "فلزات اساسی", "پتروشیمی", "کانی", "زنجیره فولاد", "فولاد",
            "کاشی", "سرامیک", "شیشه")
+# HISTORICAL v2.1 ONLY -- do not read as the running mandatory list.
+# The v2.1 wording included detergent and regulated food. The owner ruling
+# (Task 8) and the runtime list MANDATORY_PRICING_TOKENS in fts_engine.py are
+# exactly three: car/parts, power, tire. Insurance is a separate hard veto
+# (reject_insurance), and drug/food are allowed (not mandatory). Kept here only
+# so the v2.1 fixture encoder stays reproducible.
 MANDATORY_21 = ("خودرو", "نیروگاه", "شوینده", "لاستیک",
                 "غذایی مشمول تنظیم بازار")
 HOLDING_KINDS = ("holding", "investment")
@@ -363,16 +376,19 @@ def run_tests():
 
 
 # ----------------------------------------------------------------------------
-# divergence log: spec v2.1 vs the current project implementation.
-# Informational only -- never affects pass/fail or exit code.
+# divergence log: spec v2.1 vs the implementation AS IT WAS when v2.1 shipped.
+# HISTORICAL SNAPSHOT -- informational only, never affects pass/fail or exit
+# code, and NOT a statement about the current product. Entries can be (and some
+# are) superseded by later owner rulings; check fts_engine.py / api/*.py and
+# docs/FTS_SYSTEM_SPECIFICATION_v2.md for runtime truth.
 # ----------------------------------------------------------------------------
 DIVERGENCES = [
     ("F-04/cov", "spec v2.1 GP coverage threshold = 40% ; impl profit_potential_min=30 (bors_config.py) and v10_potential_min=33 (api/fundamental.py FTS_V10_DEFAULTS)"),
     ("F-04/pass", "spec v2.1 pass = ratio>=1.0 OR coverage>=40% ; impl api/fundamental.py ind4_valuation pass = sales_pass AND pot_pass (AND, not OR)"),
     ("F-04/holding", "spec v2.1: holding/investment ratio must be N/A ; impl dynamic_annualized_sales still emits a ratio on op-revenue basis (no N/A)"),
     ("F-05/free", "spec v2.1 free list includes 'شیشه' (glass) ; impl FREE_PRICING_TOKENS (fts_engine.py) has no 'شیشه'"),
-    ("F-05/daroo", "spec v2.1 allows pharma with GPM>50% ; impl marks all 'دارو' as mandatory reject (no exception)"),
-    ("F-05/breadth", "spec v2.1 mandatory = severe-regulated food only ; impl also blanket-rejects 'قند و شکر' and generic 'غذا'"),
+    ("F-05/daroo", "spec v2.1 allows pharma with GPM>50% ; impl marks all 'دارو' as mandatory reject (no exception) [superseded by Task 8: drug/food allowed, not mandatory]"),
+    ("F-05/breadth", "spec v2.1 mandatory = severe-regulated food only ; impl also blanket-rejects 'قند و شکر' and generic 'غذا' [superseded by Task 8: three booklet industries only]"),
     ("F-01/suspend", "spec v2.1 rejects literal suspension flag 'A' ; impl is_suspended() uses a stale-session heuristic, no 'A' flag test"),
 ]
 

@@ -1,0 +1,71 @@
+[
+ {
+  "i": 0,
+  "path": "funnel",
+  "start_wall": 1792252173.932,
+  "end_wall": 1792252175.903,
+  "ms": 1971.3,
+  "x_cache": "MISS",
+  "wire": 468374
+ },
+ {
+  "i": 1,
+  "path": "funnel",
+  "start_wall": 1792252184.504,
+  "end_wall": 1792252185.047,
+  "ms": 543.3,
+  "x_cache": "MISS",
+  "wire": 468374
+ },
+ {
+  "i": 2,
+  "path": "funnel",
+  "start_wall": 1792252193.648,
+  "end_wall": 1792252194.355,
+  "ms": 706.8,
+  "x_cache": "MISS",
+  "wire": 468374
+ },
+ {
+  "i": 3,
+  "path": "funnel",
+  "start_wall": 1792252202.956,
+  "end_wall": 1792252203.484,
+  "ms": 528.2,
+  "x_cache": "MISS",
+  "wire": 468374
+ },
+ {
+  "i": 4,
+  "path": "funnel",
+  "start_wall": 1792252212.085,
+  "end_wall": 1792252212.635,
+  "ms": 550.5,
+  "x_cache": "MISS",
+  "wire": 468377
+ },
+ {
+  "i": 0,
+  "path": "mstat-board",
+  "start_wall": 1792252221.236,
+  "end_wall": 1792252222.668,
+  "ms": 1432.6,
+  "wire": 76396
+ },
+ {
+  "i": 1,
+  "path": "mstat-board",
+  "start_wall": 1792252224.669,
+  "end_wall": 1792252226.036,
+  "ms": 1367.3,
+  "wire": 76398
+ },
+ {
+  "i": 2,
+  "path": "mstat-board",
+  "start_wall": 1792252228.036,
+  "end_wall": 1792252229.61,
+  "ms": 1573.5,
+  "wire": 76395
+ }
+]

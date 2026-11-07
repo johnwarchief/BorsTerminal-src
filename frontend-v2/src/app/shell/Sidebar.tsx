@@ -12,7 +12,7 @@ const GROUPS: Group[] = [
   { title: 'فضای تحلیل', items: [
     { path: '/market', label: 'بازار', icon: 'grid', live: true },
     { path: '/technical', label: 'تکنیکال', icon: 'chart', live: true },
-    { path: '/fundamental', label: 'بنیادی', icon: 'file' },
+    { path: '/fundamental', label: 'بنیادی', icon: 'file', live: true },
     { path: '/market-status', label: 'وضعیت بازار', icon: 'pulse', live: true },
   ] },
   { title: 'کشف فرصت', items: [

@@ -1,0 +1,311 @@
+{
+  "tableComfortablePaper1366": {
+    "surface": "paper",
+    "densityCompact": "false",
+    "densityComfortable": "true",
+    "count": "۷۸۳ از ۷۸۳",
+    "headers": [
+      "#",
+      "نماد↕نام · صنعت",
+      "۱رشد فروش↕≥ ۶۰٪",
+      "۲سودآوری ۳ساله↕۳ سال",
+      "۳حاشیهٔ ناخالص↕≥ ۴۰٪",
+      "۴فروش / ارزش↕≥ ۰٫۳۳",
+      "۵نرخ‌گذاری صنعت↕رژیم",
+      "امتیاز↓",
+      "وضعیت"
+    ],
+    "chartCount": 60,
+    "axisChartContainers": 75,
+    "visibleRows": 15,
+    "ariaSorts": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "descending"
+    ],
+    "legend": "خط آستانه (خط‌چین)۱ رشد فروش۲ سودآوری ۳ساله۳ حاشیهٔ ناخالص۴ فروش / ارزش۵ نرخ‌گذاری صنعت✓ قبول✕ رد− بی‌نظر? نامشخص"
+  },
+  "tableCompactPaper1366": {
+    "surface": "paper",
+    "densityCompact": "true",
+    "densityComfortable": "false",
+    "count": "۷۸۳ از ۷۸۳",
+    "headers": [
+      "#",
+      "نماد↕نام · صنعت",
+      "۱رشد فروش↕≥ ۶۰٪",
+      "۲سودآوری ۳ساله↕۳ سال",
+      "۳حاشیهٔ ناخالص↕≥ ۴۰٪",
+      "۴فروش / ارزش↕≥ ۰٫۳۳",
+      "۵نرخ‌گذاری صنعت↕رژیم",
+      "امتیاز↓",
+      "وضعیت"
+    ],
+    "chartCount": 0,
+    "axisChartContainers": 0,
+    "visibleRows": 22,
+    "ariaSorts": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "descending"
+    ],
+    "legend": "خط آستانه (خط‌چین)۱ رشد فروش۲ سودآوری ۳ساله۳ حاشیهٔ ناخالص۴ فروش / ارزش۵ نرخ‌گذاری صنعت✓ قبول✕ رد− بی‌نظر? نامشخص"
+  },
+  "tableComfortableInk1366": {
+    "surface": "ink",
+    "densityCompact": "false",
+    "densityComfortable": "true",
+    "count": "۷۸۳ از ۷۸۳",
+    "headers": [
+      "#",
+      "نماد↕نام · صنعت",
+      "۱رشد فروش↕≥ ۶۰٪",
+      "۲سودآوری ۳ساله↕۳ سال",
+      "۳حاشیهٔ ناخالص↕≥ ۴۰٪",
+      "۴فروش / ارزش↕≥ ۰٫۳۳",
+      "۵نرخ‌گذاری صنعت↕رژیم",
+      "امتیاز↓",
+      "وضعیت"
+    ],
+    "chartCount": 60,
+    "axisChartContainers": 75,
+    "visibleRows": 15,
+    "ariaSorts": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "descending"
+    ],
+    "legend": "خط آستانه (خط‌چین)۱ رشد فروش۲ سودآوری ۳ساله۳ حاشیهٔ ناخالص۴ فروش / ارزش۵ نرخ‌گذاری صنعت✓ قبول✕ رد− بی‌نظر? نامشخص"
+  },
+  "tableComfortableInk1920": {
+    "surface": "ink",
+    "densityCompact": "false",
+    "densityComfortable": "true",
+    "count": "۷۸۳ از ۷۸۳",
+    "headers": [
+      "#",
+      "نماد↕نام · صنعت",
+      "۱رشد فروش↕≥ ۶۰٪",
+      "۲سودآوری ۳ساله↕۳ سال",
+      "۳حاشیهٔ ناخالص↕≥ ۴۰٪",
+      "۴فروش / ارزش↕≥ ۰٫۳۳",
+      "۵نرخ‌گذاری صنعت↕رژیم",
+      "امتیاز↓",
+      "وضعیت"
+    ],
+    "chartCount": 72,
+    "axisChartContainers": 90,
+    "visibleRows": 18,
+    "ariaSorts": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "descending"
+    ],
+    "legend": "خط آستانه (خط‌چین)۱ رشد فروش۲ سودآوری ۳ساله۳ حاشیهٔ ناخالص۴ فروش / ارزش۵ نرخ‌گذاری صنعت✓ قبول✕ رد− بی‌نظر? نامشخص"
+  },
+  "tableComfortablePaper1920": {
+    "surface": "paper",
+    "densityCompact": "false",
+    "densityComfortable": "true",
+    "count": "۷۸۳ از ۷۸۳",
+    "headers": [
+      "#",
+      "نماد↕نام · صنعت",
+      "۱رشد فروش↕≥ ۶۰٪",
+      "۲سودآوری ۳ساله↕۳ سال",
+      "۳حاشیهٔ ناخالص↕≥ ۴۰٪",
+      "۴فروش / ارزش↕≥ ۰٫۳۳",
+      "۵نرخ‌گذاری صنعت↕رژیم",
+      "امتیاز↓",
+      "وضعیت"
+    ],
+    "chartCount": 72,
+    "axisChartContainers": 90,
+    "visibleRows": 18,
+    "ariaSorts": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "none",
+      "descending"
+    ],
+    "legend": "خط آستانه (خط‌چین)۱ رشد فروش۲ سودآوری ۳ساله۳ حاشیهٔ ناخالص۴ فروش / ارزش۵ نرخ‌گذاری صنعت✓ قبول✕ رد− بی‌نظر? نامشخص"
+  },
+  "scrollTbt1920": [
+    {
+      "longTasks": 20,
+      "tbtMs": 308,
+      "maxLongTaskMs": 128,
+      "frames": 47,
+      "maxFrameGapMs": 160,
+      "over50msFrames": 38,
+      "scrollHeight": 68904,
+      "clientHeight": 872,
+      "heapMb": 25
+    },
+    {
+      "longTasks": 7,
+      "tbtMs": 47,
+      "maxLongTaskMs": 74,
+      "frames": 60,
+      "maxFrameGapMs": 89,
+      "over50msFrames": 38,
+      "scrollHeight": 68904,
+      "clientHeight": 872,
+      "heapMb": 25
+    },
+    {
+      "longTasks": 7,
+      "tbtMs": 47,
+      "maxLongTaskMs": 70,
+      "frames": 62,
+      "maxFrameGapMs": 88,
+      "over50msFrames": 27,
+      "scrollHeight": 68904,
+      "clientHeight": 872,
+      "heapMb": 11
+    }
+  ],
+  "scrollTbtCompact1920": [
+    {
+      "longTasks": 1,
+      "tbtMs": 1,
+      "maxLongTaskMs": 51,
+      "frames": 117,
+      "maxFrameGapMs": 78,
+      "over50msFrames": 10,
+      "scrollHeight": 36882,
+      "clientHeight": 872,
+      "heapMb": 27
+    },
+    {
+      "longTasks": 2,
+      "tbtMs": 39,
+      "maxLongTaskMs": 89,
+      "frames": 147,
+      "maxFrameGapMs": 63,
+      "over50msFrames": 3,
+      "scrollHeight": 37366,
+      "clientHeight": 872,
+      "heapMb": 26
+    }
+  ],
+  "contrastTable": {
+    "surfaceButton": {
+      "ratio": 4.5,
+      "fg": "rgb(148,101,26)",
+      "bg": "rgb(244,241,233)",
+      "text": "کاغذی"
+    },
+    "densityButton": {
+      "ratio": 7.37,
+      "fg": "rgb(87,82,74)",
+      "bg": "rgb(251,249,245)",
+      "text": "فشرده"
+    },
+    "count": {
+      "ratio": 4.61,
+      "fg": "rgb(111,105,93)",
+      "bg": "rgb(239,236,228)",
+      "text": "۷۸۳ از ۷۸۳"
+    },
+    "cellValue": {
+      "ratio": 14.72,
+      "fg": "rgb(28,26,22)",
+      "bg": "rgb(239,236,228)",
+      "text": "+۶۳٫۷٪"
+    },
+    "cellStatus": {
+      "ratio": 4.58,
+      "fg": "rgb(13,122,69)",
+      "bg": "rgb(239,236,228)",
+      "text": "✓ قبول"
+    }
+  },
+  "keyboardEnterUrl": "http://localhost:7093/#/fundamental/%D8%B1%D9%86%D9%8A%D9%83",
+  "detailRenik": {
+    "surface": "paper",
+    "quintetAxes": 5,
+    "ribbon": "۳ از ۵ محور قبول· ۲ ردتحت نظر · امتیاز ۳/۵",
+    "panels": [
+      "growth",
+      "eps",
+      "margin",
+      "sales",
+      "industry",
+      "history",
+      "evidence"
+    ],
+    "charts": 9,
+    "score": "← جدول بنیادیرنيكخدمات فني و مهندسيتحت نظرامتیاز ۳/۵دادهٔ بنیادی تا ۹ تیر ۱۴۰۵تنظیمات",
+    "hasSettings": true,
+    "hasCalendar": true,
+    "hasHealth": false
+  },
+  "contrastDetail": {
+    "panelTitle": {
+      "ratio": 16.52,
+      "fg": "rgb(28,26,22)",
+      "bg": "rgb(251,249,245)",
+      "text": "رشد فروش — ۱الف و ۱ب"
+    },
+    "panelStatus": {
+      "ratio": 6.12,
+      "fg": "rgb(176,44,55)",
+      "bg": "rgb(251,249,245)",
+      "text": "رد"
+    },
+    "quintetValue": {
+      "ratio": 16.52,
+      "fg": "rgb(28,26,22)",
+      "bg": "rgb(251,249,245)",
+      "text": "+۴۵٫۹٪"
+    },
+    "quintetStatus": null
+  },
+  "detailRenikInkSurface": "ink",
+  "holding": {
+    "badge": "هلدینگ / سرمایه‌گذاری",
+    "pnav": "N/A — قابل ارزیابی نیست؛ این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛ بنابراین P/NAV محاسبه نمی‌شود و جای آن عددی گذاشته نمی‌شود.",
+    "fakePnav": false,
+    "panels": 0
+  },
+  "bank": {
+    "badge": "بانک / مؤسسهٔ اعتباری",
+    "pnav": "N/A — قابل ارزیابی نیست؛ این نماد بانک/مؤسسهٔ اعتباری است و P/NAV برای این طبقه تعریف نشده است.",
+    "fakePnav": false
+  },
+  "normal": {
+    "industryPanel": true,
+    "holdingPanel": false
+  },
+  "consoleErrors": [],
+  "requestFailures": [
+    "GET http://localhost:7093/api/sync/codal/pipeline — net::ERR_ABORTED"
+  ],
+  "reducedMotion": {
+    "activeElementId": "panel-margin-title",
+    "animationName": "fdFadeOnly",
+    "animationDuration": "1e-05s",
+    "mediaMatches": true
+  },
+  "reducedMotionConsoleErrors": []
+}

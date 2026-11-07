@@ -43,6 +43,9 @@ const Fib = z
         end: z.string().nullish(),
         high: z.number().nullish(),
         low: z.number().nullish(),
+        // موجِ بی‌پیوتِ فراکتال = «در حال تشکیل» (P0#4)؛ رابط این را با
+        // ساختارِ تأییدشده یکی نمی‌گیرد.
+        provisional: z.boolean().nullish(),
       })
       .nullish(),
   })
@@ -74,6 +77,9 @@ const Jet = z.object({
   // «چرا جت نیست» — سرور بی‌تاریخچهٔ کافی همین را می‌فرستد و فرانت قبلاً
   // دورش می‌ریخت، پس برچسب بی‌دلیل خاموش می‌ماند.
   reason: z.string().nullish(),
+  // تعدادِ واقعی در برابرِ کفِ لازم (P0#2) — «ناکافی» با عدد، نه بی‌صدا.
+  bars_available: z.number().nullish(),
+  bars_required: z.number().nullish(),
 });
 
 const Choch = z.object({
@@ -98,6 +104,21 @@ const PointHunt = z.object({
   // تاریخِ کندلِ تریگر (لمس + ریباند رویِ همین کندل، فقط وقتی active است) —
   // مارکرِ خرید رویِ همین می‌نشیند (#221: anchor و تریگر دو چیزند).
   trigger_date: z.string().nullish(),
+  // «چرا سنجیده نشد» با تعدادِ واقعی (P0#3): سه علتِ متمایز، سه پیام.
+  reason: z.string().nullish(),
+});
+
+// پولبکِ شاخۀ صعودی (چارت ص۲: صعودی ⇒ جت یا پولبک) — سطحِ آخرین سقفِ
+// شکسته‌شده + لمس + بازگشت؛ سه‌حالته، بی‌عددِ ساختگی.
+const Pullback = z.object({
+  active: z.boolean().nullish(),
+  touching: z.boolean().nullish(),
+  level: z.number().nullish(),
+  level_date: z.string().nullish(),
+  level_age_bars: z.number().nullish(),
+  weekly_confirms: z.boolean().nullish(),
+  gap_pct: z.number().nullish(),
+  reason: z.string().nullish(),
 });
 
 const DoubleBottom = z.object({
@@ -111,6 +132,10 @@ const RangeBox = z.object({
   active: z.boolean().nullish(),
   top: z.number().nullish(),
   bottom: z.number().nullish(),
+  // کرانۀ زمانیِ خودِ جعبه (همان ۲۰ کندلِ قاعدۀ سرور) — بی‌این باکس روی کلِ
+  // دید کشیده می‌شد و extentِ واقعیِ قاعده را دروغ می‌گفت (مرحلۀ ۶).
+  start_date: z.string().nullish(),
+  end_date: z.string().nullish(),
   pct_above_top: z.number().nullish(),
   reason: z.string().nullish(),
 });
@@ -125,6 +150,8 @@ const ExitEngine = z.object({
     .object({
       hard_stop: z.number().nullish(),
       stop_basis: z.string().nullish(),
+      // علتِ «در حال تشکیل» با تعدادِ واقعی (P0#5): کفِ ۲۰ کندلِ بسته کامل نیست.
+      stop_reason: z.string().nullish(),
       stop_hit: z.boolean().nullish(),
       ma14_exit: z.boolean().nullish(),
       ma14_exit_pending: z.boolean().nullish(),
@@ -144,10 +171,14 @@ const ExitEngine = z.object({
     .object({
       third_peak: z.boolean().nullish(),
       third_peak_level: z.number().nullish(),
+      // پهنای باندِ سقفِ سوم از سرور (پارامترِ اجرایى، B4) — رابط پهناء نمی‌سازد.
+      third_peak_band_pct: z.number().nullish(),
       double_top: z.boolean().nullish(),
       hs_break: z.boolean().nullish(),
       neckline: z.number().nullish(),
       level: z.number().nullish(),
+      // «لایهٔ ۳ سنجیده نشد» با تعداد (P0#6) — بی‌صدا None نیست.
+      reason: z.string().nullish(),
     })
     .nullish(),
   l4: z
@@ -156,6 +187,7 @@ const ExitEngine = z.object({
       rsi_rollover: z.boolean().nullish(),
       rsi: z.number().nullish(),
       rsi_prev_peak: z.number().nullish(),
+      reason: z.string().nullish(),
     })
     .nullish(),
 });
@@ -183,10 +215,100 @@ const HourglassStrategy = z.object({
   rsi_oversold: z.number().nullish(),
   ma52_position_mode: z.enum(["below", "above", "either"]).nullish(),
   ma52_position_match: z.boolean().nullable().nullish(),
-  /** نام legacy؛ backend همین مقدار را برای سازگاری هم برمی‌گرداند. */
-  weekly_rsi5: z.number().nullable().nullish(),
+  // پهنای سایۀ MA52 از سرور (B4) — رابط ±۳٪ نمی‌سازد.
+  // (نامِ legacy `weekly_rsi5` درِ دورِ ادغام نیامد: `api/chart.py:3803` فقط
+  // `weekly_rsi` می‌فرستد و هیچ مصرف‌کننده‌ای درِ رابط او را نمی‌خواند.)
+  ma52_band_pct: z.number().nullish(),
   action: z.string().nullish(),
   desc: z.string().nullish(),
+});
+
+// نقاطِ ساختاریِ برچسب‌دار (HH/HL/LH/LL) — زمانِ وقوع جدا از زمانِ تأیید
+// (confirm_time) تا مارکرِ تاریخی به آینده نگاه نکند (ضدِ repaint، مرحلۀ ۱۰).
+const StructurePoint = z.object({
+  idx: z.number(),
+  time: z.string(),
+  confirm_idx: z.number().nullish(),
+  confirm_time: z.string().nullish(),
+  price: z.number(),
+  kind: z.string(),
+  label: z.string(),
+  ref_time: z.string().nullish(),
+  ref_price: z.number().nullish(),
+  // درجۀبندیِ ماژور (مأموریت ۱۴۰۵-۰۷-۲۷): فهرستِ لایۀِ ساختار حالا فقط
+  // Extremeهایِ ماژور است، پس رابط باید بتواند بگوید این نقطه با چه عددی ماژور
+  // شمرده شده است.
+  major: z.boolean().nullish(),
+  leg_pct: z.number().nullish(),
+  leg_atr_x: z.number().nullish(),
+  recent: z.boolean().nullish(),
+});
+
+// ── پروندۀِ «چه چیزی رأی را ساخت» — کنارِ رأی، نه داخلِ آن ────────────────────
+// `confirmed_trend` رأیِ داورِ System 1 رویِ ماژورهاست؛ `provisional` فقط اطلاع
+// است و هیچِ کامپوننتی حق ندارد با آن جهت یا حکمِ قیف را عوض کند.
+const MajorSwingPoint = z.object({
+  idx: z.number(),
+  time: z.string(),
+  kind: z.string(),
+  price: z.number(),
+  confirm_idx: z.number().nullish(),
+  confirm_time: z.string().nullish(),
+  confirm_age_bars: z.number().nullish(),
+  leg_pct: z.number().nullish(),
+  leg_pct_in: z.number().nullish(),
+  leg_pct_out: z.number().nullish(),
+  out_pending: z.boolean().nullish(),
+  leg_atr_x: z.number().nullish(),
+  recent: z.boolean().nullish(),
+  ma100_ctx: z.string().nullish(),
+});
+
+const ProvisionalLeg = z.object({
+  idx: z.number(),
+  time: z.string(),
+  price: z.number().nullish(),
+  provisional: z.boolean().nullish(),
+  confirmed: z.boolean().nullish(),
+  bars_since: z.number().nullish(),
+  bars_to_confirm: z.number().nullish(),
+});
+
+const MajorContext = z.object({
+  timeframe: z.string().nullish(),
+  confirmed_trend: z.string().nullish(),
+  verdict_basis: z.string().nullish(),
+  /** آخرینِ کندلِ **بستهٔ** همان سری — مبنایِ «قطعی بودن»ِ رأی */
+  as_of: z.string().nullish(),
+  daily_as_of: z.string().nullish(),
+  bars: z.number().nullish(),
+  /** سبدِ هفتگی/ماهانۀِ آخر هنوز کندلِ روزانۀِ جدید می‌گیرد (اطلاع، نه رأی) */
+  bucket_forming: z.boolean().nullish(),
+  major_swings: z.array(MajorSwingPoint).nullish(),
+  counts: z
+    .object({
+      pivots: z.number().nullish(),
+      majors: z.number().nullish(),
+      major_highs: z.number().nullish(),
+      major_lows: z.number().nullish(),
+      minor_highs: z.number().nullish(),
+      minor_lows: z.number().nullish(),
+      undecided: z.number().nullish(),
+      dropped_minor: z.number().nullish(),
+    })
+    .nullish(),
+  threshold: z.object({ atr_x: z.number().nullish(), floor_pct: z.number().nullish() }).nullish(),
+  enough_extremes: z.boolean().nullish(),
+  provisional: z
+    .object({
+      since_pivot_time: z.string().nullish(),
+      bars_since_last_pivot: z.number().nullish(),
+      high: ProvisionalLeg.nullish(),
+      low: ProvisionalLeg.nullish(),
+      note: z.string().nullish(),
+    })
+    .nullish(),
+  reason: z.string().nullish(),
 });
 
 // وضعیتِ عمومیِ canonical و جدولِ نقش‌ها — تنها منبعِ متنِ «وضعیت FTS» و تنها
@@ -220,17 +342,39 @@ export const FtsAnalysis = z.object({
       M: TrendLeg.nullish(),
       alignment: z.string().nullish(),
       matrix: MatrixDecision.nullish(),
+      // مبنایِ زمانیِ رأی: آخرینِ کندلِ بستهٔ روزانۀِ ساختار (کندلِ تکمیل‌نشده
+      // درِ ساختارِ جهت نیست، فقط زیرِ `provisional` گزارش می‌شود).
+      as_of: z.string().nullish(),
+      major_swings: z
+        .object({
+          D: MajorContext.nullish(),
+          W: MajorContext.nullish(),
+          M: MajorContext.nullish(),
+        })
+        .nullish(),
     })
     .nullish(),
   fib: Fib,
   jet: Jet.nullish(),
   choch: Choch.nullish(),
   point_hunt: PointHunt.nullish(),
+  pullback: Pullback.nullish(),
   double_bottom: DoubleBottom.nullish(),
   range_box: RangeBox.nullish(),
   exit_engine: ExitEngine.nullish(),
   hourglass: HourglassStrategy.nullish(),
   setups: z.array(Setup).nullish(),
+  // فهرستِ خالی زیرِ کفِ تاریخچه «۰ ستاپ» نیست (P0#11)؛ رابط این را می‌خواند.
+  setups_state: z.string().nullish(),
+  setups_bars_available: z.number().nullish(),
+  setups_bars_required: z.number().nullish(),
+  // نقاطِ ساختاریِ HH/HL/LH/LL — لایۀ «ساختار روند» (روزانه مرجع، هفتگی زمینه).
+  structure_points: z
+    .object({
+      D: z.array(StructurePoint).nullish(),
+      W: z.array(StructurePoint).nullish(),
+    })
+    .nullish(),
   status: FtsStatus.nullish(),
   roles: z.record(z.string(), z.string()).nullish(),
 });
@@ -245,6 +389,9 @@ const FtsResponse = z.object({
   // و واگراییِ سریِ محلی با CDN بی‌صدا می‌ماند.
   analysis_basis: z.string().nullish(),
   bars: z.number().nullish(),
+  // لنگرِ نمایش: آخرین بستۀ سریِ تحلیلِ سرور. موتور دوم (FFC) بی‌این عدد
+  // نمی‌تواند قیمتِ سرور را به فضایِ کندلِ رسم‌شده ببرد (B5).
+  ref_close: z.number().nullish(),
   // فقط در status === 'error' پر می‌شود؛ قبلاً دور ریخته می‌شد و نشان‌ها
   // تا ابد «در حال دریافت…» می‌ماندند.
   message: z.string().nullish(),

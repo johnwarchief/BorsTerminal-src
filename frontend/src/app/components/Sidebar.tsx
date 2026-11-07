@@ -1,17 +1,14 @@
-import { useState } from 'react';
 import { NavLink } from 'react-router';
 import { useUiStore } from '@shared/stores/uiStore';
-import { useAuthStore } from '@shared/stores/authStore';
 import { useMediaQuery } from '@shared/lib/useMediaQuery';
 import { MEDIA_SMALL } from '@shared/lib/breakpoints';
-import { ThemeToggle } from './ThemeToggle';
-import { UserSettingsModal } from '@widgets/UserSettingsModal';
-import { UpdateManagerModal } from '@widgets/UpdateManagerModal';
+import { AccountControls } from './AccountControls';
 import {
   ChevronIcon,
   FundamentalIcon,
   MarketIcon,
   MasterIcon,
+  BoltIcon,
   PortfolioIcon,
   StatusIcon,
   TechnicalIcon,
@@ -64,6 +61,9 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'سرمایه و دارایی',
     items: [
       { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
+      // رأیِ مأموریت 2026-10-17: سرخطی تبِّ مستقلِ ناوبری است (نه فقط پنلِ دیده‌بان)،
+      // چون جریانِ «اتصال ← سفارش ← زمان‌بندی ← نتیجه ← سابقه» جایِ خودش را می‌خواهد.
+      { to: '/sarkhati', icon: BoltIcon, label: 'سرخطی', end: false },
       // رأیِ مالک (1405-07-20): دیده‌بان از درونِ پرتفوی بیرون آمد و تبِّ مستقل شد،
       // ولی همان‌جا زیرِ گروهِ «سرمایه و دارایی» و با دندانه نشان داده می‌شود که
       // تعلقش به پرتفوی گم نشود.
@@ -79,12 +79,6 @@ export function Sidebar() {
   const collapsedOverride = useUiStore((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   const collapsed = collapsedOverride ?? isSmall;
-
-  const username = useAuthStore((s) => s.username);
-  const logout = useAuthStore((s) => s.logout);
-
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [updateOpen, setUpdateOpen] = useState(false);
 
   return (
     <aside
@@ -102,7 +96,7 @@ export function Sidebar() {
         </div>
         <div className={collapsed ? 'hidden' : 'min-w-0'}>
           <span className="block text-xs font-black text-text-primary truncate">ترمینال بورس</span>
-          <span className="block text-[9px] tracking-wider text-text-muted truncate">FTS v2.1</span>
+          <span className="block text-3xs tracking-wider text-text-muted truncate">FTS v2.1</span>
         </div>
         <button
           type="button"
@@ -120,7 +114,7 @@ export function Sidebar() {
         {NAV_SECTIONS.map((sec, secIdx) => (
           <div key={sec.title} className="flex flex-col gap-0.5">
             {!collapsed ? (
-              <div className="px-2 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-text-muted select-none">
+              <div className="px-2 pt-1 pb-0.5 text-3xs font-black uppercase tracking-wider text-text-muted select-none">
                 {sec.title}
               </div>
             ) : secIdx > 0 ? (
@@ -134,7 +128,7 @@ export function Sidebar() {
                 end={item.end}
                 title={item.label}
                 aria-label={item.label}
-                data-testid={item.sub ? 'nav-sub-watch' : undefined}
+                data-testid={item.sub ? 'nav-sub-watch' : `nav-${item.to.slice(1)}`}
                 className={({ isActive }) =>
                   `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${item.sub && !collapsed ? 'ms-3 text-2xs' : ''} ${
                     collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
@@ -168,80 +162,12 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer Controls & User Settings */}
-      <div className={`mt-auto flex flex-col gap-2 ${collapsed ? 'w-full items-center' : ''}`}>
-        {collapsed ? (
-          <div className="flex flex-col items-center gap-1.5 py-1">
-            <ThemeToggle compact />
-            <button
-              type="button"
-              onClick={() => setUpdateOpen(true)}
-              data-testid="app-update-btn"
-              className="rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-text-secondary transition-all hover:border-neon-cyan hover:text-neon-cyan"
-              title="به‌روزرسانی ترمینال"
-              aria-label="به‌روزرسانی ترمینال"
-            >
-              🚀
-            </button>
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              data-testid="user-settings-btn"
-              className="rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
-              title={`تنظیمات کاربر: ${username}`}
-            >
-              ⚙
-            </button>
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-accent-red transition-all hover:border-accent-red/40 hover:bg-accent-red/10"
-              title="خروج از حساب"
-            >
-              ⎋
-            </button>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/50 p-2 backdrop-blur">
-            <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-border-c/50">
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                data-testid="user-settings-btn"
-                className="flex items-center gap-1.5 truncate text-2xs font-bold text-text-primary hover:text-accent-blue transition-colors"
-                title="تنظیمات کاربر"
-              >
-                <span className="text-accent-blue">⚙</span>
-                <span className="truncate max-w-[85px]">{username}</span>
-              </button>
-              <button
-                type="button"
-                onClick={logout}
-                className="rounded border border-transparent px-1 text-2xs text-accent-red hover:border-accent-red/40 hover:bg-accent-red/10 transition-colors"
-                title="خروج از حساب"
-              >
-                خروج ⎋
-              </button>
-            </div>
-            <div className="flex items-center justify-between gap-1 pt-1.5">
-              <ThemeToggle compact />
-              <button
-                type="button"
-                onClick={() => setUpdateOpen(true)}
-                data-testid="app-update-btn"
-                className="flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/60 px-2 py-1 text-[11px] font-bold text-text-secondary transition-all hover:border-neon-cyan hover:text-neon-cyan"
-                title="مدیریت و بررسی به‌روزرسانی سیستم"
-              >
-                <span>🚀</span>
-                <span>به‌روزرسانی</span>
-              </button>
-            </div>
-          </div>
-        )}
+      {/* کنترل‌هایِ حساب درِ یکِ مرجع (AccountControls): ریلِ جمع‌شده وِ کارتِ باز
+          دو نما ازِ یکِ فایل‌اند، پسِ ناوبریِ گوشی هم همانِ چهارِ کنترل را باِ
+          همانِ رفتارِ modalها دارد — نه نسخۀِ دومِ آن‌ها. */}
+      <div className="mt-auto">
+        <AccountControls layout={collapsed ? 'rail' : 'card'} />
       </div>
-
-      <UserSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <UpdateManagerModal open={updateOpen} onClose={() => setUpdateOpen(false)} />
     </aside>
   );
 }

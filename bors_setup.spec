@@ -18,6 +18,7 @@ a = Analysis(
         ('app.py', '.'),
         ('bootstrap_first_run.py', '.'),
         ('codal_fetcher.py', '.'),
+        ('codal_captcha.py', '.'),
         ('fts_engine.py', '.'),
         ('mstat_engine.py', '.'),
         ('confidence_engine.py', '.'),
@@ -33,7 +34,7 @@ a = Analysis(
     hiddenimports=[
         'uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
         'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
-        'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'mstat_engine',
+        'codal_fetcher', 'codal_captcha', 'app', 'test_tsetmc', 'fts_engine', 'mstat_engine',
         # `app.py` هوکِ استارتش `codal_pipeline` را داخلِ بدنهٔ تابع import
         # می‌کند (خطِ دریافت خودکار کدال)؛ اسکنِ ایستای PyInstaller آن را نمی‌بیند
         # و EXE رویِ اولین بوت با ModuleNotFoundError می‌مرد.
@@ -48,6 +49,16 @@ a = Analysis(
         # دروازۀ اجرای سفارش (api_router آن را درِ بدنهٔ تابع import می‌کند؛
         # ایستیک‌اسکن نمی‌بیند). مثلِ fts_terminal.spec باید اینجا هم باشد.
         'api.execution',
+        # آداپتورِ EasyTrader — سطح-بالِ api/execution.py، ولی به حدسِ اسکن
+        # سپرده نمی‌شود (قاعدۀ مخزن؛ مأموریتِ ۱۴۰۵-۰۷-۲۴).
+        'execution_easytrader',
+        # تنظیمِ اتصال (`execution_settings`) درِ بدنهٔ تابع import می‌شود؛ بی‌این
+        # درِ بستهٔ ساخته‌شده با این spec، اولین `/api/execution/config` یا
+        # `/api/execution/status` با ModuleNotFoundError می‌افتد (مأموریتِ ۲۰۲۶-۱۰-۱۸).
+        'execution_settings',
+        # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
+        # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.
+        'api.bot', 'bot_signals', 'paper_trading', 'trade_sim', 'backtest_engine',
         'api.update', 'bors_minisign', 'winreg',
         'orjson', 'pandas', 'numpy', 'docx', 'openpyxl', 'reportlab',
         'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',

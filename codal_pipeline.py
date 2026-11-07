@@ -21,7 +21,7 @@
 (`pipeline_cursor` / `pipeline_runs` / `pipeline_dirty` / `pipeline_lock`).
 
 قاعده‌هایِ که این‌جا نگه داشته می‌شوند:
-  1. «تمام شد» فقط `done` / `empty` / `unresolved` است
+  1. «تمام شد» فقط `done` / `empty` / `unresolved` / `quarantined` است
      (`codal_fetcher.ledger_terminal_sql`) — صف هرگز «پردازش‌شده» شمرده نمی‌شود.
   2. checkpoint **فقط** جلو می‌رود وقتی کارهایِ آن پنجره به حالتِ پایان‌یافته
      رسیده‌اند؛ خطای شبکه یا استخرِ ناتمام یعنی همان‌جا بماند تا اجرایِ بعدی
@@ -40,20 +40,25 @@ stdlib-only است تا هیچ چرخۀ import نسازد (الگو: `codal_peri
 from __future__ import annotations
 
 import datetime
+import json
 import os
+import random
 import sqlite3
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 import codal_fetcher as CF                    # noqa: E402
+import codal_cadence as CAD                   # noqa: E402
+from codal_row_gate import validate_extracted_row   # noqa: E402
 
 __all__ = [
     "now_s", "ensure_schema", "cursor_get", "cursor_set", "enqueue", "claim",
-    "mark_done", "mark_failed", "release_stale", "counts", "run_start",
-    "run_update", "run_finish", "last_run", "dirty_mark", "dirty_take",
+    "mark_done", "mark_failed", "release_stale", "release_quarantine", "counts",
+    "run_start", "run_update", "run_finish", "last_run", "dirty_mark", "dirty_take",
     "dirty_count", "lock_acquire", "lock_heartbeat", "lock_release", "lock_state",
     "health", "process_claimed", "run_cycle",
     "discover_auto", "watermarks", "cursor_notice_tn",
@@ -61,10 +66,16 @@ __all__ = [
     "discover_instruments", "coverage_resolver",
     "worker_once", "start_worker", "stop_worker", "worker_status",
     "next_wakeup", "catchup_state", "crawler_busy", "market_in_session",
-    "offline_gate", "status_payload",
+    "offline_gate", "status_payload", "maybe_invalidate_screener",
+    "orchestrator_busy", "ORCHESTRATOR_LOCK_STALE_S",
     "CADENCE_IDLE_S", "CADENCE_BACKLOG_S", "DISCOVERY_MIN_GAP_S",
-    "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
+    "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE", "CURSOR_DEEP_PASS",
+    "PAGES_PER_CAT", "DEEP_PAGES_PER_CAT",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
+    "publication_windows", "current_network_gap",
+    "PUB_WINDOWS_CURSOR", "DAILY_REQUEST_CURSOR", "DAILY_REQUEST_CAP",
+    "FAST_GAP_S", "SLOW_GAP_S",
+    "SCREENER_CACHE_DEBOUNCE_S", "CURSOR_SCREENER_DROP",
 ]
 
 # بودجۀ تلاش و backoffِ نمایی (ثانیه). بی‌این، یکِ اطلاعیهٔ بد‌نشانی هر چرخه
@@ -274,13 +285,43 @@ def release_stale(conn, older_than_s=CLAIM_STALE_S, now=None):
     return cur.rowcount
 
 
+def release_quarantine(conn, tracing_nos=None, reason="operator"):
+    """آزادسازیِ دستیِ ردیف‌هایِ قرنطینه‌شده — تنها راهِ خروج از قرنطینه.
+
+    قرنطینه عمداً از retry خودکار بیرون است (گیتِ ردیفی رد شده)، پس بدونِ این
+    دريچه یکِ ردیفِ رد‌شده تا ابد از چرخه بیرون می‌ماند. ردیف به `queued`
+    برمی‌گردد با `error_kind='requeued'` تا «تلاشِ تازهٔ اپراتور» از «خطایِ
+    اصلیِ گیت» در گزارش جدا بماند؛ `attempts` دست‌نخورده می‌ماند (تاریخِ
+    تلاش‌ها گم نمی‌شود). `tracing_nos=None` یعنی همهٔ قرنطینه‌ها.
+    """
+    where = "state='quarantined'"
+    params = [str(reason)[:300], now_s()]
+    if tracing_nos:
+        ids = []
+        for tn in tracing_nos:
+            try:
+                ids.append(int(tn))
+            except (TypeError, ValueError):
+                continue
+        if not ids:
+            return 0
+        where += " AND tracing_no IN (%s)" % ",".join("?" * len(ids))
+        params += ids
+    cur = conn.execute(
+        "UPDATE codal_extracted SET state='queued', error_kind='requeued',"
+        " last_error=?, next_attempt_at=NULL, claim_owner=NULL, claimed_at=NULL,"
+        " updated_at=? WHERE " + where, params)
+    conn.commit()
+    return cur.rowcount
+
+
 # ─── شمارش‌ها و گزارشِ چرخه ──────────────────────────────────────────────── #
 
 def counts(conn):
     """شمارشِ حالت‌ها — از خودِ جدول، نه از شمارندهٔ حافظه (بندِ ۹: «چرخۀ
     شکست‌خورده نباید موفق نمایش داده شود»)."""
     out = {"queued": 0, "running": 0, "done": 0, "empty": 0, "failed": 0,
-           "unresolved": 0, "total": 0}
+           "unresolved": 0, "quarantined": 0, "total": 0}
     try:
         rows = conn.execute(
             "SELECT COALESCE(state,'legacy'), COUNT(*) FROM codal_extracted"
@@ -384,8 +425,17 @@ def dirty_mark(conn, symbol, source, reason=""):
 
 
 def dirty_count(conn):
+    """چند **نماد** در انتظارِ تازه‌سازی‌اند — نه چند سطر.
+
+    کلیدِ `pipeline_dirty` مرکب است (`symbol, axis`)؛ یکِ نماد با دو شاخصِ
+    وابسته دو سطر می‌سازد ولی «یک نمادِ کثیف» است. ستونِ
+    `pipeline_runs.symbols_dirty` و کلیدِ `dirty_symbols` در `health()` هم
+    همین معنا را دارند، پس `COUNT(DISTINCT symbol)` همان عددی است که گزارش
+    می‌شود (پیش‌ازاین `COUNT(*)` بود و یکِ نمادِ ماهانه «۲» شمرده می‌شد).
+    """
     try:
-        return int(conn.execute("SELECT COUNT(*) FROM pipeline_dirty").fetchone()[0])
+        return int(conn.execute("SELECT COUNT(DISTINCT symbol) FROM pipeline_dirty")
+                   .fetchone()[0])
     except sqlite3.Error:
         return 0
 
@@ -410,6 +460,43 @@ def dirty_take(conn, limit=None):
 # ─── محاسبۀ افزایشیِ پنج شاخص (بندِ ۷ مأموریت) ────────────────────────────── #
 
 RECALC_BATCH = 80               # سقفِ نماد در هر چرخه
+
+# کشِ payload اسکرینر/قیف **سراسری** است؛ هر باطل‌سازی یعنی اسکنِ دوبارهٔ کل
+# بازار (اندازه‌گیری‌شده: ~۲۷ ثانیه). در کادنسِ ۶۰۰ثانیه‌ای، باطل‌سازی در هر
+# چرخهٔ نویسنده یعنی این هزینه هر ۱۰ دقیقه. پس فقط dropِ payload (نه
+# `fts_results`) با ۳۰۰ ثانیه debounce می‌شود و زمانِ آخرین drop در
+# `pipeline_cursor` می‌ماند (چند process/restart هم همین را می‌بینند).
+SCREENER_CACHE_DEBOUNCE_S = 300
+CURSOR_SCREENER_DROP = "screener_payload_drop_at"
+_EPOCH_DT = datetime.datetime(1970, 1, 1)
+
+
+def maybe_invalidate_screener(conn, invalidate, now=None,
+                              min_interval_s=SCREENER_CACHE_DEBOUNCE_S,
+                              **kwargs):
+    """باطل‌سازیِ کشِ payload اسکرینر با debounceِ ماندگار.
+
+    `invalidate` خودِ `api.screener.invalidate_screener_cache` است (تزریق می‌شود
+    تا این ماژول stdlib-only بماند و گارد آفلاین بتواند بی‌import واقعی بسنجد).
+    برمی‌گرداند آیا این بار drop انجام شد. `fts_results` این‌جا لمس نمی‌شود؛
+    باطل‌سازیِ ردیفِ مادی همچنان بی‌تأخیر است.
+    """
+    at = _to_dt(now) or datetime.datetime.now()
+    stamp = int((at - _EPOCH_DT).total_seconds())
+    try:
+        last = int(float(cursor_get(conn, CURSOR_SCREENER_DROP, "0") or 0))
+    except (TypeError, ValueError):
+        last = 0
+    if last and 0 <= stamp - last < int(min_interval_s):
+        return False
+    invalidate(**kwargs)
+    try:
+        cursor_set(conn, CURSOR_SCREENER_DROP, str(stamp),
+                   note="screener payload drop (debounced %ss)"
+                   % int(min_interval_s))
+    except sqlite3.Error:
+        pass
+    return True
 
 
 def recompute_dirty(conn, dirty=None, *, judge=None, invalidate=None,
@@ -450,9 +537,12 @@ def recompute_dirty(conn, dirty=None, *, judge=None, invalidate=None,
         # بی‌مورد بودنِ آن یعنی قیف همان ردیفِ کهنه را نشان می‌دهد. بی‌`dirty`ِ
         # مصرف‌شده هیچ‌وقت صدا زده نمی‌شود، و `drop_materialized=False` چون
         # ردیفِ جدول را همین‌جا بردیم (در EXE هم تنها این راه می‌ماند).
+        # از موجِ رفعِ بازبینیِ نهایی، فقط همین drop با ۳۰۰ثانیه debounce
+        # می‌شود؛ باطل‌سازیِ `fts_results` بالا بی‌تأخیر مانده است.
         try:
             from api.screener import invalidate_screener_cache
-            invalidate_screener_cache(drop_materialized=False)
+            maybe_invalidate_screener(conn, invalidate_screener_cache,
+                                      now=now, drop_materialized=False)
         except Exception:
             pass
     if judge:
@@ -548,6 +638,12 @@ def lock_state(conn, key):
 # نگه داشته می‌شود و هرگز جانشینِ این نشانک یا قاطیِ دورۀ مالی نمی‌شود.
 CURSOR_NOTICE_TN = "notice_scan_tn_cat"
 CURSOR_NOTICE_DATE = "notice_newest_date"
+# بودجهٔ صفحهٔ هر دسته در هر پاسِ کشف: پاسِ عادی ۲، پاسِ عمیق (پس از پاسِ
+# ناقص/بلاک) ۳. عددِ قبلی (۶) با کادنسِ ۶۰۰ثانیه‌ای بودجهٔ روز را می‌سوزاند
+# و کشف را ساعت‌ها پیش از پایانِ پنجره متوقف می‌کرد.
+PAGES_PER_CAT = 2
+DEEP_PAGES_PER_CAT = 3
+CURSOR_DEEP_PASS = "notice_deep_pass"
 
 
 def cursor_notice_tn(cat):
@@ -576,9 +672,16 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     """
     cats = tuple(cats or CF.DISCOVERY_FEED_CATS)
     wms = watermarks(conn, cats)
+    # پاسِ عمیق: پس از پاسِ ناقص/بلاک، همان کشف با ۳ صفحه در هر دسته تکرار
+    # می‌شود تا شکافِ احتمالیِ میانِ صفحات جبران شود؛ پاسِ کامل پرچم را پاک
+    # می‌کند و کادنس به ۲ صفحه برمی‌گردد. `max_pages`ِ صریح بر پرچم مقدم است
+    # (گاردهای موجود همان را تزریق می‌کنند).
+    deep = str(cursor_get(conn, CURSOR_DEEP_PASS, "0") or "0").strip() == "1"
+    pages = (int(max_pages) if max_pages
+             else (DEEP_PAGES_PER_CAT if deep else PAGES_PER_CAT))
     res = CF.discover_notices(
         conn, watermarks=wms, cats=cats,
-        max_pages=int(max_pages or CF.DISCOVERY_MAX_PAGES),
+        max_pages=pages,
         overlap_pages=int(overlap_pages if overlap_pages is not None
                           else CF.DISCOVERY_OVERLAP_PAGES),
         session=session, fetch=fetch, pace=pace, now=now) or {}
@@ -597,7 +700,115 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     res["enqueued"] = added
     res["watermarks"] = advanced
     res.setdefault("found", 0)
+    # پرچمِ شکاف: «فیدِ این پاس کامل خوانده شد؟» پاسِ ناقص/بلاک‌شده یعنی ممکن
+    # است اطلاعیه‌ای میانِ صفحات جا مانده باشد؛ شمارندۀ پیاپی برایِ escalation
+    # است و هر پاسِ کامل هر دو را صفر می‌کند تا پرچم کهنه نماند.
+    if res.get("complete", True) and not res.get("blocked"):
+        cursor_set(conn, "notice_gap_flag", "0", note="discovery complete")
+        cursor_set(conn, "notice_incomplete_streak", "0",
+                   note="discovery complete")
+        cursor_set(conn, CURSOR_DEEP_PASS, "0", note="discovery complete")
+    else:
+        cursor_set(conn, "notice_gap_flag", "1", note="discovery incomplete")
+        # پاسِ بعدی عمیق (۳ صفحه/دسته) اجرا می‌شود تا شکافِ میانِ صفحات
+        # جبران شود؛ پاسِ کامل همین پرچم را پاک می‌کند.
+        cursor_set(conn, CURSOR_DEEP_PASS, "1", note="discovery incomplete")
+        # شکافِ «بودجهٔ صفحه» (نه بلاکِ شبکه) شمارندهٔ breaker را بالا نمی‌برد:
+        # در بستِ آخرِ ماه checkpoint باید هر ۶۰۰ثانیه جلو برود؛ وگرنه پاس‌هایِ
+        # پیاپیِ ناقص gap را رویِ ۳ ساعت latch می‌کنند و SLA را می‌شکنند.
+        if not res.get("budget_exhausted"):
+            try:
+                streak = int(cursor_get(conn, "notice_incomplete_streak",
+                                        "0") or 0) + 1
+            except (TypeError, ValueError):
+                streak = 1
+            cursor_set(conn, "notice_incomplete_streak", str(streak),
+                       note="discovery incomplete")
     return res
+
+
+def publication_windows(conn, now=None, cache_write=True):
+    """پنجره‌های انتشار از هیستوگرامِ ساعتِ اطلاعیه‌های اخیر.
+
+    کش روزانه در `pipeline_cursor`؛ خطای DB/ستون ⇒ پیش‌فرض، نه استثنا.
+    `cache_write=False` مسیرِ فقط‌خواندنی است (health): کشِ موجود خوانده
+    می‌شود ولی کشِ تازه هرگز نوشته نمی‌شود — status نباید بنویسد.
+    """
+    today = str(now or now_s())[:10]
+    try:
+        cached = json.loads(cursor_get(conn, PUB_WINDOWS_CURSOR) or "{}")
+    except (TypeError, ValueError, sqlite3.Error):
+        cached = {}
+    if isinstance(cached, dict) and cached.get("day") == today \
+            and cached.get("windows"):
+        return cached
+    counts = {h: 0 for h in range(24)}
+    samples = 0
+    try:
+        sql = (
+            "SELECT %s, %s FROM codal_notices"
+            " ORDER BY rowid DESC LIMIT ?"
+            % (CF.CP.pub_canon_sql("publish_date"),
+               CF.CP.pub_canon_sql("sent_date")))
+        rows = conn.execute(sql, (PUB_WINDOWS_LOOKBACK_ROWS,)).fetchall()
+    except sqlite3.Error:
+        rows = []
+    for pub, sent in rows:
+        stamp = pub if len(pub or "") >= 16 else (sent or "")
+        if len(stamp) >= 13 and stamp[11:13].isdigit():
+            h = int(stamp[11:13])
+            if 0 <= h < 24:
+                counts[h] += 1
+                samples += 1
+    windows = CAD.windows_from_hour_counts(counts,
+                                           min_samples=PUB_WINDOWS_MIN_SAMPLES)
+    out = {
+        "day": today,
+        "windows": [list(w) for w in windows],
+        "source": "learned" if samples >= PUB_WINDOWS_MIN_SAMPLES else "default",
+        "samples": samples,
+    }
+    if cache_write:
+        try:
+            cursor_set(conn, PUB_WINDOWS_CURSOR,
+                       json.dumps(out, ensure_ascii=False),
+                       note="publication windows")
+        except sqlite3.Error:
+            pass
+    return out
+
+
+def current_network_gap(conn, now=None, jitter=True, cache_write=True):
+    """فاصلهٔ مجازِ پاسِ شبکه + توصیفِ پنجره برای status.
+
+    breaker: سه پاسِ پیاپیِ ناقص/بلاک (`notice_incomplete_streak`) یعنی احتمالِ
+    شکافِ کشف بالا رفته است؛ فاصلهٔ پایه تشدید می‌شود:
+    `min(SLOW_GAP_S, max(1800, base * 2**min(streak-2, 6)))`. jitter **پس از**
+    تشدید روی عددِ پایه می‌نشیند تا تصمیمِ breaker با نوسانِ تصادفی قاطی نشود.
+    پاسِ کامل شمارنده را صفر می‌کند (در `discover_auto`) و کادنس به ۶۰۰ثانیه
+    برمی‌گردد.
+    """
+    at = _to_dt(now) or datetime.datetime.now()
+    pub = publication_windows(conn, now=now, cache_write=cache_write)
+    enabled = str(os.environ.get("BORS_CODAL_FAST_WINDOW", "1")).strip().lower() \
+        not in ("0", "false", "no", "off")
+    jitter_s = random.uniform(-60.0, 60.0) if jitter and enabled else 0.0
+    hour = at.hour + at.minute / 60.0
+    base = CAD.gap_seconds(hour, pub["windows"], enabled=enabled,
+                           fast=FAST_GAP_S, slow=SLOW_GAP_S, jitter_s=0)
+    streak = _int_or(cursor_get(conn, "notice_incomplete_streak", "0"))
+    if streak >= 3:
+        base = min(SLOW_GAP_S,
+                   max(1800, int(base * (2 ** min(streak - 2, 6)))))
+    gap = max(CAD.MIN_GAP_S, min(SLOW_GAP_S, int(base + jitter_s)))
+    info = dict(pub)
+    info["inside_window"] = CAD.inside_window(hour, pub["windows"])
+    info["labels"] = CAD.window_labels(pub["windows"])
+    info["network_gap_s"] = gap
+    info["enabled"] = enabled
+    info["incomplete_streak"] = streak
+    info["breaker"] = bool(streak >= 3)
+    return gap, info
 
 
 # ─── کشفِ ابزارِ تازه/تغییرکرده (بندِ ۳ مأموریت) ──────────────────────────── #
@@ -914,7 +1125,7 @@ def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
 
 # ─── یکِ چرخۀ کامل ───────────────────────────────────────────────────────── #
 
-def process_claimed(conn, rows, scrape, now=None):
+def process_claimed(conn, rows, scrape, now=None, validate=None):
     """پردازشِ ردیفهایِ claim‌شده. `scrape(notice_row)` → (kind,row,status).
 
     نوشتنِ نتیجه از **همان** UPSERTهایِ `codal_fetcher` می‌گذرد (FS_UPSERT /
@@ -922,7 +1133,8 @@ def process_claimed(conn, rows, scrape, now=None):
     تعیین می‌شود (`mark_done` / `mark_failed`)، پس «نتیجه» و «صف» یکی‌اند.
     """
     now = now or now_s()
-    tally = {"done": 0, "empty": 0, "failed": 0, "rejected": 0, "symbols": set()}
+    tally = {"done": 0, "empty": 0, "failed": 0, "rejected": 0,
+             "quarantined": 0, "symbols": set()}
     for tn, kind, n in rows:
         if not n:
             # اطلاعیه‌ای که درِ `codal_notices` نیست (claimِ یتیم) — بی‌منبع
@@ -947,6 +1159,17 @@ def process_claimed(conn, rows, scrape, now=None):
             mark_failed(conn, tn, error_kind="extract", last_error="no derived row")
             tally["failed"] += 1
             continue
+        if validate:
+            ok_row, code = validate(k, derived)
+            if not ok_row:
+                conn.execute(
+                    "UPDATE codal_extracted SET state='quarantined', error_kind='validation',"
+                    " last_error=?, updated_at=?, finished_at=?, claim_owner=NULL,"
+                    " claimed_at=NULL, next_attempt_at=NULL WHERE tracing_no=?",
+                    (str(code)[:300], now, now, int(tn)))
+                conn.commit()
+                tally["quarantined"] += 1
+                continue
         if k == "ms":
             conn.execute(CF.MS_UPSERT, derived)
             source, sym = "monthly_sales", n[1]
@@ -970,16 +1193,37 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
     همه‌چیز تزریق‌پذیر است (`discover`، `scrape`، `recalc`، `instruments`) تا
     گاردِ آفلاین همان مسیرِ تولید را با scraperِ فیک بزند، نه یک مسیرِ دومِ
     نمایشی. `instruments="auto"` یعنی مقایسۀ Universe از خودِ بانک (بی‌شبکه).
+
+    `recalc="invalidate"` = invalidate-only: ردیفِ `fts_results` همان نمادهایی
+    که این چرخه نوشت **فوراً** باطل می‌شود (`out["touched"]` /
+    `out["invalidated_symbols"]`)، ولی محاسبۀ سنگین اجرا نمی‌شود و
+    `pipeline_dirty` دست‌نخورده می‌ماند (`out["recalc_invalidate_only"]`).
     """
     now = now or now_s()
-    out = {"skipped": None, "recovered": 0, "found": 0, "enqueued": 0,
-           "done": 0, "empty": 0, "failed": 0, "rejected": 0,
+    out = {"skipped": None, "recovered": 0, "found": 0, "pages": 0,
+           "enqueued": 0, "done": 0, "empty": 0, "failed": 0, "rejected": 0,
            "processed": 0, "symbols": [], "dirty": 0, "recomputed": 0,
            "cache_invalidated": 0, "checkpoint_before": cursor_get(conn, "discovery_day"),
            "checkpoint_after": None, "run_id": None, "error": None,
-           "instruments": {}, "events": []}
+           "instruments": {}, "events": [],
+           # نمادهایی که همین چرخه دادهٔ تازه نوشتند و ردیفِ مادی‌شده‌شان فوراً
+           # باطل شد؛ `recalc_invalidate_only` یعنی محاسبۀ سنگین موکول است.
+           "touched": [], "invalidated_symbols": 0,
+           "recalc_invalidate_only": False, "screener_dropped": False}
     if not lock_acquire(conn, "codal_pipeline", owner, now=now):
         out["skipped"] = "locked"
+        return out
+    # TOCTOU: میانِ بررسیِ worker و گرفتنِ قفل، خطِ شبانه می‌تواند شروع شود.
+    # بلافاصله پس از قفل دوباره می‌بینیم؛ اگر مشغول است قفل آزاد و هیچ
+    # کار/نوشتنی انجام نمی‌شود (همان قراردادِ `orchestrator-busy`).
+    try:
+        orch = orchestrator_busy(_to_dt(now))
+    except Exception:
+        orch = {"busy": False}
+    if orch.get("busy"):
+        lock_release(conn, "codal_pipeline", owner)
+        out["skipped"] = "orchestrator-busy"
+        out["reason"] = orch.get("reason", "")
         return out
     run_id = run_start(conn, "cycle", owner, checkpoint_before=out["checkpoint_before"])
     out["run_id"] = run_id
@@ -1000,6 +1244,7 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
         if discover:
             found = discover(conn) or {}
             out["found"] = int(found.get("found") or 0)
+            out["pages"] = int(found.get("pages") or 0)
         # کارها از `pending_notices` می‌آیند: همان فیلترِ «صندوق/مشتق را با
         # پارسرِ صورتِ مالی نخور» و همان ترتیبِ canonical — تعریفِ دوم نمی‌شود.
         pend = CF.pending_notices(conn)
@@ -1009,6 +1254,7 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
         run_update(conn, run_id, found=out["found"], enqueued=out["enqueued"],
                    phase="processing")
         processed = 0
+        touched = set()
         while processed < max(1, int(budget)):
             claimed = claim(conn, owner, limit=min(8, max(1, int(budget) - processed)),
                             kinds=kinds, now=now)
@@ -1018,17 +1264,53 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             by_tn = {int(r[0]): r for r in CF.notice_rows_by_tracing(conn, tns)}
             rows = [(c[0], c[1], by_tn.get(int(c[0]))) for c in claimed]
             tally = process_claimed(conn, rows, scrape or (lambda n: (None, None, "failed")),
-                                    now=now)
+                                    now=now, validate=validate_extracted_row)
             out["done"] += tally["done"]
             out["empty"] += tally["empty"]
             out["failed"] += tally["failed"]
             out["rejected"] += tally["rejected"]
+            out["quarantined"] = int(out.get("quarantined") or 0) + tally["quarantined"]
+            touched.update(tally.get("symbols") or [])
             out["processed"] += len(rows)
             processed += len(rows)
+            # چرخه می‌تواند با POLITE/scrape از TTLِ قفل (۱۸۰ث) بگذرد؛ heartbeat
+            # پس از هر batch تازه می‌شود تا خطِ شبانه قفل را «آزاد» نبیند.
+            try:
+                lock_heartbeat(conn, "codal_pipeline", owner)
+            except sqlite3.Error:
+                pass
+        # باطل‌سازیِ فوری، مستقل از `recalc`: ردیفِ `fts_results` همان نمادهایی
+        # که تازه نوشته شدند همین‌جا می‌رود، پس کهنه پیش از چرخۀ بعد هم دیده
+        # نمی‌شود. `pipeline_dirty` دست‌نخورده می‌ماند تا محاسبۀ کامل بعداً
+        # انجام شود (invalidate-only).
+        if touched:
+            out["touched"] = sorted(touched)
+            out["invalidated_symbols"] = _invalidate_materialized(conn, sorted(touched))
+            # `pipeline_runs.cache_invalidated` باید هم باطل‌سازیِ فوری و هم
+            # مرحلهٔ محاسبه را نشان دهد، وگرنه گزارشِ چرخه کم می‌شمارد.
+            out["cache_invalidated"] = (int(out.get("cache_invalidated") or 0)
+                                        + int(out.get("invalidated_symbols") or 0))
+            # کشِ payload اسکرینر سراسری است؛ یک‌بار در هر چرخه، نه per-symbol،
+            # و با debounceِ ۳۰۰ثانیه‌ای (باطل‌سازیِ `fts_results` بالا بی‌تأخیر
+            # ماند). debounce در `pipeline_cursor` می‌ماند، پس restart هم آن را
+            # از دست نمی‌دهد.
+            try:
+                from api.screener import invalidate_screener_cache
+                out["screener_dropped"] = maybe_invalidate_screener(
+                    conn, invalidate_screener_cache, now=now,
+                    drop_materialized=False)
+            except Exception:
+                out["screener_dropped"] = False
         out["symbols"] = sorted({s for s in
                                  [r[0] for r in conn.execute(
                                      "SELECT DISTINCT symbol FROM pipeline_dirty")]})
         out["dirty"] = dirty_count(conn)
+        if recalc == "invalidate":
+            # حالتِ invalidate-only: باطل‌سازیِ فوری بالاتر انجام شد؛ محاسبۀ
+            # سنگین موکول است و صفِ `pipeline_dirty` **دست‌نخورده** می‌ماند
+            # (گاردِ زمان‌بندی: «نمادِ علامت‌خورده درِ صف می‌ماند»).
+            recalc = None
+            out["recalc_invalidate_only"] = True
         if recalc == "auto":
             recalc = recompute_dirty
         if recalc and out["dirty"]:
@@ -1036,7 +1318,8 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
             dirty = dirty_take(conn, limit=RECALC_BATCH)
             res = recalc(conn, dirty) or {}
             out["recomputed"] = int(res.get("recomputed") or 0)
-            out["cache_invalidated"] = int(res.get("cache_invalidated") or 0)
+            out["cache_invalidated"] = (int(out.get("cache_invalidated") or 0)
+                                        + int(res.get("cache_invalidated") or 0))
             out["recalc_failed"] = int(res.get("failed") or 0)
             reported = res.get("done_symbols")
             # فقط وقتی محاسبه‌گر خروجیِ **تک‌نمادی** گزارش می‌کند، بی‌جواب‌ها را
@@ -1055,6 +1338,12 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
                         (sym, ax, "recalc-missed", now))
             conn.commit()
             out["dirty"] = dirty_count(conn)
+        # پیش از نوشتنِ گزارش/checkpointِ نهایی هم یک‌بار قفل را تازه می‌کنیم؛
+        # محاسبهٔ recalc یا درج‌های بالا می‌توانند از TTL گذشته باشند.
+        try:
+            lock_heartbeat(conn, "codal_pipeline", owner)
+        except sqlite3.Error:
+            pass
         # checkpoint فقط وقتی جلو می‌رود که کارِ بازِ قدیمی نمانده باشد
         c = counts(conn)
         newest = conn.execute(
@@ -1092,6 +1381,17 @@ CADENCE_IDLE_S = 6 * 3600          # صف تهی ⇒ روزی دو پاس کاف
 CADENCE_BACKLOG_S = 300            # کارِ بازیابی‌شدنی ⇒ هر پنج دقیقه
 CADENCE_MIN_S = 60                 # سقفِ بیدارباشِ پی‌درپی
 DISCOVERY_MIN_GAP_S = 3 * 3600     # حداقل فاصلۀ دو پاسِ شبکه‌ای
+PUB_WINDOWS_CURSOR = "pub_windows_v1"
+PUB_WINDOWS_LOOKBACK_ROWS = 20000
+PUB_WINDOWS_MIN_SAMPLES = 200
+FAST_GAP_S = CAD.FAST_GAP_S
+SLOW_GAP_S = CAD.SLOW_GAP_S
+DAILY_REQUEST_CURSOR = "codal_daily_requests"
+# سقفِ سختِ صفحهٔ فید در روز: پنجرهٔ ۱۲ساعته با کادنسِ ۶۰۰ثانیه = ۷۲ پاس، و
+# ۴ صفحه/پاس (۲ به‌ازایِ هر دسته) = ۲۸۸ صفحه؛ به‌علاوهٔ حاشیهٔ بیرونِ پنجره
+# (~۳۲) ⇒ ۳۲۰ < ۴۰۰. عددِ قبلی (۲۰۰) کشف را ۲.۵ تا ۴ ساعت پیش از پایانِ
+# پنجره می‌بست و SLA ≤۱۵ دقیقه را نقض می‌کرد.
+DAILY_REQUEST_CAP = 400
 CURSOR_LAST_NETWORK = "notice_last_network_pass_at"
 CODAL_BUSY_PHASES = ("codal_sync", "codal_backoff", "codal_paused", "codal_stopped")
 _WORKER: dict = {"thread": None, "stop": None, "owner": None, "started_at": None,
@@ -1130,6 +1430,15 @@ def _to_dt(s):
         return datetime.datetime.strptime(t[:19], "%Y-%m-%d %H:%M:%S")
     except (TypeError, ValueError):
         return None
+
+
+def _int_or(value, default=0):
+    """تبدیلِ ایمن به int — cursorِ دست‌کاری‌شده/غیرعددی نباید status یا worker
+    را بترکاند؛ مقدارِ نامعتبر یعنی «صفر»، نه استثنا."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _age_s(s, now_dt=None):
@@ -1177,6 +1486,42 @@ def crawler_busy(status_path=None, max_age_s=900, now_dt=None):
     busy = ph in CODAL_BUSY_PHASES and age is not None and age <= int(max_age_s)
     return {"busy": bool(busy), "phase": ph, "age_s": age,
             "reason": "fresh-codal-phase" if busy else "idle"}
+
+
+ORCHESTRATOR_LOCK_STALE_S = 6 * 3600
+ORCHESTRATOR_TERMINAL_STAGES = frozenset({
+    "done", "dry_run_ok", "paused", "locked", "client_busy",
+    "backup_failed", "fetch_failed", "validation_failed", "merge_failed",
+    "materialize_failed", "snapshot_failed", "sign_failed", "publish_failed",
+    "pipeline_busy", "failed",
+})
+
+
+def orchestrator_busy(now=None, work_dir=None):
+    """آیا خط شبانهٔ ۱۸:۳۰ در حال اجراست؟ (فقط خواندنِ فایل، بدونِ importِ api)"""
+    work = work_dir or ROOT
+    lock = os.path.join(work, "codal_auto.lock")
+    try:
+        age = time.time() - os.path.getmtime(lock)
+        if 0 <= age <= ORCHESTRATOR_LOCK_STALE_S:
+            return {"busy": True, "reason": "lock-fresh", "stage": "lock"}
+    except OSError:
+        pass
+    status_path = os.path.join(work, "codal_auto_status.json")
+    try:
+        with open(status_path, "r", encoding="utf-8") as fh:
+            status = json.load(fh)
+    except (OSError, ValueError):
+        status = {}
+    if not isinstance(status, dict):
+        status = {}
+    stage = str(status.get("stage") or "").strip().lower()
+    if stage and stage not in ORCHESTRATOR_TERMINAL_STAGES:
+        age_s = _age_s(status.get("updated_at") or status.get("started_at"),
+                       _to_dt(now))
+        if age_s is not None and -300 <= age_s <= ORCHESTRATOR_LOCK_STALE_S:
+            return {"busy": True, "reason": "status-active", "stage": stage}
+    return {"busy": False, "reason": "", "stage": stage}
 
 
 def next_wakeup(conn, now=None, network_gap_s=DISCOVERY_MIN_GAP_S):
@@ -1258,10 +1603,14 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
     """یکِ چرخه، آماده برایِ threadِ بک‌اند یا Task Scheduler.
 
     `network=None` یعنی خودِ زمان‌بند تصمیم بگیرد: اگر خزندۀ دستی در کار است،
-    یا پاسِ شبکه‌ای زودتر از `DISCOVERY_MIN_GAP_S` از این است، فقط صفِ
-    محلی/کارهایِ بازیابی‌شدنی زده می‌شود (بی‌درخواستِ تازه). `recalc=None` هنگامِ
-    بازارِ باز یعنی محاسبۀ سنگین به چرخۀ بعد موکول می‌شود — نمادها درِ
-    `pipeline_dirty` می‌مانند و چیزی گم نمی‌شود.
+    یا پاسِ شبکه‌ای زودتر از فاصلۀ تطبیقیِ `current_network_gap` از این است
+    (پنجرۀ انتشارِ یادگرفته: ۶۰۰ ثانیه داخلِ پنجره، ۳ ساعت بیرون)، فقط صفِ
+    محلی/کارهایِ بازیابی‌شدنی زده می‌شود (بی‌درخواستِ تازه). سقفِ روزانۀ
+    صفحه‌هایِ فید (`DAILY_REQUEST_CAP`) بر همین تصمیم حاکم است: بودجۀ تمام‌شده
+    یعنی پاسِ شبکه حتی با `network=True` موکول می‌شود. `recalc=None` هنگامِ
+    بازارِ باز یعنی حالتِ invalidate-only: ردیفِ `fts_results` نمادهایِ
+    نوشته‌شده **همان‌جا** باطل می‌شود ولی محاسبۀ سنگین به چرخۀ بعد موکول
+    است — نمادها درِ `pipeline_dirty` می‌مانند و چیزی گم نمی‌شود.
     """
     now = now or now_s()
     own = conn is None
@@ -1274,15 +1623,54 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
     try:
         if busy is None:
             busy = crawler_busy(status_path=status_path)
+        orch = orchestrator_busy(_to_dt(now))
+        if orch["busy"]:
+            return {"skipped": "orchestrator-busy", "reason": orch.get("reason", ""),
+                    "network": False,
+                    "wakeup": {"seconds": 300, "reason": "orchestrator-busy",
+                               "need_network": False,
+                               "at": now, "queue": counts(conn)}}
+        network_gap_s, publication = current_network_gap(conn, now=now, jitter=True)
         age_net = _age_s(cursor_get(conn, CURSOR_LAST_NETWORK), _to_dt(now))
-        want = age_net is None or age_net >= DISCOVERY_MIN_GAP_S
+        # بودجۀ روزانۀ درخواست: هر پاسِ شبکه به اندازۀ صفحه‌هایِ خوانده‌شده
+        # (/دست‌کم ۱) از سهمِ روز کم می‌کند تا یک چرخۀ بی‌پایان، کدال را
+        # بی‌سقف نکوبد. روزِ تازه یعنی شمارنده از صفر.
+        day = str(now)[:10]
+        try:
+            req = json.loads(cursor_get(conn, DAILY_REQUEST_CURSOR) or "{}")
+        except (TypeError, ValueError, sqlite3.Error):
+            req = {}
+        if not isinstance(req, dict) or req.get("day") != day:
+            req = {"day": day, "count": 0}
+        budget_left = DAILY_REQUEST_CAP - _int_or(req.get("count"))
+        want = age_net is None or age_net >= int(network_gap_s)
         want = want and not busy["busy"]
         use_network = want if network is None else bool(network)
+        if budget_left <= 0:
+            use_network = False
         if offline_gate():
             use_network = False
         if (not use_network and not force
                 and not counts(conn)["retryable"]
                 and not dirty_count(conn)):
+            if budget_left <= 0:
+                # بودجهٔ امروز تمام است و کارِ محلی هم نیست: «کاری نکردیم» را
+                # صریح گزارش کن و تا نیمه‌شبِ روزِ بعد بخواب، نه تیکِ ۶۰ثانیه‌ایِ
+                # nothing-to-do. تصمیمِ شبکه دست‌نخورده است — بودجه از قبل
+                # use_network را خاموش کرده بود، فقط دلیل/بیدارباش عوض می‌شود.
+                now_dt = _to_dt(now) or datetime.datetime.now()
+                midnight = datetime.datetime.combine(
+                    now_dt.date() + datetime.timedelta(days=1),
+                    datetime.time())
+                secs = max(CADENCE_MIN_S,
+                           int((midnight - now_dt).total_seconds()))
+                return {"skipped": "budget-exhausted", "reason": "daily-cap",
+                        "network": False, "daily_requests": req,
+                        "wakeup": {"at": midnight.strftime("%Y-%m-%d %H:%M:%S"),
+                                   "seconds": secs,
+                                   "reason": "budget-exhausted",
+                                   "need_network": True,
+                                   "queue": counts(conn)}}
             return {"skipped": "nothing-to-do", "reason": busy.get("reason", ""),
                     "network": False}
         defer_recalc = market_in_session(_to_dt(now))
@@ -1290,7 +1678,7 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
             conn, owner or "worker-%d" % os.getpid(),
             discover=discover_auto if use_network else None,
             scrape=_offline_scrape if offline_gate() else CF.scrape_notice_row,
-            recalc=(None if defer_recalc and recalc is None
+            recalc=("invalidate" if defer_recalc and recalc is None
                     else (recalc or "auto")),
             budget=budget, now=now)
         if use_network and res.get("run_id"):
@@ -1298,10 +1686,23 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
                        note="cycle=%s skipped=%s" % (res.get("run_id"),
                                                      res.get("skipped")))
         res["network"] = use_network
+        # فقط چرخهٔ واقعی بودجه می‌خورد: skipِ «locked» (بیِ run_id، بیِ درخواست)
+        # نباید سهمِ روز را کم کند.
+        if use_network and res.get("run_id"):
+            used = int(res.get("pages") or 0) or 1
+            req["count"] = _int_or(req.get("count")) + used
+            try:
+                cursor_set(conn, DAILY_REQUEST_CURSOR, json.dumps(req),
+                           note="pages=%d" % used)
+            except sqlite3.Error:
+                pass
+        res["daily_requests"] = req
+        res["publication"] = publication
+        res["network_gap_s"] = int(network_gap_s)
         res["recalc_deferred"] = bool(defer_recalc and recalc is None)
         # چراغِ بیدارباش از همان اتصال می‌آید؛ رشتۀ زمان‌بند برایِ «چند
         # ثانیه بخوابم» اتصالِ دوم به بانکِ کاری باز نمی‌کند.
-        res["wakeup"] = next_wakeup(conn, now=now)
+        res["wakeup"] = next_wakeup(conn, now=now, network_gap_s=network_gap_s)
         return res
     finally:
         if own:
@@ -1330,7 +1731,9 @@ def start_worker(db_path=None, owner=None, *, budget=8, tick_s=30,
                 _WORKER["cycles"] = int(_WORKER.get("cycles") or 0) + 1
                 _WORKER["last"] = {k: r.get(k) for k in
                                    ("skipped", "processed", "done", "failed",
-                                    "network", "recalc_deferred", "error")}
+                                    "network", "recalc_deferred", "error",
+                                    "touched", "invalidated_symbols",
+                                    "recalc_invalidate_only")}
                 wait = int((r.get("wakeup") or {}).get("seconds") or CADENCE_MIN_S)
             except Exception as e:
                 _WORKER["last_error"] = "%s: %s" % (type(e).__name__, e)
@@ -1437,6 +1840,21 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
     # این دو درِ پاسخِ سلامت جدا می‌مانند.
     last_data = _scalar("SELECT MAX(tried_at) FROM codal_extracted"
                         " WHERE state='done'")
+    try:
+        gap, pub = current_network_gap(conn, now=None, jitter=False,
+                                       cache_write=False)
+    except Exception:
+        gap, pub = SLOW_GAP_S, {"windows": [list(w) for w in CAD.DEFAULT_WINDOWS],
+                                "source": "default", "samples": 0,
+                                "labels": CAD.window_labels(CAD.DEFAULT_WINDOWS),
+                                "inside_window": False, "network_gap_s": SLOW_GAP_S,
+                                "enabled": False}
+    try:
+        req = json.loads(cursor_get(conn, DAILY_REQUEST_CURSOR) or "{}")
+    except (TypeError, ValueError, sqlite3.Error):
+        req = {}
+    if not isinstance(req, dict):
+        req = {}
     return {
         "queue": c,
         "dirty_symbols": dirty_count(conn),
@@ -1446,6 +1864,13 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
         "data_epoch": "%s|%s" % (last_data or "",
                                  _scalar("SELECT COUNT(*) FROM financial_statements")
                                  or 0),
+        "publication": pub,
+        "last_new_notice_at": _scalar("SELECT MAX(fetched_at) FROM codal_notices"),
+        "gap_flag": cursor_get(conn, "notice_gap_flag") == "1",
+        "incomplete_streak": _int_or(cursor_get(conn, "notice_incomplete_streak",
+                                                "0")),
+        "daily_requests": {"day": req.get("day"),
+                           "count": _int_or(req.get("count"))},
         "last_successful_sync": ({"at": last_ok[0], "cycle": last_ok[1],
                                   "processed": last_ok[2], "done": last_ok[3],
                                   "failed": last_ok[4]} if last_ok else None),
@@ -1473,7 +1898,11 @@ def status_payload(conn, now=None):
     """
     h = health(conn)
     h["catchup"] = catchup_state(conn, now=now)
-    h["cadence"] = next_wakeup(conn, now=now)
+    # gapِ پایهٔ **بدونِ jitter** که health گزارش می‌کند — نه پیش‌فرضِ ثابتِ
+    # ۳ ساعت. worker پیش از تصمیمِ پاسِ شبکه jitterِ ±۶۰ثانیه هم می‌زند، پس
+    # cadenceِ نمایشی «مبنای» فاصله است، نه دقیقاً ورودیِ worker.
+    gap_s = (h.get("publication") or {}).get("network_gap_s") or SLOW_GAP_S
+    h["cadence"] = next_wakeup(conn, now=now, network_gap_s=gap_s)
     try:
         h["incomplete_extractions"] = int(conn.execute(
             "SELECT COUNT(*) FROM codal_extracted WHERE state='empty'"
@@ -1481,9 +1910,12 @@ def status_payload(conn, now=None):
     except sqlite3.Error:
         h["incomplete_extractions"] = 0
     try:
-        h["undated_notices"] = len(CF.CP.undated_counts(conn))
+        # `len(undated_counts())` تعدادِ *کلیدهای* دیکشنری را می‌داد (۳)، نه شمارِ
+        # ردیف‌ها؛ شمارِ canonical همان ستونِ `total` است. خطا ⇒ None، نه صفر:
+        # صفر یعنی «بی‌دوره‌ای نیست» و آن رأیِ قطعی رویِ بی‌شاهد است.
+        h["undated_notices"] = int(CF.CP.undated_counts(conn)["total"])
     except Exception:
-        h["undated_notices"] = 0
+        h["undated_notices"] = None
     h["offline_gate"] = offline_gate()
     return h
 
@@ -1494,6 +1926,8 @@ def main(argv=None):
     """`python codal_pipeline.py --once --json [--db PATH] [--budget N] [--force]`
 
     یکِ چرخه، بی‌رشتۀ نگه‌دارنده، خروجیِ JSON = همان چیزی که `health()` می‌دهد.
+    `--release-quarantine [--tracing-no N ...]` تنها راهِ خروجِ دستیِ ردیف‌هایِ
+    رد‌شده از قرنطینه است (بی‌شبکه، فقط UPDATE محلی).
     این دريچه برایِ «برنامهٔ زمان‌بندیِ ویندوز» ساخته شده تا وقتی BorsTerminal
     باز نیست هم عقب‌ماندگی جبران شود — اما **خودِ ثبتِ وظیفه را انجام نمی‌دهد**
     (بندِ ۱۲ مأموریت: عملیاتِ سیستمی بدونِ مجوزِ مالک ممنوع). مرزِ عملیاتی و
@@ -1511,15 +1945,29 @@ def main(argv=None):
     ap.add_argument("--status", action="store_true", help="فقط سلامتِ خط")
     ap.add_argument("--catchup", action="store_true",
                     help="فقط وضعیتِ عقب‌ماندگی (بی‌نوشتن)")
+    ap.add_argument("--release-quarantine", action="store_true",
+                    help="آزادسازیِ ردیف‌هایِ قرنطینه‌شده (بی‌شبکه)")
+    ap.add_argument("--tracing-no", action="append", type=int, default=None,
+                    help="فقط همین tracing_noها را آزاد کن (تکرارپذیر)")
     ap.add_argument("--json", action="store_true", help="خروجیِ JSON")
+    ap.add_argument("--captcha", action="store_true",
+                    help="پس از 429 چالشِ رسمیِ کدال را باز کن (اجرای دستی/کد فایل)")
+    ap.add_argument("--captcha-code-file", default=None,
+                    help="مسیر فایلِ کدِ کپچا برای اجرای غیرتعاملی/تست")
     a = ap.parse_args(argv)
+    if a.captcha:
+        CF.enable_captcha(a.captcha_code_file)
     db = a.db or CF.DB_PATH
     conn = sqlite3.connect(db, timeout=120, isolation_level=None)
     conn.row_factory = sqlite3.Row
     CF.create_schema(conn)
     CF.migrate_schema(conn)
     try:
-        if a.status:
+        if a.release_quarantine:
+            out = {"released": release_quarantine(conn,
+                                                  tracing_nos=a.tracing_no),
+                   "tracing_nos": a.tracing_no}
+        elif a.status:
             out = health(conn, db_path=db)
         elif a.catchup:
             out = catchup_state(conn)

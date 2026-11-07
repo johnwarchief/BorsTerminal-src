@@ -8,6 +8,11 @@
  * - وضعیت و اکشن‌های استور Zustand
  */
 
+// R-PAT-3: فقط نوع — هیچ import زمان‌اجرایی اضافه نمی‌شود و چرخهٔ runtime ساخته نمی‌شود.
+import type { ChartPattern } from './patterns/types';
+import type { EngineCandle } from './doubleTapEngine';
+import type { ScanResult } from './events/types';
+
 export interface Candle {
   timestamp: number;
   open: number;
@@ -149,7 +154,44 @@ export type ChannelMode = 'regression' | 'retest_channel' | 'donchian';
 
 export type RsiVariant = 'standard' | 'fibo' | 'bb' | 'smooth_ma';
 
-export type DrawerTab = 'top50' | 'indicators' | 'scanner' | 'edge';
+/**
+ * پنل‌های میزکارِ تازه (فاز B): فیدِ رویدادها + سه پنلی که امروز در کشوی عریض‌اند.
+ * در B1 فقط وضعیتِ پنلِ فعال را نگه می‌دارد؛ میزبانِ واقعی در B3 ساخته می‌شود.
+ */
+export type WorkspacePanel = 'events' | 'top50' | 'indicators' | 'edge';
+
+/**
+ * بخش‌های نوار فعالیت طبق §3 سند طراحی: chart | scanner | indicators | settings.
+ * این‌ها با تب‌های فید (WorkspacePanel) یکی نیستند؛ چارت/تنظیمات اصلاً فید نیستند.
+ */
+export type WorkspaceSection = 'chart' | 'scanner' | 'indicators' | 'settings';
+
+export type FormationConfidence = 'none' | 'low' | 'medium' | 'high';
+
+export interface FormationEstimate {
+  probability: number | null;
+  successes: number;
+  failures: number;
+  resolved: number;
+  confidence: FormationConfidence;
+  horizon: number;
+  method: 'same-symbol' | 'market-cohort';
+  qualityBucket?: number;
+  intervalLow?: number;
+  intervalHigh?: number;
+}
+
+export type DoubleTapGrade = 'A' | 'B' | 'C';
+
+/** تفکیک امتیاز p12 (۲۵/۲۰/۱۵/۱۵/۱۰/۱۵). */
+export interface DoubleTapScoreBreakdown {
+  match: number;
+  rsi: number;
+  volume: number;
+  height: number;
+  symmetry: number;
+  trend: number;
+}
 
 export interface DoubleTapPattern {
   id: string;
@@ -161,12 +203,30 @@ export interface DoubleTapPattern {
   retest?: { index: number; price: number; timestamp: number };
   breakoutIndex?: number;
   breakoutTs?: number;
+  /** بستهٔ شکست (close)؛ مبنای تگ BREAK و انتقال حد ضرر به نقطهٔ سربه‌سر. */
+  breakoutPrice?: number;
   target1: number;
   target2: number;
   stopLoss: number;
+  /** شباهت هندسی قدیمی؛ برای سازگاری نمایش حفظ شده است. */
   score: number;
+  /** امتیاز وفادار p12 (۰..۱۰۰)؛ منبع گرید و رتبه‌بندی اسپات‌لایت. */
+  p12Score?: number;
+  grade?: DoubleTapGrade;
+  scoreBreakdown?: DoubleTapScoreBreakdown;
+  /** کیفیت ساختار ۰–۱۰۰؛ احتمال نیست. */
+  quality: number;
   height: number;
-  status: 'forming' | 'active' | 'tp1_hit' | 'tp2_hit' | 'invalidated';
+  /** ATR جاری در زمان تشخیص؛ عمق ۳D و فاصلهٔ تارگت‌ها بر همین مبناست. */
+  atr?: number;
+  /**
+   * چرخهٔ p12: forming → active → tp1_hit/tp2_hit | failed | timed_out.
+   * `invalidated` یعنی ابطال پیش از شکست.
+   */
+  status: 'forming' | 'active' | 'tp1_hit' | 'tp2_hit' | 'invalidated' | 'failed' | 'timed_out';
+  trendContext?: boolean;
+  profile?: 'source' | 'precision';
+  formation?: FormationEstimate;
 }
 
 export interface PullbackSignal {
@@ -224,9 +284,10 @@ export interface TechnicalState {
   isHideAllDrawings: boolean;
   corporateEvents: CorporateEventItem[];
 
-  // تنظیمات جدید کانال چندحالته، خانواده RSI و سایدبار عریض
+  // تنظیمات جدید کانال چندحالته و خانواده RSI
   channelMode: ChannelMode;
   rsiVariant: RsiVariant;
+  doubleTapProfile: 'precision' | 'source';
   /**
    * overrideهای پنل تنظیماتِ هر اندیکاتور. خالی یعنی از مقادیرِ رجیستری
    * (DOUBLE_TAP_DEFAULTS و هم‌خانواده‌ها) استفاده شود.
@@ -235,11 +296,23 @@ export interface TechnicalState {
   /** سقفِ شکل‌های رسم‌شده به‌ازای هر اندیکاتور؛ الگوهای قدیمی‌تر حذف می‌شوند */
   maxDrawnPatterns: number;
   isLeftDrawerOpen: boolean;
-  leftDrawerWidth: number;
-  activeDrawerTab: DrawerTab;
+  /** پنلِ فعالِ فید در پوستهٔ تازه (B1)؛ محتوای میزبان از همین مقدار پیروی می‌کند (R-PB-5). */
+  activePanel: WorkspacePanel;
+  /** بخشِ فعالِ نوار فعالیت طبق §3 (R-PB-4). */
+  activeSection: WorkspaceSection;
   detectedDoubleTapPatterns: DoubleTapPattern[];
   detectedPullbackSignals: PullbackSignal[];
   detectedCHoCHSignals: CHoCHSignal[];
+  /** الگوهای کلاسیک شناسایی‌شده؛ مصرف‌کنندهٔ آن رجیستری و اورلیِ چارت است. */
+  detectedPatterns: ChartPattern[];
+  /** رده۲ (کم‌بسامد) فقط با سوییچ صریح؛ پیش‌فرض خاموش. */
+  showTier2Patterns: boolean;
+  /** شناسهٔ الگویی که کاربر از فهرست انتخاب کرده تا چارت روی آن فوکوس کند (spec §7.3). */
+  focusPatternId: string | null;
+  /** نتیجهٔ اسکن واحد چارت: الگو، کانال، واگرایی، پولبک و شکست. */
+  scanResult: ScanResult | null;
+  /** کندل‌های موتور برای مصرف در تب الگوها (تسک ۱۰ آن را منتشر می‌کند). */
+  chartCandles: EngineCandle[];
 
   setTimeframe: (tf: string) => void;
   setActiveDrawingTool: (tool: DrawingToolType | null) => void;
@@ -265,16 +338,27 @@ export interface TechnicalState {
 
   setChannelMode: (mode: ChannelMode) => void;
   setRsiVariant: (variant: RsiVariant) => void;
+  setDoubleTapProfile: (profile: 'precision' | 'source') => void;
   setIndicatorParam: (indicatorId: string, key: string, value: number) => void;
   resetIndicatorParams: (indicatorId: string) => void;
   setMaxDrawnPatterns: (count: number) => void;
   setIsLeftDrawerOpen: (open: boolean) => void;
   toggleLeftDrawer: () => void;
-  setLeftDrawerWidth: (width: number) => void;
-  setActiveDrawerTab: (tab: DrawerTab) => void;
+  /**
+   * معادلِ toggleLeftDrawer برای فید (R-PB-1): پرچمِ تازه‌ای ساخته نمی‌شود؛
+   * فقط نامِ مناسبِ فید به همان پرچم/اکشنِ موجود اشاره می‌کند.
+   */
+  toggleFeed: () => void;
+  setActivePanel: (panel: WorkspacePanel) => void;
+  setActiveSection: (section: WorkspaceSection) => void;
   setDetectedDoubleTapPatterns: (patterns: DoubleTapPattern[]) => void;
   setDetectedPullbackSignals: (signals: PullbackSignal[]) => void;
   setDetectedCHoCHSignals: (signals: CHoCHSignal[]) => void;
+  setDetectedPatterns: (patterns: ChartPattern[]) => void;
+  toggleTier2Patterns: () => void;
+  setFocusPatternId: (id: string | null) => void;
+  setScanResult: (result: ScanResult | null) => void;
+  setChartCandles: (candles: EngineCandle[]) => void;
   enableDefaultIndicators: () => void;
 
   reset: () => void;

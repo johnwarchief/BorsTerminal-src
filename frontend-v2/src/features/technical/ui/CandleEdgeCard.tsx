@@ -96,7 +96,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
     switch (marketRegime) {
       case 'TRENDING_BULL':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-xs)] t-10 font-medium bg-panel-3 text-up border border-line">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-xs)] text-xs font-medium bg-panel-3 text-up border border-line">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
               <polyline points="17 6 23 6 23 12" />
@@ -106,7 +106,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
         );
       case 'TRENDING_BEAR':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-xs)] t-10 font-medium bg-panel-3 text-down border border-line">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-xs)] text-xs font-medium bg-panel-3 text-down border border-line">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
               <polyline points="17 18 23 18 23 12" />
@@ -117,7 +117,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       case 'RANGING':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-xs)] t-10 font-medium bg-panel-3 text-text-2 border border-line">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-xs)] text-xs font-medium bg-panel-3 text-text-2 border border-line">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 12h18M3 6h18M3 18h18" />
             </svg>
@@ -143,7 +143,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           type="button"
           data-testid="tab-edge-btn"
           onClick={() => setActiveTab('edge')}
-          className={`flex-1 py-1 text-center t-9 font-medium rounded-[var(--radius-xs)] transition-colors ${
+          className={`flex-1 py-1 text-center text-xs font-medium rounded-[var(--radius-xs)] transition-colors ${
             activeTab === 'edge' ? 'bg-panel-3 text-accent font-semibold shadow-xs' : 'text-text-3 hover:text-text'
           }`}
         >
@@ -153,7 +153,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           type="button"
           data-testid="tab-symbols-btn"
           onClick={() => setActiveTab('symbols')}
-          className={`flex-1 py-1 text-center t-9 font-medium rounded-[var(--radius-xs)] transition-colors ${
+          className={`flex-1 py-1 text-center text-xs font-medium rounded-[var(--radius-xs)] transition-colors ${
             activeTab === 'symbols' ? 'bg-panel-3 text-accent font-semibold shadow-xs' : 'text-text-3 hover:text-text'
           }`}
         >
@@ -163,7 +163,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           type="button"
           data-testid="tab-smc-btn"
           onClick={() => setActiveTab('smc')}
-          className={`flex-1 py-1 text-center t-9 font-medium rounded-[var(--radius-xs)] transition-colors ${
+          className={`flex-1 py-1 text-center text-xs font-medium rounded-[var(--radius-xs)] transition-colors ${
             activeTab === 'smc' ? 'bg-panel-3 text-accent font-semibold shadow-xs' : 'text-text-3 hover:text-text'
           }`}
         >
@@ -177,14 +177,14 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           {/* سربرگ کارت */}
           <div className="flex items-center justify-between border-b border-line pb-2">
             <div className="flex items-center gap-2">
-              <h3 className="t-11 font-bold text-text">
+              <h3 className="text-xs font-bold text-text">
                 لبه آماری و SMC ({activeSymbol})
               </h3>
           <button
             type="button"
             data-testid="toggle-guide-btn"
             onClick={() => setIsGuideOpen(!isGuideOpen)}
-            className={`h-5 px-1.5 rounded-[var(--radius-xs)] t-9 font-medium border transition-colors duration-150 flex items-center gap-1 ${
+            className={`h-5 px-1.5 rounded-[var(--radius-xs)] text-xs font-medium border transition-colors duration-150 flex items-center gap-1 ${
               isGuideOpen
                 ? 'bg-panel-3 text-accent border-accent/40'
                 : 'bg-panel-2 text-text-3 border-line hover:text-text'
@@ -206,15 +206,15 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       {isGuideOpen && (
         <div
           data-testid="traders-guide-panel"
-          className="bg-panel-2 border border-accent/30 rounded-[var(--radius-sm)] p-2.5 flex flex-col gap-2 t-10"
+          className="bg-panel-2 border border-accent/30 rounded-[var(--radius-sm)] p-2.5 flex flex-col gap-2 text-xs"
         >
           <div className="flex items-center justify-between border-b border-line pb-1 text-accent font-bold">
             <span>کالبدشکافی الگوی {patternEdu.nameFa}</span>
-            <span className="t-9 text-text-3 font-normal">({patternEdu.typeFa})</span>
+            <span className="text-xs text-text-3 font-normal">({patternEdu.typeFa})</span>
           </div>
 
           {/* روانشناسی الگو */}
-          <p className="text-text-2 leading-relaxed t-10">
+          <p className="text-text-2 leading-relaxed text-xs">
             {patternEdu.psychologyFa}
           </p>
 
@@ -229,7 +229,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
               <span className="font-semibold text-text-2 block mb-0.5">
                 {STATISTICAL_EDGE_EDUCATION.winRateFa.titleFa}:
               </span>
-              <p className="text-text-3 leading-relaxed t-9">
+              <p className="text-text-3 leading-relaxed text-xs">
                 {STATISTICAL_EDGE_EDUCATION.winRateFa.explanationFa}
               </p>
             </div>
@@ -238,7 +238,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
               <span className="font-semibold text-text-2 block mb-0.5">
                 {STATISTICAL_EDGE_EDUCATION.profitFactorFa.titleFa} و {STATISTICAL_EDGE_EDUCATION.riskRewardFa.titleFa}:
               </span>
-              <p className="text-text-3 leading-relaxed t-9">
+              <p className="text-text-3 leading-relaxed text-xs">
                 {STATISTICAL_EDGE_EDUCATION.profitFactorFa.explanationFa}
               </p>
             </div>
@@ -248,21 +248,21 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
 
       {/* ۱. الگوی اخیر */}
       <div className="bg-panel-2 border border-line rounded-[var(--radius-sm)] p-2.5">
-        <div className="flex items-center justify-between t-11">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-text-3">الگوی اخیر:</span>
           <span
             data-testid="active-pattern-badge"
-            className={`font-medium px-2 py-0.5 rounded-[var(--radius-xs)] t-10 bg-panel-3 border border-line ${
+            className={`font-medium px-2 py-0.5 rounded-[var(--radius-xs)] text-xs bg-panel-3 border border-line ${
               patternEdu.isBullish ? 'text-up' : 'text-down'
             }`}
           >
             {patternEdu.nameFa}
           </span>
         </div>
-        <p className="t-9 text-text-3 leading-relaxed mt-1.5 pt-1.5 border-t border-line/60">
+        <p className="text-xs text-text-3 leading-relaxed mt-1.5 pt-1.5 border-t border-line/60">
           {patternEdu.psychologyFa}
         </p>
-        <div className="flex items-center justify-between t-9 text-text-3 mt-1.5 pt-1 border-t border-line/40">
+        <div className="flex items-center justify-between text-xs text-text-3 mt-1.5 pt-1 border-t border-line/40">
           <span>نمونه‌های آماری:</span>
           <span className="text-text-2 num">
             {toFaDigits(sampleCount)} کندل
@@ -273,18 +273,18 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       {/* ۲. نرخ برد تاریخی (Win Rate) */}
       <div className="bg-panel-2 border border-line rounded-[var(--radius-sm)] p-2.5">
         <div className="flex items-center justify-between mb-1.5">
-          <div className="t-10 font-bold text-text-2">
+          <div className="text-xs font-bold text-text-2">
             نرخ برد تاریخی الگو (Win Rate)
           </div>
-          <span className="t-85 text-text-3" title={STATISTICAL_EDGE_EDUCATION.winRateFa.explanationFa}>
+          <span className="text-xs text-text-3" title={STATISTICAL_EDGE_EDUCATION.winRateFa.explanationFa}>
             احتمال رشد قیمت
           </span>
         </div>
         <div className="grid grid-cols-3 gap-1.5 text-center">
           <div className="bg-panel border border-line rounded-[var(--radius-xs)] p-1.5">
-            <span className="t-9 text-text-3 block mb-0.5">۱ کندل بعد</span>
+            <span className="text-xs text-text-3 block mb-0.5">۱ کندل بعد</span>
             <span
-              className={`t-11 font-bold num ${
+              className={`text-xs font-bold num ${
                 winRate1 >= 50 ? 'text-up' : 'text-down'
               }`}
             >
@@ -301,9 +301,9 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           </div>
 
           <div className="bg-panel border border-line rounded-[var(--radius-xs)] p-1.5">
-            <span className="t-9 text-text-3 block mb-0.5">۳ کندل بعد</span>
+            <span className="text-xs text-text-3 block mb-0.5">۳ کندل بعد</span>
             <span
-              className={`t-11 font-bold num ${
+              className={`text-xs font-bold num ${
                 winRate3 >= 50 ? 'text-up' : 'text-down'
               }`}
             >
@@ -320,9 +320,9 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           </div>
 
           <div className="bg-panel border border-line rounded-[var(--radius-xs)] p-1.5">
-            <span className="t-9 text-text-3 block mb-0.5">۵ کندل بعد</span>
+            <span className="text-xs text-text-3 block mb-0.5">۵ کندل بعد</span>
             <span
-              className={`t-11 font-bold num ${
+              className={`text-xs font-bold num ${
                 winRate5 >= 50 ? 'text-up' : 'text-down'
               }`}
             >
@@ -343,7 +343,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       {/* ۳. فاکتور سود و نسبت ریسک به ریوارد */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-panel-2 border border-line rounded-[var(--radius-sm)] p-2">
-          <span className="t-9 text-text-3 block mb-0.5">فاکتور سود (PF)</span>
+          <span className="text-xs text-text-3 block mb-0.5">فاکتور سود (PF)</span>
           <div className="flex items-baseline gap-1">
             <span
               className={`t-125 font-bold num ${
@@ -356,14 +356,14 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
             >
               {faNum(profitFactor, 2)}
             </span>
-            <span className="t-85 text-text-3">
+            <span className="text-xs text-text-3">
               {profitFactor >= 1.5 ? '(عالی)' : profitFactor >= 1 ? '(مطلوب)' : '(ضعیف)'}
             </span>
           </div>
         </div>
 
         <div className="bg-panel-2 border border-line rounded-[var(--radius-sm)] p-2">
-          <span className="t-9 text-text-3 block mb-0.5">نسبت سود/زیان (R/R)</span>
+          <span className="text-xs text-text-3 block mb-0.5">نسبت سود/زیان (R/R)</span>
           <div className="flex items-baseline gap-1">
             <span className="t-125 font-bold num text-text">
               ۱ : {faNum(riskReward, 2)}
@@ -375,7 +375,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       {/* ۴. زون‌های فعال نقدینگی و SMC */}
       <div className="bg-panel-2 border border-line rounded-[var(--radius-sm)] p-2.5">
         <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-line">
-          <span className="t-10 font-bold text-text-2">
+          <span className="text-xs font-bold text-text-2">
             زون‌های نقدینگی (SMC)
           </span>
 
@@ -384,7 +384,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
             role="switch"
             aria-checked={showSMCZones}
             onClick={toggleSMCZones}
-            className={`h-5 px-2 rounded-[var(--radius-xs)] t-9 font-medium border transition-colors duration-150 flex items-center gap-1 ${
+            className={`h-5 px-2 rounded-[var(--radius-xs)] text-xs font-medium border transition-colors duration-150 flex items-center gap-1 ${
               showSMCZones
                 ? 'bg-panel-3 text-accent border-accent/40'
                 : 'bg-panel text-text-3 border-line hover:text-text'
@@ -400,7 +400,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
         </div>
 
         {activeZones.length === 0 ? (
-          <p className="t-10 text-text-3 text-center py-2">
+          <p className="text-xs text-text-3 text-center py-2">
             هیچ زون فعال مصرف‌نشده‌ای یافت نشد
           </p>
         ) : (
@@ -408,10 +408,10 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
             {activeZones.slice(0, 4).map((zone: PriceZone) => (
               <div
                 key={zone.id}
-                className="flex items-center justify-between p-1 rounded-[var(--radius-xs)] bg-panel border border-line/60 t-10"
+                className="flex items-center justify-between p-1 rounded-[var(--radius-xs)] bg-panel border border-line/60 text-xs"
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="px-1 rounded-[var(--radius-xs)] t-85 num bg-panel-3 border border-line text-text-3">
+                  <span className="px-1 rounded-[var(--radius-xs)] text-xs num bg-panel-3 border border-line text-text-3">
                     {zone.type}
                   </span>
                   <span
@@ -423,7 +423,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                   </span>
                 </div>
 
-                <div className="text-left num t-9 text-text-2">
+                <div className="text-left num text-xs text-text-2">
                   <span>{toFaDigits(Math.round(zone.bottom).toLocaleString('fa-IR'))}</span>
                   <span className="text-text-3 mx-1">-</span>
                   <span>{toFaDigits(Math.round(zone.top).toLocaleString('fa-IR'))}</span>
@@ -440,8 +440,8 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       {activeTab === 'symbols' && (
         <div data-testid="famous-symbols-watchlist" className="flex flex-col gap-2">
           <div className="flex items-center justify-between border-b border-line pb-1.5">
-            <span className="t-10 font-bold text-text">دیده‌بان ۲۰ نماد شاخص</span>
-            <span className="t-85 text-text-3">انتخاب سریع</span>
+            <span className="text-xs font-bold text-text">دیده‌بان ۲۰ نماد شاخص</span>
+            <span className="text-xs text-text-3">انتخاب سریع</span>
           </div>
 
           {/* فیلتر جستجو درون ۲۰ نماد */}
@@ -452,7 +452,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
               value={symbolFilter}
               onChange={(e) => setSymbolFilter(e.target.value)}
               placeholder="فیلتر نماد یا صنعت..."
-              className="w-full h-6 px-2 bg-panel-2 rounded-[var(--radius-xs)] border border-line text-text t-9 focus:outline-none focus:border-accent"
+              className="w-full h-6 px-2 bg-panel-2 rounded-[var(--radius-xs)] border border-line text-text text-xs focus:outline-none focus:border-accent"
             />
           </div>
 
@@ -482,10 +482,10 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="t-10 font-bold">{item.symbol}</span>
-                    <span className="t-85 text-text-3 truncate max-w-[140px]">{item.name}</span>
+                    <span className="text-xs font-bold">{item.symbol}</span>
+                    <span className="text-xs text-text-3 truncate max-w-[140px]">{item.name}</span>
                   </div>
-                  <span className="t-85 px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-panel border border-line/60 text-text-3">
+                  <span className="text-xs px-1.5 py-0.5 rounded-[var(--radius-xs)] bg-panel border border-line/60 text-text-3">
                     {item.sector}
                   </span>
                 </button>
@@ -499,13 +499,13 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
       {activeTab === 'smc' && (
         <div data-testid="institutional-smc-panel" className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between border-b border-line pb-1.5">
-            <span className="t-10 font-bold text-text">زون‌های نقدینگی و SMC</span>
+            <span className="text-xs font-bold text-text">زون‌های نقدینگی و SMC</span>
             <button
               type="button"
               role="switch"
               aria-checked={showSMCZones}
               onClick={toggleSMCZones}
-              className={`h-5 px-2 rounded-[var(--radius-xs)] t-9 font-medium border transition-colors duration-150 flex items-center gap-1 ${
+              className={`h-5 px-2 rounded-[var(--radius-xs)] text-xs font-medium border transition-colors duration-150 flex items-center gap-1 ${
                 showSMCZones
                   ? 'bg-panel-3 text-accent border-accent/40'
                   : 'bg-panel text-text-3 border-line hover:text-text'
@@ -520,12 +520,12 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
             </button>
           </div>
 
-          <p className="t-85 text-text-3 leading-relaxed">
+          <p className="text-xs text-text-3 leading-relaxed">
             نواحی عدم تعادل (FVG) و بلوک‌های سفارش (Order Block) با خط تعادل ۵۰٪ و رهگیری مصرف‌شدگی.
           </p>
 
           {activeZones.length === 0 ? (
-            <p className="t-10 text-text-3 text-center py-4 bg-panel-2 rounded-[var(--radius-xs)] border border-line">
+            <p className="text-xs text-text-3 text-center py-4 bg-panel-2 rounded-[var(--radius-xs)] border border-line">
               هیچ زون فعال مصرف‌نشده‌ای یافت نشد
             </p>
           ) : (
@@ -533,11 +533,11 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
               {activeZones.map((zone: PriceZone) => (
                 <div
                   key={zone.id}
-                  className="flex flex-col gap-1 p-2 rounded-[var(--radius-xs)] bg-panel-2 border border-line/70 t-9"
+                  className="flex flex-col gap-1 p-2 rounded-[var(--radius-xs)] bg-panel-2 border border-line/70 text-xs"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className="px-1.5 py-0.5 rounded-[var(--radius-xs)] t-85 font-mono font-bold bg-panel-3 border border-line text-accent">
+                      <span className="px-1.5 py-0.5 rounded-[var(--radius-xs)] text-xs font-mono font-bold bg-panel-3 border border-line text-accent">
                         {zone.type}
                       </span>
                       <span
@@ -550,7 +550,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                     </div>
 
                     <span
-                      className={`t-8 px-1.5 py-0.5 rounded-[var(--radius-xs)] border ${
+                      className={`text-xs px-1.5 py-0.5 rounded-[var(--radius-xs)] border ${
                         zone.mitigated
                           ? 'border-line text-text-3 bg-panel'
                           : 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30 font-semibold'
@@ -561,7 +561,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                   </div>
 
                   {/* محدوده و ۵۰٪ تعادل */}
-                  <div className="flex items-center justify-between pt-1 border-t border-line/40 t-85 text-text-3">
+                  <div className="flex items-center justify-between pt-1 border-t border-line/40 text-xs text-text-3">
                     <span>محدوده:</span>
                     <span className="num text-text-2">
                       {toFaDigits(Math.round(zone.bottom).toLocaleString('fa-IR'))} - {toFaDigits(Math.round(zone.top).toLocaleString('fa-IR'))} ریال
@@ -569,7 +569,7 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                   </div>
 
                   {zone.equilibrium ? (
-                    <div className="flex items-center justify-between t-85 text-text-3">
+                    <div className="flex items-center justify-between text-xs text-text-3">
                       <span>تعادل (۵۰٪ EQ):</span>
                       <span className="num font-semibold text-accent">
                         {toFaDigits(Math.round(zone.equilibrium).toLocaleString('fa-IR'))} ریال
@@ -584,12 +584,12 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
           {/* بخش رویدادهای شرکتی و مجمع نماد */}
           <div data-testid="corporate-events-section" className="flex flex-col gap-2 pt-2 border-t border-line">
             <div className="flex items-center justify-between">
-              <span className="t-10 font-bold text-text">رویدادهای شرکتی و مجمع</span>
-              <span className="t-85 text-text-3 num">{toFaDigits(corporateEvents.length)} رویداد</span>
+              <span className="text-xs font-bold text-text">رویدادهای شرکتی و مجمع</span>
+              <span className="text-xs text-text-3 num">{toFaDigits(corporateEvents.length)} رویداد</span>
             </div>
 
             {corporateEvents.length === 0 ? (
-              <p className="t-9 text-text-3 text-center py-2 bg-panel-2 rounded-[var(--radius-xs)] border border-line">
+              <p className="text-xs text-text-3 text-center py-2 bg-panel-2 rounded-[var(--radius-xs)] border border-line">
                 رویداد مجمع یا افزایش سرمایه برای این نماد ثبت نشده است
               </p>
             ) : (
@@ -600,11 +600,11 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                   return (
                     <div
                       key={`${ev.date}-${idx}`}
-                      className="flex items-center justify-between p-1.5 rounded-[var(--radius-xs)] bg-panel-2 border border-line/70 t-9"
+                      className="flex items-center justify-between p-1.5 rounded-[var(--radius-xs)] bg-panel-2 border border-line/70 text-xs"
                     >
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] ${
+                          className={`w-5 h-5 rounded flex items-center justify-center font-bold text-xs ${
                             isShareChange
                               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
                               : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
@@ -614,11 +614,11 @@ export const CandleEdgeCard: React.FC<CandleEdgeCardProps> = ({
                         </span>
                         <div className="flex flex-col">
                           <span className="font-semibold text-text">{label}</span>
-                          <span className="t-8 text-text-3 num">{toFaDigits(ev.date)}</span>
+                          <span className="text-xs text-text-3 num">{toFaDigits(ev.date)}</span>
                         </div>
                       </div>
 
-                      <div className="text-left num t-85 text-text-2">
+                      <div className="text-left num text-xs text-text-2">
                         {ev.from != null && ev.to != null ? (
                           <span>
                             {toFaDigits(ev.from)} ➔ {toFaDigits(ev.to)}

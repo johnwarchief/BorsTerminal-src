@@ -3,8 +3,7 @@
 // سراسری سبک تا سایدبار در هر صفحه دوباره fetch نزند.
 import { useMemo } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { useMarketFeed } from '@features/market/api/useMarketFeed';
-import { findBoardRow } from '@features/market/api/useSymbolFlow';
+import { useMarketRow, marketRowOf } from '@features/market/api/useMarketRow';
 import type { MarketRow } from '@shared/types/marketRow';
 
 export type BoardRow = {
@@ -22,14 +21,14 @@ export type BoardRow = {
 /** ردیفِ خامِ تابلو — همان چیزی که قواعدِ درِ تابلو (`tapeFilterVerdict`) و
  *  `symbolStageProgress` رویِ خودش اجرا می‌شوند. تطبیقِ نماد از `findBoardRow`
  *  است (نوشتارِ عربی/فارسی + فاصله)، نه از مقایسهٔ خام. */
-export function useInspectorRawRow(): MarketRow | null {
+export function useInspectorRawRow(opts: { enabled?: boolean } = {}): MarketRow | null {
   const symbol = useSymbolStore((s) => s.symbol);
-  const { data } = useMarketFeed();
-  return useMemo(() => findBoardRow(data?.data ?? [], symbol), [symbol, data]);
+  const q = useMarketRow(symbol, opts.enabled ?? true);
+  return marketRowOf(q);
 }
 
-export function useInspectorBoard(): BoardRow | null {
-  const r = useInspectorRawRow();
+export function useInspectorBoard(opts: { enabled?: boolean } = {}): BoardRow | null {
+  const r = useInspectorRawRow(opts);
   return useMemo(() => {
     if (!r) return null;
     return {

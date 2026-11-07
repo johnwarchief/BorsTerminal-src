@@ -1,0 +1,56 @@
+{
+  "head": "53e2e1a9",
+  "branch": "integration/4axes-main-2026-11-03",
+  "date": "2026-11-04",
+  "scope": "fundamental",
+  "screenshots": [
+    "_audit/rebuild/fundamental-redesign/table-comfortable-paper-1366.png",
+    "_audit/rebuild/fundamental-redesign/table-compact-paper-1366.png",
+    "_audit/rebuild/fundamental-redesign/table-exempt-badge-1366.png",
+    "_audit/rebuild/fundamental-redesign/detail-renik-paper-1366.png",
+    "_audit/rebuild/fundamental-redesign/detail-renik-mid-1366.png",
+    "_audit/rebuild/fundamental-redesign/detail-renik-bottom-1366.png",
+    "_audit/rebuild/fundamental-redesign/panel-growth-foolad-1366.png",
+    "_audit/rebuild/fundamental-redesign/panel-eps-renik-1366.png",
+    "_audit/rebuild/fundamental-redesign/detail-visa-holding-1366.png",
+    "_audit/rebuild/fundamental-redesign/detail-webmelat-bank-1366.png"
+  ],
+  "code_refs": {
+    "axis_names": "frontend-v2/src/features/fundamental/lib/axisMeta.ts:19-23",
+    "growth_threshold": "frontend-v2/src/features/fundamental/ui/panels/GrowthPanel.tsx:38-39,57",
+    "sales_headline": "frontend-v2/src/features/fundamental/ui/panels/SalesPanel.tsx:23-28",
+    "eps_panel": "frontend-v2/src/features/fundamental/ui/panels/EpsPanel.tsx:40-51",
+    "card_schema": "frontend-v2/src/features/fundamental/api/useFtsCard.ts:12-31",
+    "surface_prefs": "frontend-v2/src/features/fundamental/stores/prefs.ts:5,19",
+    "surface_page": "frontend-v2/src/features/fundamental/routes/FundamentalPage.tsx:61-71",
+    "chart_contract": "frontend-v2/src/features/chart/api/useChart.ts",
+    "legacy_eps_growth": "frontend/src/features/fundamental/lib/epsHistory.ts:144",
+    "api_potential": "api/fundamental.py:1228",
+    "api_ytd": "api/fundamental.py:1733"
+  },
+  "live_values": {
+    "screener_rows": 783,
+    "renik_growth_pct": 45.9,
+    "renik_eps_series": [1119, 1615, 1672],
+    "renik_eps_years": 3,
+    "renik_sales_to_mcap": 1.15,
+    "renik_potential_pct": 13.2,
+    "foolad_growth_pct": 56.0,
+    "foolad_volume_real_pct": -2.5,
+    "foolad_growth_floor": 40,
+    "foolad_growth_target": 60
+  },
+  "owner_expectations": {
+    "eps_period_growth": "FAIL",
+    "indicator_1_1a_1b": "PARTIAL",
+    "current_and_previous_sales": "FAIL",
+    "theme_follows_app": "FAIL",
+    "indicator_4_name_and_final_pct": "FAIL",
+    "indicator_3_name": "FAIL"
+  },
+  "limitations": [
+    "No fresh browser run for this report; current production acceptance screenshots at HEAD 53e2e1a9 were used.",
+    "No full FTS chart interaction in v2; useChart.ts has no fts payload consumer.",
+    "Ambiguous handwritten booklet pages are marked in booklet-ledger.md and are not reported as defects."
+  ]
+}

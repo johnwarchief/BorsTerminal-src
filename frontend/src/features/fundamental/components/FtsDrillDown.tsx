@@ -12,12 +12,13 @@ import type { FiscalQuarter } from '../lib/fundMath';
 import { EPS_PARTIAL_TESTID, epsChangeText, epsChanges, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
 import { industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
-import { FTS_PANEL_TITLE, FTS_FX_TITLE } from '@shared/lib/ftsLabels';
+import { FTS_PANEL_TITLE, FTS_FX_TITLE, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
 import {
   NO_ANNUAL_SALES,
   NO_GROSS_MARGIN,
   NO_MCAP,
   NOT_COMPUTABLE,
+  growthBasisLabel,
   gapReason as axisGapReason,
   gapTooltip as axisGapTooltip,
 } from '../lib/gapReason';
@@ -75,6 +76,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
   // جدا در UI یعنی دو جواب برای یک نماد، پس نشانه از حکمِ شاخص ۱ می‌آید.
   const aboveFloor = passes1a ?? beatsFloor;
   const passes1b = card.passes?.['1b_volume_growth'];
+  /** مبنایِ رشد از خودِ موتور (Task 2/4): None = ماهانهٔ YTD؛ fs_* = صورتِ مالی.
+   *  شکافِ داده هم دلیلِ خودش را دارد (`mon.reason`) و نباید با متنِ عمومیِ
+   *  «گزارش ماهانه نیست» یکی شود. */
+  const growthBasis = mon ? growthBasisLabel(mon.basis) : null;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -82,9 +87,11 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-c/40 pb-3">
         <div className="flex flex-wrap items-center gap-2">
           {growth == null ? (
-            <GapHint reason={axisGapTooltip('1a_monetary_growth')}>
+            <GapHint reason={mon?.reason || axisGapTooltip('1a_monetary_growth')}>
               <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
-                {axisGapReason('1a_monetary_growth').label}
+                {mon?.basis === 'fs_unavailable'
+                  ? 'صورت مالی — شکاف داده'
+                  : axisGapReason('1a_monetary_growth').label}
               </span>
             </GapHint>
           ) : (
@@ -107,6 +114,15 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             <Badge tone="blue">
               <span className="num">{toFaDigits(mon.months)}</span> ماهه · <span className="num">{toFaDigits(mon.period ?? '')}</span>
             </Badge>
+          ) : null}
+          {growthBasis ? (
+            <span
+              data-testid="drilldown-growth-basis"
+              className="rounded-full border border-border-c/60 bg-bg-card/60 px-2.5 py-0.5 text-2xs text-text-secondary"
+              title={mon?.period ? `دورهٔ مبنا: ${mon.period}` : undefined}
+            >
+              مبنای رشد: {growthBasis}
+            </span>
           ) : null}
         </div>
 
@@ -201,11 +217,13 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
               </span>
             </div>
             <span className="text-3xs text-text-muted mt-1">
-              {floor == null
-                ? 'کفِ رشدِ FTS در پاسخِ این نماد نیامده — عددی ساخته نمی‌شود.'
-                : aboveFloor
-                  ? `بالای کفِ ${toFaDigits(floor)}٪ FTS ✓`
-                  : `زیر کفِ ${toFaDigits(floor)}٪ FTS`}
+              {growth == null
+                ? 'سنجیده نشد — دلیلِ شکاف بالای همین پنل آمده است.'
+                : floor == null
+                  ? 'کفِ رشدِ FTS در پاسخِ این نماد نیامده — عددی ساخته نمی‌شود.'
+                  : aboveFloor
+                    ? `بالای کفِ ${toFaDigits(floor)}٪ FTS ✓`
+                    : `زیر کفِ ${toFaDigits(floor)}٪ FTS`}
             </span>
           </div>
         </div>
@@ -259,7 +277,9 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 
         <p className="mt-1 text-3xs leading-relaxed text-text-muted">
           فرمول FTS: رشد = (فروش تجمیعی دورهٔ جاری ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
-          {mon?.denominator_basis ? ` · مبنا: ${toFaDigits(mon.denominator_basis)}` : ''}
+          {mon?.denominator_basis
+            ? ` · مبنا: ${toFaDigits(mon.denominator_basis)}`
+            : growthBasis ? ` · مبنا: ${growthBasis}` : ''}
         </p>
       </div>
 
@@ -287,7 +307,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
                   ? ` (اثر تقریبی نرخ ${toFaDigits(Math.round(vol.implied_price_pct))}٪)`
                   : '')
               : vol?.data_gap
-                ? `${axisGapReason('1b_volume_growth').why} رشد تولیدی از این گزارش حساب نمی‌شود.`
+                ? `${vol?.reason || axisGapReason('1b_volume_growth').why} رشد تولیدی از این گزارش حساب نمی‌شود.`
                 : 'رشد تولیدی قابل محاسبه نیست — گزارش ماهانهٔ تولیدی کدال ناقص است.'}
           </p>
         </div>
@@ -347,7 +367,7 @@ function Panel2({ card }: { card: FtsCard }) {
               data-testid="drilldown-eps-na"
               className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow"
             >
-              {ind?.consolidated_used ? 'کاربرد ندارد — مبنایِ تلفیقی' : 'کاربرد ندارد — این لایه اجرا نمی‌شود'}
+              {ind?.consolidated_used ? 'N/A — کاربرد ندارد (مبنایِ تلفیقی)' : 'N/A — کاربرد ندارد (این لایه اجرا نمی‌شود)'}
             </span>
           </GapHint>
         ) : rising == null && realYears < 2 ? (
@@ -371,9 +391,14 @@ function Panel2({ card }: { card: FtsCard }) {
           </Badge>
           </span>
         )}
-        {ind?.evidence_tier ? (
+        {ind?.evidence_label || ind?.evidence_tier ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-evidence-tier">
-            مدرک: {EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier}
+            {/* برچسبِ شاهد (Task 5) از خودِ موتور مقدم است؛ نقشهٔ قدیمی فقط
+                fallbackِ پاسخ‌هایِ بی‌برچسب است. */}
+            مدرک: {ind?.evidence_label
+              ?? (ind?.evidence_tier
+                ? (EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier)
+                : '')}
           </span>
         ) : null}
         {refNos.length ? (
@@ -483,9 +508,22 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
-          {margin == null ? 'قابل ارزیابی نیست' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
-        </Badge>
+        <span data-testid="drilldown-margin-band">
+          <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
+            {margin == null ? 'N/A' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
+          </Badge>
+        </span>
+        {/* طبقهٔ نمایشی (Task 6) کنارِ همان درصد؛ برچسبِ باند/حکم دست‌نخورده
+            است — ۵۰٪ فقط نامِ «خوب» است، نه دروازه. */}
+        {ind?.margin_tier ? (
+          <span
+            data-testid="drilldown-margin-tier"
+            className="text-2xs font-bold text-text-muted"
+            title={MARGIN_TIER_HINT}
+          >
+            طبقه: {MARGIN_TIER_LABEL[ind.margin_tier] ?? ind.margin_tier}
+          </span>
+        ) : null}
         {ind?.basis ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-margin-basis">
             مبنای محاسبه: {toFaDigits(ind.basis)}
@@ -578,7 +616,13 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
 /** شاخص ۴: سالانه‌سازی داینامیک ×۱۲÷م + نسبت فروش ÷ ارزش بازار + پتانسیل سود */
 function Panel4({ card }: { card: FtsCard }) {
   const ind = card.indicators?.['4'];
-  const m = Math.max(1, Math.round(ind?.months_used ?? card.metrics?.months_used ?? 12));
+  /** دوره و سالانه‌سازی از قراردادِ موتور: `annualize_months` مرجع است و
+   *  `months_used` فقط fallbackِ کارت‌هایِ قدیمی. `available === false`
+   *  (معاف/بی‌داده) هیچ سالانه‌سازی‌ای ندارد — پیش از این `Math.max(1, 0)`
+   *  «دورهٔ ۱ ماهه» و ضریبِ ساختگی می‌ساخت. */
+  const engineMonths = ind?.annualize_months ?? ind?.months_used;
+  const hasAnnualization = ind?.available !== false && (engineMonths ?? 0) > 0;
+  const m = hasAnnualization ? Math.max(1, Math.round(engineMonths!)) : 0;
   const scale = ind?.scale_factor ?? card.metrics?.scale_factor ?? 1;
   const ytd = ind?.annual?.ytd_sales_bt ?? null;
   const annualSales = ind?.annual_sales_bt ?? card.metrics?.annual_sales_bt ?? null;
@@ -591,10 +635,25 @@ function Panel4({ card }: { card: FtsCard }) {
   const potThresh = typeof ind?.potential_threshold === 'number' ? ind.potential_threshold : null;
   const salesFloorLabel = salesThresh == null ? 'کفِ نسبت از بک‌اند نرسید' : `≥ ${toFaDigits(salesThresh.toFixed(2))}×`;
   const scaleTable = ind?.annual?.scale_table ?? [];
+  /** مسیرِ پذیرش و برچسبِ سالانه‌سازی از خودِ `indicators['4']` (Task 7) —
+   *  نامِ مسیرِ پاس‌شده، نه آستانهٔ تازه؛ معاف/بی‌داده هیچ‌کدام را ندارد. */
+  const acceptPath = ind?.acceptance_path ?? null;
+  const annualizeLabel = (ind?.annualize_label ?? '').trim();
+  /** برچسبِ موتور با ارقامِ فارسی رندر می‌شود؛ مقدارِ خام فقط برایِ منطق. */
+  const annualizeLabelFa = toFaDigits(annualizeLabel);
+  // ۱۲ ماه کامل «سالانه‌سازی» نیست، پس همان پیامِ سال کامل می‌ماند و برچسبِ
+  // ثانویهٔ موتور (که برایِ ۱۲ هم پر است) تکرار نمی‌شود.
+  const basisLabel = !hasAnnualization
+    ? 'بدون سالانه‌سازی — N/A'
+    : m >= 12
+      ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)'
+      : (annualizeLabelFa || `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`);
   return (
     <div className="flex flex-col gap-3" data-testid="drilldown-panel-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="blue">م = <span className="num">{toFaDigits(m)}</span> ماه · ضریب ×<span className="num">{toFaDigits(scale.toFixed(2))}</span></Badge>
+        {hasAnnualization ? (
+          <Badge tone="blue">م = <span className="num">{toFaDigits(m)}</span> ماه · ضریب ×<span className="num">{toFaDigits(scale.toFixed(2))}</span></Badge>
+        ) : null}
         {s2m != null ? (
           <Badge tone={salesThresh == null ? 'gray' : s2m >= salesThresh ? 'green' : 'yellow'}>
             نسبت فروش ÷ ارزش بازار <span className="num">{toFaDigits(s2m.toFixed(2))}</span>×
@@ -607,44 +666,67 @@ function Panel4({ card }: { card: FtsCard }) {
             {potThresh == null ? '' : ` (کف ${toFaDigits(potThresh)}٪)`}
           </Badge>
         ) : null}
+        {/* «چرا ۴ پاس شد»: مسیرِ اول فروش÷ارزش بازار است و مسیرِ دوم
+            پتانسیلِ ۴۰٪ سند v2.1؛ خودِ دروازهٔ OR دست‌نخورده است. */}
+        {acceptPath ? (
+          <span data-testid="drilldown-i4-acceptance">
+            <Badge
+              tone={acceptPath === 'profit_potential' ? 'blue' : 'green'}
+              title={
+                acceptPath === 'profit_potential'
+                  ? '۴۰٪ پتانسیل سود ناخالص ÷ ارزش بازار (مسیر دوم پذیرش)'
+                  : 'فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳× (مسیر اول پذیرش)'
+              }
+            >
+              {acceptPath === 'profit_potential'
+                ? 'پذیرش: پتانسیل سود ۴۰٪ — مسیر دوم سند v2.1'
+                : 'پذیرش: فروش÷ارزش بازار'}
+            </Badge>
+          </span>
+        ) : null}
       </div>
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3">
-        <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
-        <div className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
-          فروش سالانه‌شده = (فروش تجمعی ÷ {toFaDigits(m)} ماه) × {toFaDigits(12)}
-        </div>
-        <div className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
-          <span className="font-bold text-accent-blue">فروش ÷ ارزش بازار = </span>
-          <MathFraction
-            numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
-            denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
-          />
-          <span className="text-accent-green font-bold ms-2">{salesFloorLabel}</span>
-        </div>
-        <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
-          N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.
-        </p>
-        {ytd != null ? (
-          <p className="num mt-1.5 text-2xs text-text-secondary">
-            فروش تجمیعی {fmtInt(ytd)} میلیارد تومان × {toFaDigits(scale.toFixed(2))} = {fmtInt(annualSales ?? 0)} میلیارد تومان سالانه
+        {hasAnnualization ? (
+          <>
+            <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
+            <div className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
+              فروش سالانه‌شده = (فروش تجمعی ÷ {toFaDigits(m)} ماه) × {toFaDigits(12)}
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
+              <span className="font-bold text-accent-blue">فروش ÷ ارزش بازار = </span>
+              <MathFraction
+                numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
+                denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
+              />
+              <span className="text-accent-green font-bold ms-2">{salesFloorLabel}</span>
+            </div>
+            <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
+              N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.
+            </p>
+            {ytd != null ? (
+              <p className="num mt-1.5 text-2xs text-text-secondary">
+                فروش تجمیعی {fmtInt(ytd)} میلیارد تومان × {toFaDigits(scale.toFixed(2))} = {fmtInt(annualSales ?? 0)} میلیارد تومان سالانه
+              </p>
+            ) : null}
+            <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
+              مبنا: {basisLabel}
+              {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
+            </p>
+            {ind?.annual?.reconciled === false ? (
+              <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
+                برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          /* معاف/بی‌داده: هیچ دوره‌ای برایِ سالانه‌سازی نیست — یک سطرِ صریح
+             N/A به‌جایِ «÷ ۱ ماه × ۱۲» و جدولِ ضریبِ ساختگی. */
+          <p className="text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
+            مبنا: {basisLabel}
           </p>
-        ) : null}
-        <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
-          مبنا: {m >= 12 ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)' : `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`}
-          {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
-          {` · واحد: ${toFaDigits(ind?.annual?.fs_unit_label ?? 'نامعلوم')}`}
-        </p>
-        {ind?.annual?.unit_unverified ? (
-          <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unit-unverified">
-            واحدِ پولِ ردیفِ مرجع در کدال اعلام نشده؛ مقیاسِ این عدد راستی‌آزمایی نشده است.
-          </p>
-        ) : ind?.annual?.reconciled === false ? (
-          <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
-            برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
-          </p>
-        ) : null}
+        )}
       </div>
-      {scaleTable.length > 0 ? (
+      {hasAnnualization && scaleTable.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {scaleTable.map((s) => (
             <span
@@ -768,11 +850,11 @@ function Panel5({ card }: { card: FtsCard }) {
       </div>
       {outlook ? <p className="text-2xs leading-relaxed text-text-secondary">چشم‌انداز: {outlook}</p> : null}
       {/* جدولِ ص ۶ جزوه، نه حدسِ رابط: ✗ فقط خودرو و قطعات، نیروگاهی و لاستیک‌اند؛
-          دارویی ✓ و غذایی ✓ (با برچسب «کنترل قیمت»). فهرستِ موتورِ امروز «قند و
-          شکر»، «شوینده» و «بیمه» را هم دستوری می‌شمارد که در جزوه نیست — آن
-          افزودۀ پیاده‌سازی است، نه قانونِ جزوه، و حکمِ نهایی را همان موتور می‌دهد. */}
+          دارویی ✓ و غذایی ✓ (با برچسب «کنترل قیمت»). حکمِ مالک (Task 8): همان سه
+          صنعت فهرستِ الزامیِ موتور هم هستند؛ قند/شوینده/بیمه الزامی نیستند و بیمه
+          وتویِ سختِ جداگانه (`reject_insurance`) دارد. حکمِ نهایی را موتور می‌دهد. */}
       <p className="text-2xs leading-relaxed text-text-muted">
-        جزوه (ص ۶): ✗ خودرو و قطعات، نیروگاهی، لاستیک · ✓ سیمان، فلزات اساسی، پتروشیمی، کانه‌های فلزی، کاشی (بورس کالا / آزاد) · دارویی و غذایی در فهرستِ جزوه ✗ نیستند.
+        جزوه (ص ۶): ✗ خودرو و قطعات، نیروگاهی، لاستیک · ✓ سیمان، فلزات اساسی، پتروشیمی، کانه‌های فلزی، کاشی (بورس کالا / آزاد) · دارویی و غذایی در فهرستِ جزوه ✗ نیستند؛ بیمه وتویِ سختِ جداگانه است.
         {ind?.exclusion_active === false
           ? ' · در حالتِ «فقط رتبه‌بندی»، دستوری وتو نمی‌شود.'
           : ' · حکمِ همین نماد را موتور می‌دهد.'}

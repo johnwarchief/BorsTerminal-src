@@ -1,0 +1,32 @@
+temp db copy dir: C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_xa4rskco
+copy done in 3.4s -> market.db 233.2MB, user.db 0.0MB
+DB_PATH=C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_xa4rskco\market.db
+USER_DB_PATH=C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_xa4rskco\user.db
+
+=== get_db() ladder — per-rung cost (median / p95 / max, ms) ===
+  sqlite3.connect                    med=   0.24  p95=   0.30 max=    0.34  min=  0.21
+  row_factory                        med=   0.01  p95=   0.01 max=    0.02  min=  0.01   ERR AttributeError: 'NoneType' object has no attribute 'row_factory' and no __dict__ for setting new attributes
+  PRAGMA journal_mode=WAL            med=   0.00  p95=   0.00 max=    0.01  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  PRAGMA synchronous=NORMAL          med=   0.00  p95=   0.00 max=    0.00  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  PRAGMA cache_size=-64000           med=   0.00  p95=   0.00 max=    0.00  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  PRAGMA temp_store=MEMORY           med=   0.00  p95=   0.00 max=    0.00  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  PRAGMA mmap_size=256MB             med=   0.00  p95=   0.00 max=    0.00  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  import fts_engine + register_sql   med=   0.01  p95=   0.01 max=    0.02  min=  0.01
+  2x CREATE INDEX IF NOT EXISTS      med=   0.00  p95=   0.00 max=    0.01  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  ensure_market_schema               med=   0.00  p95=   0.00 max=    0.00  min=  0.00
+  ensure_selection_schema            med=   0.00  p95=   0.00 max=    0.00  min=  0.00
+  watchlist_store.ensure_table       med=   0.00  p95=   0.00 max=    0.00  min=  0.00   ERR AttributeError: 'NoneType' object has no attribute 'execute'
+  mstat_engine.ensure_schema         med=   0.02  p95=   0.03 max=    1.07  min=  0.02
+  SUM of medians                        0.30 ms
+
+  full get_db()            med=   3.57 p95=   4.60 min=  3.22 max=    7.50
+  full get_user_db()       med=   5.34 p95=   6.54 min=  4.36 max=    7.27
+  get_db + get_user_db     med=   7.84 p95=  12.72 (what a typical request pays before any query)
+
+=== memory of held connections (get_db settings, per process) ===
+  n=1   WS         0 ->         0 KB (after query         0)   private         0 ->         0 KB
+  n=2   WS         0 ->         0 KB (after query         0)   private         0 ->         0 KB
+  n=4   WS         0 ->         0 KB (after query         0)   private         0 ->         0 KB
+  n=8   WS         0 ->         0 KB (after query         0)   private         0 ->         0 KB
+
+wrote _audit/perf/SQLITE_CONN_BASELINE.json

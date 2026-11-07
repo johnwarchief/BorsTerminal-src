@@ -1,0 +1,217 @@
+{
+ "captured_at": "2026-10-17T21:05:06+03:30",
+ "processes": [
+  "2952|2026-10-15T04:02:44|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1791959588996-53uxp1.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd /c/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/ui-audit-system-2 && BORS_NO_FETCH_LOOPS=1 PYTHONIOENCODING=utf-8 nohup python -u app.py > _audit/ui/backend.log 2>&1 & sleep 12; netstat -ano | grep \\\"TCP.*:8000.*LISTENING\\\"; curl -s -o /dev/null -w \\\"index=%{http_code} bytes=%{size_download}\\n\\\" http://127.0.0.1:8000/; curl -s http://127.0.0.1:8000/api/live-stats | head -c 180; echo; grep -nE \\\"\\[startup\\]|ERROR|Traceback\\\" _audit/ui/backend.log | head -8' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-b49f-cwd\"",
+  "1736|2026-10-15T04:02:45|\"C:\\Program Files\\Git\\usr\\bin\\nohup.exe\" python -u app.py",
+  "13660|2026-10-15T04:02:45|C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -u app.py",
+  "16564|2026-10-16T01:59:10|\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792100254837-k74p8v.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd \\\"C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/uiux-2-0\\\" && grep -n \\\"APP_VERSION\\\" bors_config.py | head -2; PYTHONIOENCODING=utf-8 .venv-ui/Scripts/python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning > /tmp/bors-uiux-8010.log 2>&1' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-d5ae-cwd\"",
+  "14988|2026-10-16T01:59:10|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792100254837-k74p8v.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd \\\"C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/uiux-2-0\\\" && grep -n \\\"APP_VERSION\\\" bors_config.py | head -2; PYTHONIOENCODING=utf-8 .venv-ui/Scripts/python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning > /tmp/bors-uiux-8010.log 2>&1' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-d5ae-cwd\"",
+  "6148|2026-10-16T01:59:10|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792100254837-k74p8v.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd \\\"C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/uiux-2-0\\\" && grep -n \\\"APP_VERSION\\\" bors_config.py | head -2; PYTHONIOENCODING=utf-8 .venv-ui/Scripts/python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning > /tmp/bors-uiux-8010.log 2>&1' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-d5ae-cwd\"",
+  "8028|2026-10-16T01:59:11|C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning",
+  "2676|2026-10-16T01:59:11|C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning",
+  "15108|2026-10-16T21:30:42|\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792100254837-k74p8v.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd /c/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/uiux-2-0/frontend && PYTHONIOENCODING=utf-8 python - <<'\\\"'\\\"'PY'\\\"'\\\"' > /dev/null 2>&1; sed -n '\\\"'\\\"'196,215p'\\\"'\\\"' src/__tests__/order-line-page.spec.tsx' && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-88d1-cwd\"",
+  "13196|2026-10-16T21:30:42|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792100254837-k74p8v.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd /c/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/uiux-2-0/frontend && PYTHONIOENCODING=utf-8 python - <<'\\\"'\\\"'PY'\\\"'\\\"' > /dev/null 2>&1; sed -n '\\\"'\\\"'196,215p'\\\"'\\\"' src/__tests__/order-line-page.spec.tsx' && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-88d1-cwd\"",
+  "7088|2026-10-16T21:30:42|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792100254837-k74p8v.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd /c/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/uiux-2-0/frontend && PYTHONIOENCODING=utf-8 python - <<'\\\"'\\\"'PY'\\\"'\\\"' > /dev/null 2>&1; sed -n '\\\"'\\\"'196,215p'\\\"'\\\"' src/__tests__/order-line-page.spec.tsx' && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-88d1-cwd\"",
+  "18336|2026-10-17T21:05:05|\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792248959764-4u3ow3.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd \\\"C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf\\\" && PYTHONIOENCODING=utf-8 python _test_runs/performance_first_2026-10-18/c0_live_state.py 2>&1 | tail -40' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-05da-cwd\"",
+  "2304|2026-10-17T21:05:05|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792248959764-4u3ow3.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd \\\"C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf\\\" && PYTHONIOENCODING=utf-8 python _test_runs/performance_first_2026-10-18/c0_live_state.py 2>&1 | tail -40' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-05da-cwd\"",
+  "9972|2026-10-17T21:05:05|\"C:\\Program Files\\Git\\bin\\..\\usr\\bin\\bash.exe\" -c \"{ source '/c/Users/Johnkallnaya/.qoder/shell-snapshots/snapshot-bash-1792248959764-4u3ow3.sh' 2>/dev/null || true; } && export PATH=\\\"${__QODER_BASH_PATH_PREFIX:+$__QODER_BASH_PATH_PREFIX:}$PATH\\\" && { shopt -u extglob 2>/dev/null || true; } && eval 'cd \\\"C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf\\\" && PYTHONIOENCODING=utf-8 python _test_runs/performance_first_2026-10-18/c0_live_state.py 2>&1 | tail -40' < /dev/null && pwd -P >| /c/Users/JOHNKA~1/AppData/Local/Temp/qoder-05da-cwd\""
+ ],
+ "ports": {
+  "8000": {
+   "/api/update/version": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 73,
+    "ms": 110.4,
+    "json": {
+     "version": "1.0.86",
+     "tauri": false,
+     "mode": "dev",
+     "instance": "9169895f1f63"
+    }
+   },
+   "/api/mstat/phase": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 651,
+    "ms": 142.9,
+    "json": {
+     "phase": "closed",
+     "label": "پایانِ نشست",
+     "phase_source": "tsetmc_marketState",
+     "official": true,
+     "official_state": "F",
+     "official_state_title": "بسته",
+     "session_day": 20261014,
+     "activity_h_even": 181315,
+     "is_live": false,
+     "verdict_allowed": true,
+     "computable": {
+      "realized_flow": true,
+      "order_pressure": false,
+      "session_vs_threshold": true,
+      "close_price_final": true
+     },
+     "not_computable": [
+      "order_pressure"
+     ],
+     "why_not": {
+      "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست"
+     },
+     "data_updated_at": "2026-10-15 02:17:08",
+     "clock_now": "2026-10-17 21:05:08",
+     "session_start": "09:00",
+     "session_end": "12:30",
+     "status": "ok",
+     "source": "local:market.db"
+    }
+   },
+   "/api/market/sync-state": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 265,
+    "ms": 1352.6,
+    "json": {
+     "status": "success",
+     "running": false,
+     "last": {
+      "stage": "tsetmc",
+      "phase": "error",
+      "detail": "خطای شبکه یا فایروال (10013) در دریافت تابلوخوانی",
+      "total": 0,
+      "current": 0,
+      "symbol": "",
+      "elapsed": 523.6,
+      "percent": 0.0,
+      "ts": "2026-10-15T04:11:52"
+     }
+    }
+   },
+   "/api/sync/status": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 185,
+    "ms": 28.6,
+    "json": {
+     "status": "success",
+     "sync": {
+      "source": "global",
+      "active": false,
+      "symbol": "",
+      "stage": "idle",
+      "detail": "",
+      "phase": "",
+      "total": 0,
+      "current": 0,
+      "percent": 0.0,
+      "elapsed": 0.0,
+      "ts": "",
+      "ban_until": ""
+     }
+    }
+   },
+   "/api/execution/status": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 494,
+    "ms": 23.9,
+    "exists": false
+   }
+  },
+  "8010": {
+   "/api/update/version": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 73,
+    "ms": 218.7,
+    "json": {
+     "version": "1.0.86",
+     "tauri": false,
+     "mode": "dev",
+     "instance": "7c09a8b83bb3"
+    }
+   },
+   "/api/mstat/phase": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 651,
+    "ms": 202.4,
+    "json": {
+     "phase": "closed",
+     "label": "پایانِ نشست",
+     "phase_source": "tsetmc_marketState",
+     "official": true,
+     "official_state": "P",
+     "official_state_title": "بسته",
+     "session_day": 20261017,
+     "activity_h_even": 125930,
+     "is_live": false,
+     "verdict_allowed": true,
+     "computable": {
+      "realized_flow": true,
+      "order_pressure": false,
+      "session_vs_threshold": true,
+      "close_price_final": true
+     },
+     "not_computable": [
+      "order_pressure"
+     ],
+     "why_not": {
+      "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست"
+     },
+     "data_updated_at": "2026-10-17 12:59:45",
+     "clock_now": "2026-10-17 21:05:09",
+     "session_start": "09:00",
+     "session_end": "12:30",
+     "status": "ok",
+     "source": "local:market.db"
+    }
+   },
+   "/api/market/sync-state": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 141,
+    "ms": 1377.5,
+    "json": {
+     "status": "success",
+     "running": false,
+     "last": {
+      "stage": "done",
+      "detail": "بازار: 3,315 نماد ذخیره شد",
+      "ts": "2026-10-17T12:59:56"
+     }
+    }
+   },
+   "/api/sync/status": {
+    "status": 200,
+    "content_type": "application/json",
+    "bytes": 185,
+    "ms": 32.9,
+    "json": {
+     "status": "success",
+     "sync": {
+      "source": "global",
+      "active": false,
+      "symbol": "",
+      "stage": "idle",
+      "detail": "",
+      "phase": "",
+      "total": 0,
+      "current": 0,
+      "percent": 0.0,
+      "elapsed": 0.0,
+      "ts": "",
+      "ban_until": ""
+     }
+    }
+   },
+   "/api/execution/status": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 514,
+    "ms": 44.7,
+    "exists": false
+   }
+  }
+ }
+}

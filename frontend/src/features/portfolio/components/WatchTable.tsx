@@ -28,7 +28,7 @@ import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@sha
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
 import { patternBadges } from '@features/market/lib/tapeBadges';
-import { MicroBadge } from '@features/market/components/TapeTable';
+import { MicroBadge } from '@features/market/components/MicroBadge';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 import {
   MATRIX_STATE_LABEL, matrixBySymbol, useWatchMatrix,

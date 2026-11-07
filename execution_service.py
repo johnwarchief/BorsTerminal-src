@@ -66,6 +66,10 @@ class Limits:
     max_daily_loss: float | None = None
     #: نرخِ ارسال: چند سفارش در `window_seconds` (§۶-۴: حدِ مجاز تعداد سفارش)
     max_orders_per_window: int | None = None
+    #: سقفِ *جمعِ* سفارش‌ها درِ پنجره، بی‌اعتبار به نماد. نبودِ این یکی همان
+    #: نقیصۀ مرجعِ Rust است: limiter آن‌جا هر-ترد بود و بودژۀ جهانی نداشت، پس
+    #: پنجاه نماد = پنجاه برابرِ نرخِ مجازِ حساب. `None` یعنی این گیت خاموش.
+    max_total_orders_per_window: int | None = None
     window_seconds: float = 60.0
     #: تازگیِ داده: اگر تازه‌ترین شاهدِ داده از این بیشتر گذشته باشد، رد (§۳-۳).
     #: `None` یعنی این گیت خاموش است (رفتارِ پیشینِ سرخطی).
@@ -307,16 +311,26 @@ class ExecutionService:
             except BrokerError as e:
                 p.add("balance", UNKNOWN, e.code.value)
 
-        # تکراری‌بودن (بندِ ۱۹) — هم حافظه، هم ردِّپایِ ماندگار. پسِ restart
-        # دیکشنریِ درحافظه خالی است و اگر فقط به او نگاه کنیم همان `execution_id`
-        # دوباره فرستاده می‌شود؛ ردِّپا رویِ دیسک همان را می‌گیرد.
-        seen_local = draft.execution_id in self._ledger
+        # تکراری‌بودن (بندِ ۱۹) — هم ردِّپا، هم هر چیزی که *این* پروسه قبلاً
+        # دربارهٔ همان شناسه تصمیم گرفته است. سه منبع، به ترتیبِ زودخجازد:
+        #  ۱) `_ledger` — رکوردِ اجراشده (پذیرش، خطا، نامعلوم)؛
+        #  ۲) `_prepared` — رزروِ یکِ prepare که هنوز execute نشده. بی‌این، دو
+        #     درخواستِ هم‌زمانِ یکِ `execution_id` هر دو preflight را رد می‌کردند:
+        #     درِ `api/execution.py` قفل میانِ prepare و execute رها می‌شود (تا
+        #     توقفِ اضطراری پشتِ یکِ POSTِ ۷ ثانیه‌ای گیر نکند) و کارگزاری دو
+        #     سفارش می‌گرفت. زیرِ بارِ CPU این رقابت واقعاً دو سفارش ساخت —
+        #     «race-now ⇒ 1 سفارش» با got 2 شکست و این سنجه همان را قفل می‌کند.
+        #  ۳) ردِّپایِ ماندگار — پسِ restart دیکشنری‌هایِ درحافظه خالی‌اند.
+        seen_local = (draft.execution_id in self._ledger
+                      or draft.execution_id in self._prepared)
         seen_durable = False
         if self.audit is not None and not seen_local:
             seen_durable = bool(self.audit.events(execution_id=draft.execution_id,
                                                   kinds=("dispatch",), limit=1))
         p.add("duplicate", FAIL_ if (seen_local or seen_durable) else PASS,
-              "already dispatched (durable trail)" if seen_durable else "")
+              "already dispatched (durable trail)" if seen_durable
+              else ("another prepare holds this id"
+                    if draft.execution_id in self._prepared else ""))
         # تواناییِ ارسال
         p.add("place", PASS if caps.place else FAIL_, "broker cannot place orders")
 
@@ -521,9 +535,15 @@ class ExecutionService:
             _carry_state(rec, hit, "reconciled from broker order list")
             self._audit_state(rec, "reconcile", "found on broker list")
         else:
-            rec.status = ExecutionStatus.FAILED
-            rec.note("reconciled: broker has no such order")
-            self._audit_state(rec, "reconcile", "broker has no such order")
+            # نبودنِ ردیف درِ فهرستِ کارگزاری اثباتِ «نرسیدن» نیست: همان فهرست
+            # ممکن است عقب بماند یا ردیفِ تازه را هنوز نسازد، و تطبیقِ این لایه
+            # باِ `execution_id` فقط وقتی کار می‌کند که ردیف پیش‌تر وصل شده باشد.
+            # پس حالت *ناشناخته* می‌ماند — تنها حالتی که دروازۀ «اول تعیین تکلیف،
+            # بعد هر چیزِ دیگر» را باز نمی‌کند. `FAILED` فقط باِ شواهدِ مثبتِ رد
+            # نوشته می‌شود (پاسخِ صریحِ OMS)، نه باِ غیبت.
+            rec.note("reconcile inconclusive: broker list does not show it "
+                     "(absence is not proof of failure)")
+            self._audit_state(rec, "reconcile", "inconclusive: absent from broker list")
         return rec
 
     # ---- ۴-پ) خواندنِ وضعیت / صف (بندِ ۱۸) ---------------------------------
@@ -596,6 +616,74 @@ class ExecutionService:
             if i + 1 < max(1, int(samples)):
                 sleep(interval_ms / 1000.0)
         return seen
+
+    # ---- ۴-ت) لغوِ سفارش (بندِ ۱۹) ----------------------------------------
+    def cancel(self, execution_id: str, *, reason: str = "user") -> ExecutionRecord:
+        """لغوِ سفارشی که *واقعاً* به کارگزاری رفته است — باِ شواهد، نه باِ خواست.
+
+        چهار رأیِ جدا، و هیچ‌کدام بدلِ دیگری نمی‌شود:
+          • `capabilities.cancel` صریح False ⇒ `UNSUPPORTED` و **هیچ** درخواستی
+            ساخته نمی‌شود (سیمِ لغو درِ هیچ مرجعِ بازبینی‌شده‌ای نبود — §۷-الف).
+          • بی‌`broker_order_id` ⇒ لغوِ چیزی که اثبات نشده فرستاده شده ممکن نیست؛
+            «لغوِ پیش‌نویس» کارِ این در نیست (زمان‌بندیِ نجوشیده ازِ
+            `DELETE /schedule` لغو می‌شود).
+          • سفارش درِ حالتِ بسته ⇒ بی‌اثر، ولی یادداشت و ردِّپا می‌ماند: «لغو شد»
+            دربارهٔ سفارشِ پرشده ادعایِ دروغ است.
+          • ادapte `True` می‌گوید ولی بازخوانیِ وضعیت `cancelled` را نشان ندهد ⇒
+            فقط «پذیرفته شد، تأیید نشده» نوشته می‌شود. پاسخِ موفقِ یکِ فراخوان
+            به‌تنهایی «لغو تأیید شد» نیست — همان قاعدۀ «۲۰۰ ≠ پذیرش» (§۴-ج).
+        خطایِ شبکه/timeout درِ لغو هم نتیجه را نامعلوم می‌گذارد و هیچ تلاشِ
+        دوباره‌ای نمی‌شود؛ ابهام باِ «رفعِ ابهام» حل می‌شود، نه باِ تکرار.
+        """
+        rec = self._ledger.get(execution_id)
+        if rec is None:
+            raise ExecutionError(ErrorCode.INVALID_EXECUTION_ID,
+                                 f"no such execution {execution_id}")
+        caps = self.adapter.capabilities()
+        if not caps.cancel:
+            raise ExecutionError(ErrorCode.UNSUPPORTED,
+                                 "لغو درِ capabilities این اتصال اعلام نشده "
+                                 "(cancel=false) — هیچ درخواستی ساخته نمی‌شود")
+        if not rec.broker_order_id:
+            raise ExecutionError(ErrorCode.NOT_ORDERABLE,
+                                 "شناسۀِ کارگزاری این اجرا معلوم نیست؛ لغوِ سفارشی "
+                                 "که رفتنش اثبات نشده ممکن نیست")
+        if rec.order_state in TERMINAL_ORDER_STATES:
+            rec.note(f"cancel skipped: order already {rec.order_state.value}")
+            self._audit_state(rec, "cancel",
+                              f"skipped: terminal {rec.order_state.value} ({reason})")
+            return rec
+        try:
+            accepted = bool(self.adapter.cancel_order(rec.broker_order_id))
+        except BrokerError as e:
+            rec.note("cancel ambiguous: no clean answer from the broker — "
+                     "nothing was retried")
+            self._audit_state(rec, "cancel", f"ambiguous: {e.code.value}")
+            raise ExecutionError(e.code,
+                                 "از لغو پاسخِ روشنی نرسید — نتیجه نامعلوم؛ "
+                                 "«رفعِ ابهام» با «تلاشِ دوباره» یکی نیست") from None
+        if not accepted:
+            rec.note("cancel refused by broker")
+            self._audit_state(rec, "cancel", f"refused by broker ({reason})")
+            raise ExecutionError(ErrorCode.BROKER_REJECTED,
+                                 "کارگزاری لغو را رد کرد (سفارش لغوپذیر نیست)")
+        proof = None
+        if caps.order_state:
+            try:
+                proof = self.adapter.get_order(rec.broker_order_id)
+            except BrokerError:
+                proof = None
+        if proof is not None and proof.order_state is OrderState.CANCELLED:
+            _carry_state(rec, proof, "cancelled — confirmed by broker read-back")
+            self._audit_state(rec, "cancel", f"confirmed ({reason})")
+        else:
+            rec.note("cancel accepted but read-back does not confirm it yet")
+            self._audit_state(rec, "cancel",
+                              "accepted, unconfirmed (%s) — %s" % (
+                                  reason,
+                                  "read-back unavailable" if proof is None
+                                  else "read-back says " + proof.order_state.value))
+        return rec
 
     # ---- ۵) تکرار با گارد (بندِ ۱۵) ---------------------------------------
     def plan_repeat(self, draft: OrderDraft, count: int, delay_ms: int, *,
@@ -678,6 +766,20 @@ class ExecutionService:
                 raise ExecutionError(ErrorCode.RISK_LIMIT,
                                      f"ضررِ امروز ({pnl:.0f}) به سقفِ {lim.max_daily_loss:.0f} "
                                      "رسیده — ارسالِ تازه ممنوع")
+
+        if lim.max_total_orders_per_window is not None:
+            total = None if self.audit is None else self.audit.orders_in_window(
+                lim.window_seconds, symbol=None)
+            if total is None:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     "سقفِ جمعیِ سفارش تعریف شده ولی ردِّپایِ ماندگار "
+                                     "وصل نیست — نمی‌دانیم درِ پنجره چندتا فرستاده",
+                                     checks={"order_rate_total": UNKNOWN})
+            if total + n > lim.max_total_orders_per_window:
+                raise ExecutionError(
+                    ErrorCode.RISK_LIMIT,
+                    f"{total + n} سفارش درِ {lim.window_seconds:.0f} ثانیه (همۀ نمادها)، "
+                    f"سقفِ جمعی {lim.max_total_orders_per_window}")
 
         if lim.max_orders_per_window is not None:
             sent = None if self.audit is None else self.audit.orders_in_window(

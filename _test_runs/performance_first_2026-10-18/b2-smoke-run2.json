@@ -1,0 +1,151 @@
+{
+ "bundle": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\system2-perf\\dist\\BorsTerminal_Ultimate",
+ "port": 8123,
+ "tag": "run2",
+ "checks": [
+  {
+   "name": "بوتِ بک‌اندِ بسته‌شده (بی‌pythonِ سیستم)",
+   "ok": true,
+   "detail": "10.3s"
+  },
+  {
+   "name": "نسخهٔ بسته",
+   "ok": true,
+   "detail": {
+    "version": "1.0.86",
+    "tauri": false,
+    "mode": "portable",
+    "instance": "d8815786a4af"
+   }
+  },
+  {
+   "name": "SPA ازِ داخلِ بسته سرو می‌شود",
+   "ok": true,
+   "detail": "200 494B"
+  },
+  {
+   "name": "بستهٔ سروشده برچسبِ اصلاحِ F1 را دارد",
+   "ok": true,
+   "detail": "/assets/index-JYkNGBQN.js sha256=2df8d540276aec671d5bf9b5bb9f381d17a09c220ca694d14a8390fbf367d901"
+  },
+  {
+   "name": "`/api/market` gzip سطحِ پیش‌فرض (بی‌BORS_GZIP_LEVEL)",
+   "ok": true,
+   "detail": "wire=1503653B decoded=6355843B gzip MISS 16243.3ms"
+  },
+  {
+   "name": "GETِ مشروطِ تابلو ⇒ ۳۰۴ِ صفر‌بایت",
+   "ok": true,
+   "detail": 304
+  },
+  {
+   "name": "قیفِ POST ⇒ ۲۰۰ + X-Cache",
+   "ok": true,
+   "detail": "HIT wire=467878B decoded=7488689B 51896.1ms (sent at +27.2s)"
+  },
+  {
+   "name": "قیفِ دوم درِ همان TTL ⇒ HIT، بدنه (بی‌cached_for_ms) یکی",
+   "ok": true,
+   "detail": "44.6ms vs 51896.1ms same=True"
+  },
+  {
+   "name": "POSTِ مشروط ⇒ ۴۱۲ِ بی‌بدنه (نه ۳۰۴)",
+   "ok": true,
+   "detail": 412
+  },
+  {
+   "name": "GETِ مشروطِ قیف ⇒ ۳۰۴ِ صفر‌بایت",
+   "ok": true,
+   "detail": "200→304 HIT-304"
+  },
+  {
+   "name": "اسکرینر ۲۰۰ با ردیف و دروازهٔ قیفِ اعمال‌شده",
+   "ok": true,
+   "detail": "922 ردیف، gate=applied 346.2ms"
+  },
+  {
+   "name": "دادهٔ واقعی ازِ بانکِ کپی‌شده",
+   "ok": true,
+   "detail": "5981 ردیف، last_sync=2026-10-15 02:17:08"
+  },
+  {
+   "name": "بسته بسته شد و پورت آزاد است",
+   "ok": true,
+   "detail": "pid=15864"
+  },
+  {
+   "name": "لاگِ بسته بی‌Traceback/ERROR",
+   "ok": true,
+   "detail": "162 خط، 0 خطِ خطا"
+  },
+  {
+   "name": "پیش‌پرواز بی‌دانلود و بی‌ادغامِ baseline",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "هیچ دریافتِ تاریخچه‌ای ازِ شبکه به بانک نرسید",
+   "ok": true,
+   "detail": "26 خطِ [history]، 0 ذخیره"
+  }
+ ],
+ "at": "2026-10-18 00:46:33",
+ "prep": {
+  "market_db_sha256": "9d557a533fc51e8356528da634e2f468154ad85625cdace713f6fb434eeb4f34",
+  "lzma_sha256": "e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157",
+  "baseline_stamp": "e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157",
+  "screener_disk_cache_present": false
+ },
+ "env_overrides": {
+  "BORS_PORT": "8123",
+  "BORS_NO_FETCH_LOOPS": "1",
+  "HTTP_PROXY": "http://127.0.0.1:9",
+  "HTTPS_PROXY": "http://127.0.0.1:9",
+  "NO_PROXY": "127.0.0.1,localhost"
+ },
+ "exe_sha256": "a05d8c13659dec8c90f5ca90bf70254430dce8bf1707453cb857424bfa86ab3b",
+ "pid": 15864,
+ "boot_s": 10.3,
+ "version": {
+  "version": "1.0.86",
+  "tauri": false,
+  "mode": "portable",
+  "instance": "d8815786a4af"
+ },
+ "funnel_first": {
+  "sent_at_s": 27.2,
+  "ms": 51896.1,
+  "xc": "HIT",
+  "status": 200
+ },
+ "exe_stdout_lines": 0,
+ "bundle_log": {
+  "path": "b2-smoke-run2-bors.log",
+  "sha256": "34b0636ebb28343e925b888a0fa0cb600b60342e1b939d2dd2a36ef440e457a8",
+  "lines": 162,
+  "error_lines": [],
+  "history_lines": 26,
+  "history_rows_saved": 0,
+  "history_samples": [
+   "  [history] فولاد: error - ProxyError: HTTPSConnectionPool(host='cdn.tsetmc.com', port=443): Max retries exceeded with url: /api/ClosingPrice/GetClosingPriceDailyListCSV/46348559193224090/20261015 (Caused by ProxyError('Unable to connect to proxy', NewConnectionError(\"HTTPSConnection(host='127.0.0.1', port=9): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\")))",
+   "  [history] آلومینا: ins_code not found in instruments",
+   "  [history] کوچین: ins_code not found in instruments",
+   "  [history] ساربیل: ins_code not found in instruments",
+   "  [history] شکلر: ins_code not found in instruments",
+   "  [history] الکتروماد: ins_code not found in instruments",
+   "  [history] غمینو: ins_code not found in instruments",
+   "  [history] کپرسپولیس: ins_code not found in instruments"
+  ],
+  "release_download": [],
+  "baseline_merge": [],
+  "screener": [
+   "[screener] cache miss, running heavy bulk scan...",
+   "[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10",
+   "[screener] saved to disk cache",
+   "[screener] cache warmed"
+  ]
+ },
+ "market_db_sha256_after": "9d557a533fc51e8356528da634e2f468154ad85625cdace713f6fb434eeb4f34",
+ "summary": "16/16",
+ "rc": 0
+}

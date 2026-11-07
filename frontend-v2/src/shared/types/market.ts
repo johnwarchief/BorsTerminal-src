@@ -78,6 +78,9 @@ export const MarketMetaSchema = z.looseObject({
   d_even: num,
   h_even: num,
   last_sync: z.string().nullish(),
+  live: z.boolean().nullish(),
+  live_at: num,
+  live_err: z.string().nullish(),
 });
 
 export const MarketFeedSchema = z.looseObject({

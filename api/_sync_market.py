@@ -99,9 +99,18 @@ def _sync_market_on_start():
     تابلو/اسکرینر را بازمی‌سازد، پس نخستین درخواستِ هر تب پشتِ همان کار می‌ماند.
     بیرونِ پنجرۀ رسمی، اگر بانک *همینِ روزِ نشست* را دارد، داده چیزی عوض
     نمی‌کند — پس سرو می‌شود و شبکه صدا زده نمی‌شود. بی‌داده‌ی امروز یا درِ
-    نشستِ باز، رفتارِ پیشین دست‌نخورده است."""
+    نشستِ باز، رفتارِ پیشین دست‌نخورده است.
+
+    `_SYNC_DECIDED` + `_SYNC_WILL_RUN` برایِ زمان‌بندیِ گرم‌کردنِ اسکرینر است،
+    نه برایِ داوریِ داده: `_run_market_sync` درِ پایانِ خودش اسکرینر را دوباره
+    گرم می‌کند، پس اگر سینک در کار باشد، گرم‌کردنِ هم‌زمانِ بوت دور ریخته
+    می‌شود (سنجش ۱۴۰۵-۰۷-۲۳: دوِ بیلدِ کاملِ اسکرینر درِ یکِ بوت، و اولین
+    درخواستِ تب بنیادی ۹۹ ثانیه پشتِ بازسازیِ سنگین).
+    """
     if _market_sync_alive():
         print("[startup] market sync already running — skip")
+        _SYNC_WILL_RUN[0] = True          # نخِ دیگری در کار است؛ او گرم می‌کند
+        _SYNC_DECIDED.set()
         return
     try:
         import datetime as _dt
@@ -115,10 +124,46 @@ def _sync_market_on_start():
             if have and have >= today:
                 print(f"[startup] market closed and board is from {have} — "
                       "serving the stored session, no network sync")
+                _SYNC_WILL_RUN[0] = False
+                _SYNC_DECIDED.set()
                 return
         threading.Thread(target=_run_market_sync, daemon=True).start()
+        _SYNC_WILL_RUN[0] = True
+        _SYNC_DECIDED.set()
         print("[startup] market sync thread spawned")
     except Exception as e:
+        _SYNC_WILL_RUN[0] = False
+        _SYNC_DECIDED.set()
         print(f"[startup] market sync failed to start: {e}")
 
 _MARKET_SYNC_LOCK = threading.Lock()
+
+
+# ---- زمان‌بندیِ گرم‌کردنِ اسکرینر درِ بوت (PERF-S6) --------------------
+# `_run_market_sync` درِ پایانِ خودش `invalidate_screener_cache()` و
+# `warm_screener_cache()` می‌زند. اگر hookِ بوت *هم‌زمان* اسکرینر را گرم کند،
+# آن بیلد دور ریخته می‌شود و بیلدِ دوم شروع می‌شود — سنجشِ ۱۴۰۵-۰۷-۲۳ رویِ
+# لپ‌تاپِ ۴هسته‌ای: دوِ بیلدِ کاملِ `bulk_scan` درِ یکِ بوت و ۹۹ ثانیه ماندنِ
+# اولین درخواستِ `/api/screener` (تب بنیادی) پشتِ بازسازی. این دو نشانه فقط
+# زمان‌بندی را می‌گویند، هیچ داوریِ داده‌ای را عوض نمی‌کنند.
+_SYNC_DECIDED = threading.Event()
+_SYNC_WILL_RUN = [False]
+
+
+def mark_sync_not_scheduled() -> None:
+    """وقتی حلقه‌هایِ شبکه آگاهانه خاموش‌اند: سینکی در کار نیست، گرم‌کردنِ
+    اسکرینر نباید منتظرِ داوریِ آن بماند."""
+    _SYNC_WILL_RUN[0] = False
+    _SYNC_DECIDED.set()
+
+
+def screener_warm_should_skip(wait_s: float = 25.0) -> bool:
+    """True ⇒ سینکِ بوت در کار است و خودش اسکرینر را گرم می‌کند.
+
+    بی‌صبر تا `wait_s` برایِ *داوریِ* سینک؛ اگر داوری نرسید (بررسیِ پروسهٔ
+    بیرونی با PowerShell لنگ بزند) False می‌دهد تا گرم‌کردنِ بوت همان کارِ
+    همیشگی را بکند — پس هیچ‌وقت «تب بنیادی بی‌کشِ گرم» از این مسیر نمی‌سازیم.
+    """
+    if not _SYNC_DECIDED.wait(wait_s):
+        return False
+    return bool(_SYNC_WILL_RUN[0])

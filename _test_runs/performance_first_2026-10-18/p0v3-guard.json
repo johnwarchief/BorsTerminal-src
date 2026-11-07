@@ -1,0 +1,27 @@
+{
+ "at": "2026-10-18 00:22:26",
+ "funnel_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+ "db_pristine_before": true,
+ "rounds": [
+  {
+   "round": 1,
+   "rc": 1,
+   "dur_s": 51.0,
+   "head_check": "ok   ۲۱ HEAD بی‌بدنه می‌ماند (امروز 405) و POSTِ شرطی 304 نمی‌گیرد  [{'get': 200, 'head': 405, 'head_bytes': 0, 'post_cond': 412, 'post_xc': 'HIT'}]",
+   "green": 23,
+   "red": 1,
+   "log": "p0v3-guard-1.txt"
+  },
+  {
+   "round": 2,
+   "rc": 0,
+   "dur_s": 50.9,
+   "head_check": "ok   ۲۱ HEAD بی‌بدنه می‌ماند (امروز 405) و POSTِ شرطی 304 نمی‌گیرد  [{'get': 200, 'head': 405, 'head_bytes': 0, 'post_cond': 412, 'post_xc': 'HIT'}]",
+   "green": 24,
+   "red": 0,
+   "log": "p0v3-guard-2.txt"
+  }
+ ],
+ "ready_s": 3.745203971862793,
+ "db_pristine_after": true
+}

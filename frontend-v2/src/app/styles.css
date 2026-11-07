@@ -117,6 +117,191 @@ html[data-theme='cool'] {
   --down-soft: rgba(176, 44, 55, 0.08);
 }
 
+/* ===== سطح داده از تم برنامه ارث می‌برد؛ هیچ تم مستقل/سوییچی وجود ندارد. ===== */
+.fundamental-surface {
+  /* R-UNSLOP-2: پایهٔ سطح روی مقیاس می‌نشیند؛ وگرنه ۱۲٫۵pxِ بدنه به‌عنوان ارث به گره‌های بی‌کلاس نشت می‌کند. */
+  font-size: 12px;
+  --fd-bg: var(--bg); --fd-panel: var(--panel); --fd-panel-2: var(--panel-2); --fd-panel-3: var(--panel-3);
+  --fd-line: var(--line); --fd-line-strong: var(--line-strong);
+  --fd-text: var(--text); --fd-text-2: var(--text-2); --fd-text-3: var(--text-3);
+  --fd-accent: var(--accent); --fd-up: var(--up); --fd-down: var(--down);
+  --fd-warn: var(--warn); --fd-flat: var(--flat);
+  --fd-grid: color-mix(in srgb, var(--text-3) 16%, transparent);
+}
+.fundamental-surface .fd-status--pass { color: var(--fd-up); }
+.fundamental-surface .fd-status--fail { color: var(--fd-down); }
+.fundamental-surface .fd-status--na { color: var(--fd-flat); }
+.fundamental-surface .fd-status--unknown { color: var(--fd-warn); }
+/* ===== R-UNSLOP · تایپوگرافیِ سطح بنیادی =====
+   شش جفتِ اندازه/وزن برایِ پروفایل، دو جفت برایِ جدولِ هر چگالی، و هیچ متنِ
+   فارسیِ زیرِ ۱۱px. سلسله‌مراتب با اندازه و رنگ ساخته می‌شود، نه با bold:
+   `<b>/<strong>` روی همین سطح به ۵۰۰ می‌نشیند تا ۷۰۰/۸۰۰ باقی نماند.
+   قاعده‌ها با پیشوندِ سطح نوشته شده‌اند تا از قاعدهٔ `<b>` سنگین‌تر باشند. */
+.fundamental-surface {
+  --fd-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --fd-cell-fs: 12px;
+  --fd-grid-gap: 8px;
+}
+.fundamental-surface b,
+.fundamental-surface strong {
+  font-weight: 500;
+}
+/* برچسب و متا ۱۲/۴۰۰ · متنِ روان ۱۳/۴۰۰ · تیترِ پنل ۱۳/۵۰۰
+   عددِ اصلیِ پنل ۲۰/۵۰۰ · تیترِ نماد ۱۶/۵۰۰ · واژهٔ وضعیت ۱۲/۵۰۰ */
+.fundamental-surface .fd-meta { font-size: 12px; font-weight: 400; line-height: 1.45; }
+.fundamental-surface .fd-secondary { font-size: 13px; font-weight: 400; line-height: 1.55; }
+.fundamental-surface .fd-title { font-size: 13px; font-weight: 500; line-height: 1.4; }
+.fundamental-surface .fd-figure { font-size: 20px; font-weight: 500; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.fundamental-surface .fd-heading { font-size: 16px; font-weight: 500; line-height: 1.3; }
+.fundamental-surface .fd-status-word { font-size: 12px; font-weight: 500; line-height: 1.4; }
+/* جدولِ بنیادی: راحت ۱۲px، فشرده ۱۱px؛ هر دو چگالی فقط ۴۰۰ و ۵۰۰ می‌بیند. */
+.fundamental-surface .fd-table { --fd-cell-fs: 12px; }
+.fundamental-surface .fd-table--compact { --fd-cell-fs: 11px; }
+.fundamental-surface .fd-cell-meta { font-size: var(--fd-cell-fs); font-weight: 400; line-height: 1.4; }
+.fundamental-surface .fd-cell-strong { font-size: var(--fd-cell-fs); font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; }
+/* مهرِ وضعیت: واژهٔ فارسی + یک نقطهٔ رنگیِ ۶پیکسلی، در جدول، پنل و روبان یکی. */
+.fundamental-surface .fd-status-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.fundamental-surface .fd-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+.fundamental-surface .fd-chart-track { fill: color-mix(in srgb, var(--fd-text-3) 16%, transparent); }
+.fundamental-surface .fd-chart-fill { fill: var(--fd-up); }
+.fundamental-surface .fd-chart-fill.is-fail { fill: var(--fd-down); }
+.fundamental-surface .fd-chart-fill.is-na { fill: var(--fd-flat); }
+.fundamental-surface .fd-chart-fill.is-unknown { fill: var(--fd-warn); }
+.fundamental-surface .fd-chart-bar { fill: var(--fd-up); }
+.fundamental-surface .fd-chart-bar.is-fail { fill: var(--fd-down); }
+.fundamental-surface .fd-chart-bar.is-na { fill: var(--fd-flat); }
+.fundamental-surface .fd-chart-bar.is-unknown { fill: var(--fd-warn); }
+.fundamental-surface .fd-history-bar.is-pass { background: var(--fd-up); }
+.fundamental-surface .fd-history-bar.is-fail { background: var(--fd-down); }
+.fundamental-surface .fd-history-bar.is-na { background: var(--fd-flat); }
+.fundamental-surface .fd-history-bar.is-unknown { background: var(--fd-warn); }
+/* R-P1-8: تُنِ «شاهد» خنثی است؛ نه رنگِ قبول و نه رد. */
+.fundamental-surface .fd-history-bar.is-evidence { background: var(--fd-text-3); }
+/* R-P1-3/R-P1-5: میله‌های رشد دوره‌ای EPS؛ مثبت/منفی، صفرِ بی‌تغییر و خالیِ بی‌رنگ.
+   R-UNSLOP-4: شعاعِ سرِ میله ۲px است (نه ۱px) و از همین‌جا می‌آید، نه از utility. */
+.fundamental-surface .fd-delta-bar,
+.fundamental-surface .fd-history-bar { border-radius: 2px 2px 0 0; display: block; width: 100%; }
+.fundamental-surface .fd-delta-bar.is-up { background: var(--fd-up); }
+.fundamental-surface .fd-delta-bar.is-down { background: var(--fd-down); }
+.fundamental-surface .fd-delta-bar.is-flat { background: var(--fd-flat); }
+.fundamental-surface .fd-delta-bar.is-empty { background: transparent; }
+.fundamental-surface .fd-th-line { stroke: var(--fd-accent); stroke-width: 1; stroke-dasharray: 2 2; opacity: .9; }
+.fundamental-surface .fd-chart-tick { stroke: var(--fd-line-strong); stroke-width: .8; }
+.fundamental-surface .fd-chart-text { fill: var(--fd-text-3); font-family: inherit; font-variant-numeric: tabular-nums; }
+.fundamental-surface .fd-regime-dot { background: var(--fd-line-strong); }
+.fundamental-surface .fd-regime-dot.is-active { outline: 1px solid var(--fd-text-2); outline-offset: 1px; }
+.fundamental-surface .fd-regime-dot.is-active.is-pass { background: var(--fd-up); }
+.fundamental-surface .fd-regime-dot.is-active.is-fail { background: var(--fd-down); }
+.fundamental-surface .fd-regime-dot.is-active.is-na { background: var(--fd-flat); }
+.fundamental-surface .fd-regime-dot.is-active.is-unknown { background: var(--fd-warn); }
+.fundamental-surface .fd-glyph span { background: var(--fd-line-strong); }
+.fundamental-surface .fd-glyph span.is-pass { background: var(--fd-up); }
+.fundamental-surface .fd-glyph span.is-fail { background: var(--fd-down); }
+.fundamental-surface .fd-glyph span.is-na { background: var(--fd-flat); }
+.fundamental-surface .fd-glyph span.is-unknown { background: var(--fd-warn); }
+
+/* ===== حرکتِ مهارشده و فوکوسِ سطح بنیادی (R73/R76/R77/R78/R80 + R-UNSLOP-6) =====
+   فقط opacity/transform؛ هیچ height/top/margin/left انیمیت نمی‌شود تا layout
+   جدولِ ۷۸۳ ردیفی تکان نخورد. ورودِ ردیف‌ها عمداً بی‌انیمیشن است.
+   fd-in فقط روی ریشهٔ Quintet/ScoreRibbon؛ fd-enter روی ۹ wrapper جزئیات.
+   R-UNSLOP-6: پلکانِ شش‌پله‌ای و سقفِ ۲۰۰ms — از فرزندِ هفتم به بعد همه روی
+   آخرین پله می‌نشینند (پلکانِ نه‌تایی و ۳۲۰ms بویِ قالب می‌داد) و کلِ حرکتِ
+   سطح یک منحنیِ شتاب دارد: --fd-ease. */
+.fundamental-surface .fd-in,
+.fundamental-surface .fd-enter {
+  animation: fdIn 200ms var(--fd-ease) both;
+}
+.fundamental-surface .fd-in:nth-child(2),
+.fundamental-surface .fd-enter:nth-child(2) { animation-delay: 40ms; }
+.fundamental-surface .fd-in:nth-child(3),
+.fundamental-surface .fd-enter:nth-child(3) { animation-delay: 80ms; }
+.fundamental-surface .fd-in:nth-child(4),
+.fundamental-surface .fd-enter:nth-child(4) { animation-delay: 120ms; }
+.fundamental-surface .fd-in:nth-child(5),
+.fundamental-surface .fd-enter:nth-child(5) { animation-delay: 160ms; }
+.fundamental-surface .fd-in:nth-child(6),
+.fundamental-surface .fd-enter:nth-child(6),
+.fundamental-surface .fd-enter:nth-child(n+7) { animation-delay: 200ms; }
+
+@keyframes fdIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* نمودارهای نمای نماد: کشیده‌شدنِ افقی از لبهٔ راست (RTL) — بدون انیمیشنِ loop. */
+.fundamental-surface .fd-draw {
+  animation: fdDraw 260ms var(--fd-ease) both;
+  transform-origin: right center;
+}
+
+@keyframes fdDraw {
+  from {
+    opacity: 0;
+    transform: scaleX(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* R78: تغییر density، یک‌بار بدنهٔ جدول را ۱۶۰ms محو می‌کند؛ خودِ
+   ردیف‌ها و نمودارها نه remount می‌شوند نه transition دارند. */
+.fundamental-surface .fd-scroll {
+  transition: opacity 160ms ease-out;
+}
+.fundamental-surface .fd-scroll.is-fading {
+  opacity: .65;
+}
+
+/* R76: فوکوسِ ردیف و ریشهٔ پنل با توکنِ fd، فقط برای :focus-visible. */
+.fundamental-surface .fd-row:focus-visible,
+.fundamental-surface .fd-panel:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: -2px;
+}
+
+/* R76: زیر reduced-motion، fd-in/fd-draw فقط محوِ کوتاهِ opacity می‌شوند؛
+   transform و stagger حذف می‌شوند. قاعدهٔ سراسریِ بالا هم مدت‌ها را کوتاه می‌کند. */
+@media (prefers-reduced-motion: reduce) {
+  .fundamental-surface .fd-in,
+  .fundamental-surface .fd-draw,
+  .fundamental-surface .fd-enter {
+    animation: fdFadeOnly 120ms var(--fd-ease) both;
+    animation-delay: 0ms !important;
+  }
+  /* R78: کاهش حرکت، crossfade جدول را هم خاموش می‌کند. */
+  .fundamental-surface .fd-scroll {
+    transition: none;
+  }
+}
+
+@keyframes fdFadeOnly {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ===== geometry tokens ===== */
 :root {
   --rail-w: 208px;
@@ -163,6 +348,16 @@ html[data-theme='cool'] {
     --row-h: 48px;
     --row-fs: 14px;
     --sym-max: 290px;
+  }
+}
+
+/* ===== technical workspace shell (B5) =====
+   قفسهٔ ۲۸۰px در عرض‌های ≥1441px؛ زیرِ آن ریل به ۲۴۰px باریک می‌شود تا
+   سهمِ چارت از ویوپورتِ ۱۳۶۶px زیرِ ۶۰٪ نیفتد (حساب: 1366 − 208 سایدبار
+   − 40 فعالیت − 40 نوار رسم − 240 ریل = 838 → 61.3٪). */
+@media (max-width: 1440px) {
+  .workspace-grid {
+    --ws-grid-columns: 40px minmax(0, 1fr) 240px;
   }
 }
 
@@ -272,6 +467,35 @@ body {
 }
 .tape-btn.is-all[aria-pressed='true'] {
   border-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
+}
+/* R42 — tape-btn داخل سطح بنیادی از توکن‌های --fd-* رنگ می‌گیرد؛
+   این توکن‌ها alias تم برنامه‌اند و سطح مستقل ندارند.
+   R-UNSLOP-1/2/5: در همین سطح ارتفاع ۲۴، شعاع ۸ (کنترل) و متن ۱۲px —
+   پوستهٔ بیرونیِ برنامه (تابلو) دست‌نخورده می‌ماند. */
+.fundamental-surface .tape-btn {
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  border-color: var(--fd-line-strong);
+  background: var(--fd-panel);
+  color: var(--fd-text-2);
+}
+.fundamental-surface .tape-btn:hover {
+  border-color: var(--fd-accent);
+  color: var(--fd-text);
+}
+.fundamental-surface .tape-btn:focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
+.fundamental-surface .tape-btn[aria-pressed='true'],
+.fundamental-surface .tape-btn[aria-expanded='true'] {
+  border-color: var(--fd-accent);
+  color: var(--fd-accent);
+  background: var(--fd-panel-2);
 }
 .status-card {
   min-width: 0;

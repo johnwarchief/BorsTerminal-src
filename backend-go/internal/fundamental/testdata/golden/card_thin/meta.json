@@ -13,7 +13,7 @@
   ],
   "call": "api.fundamental.get_fundamental(symbol, months)"
  },
- "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "python_commit": "d3a266d867b7426384de9377f9ececcc0a52d5f8",
  "fixture": {
   "dir": "backend-go/internal/fundamental/testdata/fixture",
   "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
@@ -21,7 +21,7 @@
  },
  "pinned_today": "2026-10-28",
  "body_file": "body.json",
- "body_sha256": "a7fc1c47a4c3ac23b25956bfdbf29d5721a60fabec06ad5bdda57d4121b3524c",
- "body_bytes": 22799,
+ "body_sha256": "6a3a36666045154a33c49f0ff414a1d699973bdf1a9a4b842d9199c88e6cfe17",
+ "body_bytes": 23961,
  "generated_by": "tools/parity/gen_fundamental_card_golden.py"
 }

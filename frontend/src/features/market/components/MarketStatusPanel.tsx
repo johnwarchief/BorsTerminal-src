@@ -94,13 +94,14 @@ export function MarketStatusPanel() {
       total: d?.count ?? null,
       fossil: d?.fossil_count ?? null,
       lastSync: d?.meta?.last_sync ?? null,
+      boardDay: d?.meta?.d_even ?? null,
     };
     // `now` تنها برایِ سن است؛ تیکِ هر رندرِ همین پنل کافی است (۱۵ ثانیه).
   }, [qc, now]);
 
   const fs = computeFeedStatus({
     status: feed.status, dataUpdatedAt: feed.dataUpdatedAt, dataChangedAt: feed.revAt,
-    liveCount: feed.liveCount, totalCount: feed.total, now,
+    liveCount: feed.liveCount, totalCount: feed.total, boardDay: feed.boardDay, now,
   });
   const d = stats?.data ?? {};
   const win = d.window ?? {};

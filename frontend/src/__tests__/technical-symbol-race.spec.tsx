@@ -32,7 +32,7 @@ const chartStub = () => ({
   setDataLoader: vi.fn((o: Loader) => { loaders.push(o); }),
   setSymbol: vi.fn(), setPeriod: vi.fn(), setFormatter: vi.fn(),
   createIndicator: vi.fn(), removeIndicator: vi.fn(), setPaneOptions: vi.fn(),
-  setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideOverlay: vi.fn(),
+  setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideXAxis: vi.fn(), overrideOverlay: vi.fn(),
   createOverlay: vi.fn(() => 'ov'), removeOverlay: vi.fn(), resetData: vi.fn(),
   resize: vi.fn(), getConvertPictureUrl: vi.fn(() => ''), subscribeAction: vi.fn(),
   scrollToRealTime: vi.fn(), getDataList: vi.fn(() => []), setScrollEnabled: vi.fn(),

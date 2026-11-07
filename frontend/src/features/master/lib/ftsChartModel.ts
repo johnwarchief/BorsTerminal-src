@@ -22,7 +22,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import type { StrategyParameters } from '../stores/strategyParamsStore';
 
 export type FtsZone = 'F' | 'T' | 'S' | 'M';
-export type FtsPreset = 'swing' | 'trend' | 'hourglass' | 'custom';
+export type FtsPreset = 'swing' | 'trend' | 'hourglass' | 'custom' | 'tech_first';
 /** جهتِ ریل: مهندسی معکوسِ جزوه (S→T→F→M) یا جریانِ کلاسیکِ تحلیلی (F→T→S→M).
  *  فقط ترتیبِ روشن‌شدن و فلشِ ریل را عوض می‌کند — هیچ گره، هیچ parent و هیچ
  *  جایگاهِ Zone را جابه‌جا نمی‌کند (قیدِ مالک: جهت، توپولوژی را نسازد). */
@@ -619,7 +619,34 @@ const CHART_HEADS: FtsChartNode[] = [
 
 /** گره‌هایِ برچسب‌دارِ نقشه — متن/قاعده/آستانه عیناً از جدولِ پیشین. تابع است چون
  *  برچسبِ چند گره آستانۀ زندۀ `strategyParamsStore` را درِ خودش نشان می‌دهد. */
-export function chartLeaves(params: StrategyParameters): FtsChartNode[] {
+/** متنِ ساعت‌شنی از تنظیمِ فعالِ موتور می‌آید؛ نبودش «—» است، نه عددِ جانشین. */
+function hgLevel(h?: HourglassSettings | null): string | null {
+  const v = h?.oversoldLevel;
+  return typeof v === 'number' ? toFaDigits(v) : null;
+}
+function hgPeriod(h?: HourglassSettings | null): string | null {
+  const v = h?.rsiPeriod;
+  return typeof v === 'number' ? toFaDigits(v) : null;
+}
+function hgRsiCaption(h?: HourglassSettings | null): string {
+  const lvl = hgLevel(h), per = hgPeriod(h);
+  if (lvl === null) return 'RSI هفتگی < —';
+  return per === null ? `RSI هفتگی < ${lvl}` : `RSI(دورۀ ${per}) هفتگی < ${lvl}`;
+}
+function hgRsiSentence(h?: HourglassSettings | null): string {
+  const lvl = hgLevel(h), per = hgPeriod(h);
+  if (lvl === null) return 'RSI هفتگی زیرِ سطحِ اشباع تنظیم‌شده';
+  return per === null ? `RSI هفتگی زیر ${lvl}` : `RSI دورۀ ${per} هفتگی زیر ${lvl}`;
+}
+function hgRsiFormula(h?: HourglassSettings | null): string {
+  const lvl = hgLevel(h) ?? '—', per = hgPeriod(h) ?? '—';
+  return `هفتگی زیر MA=52 + RSI(دورۀ ${per}) <= ${lvl}`;
+}
+
+export function chartLeaves(
+  params: StrategyParameters,
+  hourglass?: HourglassSettings | null,
+): FtsChartNode[] {
   return [
   {
     id: 'crit_sales_growth',
@@ -794,15 +821,15 @@ export function chartLeaves(params: StrategyParameters): FtsChartNode[] {
     order: 1,
     origin: 'chart',
     kind: 'leaf',
-    label: `⏳ اشباع کف هفتگی (RSI(۵) < ${toFaDigits(params.hourglassWeeklyRsi)})`,
+    label: `⏳ اشباع کف هفتگی (${hgRsiCaption(hourglass)})`,
     fullTitle: 'اشباع فروش عمیق در کف تاریخی هفتگی (استراتژی ساعت شنی)',
     page: 'صفحه ۲ و ۴',
-    description: `قیمت در تایم هفتگی زیر MA-52 و RSIِ پنج‌رفته زیر ${toFaDigits(params.hourglassWeeklyRsi)} (ناحیه اشباع فروش)؛ فرصت طلایی خرید سنگین پله‌ای به افق ۳ تا ۱۰ سال.`,
-    ruleFormula: `هفتگی زیر MA=52 + RSI(دوره ${toFaDigits(5)}) <= ${params.hourglassWeeklyRsi}`,
+    description: `قیمت در تایم هفتگی زیر MA-52 و ${hgRsiSentence(hourglass)} (ناحیه اشباع فروش)؛ فرصت طلایی خرید سنگین پله‌ای به افق ۳ تا ۱۰ سال.`,
+    ruleFormula: hgRsiFormula(hourglass),
     badge: 'اهرم کف تاریخ',
     color: '#eab308',
     refs: ['m_strategy'],
-    editableParamKeys: ['hourglassWeeklyRsi', 'hourglassLeverageMultiplier'],
+    editableParamKeys: ['hourglassLeverageMultiplier'],
   },
   {
     id: 'stop_hourglass',
@@ -819,7 +846,7 @@ export function chartLeaves(params: StrategyParameters): FtsChartNode[] {
     badge: 'اهرم بلندمدت',
     color: '#eab308',
     refs: ['m_strategy'],
-    editableParamKeys: ['hourglassLeverageMultiplier', 'hourglassWeeklyRsi'],
+    editableParamKeys: ['hourglassLeverageMultiplier'],
   },
   {
     id: 'exit_half',
@@ -1400,10 +1427,14 @@ export function railOrder(flow: FlowDirection): FtsZone[] {
  *
  *  ساعت شنی ستاپِ مستقل ندارد؛ خودِ همان اشباعِ هفتگی (MA=52 + RSI)
  *  در ستونِ هفتگی روشن می‌شود. */
-export const PRESET_ACTIVE: Record<'swing' | 'trend' | 'hourglass', string[]> = {
+export const PRESET_ACTIVE: Record<'swing' | 'trend' | 'hourglass' | 'tech_first', string[]> = {
   swing: ['fund_good', 'fund_medium', 'tech_weekly_up', 'setup_jet', 'setup_fib', 'tape_clock', 'tape_volume', 'stop_swing', 'exit_half'],
   trend: ['fund_super', 'fund_good', 'tech_weekly_up', 'setup_fib', 'setup_choch', 'setup_jet', 'setup_point_hunt', 'tape_floor_sweep', 'stop_trend'],
   hourglass: ['fund_super', 'tech_weekly_hourglass', 'tape_floor_sweep', 'tape_clock', 'stop_hourglass'],
+  // استراتژیِ «تکنیکال‌محور» درِ نقشۀ چارت فقط یک گیتِ ثابت دارد: روندِ صعودیِ
+  // هفتگی. شرط‌هایِ انتخابی درِ قیف‌اند و گره‌ای درِ این نقشه ندارند (رجیستری
+  // `technical_gate` را همین می‌گوید)، پس چیزی به نقشه اضافه نمی‌شود.
+  tech_first: ['tech_weekly_up'],
 };
 
 /** پرست ⇒ گره‌هایِ روشن + جدّهایِ مسیرشان، تا ریل رویِ نقشه بُرش نداشته باشد. */
@@ -1421,8 +1452,17 @@ export function activeIdsForPreset(
   return set;
 }
 
-export function buildFtsChartModel(params: StrategyParameters): FtsChartModel {
-  const nodes: FtsChartNode[] = [...CHART_HEADS, ...chartLeaves(params)];
+/** تنظیمِ فعالِ ساعت‌شنی — از `hourglass_settings` رجیستری (خودِ موتور). */
+export type HourglassSettings = {
+  rsiPeriod?: number | null;
+  oversoldLevel?: number | null;
+};
+
+export function buildFtsChartModel(
+  params: StrategyParameters,
+  hourglass?: HourglassSettings | null,
+): FtsChartModel {
+  const nodes: FtsChartNode[] = [...CHART_HEADS, ...chartLeaves(params, hourglass)];
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const childrenOf = new Map<string, string[]>();
   for (const n of nodes) {

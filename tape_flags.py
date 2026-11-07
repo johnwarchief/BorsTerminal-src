@@ -208,12 +208,37 @@ def resistance_ladder_high(df: pd.DataFrame, lookback: int = max(JET_LADDER)) ->
     return stack.max(axis=1).where(_sessions_ok(df, max(pts) + 1))
 
 
-def clock_flag(df: pd.DataFrame) -> pd.Series:
-    """A) الگوی ساعت: ``pl >= pc*1.02 && tvol > Σ[ih][0..29]/30 && tno > 30``"""
+def clock_flag(df: pd.DataFrame, delta: float = CLOCK_DELTA) -> pd.Series:
+    """A) الگوی ساعت: ``pl >= pc*(1+delta) && tvol > Σ[ih][0..29]/30 && tno > 30``
+
+    `delta` تنها برایِ استراتژی‌هایی است که آستانه را خودشان انتخاب می‌کنند
+    (تنظیمِ «الگوی ساعت» درِ تکنیکال‌محور). پیش‌فرضش همان ۲٪ِ فایل است، پس هر
+    مصرف‌کنندۀ دیروز ذره‌ای جابه‌جا نمی‌شود؛ داوریِ دوم هم نمی‌سازیم — همین
+    تابع تنها جایِ نوشتنِ این شرط است.
+    """
     pc, pl = _n(df["p_closing"]), _n(df["p_last"])
-    return ((pc > 0) & (pl >= pc * (1.0 + CLOCK_DELTA))
+    return ((pc > 0) & (pl >= pc * (1.0 + delta))
             & (formula_vol_ratio(df) > 1.0)
             & (_n(df["z_tot_tran"]) > CLOCK_TRADES)).fillna(False)
+
+
+_CLOCK_COLS = ("p_closing", "p_last", "tvol", "z_tot_tran", "prior30_vol",
+               "hist_sessions", "is_live")
+
+
+def rejudge_clock(rows: list[dict], delta: float) -> list[bool]:
+    """همان clock_flag، رویِ ردیف‌هایِ دیکشنری‌شده، با آستانۀ انتخابی.
+
+    پرچمِ `f_clock` درِ تابلو با ۲٪ِ فایل ساخته می‌شود؛ استراتژی‌ای که آستانه را
+    عوض می‌کند نباید آن ستون را بخواند، بلکه باید همین فرمول دوباره اجرا شود.
+    ترتیبِ خروجی با ترتیبِ `rows` می‌خواند.
+    """
+    import pandas as pd
+    if not rows:
+        return []
+    df = pd.DataFrame([{c: r.get(c) for c in _CLOCK_COLS} for r in rows])
+    hit = clock_flag(df, delta) & _alive(df)
+    return [bool(x) for x in hit.tolist()]
 
 
 def suspicious_flag(df: pd.DataFrame) -> pd.Series:

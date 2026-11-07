@@ -1,0 +1,92 @@
+{
+  "phase": "D",
+  "date": "2026-11-06",
+  "series": 30,
+  "tier1_featured": 39,
+  "tier1_tp": 39,
+  "tier1_fp": 0,
+  "precision_pct": 100.0,
+  "gate": {
+    "target_precision_pct": 90,
+    "zero_fake": true,
+    "passed": true
+  },
+  "removed_fakes": [
+    {
+      "symbol": "فولاد",
+      "timeframe": "1D",
+      "kind": "FLAG_BEAR",
+      "anchor_index": 3617,
+      "reason": "پس از امتداد لگ تا ۱٬۵۲۷، اصلاح تا ۱٬۸۲۳ = ۴۱٪ از لگ > آستانهٔ ۳۸٪"
+    },
+    {
+      "symbol": "خودرو",
+      "timeframe": "1W",
+      "kind": "PENNANT",
+      "anchor_index": 931,
+      "reason": "اصلاح ۷۲.۶٪ از لگ ۴۸→۹۴۶؛ فشرده‌سازی، اصلاح عمیق است نه پنانت"
+    },
+    {
+      "symbol": "شستا",
+      "timeframe": "1W",
+      "kind": "PENNANT",
+      "anchor_index": 70,
+      "reason": "فشرده‌سازی ۳۹ هفته در برابر لگ ۱۴ هفته = ۲.۸ > ۲"
+    },
+    {
+      "symbol": "وغدير",
+      "timeframe": "1D",
+      "kind": "PENNANT",
+      "anchor_index": 5264,
+      "reason": "لگ تا ۱۵٬۵۳۳ امتداد یافت؛ اصلاح تا ۱۲٬۹۶۲ = ۴۳.۹٪ > آستانهٔ ۳۸٪"
+    },
+    {
+      "symbol": "وپاسار",
+      "timeframe": "1W",
+      "kind": "TRIPLE_BOTTOM",
+      "anchor_index": 582,
+      "reason": "پراکندگی سه کف ۲۲.۵٪ از قیمت > سقف ۸٪"
+    },
+    {
+      "symbol": "شبندر",
+      "timeframe": "1W",
+      "kind": "TRIPLE_BOTTOM",
+      "anchor_index": 589,
+      "reason": "پراکندگی سه کف ۹.۱٪ > سقف ۸٪"
+    },
+    {
+      "symbol": "اخابر",
+      "timeframe": "1W",
+      "kind": "TRIPLE_BOTTOM",
+      "anchor_index": 773,
+      "reason": "پراکندگی سه کف ۹.۸٪ > سقف ۸٪"
+    },
+    {
+      "symbol": "تاپيكو",
+      "timeframe": "1W",
+      "kind": "INVERSE_HEAD_SHOULDERS",
+      "anchor_index": 615,
+      "reason": "اختلاف شانه‌ها از سقف ۸٪ گذشت؛ ATR جاری بزرگ آن را پنهان می‌کرد"
+    }
+  ],
+  "tier2": {
+    "featured": 41,
+    "sample": 5,
+    "sample_tp": 2,
+    "status": "best-effort, hidden by default"
+  },
+  "changes": [
+    "پرچم/پنانت: لگ تا اکستریم واقعیِ پیش از پایان فشرده‌سازی اندازه‌گیری می‌شود؛ اصلاح ۳۸٪ روی کندل، طول فشرده‌سازی ≤۲× لگ.",
+    "مستطیل: رانش نسبی هر مرز ≤۸٪.",
+    "مثلث/گُوه: نسبت لگ اول به بزرگ‌ترین لگ بعدی ≤۲ تا لگ روند + پولبک «مثلث» برچسب نخورد.",
+    "سه‌قلو: سقف درصدی ۸٪ برای پراکندگی سطوح، مستقل از ATR جاری.",
+    "سر و شانه: سقف درصدی ۸٪ برای اختلاف شانه‌ها، مستقل از ATR جاری.",
+    "انتخاب الگوهای برجسته: فیلتر ردهٔ ۲ پیش از انتخاب، هم‌تراز با رفتار پیش‌فرض چارت."
+  ],
+  "tests": {
+    "frontend_files": 94,
+    "frontend_cases": 793,
+    "pattern_files": 13,
+    "pattern_cases": 144
+  }
+}

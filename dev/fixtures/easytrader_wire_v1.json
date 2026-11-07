@@ -1,0 +1,117 @@
+{
+  "fixture_set": "easytrader_wire_v1",
+  "purpose": "قراردادِ پاسخِ Orbis/EasyTrader، فیکسچرِ پاک‌سازی‌شده برایِ گاردِ dev/sarkhati_protocol_v1119.py. هیچ‌کدام ازِ کارگزاری *دریافت* نشده؛ هیچ سفارشی ارسال نشده.",
+  "provenance_legend": {
+    "third-party-observed": "شکلِ بدنه/میدان‌ها ازِ کدِ مخزن‌هایِ شخصِ ثالث خوانده شده (m-fazel/Sarkhati، RezaMahdaviiDev/mofid، …). این شاهدِ پشتیبانیِ رسمیِ کارگزاری نیست.",
+    "broker-observed-read-only": "رفتارِ میزبانِ رسمی درِ نشستِ 2026-10-17 باِ درخواستِ فقط‌خواندنی دیده شد (GET، صفر سفارش، صفر credential).",
+    "synthetic": "بدنۀِ ساختگی برایِ پوشاندنِ یکِ حالت؛ درِ گزارش صریح Mock علامت می‌خورد."
+  },
+  "official_docs_status": "swagger/openapi/docs رویِ api-mts.orbis.easytrader.ir همگی 403؛ هیچ سندِ رسمیِ API پیدا نشد. پس سیمِ سفارش (مسیر، میدان‌ها، معنای id) همچنان فرضیه است و گاردِ WIRE_HYPOTHESIS باید روشن بماند.",
+  "cases": [
+    {
+      "name": "accepted_with_id",
+      "source": ["third-party-observed", "synthetic"],
+      "mock": true,
+      "response": { "status": 200, "headers": {}, "body": { "isSuccessful": true, "id": "O-991" } },
+      "expect": { "accepted": true, "error": null, "ambiguous": false, "broker_order_id": "O-991", "resend_without_reconcile": false }
+    },
+    {
+      "name": "semantic_reject_http_200",
+      "source": ["third-party-observed"],
+      "mock": true,
+      "note": "قلبِ §۳-۵: HTTP موفق ≠ پذیرش. flag=false حتی با id هم پذیرش نیست.",
+      "response": { "status": 200, "headers": {}, "body": { "isSuccessful": false, "id": "O-992", "message": "سفارش نامعتبر: محدودهٔ قیمت" } },
+      "expect": { "accepted": false, "error": "BROKER_REJECTED", "ambiguous": false, "broker_order_id": null, "resend_without_reconcile": false }
+    },
+    {
+      "name": "oms_error_200",
+      "source": ["third-party-observed"],
+      "mock": true,
+      "response": { "status": 200, "headers": {}, "body": { "isSuccessful": true, "omsError": [{ "code": "1024", "message": "محدودیتِ مجاز" }] } },
+      "expect": { "accepted": false, "error": "BROKER_REJECTED", "ambiguous": false, "resend_without_reconcile": false }
+    },
+    {
+      "name": "success_flag_absent",
+      "source": ["synthetic"],
+      "mock": true,
+      "note": "سکوتِ پاسخ پذیرش نیست.",
+      "response": { "status": 200, "headers": {}, "body": { "id": "O-993" } },
+      "expect": { "accepted": null, "error": "UNKNOWN_RESULT", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "empty_body_200",
+      "source": ["synthetic"],
+      "mock": true,
+      "response": { "status": 200, "headers": {}, "body": "" },
+      "expect": { "accepted": null, "error": "UNKNOWN_RESULT", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "truncated_json_200",
+      "source": ["synthetic"],
+      "mock": true,
+      "note": "JSONِ ناقص — همان چیزی که خواندنِ بدنه را بی‌صدا می‌سوزاند.",
+      "response": { "status": 200, "headers": {}, "body": "{\"isSuccessful\": true, \"id\": \"O-" },
+      "expect": { "accepted": null, "error": "UNKNOWN_RESULT", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "html_login_page_200",
+      "source": ["synthetic", "broker-observed-read-only"],
+      "mock": true,
+      "note": "۲۰۰ + HTMLِ صفحۀ ورود؛ هرگز «اتصال موفق» تفسیر نمی‌شود. (مشاهده: میزبانِ UI هر مسیرِ ناشناخته را با index.html پاسخ می‌دهد.)",
+      "response": { "status": 200, "headers": { "content-type": "text/html" }, "body": "<html><body>login</body></html>" },
+      "expect": { "accepted": null, "error": "UNKNOWN_RESULT", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "expired_401",
+      "source": ["broker-observed-read-only"],
+      "mock": false,
+      "note": "۴۰۱ + www-authenticate: Bearer رویِ GETهایِ فقط‌خواندنیِ /easy/api/account/server-time و /symbols/api/TradingTime دیده شد — پس ۴۰۱/۲۰۰ داوریِ دوْضابطهٔ نشست می‌دهد.",
+      "response": { "status": 401, "headers": { "www-authenticate": "Bearer" }, "body": "" },
+      "expect": { "accepted": false, "error": "SESSION_EXPIRED", "ambiguous": false, "resend_without_reconcile": true }
+    },
+    {
+      "name": "auth_failed_403",
+      "source": ["third-party-observed"],
+      "mock": true,
+      "response": { "status": 403, "headers": {}, "body": { "isSuccessful": false, "message": "forbidden" } },
+      "expect": { "accepted": false, "error": "AUTH_FAILED", "ambiguous": false, "resend_without_reconcile": false }
+    },
+    {
+      "name": "rate_limited_429",
+      "source": ["synthetic", "third-party-observed"],
+      "mock": true,
+      "response": { "status": 429, "headers": { "retry-after": "0.5" }, "body": "" },
+      "expect": { "accepted": false, "error": "RATE_LIMITED", "ambiguous": false, "resend_without_reconcile": false }
+    },
+    {
+      "name": "redirect_302_on_post",
+      "source": ["synthetic"],
+      "mock": true,
+      "note": "بازارسالِ POST یعنی «همان بدن را جایِ دیگری بفرست» — بازارسالِ بی‌ضرر نیست، نامعلوم است.",
+      "response": { "status": 302, "headers": { "location": "https://account.emofid.com/" }, "body": "" },
+      "expect": { "accepted": null, "error": "UNKNOWN_RESULT", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "server_error_500",
+      "source": ["synthetic"],
+      "mock": true,
+      "note": "سرور شاید پذیرفته باشد؛ نتیجه نامعلوم، فقط reconcile.",
+      "response": { "status": 500, "headers": {}, "body": "" },
+      "expect": { "accepted": null, "error": "NETWORK_ERROR", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "timeout_408",
+      "source": ["synthetic"],
+      "mock": true,
+      "response": { "status": 408, "headers": {}, "body": "" },
+      "expect": { "accepted": null, "error": "TIMEOUT", "ambiguous": true, "resend_without_reconcile": true }
+    },
+    {
+      "name": "bad_request_400",
+      "source": ["third-party-observed"],
+      "mock": true,
+      "response": { "status": 400, "headers": {}, "body": { "isSuccessful": false, "message": "price invalid" } },
+      "expect": { "accepted": false, "error": "BROKER_REJECTED", "ambiguous": false, "resend_without_reconcile": false }
+    }
+  ]
+}

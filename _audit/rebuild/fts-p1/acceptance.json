@@ -1,0 +1,270 @@
+{
+  "tableGrowthSub_brass": "+۴۵٫۹٪✓ قبول≥ ۴۰٪ · ۱الف قبول · ۱ب بی‌نظر",
+  "growth_brass": {
+    "text": "۱رشد فروش — ۱الف و ۱بقبولرشد ریالی در برابر کف، و تأیید رشد واقعی/تناژ+۴۵٫۹٪کف ۴۰٪ · هدف ۶۰٪۱الف — رشد ریالی+۴۵٫۹٪۱ب — رشد واقعی/تناژN/A · بی‌نظرفروش دورهٔ جاری۵٬۵۴۵ میلیارد تومانفروش دورهٔ قبل۳٬۸۰۰ میلیارد توماندلیلرشد اسمی +45.9٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته).۱ب — رشد واقعیفروش جاری / دورهٔ قبلدوره قبلدوره جاریفرمول و منبع۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ 40٪ · ۱ب = رشد کمیت ≥ 0٪ یا رشد واقعیِ پس از تورم ≥ 0٪ · پهنای رشد (6/6 ماه) فقط نمایشی است، دروازۀ امتیاز نیست — کدال — گزارش فعالیت ماهانهٔ منتهی به 06/1405 | مخرج: تجمیعی 06/1404 از گزارش فعالیت ماهانه (نه ماه قبل) | طبقهٔ شرکت: خدماتی",
+    "svgs": 2,
+    "images": 3,
+    "testids": [
+      "growth-sales-pair"
+    ]
+  },
+  "eps_brass": {
+    "text": "۲سودآوری ۳سالهقبولسابقهٔ EPS و روند سال‌به‌سال؛ «سنجیده‌نشده» از «رد» جدا است۱۶۷۲ ↑۳ سال۱۱۱۹۱۶۱۵۱۶۷۲آخرین EPS۱۶۷۲سال‌های موجود۳/۳نیاز گیت۳ سال متوالیشواهدسال‌پایانِ حسابرسی‌شده، سال‌پایانِ حسابرسی‌شده، سال‌سازیِ میاندورهٔ کوتاهتلفیقی—۱۴۰۳/۱۲/۳۰۱۴۰۴/۱۲/۲۹۱۴۰۵/۰۳/۳۱۱۴۰۳/۱۲/۳۰۱۱۱۹——۱۴۰۴/۱۲/۲۹۱۶۱۵+۴۹۶+۴۴٫۳٪۱۴۰۵/۰۳/۳۱۱۶۷۲+۵۷+۳٫۵٪فرمول و منبعEPSy > EPSy−1 > EPSy−2 · 3 سال مالیِ متوالی · مبنای امروزی: سال‌پایان + سال‌سازیِ میاندوره × ۱۲÷م برای تکمیلِ سه سال · تداوم: EPS میاندوره × ۱۲÷م ≥ آخرین EPS سال‌پایان — کدال — صورت‌های مالی سالانه + میاندوره",
+    "svgs": 1,
+    "images": 2,
+    "testids": [
+      "eps-growth-chart",
+      "eps-period-0",
+      "eps-period-1",
+      "eps-period-2"
+    ]
+  },
+  "marginTitle_brass": "حاشیه سود ناخالص",
+  "surfaceCount_brass": 0,
+  "epsBars_brass": {
+    "boxPx": 44,
+    "plotPx": [
+      28,
+      28,
+      28
+    ],
+    "bars": [
+      {
+        "tone": "is-empty w-full rounded-t-sm",
+        "px": 0,
+        "inline": "0%"
+      },
+      {
+        "tone": "is-up w-full rounded-t-sm",
+        "px": 28,
+        "inline": "100%"
+      },
+      {
+        "tone": "is-up w-full rounded-t-sm",
+        "px": 2.8,
+        "inline": "10%"
+      }
+    ]
+  },
+  "growthPair_brass": {
+    "boxPx": 55.5,
+    "plotPx": [
+      22.5,
+      22.5
+    ],
+    "bars": [
+      {
+        "tone": "is-evidence w-full rounded-t-sm",
+        "px": 15.4,
+        "inline": "68.5302%"
+      },
+      {
+        "tone": "is-evidence w-full rounded-t-sm",
+        "px": 22.5,
+        "inline": "100%"
+      }
+    ]
+  },
+  "epsBarsRatio_brass": null,
+  "growthPairRatio_brass": 1.461,
+  "tableGrowthSub_warm": "+۴۵٫۹٪✓ قبول≥ ۴۰٪ · ۱الف قبول · ۱ب بی‌نظر",
+  "growth_warm": {
+    "text": "۱رشد فروش — ۱الف و ۱بقبولرشد ریالی در برابر کف، و تأیید رشد واقعی/تناژ+۴۵٫۹٪کف ۴۰٪ · هدف ۶۰٪۱الف — رشد ریالی+۴۵٫۹٪۱ب — رشد واقعی/تناژN/A · بی‌نظرفروش دورهٔ جاری۵٬۵۴۵ میلیارد تومانفروش دورهٔ قبل۳٬۸۰۰ میلیارد توماندلیلرشد اسمی +45.9٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته).۱ب — رشد واقعیفروش جاری / دورهٔ قبلدوره قبلدوره جاریفرمول و منبع۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ 40٪ · ۱ب = رشد کمیت ≥ 0٪ یا رشد واقعیِ پس از تورم ≥ 0٪ · پهنای رشد (6/6 ماه) فقط نمایشی است، دروازۀ امتیاز نیست — کدال — گزارش فعالیت ماهانهٔ منتهی به 06/1405 | مخرج: تجمیعی 06/1404 از گزارش فعالیت ماهانه (نه ماه قبل) | طبقهٔ شرکت: خدماتی",
+    "svgs": 2,
+    "images": 3,
+    "testids": [
+      "growth-sales-pair"
+    ]
+  },
+  "eps_warm": {
+    "text": "۲سودآوری ۳سالهقبولسابقهٔ EPS و روند سال‌به‌سال؛ «سنجیده‌نشده» از «رد» جدا است۱۶۷۲ ↑۳ سال۱۱۱۹۱۶۱۵۱۶۷۲آخرین EPS۱۶۷۲سال‌های موجود۳/۳نیاز گیت۳ سال متوالیشواهدسال‌پایانِ حسابرسی‌شده، سال‌پایانِ حسابرسی‌شده، سال‌سازیِ میاندورهٔ کوتاهتلفیقی—۱۴۰۳/۱۲/۳۰۱۴۰۴/۱۲/۲۹۱۴۰۵/۰۳/۳۱۱۴۰۳/۱۲/۳۰۱۱۱۹——۱۴۰۴/۱۲/۲۹۱۶۱۵+۴۹۶+۴۴٫۳٪۱۴۰۵/۰۳/۳۱۱۶۷۲+۵۷+۳٫۵٪فرمول و منبعEPSy > EPSy−1 > EPSy−2 · 3 سال مالیِ متوالی · مبنای امروزی: سال‌پایان + سال‌سازیِ میاندوره × ۱۲÷م برای تکمیلِ سه سال · تداوم: EPS میاندوره × ۱۲÷م ≥ آخرین EPS سال‌پایان — کدال — صورت‌های مالی سالانه + میاندوره",
+    "svgs": 1,
+    "images": 2,
+    "testids": [
+      "eps-growth-chart",
+      "eps-period-0",
+      "eps-period-1",
+      "eps-period-2"
+    ]
+  },
+  "marginTitle_warm": "حاشیه سود ناخالص",
+  "surfaceCount_warm": 0,
+  "epsBars_warm": {
+    "boxPx": 44,
+    "plotPx": [
+      28,
+      28,
+      28
+    ],
+    "bars": [
+      {
+        "tone": "is-empty w-full rounded-t-sm",
+        "px": 0,
+        "inline": "0%"
+      },
+      {
+        "tone": "is-up w-full rounded-t-sm",
+        "px": 28,
+        "inline": "100%"
+      },
+      {
+        "tone": "is-up w-full rounded-t-sm",
+        "px": 2.8,
+        "inline": "10%"
+      }
+    ]
+  },
+  "growthPair_warm": {
+    "boxPx": 55.5,
+    "plotPx": [
+      22.5,
+      22.5
+    ],
+    "bars": [
+      {
+        "tone": "is-evidence w-full rounded-t-sm",
+        "px": 15.4,
+        "inline": "68.5302%"
+      },
+      {
+        "tone": "is-evidence w-full rounded-t-sm",
+        "px": 22.5,
+        "inline": "100%"
+      }
+    ]
+  },
+  "epsBarsRatio_warm": null,
+  "growthPairRatio_warm": 1.461,
+  "growthFoolad": {
+    "text": "۱رشد فروش — ۱الف و ۱بردرشد ریالی در برابر کف، و تأیید رشد واقعی/تناژ+۵۶٫۰٪کف ۴۰٪ · هدف ۶۰٪۱الف — رشد ریالی+۵۶٫۰٪۱ب — رشد واقعی/تناژ−۲٫۵٪ · ردفروش دورهٔ جاری۲۵۰٬۹۴۲ میلیارد تومانفروش دورهٔ قبل۱۶۰٬۸۷۳ میلیارد توماندلیلرشد اسمی +56.0٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته).۱ب — رشد واقعیفروش جاری / دورهٔ قبلدوره قبلدوره جاریفرمول و منبع۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ 40٪ · ۱ب = رشد کمیت ≥ 0٪ یا رشد واقعیِ پس از تورم ≥ 0٪ · پهنای رشد (1/1 ماه) فقط نمایشی است، دروازۀ امتیاز نیست — کدال — گزارش فعالیت ماهانهٔ منتهی به 06/1405 | مخرج: ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارش | طبقهٔ شرکت: تولیدی / صادراتی",
+    "svgs": 2,
+    "images": 3,
+    "testids": [
+      "growth-sales-pair"
+    ]
+  },
+  "epsBarsFoolad": {
+    "boxPx": 44,
+    "plotPx": [
+      28,
+      28,
+      28
+    ],
+    "bars": [
+      {
+        "tone": "is-empty w-full rounded-t-sm",
+        "px": 0,
+        "inline": "0%"
+      },
+      {
+        "tone": "is-down w-full rounded-t-sm",
+        "px": 11.8,
+        "inline": "42.2265%"
+      },
+      {
+        "tone": "is-down w-full rounded-t-sm",
+        "px": 28,
+        "inline": "100%"
+      }
+    ]
+  },
+  "growthPairFoolad": {
+    "boxPx": 55.5,
+    "plotPx": [
+      22.5,
+      22.5
+    ],
+    "bars": [
+      {
+        "tone": "is-evidence w-full rounded-t-sm",
+        "px": 14.4,
+        "inline": "64.1078%"
+      },
+      {
+        "tone": "is-evidence w-full rounded-t-sm",
+        "px": 22.5,
+        "inline": "100%"
+      }
+    ]
+  },
+  "growthPairRatioFoolad": 1.563,
+  "allPanels": [
+    {
+      "k": "growth",
+      "charts": 3
+    },
+    {
+      "k": "eps",
+      "charts": 2
+    },
+    {
+      "k": "margin",
+      "charts": 1
+    },
+    {
+      "k": "sales",
+      "charts": 1
+    },
+    {
+      "k": "industry",
+      "charts": 1
+    }
+  ],
+  "config": {
+    "status": "success",
+    "config": {
+      "growth_min": 40,
+      "eps_years": 3,
+      "margin_min": 20,
+      "margin_optimal": 30,
+      "sales_to_mcap_min": 0.33,
+      "sales_to_mcap_ideal": 1,
+      "profit_potential_min": 40,
+      "industry_mode": "Exclude_Mandatory_Pricing",
+      "mandatory_sectors": [
+        "خودرو",
+        "نیروگاه",
+        "لاستیک"
+      ],
+      "free_sectors": [
+        "سیمان",
+        "پتروشیمی",
+        "شیمیایی",
+        "فلزات",
+        "کانی",
+        "کاشی",
+        "سرامیک",
+        "شیشه",
+        "کانه",
+        "معادن",
+        "نفت",
+        "محصولات فلزی"
+      ],
+      "reject_insurance": true,
+      "watchlist_max": 50,
+      "mcap_min_hmt": 0,
+      "holdings_sales_na": true,
+      "pharma_margin_exempt_min": 0,
+      "exclude_base_market": true,
+      "exclude_rejected_indicators": [],
+      "suspended_max_stale_sessions": 3,
+      "filter_m141": false,
+      "min_trade_val": 0,
+      "v10_monetary_growth_min": 60,
+      "v10_inflation_basis": 60,
+      "v10_volume_growth_min": 0,
+      "v10_volume_breadth_min": 0.6,
+      "v10_eps_years": 3,
+      "v10_margin_min": 20,
+      "v10_margin_ideal": 30,
+      "v10_sales_to_mcap_min": 0.33,
+      "v10_potential_min": 40,
+      "include_industries": [],
+      "exclude_industries": [],
+      "hourglass_rsi_period": 7,
+      "hourglass_rsi_oversold": 30,
+      "hourglass_ma52_position": "below"
+    }
+  },
+  "consoleErrors": []
+}

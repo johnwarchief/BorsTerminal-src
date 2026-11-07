@@ -1,0 +1,155 @@
+simulated CI: DB_PATH = C:\Users\PCMOD\Desktop\_bors-easytrader\_audit\ci_sim_no_market_db.db
+easytrader_adapter_v1113 — آداپتورِ واقعی، بی‌شبکه، با کنترلِ منفی
+── ۱ بی‌سوکت تا نشستِ مالک نباشد
+  ok   ساختِ آداپتور بی‌ترافیک ممکن است (درِ import هم همین مسیر است)
+  ok   بی‌نشست capabilities «هیچ» است، نه «صفر مجاز»
+  ok   بی‌token وضعیتِ نشست disconnected است
+  ok   ارسالِ بی‌نشست ردِ *قطعی* می‌دهد، نه ابهام
+  ok   خواندنِ بی‌نشست UNSUPPORTED
+  ok   probe بی‌نشست هیچ درِ نمی‌زند و همان را می‌گوید
+  ok   هیچ سوکتی باز نشد
+  ok   ترافیکِ واقعی تزریق‌پذیر است (ولی اینجا هرگز صدا زده نشد)
+  ok   لایۀِ HTTP با max_retries=0 — retryِ پنهانِ urllib3 ممنوع
+  ok   بازارسالِ 3xx رویِ POST ممنوع
+  ok   بررسیِ TLS پیش‌فرضِ روشن است (برخلافِ ignoreHTTPSErrorsِ مرجع)
+  ok   بررسیِ TLS درِ نشستِ واقعی روشَن است (نه ignoreHTTPSErrorsِ مرجع)
+  ok   retryِ پنهانِ urllib3 درِ آداپتورِ mounted خاموش است (total=0)
+── ۲ تفسیرِ پاسخ: ۲xx هیچ حکمی نیست
+  ok   ۲۰۰ + isSuccessful:true ⇒ پذیرش
+  ok   ۲۰۰ + isSuccessful:false ⇒ ردِ *قطعی* با کدِ OMS، و idِ پاسخِ ردشده نگه نمی‌ماند
+  ok   omsError[{name,error,code}] عیناً منتقل می‌شود
+  ok   کنترلِ منفی: تفسیرِ بدقلق همین پاسخِ ردشده را «پذیرش» می‌خواند (پس سنسور زنده است)
+  ok   کنترلِ منفی: تفسیرِ درست همان پاسخ را رد می‌کند
+  ok   408 ⇒ ابهام، نه ردِ قطعی
+  ok   500 ⇒ ابهام، نه ردِ قطعی
+  ok   502 ⇒ ابهام، نه ردِ قطعی
+  ok   503 ⇒ ابهام، نه ردِ قطعی
+  ok   ۴۰۱ ⇒ نشستِ باطل‌شده (بی‌retry)
+  ok   ۴۰۳ ⇒ اجازه‌ای نبود — از «منقضی» جداست
+  ok   ۴۲۹ ⇒ مسیرِ صریحِ RATE_LIMITED با Retry-After (درِ هر پنج مخزن نبود)
+  ok   ۲۰۰ با بدنۀِ HTML ⇒ نامعلوم، نه موفق
+  ok   ۲۰۰ بی‌isSuccessful ⇒ نامعلوم (مرجع نبودش را «موفق» می‌شمرد)
+  ok   کنترلِ منفی: «id داشت» درِ تفسیرِ بدقلق پذیرش است
+  ok   ۳xx ⇒ نامعلوم؛ بدنِ سفارش را به جایِ دیگری نمی‌فرستیم
+  ok   وضعیتِ سفارش ازِ متنِ سرور خوانده می‌شود
+  ok   واژۀِ ناشناخته ⇒ UNKNOWN، نه «پذیرفته/پر شده»
+  ok   executed == quantity ⇒ پرشده
+── ۳ بدنۀِ سیم — با برچسبِ فرضیه
+  ok   بدنه درهم‌پیچِ {"order":{…}} است نه تخت
+  ok   جهت عددی: ۰=خرید، ۱=فروش
+  ok   شناسه، ISIN است نه ins_code
+  ok   مقدارهایِ enum ازِ مرجع، بی‌ادعایِ صحت
+  ok   قالبِ createDateTime رویِ ویندوز درست ساخته می‌شود (نه %-mِ نشکسته)
+  ok   هیچ token درِ پیش‌نمایشِ بدنه نیست
+  ok   WIRE_HYPOTHESIS روشن است — هیچ ثابتی تأییدشده نیست
+── ۴ سوئیتِ قراردادِ مخزنِ اول، رویِ آداپتورِ واقعی
+  ok   قرارداد/success_acknowledges_one_order
+  ok   قرارداد/validation_error_is_not_unknown_result
+  ok   قرارداد/auth_failure_is_terminal_not_retryable
+  ok   قرارداد/session_expiry_is_reported_back
+  ok   قرارداد/timeout_becomes_unknown_result_with_server_side_order
+  ok   قرارداد/after_timeout_reconcile_resolves_without_resubmit
+  ok   قرارداد/http5xx_is_unknown_result_and_reconcile_finds_nothing
+  ok   قرارداد/duplicate_execution_id_is_guarded
+  ok   قرارداد/missing_isin_is_not_orderable_and_never_hits_the_wire
+  ok   قرارداد/unknown_symbol_resolves_to_unresolved_not_a_guess
+  ok   قرارداد/cancel_without_capability_raises_unsupported
+  ok   قرارداد/queue_without_capability_is_unknown_not_zero
+  ok   قرارداد/queue_with_no_server_data_stays_unknown
+  ok   قرارداد/broker_rejection_carries_its_own_message
+  ok   قرارداد/record_keeps_scheduled_and_send_times_with_one_attempt
+  ok   قرارداد/no_secret_survives_redaction
+  ok   caseِ استثناشده *واقعاً* می‌افتد (پس استثنا بی‌خیالی نیست)
+  ok   هر ۱۷ case سوئیتِ قرارداد اجرا شد
+  ok   ۱۶ سبز + یکِ استثنایِ ثبت‌شده
+── ۵ timeout ⇒ UNKNOWN، بازیابی، و ممنوعیتِ تکرار
+  ok   timeout ⇒ نامعلومِ غیرقابلِ‌تکرار
+  ok   یکِ POST — آداپتور خودش retry نمی‌کند
+  ok   reconcile ازِ فهرستِ سرور پیدایش می‌کند (تطبیقِ تنها)
+  ok   تکرارِ همان شناسه ⇒ DUPLICATE_GUARD
+  ok   «ارسالِ دوباره با شناسۀِ تازه» دو سفارشِ واقعی می‌سازد (خطر ثابت شد)
+  ok   کنترلِ منفی: retry درِ لایۀِ ترافیک ≥ دو سفارش می‌سازد و ممکن است «موفق» هم برگردد (پس max_retries=0 لازم است)
+  ok   دو ردیفِ همسان ⇒ مبهم می‌ماند، نه پذیرش
+  ok   ۴۰۱ ⇒ SESSION_EXPIRED
+  ok   پسِ ۴۰۱ وضعیتِ نشست *واقعاً* expired شد (نه Connectedِ باقی‌مانده)
+  ok   ۴۰۳ ⇒ AUTH_FAILED، جدا از انقضا — شش‌مقداریِ واقعی
+  ok   SessionState شش مقدار دارد
+── ۶ جایِ صف فقط با دادهٔ واقعی
+  ok   پاسخِ خالی ⇒ None (QUEUE_UNAVAILABLE)، نه صفر
+  ok   عددِ واقعی همان عدد است
+  ok   واحدِ volumeAhead درِ منبع علامت خورده است
+  ok   ردیفِ بی‌عدد ⇒ known=False، نه «اولِ صف»
+  ok   لغو: مسیرِ مستندنشده ادعا نمی‌شود
+  ok   موجودی ⇒ None، نه صفر
+── ۷ درِ HTTP رویِ آداپتورِ واقعی
+  ok   بی‌token: live false و «چیزی بیرون نمی‌رود» — ازِ وضعیتِ واقعی
+  ok   بی‌token: همهٔ capabilities false ⇒ UI هیچ دکمه‌ای را باز نمی‌کند
+  ok   درِ واقعی انتخاب شد و «فرضیه بودنِ سیم» اعلام می‌شود
+  ok   دلیلِ بلوکم بودن درِ پاسخ هست
+  ok   dispatch بی‌نشست رد می‌شود و چیزی بیرون نمی‌رود
+  ok   هیچ POSTِ سفارشی ساخته نشد
+  ok   probe بی‌نشست درِ سفارش را نمی‌زند
+  ok   با نشست: live و capabilities ازِ خودِ آداپتور خوانده می‌شود
+  ok   پیش‌نمایشِ *بدنۀِ واقعی* به UI می‌رسد
+  ok   پیش‌نمایش همان ISINِ بانکِ محلی را می‌برد (نه حدسِ آداپتور)
+  ok   پذیرش و *بازخوانی* درِ فهرستِ سرور: SAFE پیش ازِ تأییدِ مسدودکننده سفارش را رویِ سرور می‌بیند
+  ok   شناسۀِ کارگزاری و زمانِ پاسخ درِ رکورد است
+  ok   زمانِ dispatch ازِ زمانِ پاسخ جدا اعلام می‌شود
+  ok   دفترِ اجرا رکورد را دارد
+  ok   مشاهدهٔ سفارش جدا ازِ پذیرش اندازه می‌شود
+  ok   زمان‌بندی درِ همان درخواست نمی‌خوابد — فوراً پاسخ می‌دهد
+  ok   halt زمان‌بندیِ درِ انتظار را لغو می‌کند
+  ok   نتیجه: پیش ازِ آتش ایستاد
+  ok   و هیچ سفارشی بیرون نرفت
+  ok   قفلِ توقف رویِ دیسک ماند
+  ok   resume دستی قفل را برمی‌گرداند
+  ok   زمان‌بندیِ بی‌ack رویِ راه افتاد
+  ok   نتیجه: نامعلوم، نه رد و نه پذیرش
+  ok   ردِّپا آن را باز می‌شمارد (فهرستِ reconcile پسِ restart)
+  ok   هیچ سطرِ بستنِ اضافه ازِ درِ زمان‌بندی نوشته نشد
+  ok   و رکوردِ حافظه هم UNKNOWN است
+  ok   ارسالِ دوبارهٔ همان شناسه رد شد — حتی پسِ نامعلوم بودن
+  ok   هیچ threadی بیرون نپرید (race-sched)
+  ok   race-sched ⇒ 1 سفارش درِ دفترِ بروکر
+  ok   race-sched ⇒ حداکثر 2 POST به آداپتور
+  ok   هیچ threadی بیرون نپرید (race-now)
+  ok   race-now ⇒ 1 سفارش درِ دفترِ بروکر
+  ok   تلاشِ دوم درِ پاسخِ HTTP صریح رد شد، نه بی‌صدا
+  ok   race-now ⇒ حداکثر 1 POST به آداپتور
+  ok   ردِّپا هر دو قصدِ سفارش را دارد، حتی آن که رد شد
+  ok   دومینِ prepareِ همان شناسه رد شد (DUPLICATE_GUARD)
+  ok   و پاسخ دقیقاً همان یکِ نگهبانِ شکست‌خورده را نام می‌برد
+  ok   کنترلِ منفی: با برداشتنِ رزرو، preflight رد نمی‌کند (پس سنسور به رزرو نگاه می‌کند)
+  ok   هیچ POSTی ازِ این سنجه بیرون نرفت
+  ok   token درِ لاگِ ترافیک/repr زنده نمی‌ماند
+  ok   redact خودِ مقدارِ bearer را هم می‌بلعد
+  ok   ردِّپایِ رویِ دیسک token ندارد
+  ok   و رُکوردِ حاویِ secret واقعاً رویِ دیسک نوشته شد
+  ok   پاسخِ status token ندارد
+  ok   session فقط «هست/نیست» را می‌گوید
+  ok   پیش‌نمایشِ بدنه token ندارد
+  ok   بازیابی پسِ restart رکوردهایِ باز را برمی‌دارد
+  ok   بازیابی‌شده UNKNOWN می‌ماند؛ restart خودش را «پذیرفته» جا نمی‌زند
+  ok   فهرستِ باز پسِ restart اعلام می‌شود
+  ok   پیش‌فرضِ بی‌متغیرِ محیطی: mock
+  ok   پیش‌فرض: dry_run=true
+  ok   انتخابِ آداپتور فقط ازِ محیط (نه ازِ بدنهٔ درخواست)
+  ok   مقدارِ نامعلومِ محیط ⇒ mock (پیش‌فرضِ ایمن)
+  ok   هیچ بدنه‌ای dry_run/live را عوض نمی‌کند
+  ok   درِ execution آداپتورِ واقعی را وارد می‌کند
+── ۸ کنترلِ منفیِ سنسور
+  ok   سنسور، آداپتورِ «۲xx=پذیرش» را می‌بیند
+  ok   و خطایِ نامعلوم را که بدقلق هم درست می‌کند، اشتباهاً قرمز نمی‌کند
+── ۱۰ بدنهٔ نامعتبر، نشانی را برنمی‌گرداند
+  ok   بدنۀِ واژه‌نامه‌نشدنش نشست را باز نمی‌کند و token را برنمی‌گرداند
+  ok   و بی‌شکل بودنِ بدنه token را ذخیره نمی‌کند
+  ok   بدنۀِ درست نشست را باز می‌کند و باز هم مقدار را برنمی‌گرداند
+  ok   هیچ repr/وضعیتی نشانی را ندارد
+  ok   درِ نشست با Request خام خوانده می‌شود (نه Bodyِ pydantic)
+── ۹ spec: آداپتور درِ بیلدِ منجمد گم نمی‌شود
+  ok   fts_terminal.spec درِ hiddenimports آداپتورِ تازه را دارد
+  ok   bors_setup.spec درِ hiddenimports آداپتورِ تازه را دارد
+  ok   ایمپورت درِ سطحِ api/execution.py است (نه درونِ تابع) — اسکنِ ایستا هم می‌بیند
+  ok   ترافیکِ واقعی رویِ requests است — بستهٔ تازه‌ای به مخزن اضافه نشد
+
+easytrader_adapter_v1113: 141 passed / 0 failed

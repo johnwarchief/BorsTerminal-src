@@ -18,6 +18,8 @@ import { USER_INDICATORS_REGISTRY } from '../overlays/userIndicators';
 export interface ForecastControlsProps {
   className?: string;
   onHorizonChange?: (horizon: number) => void;
+  /** R-PB-10: میزکار تازه نماد/تایم‌فریم/تعدیل را در نوار بالا دارد؛ این ردیف فقط ابزارها را نگه می‌دارد. */
+  compact?: boolean;
 }
 
 const QUICK_HORIZONS = [3, 6, 12];
@@ -38,6 +40,7 @@ const ADJUSTMENT_OPTIONS = [
 export const ForecastControls: React.FC<ForecastControlsProps> = ({
   className = '',
   onHorizonChange,
+  compact = false,
 }) => {
   const selectedSymbol = useTechnicalStore((s) => s.selectedSymbol);
   const setSelectedSymbol = useTechnicalStore((s) => s.setSelectedSymbol);
@@ -133,6 +136,7 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
       {/* منطقه ۱ (راست): هسته معاملاتی - نماد، تایم‌فریم، نوع تعدیل، رویدادهای شرکتی و زون‌های SMC */}
       <div className="flex items-center gap-1.5 shrink-0">
         {/* جستجو و سوییچ نماد با پالت تمیز و بدون شلوغی */}
+        {!compact && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -161,8 +165,9 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
             ↵
           </button>
         </form>
+        )}
 
-        {/* انتخاب تایم‌فریم به سبک وبول و کراکن پرو */}
+        {!compact && (
         <div
           data-testid="timeframe-selector"
           className="flex items-center h-6.5 bg-panel-2 p-0.5 rounded-[var(--radius-sm)] border border-line shrink-0"
@@ -187,10 +192,10 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
             );
           })}
         </div>
+        )}
+        {!compact && <div className="h-3.5 w-px bg-line/60 shrink-0 mx-0.5" />}
 
-        <div className="h-3.5 w-px bg-line/60 shrink-0 mx-0.5" />
-
-        {/* منوی تعدیل رهاورد ۳۶۵ */}
+        {!compact && (
         <div className="flex items-center h-6.5 bg-panel-2 px-1.5 rounded-[var(--radius-sm)] border border-line shrink-0">
           <span className="t-9 text-text-3 me-1">تعدیل:</span>
           <select
@@ -206,6 +211,7 @@ export const ForecastControls: React.FC<ForecastControlsProps> = ({
             ))}
           </select>
         </div>
+        )}
 
         {/* رویدادهای شرکتی (M, D, E) با بج نقطه فعال */}
         <button

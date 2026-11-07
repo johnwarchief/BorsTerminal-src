@@ -57,12 +57,23 @@ def fresh_db():
     return c
 
 
-def notice(c, tn, sym, title=FS_TITLE, pub="1405/07/20 10:00:00"):
+def notice(c, tn, sym, title=FS_TITLE, pub="1405/07/20 10:00:00",
+           pdf=None, excel=None):
+    """اطلاعیهٔ فیچر با پیوندهایِ واقعیِ منبع (pdf/excel).
+
+    بدونِ این پیوندها گیتِ «missing_provenance» در فازِ جدید گزارشِ ماهانه را
+    قرنطینه می‌کند و این گاردِ قدیمی ۳۸/۴ می‌شود؛ پیش‌فرض از tracing_no ساخته
+    می‌شود تا هر دو نوعِ FS/MS منبعِ قابلِ استناد داشته باشند.
+    """
+    if pdf is None:
+        pdf = "https://codal.ir/PDF/%d.pdf" % tn
+    if excel is None:
+        excel = "https://codal.ir/Excel/%d.xlsx" % tn
     c.execute("INSERT OR REPLACE INTO codal_notices (tracing_no, symbol, company_name,"
               " title, letter_code, publish_date, sent_date, url, fetched_at,"
               " pdf_url, excel_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
               (tn, sym, sym, title, "1", pub, "", "https://codal.ir/Reports?a=%d" % tn,
-               "2026-10-13 00:00:00", "", ""))
+               "2026-10-13 00:00:00", pdf, excel))
 
 
 def fs_scrape(n):

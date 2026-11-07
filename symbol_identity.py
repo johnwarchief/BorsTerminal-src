@@ -45,12 +45,16 @@
         - ISIN مخالف  → رد کن، هرگز الحاق نکن (evidence='isin-clash'): هر
           دوصدایی — چندِ صادرکننده زیرِ یکِ پایۀ نام (خودِ پایه و خط‌هایِ
           خواهرش، «كم ر ۱..۵») یا نخواندنِ ISINِ خودِ خط با آن صادرکننده.
-        - شاهدی نیست  → بپذیر ولی **اعلام کن** (evidence='no-isin') تا در ردپای
+        - شاهدی نیست  → **ادغام نکن** (evidence='pending-review')؛ نامزد درِ
+          `pending_variants` می‌ماند و علت درِ ردپایِ کارت دیده می‌شود. رأیِ
+          مالک ۲۰۲۶-۱۰-۱۷: تشابه نام یا پسوند به‌تنهایی مجوزِ ادغام نیست.
+          (پیش از این همین حالت «بپذیر ولی اعلام کن» بود.)
           کارت دیده شود؛ این تنها حالتی است که ریسک دارد و بی‌اعلان نمی‌ماند.
      جهتِ برعکسِ همین بند (`class_siblings`): نمادِ کدال رویِ تابلو نیست و یکِ
      خطِ شماره‌دارِ همان نام وجود دارد («پارتین» ← «پارتین2»؛ کارت برایِ ارزشِ
      بازار به `instruments` نیاز دارد). تنها شاهدِ ممکن **یگانگی** است: یکِ
-     کاندیدا ⇒ بپذیر با `no-isin`، دو کاندیدا ⇒ رد با `ambiguous`. سنجشِ همین
+     کاندیدا ⇒ **ادغام نکن** و با `pending-review` اعلام کن؛ دو کاندیدا ⇒ رد با
+     `ambiguous`. رأیِ مالک ۲۰۲۶-۱۰-۱۷ همین دو «بی‌شاهد» را بست. سنجشِ همین
      بانک: ۱ نمادِ کدال این راه را می‌رود و ۰ نمادِ چندکاندیدیداد — پس امروز
      رفتار عوض نمی‌شود و این هم نگهبانِ روزِ بعد است.
   ۴) هیچ تطبیقِ فازی/تقریبی/نام‌محور در این لایه نیست. اگر دو رشته کلیدِ
@@ -70,7 +74,8 @@ import re
 import sqlite3
 
 __all__ = [
-    "key", "norm", "variants", "line_variants", "class_siblings", "pred", "sources",
+    "key", "norm", "variants", "line_variants", "pending_variants", "class_siblings",
+    "pending_siblings", "pred", "evidence", "sources",
     "reset_cache", "cache_info", "identity_stats", "EVIDENCE",
 ]
 
@@ -232,30 +237,30 @@ def variants(conn, symbol, domain=CODAL) -> tuple:
 
 # ── ۳) پسوندِ خطِ تابلو، با گیتِ ISIN ──────────────────────────────────────
 _ONE_DIGIT = re.compile(r"(?<=\D)\d$")
-EVIDENCE = ("exact", "same-key", "isin-agree", "no-isin", "isin-clash", "ambiguous",
+EVIDENCE = ("exact", "same-key", "isin-agree", "pending-review", "isin-clash", "ambiguous",
             "unmatched")
 
 
-def line_variants(conn, symbol, domain=CODAL):
-    """(namzed-ha, evidence) برای نمادهای «خط» تابلو مثل `آباد3`.
+def _line_candidates(conn, symbol, domain=CODAL):
+    """(نامزدها, شاهد, ادغام‌شده؟) — یگانۀ داوریِ الحاقِ پسوندِ رقمی.
 
-    فقط یک رقمِ انتهایی؛ رقم‌های چندتایی هرگز (`اراد275` زیرِ نامزدش هشتاد
-    اوراقِ با ISINِ متفاوت دارد — اندازه‌گیری‌شده). بازگشت:
-      ((), 'exact')      یعنی بی‌پسوندیم یا نامزد بی‌ردیفِ کدال است
+    رأیِ مالک (۲۰۲۶-۱۰-۱۷): ادغامِ خودکار **فقط** با ISINِ معتبر مجاز است. تشابه
+    نام، پسوند یا «یکِ نامزد بودن» به‌تنهایی شاهد نیست؛ پس آن حالت از `merged`
+    بیرون می‌ماند و نامزد درِ `pending_variants` زنده می‌ماند (حذف نمی‌شود).
     """
     if domain != CODAL:
         # درِ جهانِ تابلو پسوندِ رقمی هویتِ ابزار است؛ الحاق ممنوع.
-        return (), "exact"
+        return (), "exact", False
     k = key(symbol)
     if not k or len(k) < 3 or not _ONE_DIGIT.search(k):
-        return (), "exact"
+        return (), "exact", False
     base = _ONE_DIGIT.sub("", k)
     if not base or base == k:
-        return (), "exact"
+        return (), "exact", False
     slot = _slot(conn)
     # نامزد فقط وقتی معتبر است که ردیفِ کدال داشته باشد (نه فقط ردیفِ تابلو)
     if not _has_codal_rows(conn, base):
-        return (), "exact"
+        return (), "exact", False
     mine = set(slot["isin"].get(k, ()))
     theirs = set(slot["isin"].get(base, ()))
     for kk, segs in slot["isin"].items():
@@ -264,13 +269,32 @@ def line_variants(conn, symbol, domain=CODAL):
         # الحاقِ هر کدام به دیگری خطاست — حتی وقتی ISINِ خودِ خط با یکی می‌خواند.
         if kk != base and kk != k and _ONE_DIGIT.search(kk) and _ONE_DIGIT.sub("", kk) == base:
             theirs |= segs
-    if len(theirs) > 1:
-        return (), "isin-clash"                 # یکِ نام، چندِ صادرکننده ⇒ الحاق ممنوع
-    if mine and theirs and not (mine & theirs):
-        return (), "isin-clash"                 # ISINِ خودِ خط با صادرکنندۀ نام نمی‌خواند
-    ev = "isin-agree" if (mine and theirs) else "no-isin"
     raws = tuple(r for r in slot["by_key"].get(base, ()) if key(r) == base)
-    return raws, ev
+    if len(theirs) > 1:
+        return raws, "isin-clash", False            # یکِ نام، چندِ صادرکننده
+    if mine and theirs and not (mine & theirs):
+        return raws, "isin-clash", False            # ISINِ خط با صادرکنندۀ نام نمی‌خواند
+    if mine and theirs:
+        return raws, "isin-agree", True             # تنها شاهدِ پذیرفتنی
+    return raws, "pending-review", False            # بی‌شاهد ⇒ نامزد می‌ماند، ادغام نه
+
+
+def line_variants(conn, symbol, domain=CODAL):
+    """(namzed-ha, evidence) — فقط وقتی ادغام مجاز است نامزدها برگردانده می‌شوند.
+
+    نمادهای «خط» تابلو مثل `آباد3`. بی‌شاهدِ ISIN، فهرستِ الحاق **خالی** است و
+    شاهد `pending-review` می‌آید؛ نامزدها را `pending_variants` نشان می‌دهد.
+    بازگشت:
+      ((), 'exact')      یعنی بی‌پسوندیم یا نامزد بی‌ردیفِ کدال است
+    """
+    raws, ev, merged = _line_candidates(conn, symbol, domain)
+    return (raws if merged else ()), ev
+
+
+def pending_variants(conn, symbol, domain=CODAL):
+    """نامزدهایی که **یافت شدند ولی ادغام نشدند** — با علت، برایِ رابط و گارد."""
+    raws, ev, merged = _line_candidates(conn, symbol, domain)
+    return ((), "unmatched") if merged or ev == "exact" else (raws, ev)
 
 
 def class_siblings(conn, symbol):
@@ -280,8 +304,8 @@ def class_siblings(conn, symbol):
     تابلو را می‌خواهیم (کارتِ بنیادی برایِ ارزشِ بازار به `instruments` نیاز
     دارد). تنها شاهدِ ممکن **یگانگی** است: اگر دو خطِ شماره‌دار زیرِ یکِ نام
     باشد (`كم ر ۱..۵` — دو صادرکننده با ISINِ متفاوت) الحاق ممنوع و ردپا
-    `ambiguous` می‌ماند؛ یکِ کاندیدا ⇒ قبول با ردپایِ `no-isin` (بی‌شاهد، ولی
-    اعلام‌شده). سنجشِ همین بانک: از ۱۱۹۵ نمادِ کدال، دقیقاً **۱** نماد
+    `ambiguous` می‌ماند؛ یکِ کاندیدا ⇒ ادغام نمی‌شود و ردپا `pending-review`
+    است (بی‌شاهدِ ISIN؛ نامزد را `pending_siblings` نشان می‌دهد). سنجشِ همین بانک: از ۱۱۹۵ نمادِ کدال، دقیقاً **۱** نماد
     (`پارتین`) رویِ تابلو نیست و با یکِ رقمِ اضافی پیدا می‌شود (`پارتین2`)، و
     صفر نماد چندکاندیدیداد — پس این قاعده امروز رفتار را عوض نمی‌کند و فقط
     classِ خطرناک را می‌بندد.
@@ -302,7 +326,28 @@ def class_siblings(conn, symbol):
         return (), "unmatched"
     if len(cands) > 1:
         return (), "ambiguous"
-    return tuple(cands), "no-isin"
+    return (), "pending-review"
+
+
+def pending_siblings(conn, symbol):
+    """خط‌هایِ کلاسِ نامزدِ یکِ نماد، وقتی ادغام بسته شده — با علت.
+
+    بی‌این، «ادغامِ جلوگرفته‌شده» از «نامزدی که نبود» تفاوتی ندارد و کاربر نمی‌
+    فهمد چرا ارزشِ بازار خوانده نمی‌شود. هیچ ردیفی حذف نمی‌شود؛ فقط الحاق
+    نمی‌شود.
+    """
+    cands, ev = class_siblings(conn, symbol)
+    if cands:
+        return cands, ev
+    k = key(symbol)
+    slot = _slot(conn)
+    found = set()
+    for kk, raws in slot["by_key_board"].items():
+        if kk != k and _ONE_DIGIT.search(kk) and _ONE_DIGIT.sub("", kk) == k:
+            found.update(raws)
+    if not found or slot["by_key_board"].get(k):
+        return (), "unmatched"
+    return tuple(sorted(found)), ev if ev == "pending-review" else "ambiguous"
 
 
 def _has_codal_rows(conn, k: str) -> bool:
@@ -340,7 +385,7 @@ def pred(conn, col: str, symbol, domain=CODAL):
 
 
 def evidence(conn, symbol, domain=CODAL) -> str:
-    """چطور به ردیف‌ها رسیدیم: same-key | isin-agree | no-isin | isin-clash | unmatched.
+    """چطور به ردیف‌ها رسیدیم: same-key | isin-agree | pending-review | isin-clash | unmatched.
 
     پیش ازِ دامنه‌ای‌بودنِ این لایه، پاسخ همیشه `same-key` بود: `instruments` هم
     در همان نقشه بود و نامِ خودش را پیدا می‌کرد، پس سنسور هیچ‌وقت چیزی نمی‌دید.
@@ -351,13 +396,16 @@ def evidence(conn, symbol, domain=CODAL) -> str:
     mp = slot["by_key"] if domain == CODAL else slot["by_key_board"]
     if mp.get(k):
         return "same-key"
-    extra, ev = line_variants(conn, symbol, domain)
-    if extra:
+    _raws, ev, merged = _line_candidates(conn, symbol, domain)
+    if merged:
+        return ev
+    if ev in ("pending-review", "isin-clash"):
+        # «ادغام بسته شد» با «نامزدی نبود» یکی نیست؛ هر دو باید درِ کارت دیده شوند
         return ev
     # «الحاق رد شد» با «هیچ نامزدی نبود» یکی نیست: ردپایِ رد (`isin-clash`) باید درِ
     # کارت دیده شود، وگرنه یکِ الحاقِ خطرناکِ جلوگرفته‌شده دقیقاً مثلِ نبودِ داده
     # خوانده می‌شود — همان جایی که سنسور کور می‌شود.
-    return ev if ev == "isin-clash" else "unmatched"
+    return "unmatched"
 
 
 def reset_cache(conn=None) -> int:

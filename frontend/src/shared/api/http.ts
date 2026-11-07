@@ -63,6 +63,32 @@ const RETRYABLE = new Set([403, 429, 500, 502, 503, 504]);
  * از `useMarketFeed` کوئری می‌زد و ردیف‌های دوفیلدیِ او به کشِ تابلو نشت می‌کرد.
  */
 const conditional = new Map<string, { etag: string; data: unknown }>();
+/** سقفِ کشِ شرطی. کلید شاملِ URL است و مسیرهایِ نمادمحور (`/api/chart/<sym>`)
+ *  هر کدام یک ورودیِ تازه می‌سازند؛ بی‌سقف، یک نشستِ طولانی با صدها نماد
+ *  صدها بدنهٔ پارس‌شده (چارت ~۱MB) را تا بستنِ تب نگه می‌داشت. ۳۲ ورودیِ
+ *  آخر (LRU) همان سودِ ۳۰۴ را برایِ مسیرهایِ پرتکرار نگه می‌دارد و حافظه را
+ *  کران‌دار می‌کند. اخراج فقط «۳۰۴ِ بعدی» را از دست می‌دهد، نه داده یا درخواست. */
+const CONDITIONAL_MAX = 32;
+
+function conditionalGet(key: string) {
+  const hit = conditional.get(key);
+  if (hit) {
+    // تازه‌سازیِ ترتیب: ورودیِ پرتکرار آخر می‌رود، نه اول.
+    conditional.delete(key);
+    conditional.set(key, hit);
+  }
+  return hit;
+}
+
+function conditionalSet(key: string, value: { etag: string; data: unknown }) {
+  conditional.delete(key);
+  conditional.set(key, value);
+  while (conditional.size > CONDITIONAL_MAX) {
+    const oldest = conditional.keys().next().value as string | undefined;
+    if (oldest === undefined) break;
+    conditional.delete(oldest);
+  }
+}
 
 const schemaIds = new WeakMap<ZodType, number>();
 let schemaSeq = 0;
@@ -136,6 +162,49 @@ export async function httpBlob(url: string, body: unknown, signal?: AbortSignal)
   };
 }
 
+type RawReply = { status: number; ok: boolean; etag: string | null; data: unknown };
+
+/** پاسخِ خامِ GETهایِ هم‌زمانِ یک URL را یکی می‌کند.
+ *
+ *  دو مصرف‌کنندهٔ مستقل (مثلاً چارت و تحلیلِ تکنیکال) همان URL را هم‌زمان
+ *  می‌خواهند؛ بی‌این، دو درخواست و دو محاسبهٔ سنگین می‌شود. اشتراک در سطحِ
+ *  **JSONِ خام** است، نه شیءِ پارس‌شده: هر فراخوان اسکیمای خودش را جدا اعمال
+ *  می‌کند، پس درسِ «اسکیمای چروکیده به کشِ دیگری نشت کند» تکرار نمی‌شود.
+ */
+const inflightRaw = new Map<string, Promise<RawReply>>();
+
+function sharedRaw(url: string): Promise<RawReply> {
+  const hit = inflightRaw.get(url);
+  if (hit) return hit;
+  const p = (async (): Promise<RawReply> => {
+    const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    let data: unknown = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    return { status: res.status, ok: res.ok, etag: res.headers?.get?.('etag') ?? null, data };
+  })();
+  inflightRaw.set(url, p);
+  const clear = () => { if (inflightRaw.get(url) === p) inflightRaw.delete(url); };
+  p.then(clear, clear);
+  return p;
+}
+
+function abortable<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return p;
+  if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new DOMException('Aborted', 'AbortError'));
+    signal.addEventListener('abort', onAbort, { once: true });
+    p.then(
+      (v) => { signal.removeEventListener('abort', onAbort); resolve(v); },
+      (e) => { signal.removeEventListener('abort', onAbort); reject(e); },
+    );
+  });
+}
+
 /** fetch با retry نمایی + Zod parse — الگوی codal_fetcher (backoff روی 429/403) */
 export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
   const { schema, retries = 2, baseDelayMs = 800, signal, method = 'GET',
@@ -148,42 +217,64 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const revalidate = method === 'GET' && !noCache ? conditional.get(cKey) : undefined;
-      const res = await fetch(url, {
-        headers: {
-          Accept: 'application/json',
-          // برای بدینهٔ خام، Content-Type را فراخواننده تعیین می‌کند (در headers).
-          ...(payload && rawBody == null ? { 'Content-Type': 'application/json' } : {}),
-          ...(revalidate ? { 'If-None-Match': revalidate.etag } : {}),
-          ...headers,
-        },
-        ...(revalidate ? { cache: 'no-store' as RequestCache } : {}),
-        method,
-        ...(payload != null ? { body: payload } : {}),
-        signal,
-      });
-      // ۳۰۴ پیش از !res.ok بررسی می‌شود: statusِ ۳۰۴ با ok=false می‌آید و
-      // اگر همین‌جا رد شود، کاربر «خطایِ شبکه» می‌بیند در حالی که داده سالم است.
-      if (res.status === 304 && revalidate) return revalidate.data as T;
-      if (!res.ok) {
-        const err = new HttpError(res.status, url);
-        if (RETRYABLE.has(res.status) && attempt < retries) {
-          await sleep(baseDelayMs * 2 ** attempt, signal);
-          lastErr = err;
-          continue;
+      const revalidate = method === 'GET' && !noCache ? conditionalGet(cKey) : undefined;
+      let data: unknown;
+      let etag: string | null;
+      const canShare = method === 'GET' && !payload && !rawBody && !noCache && !revalidate && !headers;
+      if (canShare) {
+        const raw = await abortable(sharedRaw(url), signal);
+        if (!raw.ok) {
+          const err = new HttpError(raw.status, url);
+          if (RETRYABLE.has(raw.status) && attempt < retries) {
+            await sleep(baseDelayMs * 2 ** attempt, signal);
+            lastErr = err;
+            continue;
+          }
+          throw err;
         }
-        throw err;
+        data = raw.data;
+        etag = raw.etag;
+      } else {
+        const res = await fetch(url, {
+          headers: {
+            Accept: 'application/json',
+            // برای بدینهٔ خام، Content-Type را فراخواننده تعیین می‌کند (در headers).
+            ...(payload && rawBody == null ? { 'Content-Type': 'application/json' } : {}),
+            ...(revalidate ? { 'If-None-Match': revalidate.etag } : {}),
+            ...headers,
+          },
+          ...(revalidate ? { cache: 'no-store' as RequestCache } : {}),
+          method,
+          ...(payload != null ? { body: payload } : {}),
+          signal,
+        });
+        // ۳۰۴ پیش از !res.ok بررسی می‌شود: statusِ ۳۰۴ با ok=false می‌آید و
+        // اگر همین‌جا رد شود، کاربر «خطایِ شبکه» می‌بیند در حالی که داده سالم است.
+        if (res.status === 304 && revalidate) return revalidate.data as T;
+        if (!res.ok) {
+          const err = new HttpError(res.status, url);
+          if (RETRYABLE.has(res.status) && attempt < retries) {
+            await sleep(baseDelayMs * 2 ** attempt, signal);
+            lastErr = err;
+            continue;
+          }
+          throw err;
+        }
+        data = await res.json();
+        etag = res.headers?.get?.('etag') ?? null;
       }
-      const data: unknown = await res.json();
-      if (!schema) return data as T;
+      if (!schema) {
+        // GETِ بی‌اسکیما (مثلاً قیف) هم باید ETag را نگه دارد؛ وگرنه هر ورودِ
+        // دوباره بدنهٔ چندمگابایتی را کامل می‌گیرد. کلید همچنان URL+هویتِ
+        // اسکیماست (اینجا id=0)، پس با مسیرِ اسکیمادارِ همان URL قاطی نمی‌شود.
+        if (method === 'GET' && etag && !noCache) conditionalSet(cKey, { etag, data });
+        return data as T;
+      }
       const parsed = schema.safeParse(data);
       if (!parsed.success) {
         throw new HttpError(0, url, `پاسخ API با قرارداد نمی خواند: ${parsed.error.message}`);
       }
-      // `?.` چون پاسخ‌هایِ ماک‌شدهٔ تست‌ها ممکن است Responseِ کامل نباشند؛
-      // نبودِ هدر فقط یعنی «این پاسخ قابلِ اعتبارسنجیِ مجدد نیست».
-      const etag = res.headers?.get?.('etag') ?? null;
-      if (method === 'GET' && etag && !noCache) conditional.set(cKey, { etag, data: parsed.data });
+      if (method === 'GET' && etag && !noCache) conditionalSet(cKey, { etag, data: parsed.data });
       return parsed.data as T;
     } catch (e) {
       if (e instanceof HttpError) throw e;

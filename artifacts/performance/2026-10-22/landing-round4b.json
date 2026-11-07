@@ -1,0 +1,123 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "ranAt": "2026-10-22T01:37:19.595Z",
+ "results": [
+  {
+   "fcp": 2108,
+   "ttfb": 250,
+   "api": [
+    {
+     "u": "/api/update/version",
+     "ms": 7,
+     "enc": 73
+    },
+    {
+     "u": "/api/notifications/feed",
+     "ms": 1666,
+     "enc": 4820
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 190,
+     "enc": 374
+    },
+    {
+     "u": "/api/funnel/registry",
+     "ms": 163,
+     "enc": 7688
+    },
+    {
+     "u": "/api/market/closes",
+     "ms": 478,
+     "enc": 31130
+    }
+   ],
+   "encodedTotal": 44085,
+   "longtasks": 3,
+   "tbt": 247,
+   "heapMB": 12,
+   "run": 1,
+   "loginGate": true,
+   "readyMs": 4894,
+   "errors": []
+  },
+  {
+   "fcp": 1708,
+   "ttfb": 21,
+   "api": [
+    {
+     "u": "/api/update/version",
+     "ms": 7,
+     "enc": 73
+    },
+    {
+     "u": "/api/notifications/feed",
+     "ms": 1432,
+     "enc": 4820
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 172,
+     "enc": 374
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 220,
+     "enc": 388078
+    },
+    {
+     "u": "/api/funnel/registry",
+     "ms": 50,
+     "enc": 7688
+    },
+    {
+     "u": "/api/market/closes",
+     "ms": 422,
+     "enc": 31130
+    }
+   ],
+   "encodedTotal": 432163,
+   "longtasks": 7,
+   "tbt": 339,
+   "heapMB": 19,
+   "run": 2,
+   "loginGate": true,
+   "readyMs": 4346,
+   "errors": []
+  },
+  {
+   "fcp": 620,
+   "ttfb": 17,
+   "api": [
+    {
+     "u": "/api/update/version",
+     "ms": 7,
+     "enc": 73
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 83,
+     "enc": 374
+    },
+    {
+     "u": "/api/funnel/registry",
+     "ms": 126,
+     "enc": 7688
+    },
+    {
+     "u": "/api/market/closes",
+     "ms": 634,
+     "enc": 31130
+    }
+   ],
+   "encodedTotal": 39265,
+   "longtasks": 4,
+   "tbt": 203,
+   "heapMB": 11,
+   "run": 3,
+   "loginGate": true,
+   "readyMs": 2343,
+   "errors": []
+  }
+ ]
+}

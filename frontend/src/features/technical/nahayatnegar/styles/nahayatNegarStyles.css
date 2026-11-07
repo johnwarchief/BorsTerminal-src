@@ -289,8 +289,10 @@
   bottom: 2px;
   right: 2px;
   left: auto;
-  font-size: 8px;
-  line-height: 8px;
+  /* 8px تنها متنِ زیرِ کفِ نردبان درِ «تحلیل تکنیکال» بود (سنجشِ مرورگر: ۱۲ گره).
+     علامتِ «زیرابزار هست» باید دیده شود؛ ۱۱px کفِ --fs-3xs است. */
+  font-size: var(--fs-3xs, 11px);
+  line-height: 1.1;
   color: var(--nn-text-secondary);
   opacity: 0.6;
   cursor: pointer;
@@ -422,6 +424,89 @@
   z-index: 10;
 }
 
+/* هشدارِ عملکردی: یک خطِ کوتاه با عددهای همین نماد؛ جزئیات فقط با بازکردن. */
+.nn-functional-note {
+  max-width: min(520px, calc(100% - 20px));
+  line-height: 1.7;
+}
+
+.nn-functional-note > span {
+  display: block;
+}
+
+.nn-functional-details {
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.nn-functional-details summary {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--nn-color-warning);
+}
+
+.nn-functional-details ul {
+  margin: 4px 0 0;
+  padding-inline-start: 14px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.nn-functional-details li {
+  margin: 1px 0;
+}
+
+.nn-functional-method {
+  margin-top: 4px;
+  font-size: 9px;
+}
+
+.nn-functional-method summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.nn-functional-method p {
+  margin: 3px 0 0;
+  max-height: 80px;
+  overflow: auto;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+/* واترمارکِ چارت — لایۀ واقعاً رسم‌شده (پیش‌تر فقط دو پرچم درِ استور ذخیره می‌شد).
+   opacity از استور می‌آید (۵٪…۵۰٪)؛ pointer-events:none تا کلیکِ کندل، مگنت و
+   درگِ محور را بلوکه نکند. */
+.nn-chart-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+  color: var(--nn-text-primary);
+  direction: rtl;
+}
+
+.nn-watermark-symbol {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.nn-watermark-brand {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
 /* ================= نوار شناور تنظیمات المان (FLOATING PROPERTIES BAR) ================= */
 .tv-floating-properties-bar {
   position: absolute;
@@ -521,10 +606,6 @@
   color: var(--nn-text-active);
   border-color: rgba(41, 98, 255, 0.4);
 }
-
-/* حالت‌های تعدیلِ بدون دادهٔ تفکیکی — غیرفعال و با شفافیت کم */
-.nn-dropdown-item.nn-disabled { opacity: .38; cursor: not-allowed; }
-.nn-dropdown-item.nn-disabled:hover { background-color: transparent; }
 
 /* لِجِندِ الگوهای فعالِ FTS روی چارت (بالا-چپ؛ جمع‌شونده و کامپکت) */
 .nn-pattern-legend {
@@ -630,12 +711,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 18px;
-  min-width: 22px;
+  /* 18×22 باِ متنِ 10px هم ازِ کفِ خوانایی (۱۱px) پایین‌تر بود هم ازِ کفِ هدفِ
+     تعاملِ WCAG 2.2 (۲۴px). نوارِ محورِ نمودار جایِ فشرده‌ای است، پسِ ارتفاعِ
+     خودِ کلید ۲۲px وِ عرضش ۲۴px شد — متنِ «% / LOG / AUTO» حالا اندازهٔ
+     نردبان را دارد. */
+  height: 22px;
+  min-width: 24px;
   border: 1px solid transparent;
   background: transparent;
   color: #848e9c;
-  font-size: 10px;
+  font-size: var(--fs-3xs, 11px);
   font-weight: 700;
   padding: 0 5px;
   border-radius: 3px;

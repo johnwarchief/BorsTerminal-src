@@ -8,8 +8,7 @@
 // کلیدِ پرس‌وجو `ins_code` است (شناسۀ پایدار)، نه نامِ نمایشی.
 import { useQuery } from '@tanstack/react-query';
 import { http } from '@shared/api/http';
-import { useMarketFeedShared } from '@shared/api/marketFeed';
-import { normalizeFa } from '@shared/lib/normalizeFa';
+import { useMarketRowIdentity } from '@features/market/api/useMarketRow';
 import { TAPE_FLAGS, type TapeFlag } from '@shared/lib/tapeFlags';
 
 export type TapeDayCell = {
@@ -43,13 +42,11 @@ export const TAPE_HISTORY_KEY = ['tape-history'] as const;
  *  را می‌شناسد و کوئریِ سابقه کلیدِ پایدار می‌خواهد، پس از همان فیدِ مشترکِ تابلو
  *  خوانده می‌شود — بی‌درخواستِ دوم. نبودش یعنی «سابقه خوانده نمی‌شود»، نه «صفر». */
 export function useInsCodeFor(symbol: string | null | undefined): string | null {
-  const norm = normalizeFa(symbol ?? '');
-  const q = useMarketFeedShared((f) => {
-    if (!norm) return null;
-    const hit = (f.data ?? []).find((r) => normalizeFa(String(r.symbol ?? '')) === norm);
-    return hit ? (String(hit.ins_code ?? '') || null) : null;
-  }, 60_000);
-  return q.data ?? null;
+  // ردیفِ همان نماد از `/api/market/row` — پیش‌تر برایِ یک `ins_code` کلِ
+  // فیدِ ۶٫۸MB خوانده می‌شد و صفحهٔ مستر را در هر انتخابِ نماد درگیر می‌کرد.
+  const sym = String(symbol ?? '').trim();
+  const q = useMarketRowIdentity(sym, sym.length > 0);
+  return q.data?.row?.ins_code ? String(q.data.row.ins_code) : null;
 }
 
 export function useTapeHistory(insCode: string | null | undefined, days = 6) {

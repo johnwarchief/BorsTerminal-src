@@ -162,7 +162,7 @@ export function PageTabs({
           data-testid={`${testId}-${p.id}`}
           title={p.hint}
           onClick={() => onSelect(p.id)}
-          className={`truncate rounded-md border px-2 py-1 text-[10px] font-bold transition-colors ${
+          className={`truncate rounded-md border px-2 py-1 text-3xs font-bold transition-colors ${
             page === p.id
               ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
               : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'

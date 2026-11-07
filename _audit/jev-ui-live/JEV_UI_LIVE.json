@@ -1,0 +1,185 @@
+{
+  "base": "http://127.0.0.1:8173/",
+  "at": "2026-10-19T01:04:42.480Z",
+  "shots": [
+    "01-normal-1440.png",
+    "02-order-1440.png",
+    "03-halted-1440.png",
+    "04-hint-1440.png",
+    "05-normal-1280.png"
+  ],
+  "normal": {
+    "row": {
+      "order": [
+        "schedule",
+        "risk",
+        "monitor"
+      ],
+      "labels": [
+        "زمان‌بندی",
+        "ریسک و ایمنی",
+        "پایش و سابقه"
+      ],
+      "chipHeight": [
+        28,
+        28,
+        28
+      ],
+      "rowTop": 115
+    },
+    "hint": {
+      "present": false
+    },
+    "metrics": {
+      "pageHeight": 257,
+      "pageWidth": 1272
+    }
+  },
+  "symbolResults": 12,
+  "chosenSymbol": "آتيه06",
+  "orderPanel": {
+    "row": {
+      "order": [
+        "schedule",
+        "risk",
+        "monitor"
+      ],
+      "labels": [
+        "زمان‌بندی",
+        "ریسک و ایمنی",
+        "پایش و سابقه"
+      ],
+      "chipHeight": [
+        28,
+        28,
+        28
+      ],
+      "rowTop": 180
+    },
+    "formPresent": 1,
+    "killChip": 1
+  },
+  "halt": {
+    "waitedMs": 618,
+    "seen": {
+      "order": [
+        "risk",
+        "schedule",
+        "monitor"
+      ],
+      "labels": [
+        "ریسک و ایمنی",
+        "زمان‌بندی",
+        "پایش و سابقه"
+      ],
+      "chipHeight": [
+        28,
+        28,
+        28
+      ],
+      "rowTop": 181
+    }
+  },
+  "haltHint": {
+    "present": false
+  },
+  "haltLine": "توقفِ اضطراری فعال است",
+  "hintAfterRepeats": {
+    "hint": {
+      "present": true,
+      "level": "2",
+      "text": "راهنما: توقفِ اضطراری باز است (توقف از پنلِ معامله) — «ادامهٔ دستوری» لازم است · مسیرِ بازکردن: «ریسک و ایمنی» · بسته بر ۱ شرطِ خودِ سرویس",
+      "height": 14
+    },
+    "rowBefore": {
+      "order": [
+        "risk",
+        "schedule",
+        "monitor"
+      ],
+      "labels": [
+        "ریسک و ایمنی",
+        "زمان‌بندی",
+        "پایش و سابقه"
+      ],
+      "chipHeight": [
+        28,
+        28,
+        28
+      ],
+      "rowTop": 181
+    },
+    "rowAfter": {
+      "order": [
+        "risk",
+        "schedule",
+        "monitor"
+      ],
+      "labels": [
+        "ریسک و ایمنی",
+        "زمان‌بندی",
+        "پایش و سابقه"
+      ],
+      "chipHeight": [
+        28,
+        28,
+        28
+      ],
+      "rowTop": 181
+    }
+  },
+  "resumeClicked": true,
+  "afterResume": {
+    "order": [
+      "schedule",
+      "risk",
+      "monitor"
+    ],
+    "labels": [
+      "زمان‌بندی",
+      "ریسک و ایمنی",
+      "پایش و سابقه"
+    ],
+    "chipHeight": [
+      28,
+      28,
+      28
+    ],
+    "rowTop": 180
+  },
+  "errors1440": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "normal1280": {
+    "row": {
+      "order": [
+        "schedule",
+        "risk",
+        "monitor"
+      ],
+      "labels": [
+        "زمان‌بندی",
+        "ریسک و ایمنی",
+        "پایش و سابقه"
+      ],
+      "chipHeight": [
+        28,
+        28,
+        28
+      ],
+      "rowTop": 115
+    },
+    "hint": {
+      "present": false
+    },
+    "metrics": {
+      "pageHeight": 257,
+      "pageWidth": 1112
+    }
+  },
+  "errors1280": [],
+  "externalRequests": [],
+  "zeroEgress": true,
+  "httpFailures": []
+}

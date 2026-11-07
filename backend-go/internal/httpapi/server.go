@@ -81,6 +81,7 @@ type Fundamental interface {
 	Sectors(http.ResponseWriter, *http.Request)
 	Quarters(http.ResponseWriter, *http.Request)
 	Card(http.ResponseWriter, *http.Request)
+	Freshness(http.ResponseWriter, *http.Request)
 }
 
 // Watchlist سه مسیرِ CRUD واچ‌لیست در B5؛ nil یعنی پورت نشده.
@@ -101,6 +102,7 @@ type Notifications interface {
 type Sync interface {
 	SyncStatus(http.ResponseWriter, *http.Request)
 	CodalDBStatus(http.ResponseWriter, *http.Request)
+	CodalPipeline(http.ResponseWriter, *http.Request)
 	Diagnose(http.ResponseWriter, *http.Request)
 	SyncMarket(http.ResponseWriter, *http.Request)
 	SyncCodal(http.ResponseWriter, *http.Request)
@@ -184,6 +186,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("GET /api/market", srv.Market.Board)
 		mux.HandleFunc("GET /api/market/delta", srv.Market.Delta)
 		mux.HandleFunc("GET /api/market/sync-state", srv.Market.SyncState)
+		mux.HandleFunc("POST /api/orderbook/watch", orderbookWatchHandler)
 		mux.HandleFunc("GET /api/tape-history", srv.Market.TapeHistory)
 	}
 	if srv.Mstat != nil {
@@ -224,6 +227,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		// پایتون هم متنیِ `/api/fundamental/sectors` پیش از `/api/fundamental/{symbol}`
 		// تعریف شده است.
 		mux.HandleFunc("GET /api/fundamental/sectors", srv.Fundamental.Sectors)
+		mux.HandleFunc("GET /api/fundamental/freshness", srv.Fundamental.Freshness)
 		mux.HandleFunc("GET /api/fundamental/screen", s.notPortedRoute)
 		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", srv.Fundamental.Quarters)
 		mux.HandleFunc("GET /api/fundamental/{symbol}", srv.Fundamental.Card)
@@ -241,6 +245,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 	if srv.Sync != nil {
 		mux.HandleFunc("GET /api/sync/status", srv.Sync.SyncStatus)
 		mux.HandleFunc("GET /api/sync/codal/db-status", srv.Sync.CodalDBStatus)
+		mux.HandleFunc("GET /api/sync/codal/pipeline", srv.Sync.CodalPipeline)
 		mux.HandleFunc("GET /api/sync/diagnose", srv.Sync.Diagnose)
 		mux.HandleFunc("POST /api/sync/market", srv.Sync.SyncMarket)
 		mux.HandleFunc("POST /api/sync/codal", srv.Sync.SyncCodal)

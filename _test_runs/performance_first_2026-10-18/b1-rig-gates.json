@@ -1,0 +1,35 @@
+{
+ "at": "2026-10-17 22:07:04",
+ "after_db_pristine": true,
+ "after_ready_s": 4.419434070587158,
+ "funnel_body_cache_final": {
+  "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/funnel_body_cache_v1.py --port 8020",
+  "rc": 1,
+  "dur_s": 50.2,
+  "log": "b1-funnel_body_cache_final.txt"
+ },
+ "equal_save_after": {
+  "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/perf_output_equal_v1.py save --base http://127.0.0.1:8020 --tag after-perf-first",
+  "rc": 0,
+  "dur_s": 24.3,
+  "log": "b1-equal-save-after.txt"
+ },
+ "head_put_sha": "0867f8814f578a24ca67dff2e0b6af7e8d91bded61236553526f6197997e54fb",
+ "before_db_pristine": true,
+ "before_ready_s": 3.6371419429779053,
+ "equal_save_before": {
+  "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/perf_output_equal_v1.py save --base http://127.0.0.1:8020 --tag before-perf-first",
+  "rc": 0,
+  "dur_s": 33.3,
+  "log": "b1-equal-save-before.txt"
+ },
+ "final_put_sha": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+ "final_restored_ok": true,
+ "equal_check": {
+  "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/perf_output_equal_v1.py check --before before-perf-first --after after-perf-first --report OUTPUT_EQUALITY_PERF_FIRST.json",
+  "rc": 0,
+  "dur_s": 6.2,
+  "log": "b1-equal-check.txt"
+ },
+ "db_restored_after": true
+}

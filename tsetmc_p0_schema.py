@@ -52,6 +52,51 @@ CREATE TABLE IF NOT EXISTS share_change_events (
     PRIMARY KEY (ins_code, d_even))
 """
 
+# توزیع‌هایِ نقدیِ صندوق‌ها که TSETMC در price_adjust_events منتشر نمی‌کند.
+# مقدار از پورتالِ رسمیِ مدیرِ صندوق می‌آید؛ `ratio` فقط برایِ بازبینیِ سریع است و
+# موتور آن را از reference_price/unit_profit بازمی‌سازد. کلید = (ins_code, d_even).
+FUND_PROFIT_EVENTS = """
+CREATE TABLE IF NOT EXISTS fund_profit_events (
+    ins_code TEXT, d_even INTEGER, symbol TEXT,
+    profit_date TEXT, unit_profit REAL, reference_price REAL, ratio REAL,
+    source TEXT, source_id TEXT, fetched_at TEXT,
+    PRIMARY KEY (ins_code, d_even))
+"""
+
+# DPSِ **اعلامیِ مجمع** برایِ سهام — منبعِ درستِ D در فرمولِ
+# close_ex/(close_ex+dps) (R32H: ۲۰ از ۳۲ گامِ دور دقیق شد). مقدار از صفحهٔ
+# Decision.aspxِ کدال می‌آید، نه از اختلافِ pna−pclِ دفترِ تعدیل؛ `d_even` همان
+# روزِ مؤثرِ ردیفِ PA است و `reference_price` پایانیِ رسمیِ همان روز.
+# نبودِ ردیف یعنی «اعلامی پیدا نشد» — نه DPSِ صفر.
+STOCK_DIVIDEND_EVENTS = """
+CREATE TABLE IF NOT EXISTS stock_dividend_events (
+    ins_code TEXT, d_even INTEGER, symbol TEXT,
+    dps REAL, reference_price REAL, ratio REAL,
+    publish_date TEXT, source TEXT, source_id TEXT, fetched_at TEXT,
+    PRIMARY KEY (ins_code, d_even))
+"""
+
+# ردیف‌هایی که CDN در CSV تاریخی جا انداخته ولی `/ClosingPrice/GetClosingPriceDaily`
+# همان روز را دارد. فقط ردیفِ رسمیِ همان روز؛ هیچ ساختن/کپیِ روزِ مجاور.
+SESSION_BACKFILL = """
+CREATE TABLE IF NOT EXISTS session_backfill (
+    ins_code TEXT, d_even INTEGER, symbol TEXT,
+    open REAL, high REAL, low REAL, close REAL, last REAL,
+    base REAL, volume REAL,
+    source TEXT, source_id TEXT, fetched_at TEXT,
+    PRIMARY KEY (ins_code, d_even))
+"""
+
+# تاریخ‌هایی که یک گسستِ پایهٔ بازار-گسترده (نه اقدام شرکتی) داشته‌اند.
+# توسط `tools/session_anomaly_scan.py` از شواهد cross-sectional پر می‌شود؛
+# هیچ تاریخی در کد hard-code نیست.
+SESSION_ANOMALIES = """
+CREATE TABLE IF NOT EXISTS session_anomalies (
+    d_even INTEGER PRIMARY KEY, gap_symbols INTEGER, official_symbols INTEGER,
+    product_only_steps INTEGER, median_abs_ratio_deviation REAL,
+    cause TEXT, evidence TEXT, built_at TEXT)
+"""
+
 # کلید سه‌تایی: GetInstrumentStateTop «تغییراتِ وضعیت» می‌دهد نه وضعیتِ روزانه،
 # و یک نماد در یک روز چند بار جابه‌جا می‌شود (سنجشِ زنده: 500 رکورد با کلیدِ
 # دوتایی فقط 225 ردیف می‌گذاشت).
@@ -93,18 +138,49 @@ CREATE TABLE IF NOT EXISTS tsetmc_messages (
 """
 
 # throttle/بودجهٔ سه خانوادۀ P0 (هیچ‌کدام در حلقۀ ۹۰ ثانیه‌ای نمی‌دوند)
+#   last_status / last_result / last_success: «چه شد» را از «کی دویدیم» جدا می‌کنند.
+#   پیش ازِ این سه ستون، یکِ روزِ کاملِ بی‌پاسخ (۴ از ۴ flow شکست) دقیقاً مثلِ یکِ روزِ
+#   موفق `last_run` می‌گرفت و تا ۲۴ ساعتِ بعدی هیچِ تلاشی نمی‌شد — یعنی شکست با سکوت
+#   به‌عنوانِ موفقیت ثبت می‌شد (قیدِ مأموریت: «failure با سکوت به‌عنوان موفقیت ثبت نمی‌شود»).
 P0_STATE = """
 CREATE TABLE IF NOT EXISTS tsetmc_p0_state (
-    name TEXT PRIMARY KEY, last_run TEXT)
+    name TEXT PRIMARY KEY, last_run TEXT,
+    last_status TEXT, last_result TEXT, last_success TEXT)
 """
+P0_STATE_EXTRA_COLUMNS = ("last_status", "last_result", "last_success")
 
 ALL = (CLIENT_TYPE_VALUE, CLIENT_TYPE_VALUE_STATE, PRICE_ADJUST_EVENTS,
-       SHARE_CHANGE_EVENTS, INSTRUMENT_STATE, STOP_REASONS, SUPERVISION_STATE,
+       SHARE_CHANGE_EVENTS, FUND_PROFIT_EVENTS, STOCK_DIVIDEND_EVENTS,
+       SESSION_BACKFILL,
+       SESSION_ANOMALIES, INSTRUMENT_STATE, STOP_REASONS, SUPERVISION_STATE,
        TSETMC_MESSAGES, P0_STATE)
 
 TABLES = ("client_type_value", "client_type_value_state", "price_adjust_events",
-          "share_change_events", "instrument_state", "stop_reasons",
+          "share_change_events", "fund_profit_events", "stock_dividend_events",
+          "session_backfill",
+          "session_anomalies", "instrument_state", "stop_reasons",
           "supervision_state", "tsetmc_messages", "tsetmc_p0_state")
+
+
+def migrate_p0_state(conn) -> int:
+    """افزودنِ بی‌خطرِ ستون‌هایِ جدید برِ بانک‌هایِ ساخته‌شده با DDLِ قدیمی (idempotent).
+
+    `CREATE TABLE IF NOT EXISTS` هرگز جدولِ موجود را عوض نمی‌کند، پس بدونِ این،
+    SELECTِ ستونِ تازه رویِ بانکِ کاربر خطا می‌داد و حلقۀِ تابلو را می‌شکست.
+    """
+    try:
+        have = {r[1] for r in conn.execute("PRAGMA table_info(tsetmc_p0_state)")}
+    except Exception:
+        return 0
+    added = 0
+    for col in P0_STATE_EXTRA_COLUMNS:
+        if col not in have:
+            try:
+                conn.execute(f"ALTER TABLE tsetmc_p0_state ADD COLUMN {col} TEXT")
+                added += 1
+            except Exception:
+                pass    # بانکِ قفل‌شده نباید یکِ درخواستِ خواندن را ۵۰۰ کند
+    return added
 
 
 def create_all(conn):
@@ -117,4 +193,5 @@ def create_all(conn):
             made += 1
         except Exception:
             pass
+    migrate_p0_state(conn)      # افزودنیِ بی‌خطر؛ بانکِ قدیمی هم ستون‌هایِ وضعیت را ببیند
     return made
