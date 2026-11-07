@@ -12,7 +12,7 @@
 
 این سند، مرجع رسمی و تغییرناپذیر کلیه تعاملات شبکه میان فرانت‌اند مدرن (`frontend-v2`) و سرور یکپارچه Go (`borsd`) در پروژه بورس‌ترمینال است. با ورود به فاز عملیاتی مرحله ۲ (حذف کامل پایتون از زمان اجرای نهایی دسکتاپ)، ارتباط فرانت‌اند نوین به‌طور مستقیم و انحصاری با باینری Go برقرار می‌شود.
 
-تمامی ۵۲ فراخوانی شبکه در فرانت‌اند نوین با دقت خط‌به‌خط بررسی، استخراج و در قالب **۲۳ الگوی مسیر منحصر‌به‌فرد** اعتبارسنجی شده‌اند. این سند اثبات می‌کند که **۱۰۰٪ نیازمندی‌های شبکه `frontend-v2` توسط هندلرهای فعال Go برطرف شده است** و هیچ‌گونه وابستگی عملیاتی به اندپوینت‌های پورت‌نشده یا پایتون وجود ندارد.
+تمامی ۵۲ فراخوانی شبکه در فرانت‌اند نوین با دقت خط‌به‌خط بررسی، استخراج و در قالب **۲۴ الگوی مسیر فعال در Go + ۱ روت تنظیمات کاربر (`/api/fts/config`) — در مجموع ۲۵ الگوی مسیر** اعتبارسنجی شده‌اند. این سند اثبات می‌کند که **۱۰۰٪ نیازمندی‌های عملیاتی و تحلیلی فرانت‌اند توسط هندلرهای فعال Go برطرف شده است** و روت تنظیمات بنیادی نیز با رفتار فال‌بک مشخص تا فاز ذخیره‌سازی تنظیمات (Task 6) مهار شده است.
 
 ---
 
@@ -50,7 +50,7 @@ $$\mathbf{61\ (Active\ Handlers) - 3\ (Explicit\ 501\ Registered\ Routes) = 58\ 
 همچنین در برخی گزارش‌ها، متدهای سه‌گانه واچ‌لیست (`GET`, `POST`, `DELETE /api/watchlist`) یا متدهای اکسپورت و فانل به‌صورت یک سرفصل واحد شمارش شده بودند.
 
 ### د) سهم کلاینت نوین (`frontend-v2`):
-فرانت‌اند `frontend-v2` برخلاف SPA قدیمی پایتون، به اندپوینت‌های آزمایشی، بات معامله‌گر، سرخطی و اسکریپت‌های موقت متصل **نیست**. این فرانت‌اند در کل ۵۲ فراخوانی شبکه در سورس‌کد خود دارد که منحصراً به **۲۳ الگوی مسیر فعال** ترجمه می‌شوند. تمام این ۲۳ الگو در Go پیاده‌سازی شده و دارای تست سبز هستند.
+فرانت‌اند `frontend-v2` برخلاف SPA قدیمی پایتون، به اندپوینت‌های آزمایشی، بات معامله‌گر، سرخطی و اسکریپت‌های موقت متصل **نیست**. این فرانت‌اند در کل ۵۲ فراخوانی شبکه در سورس‌کد خود دارد که منحصراً به **۲۴ الگوی مسیر فعال در Go** و **۱ روت تنظیمات کاربر ۵۰۱ (`/api/fts/config`)** — در مجموع **۲۵ الگوی مسیر** — ترجمه می‌شوند. تمامی ۲۴ مسیر عملیاتی و تحلیلی در Go پیاده‌سازی شده و دارای تست سبز هستند؛ مسیر تنظیمات نیز در فاز ۲E (وظیفه ۶) به دیتابیس کاربر متصل خواهد شد و در حال حاضر با مقادیر پیش‌فرض جزوه بدون خطا فعالیت می‌کند.
 
 ---
 
@@ -96,7 +96,7 @@ $$\mathbf{61\ (Active\ Handlers) - 3\ (Explicit\ 501\ Registered\ Routes) = 58\ 
 
 ---
 
-## ۵. جدول جامع ۲۳ قرارداد وب‌سرویس فعال `frontend-v2`
+## ۵. جدول جامع ۲۵ قرارداد وب‌سرویس کلاینت نوین `frontend-v2`
 
 | # | ویژگی فرانت‌اند | متد و مسیر API | هندلر Go | اینترفیس سرویس | دیتابیس و دسترسی | پارامترها و بدنه درخواست | اسکیما و تایپ پاسخ فرانت‌اند | رفتار در داده خالی / خطا |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -123,6 +123,8 @@ $$\mathbf{61\ (Active\ Handlers) - 3\ (Explicit\ 501\ Registered\ Routes) = 58\ 
 | **۲۱** | پیش‌بینی کوانتایل افق هوش مصنوعی | `GET /api/chart/{symbol}/forecast` | `srv.Chart.Forecast` | `Chart.Forecast` | `market.db` (RO) | Path: `symbol`<br>Query: `horizon`, `model`, `adjustment` | `ForecastResponseSchema` (`PredictionData`) | گام‌های تخمینی بر مبنای آخرین نوسانات تاریخی |
 | **۲۲** | لبه آماری کندل و نواحی نقدینگی SMC | `GET /api/chart/{symbol}/edge` | `srv.Chart.Edge` | `Chart.Edge` | `market.db` (RO) | Path: `symbol`<br>Query: `swing_period` | `CandleEdgeResponseSchema` (`CandleEdgeReport`) | آرایه خالی نواحی پرایس‌اکشن با وین‌ریت ۰٫۵ |
 | **۲۳** | اندیکاتورهای محاسباتی تکنیکال | `GET /api/chart/{symbol}/indicators` | `srv.Chart.Indicators` | `Chart.Indicators` | `market.db` (RO) | Path: `symbol` | `IndicatorsResponseSchema` (`IndicatorsResponse`) | دیکشنری خالی سری‌ها در تاریخچه ناکافی |
+| **۲۴** | تحلیل سرورساید FTS و بدج استریپ | `GET /api/fts/{symbol}` | `srv.Chart.FTS` | `Chart.FTS` | `market.db` (RO) | Path: `symbol` | `FtsResponse` (`FtsAnalysisData`) | بازگشت `{status: "empty"}` یا `{status: "error"}` در نبود داده |
+| **۲۵** | تنظیمات و آستانه‌های بنیادی FTS | `GET /api/fts/config`<br>`POST /api/fts/config` | `s.notPortedRoute` | ثبت‌شده صریح (501) | `user.db` (موکول به Task 6) | Body در متد POST: آبجکت `FtsConfig` | `FtsConfigResponseSchema` (`FtsConfigResponse`) | پاسخ `501 NOT_PORTED`؛ کلاینت با فال‌بک پیش‌فرض‌های جزوه کار می‌کند |
 
 ---
 
@@ -480,6 +482,56 @@ $$\mathbf{61\ (Active\ Handlers) - 3\ (Explicit\ 501\ Registered\ Routes) = 58\ 
 
 ---
 
+### ۲۴. تحلیل سرورساید FTS و بدج استریپ (`GET /api/fts/{symbol}`)
+- **ماژول فرانت‌اند:** `features/technical/api/useFtsAnalysis.ts`
+- **هندلر Go:** `internal/chart/service.go:FTS` (ثبت‌شده در `server.go:216`)
+- **اینترفیس سرویس:** `Chart.FTS`
+- **دسترسی پایگاه داده:** `market.db` (RO)
+- **ساختار پارامترها:** Path `symbol` با انکودینگ الزامی `encodeURIComponent(symbol)`.
+- **اسکیمای پاسخ (Zod):**
+  ```typescript
+  export const FtsResponse = z.object({
+    status: z.string(),
+    symbol: z.string().nullish(),
+    fts: FtsAnalysis.nullish(),
+    analysis_basis: z.string().nullish(),
+    bars: z.number().nullish(),
+    ref_close: z.number().nullish(),
+    message: z.string().nullish(),
+  });
+  ```
+- **مدیریت وضعیت خطا/داده خالی:** در صورتی که نماد تاریخچه نداشته باشد، پاسخ با وضعیت `status: "empty"` صادر می‌شود که توسط کامپوننت‌های فرانت‌اند بدون پرتاب خطا به‌عنوان نماد فاقد سابقه تحلیل شناخته و رندر می‌شود.
+
+---
+
+### ۲۵. تنظیمات و آستانه‌های بنیادی FTS (`GET` و `POST /api/fts/config`)
+- **ماژول فرانت‌اند:** `features/fundamental/api/useFtsConfig.ts` / `features/fundamental/ui/FtsSettingsDrawer.tsx`
+- **هندلر Go:** `s.notPortedRoute` (ثبت صریح ۵۰۱ در `server.go:223`)
+- **دسترسی پایگاه داده:** `user.db` (**موکول به وظیفه ۶: Task 6 - User Features & Persistence**)
+- **روش‌ها و مسیرها:**
+  - `GET /api/fts/config`: واکشی آستانه‌های ذخیره‌شده کاربر برای فیلترهای بنیادی.
+  - `POST /api/fts/config`: ذخیره‌سازی آستانه‌های اختصاصی کاربر.
+- **بدنه درخواست POST (`FtsConfigPayloadSchema`):**
+  ```typescript
+  export const FtsConfigPayloadSchema = z.looseObject({
+    growth_min: z.number(),
+    eps_years: z.number(),
+    margin_min: z.number(),
+    margin_optimal: z.number(),
+    sales_to_mcap_min: z.number(),
+    profit_potential_min: z.number(),
+    industry_mode: z.string(),
+    watchlist_max: z.number(),
+    mandatory_sectors: z.array(z.string()),
+    free_sectors: z.array(z.string()),
+  });
+  ```
+- **اسکیمای پاسخ:** `FtsConfigResponseSchema` (`status`, `config`, `message`, `errors`).
+- **رفتار و تاب‌آوری کلاینت در برابر ۵۰۱ فعلی:**
+  تا زمان پیاده‌سازی کامل ذخیره‌سازی تنظیمات کاربر در `user.db` طی وظیفه ۶، کشوی تنظیمات `FtsSettingsDrawer` در صورت دریافت خطای ۵۰۱، به‌صورت خودکار بر روی مقادیر پیش‌فرض جزوه FTS (`FTS_BASIC_DEFAULTS`) فعالیت کرده و عملکرد پایه‌ای فرانت‌اند مختل نمی‌گردد.
+
+---
+
 ## ۷. مسیرهای خارج از شمول کلاینت نوین (Out-of-Scope Ledger)
 
 جدول زیر چرایی عدم نیاز به ۷۸ مسیر باقیمانده پایتون در `frontend-v2` را تبیین می‌کند:
@@ -491,7 +543,8 @@ $$\mathbf{61\ (Active\ Handlers) - 3\ (Explicit\ 501\ Registered\ Routes) = 58\ 
 | **اندپوینت‌های قدیمی نبض** | ۸ | `/api/mstat/gold`, `/api/mstat/treemap` | در بازطراحی V2، بخش طلا و نقشه‌های درختی سنگین قدیمی با ویجت‌های بهینه جایگزین شده‌اند. | `501 NOT_PORTED` |
 | **کنترل پل ADB و شبکه** | ۴ | `/api/adb/rotate`, `/api/adb/status` | تغییر آی‌پی مودم و دانگل موبایل در فرآیند استخراج محلی استفاده می‌شود، نه کلاینت دسکتاپ نهایی. | `501 NOT_PORTED` |
 | **موتور سوم ساختار** | ۱ | `/api/structure3/{symbol}` | موتور سوم ساختار در نسخه قدیمی ناپایدار بوده و در فاز ۲E با ساختار نوین ادغام می‌شود. | `501 NOT_PORTED` |
-| **سینک و مدیریت دستی دیتابیس** | ۴۲ | `/api/sync/discover`, `/api/sync/full`, `/api/update/*` | عملیات نگهداری توسط لانچر Tauri و فرآیندهای پس‌زمینه خودکار مدیریت می‌شوند. | `501 NOT_PORTED` |
+| **تنظیمات و ماتریس‌های معلق** | ۲ | `/api/fundamental/screen`, `/api/watchlist/matrix` | مسیرهای معلق با ثبت صریح ۵۰۱ در Mux تا زمان بازطراحی کامل. | `REGISTERED_501` |
+| **سینک و مدیریت دستی دیتابیس** | ۴۰ | `/api/sync/discover`, `/api/sync/full`, `/api/update/*` | عملیات نگهداری توسط لانچر Tauri و فرآیندهای پس‌زمینه خودکار مدیریت می‌شوند. | `501 NOT_PORTED` |
 
 ---
 
@@ -499,7 +552,7 @@ $$\mathbf{61\ (Active\ Handlers) - 3\ (Explicit\ 501\ Registered\ Routes) = 58\ 
 
 این قرارداد API به‌وسیله آزمون‌های زیر در سطح شاخه قفل شده است:
 ۱. **تست‌های واحد و یکپارچگی Go (`backend-go`):** ۳۵ پکیج با ۳۲۴ سناریوی تست تمامی ۶۱ هندلر را با دیتابیس‌های واقعی و فیکسچرهای استاندارد راستی‌آزمایی می‌کنند.
-۲. **تست‌های فرانت‌اند (`frontend-v2`):** ۱۰۴ فایل آزمون Vitest (شامل ۸۵۹ تست سبز) نحوه فراخوانی، دریافت و اعتبارسنجی Zod را برای تک‌تک این ۲۳ وب‌سرویس تضمین می‌نمایند.
+۲. **تست‌های فرانت‌اند (`frontend-v2`):** ۱۰۴ فایل آزمون Vitest (شامل ۸۵۹ تست سبز) نحوه فراخوانی، دریافت و اعتبارسنجی Zod را برای تمامی مسیرهای فعال کلاینت نوین (۲۴ روت فعال Go + ۱ روت تنظیمات کاربر با فال‌بک) تضمین می‌نمایند.
 ۳. **تایپ‌چک کامل کامپایلر تایپ‌اسکریپت (`npx tsc -b`):** صفر خطای تایپ در تمامی تعاریف اسکیما، مدل‌ها و ارتباطات کامپوننت‌ها.
 
 $$\mathbf{VERDICT: CONTRACT\_FROZEN\_AND\_VERIFIED}$$
