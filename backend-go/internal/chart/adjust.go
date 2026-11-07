@@ -24,41 +24,60 @@ const adjFunctionalReason = "تعدیلِ عملکردیِ واقعی (سودِ 
 func (s *Service) storedAdjustEvents(ctx context.Context, symbol string) []adjustEvent {
 	rs, err := s.market.QueryContext(ctx,
 		"SELECT date, ratio FROM adjust_events WHERE symbol=? ORDER BY date", symbol)
-	if err != nil {
-		return nil
-	}
-	defer rs.Close()
-	out := []adjustEvent{}
-	for rs.Next() {
-		var date sql.NullString
-		var ratio sql.NullFloat64
-		if err := rs.Scan(&date, &ratio); err != nil {
+	if err == nil {
+		defer rs.Close()
+		out := []adjustEvent{}
+		for rs.Next() {
+			var date sql.NullString
+			var ratio sql.NullFloat64
+			if err := rs.Scan(&date, &ratio); err != nil {
+				break
+			}
+			if ratio.Valid && ratio.Float64 != 0 {
+				ev := adjustEvent{Ratio: ratio.Float64}
+				if date.Valid {
+					ev.Date = date.String
+				} else {
+					ev.NullDate = true
+				}
+				out = append(out, ev)
+			}
+		}
+		if len(out) > 0 {
 			return out
 		}
-		// پایتون فقط ratioِ تهی را می‌اندازد؛ ردیفی با date NULL درِ adjustEvents
-		// و درِ event_count می‌ماند (بعد در factors حذفش می‌کند) و date را null
-		// می‌فرستد، نه رشتهٔ تهی.
-		if ratio.Valid && ratio.Float64 != 0 {
-			ev := adjustEvent{Ratio: ratio.Float64}
-			if date.Valid {
-				ev.Date = date.String
-			} else {
-				ev.NullDate = true
+	}
+
+	pack := LoadPack(s.dataDir)
+	if pack != nil {
+		if steps, covered := pack.GetPackSteps("", symbol); covered {
+			out := make([]adjustEvent, 0, len(steps))
+			for _, st := range steps {
+				out = append(out, adjustEvent{
+					Date:  st.Date,
+					Ratio: st.Ratio,
+				})
 			}
-			out = append(out, ev)
+			return out
 		}
 	}
-	return out
+	return nil
 }
 
 func (s *Service) storedAdjustSource(ctx context.Context, symbol string) string {
 	var src sql.NullString
 	err := s.market.QueryRowContext(ctx,
 		"SELECT source FROM adjust_verdict WHERE symbol=?", symbol).Scan(&src)
-	if err != nil {
-		return ""
+	if err == nil && src.Valid && src.String != "" {
+		return src.String
 	}
-	return src.String
+	pack := LoadPack(s.dataDir)
+	if pack != nil {
+		if _, covered := pack.GetPackSteps("", symbol); covered {
+			return "local-cache"
+		}
+	}
+	return ""
 }
 
 func (s *Service) adjustCapability(events []adjustEvent, source string) map[string]any {

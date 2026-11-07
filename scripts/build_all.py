@@ -101,6 +101,14 @@ def main():
             print(f'[db] copying market.db -> {dest_db}')
             shutil.copy2(market_db, dest_db)
 
+    corrections_dir = os.path.join(ROOT, 'data', 'ra365_corrections')
+    if os.path.isdir(corrections_dir):
+        dest_corrections = os.path.join(OUT, 'data', 'ra365_corrections')
+        print(f'[corrections] copying {corrections_dir} -> {dest_corrections}')
+        if os.path.isdir(dest_corrections):
+            shutil.rmtree(dest_corrections)
+        shutil.copytree(corrections_dir, dest_corrections)
+
     # 6. Verify Production Bundle Contract (ZERO Python)
     print('\n=== Verifying Production Bundle Contract ===')
     main_exe = os.path.join(OUT, 'BorsTerminal_Ultimate.exe')

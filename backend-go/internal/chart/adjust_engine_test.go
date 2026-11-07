@@ -249,3 +249,51 @@ func Test20FamousSymbols_RealMarketDB(t *testing.T) {
 	}
 }
 
+func TestRahavardCorrectionPackParity_ShastaFemeli(t *testing.T) {
+	pack := LoadPack("")
+	if pack == nil {
+		t.Skip("Rahavard correction pack not found in default search paths")
+		return
+	}
+
+	// ۱. بررسی پوشش شستا
+	shastaSteps, coveredShasta := pack.GetPackSteps("", "شستا")
+	if !coveredShasta || len(shastaSteps) == 0 {
+		t.Fatalf("expected شستا to be covered by Rahavard pack, got covered=%v len=%d", coveredShasta, len(shastaSteps))
+	}
+
+	// ۲. بررسی پوشش فملی
+	femeliSteps, coveredFemeli := pack.GetPackSteps("", "فملی")
+	if !coveredFemeli || len(femeliSteps) == 0 {
+		t.Fatalf("expected فملی to be covered by Rahavard pack, got covered=%v len=%d", coveredFemeli, len(femeliSteps))
+	}
+
+	// ۳. راستی‌آزمایی گام‌های شستا: باید شامل سود نقدی سال‌های تاریخی قبل از ۲۰۲۴ باشد
+	foundOldShastaDividend := false
+	for _, step := range shastaSteps {
+		if step.Date < "2024-01-01" && (step.Type == "dividend" || step.EventSig == "dps") {
+			foundOldShastaDividend = true
+			break
+		}
+	}
+	if !foundOldShastaDividend {
+		t.Errorf("expected historical pre-2024 dividend step for شستا in pack")
+	}
+
+	// ۴. راستی‌آزمایی گام ترکیبی ۲۰۲۶ فملی
+	foundFemeliJointStep := false
+	for _, step := range femeliSteps {
+		if step.Date >= "2026-07-01" && step.Date <= "2026-08-15" {
+			// ضریب گام مشترک رهاورد در راند ۳۲ب تقریباً ۰.۷۱۳۴۱۳۷۱۴ است
+			if math.Abs(step.Ratio-0.713413714) < 1e-4 {
+				foundFemeliJointStep = true
+				break
+			}
+		}
+	}
+	if !foundFemeliJointStep {
+		t.Errorf("expected Rahavard joint step ratio ~0.713413714 for فملی")
+	}
+}
+
+

@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
-
-	"borsterminal/backend/internal/pyround"
 )
 
 // AdjustmentMode حالت‌های مختلف تعدیل قیمت چارت تکنیکال مطابق رهاورد ۳۶۵
@@ -94,7 +94,7 @@ func ComputeAdjustmentFactors(times []string, events []AdjustEventItem, mode Adj
 			f *= ratios[j]
 			j--
 		}
-		out[i] = pyround.Round(f, 10)
+		out[i] = f
 	}
 
 	return out
@@ -137,6 +137,28 @@ func (s *Service) LoadAutonomousAdjustmentEvents(ctx context.Context, symbol str
 		_ = s.market.QueryRowContext(ctx, "SELECT ins_code FROM price_adjust_events WHERE symbol=? LIMIT 1", symbol).Scan(&insCode)
 		if insCode == "" {
 			_ = s.market.QueryRowContext(ctx, "SELECT ins_code FROM share_change_events WHERE symbol=? LIMIT 1", symbol).Scan(&insCode)
+		}
+	}
+
+	// ۰. بررسی پوشش بسته مرجع رهاورد (Rahavard Reference Correction Pack) برای تطبیق ۱۰۰٪
+	pack := LoadPack(s.dataDir)
+	if pack != nil {
+		if steps, covered := pack.GetPackSteps(insCode, symbol); covered {
+			for _, st := range steps {
+				events = append(events, AdjustEventItem{
+					Date:   st.Date,
+					Ratio:  st.Ratio,
+					Type:   st.Type,
+					Source: "rahavard-reference-correction",
+				})
+			}
+			if pack.AsOf != "" && insCode != "" {
+				s.appendFutureCorporateEvents(ctx, insCode, pack.AsOf, &events)
+			}
+			sort.SliceStable(events, func(i, j int) bool {
+				return events[i].Date < events[j].Date
+			})
+			return events
 		}
 	}
 	if insCode != "" {
@@ -232,4 +254,63 @@ func sourceOrString(v any) string {
 		return "tsetmc"
 	}
 	return s
+}
+
+func (s *Service) appendFutureCorporateEvents(ctx context.Context, insCode, asOf string, events *[]AdjustEventItem) {
+	asOfDEven := 0
+	cleanAsOf := strings.ReplaceAll(asOf, "-", "")
+	if len(cleanAsOf) >= 8 {
+		asOfDEven, _ = strconv.Atoi(cleanAsOf[:8])
+	}
+
+	rsShare, err := s.market.QueryContext(ctx,
+		"SELECT d_even, shares_old, shares_new, source FROM share_change_events "+
+			"WHERE ins_code=? AND d_even > ? ORDER BY d_even", insCode, asOfDEven)
+	if err == nil {
+		defer rsShare.Close()
+		for rsShare.Next() {
+			var d, src any
+			var oldV, newV sql.NullFloat64
+			if err := rsShare.Scan(&d, &oldV, &newV, &src); err == nil {
+				dt := dEvenToDate(d)
+				if dt > asOf && oldV.Valid && newV.Valid && newV.Float64 > 0 && oldV.Float64 > 0 {
+					*events = append(*events, AdjustEventItem{
+						Date:     dt,
+						Ratio:    oldV.Float64 / newV.Float64,
+						Type:     "capital_increase",
+						Source:   sourceOrString(src),
+						CapRatio: (newV.Float64 - oldV.Float64) / oldV.Float64,
+					})
+				}
+			}
+		}
+	}
+
+	rsPrice, errPrice := s.market.QueryContext(ctx,
+		"SELECT d_even, p_closing_not_adjusted, p_closing, source FROM price_adjust_events "+
+			"WHERE ins_code=? AND d_even > ? ORDER BY d_even", insCode, asOfDEven)
+	if errPrice == nil {
+		defer rsPrice.Close()
+		for rsPrice.Next() {
+			var d, src any
+			var raw, adj sql.NullFloat64
+			if err := rsPrice.Scan(&d, &raw, &adj, &src); err == nil {
+				dt := dEvenToDate(d)
+				if dt > asOf && raw.Valid && adj.Valid && raw.Float64 > 0 && adj.Float64 > 0 {
+					dps := raw.Float64 - adj.Float64
+					ratio := adj.Float64 / raw.Float64
+					if adj.Float64+dps > 0 {
+						ratio = adj.Float64 / (adj.Float64 + dps)
+					}
+					*events = append(*events, AdjustEventItem{
+						Date:   dt,
+						Ratio:  ratio,
+						Type:   "dividend",
+						Source: sourceOrString(src),
+						DPS:    dps,
+					})
+				}
+			}
+		}
+	}
 }
