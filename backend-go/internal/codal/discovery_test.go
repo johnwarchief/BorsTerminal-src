@@ -261,3 +261,150 @@ func TestDiscoverFeed_ContextCancellation(t *testing.T) {
 		t.Fatalf("expected context cancellation error, got nil")
 	}
 }
+
+func TestDiscoverFeed_MidStreamFailure_CursorNotCorrupted(t *testing.T) {
+	failPage2 := true
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		page := r.URL.Query().Get("PageNumber")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		if page == "1" {
+			// صفحه ۱ با شماره‌های تازه ۱۱۰۰ و ۱۰۹۰
+			resp := map[string]any{
+				"Page":       1,
+				"Total":      4,
+				"TotalPages": 2,
+				"Letters": []map[string]any{
+					{
+						"TracingNo":       "1100",
+						"Symbol":          "فولاد",
+						"CompanyName":     "فولاد مبارکه اصفهان",
+						"Title":           "گزارش ۱",
+						"LetterCode":      "ن-۱۰",
+						"PublishDateTime": "1403/01/02 10:00:00",
+						"SentDateTime":    "1403/01/02 09:50:00",
+						"Url":             "/Reports/Decision.aspx?LetterSerial=1100",
+					},
+					{
+						"TracingNo":       "1090",
+						"Symbol":          "فملی",
+						"CompanyName":     "ملی مس",
+						"Title":           "گزارش ۲",
+						"LetterCode":      "ن-۱۰",
+						"PublishDateTime": "1403/01/02 09:30:00",
+						"SentDateTime":    "1403/01/02 09:20:00",
+						"Url":             "/Reports/Decision.aspx?LetterSerial=1090",
+					},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+
+		if page == "2" {
+			// در اجرای اول، صفحه ۲ با خطای ۵۰۰ یا قطعی مواجه می‌شود
+			if failPage2 {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(`internal server error`))
+				return
+			}
+			// در اجرای دوم، صفحه ۲ با شماره‌های ۱۰۵۰ و ۱۰۰۰ (واترمارک) با موفقیت پاسخ می‌دهد
+			resp := map[string]any{
+				"Page":       2,
+				"Total":      4,
+				"TotalPages": 2,
+				"Letters": []map[string]any{
+					{
+						"TracingNo":       "1050",
+						"Symbol":          "شستا",
+						"CompanyName":     "شستا",
+						"Title":           "گزارش ۳",
+						"LetterCode":      "ن-۱۰",
+						"PublishDateTime": "1403/01/01 10:00:00",
+						"SentDateTime":    "1403/01/01 09:50:00",
+						"Url":             "/Reports/Decision.aspx?LetterSerial=1050",
+					},
+					{
+						"TracingNo":       "1000",
+						"Symbol":          "خودرو",
+						"CompanyName":     "ایران خودرو",
+						"Title":           "گزارش ۴",
+						"LetterCode":      "ن-۱۰",
+						"PublishDateTime": "1403/01/01 09:00:00",
+						"SentDateTime":    "1403/01/01 08:50:00",
+						"Url":             "/Reports/Decision.aspx?LetterSerial=1000",
+					},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+	}))
+	defer server.Close()
+
+	client := codal.NewPoliteClient(codal.PoliteClientConfig{
+		HTTPClient:    server.Client(),
+		MinRequestGap: 1 * time.Millisecond,
+		BaseURL:       server.URL,
+		MaxRetries:    1,
+		BaseDelay:     1 * time.Millisecond,
+		MaxDelay:      5 * time.Millisecond,
+	})
+
+	db := createTestDB(t)
+	ctx := context.Background()
+
+	if err := codal.EnsureSchema(db); err != nil {
+		t.Fatalf("ensure schema failed: %v", err)
+	}
+
+	// تنظیم واترمارک اولیه روی ۱۰۰۰
+	_, err := db.Exec("INSERT INTO pipeline_cursor (key, value, note, updated_at) VALUES ('notice_scan_tn_cat1', '1000', 'initial', '2026-01-01 00:00:00')")
+	if err != nil {
+		t.Fatalf("setup initial cursor failed: %v", err)
+	}
+
+	// ۱. اجرای اول که در صفحه ۲ شکست می‌خورد
+	_, err = codal.DiscoverFeed(ctx, client, db, 1)
+	if err == nil {
+		t.Fatalf("expected error on mid-stream failure, got nil")
+	}
+
+	// نشانک نباید به ۱۱۰۰ جهش کرده باشد! باید همچنان همان ۱۰۰۰ اولیه بماند تا اطلاعیه‌های صفحه ۲ نسوزند.
+	var cursorVal string
+	err = db.QueryRow("SELECT value FROM pipeline_cursor WHERE key = 'notice_scan_tn_cat1'").Scan(&cursorVal)
+	if err != nil {
+		t.Fatalf("query cursor failed: %v", err)
+	}
+	if cursorVal != "1000" {
+		t.Fatalf("CRITICAL BUG: cursor prematurely advanced to %s after mid-stream failure, want 1000", cursorVal)
+	}
+
+	// ۲. اجرای دوم پس از برطرف شدن خطای شبکه
+	failPage2 = false
+	notices, err := codal.DiscoverFeed(ctx, client, db, 1)
+	if err != nil {
+		t.Fatalf("second DiscoverFeed run failed: %v", err)
+	}
+
+	// اطلاعیه شماره ۱۰۵۰ در صفحه ۲ باید به درستی کشف شده باشد و جا نیفتاده باشد
+	found1050 := false
+	for _, n := range notices {
+		if n.TracingNo == 1050 {
+			found1050 = true
+			break
+		}
+	}
+	if !found1050 {
+		t.Fatalf("notice 1050 was dropped due to previous mid-stream failure")
+	}
+
+	// اکنون نشانک باید به درستی به ۱۱۰۰ ارتقا یافته باشد
+	err = db.QueryRow("SELECT value FROM pipeline_cursor WHERE key = 'notice_scan_tn_cat1'").Scan(&cursorVal)
+	if err != nil {
+		t.Fatalf("query cursor failed: %v", err)
+	}
+	if cursorVal != "1100" {
+		t.Fatalf("expected cursor value 1100 after complete success, got %s", cursorVal)
+	}
+}

@@ -98,8 +98,9 @@ func DiscoverFeed(ctx context.Context, client *PoliteClient, db *sql.DB, categor
 	}
 
 	var discovered []NoticeSummary
-	maxSeenTracingNo := watermark
+	cycleMaxTracingNo := watermark
 	newestPublishDate := ""
+	reachedWatermark := false
 
 	const maxPages = 50 // سقف احتیاطی صفحات در یک دور کشف
 
@@ -127,7 +128,6 @@ func DiscoverFeed(ctx context.Context, client *PoliteClient, db *sql.DB, categor
 			break
 		}
 
-		allKnownOnPage := true
 		var pageNewNotices []NoticeSummary
 
 		// تراکنش برای درج دسته‌ای اطلاعیه‌های همین صفحه
@@ -156,23 +156,15 @@ func DiscoverFeed(ctx context.Context, client *PoliteClient, db *sql.DB, categor
 				continue
 			}
 
-			if tn > maxSeenTracingNo {
-				maxSeenTracingNo = tn
+			if tn > cycleMaxTracingNo {
+				cycleMaxTracingNo = tn
 			}
 
-			// اگر شماره پیگیری اطلاعیه کوچک‌تر یا مساوی نشانک باشد، پیش‌تر دیده شده است
+			// اگر شماره پیگیری اطلاعیه کوچک‌تر یا مساوی نشانک باشد، به مرز داده‌های پیشین رسیده‌ایم
 			if watermark > 0 && tn <= watermark {
+				reachedWatermark = true
 				continue
 			}
-
-			// بررسی وجود در پایگاه داده
-			var exists int
-			_ = tx.QueryRowContext(ctx, "SELECT 1 FROM codal_notices WHERE tracing_no = ?", tn).Scan(&exists)
-			if exists == 1 {
-				continue
-			}
-
-			allKnownOnPage = false
 
 			pubDate := foldDigits(item.PublishDateTime)
 			sentDate := foldDigits(item.SentDateTime)
@@ -184,28 +176,31 @@ func DiscoverFeed(ctx context.Context, client *PoliteClient, db *sql.DB, categor
 			title := strings.TrimSpace(item.Title)
 			lCode := strings.TrimSpace(item.LetterCode)
 
-			_, execErr := stmt.ExecContext(ctx, tn, sym, comp, title, lCode, pubDate, sentDate, rawURL, nowStr, pdfURL, excelURL)
+			res, execErr := stmt.ExecContext(ctx, tn, sym, comp, title, lCode, pubDate, sentDate, rawURL, nowStr, pdfURL, excelURL)
 			if execErr != nil {
 				_ = stmt.Close()
 				_ = tx.Rollback()
 				return nil, fmt.Errorf("insert notice %d: %w", tn, execErr)
 			}
 
-			if pubDate > newestPublishDate {
-				newestPublishDate = pubDate
-			}
+			rowsAff, _ := res.RowsAffected()
+			if rowsAff > 0 {
+				if pubDate > newestPublishDate {
+					newestPublishDate = pubDate
+				}
 
-			summary := NoticeSummary{
-				TracingNo:   tn,
-				Symbol:      sym,
-				CompanyName: comp,
-				Title:       title,
-				LetterCode:  lCode,
-				PublishDate: pubDate,
-				SentDate:    sentDate,
-				URL:         rawURL,
+				summary := NoticeSummary{
+					TracingNo:   tn,
+					Symbol:      sym,
+					CompanyName: comp,
+					Title:       title,
+					LetterCode:  lCode,
+					PublishDate: pubDate,
+					SentDate:    sentDate,
+					URL:         rawURL,
+				}
+				pageNewNotices = append(pageNewNotices, summary)
 			}
-			pageNewNotices = append(pageNewNotices, summary)
 		}
 
 		_ = stmt.Close()
@@ -216,18 +211,23 @@ func DiscoverFeed(ctx context.Context, client *PoliteClient, db *sql.DB, categor
 
 		discovered = append(discovered, pageNewNotices...)
 
-		// پیش بردن اتمیک نشانک پس از تکمیل کامل و موفق این صفحه
-		if maxSeenTracingNo > watermark {
-			updateCursor(ctx, db, cursorKey, strconv.FormatInt(maxSeenTracingNo, 10), fmt.Sprintf("category %d discovery", category))
-		}
-		if newestPublishDate != "" {
-			updateCursor(ctx, db, "notice_newest_date", newestPublishDate, "تازه‌ترین تاریخ انتشار دیده‌شده")
-		}
-
-		// اگر تمام اطلاعیه‌های این صفحه قبلاً دیده شده بودند، به مرز داده‌های پیشین رسیده‌ایم
-		if allKnownOnPage && watermark > 0 {
+		if reachedWatermark {
 			break
 		}
+
+		if searchResp.Total > 0 && len(searchResp.Letters) > 0 && page*len(searchResp.Letters) >= searchResp.Total {
+			break
+		}
+	}
+
+	// پیش بردن اتمیک نشانک منحصراً پس از اتصال موفق به نشانک پیشین یا رسیدن به انتهای صفحات
+	if cycleMaxTracingNo > watermark {
+		if err := updateCursor(ctx, db, cursorKey, strconv.FormatInt(cycleMaxTracingNo, 10), fmt.Sprintf("category %d discovery", category)); err != nil {
+			return nil, fmt.Errorf("update cursor: %w", err)
+		}
+	}
+	if newestPublishDate != "" {
+		_ = updateCursor(ctx, db, "notice_newest_date", newestPublishDate, "تازه‌ترین تاریخ انتشار دیده‌شده")
 	}
 
 	return discovered, nil
@@ -260,7 +260,7 @@ func buildSearchURL(baseURL string, category int, page int) string {
 }
 
 // updateCursor ذخیره نشانک در pipeline_cursor با حفظ مقدار قبلی.
-func updateCursor(ctx context.Context, db *sql.DB, key, value, note string) {
+func updateCursor(ctx context.Context, db *sql.DB, key, value, note string) error {
 	nowStr := time.Now().UTC().Format("2006-01-02 15:04:05")
 	query := `
 	INSERT INTO pipeline_cursor (key, value, previous, updated_at, note)
@@ -271,7 +271,8 @@ func updateCursor(ctx context.Context, db *sql.DB, key, value, note string) {
 		updated_at = excluded.updated_at,
 		note = excluded.note;
 	`
-	_, _ = db.ExecContext(ctx, query, key, value, nowStr, note)
+	_, err := db.ExecContext(ctx, query, key, value, nowStr, note)
+	return err
 }
 
 // foldDigits تبدیل ارقام فارسی و عربی به ارقام انگلیسی (ASCII).
