@@ -1,76 +1,114 @@
 {
+  "environment": {
+    "os": "Windows 11 (10.0.26300)",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "architecture": "AMD64",
+    "processor": "Intel64 Family 6 Model 191 Stepping 2, GenuineIntel",
+    "cpu_cores": 16,
+    "total_ram_gb": 31.76,
+    "python_version": "3.14.7",
+    "database": {
+      "path": "market.db",
+      "size_mb": 268.27,
+      "sha256": "1e7eeb19fd271150b6d7258bdfac7d1dbfdd51c7c9b6b97db213a2e134be91f4"
+    },
+    "benchmark_timestamp_utc": "2026-11-07T13:33:35.804761+00:00",
+    "repetitions_per_endpoint": 30
+  },
   "go": {
-    "cold_start_ms": 19.02,
-    "idle_rss_mb": 13.19,
+    "process_readiness_ms": 22.56,
+    "cold_start_request_ms": 245.09,
+    "idle_rss_mb": 13.36,
     "endpoints": {
       "market": {
         "count": 30,
         "success": 30,
-        "bytes": 7170941,
-        "p50_ms": 17.67,
-        "p95_ms": 26.81,
-        "avg_ms": 22.26,
-        "min_ms": 6.31,
-        "max_ms": 251.88
+        "bytes": 6452878,
+        "p50_ms": 8.77,
+        "p95_ms": 34.9,
+        "avg_ms": 16.16,
+        "min_ms": 6.65,
+        "max_ms": 45.43
       },
       "chart_db_foolad": {
         "count": 30,
         "success": 30,
-        "bytes": 120670,
-        "p50_ms": 18.42,
-        "p95_ms": 28.11,
-        "avg_ms": 15.3,
-        "min_ms": 5.0,
-        "max_ms": 61.73
+        "bytes": 120261,
+        "p50_ms": 6.74,
+        "p95_ms": 25.21,
+        "avg_ms": 10.69,
+        "min_ms": 5.58,
+        "max_ms": 27.36
       },
-      "mstat_summary": {
+      "fundamental_foolad": {
         "count": 30,
         "success": 30,
-        "bytes": 3701,
-        "p50_ms": 11.12,
-        "p95_ms": 25.29,
-        "avg_ms": 13.16,
-        "min_ms": 0.93,
-        "max_ms": 110.72
+        "bytes": 21275,
+        "p50_ms": 41.39,
+        "p95_ms": 65.04,
+        "avg_ms": 44.41,
+        "min_ms": 36.06,
+        "max_ms": 65.53
+      },
+      "screener": {
+        "count": 30,
+        "success": 30,
+        "bytes": 1337449,
+        "p50_ms": 24.43,
+        "p95_ms": 50.51,
+        "avg_ms": 29.84,
+        "min_ms": 17.74,
+        "max_ms": 56.31
       }
     },
-    "load_rss_mb": 191.41
+    "load_rss_mb": 203.88
   },
   "python": {
-    "cold_start_ms": 2933.62,
-    "idle_rss_mb": 257.05,
+    "process_readiness_ms": 1646.84,
+    "cold_start_request_ms": 2288.71,
+    "idle_rss_mb": 144.97,
     "endpoints": {
       "market": {
         "count": 30,
         "success": 30,
-        "bytes": 7588549,
-        "p50_ms": 19.55,
-        "p95_ms": 63.48,
-        "avg_ms": 23.25,
-        "min_ms": 8.25,
-        "max_ms": 63.84
+        "bytes": 6814415,
+        "p50_ms": 24.02,
+        "p95_ms": 95.64,
+        "avg_ms": 33.5,
+        "min_ms": 8.18,
+        "max_ms": 158.95
       },
       "chart_db_foolad": {
         "count": 30,
         "success": 30,
-        "bytes": 180378,
-        "p50_ms": 1142.06,
-        "p95_ms": 1721.34,
-        "avg_ms": 1259.66,
-        "min_ms": 930.3,
-        "max_ms": 1734.05
+        "bytes": 179890,
+        "p50_ms": 889.65,
+        "p95_ms": 985.9,
+        "avg_ms": 883.3,
+        "min_ms": 750.74,
+        "max_ms": 1015.32
       },
-      "mstat_summary": {
+      "fundamental_foolad": {
         "count": 30,
         "success": 30,
-        "bytes": 3726,
-        "p50_ms": 20.28,
-        "p95_ms": 36.39,
-        "avg_ms": 17.93,
-        "min_ms": 3.43,
-        "max_ms": 106.83
+        "bytes": 21390,
+        "p50_ms": 89.67,
+        "p95_ms": 185.17,
+        "avg_ms": 100.36,
+        "min_ms": 81.16,
+        "max_ms": 212.49
+      },
+      "screener": {
+        "count": 30,
+        "success": 30,
+        "bytes": 1569959,
+        "p50_ms": 92.19,
+        "p95_ms": 192.91,
+        "avg_ms": 98.39,
+        "min_ms": 74.61,
+        "max_ms": 248.84
       }
     },
-    "load_rss_mb": 345.56
+    "load_rss_mb": 340.03
   }
 }
