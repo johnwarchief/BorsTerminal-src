@@ -2,6 +2,7 @@ package config
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -35,25 +36,57 @@ func TestPortFlagBeatsDefault(t *testing.T) {
 }
 
 func TestDataDirPrecedence(t *testing.T) {
-	cfg, err := Load(nil, env(map[string]string{"BORS_DATA_DIR": "C:/data/a"}))
+	dirA := "/data/a"
+	dirB := "/data/b"
+	if runtime.GOOS == "windows" {
+		dirA = "C:/data/a"
+		dirB = "C:/data/b"
+	}
+	expectedA, err := filepath.Abs(dirA)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.DataDir != "C:\\data\\a" {
-		t.Fatalf("env data dir = %q", cfg.DataDir)
-	}
-	cfg, err = Load([]string{"--db-dir", "C:/data/b"}, env(map[string]string{"BORS_DATA_DIR": "C:/data/a"}))
+	expectedB, err := filepath.Abs(dirB)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.DataDir != "C:\\data\\b" {
-		t.Fatalf("flag should win, got %q", cfg.DataDir)
+
+	cfg, err := Load(nil, env(map[string]string{"BORS_DATA_DIR": dirA}))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if cfg.MarketDB() != "C:\\data\\b\\market.db" {
-		t.Fatalf("market path = %q", cfg.MarketDB())
+	if cfg.DataDir != expectedA {
+		t.Fatalf("env data dir = %q, want %q", cfg.DataDir, expectedA)
 	}
-	if cfg.UserDB() != "C:\\data\\b\\user.db" {
-		t.Fatalf("user path = %q", cfg.UserDB())
+	if runtime.GOOS == "windows" && cfg.DataDir != "C:\\data\\a" {
+		t.Fatalf("env data dir on windows must be strictly C:\\data\\a, got %q", cfg.DataDir)
+	}
+
+	cfg, err = Load([]string{"--db-dir", dirB}, env(map[string]string{"BORS_DATA_DIR": dirA}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DataDir != expectedB {
+		t.Fatalf("flag should win, got %q, want %q", cfg.DataDir, expectedB)
+	}
+	if runtime.GOOS == "windows" && cfg.DataDir != "C:\\data\\b" {
+		t.Fatalf("flag data dir on windows must be strictly C:\\data\\b, got %q", cfg.DataDir)
+	}
+
+	expectedMarket := filepath.Join(expectedB, "market.db")
+	if cfg.MarketDB() != expectedMarket {
+		t.Fatalf("market path = %q, want %q", cfg.MarketDB(), expectedMarket)
+	}
+	if runtime.GOOS == "windows" && cfg.MarketDB() != "C:\\data\\b\\market.db" {
+		t.Fatalf("market path on windows must be strictly C:\\data\\b\\market.db, got %q", cfg.MarketDB())
+	}
+
+	expectedUser := filepath.Join(expectedB, "user.db")
+	if cfg.UserDB() != expectedUser {
+		t.Fatalf("user path = %q, want %q", cfg.UserDB(), expectedUser)
+	}
+	if runtime.GOOS == "windows" && cfg.UserDB() != "C:\\data\\b\\user.db" {
+		t.Fatalf("user path on windows must be strictly C:\\data\\b\\user.db, got %q", cfg.UserDB())
 	}
 }
 
@@ -65,12 +98,25 @@ func TestCalendarPath(t *testing.T) {
 	if !strings.HasSuffix(cfg.CalendarPath, filepath.Join("static", "calendar", "cache.json")) {
 		t.Fatalf("default calendar path = %q", cfg.CalendarPath)
 	}
-	cfg, err = Load(nil, env(map[string]string{"BORS_CALENDAR_PATH": "C:/cal/cache.json"}))
+
+	calPath := "/cal/cache.json"
+	if runtime.GOOS == "windows" {
+		calPath = "C:/cal/cache.json"
+	}
+	expectedCal, err := filepath.Abs(calPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.CalendarPath != "C:\\cal\\cache.json" {
-		t.Fatalf("env calendar path = %q", cfg.CalendarPath)
+
+	cfg, err = Load(nil, env(map[string]string{"BORS_CALENDAR_PATH": calPath}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.CalendarPath != expectedCal {
+		t.Fatalf("env calendar path = %q, want %q", cfg.CalendarPath, expectedCal)
+	}
+	if runtime.GOOS == "windows" && cfg.CalendarPath != "C:\\cal\\cache.json" {
+		t.Fatalf("env calendar path on windows must be strictly C:\\cal\\cache.json, got %q", cfg.CalendarPath)
 	}
 }
 
