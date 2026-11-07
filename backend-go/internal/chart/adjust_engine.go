@@ -125,13 +125,21 @@ func (s *Service) LoadAutonomousAdjustmentEvents(ctx context.Context, symbol str
 	var events []AdjustEventItem
 
 	// ۱. استعلام شناسه نماد و رویدادهای تفکیکی price_adjust_events و share_change_events
+	var insCode string
 	pred, params := s.pred(ctx, "l_val18", symbol)
 	allParams := append(params, symbol)
 	q := fmt.Sprintf("SELECT ins_code FROM instruments WHERE %s ORDER BY (CASE WHEN l_val18=? THEN 0 ELSE 1 END), updated_at DESC LIMIT 1", pred)
 	var ins any
 	if err := s.market.QueryRowContext(ctx, q, allParams...).Scan(&ins); err == nil {
-		insCode := stringValue(ins)
-		if insCode != "" {
+		insCode = stringValue(ins)
+	}
+	if insCode == "" {
+		_ = s.market.QueryRowContext(ctx, "SELECT ins_code FROM price_adjust_events WHERE symbol=? LIMIT 1", symbol).Scan(&insCode)
+		if insCode == "" {
+			_ = s.market.QueryRowContext(ctx, "SELECT ins_code FROM share_change_events WHERE symbol=? LIMIT 1", symbol).Scan(&insCode)
+		}
+	}
+	if insCode != "" {
 			// رویدادهای تغییر سهام (افزایش سرمایه)
 			rsShare, errShare := s.market.QueryContext(ctx,
 				"SELECT d_even, shares_old, shares_new, source FROM share_change_events "+
@@ -180,7 +188,6 @@ func (s *Service) LoadAutonomousAdjustmentEvents(ctx context.Context, symbol str
 			}
 		}
 		rsPrice.Close()
-	}
 	}
 	}
 

@@ -129,6 +129,22 @@ func Open(dataDir string, readOnly bool) (*Handles, error) {
 	return &Handles{Market: m, Codal: c, User: u}, nil
 }
 
+// OpenRO opens an existing database file strictly in read-only mode with query_only=ON.
+func OpenRO(path string) (*sql.DB, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, err
+	}
+	return open(path, "ro")
+}
+
+// OpenRW opens an existing database file in read-write mode.
+func OpenRW(path string) (*sql.DB, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, err
+	}
+	return open(path, "rw")
+}
+
 // OpenWritableForTest صرفاً برای فیکسچرهای تست در دایرکتوری‌های موقت t.TempDir()
 // است تا تست‌های اجزای تحلیل‌گر بتوانند داده‌های ساختگی/لبه‌ای را شبیه‌سازی کنند.
 func OpenWritableForTest(dataDir string) (*Handles, error) {

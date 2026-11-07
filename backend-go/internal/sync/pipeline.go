@@ -6,9 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/httpapi"
-
-	_ "modernc.org/sqlite"
 )
 
 // CodalPipeline عینِ `GET /api/sync/codal/pipeline` (api/fundamental.py:3043):
@@ -16,14 +15,14 @@ import (
 // که پنلِ UI می‌خواهد برمی‌گردد؛ هر خواندن گارد دارد و جدولِ نبود ⇒ صفر/خالی،
 // نه ۵۰۰.
 func (h *Handler) CodalPipeline(w http.ResponseWriter, r *http.Request) {
-	path := filepath.ToSlash(filepath.Join(h.dataDir, "market.db"))
-	db, err := sql.Open("sqlite", "file:"+path+"?mode=ro")
+	path := filepath.Join(h.dataDir, "market.db")
+	dbConn, err := db.OpenRO(path)
 	if err != nil {
 		httpapi.WriteJSON(w, http.StatusOK, map[string]any{"status": "error", "message": err.Error()})
 		return
 	}
-	defer db.Close()
-	httpapi.WriteJSON(w, http.StatusOK, pipelineHealth(db, h.clock()))
+	defer dbConn.Close()
+	httpapi.WriteJSON(w, http.StatusOK, pipelineHealth(dbConn, h.clock()))
 }
 
 func pipelineHealth(db *sql.DB, now time.Time) map[string]any {

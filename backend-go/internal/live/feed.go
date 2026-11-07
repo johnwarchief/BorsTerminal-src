@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	borsdb "borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/store"
 
 	_ "modernc.org/sqlite"
@@ -235,15 +236,11 @@ func (f *Feed) persist(ctx context.Context, rows map[string]Row) error {
 	db, dbPath, insCodes, dEven := f.db, f.dbPath, f.insCodes, f.dEven
 	f.mu.Unlock()
 	if db == nil {
-		opened, err := sql.Open("sqlite", dbPath)
+		opened, err := borsdb.OpenRW(dbPath)
 		if err != nil {
 			return err
 		}
 		opened.SetMaxOpenConns(1)
-		if _, err := opened.Exec("PRAGMA busy_timeout=5000"); err != nil {
-			opened.Close()
-			return err
-		}
 		db = opened
 		f.mu.Lock()
 		f.db = db
