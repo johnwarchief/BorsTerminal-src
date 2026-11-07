@@ -431,8 +431,8 @@ func TestEveryParameterizedRouteIs501(t *testing.T) {
 			t.Errorf("route = %v, want %q", body["route"], want)
 		}
 	}
-	if total != 16 {
-		t.Fatalf("parameterized routes = %d, want 16", total)
+	if total != 21 {
+		t.Fatalf("parameterized routes = %d, want 21", total)
 	}
 }
 
@@ -507,8 +507,8 @@ func TestUnprocessableShape(t *testing.T) {
 
 func TestRoutesInventoryIsExactAndSorted(t *testing.T) {
 	routes := Routes()
-	if len(routes) != 104 {
-		t.Fatalf("routes = %d, want 104 (this curated inventory adds fundamental/freshness)", len(routes))
+	if len(routes) != 142 {
+		t.Fatalf("routes = %d, want 142 (all active Python /api/* routes reconciled from source)", len(routes))
 	}
 	if !sort.StringsAreSorted(routes) {
 		for i := 1; i < len(routes); i++ {

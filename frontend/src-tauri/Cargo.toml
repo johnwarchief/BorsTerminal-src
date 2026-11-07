@@ -1,6 +1,6 @@
 [package]
 name = "bors-terminal"
-version = "1.0.88"
+version = "1.0.95"
 description = "Bors Terminal Ultimate Desktop Shell"
 authors = ["BorsTerminal"]
 license = "MIT"

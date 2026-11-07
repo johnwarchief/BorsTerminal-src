@@ -139,7 +139,7 @@ def manual(rows_, bucket):
             # شنبه‌محور، هم‌قاعدهٔ `_fts_resample` (ISO دوشنبه‌محور است)
             k = d - datetime.timedelta(days=(d.weekday() + 2) % 7)
         else:
-            k = d.replace(day=1)
+            k = CH.WMC.month_key(r["time"])
         if k != key:
             if cur:
                 out.append(cur)

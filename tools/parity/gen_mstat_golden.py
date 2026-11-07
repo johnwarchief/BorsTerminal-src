@@ -141,6 +141,11 @@ def scenario(name, sql=(), only=None):
 
     import market_phase as MP
     MP.datetime = _DT
+    try:
+        import mstat_panels
+        mstat_panels.datetime = _DT
+    except Exception:
+        pass
     import api.market_status as MS
     assert_seam(tmp)
     MS._MSTAT_CACHE.clear()

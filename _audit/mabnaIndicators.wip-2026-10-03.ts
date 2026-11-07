@@ -1169,8 +1169,8 @@ const HMA: MabnaIndicator = {
 };
 
 /**
- * Ichimoku — ایچیموکو کینکو هئو (九十公平表)
- * 五 lines: tenkan, kijun, senkouA, senkouB, chikou
+ * Ichimoku — ایچیموکو کینکو هئو
+ * 5 lines: tenkan, kijun, senkouA, senkouB, chikou
  */
 function calcIchimoku(dataList: MabnaCandle[], indicator: { calcParams: MabnaParam[] }): MabnaRow[] {
   const tenkanLen = Math.round(num(indicator.calcParams[0], 9));
