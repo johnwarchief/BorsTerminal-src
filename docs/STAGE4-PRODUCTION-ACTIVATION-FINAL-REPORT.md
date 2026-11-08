@@ -5,9 +5,10 @@
 **شاخه فعال:** `mission/stage4-production-activation-2026-11-08`  
 **نقطه شروع اولیه:** `da6d61777ec2f99a3c7a64464270730c17ffeb6e` (تکمیل فاز ۳)  
 **نقطه بازبینی و رفع شکاف‌ها:** `cd3350bd`  
+**نقطه فعال‌سازی تولید:** `15dbb8e9` (GitHub Actions Run `42508665247`)  
 **نسخه نرم‌افزار:** `1.0.95` (یکپارچه در تمامی ۱۱ لنگر مخزن)  
-**حکم نهایی پذیرش (Final Verdict):** **`STAGE4_CODE_CLOSED_PRODUCTION_PENDING`**  
-*(تمامی شکاف‌های عملیاتی کد، خط لوله زمان‌بندی‌شده، تست‌های E2E، اعتبارسنجی کلاینت ویندوز، عدم دستکاری `user.db` و گاردهای ۱۱ گانه نسخه ۱۰۰٪ بسته و با شواهد تجربی قطعی اثبات شدند. اتصال به مخزن لایو GitHub در انتظار تزریق کلیدهای محرمانه و دسترسی اپراتور است).*
+**حکم نهایی پذیرش (Final Verdict):** **`STAGE4_PRODUCTION_ACTIVATED_CLIENT_VERIFIED`**  
+*(تمامی شکاف‌های کد، زمان‌بندی، E2E، اعتبارسنجی کلاینت ویندوز و گاردهای ۱۱ گانه نسخه بسته شدند و فراتر از آن، انتشار واقعی Snapshot روی GitHub Releases با تطابق ریاضی کلید امضا و دریافت کامل توسط باینری ویندوزی از مسیر واقعی GitHub اثبات شد. جزئیات در بخش‌های ۵ و ۶).*
 
 ---
 
@@ -219,12 +220,81 @@ OK
 
 ## ۵. حکم نهایی پذیرش مرحله ۴ (Final Acceptance Verdict)
 
-با توجه به بسته شدن تمامی ۶ شکاف عملیاتی، اثبات ریاضی برابری هش `user.db` روی باینری نصبی ویندوز، گذر کامل تست‌های سرتاسری و همگام‌سازی ۱۱ لنگر نسخه، وضعیت پروژه به شرح زیر تعیین می‌گردد:
+با فعال‌سازی واقعی خط لوله روی GitHub Actions، اثبات ریاضی تطابق کلید امضا با کلید عمومی تعبیه‌شده در Client، انتشار مجموعه کامل ۶ دارایی روی ریلیز `v1.0.98`، و دریافت/راستی‌آزمایی/اعمال همان مجموعه توسط باینری ویندوزی از مسیر واقعی GitHub، وضعیت پروژه به شرح زیر است:
 
-$$\mathbf{VERDICT:}\quad \text{STAGE4\_CODE\_CLOSED\_PRODUCTION\_PENDING}$$
+$$\mathbf{VERDICT:}\quad \text{STAGE4\_PRODUCTION\_ACTIVATED\_CLIENT\_VERIFIED}$$
 
-- **بخش‌های تکمیل‌شده:** کد منبع، زیرساخت دیمن، زمان‌بند UTC، آزمون‌های E2E انتشار، اعتبارسنجی کلاینت، تست‌های واحد، گارد نسخه‌ها و ممیزی Universe.
-- **اقدامات باقی‌مانده برای اپراتور پروداکشن (تولید زنده):**
-  ۱. تعریف متغیرهای محیطی `GITHUB_TOKEN` و `BORS_MINISIGN_SECRET_KEY` روی سرور توزیع لینوکسی.
-  ۲. راه‌اندازی سرویس `systemd` با کاربر `borsproducer` یا کانتینر داکر پرودوسر با دستور `docker compose -f deploy/docker/docker-compose.producer.yml up -d`.
-  ۳. تایید اولین انتشار خودکار اسنپ‌شات رأس ساعت 06:00 UTC در Releases مخزن GitHub.
+| محور | شاهد قطعی | وضعیت |
+| :--- | :--- | :---: |
+| تطابق کلید | `bors-producer audit key` در Actions: KeyID `830BF752EF10076` | PASS |
+| انتشار | Run [42508665247](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42508665247): ۶ دارایی، manifest 540 بایت | PASS |
+| محتوای FTS | 1,188 ردیف: 37 STRONG، 336 WATCH، 359 REJECT، 366 بدون FTS، 90 EXCLUDED | PASS |
+| دریافت Client | دانلود 91,547,928 بایت از GitHub، تأیید Minisign، اعمال نسل `v1.0.98` | PASS |
+| دادهٔ کاربر | SHA-256 `user.db` قبل/بعد یکسان (0 بایت تغییر) | PASS |
+| پایداری | Restart و بازخوانی نسل فعال | PASS |
+
+**اقدامات باقی‌مانده (عملیاتی، نه کد):**
+
+1. **تازه‌سازی روزانهٔ داده:** این انتشار از بیس‌لاین `data-latest` (تاریخ داده 1405-07-23) به‌همراه بازمحاسبهٔ FTS در 2026-11-08 ساخته شد. برای دادهٔ روز، دیمن `bors-producer` باید روی سرور توزیع اجرا شود یا منبع `data-latest` تازه شود. مسیر کد و زمان‌بندی 06:00 UTC تست شده است، اما استقرار systemd/docker روی سرور انجام نشده.
+2. **کلید بدون مصرف در مخزن توزیع:** `TAURI_SIGNING_PRIVATE_KEY` در `johnwarchief/BorsTerminal` وجود دارد اما هیچ workflow‌ای آن را مصرف نمی‌کند. حذف این کلید تکراری پس از تأیید مالک توصیه می‌شود؛ مقدار آن در این بررسی خوانده یا افشا نشد.
+3. **درشت‌دانگی نوار پیشرفت:** درصد دانلود در Client در سطح دارایی است (47.5٪ در تمام دانلود دارایی بزرگ و 90٪ در تمام مرحلهٔ اعمال)؛ متن وضعیت درست است اما درصد گام‌به‌گام نیست.
+
+---
+
+## ۶. سابقهٔ فعال‌سازی تولید (Production Activation Record, 2026-11-08)
+
+### ۶.۱. مدیریت کلید امضا (Zero-Exposure Key Audit)
+
+| مورد | یافته | نتیجه |
+| :--- | :--- | :---: |
+| محل Secret | `johnwarchief/BorsTerminal-src` → `TAURI_SIGNING_PRIVATE_KEY` (آخرین به‌روزرسانی 2026-09-22) | موجود |
+| Secret دوم | `johnwarchief/BorsTerminal` → `TAURI_SIGNING_PRIVATE_KEY` (2026-09-19) | موجود، بدون مصرف‌کننده |
+| بررسی ریاضی | Audit در Actions با همان Secret | PASS — KeyID `830BF752EF10076` |
+| کلید عمومی Client (Go) | `sync.DefaultUpdatePubKey` | همان KeyID |
+| کلید عمومی Client (Tauri) | `frontend/src-tauri/tauri.conf.json` | همان KeyID |
+| بررسی محلی | `BORS_MINISIGN_KEY_FILE=.tauri/updater.key ./bin/bors-producer audit key` | PASS — همان KeyID |
+| افشا | هیچ مقدار کلیدی در لاگ، فایل یا چت چاپ نشد | صفر |
+
+روش استفادهٔ امن: مقدار Secret فقط به‌صورت متغیر محیطی (`BORS_MINISIGN_SECRET_KEY`) به باینری `bors-producer` در Runner داده می‌شود؛ خودِ ابزار فقط KeyID را چاپ می‌کند. هیچ استخراج Secret از GitHub انجام نشد و Workflow پیش‌فرض روی `mode=audit` است و انتشار فقط با `mode=publish` صریح انجام می‌شود.
+
+**هشدار سازگاری چرخش کلید:** کلید عمومی داخل باینری‌های Client تعبیه شده است. اگر روزی کلید خصوصی چرخانده شود، Clientهای قدیمی اسنپ‌شات جدید را رد می‌کنند. ترتیب صحیح: انتشار Clientی که کلید عمومی جدید (و در صورت نیاز کلید قدیمی به‌صورت هم‌زمان) را می‌شناسد، سپس امضای اسنپ‌شات با کلید جدید و بازنشستگی کلید قدیمی. بدون این ترتیب، بازیابی فقط با به‌روزرسانی دستی Client ممکن است.
+
+### ۶.۲. شواهد انتشار و دریافت
+
+```text
+Run:        42508665247 (workflow_dispatch, mode=publish, head=15dbb8e9)
+Tag:        v1.0.98
+Manifest:   snapshot_set_id=v1.0.98, created_at_utc=2026-11-08T18:12:34Z
+market:     size=91,547,928  sha256=cb3b0f777431972595a5ae005fab1b3212f145bd88f2128921d052a6bf343123
+codal:      size=4,497,675   sha256=213535eade17dce1ea9de6db0c582f6082782b859698c5ac0d1b559a2a11345a
+Signer:     KeyID 0830BF752EF10076 (همان کلید عمومی تعبیه‌شده)
+FTS recalc: 1,188 symbols در 53 ثانیه
+Client E2E: python tools/test_installed_windows_client_e2e.py --live-github  → exit 0
+```
+
+خروجی آزمون زندهٔ Client (مسیر واقعی GitHub، بدون سرور شبیه‌ساز):
+
+```text
+[7] [955] stage=verifying, pct=80% ...
+    [956] stage=applying, pct=90% ...
+    [1446] stage=done, pct=100%, detail=اسنپ‌شات با موفقیت اعمال شد.
+[8] Active Generation verified: v1.0.98
+    New generation DB query: symbol فولاد -> verdict WATCH (verified!)
+[9] Initial user.db SHA-256: d7f11b5ba654f3a6f78d0f66368024f618a19f4a0aae855eac0f4ebfb721b0a4
+    Final   user.db SHA-256: d7f11b5ba654f3a6f78d0f66368024f618a19f4a0aae855eac0f4ebfb721b0a4
+    PASS: user.db SHA-256 is 100% byte-for-byte identical (Zero Modification).
+[10] PASS: Client reloaded active generation successfully after restart.
+```
+
+نکتهٔ مهم: دانلود و اعمال این مجموعه حدود 12 دقیقه طول کشید و از سقف 60 ثانیه‌ای قبلی عبور کرد؛ این آزمون مستقیماً اثبات می‌کند که اصلاح تایم‌اوت دانلود (حذف `http.Client.Timeout` کلی و حفظ `ResponseHeaderTimeout`) برای Client تولیدی لازم و کافی بوده است.
+
+### ۶.۳. نقص‌های کشف‌شده و رفع‌شده در این فعال‌سازی
+
+| نقص | ریشه | رفع | شاهد |
+| :--- | :--- | :--- | :--- |
+| شکست بازمحاسبهٔ FTS روی دیتابیس تولید | جدول `pipeline_dirty` با شمای قدیمی `(symbol, axis, reason, marked_at)` و نبود ستون `source` | مهاجرت حفظ‌داده در `EnsureRecalcSchema` و تست رگرسیون | `1188 symbols updated` |
+| تایم‌اوت 60 ثانیه‌ای دانلود | `http.Client.Timeout` شامل خواندن بدنهٔ پاسخ می‌شود | حذف Timeout کلی، حفظ `ResponseHeaderTimeout=60s` و سقف 45 دقیقه‌ای Context | آزمون زنده 12 دقیقه‌ای PASS |
+| انتشار اسنپ‌شات بدون FTS | Workflow قبلی فقط `data-latest` را بازمنتشر می‌کرد | Workflow جدید: Materialize → recalc --all → gate صفر نبودن FTS → build/sign/publish | 1,188 ردیف FTS |
+| پنجرهٔ انتظار آزمون زنده | 150 ثانیه برای دانلود واقعی کافی نبود | 45 دقیقه در حالت `--live-github` | exit 0 |
+
+**کامیت‌های مرتبط:** `a7be63d6` (مهاجرت شمای FTS)، `280aa4ac` (تایم‌اوت دانلود)، `15dbb8e9` (Workflow بازسازی FTS و آزمون زنده).
