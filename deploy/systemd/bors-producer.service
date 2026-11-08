@@ -6,8 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=bors
-Group=bors
+User=borsproducer
+Group=borsproducer
 WorkingDirectory=/var/lib/bors-producer
 EnvironmentFile=-/etc/bors-producer/producer.env
 ExecStart=/usr/local/bin/bors-producer daemon --config=/etc/bors-producer/producer_config.json

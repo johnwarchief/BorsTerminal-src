@@ -11,6 +11,9 @@ services:
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
+      - BORS_PUBLISH_ENABLED=${BORS_PUBLISH_ENABLED:-false}
+      - BORS_GITHUB_REPO=${BORS_GITHUB_REPO:-johnwarchief/BorsTerminal}
+      - SNAPSHOT_DAILY_UTC=${SNAPSHOT_DAILY_UTC:-06:00}
     volumes:
       - ../../data:/app/data
       - ../../snapshots:/app/snapshots

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,8 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"borsterminal/backend/internal/snapshot"
 )
 
 var version = "1.0.95"
@@ -137,6 +140,18 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 
 	case "daemon":
 		return runDaemon(ctx, rest, stdout, stderr)
+
+	case "keygen":
+		pub, priv, err := snapshot.GenerateTestKeyPair()
+		if err != nil {
+			fmt.Fprintf(stderr, "keygen failed: %v\n", err)
+			return 1
+		}
+		outMap := map[string]string{"public_key": pub, "secret_key": priv}
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(outMap)
+		return 0
 
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\nRun 'bors-producer help' for usage.\n", cmd)

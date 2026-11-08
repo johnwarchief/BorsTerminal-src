@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 
 	"borsterminal/backend/internal/codal"
 	"borsterminal/backend/internal/db"
-	"borsterminal/backend/internal/snapshot"
 	"borsterminal/backend/internal/tsetmc"
 	"borsterminal/backend/internal/worker"
 )
@@ -30,7 +28,13 @@ type DaemonConfig struct {
 	MarketIntervalSec    int    `json:"market_interval_sec"`
 	CorporateIntervalSec int    `json:"corporate_interval_sec"`
 	SnapshotIntervalSec  int    `json:"snapshot_interval_sec"`
+	SnapshotDailyUTC     string `json:"snapshot_daily_utc"`
+	CatchupMissedDaily   bool   `json:"catchup_missed_daily"`
 	SnapshotOutDir       string `json:"snapshot_out_dir"`
+	PublishEnabled       bool   `json:"publish_enabled"`
+	PublishRepo          string `json:"publish_repo"`
+	PublishTag           string `json:"publish_tag"`
+	PublishBaseURL       string `json:"publish_base_url"`
 	DrainTimeoutSec      int    `json:"drain_timeout_sec"`
 	LogLevel             string `json:"log_level"`
 	LogFormat            string `json:"log_format"`
@@ -43,8 +47,14 @@ func defaultDaemonConfig() DaemonConfig {
 		OffPeakIntervalSec:   7200,  // 2 hours
 		MarketIntervalSec:    60,    // 1 minute
 		CorporateIntervalSec: 7200,  // 2 hours
-		SnapshotIntervalSec:  0,     // disabled by default (e.g. 86400 = 24h)
+		SnapshotIntervalSec:  0,     // legacy relative interval (0 = use SnapshotDailyUTC)
+		SnapshotDailyUTC:     "06:00", // fixed 06:00 UTC daily schedule
+		CatchupMissedDaily:   true,  // catchup on startup if today's 06:00 UTC run was missed
 		SnapshotOutDir:       "",
+		PublishEnabled:       false,
+		PublishRepo:          "johnwarchief/BorsTerminal",
+		PublishTag:           "",
+		PublishBaseURL:       "",
 		DrainTimeoutSec:      10,    // 10 seconds
 		LogLevel:             "info",
 		LogFormat:            "text",
@@ -60,6 +70,8 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 	fs.SetOutput(stderr)
 	configFlag := fs.String("config", "producer_config.json", "Path to producer JSON configuration file")
 	dataDirFlag := fs.String("data-dir", "", "Directory holding database files (overrides config)")
+	publishFlag := fs.Bool("publish", false, "Enable automated snapshot publishing to repository")
+	dailyUTCFlag := fs.String("daily-utc", "", "Daily snapshot schedule in HH:MM UTC (overrides config)")
 
 	if err := fs.Parse(args); err != nil {
 		return 1
@@ -76,6 +88,24 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 
 	if *dataDirFlag != "" {
 		cfg.DataDir = *dataDirFlag
+	}
+	if *publishFlag {
+		cfg.PublishEnabled = true
+	} else if envPub := os.Getenv("BORS_PUBLISH_ENABLED"); envPub == "1" || strings.EqualFold(envPub, "true") {
+		cfg.PublishEnabled = true
+	}
+
+	if *dailyUTCFlag != "" {
+		cfg.SnapshotDailyUTC = *dailyUTCFlag
+	} else if envDaily := os.Getenv("SNAPSHOT_DAILY_UTC"); envDaily != "" {
+		cfg.SnapshotDailyUTC = envDaily
+	}
+
+	if envRepo := os.Getenv("BORS_GITHUB_REPO"); envRepo != "" {
+		cfg.PublishRepo = envRepo
+	}
+	if envBase := os.Getenv("GITHUB_API_BASE_URL"); envBase != "" && cfg.PublishBaseURL == "" {
+		cfg.PublishBaseURL = envBase
 	}
 
 	if cfg.SnapshotOutDir == "" {
@@ -263,82 +293,43 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		return 1
 	}
 
-	// 4. Task: Scheduled Snapshot Creation (if enabled)
-	if cfg.SnapshotIntervalSec > 0 {
-		snapshotInterval := time.Duration(cfg.SnapshotIntervalSec) * time.Second
+	// 4. Task: Scheduled Snapshot Creation & Publishing
+	var snapshotCadence func(time.Time) time.Duration
+	var snapshotHour, snapshotMinute int
+	var isDailySchedule bool
+
+	if cfg.SnapshotDailyUTC != "" {
+		h, m, err := parseDailyUTCTime(cfg.SnapshotDailyUTC)
+		if err != nil {
+			slog.Warn("invalid snapshot_daily_utc, falling back to 06:00 UTC", "val", cfg.SnapshotDailyUTC, "err", err)
+			h, m = 6, 0
+		}
+		snapshotHour, snapshotMinute = h, m
+		isDailySchedule = true
+		snapshotCadence = func(now time.Time) time.Duration {
+			return NextDailyUTCDuration(now, snapshotHour, snapshotMinute)
+		}
+		slog.Info("configured daily snapshot schedule", "time_utc", fmt.Sprintf("%02d:%02d", snapshotHour, snapshotMinute), "publish_enabled", cfg.PublishEnabled)
+	} else if cfg.SnapshotIntervalSec > 0 {
+		interval := time.Duration(cfg.SnapshotIntervalSec) * time.Second
+		snapshotCadence = func(time.Time) time.Duration { return interval }
+		slog.Info("configured interval snapshot schedule", "interval", interval, "publish_enabled", cfg.PublishEnabled)
+	}
+
+	if snapshotCadence != nil {
 		err = orchestrator.Register(worker.WorkerTask{
-			Name:     "snapshot_builder",
-			Interval: snapshotInterval,
+			Name:    "snapshot_builder",
+			Cadence: snapshotCadence,
 			Fn: func(taskCtx context.Context) error {
-				slog.Info("snapshot_builder: task started", "out_dir", cfg.SnapshotOutDir)
-
-				lock, err := tsetmc.AcquireWriterLockWithTimeout(taskCtx, cfg.DataDir, 1*time.Second)
-				if err != nil {
-					slog.Warn("snapshot_builder: lock acquisition timed out", "err", err)
-					return err
-				}
-				defer lock.Release()
-
-				entries, err := os.ReadDir(cfg.DataDir)
-				if err != nil {
-					slog.Error("snapshot_builder: read data dir failed", "dir", cfg.DataDir, "err", err)
-					return err
-				}
-
-				dbs := make(map[string]*sql.DB)
-				defer func() {
-					for _, conn := range dbs {
-						if conn != nil {
-							_ = conn.Close()
-						}
-					}
-				}()
-
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					name := entry.Name()
-					if strings.EqualFold(filepath.Ext(name), ".db") {
-						dbPath := filepath.Join(cfg.DataDir, name)
-						conn, err := db.OpenRW(dbPath)
-						if err != nil {
-							slog.Warn("snapshot_builder: failed to open db", "path", dbPath, "err", err)
-							continue
-						}
-						key := strings.TrimSuffix(name, filepath.Ext(name))
-						dbs[key] = conn
-					}
-				}
-
-				if len(dbs) == 0 {
-					slog.Warn("snapshot_builder: no database files found to snapshot", "dir", cfg.DataDir)
-					return nil
-				}
-
-				manifest, err := snapshot.BuildSnapshotSet(taskCtx, dbs, cfg.SnapshotOutDir, "")
-				if err != nil {
-					slog.Error("snapshot_builder: build snapshot set failed", "err", err)
-					return err
-				}
-
-				privKey := getMinisignSecretKey()
-				if privKey != "" {
-					password := getMinisignPassword()
-					manifestPath := filepath.Join(cfg.SnapshotOutDir, "manifest.json")
-					sigPath, err := snapshot.SignAsset(manifestPath, privKey, password)
-					if err != nil {
-						slog.Error("snapshot_builder: signing manifest failed", "err", err)
-						return err
-					}
-					slog.Info("snapshot_builder: manifest signed", "sig_path", sigPath)
-				}
-
-				slog.Info("snapshot_builder: snapshot set completed successfully",
-					"snapshot_set_id", manifest.SnapshotSetID,
-					"asset_count", len(manifest.Assets),
+				slog.Info("snapshot_builder: executing scheduled snapshot pipeline",
+					"publish_enabled", cfg.PublishEnabled,
 					"out_dir", cfg.SnapshotOutDir,
 				)
+				_, err := ExecuteScheduledSnapshotPipeline(taskCtx, cfg, time.Now())
+				if err != nil {
+					slog.Error("snapshot_builder: pipeline failed", "err", err)
+					return err
+				}
 				return nil
 			},
 		})
@@ -354,6 +345,29 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		slog.Error("failed to start orchestrator", "err", err)
 		fmt.Fprintf(stderr, "failed to start orchestrator: %v\n", err)
 		return 1
+	}
+
+	// Startup catchup check: if daily schedule is configured and catchup is enabled,
+	// check if today's run has already passed and was missed due to service downtime.
+	if isDailySchedule && cfg.CatchupMissedDaily {
+		nowUTC := time.Now().UTC()
+		todayStr := nowUTC.Format("2006-01-02")
+		if nowUTC.Hour() > snapshotHour || (nowUTC.Hour() == snapshotHour && nowUTC.Minute() >= snapshotMinute) {
+			lastSuccessDate := LastSuccessfulSnapshotDate(cfg.SnapshotOutDir)
+			if lastSuccessDate != todayStr {
+				slog.Info("snapshot_builder: missed daily snapshot run detected on startup; queuing catchup run",
+					"today", todayStr,
+					"last_success", lastSuccessDate,
+				)
+				if err := orchestrator.Trigger("snapshot_builder"); err != nil {
+					slog.Warn("failed to trigger catchup snapshot run", "err", err)
+				}
+			} else {
+				slog.Info("snapshot_builder: daily snapshot for today already completed, next run scheduled at 06:00 UTC",
+					"today", todayStr,
+				)
+			}
+		}
 	}
 
 	slog.Info("bors-producer orchestrator started")

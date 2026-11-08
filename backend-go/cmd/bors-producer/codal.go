@@ -529,6 +529,18 @@ func runCodalSnapshot(ctx context.Context, args []string, stdout, stderr io.Writ
 	privKey := getMinisignSecretKey()
 	password := getMinisignPassword()
 	if privKey != "" {
+		for name, assetMeta := range manifest.Assets {
+			assetPath := assetMeta.Path
+			if !filepath.IsAbs(assetPath) {
+				assetPath = filepath.Join(outDir, assetPath)
+			}
+			asig, err := snapshot.SignAsset(assetPath, privKey, password)
+			if err != nil {
+				fmt.Fprintf(stderr, "error signing asset %s: %v\n", name, err)
+				return 1
+			}
+			fmt.Fprintf(stdout, "Asset signature generated: %s -> %s\n", name, asig)
+		}
 		manifestPath := filepath.Join(outDir, "manifest.json")
 		sigPath, err := snapshot.SignAsset(manifestPath, privKey, password)
 		if err != nil {
