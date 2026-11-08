@@ -41,6 +41,9 @@ func VacuumInto(ctx context.Context, srcDB *sql.DB, targetPath string) error {
 	}
 
 	cleanPath := filepath.Clean(targetPath)
+	if abs, err := filepath.Abs(cleanPath); err == nil {
+		cleanPath = abs
+	}
 	dir := filepath.Dir(cleanPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("create target dir %s: %w", dir, err)
