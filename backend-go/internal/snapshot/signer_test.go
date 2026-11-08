@@ -36,6 +36,17 @@ func TestSigner_GenerateTestKeyPair(t *testing.T) {
 	}
 }
 
+func TestSigner_ParsePublicKey_Base64(t *testing.T) {
+	const rawB64 = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzMEJGNzUyRUYxMDA3NgpSV1IyQVBFdWRiOHdDRllFSTQrRUZwV0ZDYWJ6eTdiVWlQNlNJckk0dldnb294aVlkTy9oSFRHQwo="
+	pub, err := ParsePublicKey(rawB64)
+	if err != nil {
+		t.Fatalf("ParsePublicKey with base64 failed: %v", err)
+	}
+	if pub.ID() == 0 {
+		t.Fatal("expected non-zero key ID")
+	}
+}
+
 func TestSigner_SignAndVerifyAsset_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test_asset.db.lzma")

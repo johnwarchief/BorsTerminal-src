@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -63,7 +64,8 @@ func ParsePrivateKey(privKeyStr, password string) (minisign.PrivateKey, error) {
 	return key, nil
 }
 
-// ParsePublicKey decodes a Minisign public key string via UnmarshalText.
+// ParsePublicKey decodes a Minisign public key string via UnmarshalText,
+// with transparent fallback for base64-encoded minisign public key files.
 func ParsePublicKey(pubKeyStr string) (minisign.PublicKey, error) {
 	clean := strings.TrimSpace(pubKeyStr)
 	if clean == "" {
@@ -72,6 +74,11 @@ func ParsePublicKey(pubKeyStr string) (minisign.PublicKey, error) {
 
 	var pub minisign.PublicKey
 	if err := pub.UnmarshalText([]byte(clean)); err != nil {
+		if dec, decErr := base64.StdEncoding.DecodeString(clean); decErr == nil {
+			if err2 := pub.UnmarshalText(dec); err2 == nil {
+				return pub, nil
+			}
+		}
 		return minisign.PublicKey{}, fmt.Errorf("parse public key: %w", err)
 	}
 	return pub, nil

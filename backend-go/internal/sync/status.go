@@ -36,6 +36,7 @@ func parseISO(ts string) (time.Time, error) {
 }
 
 // GetCodalDBStatus وضعیت دیتابیس کدال را از codal_db_status.json بازمی‌گرداند.
+// در صورت وجود active_generation.json، اطلاعات نسل فعال اسنپ‌شات را نیز برمی‌گرداند.
 func GetCodalDBStatus(dataDir string, running bool) map[string]any {
 	stPath := filepath.Join(dataDir, "codal_db_status.json")
 	st := safeReadJSON(stPath)
@@ -49,17 +50,57 @@ func GetCodalDBStatus(dataDir string, running bool) map[string]any {
 	errStr, _ := st["error"].(string)
 	ts, _ := st["ts"].(string)
 
-	return map[string]any{
-		"status": "success",
-		"db": map[string]any{
-			"running": running,
-			"stage":   stage,
-			"percent": pct,
-			"detail":  detail,
-			"error":   errStr,
-			"ts":      ts,
-		},
+	dbMap := map[string]any{
+		"running": running,
+		"stage":   stage,
+		"percent": pct,
+		"detail":  detail,
+		"error":   errStr,
+		"ts":      ts,
 	}
+
+	res := map[string]any{
+		"status": "success",
+		"db":     dbMap,
+	}
+
+	activeGenPath := filepath.Join(dataDir, "active_generation.json")
+	if _, err := os.Stat(activeGenPath); err == nil {
+		activeGen := safeReadJSON(activeGenPath)
+		if len(activeGen) > 0 {
+			dbMap["active_generation"] = activeGen
+			res["active_generation"] = activeGen
+		}
+	}
+
+	return res
+}
+
+// writeCodalDBStatus وضعیت دانلود اسنپ‌شات را به صورت اتمیک در codal_db_status.json ثبت می‌کند.
+func writeCodalDBStatus(dataDir, stage string, percent float64, detail, errText string, now time.Time) error {
+	stPath := filepath.Join(dataDir, "codal_db_status.json")
+	tmpPath := stPath + ".tmp"
+
+	data := map[string]any{
+		"stage":   stage,
+		"percent": percent,
+		"detail":  detail,
+		"error":   errText,
+		"ts":      now.Format("2006-01-02T15:04:05"),
+	}
+	raw, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return err
+	}
+	raw = append(raw, '\n')
+	if err := os.WriteFile(tmpPath, raw, 0644); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, stPath); err != nil {
+		_ = os.Remove(stPath)
+		return os.Rename(tmpPath, stPath)
+	}
+	return nil
 }
 
 // GetSyncStatus تجمیع وضعیت‌های سینک را شبیه get_sync_status در api/_sync_codal.py انجام می‌دهد.

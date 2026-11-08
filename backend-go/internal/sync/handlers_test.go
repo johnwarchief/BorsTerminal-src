@@ -2,10 +2,21 @@ package sync
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
+
+	"borsterminal/backend/internal/snapshot"
+	_ "modernc.org/sqlite"
 )
 
 func TestSyncHandlers(t *testing.T) {
@@ -69,13 +80,23 @@ func TestSyncHandlers(t *testing.T) {
 		t.Errorf("expected mode=full, got %v", res["mode"])
 	}
 
-	// 7. POST /api/sync/codal/db-download
+	// 7. POST /api/sync/codal/db-download (with already running check)
+	dbdlMu.Lock()
+	dbdlRunning = true
+	dbdlMu.Unlock()
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest("POST", "/api/sync/codal/db-download", nil)
 	h.SyncCodalDBDownload(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Errorf("SyncCodalDBDownload code = %d", rec.Code)
 	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &res)
+	if res["status"] != "already_running" {
+		t.Errorf("expected status=already_running, got %v", res["status"])
+	}
+	dbdlMu.Lock()
+	dbdlRunning = false
+	dbdlMu.Unlock()
 
 	// 8. POST /api/codal/control (invalid body)
 	rec = httptest.NewRecorder()
@@ -105,5 +126,353 @@ func TestSyncHandlers(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &res)
 	if res["status"] != "success" || res["cmd"] != "pause" {
 		t.Errorf("expected status=success cmd=pause, got %v", res)
+	}
+}
+
+// TestZeroPythonSubprocessesInSync validates via Go AST analysis and file inspection that
+// internal/sync contains ZERO invocations of Python processes (python, python3, py, python.exe).
+func TestZeroPythonSubprocessesInSync(t *testing.T) {
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, ".", nil, parser.ParseComments)
+	if err != nil {
+		t.Fatalf("failed to parse package internal/sync: %v", err)
+	}
+
+	disallowedCommands := []string{"python", "python3", "python.exe", "python3.exe", "py"}
+
+	for pkgName, pkg := range pkgs {
+		for fileName, file := range pkg.Files {
+			isTestFile := strings.HasSuffix(fileName, "_test.go")
+
+			// Check AST call expressions in all files
+			ast.Inspect(file, func(n ast.Node) bool {
+				call, ok := n.(*ast.CallExpr)
+				if !ok {
+					return true
+				}
+
+				// Check if call looks like exec.Command or exec.CommandContext
+				var funcName string
+				switch fun := call.Fun.(type) {
+				case *ast.SelectorExpr:
+					funcName = fun.Sel.Name
+				case *ast.Ident:
+					funcName = fun.Name
+				}
+
+				if funcName == "Command" || funcName == "CommandContext" {
+					for _, arg := range call.Args {
+						if lit, ok := arg.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+							val := strings.Trim(lit.Value, `"`)
+							for _, disallowed := range disallowedCommands {
+								if strings.EqualFold(val, disallowed) || strings.HasSuffix(strings.ToLower(val), disallowed) {
+									pos := fset.Position(lit.Pos())
+									t.Errorf("AST violation in %s (%s:%d): found subprocess call with disallowed command %q",
+										pkgName, filepath.Base(fileName), pos.Line, val)
+								}
+							}
+						}
+					}
+				}
+				return true
+			})
+
+			// Check raw content in production (non-test) files as secondary guard
+			if isTestFile {
+				continue
+			}
+			content, err := os.ReadFile(fileName)
+			if err != nil {
+				continue
+			}
+			lower := strings.ToLower(string(content))
+			for _, disallowed := range disallowedCommands {
+				needle := `"` + disallowed + `"`
+				if strings.Contains(lower, needle) {
+					t.Errorf("File scan violation in %s: string %q found in %s",
+						pkgName, needle, filepath.Base(fileName))
+				}
+			}
+		}
+	}
+}
+
+// TestSyncCodalDBDownload_MockServerSuccess tests the end-to-end native snapshot ingestion:
+// downloads manifest and signed assets from an HTTP test server, applies them via Applier,
+// updates status to "done", switches active_generation.json, and confirms zero Python subprocesses.
+func TestSyncCodalDBDownload_MockServerSuccess(t *testing.T) {
+	serverDir := t.TempDir()
+	clientDir := t.TempDir()
+
+	// 1. Generate keypair for Minisign verification
+	pubKey, privKey, err := snapshot.GenerateTestKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateTestKeyPair failed: %v", err)
+	}
+
+	// 2. Create raw SQLite database
+	rawDBPath := filepath.Join(serverDir, "codal.db")
+	db, err := sql.Open("sqlite", rawDBPath)
+	if err != nil {
+		t.Fatalf("create sqlite db: %v", err)
+	}
+	_, err = db.Exec("CREATE TABLE codal_notices (tracing_no INT PRIMARY KEY, symbol TEXT);")
+	if err != nil {
+		t.Fatalf("create table: %v", err)
+	}
+	_, err = db.Exec("INSERT INTO codal_notices (tracing_no, symbol) VALUES (98765, 'فولاد');")
+	if err != nil {
+		t.Fatalf("insert row: %v", err)
+	}
+	_ = db.Close()
+
+	// 3. Compress database using standard LZMA
+	lzmaPath := filepath.Join(serverDir, "codal.db.lzma")
+	compSHA, compSize, rawSize, err := snapshot.CompressLZMA(rawDBPath, lzmaPath)
+	if err != nil {
+		t.Fatalf("CompressLZMA failed: %v", err)
+	}
+
+	// 4. Sign asset
+	assetSigPath, err := snapshot.SignAsset(lzmaPath, privKey, "")
+	if err != nil {
+		t.Fatalf("SignAsset failed: %v", err)
+	}
+
+	// 5. Create Manifest
+	manifest := snapshot.NewManifest("set_sync_e2e_20261108", 1)
+	manifest.AddAsset("codal", "codal.db.lzma", compSHA, compSize, rawSize)
+	manifestPath := filepath.Join(serverDir, "manifest.json")
+	if err := manifest.Save(manifestPath); err != nil {
+		t.Fatalf("manifest.Save failed: %v", err)
+	}
+
+	// 6. Sign manifest
+	manifestSigPath, err := snapshot.SignAsset(manifestPath, privKey, "")
+	if err != nil {
+		t.Fatalf("Sign manifest failed: %v", err)
+	}
+
+	// 7. Setup Mock HTTP Server
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cleanPath := strings.TrimPrefix(r.URL.Path, "/")
+		switch cleanPath {
+		case "manifest.json":
+			http.ServeFile(w, r, manifestPath)
+		case "manifest.json.sig":
+			http.ServeFile(w, r, manifestSigPath)
+		case "codal.db.lzma":
+			http.ServeFile(w, r, lzmaPath)
+		case "codal.db.lzma.sig":
+			http.ServeFile(w, r, assetSigPath)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer mockServer.Close()
+
+	// 8. Create Handler configured with mock server
+	h := NewHandler(clientDir)
+	h.SetSnapshotBaseURL(mockServer.URL)
+	h.SetPubKey(pubKey)
+	h.SetHTTPClient(mockServer.Client())
+
+	// 9. Trigger SyncCodalDBDownload
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/api/sync/codal/db-download", nil)
+	h.SyncCodalDBDownload(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("SyncCodalDBDownload returned status %d, body: %s", rec.Code, rec.Body.String())
+	}
+
+	var startResp map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("parse start response: %v", err)
+	}
+	if startResp["status"] != "success" {
+		t.Fatalf("expected status=success, got %v", startResp)
+	}
+
+	// 10. Poll for completion of background goroutine
+	deadline := time.Now().Add(10 * time.Second)
+	var finalStatus map[string]any
+	for time.Now().Before(deadline) {
+		finalStatus = GetCodalDBStatus(clientDir, false)
+		dbMap, ok := finalStatus["db"].(map[string]any)
+		if ok {
+			stage, _ := dbMap["stage"].(string)
+			if stage == "done" || stage == "error" {
+				break
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	dbMap, ok := finalStatus["db"].(map[string]any)
+	if !ok {
+		t.Fatalf("db status missing from final response: %v", finalStatus)
+	}
+	if dbMap["stage"] != "done" {
+		t.Fatalf("expected stage=done, got stage=%v error=%v detail=%v",
+			dbMap["stage"], dbMap["error"], dbMap["detail"])
+	}
+	if dbMap["percent"] != 100.0 {
+		t.Errorf("expected percent=100, got %v", dbMap["percent"])
+	}
+
+	// 11. Verify active_generation exists and matches snapshot set ID
+	activeGen, ok := finalStatus["active_generation"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected active_generation in response, got %v", finalStatus)
+	}
+	if activeGen["snapshot_set_id"] != "set_sync_e2e_20261108" {
+		t.Errorf("expected snapshot_set_id set_sync_e2e_20261108, got %v", activeGen["snapshot_set_id"])
+	}
+
+	// 12. Verify active SQLite database inside gens/gen_set_sync_e2e_20261108/codal.db
+	appliedDBPath := filepath.Join(clientDir, "gens", "gen_set_sync_e2e_20261108", "codal.db")
+	if fi, err := os.Stat(appliedDBPath); err != nil || fi.IsDir() {
+		t.Fatalf("applied db file %s missing: %v", appliedDBPath, err)
+	}
+
+	readDB, err := sql.Open("sqlite", appliedDBPath)
+	if err != nil {
+		t.Fatalf("open applied db: %v", err)
+	}
+	defer readDB.Close()
+
+	var sym string
+	err = readDB.QueryRow("SELECT symbol FROM codal_notices WHERE tracing_no = 98765").Scan(&sym)
+	if err != nil {
+		t.Fatalf("query applied db: %v", err)
+	}
+	if sym != "فولاد" {
+		t.Errorf("expected symbol='فولاد', got %q", sym)
+	}
+
+	// 13. Verify dbdlRunning is safely reset to false
+	dbdlMu.Lock()
+	running := dbdlRunning
+	dbdlMu.Unlock()
+	if running {
+		t.Errorf("expected dbdlRunning=false after completion")
+	}
+}
+
+// TestSyncCodalDBDownload_TamperedSignature verifies that corrupt signatures cause
+// the download to abort with status="error" without corrupting data or getting stuck.
+func TestSyncCodalDBDownload_TamperedSignature(t *testing.T) {
+	serverDir := t.TempDir()
+	clientDir := t.TempDir()
+
+	pubKey, privKey, err := snapshot.GenerateTestKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateTestKeyPair failed: %v", err)
+	}
+
+	manifest := snapshot.NewManifest("set_tamper_test", 1)
+	manifestPath := filepath.Join(serverDir, "manifest.json")
+	if err := manifest.Save(manifestPath); err != nil {
+		t.Fatalf("save manifest: %v", err)
+	}
+
+	// Sign manifest with wrong key / tamper signature file
+	sigPath, err := snapshot.SignAsset(manifestPath, privKey, "")
+	if err != nil {
+		t.Fatalf("sign manifest: %v", err)
+	}
+	_ = os.WriteFile(sigPath, []byte("tampered signature content that cannot be valid"), 0644)
+
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cleanPath := strings.TrimPrefix(r.URL.Path, "/")
+		switch cleanPath {
+		case "manifest.json":
+			http.ServeFile(w, r, manifestPath)
+		case "manifest.json.sig":
+			http.ServeFile(w, r, sigPath)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer mockServer.Close()
+
+	h := NewHandler(clientDir)
+	h.SetSnapshotBaseURL(mockServer.URL)
+	h.SetPubKey(pubKey)
+	h.SetHTTPClient(mockServer.Client())
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/api/sync/codal/db-download", nil)
+	h.SyncCodalDBDownload(rec, req)
+
+	// Poll until error status
+	deadline := time.Now().Add(5 * time.Second)
+	var finalStatus map[string]any
+	for time.Now().Before(deadline) {
+		finalStatus = GetCodalDBStatus(clientDir, false)
+		dbMap, ok := finalStatus["db"].(map[string]any)
+		if ok {
+			stage, _ := dbMap["stage"].(string)
+			if stage == "error" {
+				break
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	dbMap, ok := finalStatus["db"].(map[string]any)
+	if !ok || dbMap["stage"] != "error" {
+		t.Fatalf("expected stage=error on tampered signature, got %v", finalStatus)
+	}
+	if dbMap["error"] == "" {
+		t.Errorf("expected non-empty error message")
+	}
+
+	// Verify dbdlRunning is false
+	dbdlMu.Lock()
+	running := dbdlRunning
+	dbdlMu.Unlock()
+	if running {
+		t.Errorf("expected dbdlRunning=false after error")
+	}
+}
+
+// TestGetCodalDBStatus_ActiveGeneration verifies reporting of active_generation.json.
+func TestGetCodalDBStatus_ActiveGeneration(t *testing.T) {
+	tmp := t.TempDir()
+
+	// When active_generation.json does not exist
+	res := GetCodalDBStatus(tmp, false)
+	if _, ok := res["active_generation"]; ok {
+		t.Errorf("expected no active_generation when file is absent")
+	}
+
+	// Write active_generation.json
+	activeData := map[string]any{
+		"snapshot_set_id": "gen_test_42",
+		"generation_dir":  "gens/gen_test_42",
+		"applied_at_utc":  "2026-11-08T06:00:00Z",
+		"schema_version":  1,
+	}
+	raw, _ := json.Marshal(activeData)
+	_ = os.WriteFile(filepath.Join(tmp, "active_generation.json"), raw, 0644)
+
+	res = GetCodalDBStatus(tmp, false)
+	ag, ok := res["active_generation"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected active_generation in response, got %v", res)
+	}
+	if ag["snapshot_set_id"] != "gen_test_42" {
+		t.Errorf("expected snapshot_set_id=gen_test_42, got %v", ag["snapshot_set_id"])
+	}
+
+	// Check db sub-map also contains it
+	dbMap, ok := res["db"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected db map in response")
+	}
+	if ag2, ok := dbMap["active_generation"].(map[string]any); !ok || ag2["snapshot_set_id"] != "gen_test_42" {
+		t.Errorf("expected db.active_generation to contain snapshot_set_id=gen_test_42, got %v", ag2)
 	}
 }

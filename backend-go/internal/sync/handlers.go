@@ -1,28 +1,69 @@
 package sync
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"borsterminal/backend/internal/httpapi"
 )
 
-const CodalDBURL = "https://github.com/johnwarchief/BorsTerminal/releases/latest/download/codal.db.lzma"
+const (
+	CodalDBURL             = "https://github.com/johnwarchief/BorsTerminal/releases/latest/download/codal.db.lzma"
+	DefaultSnapshotBaseURL = "https://github.com/johnwarchief/BorsTerminal/releases/latest/download"
+	DefaultUpdatePubKey    = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzMEJGNzUyRUYxMDA3NgpSV1IyQVBFdWRiOHdDRllFSTQrRUZwV0ZDYWJ6eTdiVWlQNlNJckk0dldnb294aVlkTy9oSFRHQwo="
+)
 
 type Handler struct {
-	dataDir string
-	clock   func() time.Time
-	prober  DiagProber
+	dataDir         string
+	clock           func() time.Time
+	prober          DiagProber
+	pubKey          string
+	snapshotBaseURL string
+	httpClient      *http.Client
 }
 
 func NewHandler(dataDir string) *Handler {
-	return &Handler{
-		dataDir: dataDir,
-		clock:   time.Now,
-		prober:  defaultProber{},
+	baseURL := os.Getenv("BORS_SNAPSHOT_URL")
+	if baseURL == "" {
+		baseURL = os.Getenv("BORS_SNAPSHOT_BASE_URL")
 	}
+	if baseURL == "" {
+		baseURL = DefaultSnapshotBaseURL
+	}
+
+	pubKey := os.Getenv("BORS_UPDATE_PUBKEY")
+	if pubKey == "" {
+		pubKey = DefaultUpdatePubKey
+	}
+
+	return &Handler{
+		dataDir:         dataDir,
+		clock:           time.Now,
+		prober:          defaultProber{},
+		pubKey:          pubKey,
+		snapshotBaseURL: baseURL,
+		httpClient:      &http.Client{Timeout: 60 * time.Second},
+	}
+}
+
+func (h *Handler) SetSnapshotBaseURL(url string) {
+	h.snapshotBaseURL = url
+}
+
+func (h *Handler) SetPubKey(pubKey string) {
+	h.pubKey = pubKey
+}
+
+func (h *Handler) SetHTTPClient(client *http.Client) {
+	h.httpClient = client
+}
+
+func (h *Handler) SetClock(clock func() time.Time) {
+	h.clock = clock
 }
 
 func (h *Handler) SyncStatus(w http.ResponseWriter, r *http.Request) {
@@ -95,13 +136,41 @@ func (h *Handler) SyncCodalDBDownload(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	dbdlRunning = true
 	dbdlMu.Unlock()
+
+	baseURL := h.snapshotBaseURL
+	if qURL := r.URL.Query().Get("url"); qURL != "" {
+		baseURL = qURL
+	}
+	if baseURL == "" {
+		baseURL = DefaultSnapshotBaseURL
+	}
+
+	// Update status to downloading immediately
+	_ = writeCodalDBStatus(h.dataDir, "downloading", 0, "شروع دانلود اسنپ‌شات...", "", h.clock())
+
+	// Run background download and apply pipeline in a goroutine
+	go h.runSnapshotDownloadAndApply(baseURL)
 
 	httpapi.WriteJSON(w, http.StatusOK, map[string]any{
 		"status":  "success",
 		"message": "دانلود دیتابیس کدال از گیت‌هاب آغاز شد.",
-		"url":     CodalDBURL,
+		"url":     baseURL,
 	})
+}
+
+func (h *Handler) runSnapshotDownloadAndApply(baseURL string) {
+	defer func() {
+		dbdlMu.Lock()
+		dbdlRunning = false
+		dbdlMu.Unlock()
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	_ = h.DownloadAndApplySnapshot(ctx, baseURL)
 }
 
 func (h *Handler) CodalControl(w http.ResponseWriter, r *http.Request) {
