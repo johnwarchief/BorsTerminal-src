@@ -51,13 +51,13 @@ jobs:
         run: |
           python -m pip install --quiet cryptography
           python - <<'PY'
-          import os, sys, base64, hashlib, re
-          content = open("api/update.py", "r", encoding="utf-8").read()
-          match = re.search(r'UPDATE_PUBKEY\s*=\s*"([^"]+)"', content)
-          if not match:
+          import os, sys, base64, hashlib, ast
+          tree = ast.parse(open("api/update.py", encoding="utf-8").read())
+          matches = [n.value.value for n in tree.body if getattr(n, "targets", [None])[0] and getattr(n.targets[0], "id", None) == "UPDATE_PUBKEY"]
+          if not matches:
               print('::error::Could not find UPDATE_PUBKEY in api/update.py', file=sys.stderr)
               sys.exit(1)
-          UPDATE_PUBKEY = match.group(1)
+          UPDATE_PUBKEY = matches[0]
           import bors_minisign
 
           raw_key = os.environ.get('KEY', '').strip()
