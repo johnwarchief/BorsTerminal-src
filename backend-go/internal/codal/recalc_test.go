@@ -391,3 +391,79 @@ func TestRecalculateAllUniverseFTS(t *testing.T) {
 	}
 }
 
+func TestEnsureRecalcSchemaMigratesLegacyPipelineDirty(t *testing.T) {
+	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "legacy_dirty.db"))
+	if err != nil {
+		t.Fatalf("open test db: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	if _, err := db.Exec(`CREATE TABLE pipeline_dirty (
+		symbol TEXT NOT NULL,
+		axis TEXT NOT NULL,
+		reason TEXT,
+		marked_at TEXT,
+		PRIMARY KEY (symbol, axis)
+	)`); err != nil {
+		t.Fatalf("create legacy pipeline_dirty: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO pipeline_dirty (symbol, axis, reason, marked_at)
+		VALUES ('فولاد', 'fundamental', 'legacy row', '2026-01-02T03:04:05Z')`); err != nil {
+		t.Fatalf("seed legacy row: %v", err)
+	}
+
+	if err := EnsureRecalcSchema(db); err != nil {
+		t.Fatalf("EnsureRecalcSchema migrate: %v", err)
+	}
+
+	cols := make(map[string]bool)
+	rows, err := db.Query(`PRAGMA table_info(pipeline_dirty)`)
+	if err != nil {
+		t.Fatalf("read migrated columns: %v", err)
+	}
+	for rows.Next() {
+		var (
+			cid     int
+			name    string
+			ctype   string
+			notNull int
+			dflt    any
+			pk      int
+		)
+		if err := rows.Scan(&cid, &name, &ctype, &notNull, &dflt, &pk); err != nil {
+			_ = rows.Close()
+			t.Fatalf("scan migrated column: %v", err)
+		}
+		cols[name] = true
+	}
+	_ = rows.Close()
+	if !cols["source"] || !cols["created_at_utc"] {
+		t.Fatalf("migrated columns = %v, want source and created_at_utc", cols)
+	}
+
+	var source, createdAt string
+	if err := db.QueryRow(`SELECT source, created_at_utc FROM pipeline_dirty WHERE symbol='فولاد'`).Scan(&source, &createdAt); err != nil {
+		t.Fatalf("read migrated row: %v", err)
+	}
+	if source != "fundamental" {
+		t.Errorf("migrated source = %q, want fundamental", source)
+	}
+	if createdAt != "2026-01-02T03:04:05Z" {
+		t.Errorf("migrated created_at_utc = %q, want legacy marked_at", createdAt)
+	}
+
+	if err := MarkDirty(context.Background(), db, "فملی", "codal"); err != nil {
+		t.Fatalf("MarkDirty after migration: %v", err)
+	}
+	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pipeline_dirty`).Scan(&count); err != nil {
+		t.Fatalf("count migrated rows: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("pipeline_dirty rows = %d, want 2", count)
+	}
+
+	if err := EnsureRecalcSchema(db); err != nil {
+		t.Fatalf("EnsureRecalcSchema idempotent: %v", err)
+	}
+}

@@ -15,18 +15,23 @@ import (
 	"borsterminal/backend/internal/symbolid"
 )
 
+const createPipelineDirtyDDL = `
+CREATE TABLE IF NOT EXISTS pipeline_dirty (
+	symbol TEXT,
+	source TEXT,
+	created_at_utc TEXT,
+	PRIMARY KEY (symbol, source)
+);`
+
 // EnsureRecalcSchema تضمین وجود جدول‌های pipeline_dirty و fts_results در دیتابیس مارکت.
 func EnsureRecalcSchema(db *sql.DB) error {
 	if db == nil {
 		return errors.New("nil database connection")
 	}
+	if err := ensurePipelineDirtySchema(db); err != nil {
+		return err
+	}
 	ddl := `
-	CREATE TABLE IF NOT EXISTS pipeline_dirty (
-		symbol TEXT,
-		source TEXT,
-		created_at_utc TEXT,
-		PRIMARY KEY (symbol, source)
-	);
 	CREATE TABLE IF NOT EXISTS fts_results (
 		symbol TEXT PRIMARY KEY,
 		f01_growth_pct REAL,
@@ -59,6 +64,86 @@ func EnsureRecalcSchema(db *sql.DB) error {
 	`
 	_, err := db.Exec(ddl)
 	return err
+}
+
+// ensurePipelineDirtySchema creates pipeline_dirty, or migrates the legacy
+// (symbol, axis, reason, marked_at) shape while preserving pending rows.
+func ensurePipelineDirtySchema(db *sql.DB) error {
+	var exists int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='pipeline_dirty'`).Scan(&exists); err != nil {
+		return fmt.Errorf("inspect pipeline_dirty: %w", err)
+	}
+	if exists == 0 {
+		_, err := db.Exec(createPipelineDirtyDDL)
+		return err
+	}
+
+	rows, err := db.Query(`PRAGMA table_info(pipeline_dirty)`)
+	if err != nil {
+		return fmt.Errorf("read pipeline_dirty columns: %w", err)
+	}
+	cols := make(map[string]bool)
+	for rows.Next() {
+		var (
+			cid     int
+			name    string
+			ctype   string
+			notNull int
+			dflt    any
+			pk      int
+		)
+		if err := rows.Scan(&cid, &name, &ctype, &notNull, &dflt, &pk); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("scan pipeline_dirty column: %w", err)
+		}
+		cols[strings.ToLower(name)] = true
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return fmt.Errorf("iterate pipeline_dirty columns: %w", err)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+
+	if cols["source"] && cols["created_at_utc"] {
+		return nil
+	}
+	if !cols["symbol"] {
+		return errors.New("pipeline_dirty has no symbol column; cannot migrate")
+	}
+
+	sourceExpr := "'legacy'"
+	if cols["axis"] {
+		sourceExpr = "COALESCE(NULLIF(TRIM(axis), ''), 'legacy')"
+	}
+	createdExpr := "NULL"
+	if cols["marked_at"] {
+		createdExpr = "marked_at"
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec(`ALTER TABLE pipeline_dirty RENAME TO pipeline_dirty_legacy`); err != nil {
+		return fmt.Errorf("rename legacy pipeline_dirty: %w", err)
+	}
+	if _, err := tx.Exec(createPipelineDirtyDDL); err != nil {
+		return fmt.Errorf("create pipeline_dirty: %w", err)
+	}
+	copySQL := fmt.Sprintf(`INSERT OR IGNORE INTO pipeline_dirty (symbol, source, created_at_utc)
+		SELECT symbol, %s, %s FROM pipeline_dirty_legacy
+		WHERE symbol IS NOT NULL AND TRIM(symbol) != ''`, sourceExpr, createdExpr)
+	if _, err := tx.Exec(copySQL); err != nil {
+		return fmt.Errorf("copy legacy pipeline_dirty: %w", err)
+	}
+	if _, err := tx.Exec(`DROP TABLE pipeline_dirty_legacy`); err != nil {
+		return fmt.Errorf("drop legacy pipeline_dirty: %w", err)
+	}
+	return tx.Commit()
 }
 
 // MarkDirty نماد را به عنوان نیازمند بازمحاسبه در جدول pipeline_dirty ثبت می‌کند.
@@ -849,4 +934,3 @@ func RecalculateAllUniverseFTS(ctx context.Context, marketDB *sql.DB) (int, erro
 
 	return totalUpdated, nil
 }
-
