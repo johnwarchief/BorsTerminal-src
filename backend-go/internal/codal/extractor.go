@@ -251,6 +251,9 @@ func parseNumericValue(s string) (float64, bool) {
 	folded := foldDigits(s)
 	folded = strings.ReplaceAll(folded, ",", "")
 	folded = strings.ReplaceAll(folded, "،", "")
+	folded = strings.ReplaceAll(folded, "\u200c", "")
+	folded = strings.ReplaceAll(folded, "\u200e", "")
+	folded = strings.ReplaceAll(folded, "\u200f", "")
 	folded = strings.TrimSpace(folded)
 
 	isNegative := false
@@ -796,7 +799,7 @@ func ExtractFinancialStatements(sheets map[string][]byte, notice NoticeSummary) 
 	}
 
 	isAudited := strings.Contains(notice.Title, "حسابرسی شده") && !strings.Contains(notice.Title, "حسابرسی نشده")
-	isConsolidated := strings.Contains(notice.Title, "تلفیقی")
+	isConsolidated := strings.Contains(notice.Title, "تلفیقی") && !strings.Contains(notice.Title, "غیرتلفیقی")
 	periodMonths := parsePeriodMonthsFromTitle(notice.Title)
 
 	var detectedPeriod string
@@ -805,8 +808,24 @@ func ExtractFinancialStatements(sheets map[string][]byte, notice NoticeSummary) 
 	refusedRank := make(map[string]int)
 	unitNorm := 1.0
 
-	// پیمایش شیت‌ها و استخراج جداول
-	for _, content := range sheets {
+	// پیمایش شیت‌ها: شیت‌های سود و زیان پیش از شیت‌های ترازنامه پردازش می‌شوند
+	// دقیقا مطابق با رفتار targets = [("income", ...), ("balance", ...)] در codal_fetcher.py
+	var sheetKeys []string
+	for k := range sheets {
+		sheetKeys = append(sheetKeys, k)
+	}
+	sort.Slice(sheetKeys, func(i, j int) bool {
+		ki, kj := strings.ToLower(sheetKeys[i]), strings.ToLower(sheetKeys[j])
+		isIncI := strings.Contains(ki, "inc") || strings.Contains(ki, "سود") || ki == "1"
+		isIncJ := strings.Contains(kj, "inc") || strings.Contains(kj, "سود") || kj == "1"
+		if isIncI != isIncJ {
+			return isIncI
+		}
+		return ki < kj
+	})
+
+	for _, sheetKey := range sheetKeys {
+		content := sheets[sheetKey]
 		tables, dsPeriod := extractTablesFromHTML(content)
 		if detectedPeriod == "" && dsPeriod != "" {
 			detectedPeriod = dsPeriod
