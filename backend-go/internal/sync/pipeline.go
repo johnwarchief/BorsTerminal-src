@@ -3,6 +3,7 @@ package sync
 import (
 	"database/sql"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -22,7 +23,15 @@ func (h *Handler) CodalPipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer dbConn.Close()
-	httpapi.WriteJSON(w, http.StatusOK, pipelineHealth(dbConn, h.clock()))
+	health := pipelineHealth(dbConn, h.clock())
+	activeGenPath := filepath.Join(h.dataDir, "active_generation.json")
+	if _, err := os.Stat(activeGenPath); err == nil {
+		activeGen := safeReadJSON(activeGenPath)
+		if len(activeGen) > 0 {
+			health["active_generation"] = activeGen
+		}
+	}
+	httpapi.WriteJSON(w, http.StatusOK, health)
 }
 
 func pipelineHealth(db *sql.DB, now time.Time) map[string]any {
@@ -48,6 +57,33 @@ func pipelineHealth(db *sql.DB, now time.Time) map[string]any {
 
 	var dirty int64
 	_ = db.QueryRow("SELECT COUNT(DISTINCT symbol) FROM pipeline_dirty").Scan(&dirty)
+
+	var quarantineCount int64
+	_ = db.QueryRow("SELECT COUNT(*) FROM codal_quarantine").Scan(&quarantineCount)
+
+	var ftsCount int64
+	_ = db.QueryRow("SELECT COUNT(DISTINCT symbol) FROM fts_results").Scan(&ftsCount)
+	var totalSymbols int64
+	_ = db.QueryRow("SELECT COUNT(DISTINCT symbol) FROM tsetmc_instruments").Scan(&totalSymbols)
+	if totalSymbols == 0 {
+		_ = db.QueryRow("SELECT COUNT(DISTINCT symbol) FROM instruments").Scan(&totalSymbols)
+	}
+	var lastFTSRecalc any
+	var lfr sql.NullString
+	if err := db.QueryRow("SELECT MAX(created_at) FROM fts_results").Scan(&lfr); err == nil && lfr.Valid {
+		lastFTSRecalc = lfr.String
+	}
+	ftsCoverage := map[string]any{
+		"evaluated_symbols": ftsCount,
+		"total_symbols":     totalSymbols,
+		"last_recalc":       lastFTSRecalc,
+	}
+
+	var lastMarketSync any
+	var lms sql.NullString
+	if err := db.QueryRow("SELECT MAX(d_even) FROM tsetmc_market_watch").Scan(&lms); err == nil && lms.Valid {
+		lastMarketSync = lms.String
+	}
 
 	var lastData any
 	var ld sql.NullString
@@ -100,6 +136,9 @@ func pipelineHealth(db *sql.DB, now time.Time) map[string]any {
 		"status":               "success",
 		"queue":                queue,
 		"dirty_symbols":        dirty,
+		"quarantine_count":     quarantineCount,
+		"fts_coverage":         ftsCoverage,
+		"last_market_sync":     lastMarketSync,
 		"last_data_update":     lastData,
 		"gap_flag":             gapFlag,
 		"last_successful_sync": lastOK,

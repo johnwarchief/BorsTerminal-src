@@ -94,3 +94,29 @@ func TestGetSyncStatusMerging(t *testing.T) {
 		t.Fatalf("expected active global for فملی, got %v", syncMap)
 	}
 }
+
+func TestGetSyncStatus_ActiveGeneration(t *testing.T) {
+	tmp := t.TempDir()
+	now := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
+
+	// Without active_generation.json
+	res := GetSyncStatus(tmp, now)
+	if _, ok := res["active_generation"]; ok {
+		t.Errorf("expected no active_generation when file absent")
+	}
+
+	// With active_generation.json
+	activeData := map[string]any{
+		"snapshot_set_id": "gen_test_99",
+		"generation_dir":  "gens/gen_test_99",
+		"applied_at_utc":  "2026-11-08T12:00:00Z",
+	}
+	raw, _ := json.Marshal(activeData)
+	_ = os.WriteFile(filepath.Join(tmp, "active_generation.json"), raw, 0644)
+
+	res = GetSyncStatus(tmp, now)
+	ag, ok := res["active_generation"].(map[string]any)
+	if !ok || ag["snapshot_set_id"] != "gen_test_99" {
+		t.Fatalf("expected active_generation with snapshot_set_id gen_test_99, got %v", res)
+	}
+}
