@@ -14,7 +14,9 @@ Opportunity Lab از دو صفحهٔ مستقل تشکیل می‌شود که ب
 
 **رجیستری خصوصی** یک مخزن GitHub خصوصی با Releaseهای تغییرناپذیر و ایندکس امضاشده است؛ سرور دائمی ندارد. مالک از سیستم خود امضا و منتشر می‌کند؛ سه کاربر با اعتبارنامهٔ خواندنی محدود دریافت می‌کنند. اگر GitHub در دسترس نباشد، آخرین نسخهٔ تأییدشدهٔ محلی معتبر استفاده می‌شود.
 
-**قرارداد اصلی:** `oc.strategy/1` (IR)، `oc.bundle/1` (بستهٔ قابل‌نصب)، `oc.registry/1` (ایندکس امضاشده)، `oc.validation_policy/1` و `oc.ranking_policy/1` (سیاست‌های امضاشدهٔ مالک)، `oc.approval/1` (رکورد تأیید). Runtime هیچ کد دلخواه، Python، ONNX یا مدل پیش‌بینی را در مسیر Stable اجرا نمی‌کند. FTS یک آداپتور کانونیکال مصرف‌شده است، نه بازپیاده‌سازی.
+**قرارداد اصلی:** `oc.strategy/1` (IR)، `oc.bundle/1` (بستهٔ قابل‌نصب)، `oc.registry/1` (ایندکس امضاشده)، `oc.validation_policy/1` و `oc.ranking_policy/1` (سیاست‌های امضاشدهٔ مالک)، `oc.approval/1` (رکورد تأیید)، `oc.notification_event/1` (رویداد اعلان). Runtime هیچ کد دلخواه، Python، ONNX یا مدل پیش‌بینی را در مسیر Stable اجرا نمی‌کند. FTS یک آداپتور کانونیکال مصرف‌شده است، نه بازپیاده‌سازی.
+
+**اعلان دسکتاپ** یک زیرسیستم سراسری و مستقل است: Go رویداد را اعتبارسنجی، طبقه‌بندی، Dedup و در `oc_client.db` ثبت می‌کند؛ Tauri Shell با `tauri-plugin-notification` فقط Toast بومی Windows را نشان می‌دهد و کلیک را به مسیر داخلی هدایت می‌کند. SPA هیچ دسترسی مستقیم به API سیستم‌عامل ندارد. جزئیات در §۱۹.
 
 **سه شکاف پذیرفته‌شدهٔ Stage 4 که پیش از فعال‌سازی OC باید بسته شوند:**
 
@@ -130,15 +132,21 @@ flowchart TB
     UI["frontend-v2 SPA<br/>React / TanStack Query"]
     BORSD["borsd (Go)<br/>HTTP 127.0.0.1:8198"]
     OCRT["OC Runtime<br/>IR interpreter + FTS adapter"]
+    NENG["Notification Engine<br/>classify / dedupe / outbox"]
+    TBR["Tauri Notification Bridge<br/>Rust long-poll + Windows toast"]
     REGC["Registry Client<br/>verify / install / rollback"]
     MKT[("market.db / codal.db<br/>read-only, active generation")]
     UDB[("user.db<br/>personal, local")]
-    OCDB[("oc_client.db<br/>installed/opportunities/audit")]
+    OCDB[("oc_client.db<br/>installed/opportunities/audit<br/>notification history + prefs")]
     CACHE["registry blobs<br/>content-addressed"]
     SHELL --> UI
     UI --> BORSD
     BORSD --> OCRT
+    BORSD --> NENG
     BORSD --> REGC
+    NENG --> OCDB
+    NENG --> TBR
+    TBR --> NTOAST["Windows Toast"]
     OCRT --> MKT
     OCRT --> OCDB
     BORSD --> UDB
@@ -164,6 +172,8 @@ flowchart TB
 | `bors-producer` | تولید دادهٔ بازار/کدال، Snapshot امضاشده، FTS دادهٔ خام | تولید/تأیید/انتشار استراتژی | Go |
 | `borsd` | سرو محلی، DB read-only، read model، API، چرخهٔ عمر کلاینت | نوشتن market/codal، آموزش، تأیید، انتشار | Go |
 | OC Runtime | تفسیر IR، اعمال `ranking_policy`، فرصت، پایش محلی | دانلود کد، اجرای Python، آموزش | Go |
+| Notification Engine (`internal/notify`) | اعتبارسنجی Event، طبقه‌بندی Severity، Dedup/Aggregation، Rate Limit، Quiet Hours، Outbox و تاریخچه | نمایش Toast، تصمیم روش‌شناسی، تولید محتوا با AI | Go |
+| Tauri Notification Bridge | Long-poll محلی، فراخوانی Plugin اعلان، Ack، Focus/Deep Link | طبقه‌بندی، ذخیرهٔ تاریخچه، دسترسی SPA به API سیستم‌عامل | Rust/Tauri v2 |
 | Registry Client | دانلود/اعتبارسنجی/نصب/فعال‌سازی/Rollback/Offline | تصمیم دربارهٔ تأیید استراتژی | Go |
 | Tauri Shell | پنجره، tray، عمر فرآیند، updater میزبان | منطق استراتژی، دسترسی به DB | Rust/Tauri v2 |
 | `frontend-v2` | Today، Library، Lab read-only، Compare، Monitor | محاسبهٔ اعداد، تأیید، اجرای آزمایش | React/TS |
@@ -292,10 +302,17 @@ opportunity_snapshots(opportunity_id, strategy_id, version, symbol, ins_code,
                       freshness, status, rank_trace_json, created_at)
 revocations(strategy_id, version, effective_at, reason, index_sequence, applied_at)
 monitoring_observations(id, strategy_id, version, observed_at, kind, detail_json, prev_hash, hash)
+notification_events(seq, event_id, event_type, category, severity, title, body, subject_json,
+                    deep_link, dedupe_key, group_key, source, source_version, payload_hash,
+                    preview_json, actions_json, occurred_at, first_seen_at, last_seen_at,
+                    occurrence_count, resolved_at, read_at, archived_at, created_at)
+notification_deliveries(event_id, channel, state, attempts, last_error, shown_at, acked_at)
+notification_prefs(id, prefs_json, updated_at)
+notification_mutes(category, muted_until, reason)
 audit_events(id, actor, action, subject, detail_json, prev_hash, hash, created_at)
 ```
 
-**قواعد:** حداکثر یک نسخهٔ فعال برای هر `strategy_id`؛ نصب چند نسخه مجاز است؛ فرصت‌ها با تغییر `data_generation` یا Revocation باطل می‌شوند؛ هیچ دادهٔ شخصی در این DB نیست (Watchlist/Portfolio فقط در `user.db`).
+**قواعد:** حداکثر یک نسخهٔ فعال برای هر `strategy_id`؛ نصب چند نسخه مجاز است؛ فرصت‌ها با تغییر `data_generation` یا Revocation باطل می‌شوند؛ هیچ دادهٔ مالی شخصی (Watchlist/Portfolio) در این DB نیست. تاریخچه/تنظیمات اعلان، دادهٔ محلی دستگاه است و در Snapshot داده یا Registry نمی‌رود؛ `user.db` همچنان دست‌نخورده می‌ماند.
 
 ### ۷.۴ `user.db`
 
@@ -564,6 +581,7 @@ flowchart TD
 | `GET /api/oc/lab/{id}/{version}` | Evidence read-only | خیر |
 | `GET /api/oc/compare?ids=...` | مقایسهٔ شواهد Stable | خیر |
 | `GET /api/oc/monitor` | مشاهدات محلی | خیر |
+| `GET/POST /api/oc/notifications...` | مرکز اعلان، Pending پل Tauri، Ack، تنظیمات (قرارداد کامل §۱۹.۷) | `oc_client.db` |
 | `POST /api/oc/registry/check` | شروع Sync با Job ID | cache/DB |
 | `GET /api/oc/registry/status` | وضعیت Sync/آخرین ایندکس | خیر |
 
@@ -679,6 +697,11 @@ stateDiagram-v2
 | Client Local API | CSRF/DNS Rebinding/Other Process | Loopback، SameSite Cookie/Token، Origin/Host check، no CORS |
 | GPU Job | Data Exfiltration | Opt-in per job، Data minimization، Encryption، Audit |
 | Strategy Runtime | Arbitrary Code/DoS | IR تایپ‌شده، Primitive Registry، Timeout/Step Limit، no I/O |
+| Notification Content | Spoofing/External text as official alert | Source Allowlist، Schema، Plain Text، Codal هرگز اعلان رسمی نیست |
+| Notification Click | Deep Link injection/Command execution | Allowlist مسیر داخلی، `window.location.hash`، بدون `javascript:`/`file:`/URL خارجی |
+| Notification Flood | Spam/DoS attention | Dedup، Grouping، Token Bucket، Source Circuit Breaker |
+| Notification Bridge | Remote webview access to OS API | Plugin فقط در Rust؛ هیچ `remote` Capability؛ Token فایل ACL‌دار |
+| Notification Preview | Sensitive portfolio/security leakage on lock screen | Redaction پیش‌فرض؛ Preview opt-in |
 | Supply Chain | Dependency/Build Tamper | Pin، Hash، SBOM، Reproducible Build (هدف)، Signature |
 | Three Users | Token Sharing/Cache Leak | Per-user read token، revoke، no personal data in registry |
 
@@ -699,6 +722,7 @@ stateDiagram-v2
 
 - `borsd` فقط `127.0.0.1` (یا IPC بومی)؛ هیچ Interface عمومی.
 - Token تصادفی per-launch در فایل محدود/کوکی `HttpOnly; SameSite=Strict`؛ درخواست‌های نوشتاری نیازمند Header CSRF.
+- پل اعلان Tauri توکن را از فایل ACL‌دار می‌خواند (نه URL/Command Line)؛ SPA از Cookie همان نشست استفاده می‌کند. هیچ `remote` Capability برای Webview باز نمی‌شود و Plugin اعلان فقط از Rust فراخوانی می‌شود.
 - Origin/Host Strict؛ CORS بسته؛ `Origin: null` رد.
 - Tauri Shell نباید URL دلخواه را بدون Token باز کند؛ `--url` فعلی باید محدود/امضاشده شود. این بخش از تصمیم‌های OPEN مهاجرت (`docs/...:559-568`) است و در P0 امنیت بسته می‌شود.
 - هیچ Secret در URL یا Log.
@@ -725,6 +749,11 @@ stateDiagram-v2
 | Registry Publish نیمه‌کاره | ایندکس منتشر نمی‌شود؛ کلاینت ایندکس قبلی | Publisher failure tests |
 | Key rotation نادرست | Client قدیمی امضا را رد می‌کند؛ نسخهٔ قبلی حفظ | Rotation drill |
 | Clock skew | Timestamp آینده/گذشتهٔ غیرمجاز رد؛ ساعت سیستم تنها مرجع نیست | Time tests |
+| Notification bridge unavailable | تاریخچه در `oc_client.db` می‌ماند؛ Toast نمی‌شود؛ وضعیت `bridge_unavailable` | Bridge-off test |
+| OS notification suppressed | `suppressed_os`؛ تاریخچه کامل؛ ادعای «دیده شد» نمی‌شود | Windows settings test |
+| Crash بین Toast و Ack | Retry محدود با همان `event_id`/`tag`؛ احتمال تکرار کم و Audit | Kill-point test |
+| Notification DB locked/full | صف حافظهٔ محدود؛ Critical اولویت؛ Backoff؛ خطای پایدار در وضعیت | Fault injection |
+| Restart با Pending قدیمی | فقط Pending جوان Toast می‌شود؛ قدیمی‌ترها فقط تاریخچه | Restart test |
 | User data corruption | Backup/Migration جدا؛ Registry نصب را تکرار نمی‌کند | user.db integrity test |
 
 **Rollback سطوح:**
@@ -753,6 +782,7 @@ stateDiagram-v2
 - **Registry Client:** هر Verify/Install/Rollback/Revocation در `audit_events` با Hash chain.
 - **Owner:** `research.db` Audit/Approval Hash chain؛ `bundle`/`index` Hash؛ Publication Log.
 - **GPU:** Job Bundle/Environment/Output Hash؛ وضعیت صادقانه (بدون ادعای تکرارپذیری کامل).
+- **Notification:** شمارش Event/Toast/Suppressed/Failed، زمان Event→show، اندازهٔ Outbox، وضعیت Bridge/OS؛ متن اعلان در Log نیست.
 - **بدون Telemetry:** هیچ ارسال خودکار به Owner/Cloud؛ فقط Download Registry/Data و GPU Opt-in.
 - **Health:** `/healthz` فعلی فقط Liveness است؛ `oc/status` آمادگی کارکردی OC را جدا گزارش می‌کند.
 
@@ -808,7 +838,395 @@ stateDiagram-v2
 | Q18 | نگهداری/چرخش کلید Registry و Approval: نرم‌افزاری رمزدار یا Hardware Token؟ | کلیدهای جدا، رمزدار، آفلاین برای Approval؛ چرخش با Key Transition + App Update | Security |
 | Q19 | آیا هر سه کاربر همهٔ Stableها را می‌بینند یا Entitlement به‌ازای کاربر لازم است؟ | v1: همهٔ Stableها برای هر سه کاربر؛ بدون Entitlement جداگانه | Registry/Product |
 
-## ۱۹) وابستگی‌ها
+## ۱۹) زیرسیستم اعلان دسکتاپ (Global Notification Subsystem)
+
+### ۱۹.۱ هدف، مرز و اصول
+
+اعلان‌ها یک زیرسیستم سراسری‌اند، نه ویژگی یک صفحه. هر رویداد مهم از هر دامنه (فرصت، استراتژی، پرتفوی، داده، امنیت، به‌روزرسانی) از یک مسیر واحد عبور می‌کند و فقط در صورت عبور از سیاست، به Toast ویندوز و مرکز اعلان می‌رسد. تجربهٔ هدف، اعلان سریع و کم‌مزاحم شبیه Telegram Desktop است؛ اما منطق آن تخصصی یک ترمینال مالی است، نه تقلید ظاهری.
+
+| اصل | تصمیم |
+|---|---|
+| مالکیت منطق | `borsd` (Go) تنها منبع حقیقت است: اعتبارسنجی، طبقه‌بندی، Dedup، Rate Limit، Quiet Hours، تاریخچه و Read State |
+| مالکیت Toast | Tauri Shell (Rust) تنها لایهٔ نمایش اعلان بومی Windows است؛ SPA هیچ دسترسی مستقیم به Notification API سیستم‌عامل ندارد |
+| مالکیت UI | `frontend-v2` فقط مرکز اعلان، Badge، تنظیمات و Deep Link را رندر می‌کند |
+| دامنه | فقط محلی؛ هیچ Push بیرونی، Telegram/Bale، ایمیل یا Telemetry در v1. Q14 با این تعبیر به‌روز می‌شود: «In-App + OS Toast محلی» |
+| امنیت | هیچ پیام خارجی (مثلاً عنوان خام کدال) به‌تنهایی «اعلان رسمی» نیست؛ فقط Event داخلیِ اعتبارسنجی‌شده می‌تواند Toast بسازد |
+| AI | هیچ مدل AI مجاز نیست اعلان Critical/Important بسازد یا Severity را بالا ببرد؛ خروجی AI حداکثر Informational است |
+| یکپارچگی Stage 4 | `user.db` دست‌نخورده می‌ماند؛ تاریخچه/تنظیمات اعلان در `oc_client.db` ذخیره می‌شود و در Snapshot داده قرار نمی‌گیرد |
+
+**تفکیک از Codal Feed:** بستهٔ فعلی `internal/notifications` (و نسخهٔ Python آن) یک Feed فقط‌خواندنی برای اطلاعیه‌های کدال است، نه موتور اعلان. آن بسته حفظ می‌شود و در `/notifications` به‌عنوان یک منبع اطلاعاتی نمایش داده می‌شود؛ موتور تازه با نام `internal/notify` ساخته می‌شود تا دو مفهوم قاطی نشوند. هیچ اعلان رسمی مستقیماً از متن کدال ساخته نمی‌شود؛ اگر یک اطلاعیه به رویداد استراتژی مربوط باشد، آن رویداد را موتور استراتژی با شناسهٔ خودش منتشر می‌کند.
+
+### ۱۹.۲ مدل چهارسطحی و قواعد ارتقا
+
+| سطح | تجربه | نمونه‌های مجاز | هرگز |
+|---|---|---|---|
+| **Critical** | Toast فوری + صدای اختیاری + نشانهٔ برجسته در مرکز | `security.event`، `data.integrity_failed`، نقض سقف ریسک پرتفوی که کاربر خودش تعیین کرده | تولید سیگنال، تغییر قیمت، خروجی AI، عنوان خام کدال |
+| **Important** | Toast دسکتاپ | `opportunity.valid` از نسخهٔ Approved، `strategy.approved`، `strategy.suspended`، `strategy.revoked`، `market.threshold_crossed` (فقط Alert کاربر)، `data.ingest_failed`، `update.security_critical` | هر رویدادی که فقط «سیگنال ساخته شد» یا «قیمت عوض شد» باشد |
+| **Normal** | فقط مرکز اعلان؛ بدون Popup | `data.stale`، `registry.check_completed`، اطلاعیهٔ کدال با سطح بالا، `update.available` | — |
+| **Informational** | فقط تاریخچه یا سطح مربوط؛ بدون Badge | `signal.created`، `price.changed`، `sync.completed`، پیشنهاد AI | — |
+
+**قواعد سخت:**
+
+1. `signal.created` و `price.changed` هرگز Important نمی‌شوند. تنها استثنا `market.threshold_crossed` است که کاربر خودش آستانه را ساخته و مالک آن است.
+2. Severity از یک Policy قطعی (`oc.notification_policy/1`) می‌آید؛ نه از مدل زبانی، نه از متن آزاد.
+3. فقط «گذار وضعیت» اعلان می‌سازد: ورود به condition، خروج از condition، تشدید، یا Resolve. وضعیت پایدار تکرار نمی‌شود.
+4. کاربر می‌تواند Toast یک دسته را خاموش کند یا حداقل Severity را بالا ببرد؛ نمی‌تواند یک رویداد ممنوع را Important کند.
+5. `Critical` فقط برای امنیت، یکپارچگی داده و ریسک مالیِ تعریف‌شده توسط کاربر است؛ نه برای «فرصت خوب».
+
+### ۱۹.۳ خط لولهٔ کامل
+
+```mermaid
+sequenceDiagram
+  participant P as Producer (Go service)
+  participant V as Event Validator
+  participant C as Classifier
+  participant D as Dedup/Aggregator
+  participant Q as Quiet Hours/Rate Limiter
+  participant DB as oc_client.db
+  participant B as Tauri Bridge (Rust)
+  participant OS as Windows Toast
+  participant SPA as Notification Center
+
+  P->>V: NotificationEvent (schema + source allowlist)
+  V->>C: validated event
+  C->>C: severity + category + policy_hash
+  C->>D: classified event
+  D->>D: dedupe_key / group_key / occurrence
+  D->>Q: candidate (maybe digest)
+  Q->>DB: persist event + delivery=pending (transaction)
+  Q-->>B: long-poll wakeup
+  B->>DB: GET /pending?after_seq (token)
+  B->>OS: show(title, body, silent, tag)
+  OS-->>B: shown / error
+  B->>DB: POST /{id}/ack (shown|failed|suppressed_os)
+  B->>SPA: eval CustomEvent bors:notification
+  SPA->>DB: refetch center + unread count
+```
+
+| جزء | مسئولیت | صریحاً مسئول نیست |
+|---|---|---|
+| `Event Publisher` | انتشار Event از سرویس‌های Go با Schema و `source` | تصمیم Severity یا نمایش |
+| `Event Validator` | Schema، Source Allowlist، طول متن، Deep Link، Payload Hash | تفسیر متن آزاد |
+| `Classifier` | Severity/Category از Policy، State Transition، Escalation | تولید محتوا یا AI |
+| `Dedup/Aggregator` | `dedupe_key`، `group_key`، شمارش، Digest | نمایش Toast |
+| `Quiet Hours/Rate Limiter` | پنجرهٔ سکوت، Token Bucket، Critical Reserve | حذف تاریخچه |
+| `Outbox` | ثبت اتمیک Event + Delivery در `oc_client.db` | تضمین دیده‌شدن توسط کاربر |
+| `Tauri Bridge` | Long-poll، Toast بومی، Ack، Click Routing | طبقه‌بندی یا ذخیرهٔ تاریخچه |
+| `Center API` | فهرست/جزئیات/خوانده‌شده/تنظیمات | ارسال Toast |
+
+**قالب رویداد (`oc.notification_event/1`):**
+
+```json
+{
+  "schema": "oc.notification_event/1",
+  "event_id": "evt_01J...",
+  "event_type": "opportunity.valid",
+  "category": "opportunity",
+  "severity": "important",
+  "subject": {
+    "kind": "symbol",
+    "id": "فولاد",
+    "symbol": "فولاد",
+    "strategy_id": "fts",
+    "strategy_version": "1.0.98"
+  },
+  "title": "فرصت معتبر FTS",
+  "body": "فولاد در نسخهٔ تأییدشدهٔ FTS شرایط ورود دارد.",
+  "deep_link": "/today?symbol=فولاد&opportunity=opp_...",
+  "dedupe_key": "opportunity.valid|fts|فولاد|2026-11-08",
+  "group_key": "opportunity|fts|2026-11-08",
+  "occurred_at": "2026-11-08T09:42:00+03:30",
+  "source": "oc.runtime",
+  "source_version": "1.0.0",
+  "payload_hash": "sha256:...",
+  "preview": {"mode": "safe", "redacted_fields": []},
+  "actions": [
+    {"id": "open", "label": "مشاهده"},
+    {"id": "read", "label": "خوانده شد"}
+  ]
+}
+```
+
+**چرخهٔ عمر موتور:** موتور به‌صورت یک goroutine در `borsd` پس از باز شدن DB و قبل از Serve شروع می‌شود و تا Shutdown زنده می‌ماند؛ به Visible بودن Webview وابسته نیست. سرویس‌ها Event را روی کانال منتشر می‌کنند و یک Ticker فقط برای Flush تجمیع/Quiet Hours است. در Startup، وضعیت منابع (داده، Registry، پورت) یک‌بار خوانده می‌شود و فقط Transitionهای تازه Event می‌سازند؛ وضعیت‌های قدیمی Silent Import می‌شوند تا سیل Toast راه نیفتد. `-no-loops` فقط برای تست است و در Production استفاده نمی‌شود.
+
+### ۱۹.۴ Dedup، Aggregation و Rate Limiting
+
+| قاعده | رفتار |
+|---|---|
+| `dedupe_key` | `hash(event_type, subject.kind, subject.id, rule_id, bucket)`؛ bucket برای آستانه‌ها ۱۵ دقیقه و برای Condition پایدار، epoch وضعیت |
+| تکرار در پنجره | رکورد موجود به‌روز می‌شود: `occurrence_count++`، `last_seen_at`، بدون Toast تازه |
+| گروه‌بندی | `group_key = category + subject + day`؛ مرکز اعلان گروه‌ها را جمع می‌کند |
+| Digest | اگر بیش از ۳ رویداد هم‌گروه در ۵ دقیقه برسد، یک Toast خلاصه («۳ رویداد…») جای سه Toast |
+| Rate Limit | سقف پیشنهادی: ۳ Toast در ۵ دقیقه برای هر دسته، ۶ Toast در ۱۰ دقیقه سراسری؛ Critical سبد رزرو دارد |
+| مازاد | به تاریخچه می‌رود، Toast نمی‌شود؛ در مرکز با برچسب «تجمیع‌شده» دیده می‌شود |
+| Restart | `dedupe_key` و `delivery_state` در DB می‌مانند؛ پس از Restart Toast تکراری ساخته نمی‌شود |
+| Resolve | رویداد Condition با `resolved_at` بسته می‌شود؛ Resolve خودش Important نیست مگر کاربر بخواهد |
+
+**مثال Policy پیشنهادی (نه آستانهٔ روش‌شناسی):**
+
+```json
+{
+  "schema": "oc.notification_policy/1",
+  "policy_id": "notify/2026-11-08",
+  "defaults": {
+    "security.event": "critical",
+    "data.integrity_failed": "critical",
+    "portfolio.risk_threshold": "critical",
+    "opportunity.valid": "important",
+    "strategy.approved": "important",
+    "strategy.suspended": "important",
+    "strategy.revoked": "important",
+    "market.threshold_crossed": "important",
+    "data.ingest_failed": "important",
+    "data.stale": "normal",
+    "registry.check_completed": "normal",
+    "update.available": "normal",
+    "update.security_critical": "important",
+    "signal.created": "informational",
+    "price.changed": "informational"
+  },
+  "never_toast": ["signal.created", "price.changed"],
+  "state_transition_only": true,
+  "quiet_hours": {"critical_bypass": true}
+}
+```
+
+### ۱۹.۵ ذخیره‌سازی
+
+اعلان‌ها در `oc_client.db` ذخیره می‌شوند، نه `user.db`. دلیل: `user.db` طبق قرارداد Stage 4 نباید در Snapshot داده بازنویسی شود و افزودن جدول شخصی جدید به آن، تضمین «بایت‌به‌بایت سالم ماندن» را پیچیده می‌کند. تاریخچهٔ اعلان دادهٔ مالی شخصی نیست (Watchlist/Portfolio در آن کپی نمی‌شود)؛ تاریخچه با Backup دوره‌ای حفظ می‌شود و حذف دستی `oc_client.db` آن را از بین می‌برد.
+
+```text
+notification_events(
+  seq INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id TEXT UNIQUE NOT NULL,
+  event_type TEXT NOT NULL,
+  category TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  subject_json TEXT NOT NULL,
+  deep_link TEXT,
+  dedupe_key TEXT NOT NULL,
+  group_key TEXT NOT NULL,
+  source TEXT NOT NULL,
+  source_version TEXT,
+  payload_hash TEXT NOT NULL,
+  preview_json TEXT NOT NULL,
+  actions_json TEXT NOT NULL,
+  occurred_at TEXT NOT NULL,
+  first_seen_at TEXT NOT NULL,
+  last_seen_at TEXT NOT NULL,
+  occurrence_count INTEGER NOT NULL DEFAULT 1,
+  resolved_at TEXT,
+  read_at TEXT,
+  archived_at TEXT,
+  created_at TEXT NOT NULL
+)
+notification_deliveries(
+  event_id TEXT NOT NULL,
+  channel TEXT NOT NULL,
+  state TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  shown_at TEXT,
+  acked_at TEXT,
+  PRIMARY KEY(event_id, channel)
+)
+notification_prefs(
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  prefs_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+)
+notification_mutes(
+  category TEXT PRIMARY KEY,
+  muted_until TEXT,
+  reason TEXT
+)
+```
+
+- ایندکس‌ها: `(occurred_at DESC)`, `(category, occurred_at DESC)`, `(severity, occurred_at DESC)`, `(dedupe_key, occurred_at DESC)`, `(read_at)`, `(group_key)`.
+- `notification_events` Append-Only است؛ ویرایش متن مجاز نیست. Read/Resolve فقط ستون‌های وضعیت را عوض می‌کند.
+- `notification_deliveries` برای هر کانال (`toast`, `center`) جدا نگهداری می‌شود تا «ثبت شد» با «نمایش داده شد» قاطی نشود.
+- Schema migration در P0.3 و با Backup/Rollback انجام می‌شود.
+- نگهداشت/آرشیو: Q23؛ پیش‌فرض پیشنهادی: Informational کوتاه‌عمر، Important/Critical تا حذف دستی یا Archive فشرده با حفظ Manifest.
+
+### ۱۹.۶ تحویل Windows و Tauri
+
+**واقعیت فعلی (تأییدشده):** Tauri `2.12.5` است؛ `tauri-plugin-notification` در `Cargo.toml`، `Cargo.lock`، `lib.rs` و Capabilityها وجود ندارد. هیچ `invoke_handler` یا Command سفارشی/IPC تعریف‌شده‌ای هم وجود ندارد. Webview یک URL خارجی `http://127.0.0.1:<port>` را بار می‌کند، نه باندل داخلی. `frontend-v2` هیچ Tauri APIای را تشخیص نمی‌دهد.
+
+**تصمیم:** افزودن `tauri-plugin-notification` (نسخهٔ ۲، Pin در P1) به Shell و راه‌اندازی آن در `lib.rs`. Plugin فقط از Rust فراخوانی می‌شود؛ Capability حداقلی `notification:default` (و در صورت نیاز `allow-notify`/`allow-is-permission-granted`) داده می‌شود. **هیچ `remote` Capability برای `http://127.0.0.1` اضافه نمی‌شود**؛ بنابراین صفحهٔ SPA نمی‌تواند مستقیماً Toast بسازد. این هم مرز امنیتی است و هم از وابستگی به تایمرهای JS وقتی پنجره Minimized است جلوگیری می‌کند.
+
+**پل Rust ↔ Go:**
+
+- Go یک توکن per-launch می‌سازد و در فایل با ACL محدود می‌نویسد؛ Shell مسیر فایل را با `--api-token-file` می‌گیرد (نه توکن در Command Line). این به P0.4 گره می‌خورد.
+- پل Rust با `reqwest` (از وابستگی‌های موجود Tauri) روی Loopback Long-Poll می‌زند: `GET /api/oc/notifications/pending?after_seq=N&wait=25`. پاسخ شامل رویدادهای واجد Toast، `next_seq` و وضعیت مجوز سیستم‌عامل است.
+- پل، `show()` را با عنوان/متن sanitized، `silent` مطابق تنظیمات و `tag = event_id` صدا می‌زند. پس از بازگشت، `POST /{id}/ack` با `shown|failed|suppressed_os` می‌فرستد.
+- سپس با `webview.eval` یک `CustomEvent('bors:notification')` با JSON امن (فقط `event_id`) ارسال می‌کند تا SPA Queryها را Invalid کند. این یک دستور Tauri نیست و Capability جدید نمی‌خواهد.
+- اگر Go در دسترس نباشد، پل با Backoff دوباره تلاش می‌کند و وضعیت `bridge_unavailable` را در مرکز نشان می‌دهد؛ تاریخچهٔ قبلی همچنان قابل خواندن است.
+
+**طرح پیاده‌سازی (پیش‌نویس P1.7، نه کد نهایی):**
+
+```rust
+// Cargo.toml
+// tauri-plugin-notification = "2"   // Pin در P1
+
+// lib.rs
+tauri::Builder::default()
+    .plugin(tauri_plugin_notification::init())
+    // ... setup, invoke_handler فعلی ندارد
+```
+
+```rust
+use tauri_plugin_notification::NotificationExt;
+app.notification()
+    .builder()
+    .title("فرصت معتبر FTS")
+    .body("فولاد در نسخهٔ تأییدشده شرایط ورود دارد.")
+    .show()?;
+```
+
+API دقیق Builder/Action در نسخهٔ Pin‌شده در P1.7 کامپایل و با Toast واقعی آزمون می‌شود؛ این قطعه تعهد نهایی به امضای API نیست.
+
+**Windows specifics:**
+
+| موضوع | رفتار/الزام |
+|---|---|
+| AppUserModelID | `identifier` فعلی `com.borsterminal.app` است؛ P1 باید AUMID و Shortcut را در نصب‌کننده تأیید کند. Toast بدون Shortcut معتبر در پوشهٔ نصب/Start Menu قابل‌اعتماد نیست. |
+| Shortcut | نصب‌کنندهٔ فعلی Shortcut را فقط به `BorsTerminal_Ultimate.exe` (Go host) می‌دهد و Shell فرزند آن است. P1 باید Shortcut/AUMID را طوری تنظیم کند که Activation به همان اپ برسد، نه یک نمونهٔ دوم. |
+| Focus Assist / Notifications off | Windows می‌تواند Toast را بی‌صدا حذف کند؛ همیشه قابل‌تشخیص نیست. تاریخچه در `oc_client.db` می‌ماند و وضعیت «ممکن است سیستم اعلان را مخفی کرده باشد» نمایش داده می‌شود؛ ادعای «نمایش داده شد» نمی‌شود. |
+| Windows 7 | پشتیبانی نمی‌شود؛ حداقل Windows 10. |
+| Multiple instances | Single-instance guard لازم است؛ وگرنه دو Shell دو Toast تکراری می‌سازند. |
+
+**چرخهٔ عمر:**
+
+| وضعیت | Toast | تاریخچه | توضیح |
+|---|---|---|---|
+| پنجره باز | بله | بله | تجربهٔ کامل |
+| Minimized | بله | بله | پل Rust مستقل از Visibility Webview است |
+| System Tray (پنجره مخفی) | بله | بله | تا وقتی Shell/Go زنده‌اند |
+| خروج کامل | خیر | دفعهٔ بعد | هیچ پروسه‌ای برای ارسال وجود ندارد؛ رویدادهای ازدست‌رفته در Startup از منابع بازخوانی می‌شوند |
+| Restart | فقط Pending جوان | بله | Toast قدیمی Replay نمی‌شود؛ Badge/مرکز کامل است |
+| Offline | بله (محلی) | بله | اعلان به شبکه نیاز ندارد؛ رویدادهای Data Source محلی‌اند |
+
+**کلیک و Deep Link:**
+
+- `on_action` (پشتیبانی Desktop در نسخه‌های جدید Plugin؛ در P1 با یک Toast واقعی تأیید می‌شود) رویداد را به Rust می‌دهد.
+- Rust پنجره را `show()` و `set_focus()` می‌کند، سپس فقط اگر `deep_link` در Allowlist باشد، با `webview.eval` به `window.location.hash` می‌رود.
+- Allowlist: `/today`, `/notifications`, `/research/...`, `/fts-screen`, `/market?symbol=...`, `/technical/:symbol`. `javascript:`, `file:`, `http(s)://` خارجی و هر مسیر ناشناس رد می‌شود.
+- اگر Plugin کلیک را در نسخهٔ Pin‌شده ارائه نکند، Fallback: کلیک Toast فقط پنجره را باز می‌کند و به `/notifications` می‌رود؛ Deep Link دقیق به P5 موکول می‌شود. این محدودیت باید در Release Note صادقانه نوشته شود.
+- دکمه‌های Action داخل Toast به پشتیبانی Plugin/Windows محدودند؛ حداقل قابل‌اتکا «کلیک و بازکردن مرکز» است. «مشاهده» و «خوانده شد» به‌صورت Quick Action در ردیف مرکز (و در صورت پشتیبانی، Action روی Toast) ارائه می‌شوند.
+
+### ۱۹.۷ قرارداد API
+
+| متد/مسیر | کار | نوشتن؟ |
+|---|---|---|
+| `GET /api/oc/notifications?cursor=&limit=&severity=&category=&read=` | فهرست صفحه‌بندی‌شدهٔ مرکز | خیر |
+| `GET /api/oc/notifications/unread-count` | شمارش Badge و به‌تفکیک Severity | خیر |
+| `GET /api/oc/notifications/{id}` | جزئیات، منبع، زمان، اقدام‌ها | خیر |
+| `POST /api/oc/notifications/{id}/read` | علامت خوانده‌شده | `oc_client.db` |
+| `POST /api/oc/notifications/read-all` | خواندن همه (با فیلتر) | `oc_client.db` |
+| `GET /api/oc/notifications/pending?after_seq=&wait=` | Long-poll پل Tauri | خیر |
+| `POST /api/oc/notifications/{id}/ack` | تأیید نمایش/خطا از پل | `oc_client.db` |
+| `GET /api/oc/notifications/preferences` | تنظیمات دستگاه | خیر |
+| `PUT /api/oc/notifications/preferences` | ذخیرهٔ تنظیمات | `oc_client.db` |
+| `GET /api/oc/notifications/status` | Bridge، مجوز OS، Quiet Hours، آخرین Sync | خیر |
+
+- همهٔ پاسخ‌ها `schema`, `as_of`, `data_state` دارند؛ `200` بدون `job_id`/`event_id` ممنوع است.
+- `pending` فقط برای Loopback با Token؛ پاسخ شامل هیچ دادهٔ Watchlist/Portfolio نیست.
+- صفحه‌بندی Cursor اجباری؛ `limit` سقف دارد.
+- `read`/`ack` Idempotent هستند.
+- خطاها `{code, message, retryable}`؛ `suppressed_os` یک وضعیت معتبر است، نه خطای پنهان.
+
+### ۱۹.۸ مرکز اعلان و تنظیمات
+
+**مسیرها:** `/notifications` (مرکز کامل) و `/settings/notifications` (تنظیمات). Badge در Sidebar/Topbar از `unread-count` می‌آید. یک Drawer سریع از Bell اختیاری است (Q22)؛ منبع داده همان API است.
+
+**مرکز اعلان:**
+
+| بخش | محتوا |
+|---|---|
+| سربرگ | شمارش خوانده‌نشده، «خواندن همه»، فیلتر Severity/Category، جستجو |
+| فهرست | ردیف فشرده: نقطهٔ Severity، عنوان، یک خط متن، نماد/استراتژی، زمان نسبی، نقطهٔ خوانده‌نشده |
+| گروه‌بندی | روز و دسته؛ رویدادهای هم‌گروه با `occurrence_count` جمع می‌شوند |
+| جزئیات | منبع، `occurred_at`، وضعیت تحویل، Deep Link، اقدام «مشاهده»/«خوانده شد» |
+| حالت‌ها | empty، loading، error، stale، bridge_unavailable، suppressed_os |
+| دسترس‌پذیری | `role="log"` برای فهرست، `aria-live="polite"` برای رویداد تازه، فوکوس قابل‌بازگشت، ناوبری کیبورد |
+
+**تنظیمات (پیش‌فرض‌های پیشنهادی، Q20/Q21):**
+
+| تنظیم | پیش‌فرض پیشنهادی |
+|---|---|
+| Toast برای Critical | روشن |
+| Toast برای Important | روشن |
+| Toast برای Normal/Informational | خاموش |
+| صدای Critical | روشن |
+| صدای Important | خاموش |
+| پیش‌نمایش متن حساس (پرتفوی/امنیت) | خاموش؛ متن عمومی |
+| Quiet Hours | خاموش؛ بازهٔ قابل‌تنظیم |
+| Critical در Quiet Hours | بله (قابل خاموش‌کردن) |
+| Badge | Critical + Important خوانده‌نشده |
+| Mute دسته | اختیاری تا زمان مشخص |
+
+تنظیمات در `oc_client.db` و به‌ازای دستگاه است؛ هیچ همگام‌سازی ابری ندارد. Quiet Hours از ساعت محلی Windows استفاده می‌کند؛ تغییر ساعت/Timezone با محاسبهٔ دوباره در هر رویداد مدیریت می‌شود.
+
+### ۱۹.۹ امنیت و حریم خصوصی
+
+- **Source Allowlist:** فقط Publisherهای داخلی Go مجازند Event بسازند. هیچ Endpoint عمومی/خارجی نمی‌تواند Event رسمی تزریق کند.
+- **Schema Validation:** `oc.notification_event/1` با Zod/JSON Schema در هر دو سمت؛ متن بیش از حد طولانی، HTML، لینک خارجی و فیلد ناشناس رد می‌شود.
+- **Plain Text:** Toast و مرکز فقط متن ساده رندر می‌کنند؛ هیچ HTML/Markdown/تصویر خارجی.
+- **Deep Link Allowlist:** فقط مسیرهای داخلی شناخته‌شده؛ هیچ `javascript:`/`file:`/URL خارجی.
+- **Preview Redaction:** برای `portfolio` و `security` پیش‌فرض متن عمومی؛ مقدار مالی/شناسهٔ حساس در Toast نمی‌رود. کاربر می‌تواند Preview را روشن کند، اما Default امن است.
+- **No Secrets:** هیچ Token/Key/شناسهٔ کامل حساب در Event یا لاگ نیست.
+- **Anti-Bombing:** Dedup + Rate Limit + Source Circuit Breaker؛ یک منبع پرخطا نمی‌تواند کاربر را غرق کند.
+- **External Text:** عنوان کدال sanitize می‌شود و هرگز به‌عنوان «اعلان رسمی» Toast نمی‌شود؛ فقط Feed است.
+- **Bridge Token:** فایل ACL‌دار، فقط Shell؛ در URL/Log نیست. هیچ `remote` Capability برای Webview باز نمی‌شود.
+- **Audit:** هر Event و Delivery در `oc_client.db` می‌ماند؛ تغییر Read/Resolve فقط ستون وضعیت است.
+
+### ۱۹.۱۰ شکست و بازیابی
+
+| سناریو | رفتار | شاهد |
+|---|---|---|
+| Go خاموش/کرش | هیچ Event تازه‌ای ساخته نمی‌شود؛ پل `bridge_unavailable` نشان می‌دهد؛ تاریخچهٔ قبلی خوانده می‌شود | تست قطع Backend |
+| Shell خاموش/کرش | Go تاریخچه را نگه می‌دارد؛ پس از Restart Pendingهای جوان Toast می‌شوند | تست Restart |
+| Toast سیستم‌عامل خاموش/Focus Assist | `suppressed_os`؛ تاریخچه کامل؛ پیام صادقانه در وضعیت | تست Windows Settings |
+| Plugin init failure | `bridge_unavailable`؛ هیچ Toast؛ مرکز کار می‌کند | تست بدون Plugin |
+| Crash بین `show()` و `ack` | پس از Restart یک Retry با همان `event_id`/`tag`؛ احتمال تکرار کم و قابل‌تشخیص | تست Kill-point |
+| DB قفل/پر | Event در صف حافظهٔ محدود؛ Critical اولویت دارد؛ پس از رفع، Flush؛ خطای پایدار در وضعیت | تست Fault Injection |
+| Deep Link نامعتبر | Toast نمایش داده می‌شود اما کلیک فقط `/notifications` را باز می‌کند؛ رویداد Audit می‌شود | تست Allowlist |
+| دو نمونهٔ هم‌زمان | Single-instance guard؛ نمونهٔ دوم Exit؛ هیچ Toast تکراری | تست دو Process |
+| ساعت/Timezone | Quiet Hours در هر Event با ساعت محلی محاسبه می‌شود؛ Monotonic برای Rate Limit | تست Clock Change |
+
+### ۱۹.۱۱ آزمون و پذیرش
+
+**Unit:** Classifier matrix، State Transition، Dedup، Aggregation، Rate Limit، Quiet Hours، Redaction، Deep Link Allowlist، Schema.
+
+**Integration:** Publisher → `oc_client.db` → Long-poll → Mock Bridge → Ack؛ Restart؛ Duplicate؛ OS Denied؛ DB Lock؛ Offline.
+
+**Windows E2E (نصب واقعی):**
+
+- Toast در حالت Minimized و Tray دیده شود.
+- کلیک Toast پنجره را باز و به مسیر درست هدایت کند.
+- خاموش‌کردن اعلان‌های Windows باعث از دست رفتن تاریخچه نشود.
+- Quiet Hours Toast Important را نگه دارد اما در مرکز ثبت شود؛ Critical مطابق تنظیم.
+- Restart برنامه Toast تکراری نسازد و Badge درست باشد.
+- `signal.created`/`price.changed` هیچ Toastی نسازند.
+- `user.db` پس از همهٔ این آزمون‌ها بایت‌به‌بایت سالم بماند.
+
+**معیار پذیرش:** صفر رویداد گم‌شده در تاریخچه؛ صفر Toast برای Normal/Informational؛ صددرصد Deep Linkهای معتبر؛ صفر درخواست بیرونی؛ صفر `remote` Capability؛ صفر Toast تکراری پس از Restart.
+
+### ۱۹.۱۲ پرسش‌های مالک
+
+| پرسش | پیش‌فرض پیشنهادی | اثر |
+|---|---|---|
+| Q20 — ماتریس پیش‌فرض Severity و Critical در Quiet Hours | جدول §۱۹.۲؛ Critical به‌طور پیش‌فرض از Quiet Hours عبور کند | محصول/آزار |
+| Q21 — Default صدای Critical/Important و Preview حساس | صدای Critical روشن؛ Preview حساس خاموش | حریم خصوصی/تجربه |
+| Q22 — مرکز اعلان فقط صفحه یا Drawer سریع هم باشد | صفحه + Drawer اختیاری از Bell | IA |
+| Q23 — نگهداشت تاریخچه | Informational کوتاه؛ Important/Critical تا Archive دستی | دیسک/حسابرسی |
+| Q24 — Toast وقتی برنامه کاملاً بسته است | خیر؛ فقط تاریخچه در Startup بعدی | انتظار کاربر |
+
+---
+
+## ۲۰) وابستگی‌ها
 
 | وابستگی | نوع | وضعیت | یادداشت |
 |---|---|---|---|
@@ -820,12 +1238,14 @@ stateDiagram-v2
 | GitHub Private Releases | Registry | موجود/قابل ایجاد | بدون سرور دائمی |
 | Stage 4 Snapshot + Minisign | Data | Accepted | Generation Resolver و Producer Allowlist پیش‌نیاز |
 | Tauri v2 | Shell | موجود | Updater فعلی برای OC استفاده نمی‌شود |
+| `tauri-plugin-notification` v2 | Toast | افزودنی (P1.7) | رسمی؛ Pin؛ Capability حداقلی `notification:default` |
+| Windows Toast/AUMID | OS | موجود در Windows 10/11 | نصب واقعی + Shortcut معتبر لازم است |
 | `frontend-v2` + TanStack Query | UI | موجود | مسیرهای OC افزوده می‌شوند |
 | Map/چارت | UI | موجود | OC چارت جدید نمی‌سازد؛ پیوند به سطوح موجود |
 
-## ۲۰) معیارهای پذیرش معماری
+## ۲۱) معیارهای پذیرش معماری
 
-### ۲۰.۱ پذیرش طراحی (این فاز)
+### ۲۱.۱ پذیرش طراحی (این فاز)
 
 | معیار | وضعیت |
 |---|---|
@@ -837,8 +1257,9 @@ stateDiagram-v2
 | Q1/Q5/Q11 تحلیل و تصمیم پیشنهادی | انجام شد |
 | ADRها و نقشهٔ اجرایی | `adr/` + `IMPLEMENTATION-ROADMAP.md` |
 | شواهد Stage 4 و شکاف‌ها | ثبت شد |
+| زیرسیستم اعلان و مسیر Event→Center | §۱۹ + ADR-OC-015 |
 
-### ۲۰.۲ پذیرش پیاده‌سازی (فاز ۵، آینده)
+### ۲۱.۲ پذیرش پیاده‌سازی (فاز ۵، آینده)
 
 1. **P0:** Producer Allowlist؛ Generation Resolver در `borsd`؛ Schema Migration؛ Local API Token؛ FTS Parity Vectors. بدون این‌ها OC فعال نمی‌شود.
 2. Registry: صدور/نصب/Verify/Revoke/Rollback/Offline با تست Tamper و Sequence.
@@ -850,8 +1271,9 @@ stateDiagram-v2
 8. No Python در Client Process Tree؛ No Telemetry؛ No Arbitrary Egress.
 9. API: Job ID/Status واقعی؛ `data_state`/`as_of`؛ خطاها صادقانه.
 10. UX: Today/Library/Lab read-only/Compare/Monitor با دادهٔ واقعی؛ ۱۳۶۶/۱۹۲۰؛ بدون سرریز.
+11. Notification: Toast در Minimized/Tray؛ OS-off تاریخچه را نکشد؛ Deep Link مجاز؛ Dedup/Rate Limit؛ `signal.created`/`price.changed` بدون Toast؛ `user.db` سالم.
 
-## ۲۱) ریسک‌ها
+## ۲۲) ریسک‌ها
 
 | ریسک | شدت | احتمال | کاهش |
 |---|---|---|---|
@@ -867,18 +1289,21 @@ stateDiagram-v2
 | App Updater معیوب، توزیع Runtime را پیچیده کند | متوسط | بالا | جداسازی ADR-OC-013؛ Rework مستقل |
 | سکوت/خطای API قدیمی (200=started) | متوسط | بالا | Job Contract + تست |
 | حجم/زمان Data Sync (۹۱MB/~۱۲دقیقه) | متوسط | متوسط | پیشرفت واقعی، Resume، Offline Cache |
+| Toast/AUMID/Shortcut در ویندوز درست کار نکند | متوسط | بالا | P1.7 Spike روی نصب واقعی؛ Fallback مرکز؛ Release Note |
+| اعلان پرتکرار/تکراری اعتماد را بکشد | بالا | متوسط | Dedup/Group/Rate Limit؛ State Transition |
+| Preview حساس روی Lock Screen | بالا | متوسط | Redaction پیش‌فرض؛ Opt-in |
 | نمونهٔ ۵ ساله برای SR پایین | بالا | بالا | `insufficient_evidence`؛ ۱۰ سال یا عدم Stable |
 
-## ۲۲) نقشهٔ اجرایی و ADRها
+## ۲۳) نقشهٔ اجرایی و ADRها
 
 - نقشهٔ گام‌به‌گام، وابستگی‌ها و Gateها: `IMPLEMENTATION-ROADMAP.md`.
-- تصمیم‌های فنی: `adr/README.md` و فایل‌های `adr/ADR-OC-001..014`.
+- تصمیم‌های فنی: `adr/README.md` و فایل‌های `adr/ADR-OC-001..015`.
 - گزارش نهایی و شواهد: `FINAL-REPORT.md`.
-- پرسش‌های باز: `OPEN-QUESTIONS.md` (Q1/Q5/Q11 و Q15-Q19).
+- پرسش‌های باز: `OPEN-QUESTIONS.md` (Q1/Q5/Q11 و Q15-Q24).
 
-## ۲۳) شواهد و شکاف‌های راستی‌آزمایی‌نشده
+## ۲۴) شواهد و شکاف‌های راستی‌آزمایی‌نشده
 
-### ۲۳.۱ شواهد کد
+### ۲۴.۱ شواهد کد
 
 - `backend-go/cmd/borsd/main.go:44-53` — باز کردن DB پیش از Serve.
 - `backend-go/internal/db/db.go:75-133` — market/codal `ro`، user `rwc`.
@@ -889,11 +1314,18 @@ stateDiagram-v2
 - `backend-go/internal/sync/handlers.go:135-166` — `url` override (SSRF surface).
 - `api/chart.py:3896` و `backend-go/internal/chart/fts_swings.go:20` — ruleset drift.
 - `frontend/src-tauri/src/lib.rs:123-131` — External URL؛ `tauri.conf.json:31-35` — updater.
-- `frontend-v2/src/shared/api/http.ts:3,19-29` — relative fetch.
+- `frontend/src-tauri/Cargo.toml:24-37` — بدون `tauri-plugin-notification`؛ `src/lib.rs:106-108` — فقط Updater/Process؛ `capabilities/default.json:8-12` — بدون Permission اعلان.
+- `frontend/src-tauri/tauri.conf.json:4` — `identifier=com.borsterminal.app`؛ `installer/bors_setup.iss:81-82` — Shortcut فقط برای `BorsTerminal_Ultimate.exe`.
+- `frontend-v2/src/app/App.tsx:20` — مسیر `/notifications`؛ `src/app/shell/Sidebar.tsx:82-95` — Bell/Badge؛ `features/notifications/api/useNotifications.ts:38-57` — Polling ۶۰ثانیه‌ای؛ `lib/unread.ts:34-51` — Read State در localStorage؛ بدون Toast.
+- `frontend/src/features/technical/stores/priceAlertStore.ts:97-141` و `lib/usePriceAlertWatch.ts:9-19` — Alert قیمت فقط در Renderer و وابسته به Polling؛ با پنجرهٔ مخفی متوقف می‌شود (`docs/fts-notes/TA_PARITY_AUDIT.md:185-187`).
+- `backend-go/internal/notifications/` — فقط Feed کدال؛ بدون Event Bus/Outbox؛ `internal/sync/handlers.go:93-133` — سه Sync بدون کار واقعی.
+- `backend-go/internal/httpapi/server.go:341-343` — Comment صریح که SSE «آینده» است؛ در کد فعلی هیچ SSE/WebSocket وجود ندارد.
+- `docs/BorsTerminal-Desktop-Migration-Decisions.md:86, 368-374, 440` — تصمیم‌های اهمیت/مرکز رویدادها؛ `docs/RELEASE_NOTES.md:705-711` — «اعلان بومی ویندوز وصل نیست».
 - `docs/STAGE4-PRODUCTION-ACTIVATION-FINAL-REPORT.md:10-11, 221-289` — Stage 4 acceptance/evidence.
+- `frontend-v2/src/shared/api/http.ts:3,19-29` — relative fetch.
 - `docs/BorsTerminal-Desktop-Migration-Decisions.md:519-645` — migration architecture/OPENs.
 
-### ۲۳.۲ راستی‌آزمایی‌نشده
+### ۲۴.۲ راستی‌آزمایی‌نشده
 
 - رفتار واقعی Generation Resolver پس از Apply (کد فعلی ندارد؛ فقط Test/ابزار).
 - پاریتی کامل FTS Go/Python روی همهٔ نمادها و رژیم‌ها.
@@ -903,3 +1335,9 @@ stateDiagram-v2
 - GPU Job روی Kaggle/Colab با دادهٔ واقعی (هیچ Job اجرا نشده).
 - چرخش کلید و Recovery کامل.
 - Migration واقعی `oc_client.db`/`research.db` (هنوز DBای ساخته نشده).
+- رفتار دقیق کلیک Toast دسکتاپ در نسخهٔ Pin‌شدهٔ `tauri-plugin-notification` (در P1 با Toast واقعی اثبات شود).
+- AUMID/Shortcut ویندوز و Activation وقتی برنامه در Tray یا بسته است (P1 روی نصب واقعی).
+- تشخیص Focus Assist/Notifications off و تفکیک `suppressed_os` از `shown` (ممکن است سیستم‌عامل خطا ندهد).
+- جلوگیری از دو نمونهٔ هم‌زمان و Toast تکراری (Single-instance guard هنوز وجود ندارد).
+- تزریق `webview.eval` روی Webview خارجی و رسیدن `CustomEvent` به SPA (P1.7 با نصب واقعی).
+- آزمون E2E اعلان در حالت Minimized/Tray/Restart با بستهٔ نصب‌شده (هیچ Toast واقعی در این مأموریت اجرا نشد).

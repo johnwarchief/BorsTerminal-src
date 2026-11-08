@@ -10,7 +10,7 @@
 | ۱ — Product Discovery | تکمیل‌شده | `01-PRODUCT-DISCOVERY.md` |
 | ۲ — Strategy Intelligence | تکمیل‌شده | `02-STRATEGY-INTELLIGENCE.md` |
 | ۳ — UX & Product Experience | تکمیل‌شده | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `PRODUCT-REQUIREMENTS.md`، `prototype/` (۹ اسکرین‌شات؛ صفر خطا) |
-| ۴ — Technical Architecture | تکمیل‌شده روی Stage 4 پذیرفته‌شده `11f4b128` | `04-TECHNICAL-ARCHITECTURE.md`، `adr/`، `IMPLEMENTATION-ROADMAP.md` |
+| ۴ — Technical Architecture | تکمیل‌شده روی Stage 4 پذیرفته‌شده `11f4b128` | `04-TECHNICAL-ARCHITECTURE.md`، `adr/`، `IMPLEMENTATION-ROADMAP.md` (شامل زیرسیستم اعلان دسکتاپ) |
 | گزارش نهایی | تکمیل‌شده | `FINAL-REPORT.md` + گزارش گفت‌وگو |
 
 فازهای ۱ تا ۳ مستقل از Stage 4 پیش می‌روند. فاز ۴ فقط پس از پذیرش نهایی Stage 4 و با بررسی معماری واقعی و تأییدشدهٔ آن نهایی می‌شود. Stage 4 در Worktree جداگانهٔ خود دست‌نخورده می‌ماند.
@@ -30,8 +30,8 @@
 | `01-PRODUCT-DISCOVERY.md` | چشم‌انداز، مسئله، کاربر و Job، مدل مفهومی، جایگاه، دامنه، روش‌های تولید، پژوهش رقابتی، مدل محصول |
 | `02-STRATEGY-INTELLIGENCE.md` | مدل استراتژی، تولید، ارزیابی، اعتبارسنجی، چرخهٔ عمر، قیدهای ایران، قرارداد FTS |
 | `03-UX-AND-PRODUCT-EXPERIENCE.md` | IA، ناوبری، جریان‌ها، مشخصات صفحات، Lab، مقایسه، Prototype، اعتبارسنجی UX |
-| `04-TECHNICAL-ARCHITECTURE.md` | معماری فنی روی Stage 4 پذیرفته‌شده، قراردادها، داده، Registry، API، امنیت، شکست/بازیابی، Q1/Q5/Q11 |
-| `adr/` | ADRهای `ADR-OC-001..014` + فهرست و قالب |
+| `04-TECHNICAL-ARCHITECTURE.md` | معماری فنی روی Stage 4 پذیرفته‌شده، قراردادها، داده، Registry، API، امنیت، شکست/بازیابی، اعلان دسکتاپ، Q1/Q5/Q11 |
+| `adr/` | ADRهای `ADR-OC-001..015` + فهرست و قالب |
 | `IMPLEMENTATION-ROADMAP.md` | مراحل P0–P6، وابستگی، Gate و معیار پذیرش |
 | `FINAL-REPORT.md` | گزارش جامع فازهای ۱–۴، شواهد، تصمیم‌ها، ریسک‌ها و وضعیت راستی‌آزمایی |
 | `PRODUCT-REQUIREMENTS.md` | PRD تجمیعی با ارجاع به فازها، بدون تکرار |
@@ -71,6 +71,7 @@
 13. Registry خصوصی است و هیچ سرور/هزینهٔ میزبانی دائمی مفروض نیست.
 14. Python برای Research/Training؛ Runtime محصول Go + Tauri است.
 15. Kronos و پیش‌بینی در Technical Intelligence می‌ماند و وارد Strategy Intelligence نمی‌شود.
+16. اعلان دسکتاپ محلی است؛ فقط Critical/Important Toast می‌شوند؛ سیگنال/تغییر قیمت هرگز Important نیست؛ هیچ متن خام یا خروجی AI اعلان رسمی نمی‌سازد.
 
 ## رابطه با اسناد پژوهشی موجود
 

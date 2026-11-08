@@ -2,6 +2,7 @@
 
 > **تاریخ:** 2026-11-08 · **شاخه:** `mission/opportunity-center-design-2026-11-08` · **مبنا:** `da6d6177` (نوک Stage 3) · **مبنای معماری:** Stage 4 پذیرفته‌شده `11f4b128` (ادغام‌شده در `9c3676d4`)
 > **وضعیت:** طراحی فازهای ۱ تا ۴ تکمیل شد. هیچ کد Runtime، API عملیاتی، مدل AI، تغییر FTS، انتشار نسخه یا ادغام در `main` انجام نشد.
+> **افزودهٔ پس از بستهٔ اولیه:** زیرسیستم اعلان دسکتاپ (ADR-OC-015) در همین سند و `04` §۱۹ ثبت شد؛ هیچ Toast واقعی اجرا نشد.
 > **حکم:** `PHASE4_DESIGN_COMPLETE_RUNTIME_NOT_STARTED`
 
 ---
@@ -25,11 +26,11 @@
 | ۱ — Product Discovery | `01-PRODUCT-DISCOVERY.md` | تکمیل‌شده | چشم‌انداز، کاربر، Job، مدل مفهومی، دامنه، روش‌های تولید، پژوهش رقابتی |
 | ۲ — Strategy Intelligence | `02-STRATEGY-INTELLIGENCE.md` | تکمیل‌شده | مدل استراتژی، تولید، ارزیابی، اعتبارسنجی، چرخهٔ عمر، قیدهای ایران، قرارداد FTS |
 | ۳ — UX & Product Experience | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `PRODUCT-REQUIREMENTS.md`، `prototype/` | تکمیل‌شده | ۹ اسکرین‌شات در ۱۳۶۶×۷۶۸ و ۱۹۲۰×۱۰۸۰؛ صفر خطای صفحه |
-| ۴ — Technical Architecture | `04-TECHNICAL-ARCHITECTURE.md` | تکمیل‌شده | ۲۳ بخش؛ نمودار زمینه/Container/توالی/چرخهٔ عمر؛ مدل داده، Registry، امنیت، شکست/بازیابی، Q1–Q19 |
-| تصمیم‌ها | `adr/ADR-OC-001..014` + `DECISION-LOG.md` | تکمیل‌شده | ۱۴ ADR؛ ۶۳ تصمیم ثبت‌شده (`OC-D-001..063`) |
-| الزامات | `PRODUCT-REQUIREMENTS.md` | تکمیل‌شده | ۶۵ FR + ۱۴ NFR با شناسهٔ پایدار |
+| ۴ — Technical Architecture | `04-TECHNICAL-ARCHITECTURE.md` | تکمیل‌شده | ۲۵ بخش (۰ تا ۲۴)؛ نمودار زمینه/Container/توالی/چرخهٔ عمر؛ مدل داده، Registry، اعلان دسکتاپ، امنیت، شکست/بازیابی، Q1–Q24 |
+| تصمیم‌ها | `adr/ADR-OC-001..015` + `DECISION-LOG.md` | تکمیل‌شده | ۱۵ ADR؛ ۷۳ تصمیم ثبت‌شده (`OC-D-001..073`) |
+| الزامات | `PRODUCT-REQUIREMENTS.md` | تکمیل‌شده | ۷۶ FR + ۱۸ NFR با شناسهٔ پایدار |
 | نقشهٔ راه | `IMPLEMENTATION-ROADMAP.md` | تکمیل‌شده | P0–P6 با Gate، وابستگی و معیار پذیرش |
-| پرسش‌های باز | `OPEN-QUESTIONS.md` | تکمیل‌شده | Q1–Q19؛ تفکیک «حل ساختاری» از «رأی مالک» |
+| پرسش‌های باز | `OPEN-QUESTIONS.md` | تکمیل‌شده | Q1–Q24؛ تفکیک «حل ساختاری» از «رأی مالک» |
 | گزارش نهایی | همین سند | تکمیل‌شده | جمع‌بندی شواهد، ریسک‌ها و مرزهای راستی‌آزمایی |
 
 Prototype مستقل است و خارج از Runtime می‌ماند. اسکرین‌شات‌ها در `prototype/evidence/` و اسکریپت بازتولید در `prototype/_screenshot.mjs` است؛ هیچ فایل دمو در بستهٔ تولید قرار نمی‌گیرد.
@@ -183,6 +184,22 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 
 نگهداشت N-1 نسخهٔ فعال برای Rollback فوری؛ حذف نسخه‌ها فقط پس از تأیید Sync و بدون حذف شواهد.
 
+### ۷.۸) زیرسیستم اعلان دسکتاپ
+
+الزام تازهٔ مالک در همین فاز به معماری اضافه شد: Toast بومی Windows، چهار سطح اهمیت، Dedup/Rate Limit، Quiet Hours، مرکز اعلان دائمی و کارکرد در Minimized/Tray.
+
+| لایه | تصمیم |
+|---|---|
+| منطق | Go (`internal/notify`): اعتبارسنجی Event، طبقه‌بندی، Dedup/Aggregation، Rate Limit، Quiet Hours، Outbox |
+| ذخیره | `oc_client.db`: `notification_events`، `notification_deliveries`، `notification_prefs`، `notification_mutes`؛ `user.db` دست‌نخورده |
+| Toast | Tauri Rust با `tauri-plugin-notification`؛ هیچ `remote` Capability برای Webview |
+| پل | Long-poll با Token فایل ACL‌دار؛ Ack اجباری؛ `shown / failed / suppressed_os` |
+| مرکز | `/notifications` + `/settings/notifications`؛ Badge پیش‌فرض Critical+Important |
+| مرز | `signal.created`/`price.changed` هرگز Important نمی‌شوند؛ Codal Feed اعلان رسمی نیست؛ AI نمی‌تواند Critical/Important بسازد |
+| شکست | OS خاموش ⇒ تاریخچه کامل + `suppressed_os`؛ Restart ⇒ فقط Pending جوان Toast؛ بستهٔ کامل ⇒ تاریخچه در Startup بعدی |
+
+جزئیات: `04` §۱۹؛ `ADR-OC-015`؛ `OC-D-064..073`؛ Q20–Q24.
+
 ---
 
 ## ۸) تعیین تکلیف Q1 تا Q14
@@ -208,7 +225,7 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 
 ---
 
-## ۹) پرسش‌های تازهٔ فاز ۴ (Q15–Q19)
+## ۹) پرسش‌های تازهٔ فاز ۴ (Q15–Q24)
 
 | پرسش | پیش‌فرض معماری | اثر | وضعیت |
 |---|---|---|---|
@@ -217,8 +234,13 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 | Q17 — آفلاین/Revocation | آخرین نسخهٔ معتبر با `offline_verified`؛ Revocation در اولین Sync | امنیت/صداقت وضعیت | نیازمند سیاست مالک |
 | Q18 — نگهداری کلید | کلیدهای جدا؛ Approval آفلاین/رمزدار؛ چرخش با Key Transition | امنیت انتشار | پیش‌فرض امنیتی |
 | Q19 — Entitlement | v1: همهٔ Stableها برای هر سه کاربر؛ بدون تفکیک | مدل دسترسی | پیش‌فرض؛ مالک |
+| Q20 — ماتریس Severity | جدول §۱۹.۲؛ Critical از Quiet Hours عبور می‌کند | نویز/اعتماد | نیازمند رأی مالک |
+| Q21 — صدا/Preview | صدای Critical روشن؛ Preview حساس خاموش | حریم خصوصی | پیش‌فرض امن؛ تأیید مالک |
+| Q22 — مرکز/Drawer | صفحهٔ کامل + Drawer اختیاری | IA | پیش‌فرض؛ مالک |
+| Q23 — نگهداشت اعلان | Informational کوتاه؛ Important/Critical تا Archive دستی | دیسک/حسابرسی | نیازمند سیاست مالک |
+| Q24 — Toast در حالت بسته | خیر؛ تاریخچه در Startup بعدی | انتظار کاربر | پیش‌فرض؛ مالک |
 
-هیچ‌کدام مانع P0–P4 نیستند؛ Q15 مانع P6 و Q17 مانع سیاست قطعی آفلاین است.
+هیچ‌کدام مانع P0–P4 نیستند؛ Q15 مانع P6، Q17 مانع سیاست قطعی آفلاین، و Q20/Q21/Q23 مانع پیش‌فرض‌های نهایی اعلان‌اند.
 
 ---
 
@@ -236,6 +258,12 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 | Ruleset فنی FTS در Python `"6"` و در Go `"3"` است | `api/chart.py:3896`؛ `backend-go/internal/chart/fts_swings.go:20` | دروازهٔ Parity و تک‌منبع‌سازی Ruleset |
 | Tauri یک URL خارجی بار می‌کند، نه باندل داخلی | `frontend/src-tauri/src/lib.rs:123-131` | مرز امنیتی کانال محلی باید صریح باشد |
 | Updater تعبیه شده اما JS آن را مصرف نمی‌کند | `frontend/src-tauri/tauri.conf.json:31-35`؛ `frontend-v2/src/shared/api/http.ts:3,19-29` | آرتیفکت استراتژی از App Updater جدا می‌شود |
+| Tauri هیچ Plugin/Notification/IPC اعلان ندارد | `frontend/src-tauri/Cargo.toml:24-37`؛ `src/lib.rs:106-108`؛ `capabilities/default.json:8-12` | P1.7: افزودن Plugin رسمی + AUMID/Shortcut |
+| Go هیچ Event Bus/SSE/WebSocket/Job Registry ندارد | `backend-go/internal/httpapi/server.go:341-343`؛ `internal/sync/handlers.go:93-133` | موتور اعلان و پل Long-poll در P0.8/P4.8 |
+| Codal Feed اعلان سیستم نیست | `backend-go/internal/notifications/`؛ `api/notifications.py` | `internal/notify` جدا؛ Codal فقط Feed |
+| Read State فعلی در localStorage و بدون Toast است | `frontend-v2/src/features/notifications/lib/unread.ts:34-51`؛ `NotificationsPage.tsx:14-85` | Read/Prefs سروری در `oc_client.db` |
+| Alert قیمت فقط در Renderer و با پنجرهٔ مخفی متوقف می‌شود | `frontend/src/features/technical/lib/usePriceAlertWatch.ts:9-19`؛ `docs/fts-notes/TA_PARITY_AUDIT.md:185-187` | ارزیابی در Go و Toast از Rust |
+| Shortcut نصب فقط به Go host است | `installer/bors_setup.iss:81-82` | P1.7: Activation/AUMID به همان اپ |
 
 ### ۱۰.۲) راستی‌آزمایی‌نشده (ادعا نمی‌شود)
 
@@ -246,6 +274,7 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 - کفایت دادهٔ تاریخی برای بک‌تست صف/عمق سفارش.
 - صحت Ruleset فنی FTS تا زمانی که Parity روی مجموعهٔ مرجع اجرا نشود.
 - امنیت کانال محلی Tauri↔Go؛ در اسناد مهاجرت `OPEN` است و Phase 4 فقط الزاماتش را ثبت کرده است.
+- رفتار واقعی Toast/کلیک `tauri-plugin-notification` در نسخهٔ Pin‌شده، AUMID/Shortcut ویندوز، Focus Assist و Single-instance؛ هیچ Toast واقعی در این مأموریت اجرا نشد.
 
 ---
 
@@ -261,6 +290,11 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 | گم‌شدن کلید APPROVAL یا چرخش نادرست | کم/بحرانی | کلید آفلاین، Backup، Key Transition + App Update |
 | وابستگی به GitHub برای توزیع | متوسط/متوسط | `RegistryTransport` قابل‌تعویض؛ Export/Import آفلاین |
 | پیچیدگی سه کاربر و Revocation | متوسط/متوسط | PAT محدود، ایندکس امضاشده، Sequence و Revocation صریح |
+| Toast در Minimized/Tray کار نکند یا کلیک گم شود | متوسط/متوسط | P1.7 Spike واقعی؛ Fallback به مرکز؛ Release Note صادق |
+| AUMID/Shortcut اشتباه، نمونهٔ دوم اجرا کند | متوسط/بالا | P1.7 Activation test؛ Single-instance guard |
+| اعلان‌های زیاد/تکراری اعتماد را بکشند | بالا/متوسط | Dedup/Group/Rate Limit؛ State Transition؛ پیش‌فرض محافظه‌کارانه |
+| Preview حساس روی صفحهٔ قفل دیده شود | متوسط/بالا | Redaction پیش‌فرض؛ Preview opt-in |
+| OS Notifications off باعث گم‌شدن رویداد شود | بالا/متوسط | تاریخچهٔ مستقل در `oc_client.db`؛ `suppressed_os` |
 | ابهام آستانه‌های Q1/Q11 | بالا/متوسط | `approval_enabled=false`؛ انتشار Stable تا امضای مالک متوقف |
 
 ---
@@ -269,12 +303,12 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 
 | مرحله | محتوا | Gate خروج |
 |---|---|---|
-| **P0 — پایهٔ اعتماد** | Generation Resolver؛ Producer Allowlist؛ Schema Migration؛ Local API Token؛ API Honesty؛ قرارداد «بدون Python در بستهٔ کلاینت» | Today از نسل فعال سرو می‌شود؛ هیچ `.db` غیرمجاز Snapshot نمی‌شود؛ 200 بدون Job ممنوع |
-| **P1 — قرارداد و Registry** | `oc.strategy/1`، `oc.bundle/1`، `oc.approval/1`، `oc.registry/1`؛ Verify/Install/Rollback | نصب اتمیک و Rollback با بستهٔ آزمایشی امضاشده |
+| **P0 — پایهٔ اعتماد** | Generation Resolver؛ Producer Allowlist؛ Schema Migration؛ Local API Token؛ API Honesty؛ قرارداد «بدون Python در بستهٔ کلاینت»؛ Notification Base | Today از نسل فعال سرو می‌شود؛ هیچ `.db` غیرمجاز Snapshot نمی‌شود؛ 200 بدون Job ممنوع؛ Storage/Token پل اعلان آماده |
+| **P1 — قرارداد و Registry** | `oc.strategy/1`، `oc.bundle/1`، `oc.approval/1`، `oc.registry/1`؛ Verify/Install/Rollback؛ Notification Contract/Tauri Spike | نصب اتمیک و Rollback با بستهٔ آزمایشی امضاشده؛ Toast نصب‌شده/AUMID/OS-off |
 | **P2 — Research Workbench** | Trial Registry، Holdout، اجرا/لغو، Validation Policy، Export | اجرای بازتولیدپذیر با Manifest کامل |
 | **P3 — FTS و Today** | Adapter/Envelope، Parity Gate، Today Read Model | Parity سبز؛ Today فقط Approved |
-| **P4 — Runtime سه کاربر** | Client Install، Lab فقط‌خواندنی، Compare/Monitor، Offline | سه دستگاه، بدون دادهٔ شخصی بیرونی |
-| **P5 — Policy، مقایسه، پایش** | Q1/Q11 پس از امضای مالک؛ Ranking/Validation نهایی؛ پایش Drift | Stable جدید فقط با امضای مالک |
+| **P4 — Runtime سه کاربر** | Client Install، Lab فقط‌خواندنی، Compare/Monitor، Offline؛ Notification Engine/Bridge | سه دستگاه، بدون دادهٔ شخصی بیرونی؛ Toast در Minimized/Tray |
+| **P5 — Policy، مقایسه، پایش** | Q1/Q11 پس از امضای مالک؛ Ranking/Validation نهایی؛ پایش Drift؛ Notification Center/Settings | Stable جدید فقط با امضای مالک؛ مرکز/تنظیمات اعلان با معیار §۱۹.۱۱ |
 | **P6 — تولید/AI/GPU** | جست‌وجوی پژوهشی، مدل‌های پیشنهادی، GPU موقت با Opt-in | هیچ خروجی AI بدون تأیید مالک منتشر نمی‌شود |
 
 وابستگی: P0 → P1 → P2/P3 → P4 → P5 → P6. P2 و P3 می‌توانند موازی پیش بروند. جزئیات در `IMPLEMENTATION-ROADMAP.md`.
@@ -287,8 +321,8 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 
 - [x] همهٔ فازهای ۱–۴ سند دارند و به هم ارجاع می‌دهند.
 - [x] معماری روی `11f4b128` بنا شده و شکاف‌های Stage 4 ثبت شده‌اند.
-- [x] ADRها برای تصمیم‌های ساختاری وجود دارند (`ADR-OC-001..014`).
-- [x] Q1–Q14 تعیین تکلیف شده‌اند؛ موارد مالکانه صریحاً «نیازمند رأی» مانده‌اند.
+- [x] ADRها برای تصمیم‌های ساختاری وجود دارند (`ADR-OC-001..015`).
+- [x] Q1–Q24 تعیین تکلیف شده‌اند؛ موارد مالکانه صریحاً «نیازمند رأی» مانده‌اند.
 - [x] Prototype در ۱۳۶۶ و ۱۹۲۰ با شواهد تصویری بازبینی شده است.
 - [x] هیچ کد Runtime، تغییر FTS، انتشار یا Merge به `main` انجام نشده است.
 
@@ -301,6 +335,7 @@ Producer فقط باید `market.db` و `codal.db` را Snapshot کند. پیم�
 - امنیت: Local API Token، عدم نشت کلید، تست نفوذ کانال محلی.
 - UI: Today فقط Approved؛ Lab کلاینت بدون کنترل اجرا/تأیید؛ اندازه‌گیری WCAG.
 - سه کاربر: Onboarding/Revoke PAT؛ صفر دادهٔ شخصی در شبکه.
+- اعلان: Toast در Minimized/Tray؛ کلیک/Deep Link؛ OS-off و Restart؛ صفر Toast برای سیگنال/قیمت؛ `user.db` سالم.
 
 ---
 
@@ -312,10 +347,10 @@ git log --oneline -5
 git merge-base --is-ancestor 11f4b128 HEAD && echo "Stage4 base OK"
 
 # شمارش مصنوعات طراحی
-ls docs/opportunity-center/adr/ADR-OC-*.md | wc -l          # انتظار: 14
-grep -c '^| OC-D-' docs/opportunity-center/DECISION-LOG.md   # انتظار: 63
-grep -c '^| FR-OC-' docs/opportunity-center/PRODUCT-REQUIREMENTS.md  # انتظار: 65
-grep -c '^| NFR-OC-' docs/opportunity-center/PRODUCT-REQUIREMENTS.md # انتظار: 14
+ls docs/opportunity-center/adr/ADR-OC-*.md | wc -l          # انتظار: 15
+grep -c '^| OC-D-' docs/opportunity-center/DECISION-LOG.md   # انتظار: 73
+grep -c '^| FR-OC-' docs/opportunity-center/PRODUCT-REQUIREMENTS.md  # انتظار: 76
+grep -c '^| NFR-OC-' docs/opportunity-center/PRODUCT-REQUIREMENTS.md # انتظار: 18
 ls docs/opportunity-center/prototype/evidence/*.png | wc -l  # انتظار: 9
 
 # گارد فارسی و فاصله‌های اضافی (پس از Stage)
@@ -331,12 +366,13 @@ git diff --cached --check
 
 ## ۱۵) مرزها و اعلام صریح
 
-1. **هیچ Runtime پیاده‌سازی نشد.** همهٔ کدهای مسیر Opportunity Center، Registry، Research Workbench و Generation Resolver طراحی شده‌اند، نه ساخته.
+1. **هیچ Runtime پیاده‌سازی نشد.** همهٔ کدهای مسیر Opportunity Center، Registry، Research Workbench، Generation Resolver و زیرسیستم اعلان طراحی شده‌اند، نه ساخته.
 2. **هیچ استراتژی‌ای تأیید یا منتشر نشد.** `approval_enabled=false` است و کلید APPROVAL در این مأموریت استفاده نشد.
 3. **`main` دست‌نخورده است.** هیچ Merge، Tag یا Release انجام نشد.
 4. **Stage 4 دست‌نخورده است.** Worktree و فایل‌های uncommitted آن لمس نشدند.
 5. **هیچ آستانهٔ روش‌شناسی اختراع نشد.** Q1 و Q11 ساختار دارند، اما اعداد و ترتیب نهایی مالک‌اند.
 6. **Prototype دمو است.** داده‌های آن ساختگی‌اند و هرگز در بستهٔ تولید قرار نمی‌گیرند.
 7. **ادعای انطباق یا پذیرش دیداری نداریم.** تصاویر و اندازه‌ها ارائه شده‌اند؛ رأی مالک لازم است.
+8. **هیچ Toast واقعی در این مأموریت اجرا نشد.** AUMID/Shortcut، کلیک، Focus Assist و Restart اعلان در P1.7/P4.8 با نصب واقعی اثبات می‌شوند؛ تا آن زمان «راستی‌آزمایی‌نشده» هستند.
 
 **گام بعدی پیشنهادی:** تأیید مالک روی Q1/Q5/Q11 و سپس شروع P0 (Generation Resolver، Producer Allowlist، Schema Migration، Local API Token، API Honesty). تا آن زمان، هیچ انتشار Stable جدیدی مجاز نیست.

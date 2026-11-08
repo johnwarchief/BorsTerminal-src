@@ -685,4 +685,24 @@ Stage 4 در شاخهٔ `mission/stage4-production-activation-2026-11-08` با c
 
 **مرزهای فنی تکمیلی:** آرتیفکت استراتژی از App Updater جدا است (OC-D-059)؛ کلاینت Lab فقط‌خواندنی است (OC-D-058)؛ اعتبارسنجی و رتبه‌بندی به‌صورت Policy امضاشده داده‌اند و مقادیر آستانه/ترتیب نهایی منتظر رأی مالک‌اند (Q1/Q11)؛ هیچ آستانه‌ای در Phase 4 اختراع نشده است.
 
-**ارجاع:** جزئیات کامل معماری، ADRها (ADR-OC-001 تا ADR-OC-014)، پرسش‌های باز Q1–Q19 و نقشهٔ راه P0–P6 در `docs/opportunity-center/` است. این بخش مجوز پیاده‌سازی Runtime یا ادغام در `main` نیست.
+### ۱۲.۴۱.۳. زیرسیستم اعلان دسکتاپ — 2026-11-08
+
+**وضعیت: Accepted (Engineering)؛ پیش‌فرض‌های محصول منتظر Q20–Q24**
+
+الزام تازهٔ مالک، اعلان دسکتاپ واقعی با تجربهٔ نزدیک Telegram Desktop را به معماری اضافه کرد. تصمیم‌ها:
+
+| # | تصمیم | مرجع |
+|---|---|---|
+| ۱ | موتور اعلان در Go (`internal/notify`): اعتبارسنجی، طبقه‌بندی، Dedup/Aggregation، Rate Limit، Quiet Hours، Outbox | OC-D-064/069 |
+| ۲ | چهار سطح Critical/Important/Normal/Informational؛ سیگنال و تغییر قیمت هرگز Important نمی‌شوند | OC-D-065 |
+| ۳ | تاریخچه/Delivery/Prefs در `oc_client.db`؛ `user.db` دست‌نخورده | OC-D-066 |
+| ۴ | Toast بومی Windows فقط از Tauri Rust با `tauri-plugin-notification`؛ هیچ `remote` Capability | OC-D-067 |
+| ۵ | پل Long-Poll با Token فایل ACL‌دار و Ack؛ تحویل At-least-once | OC-D-068 |
+| ۶ | Preview حساس پیش‌فرض خاموش؛ Deep Link فقط Allowlist داخلی؛ هیچ متن خارجی اعلان رسمی نیست | OC-D-070/072 |
+| ۷ | مرکز `/notifications` + تنظیمات `/settings/notifications` + Badge | OC-D-071 |
+
+**واقعیت تأییدشده:** Tauri `2.12.5` است و هیچ Notification Plugin/Permission/IPC ندارد؛ Webview یک URL خارجی `http://127.0.0.1:<port>` را بار می‌کند؛ `frontend-v2` مسیر `/notifications` و Badge دارد اما Toast/تنظیمات سروری ندارد؛ Alert قیمت فعلی در Renderer است و با پنجرهٔ مخفی متوقف می‌شود؛ `backend-go` هیچ SSE/WebSocket/Event Bus ندارد. این‌ها پیش‌نیازهای P0.8/P1.7/P4.8 هستند.
+
+**مرز صریح:** Q14 به «In-App + OS Toast محلی» تعبیر می‌شود؛ Telegram/Bale/ایمیل/Push ابری همچنان خارج از v1 است. ADR کامل: `ADR-OC-015`.
+
+**ارجاع:** جزئیات کامل معماری، ADRها (ADR-OC-001 تا ADR-OC-015)، پرسش‌های باز Q1–Q24 و نقشهٔ راه P0–P6 در `docs/opportunity-center/` است. این بخش مجوز پیاده‌سازی Runtime یا ادغام در `main` نیست.

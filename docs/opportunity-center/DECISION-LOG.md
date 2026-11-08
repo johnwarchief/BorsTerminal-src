@@ -68,6 +68,16 @@
 | OC-D-061 | 2026-11-08 | GPU Job فقط با Opt-in صریح مالک، Data Scope Hash و بدون دادهٔ شخصی | Upload خودکار؛ Credential دائمی | حریم خصوصی/هزینه | پیشنهاد + Q15 |
 | OC-D-062 | 2026-11-08 | در آفلاین، آخرین نسخهٔ تأییدشده با برچسب `offline_verified` استفاده می‌شود؛ Revocation در Sync بعدی اعمال می‌شود | ادعای تازگی/Revocation بدون اتصال | صداقت وضعیت | پیشنهاد + Q17 |
 | OC-D-063 | 2026-11-08 | Read Model/API با `as_of/data_state/freshness`، Job ID واقعی و صفحه‌بندی؛ 200=Started ممنوع | پاسخ بدون وضعیت؛ Sync no-op | معماری اطلاعات صادق | پیشنهاد + یافته |
+| OC-D-064 | 2026-11-08 | اعلان دسکتاپ یک زیرسیستم سراسری است: موتور Go، پل Tauri Rust، مرکز/تنظیمات SPA | Alert فقط در Renderer؛ Toast از JS | یکپارچگی و کارکرد در Minimized | مالک (الزام ۲۰۲۶-۱۱-۰۸) |
+| OC-D-065 | 2026-11-08 | چهار سطح Critical/Important/Normal/Informational؛ `signal.created` و `price.changed` هرگز Important نمی‌شوند | هر سیگنال/تغییر قیمت Toast شود | نویز/اعتماد | مالک (بند ۲ و ۳) |
+| OC-D-066 | 2026-11-08 | تاریخچه/Delivery/Prefs اعلان در `oc_client.db`؛ `user.db` دست‌نخورده | افزودن جدول شخصی به `user.db`؛ کپی Watchlist/Portfolio | حفظ قرارداد Stage 4 | پیشنهاد + یافته |
+| OC-D-067 | 2026-11-08 | `tauri-plugin-notification` رسمی، فقط از Rust؛ هیچ `remote` Capability برای Webview | Plugin از JS روی Origin محلی | امنیت/پایداری Minimized | پیشنهاد + یافته |
+| OC-D-068 | 2026-11-08 | پل Long-Poll با Token فایل ACL‌دار؛ Ack اجباری؛ تحویل At-least-once | Polling SPA؛ فرض «نمایش = دیده شد» | قابلیت اطمینان | پیشنهاد طراحی |
+| OC-D-069 | 2026-11-08 | Dedup/Group/Rate Limit و فقط گذار وضعیت؛ Dedup پس از Restart باقی می‌ماند | Toast تکراری/وضعیت پایدار | جلوگیری از مزاحمت | مالک (بند ۵) |
+| OC-D-070 | 2026-11-08 | Quiet Hours/DND در Go؛ Preview حساس پیش‌فرض خاموش؛ Critical فقط با تنظیم صریح عبور می‌کند | فیلتر در UI؛ Preview پیش‌فرض روشن | حریم خصوصی/تجربه | مالک (بند ۶ و ۹) |
+| OC-D-071 | 2026-11-08 | `/notifications` مرکز کامل + `/settings/notifications`؛ Badge پیش‌فرض Critical+Important | فقط Toast بدون تاریخچه | مرکز دائمی | مالک (بند ۷) |
+| OC-D-072 | 2026-11-08 | Codal Feed اعلان رسمی نیست؛ فقط Event داخلی Source-allowlisted؛ هیچ AI مجاز به Critical/Important یا افزایش Severity نیست | Toast از متن خام/خروجی AI | اعتبار/امنیت | مالک (بند ۹) |
+| OC-D-073 | 2026-11-08 | AUMID/Shortcut ویندوز و Single-instance در P1 اثبات شود؛ Toast خارج از نصب قابل‌اعتماد نیست | فرض Toast بدون Shortcut | Windows Activation | پیشنهاد + یافته |
 
 ---
 
@@ -137,6 +147,11 @@
 | آپلود خودکار داده در GPU Job | نقض Opt-in/حریم خصوصی |
 | چندمستأجری روی یک سرور برای سه کاربر | Runtime محلی تک‌کاربره است؛ سه نصب مستقل |
 | ادعای Revocation بی‌درنگ در آفلاین | کلاینت آفلاین از ایندکس جدید خبر ندارد؛ وضعیت باید صادق باشد |
+| Toast از سمت JS با `remote` Capability | بازکردن Commandهای Tauri به Origin محلی؛ سطح حمله و وابستگی به Timerهای Webview |
+| Alert در Renderer برای اعلان دسکتاپ | با Minimized/Tray متوقف می‌شود؛ همان نقص فعلی |
+| Toast مستقیم از Go با WinRT | تکرار منطق Shell، AUMID/Activation و Focus؛ دو پیاده‌سازی ویندوزی |
+| Toast برای هر سیگنال/تغییر قیمت | نویز و از دست رفتن اعتماد؛ نقض مدل اهمیت |
+| اعلان از متن خام کدال یا خروجی AI | اعتبارسنجی/منبع قابل‌اثبات ندارد؛ نقض بند ۹ مالک |
 
 ---
 

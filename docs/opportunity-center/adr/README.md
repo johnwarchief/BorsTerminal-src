@@ -21,6 +21,7 @@
 | [ADR-OC-012](ADR-OC-012-local-api-personal-data.md) | امنیت API محلی و مرز دادهٔ شخصی/سه کاربر | Accepted (Engineering) | A4/A12 |
 | [ADR-OC-013](ADR-OC-013-artifacts-vs-app-updater.md) | جداسازی Registry استراتژی از App Updater | Accepted (Engineering) | A12/A14 |
 | [ADR-OC-014](ADR-OC-014-read-models-lab-boundary.md) | Read Model/API، حالت‌های داده و Lab read-only | Accepted (Engineering) | Owner #1 |
+| [ADR-OC-015](ADR-OC-015-desktop-notifications.md) | زیرسیستم اعلان دسکتاپ: موتور Go، پل Tauri، مرکز اعلان | Accepted (Engineering)؛ پیش‌فرض‌های محصول Pending | Q20–Q24 |
 
 ## قالب ADR
 

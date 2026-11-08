@@ -8,12 +8,12 @@
 
 | مرحله | نام | خروجی | Gate ورود | Gate خروج |
 |---|---|---|---|---|
-| P0 | پایه‌های امن و قابل‌اعتماد | Generation Resolver، Producer Allowlist، Schema Migration، Local API Token، FTS Parity Harness | پذیرش Stage 4 | تست‌های P0 سبز |
-| P1 | قراردادها و Registry | Schemaها، Canonicalization، Bundle Builder/Signer، Verifier/Installer، Transport فایل | P0 | Verify/Install/Rollback/Offline سبز |
+| P0 | پایه‌های امن و قابل‌اعتماد | Generation Resolver، Producer Allowlist، Schema Migration، Local API Token، FTS Parity Harness، Notification Base | پذیرش Stage 4 | تست‌های P0 سبز |
+| P1 | قراردادها و Registry | Schemaها، Canonicalization، Bundle Builder/Signer، Verifier/Installer، Transport فایل، Notification Contract | P0 | Verify/Install/Rollback/Offline سبز |
 | P2 | Research Workbench | Dataset/IR/Trial/Experiment/Validation در Python، research.db | P1 | بازتولید Experiment روی Snapshot |
 | P3 | FTS Adapter و Today v1 | Envelope، FTS Parity، Read Model، API Today/Inspector | P0 + P2 | FTS Stable + Today بدون Stub |
-| P4 | Runtime و سه کاربر | IR Interpreter، Primitive Registry، Library/Activation، Registry GitHub، Onboarding ۳ کاربر | P1 + P3 | نصب/فعال‌سازی/Revoke روی ۳ کلاینت |
-| P5 | Policy/Compare/Monitor | Validation/Ranking Policy، Compare، Lab read-only، Monitoring/Revocation | P4 + Q1/Q11 | شواهد کامل + Revocation |
+| P4 | Runtime و سه کاربر | IR Interpreter، Primitive Registry، Library/Activation، Registry GitHub، Onboarding ۳ کاربر، Notification Engine/Bridge | P1 + P3 | نصب/فعال‌سازی/Revoke روی ۳ کلاینت + Toast |
+| P5 | Policy/Compare/Monitor | Validation/Ranking Policy، Compare، Lab read-only، Monitoring/Revocation، Notification Center/Settings | P4 + Q1/Q11 | شواهد کامل + Revocation + اعلان قابل‌تنظیم |
 | P6 | تولید/AI/GPU | Candidate Generation، AI Suggestions، GPU Job Adapter | Q6/Q7/Q15 | Research-only؛ بدون Auto-Approve |
 
 ## ۱) P0 — پایه‌های امن و قابل‌اعتماد
@@ -29,8 +29,9 @@
 | P0.5 FTS Parity Harness | Golden Vectors Python↔Go برای Ruleset/Config؛ گزارش تفاوت‌ها | حداقل ۵ نماد مرجع + برش‌های رژیم؛ `PASS/FAIL/INSUFFICIENT` شفاف |
 | P0.6 API Honesty | Job ID/Status برای Sync/Registry؛ حذف 200=started | تست: Job واقعی + Status + خطا |
 | P0.7 Build Contract | اسکن بسته/Process Tree برای نبود Python | تست ساخت: هیچ Python/Uvicorn/FastAPI در بستهٔ کلاینت |
+| P0.8 Notification Base | Schema `oc_client.db` برای Event/Delivery/Prefs؛ Publisher Interface؛ Token فایل ACL‌دار برای پل؛ Single-instance guard | Migration+Rollback؛ تست Token؛ دو نمونهٔ هم‌زمان |
 
-**P0 Gate:** همهٔ تست‌ها + گزارش `NOT_MEASURED`ها؛ اگر FTS Parity کامل نیست، P3 مسدود می‌شود.
+**P0 Gate:** همهٔ تست‌ها + گزارش `NOT_MEASURED`ها؛ اگر FTS Parity کامل نیست، P3 مسدود می‌شود؛ اگر Notification Base نیست، P4.8 مسدود می‌شود.
 
 ## ۲) P1 — قراردادها و Registry
 
@@ -44,8 +45,9 @@
 | P1.4 Verifier/Installer (Go) | Staging/Verify/Content-Address/Pointer/N-1 | Tamper/Hash/Schema/Compat/Crash tests |
 | P1.5 Rollback/Offline | Pointer N-1؛ Cache؛ `offline_verified`؛ Export/Import فایل | Offline install؛ Rollback؛ Sequence test |
 | P1.6 Registry Transport Interface | `file` + `github_private` (Mock) | تست بدون شبکه؛ سپس GitHub واقعی در P4 |
+| P1.7 Notification Contract & Tauri Spike | `oc.notification_event/1` + Preferences Schema؛ افزودن `tauri-plugin-notification`؛ AUMID/Shortcut؛ Mock Bridge + کلیک واقعی | Toast نصب‌شده؛ Deep Link؛ OS-off؛ Restart؛ بدون `remote` Capability |
 
-**P1 Gate:** یک Bundle ساختگی (بدون استراتژی واقعی) با موفقیت Sign/Verify/Install/Rollback/Offline می‌شود؛ هیچ کلید در CI نیست.
+**P1 Gate:** یک Bundle ساختگی (بدون استراتژی واقعی) با موفقیت Sign/Verify/Install/Rollback/Offline می‌شود؛ هیچ کلید در CI نیست؛ Toast آزمایشی در نصب واقعی با کلیک/OS-off/Restart پاس می‌شود.
 
 ## ۳) P2 — Research Workbench
 
@@ -91,8 +93,9 @@
 | P4.5 Owner Publish Flow | Sign/Publish/Sequence/Rollback انتشار | انتشار نیمه‌کاره/خطا؛ ایندکس آخر |
 | P4.6 Monitoring | مشاهدات محلی/Drift/Revocation | هشدار بدون رتبه‌بندی خودکار |
 | P4.7 Offline Drill | قطع شبکه/Registry/Data | آخرین نسخهٔ معتبر + برچسب |
+| P4.8 Notification Engine/Bridge | Publisherهای دامنه، Classifier/Dedup/Rate Limit/Quiet Hours، Outbox، Long-poll، Rust Toast، Ack/Click | Toast در Minimized/Tray؛ صفر Toast برای سیگنال/قیمت؛ Restart بدون تکرار |
 
-**P4 Gate:** یک استراتژی غیر-FTS (نمونهٔ قاعده‌محور) از Approval تا سه کلاینت می‌رود؛ Revocation سبز؛ `user.db` بایت‌به‌بایت سالم.
+**P4 Gate:** یک استراتژی غیر-FTS (نمونهٔ قاعده‌محور) از Approval تا سه کلاینت می‌رود؛ Revocation سبز؛ `user.db` بایت‌به‌بایت سالم؛ اعلان فقط برای رویداد واجد شرایط و کلیک به مسیر درست.
 
 ## ۶) P5 — Policy، Compare، Lab و پایداری
 
@@ -105,8 +108,9 @@
 | P5.5 Revocation/Deprecation | ایندکس/Sequence/آفلاین | اعمال در Sync؛ برچسب |
 | P5.6 Observability | `/api/oc/status`، Audit، Health | بدون PII؛ Job/Status |
 | P5.7 Performance Baseline | Today/Lab/Registry روی دادهٔ واقعی | اعداد ثبت‌شده؛ بدون ادعای پیش از اندازه‌گیری |
+| P5.8 Notification Center/Settings | `/notifications`، `/settings/notifications`، فیلتر/گروه/Read، صدا/Preview/Quiet Hours، Deep Link | E2E اعلان؛ صفر رویداد گم‌شده؛ حساسیت Preview |
 
-**P5 Gate:** سیاست‌های امضاشده، Compare/Lab/Revocation کامل؛ ۳ کاربر پایدار.
+**P5 Gate:** سیاست‌های امضاشده، Compare/Lab/Revocation کامل؛ ۳ کاربر پایدار؛ مرکز/تنظیمات اعلان با معیارهای §۱۹.۱۱.
 
 ## ۷) P6 — تولید، AI و GPU (اختیاری/Research)
 
@@ -134,7 +138,9 @@ flowchart LR
 
 - P3 به P0.5 (FTS Parity) و P2 (Evidence) وابسته است؛ اگر FTS ناقص باشد، P3 فقط `unavailable` را نشان می‌دهد.
 - P4 به P1 (نصب امن) و P3 (FTS) وابسته است.
+- P4.8 به P0.8 (Storage/Token) و P1.7 (Toast/AUMID) وابسته است؛ اگر Toast واقعی پاس نشود، P4.8 فقط مرکز اعلان بدون OS Toast عرضه می‌کند و این محدودیت صریح ثبت می‌شود.
 - P5 به Q1/Q11 امضاشده وابسته است؛ بدون آن، Policyها در وضعیت `owner-pending`.
+- P5.8 به Q20/Q21/Q23 برای پیش‌فرض‌های نهایی وابسته است؛ ساخت مرکز/تنظیمات بدون آن‌ها ممکن است.
 - P6 اختیاری است و هیچ Gate محصولی v1 را مسدود نمی‌کند.
 
 ## ۹) مالکیت و تصمیم‌ها
@@ -148,6 +154,9 @@ flowchart LR
 | Q16 روش دسترسی ۳ کاربر | مالک/معماری | PAT پیش‌فرض |
 | Q17 Offline/Revocation | مالک | پیش‌فرض `offline_verified` |
 | Q18 Key Custody | مالک/امنیت | کلید جدا/آفلاین |
+| Q20 ماتریس Severity/Quiet Hours | مالک | پیش‌فرض §۱۹.۲ |
+| Q21 صدا/Preview | مالک | پیش‌فرض امن |
+| Q23 نگهداشت اعلان | مالک | پیش‌فرض Archive |
 | P0/P1 فنی | مهندسی | مطابق ADRها |
 
 ## ۱۰) معیار پذیرش نهایی محصول
@@ -160,6 +169,7 @@ flowchart LR
 6. Today/Library/Compare/Monitor/Lab read-only با دادهٔ واقعی و حالت‌های صادقانه کار می‌کنند.
 7. Any Failure: last-good + Offline + clear status.
 8. اعداد Performance/دسترس‌پذیری اندازه‌گیری و ثبت شده‌اند؛ هیچ عدد اختراعی نیست.
+9. اعلان فقط برای Critical/Important؛ تاریخچهٔ کامل در مرکز؛ Toast در Minimized/Tray؛ کلیک به Deep Link معتبر؛ OS-off تاریخچه را از بین نمی‌برد؛ `user.db` سالم.
 
 ## ۱۱) آنچه در این فاز انجام نمی‌شود
 
