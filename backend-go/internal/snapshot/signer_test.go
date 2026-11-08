@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,6 +44,22 @@ func TestSigner_ParsePublicKey_Base64(t *testing.T) {
 		t.Fatalf("ParsePublicKey with base64 failed: %v", err)
 	}
 	if pub.ID() == 0 {
+		t.Fatal("expected non-zero key ID")
+	}
+}
+
+func TestSigner_ParsePrivateKey_Base64(t *testing.T) {
+	_, privStr, err := GenerateTestKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateTestKeyPair failed: %v", err)
+	}
+
+	b64Priv := base64.StdEncoding.EncodeToString([]byte(privStr))
+	priv, err := ParsePrivateKey(b64Priv, "")
+	if err != nil {
+		t.Fatalf("ParsePrivateKey with base64 failed: %v", err)
+	}
+	if priv.ID() == 0 {
 		t.Fatal("expected non-zero key ID")
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"borsterminal/backend/internal/codal"
 	"borsterminal/backend/internal/db"
@@ -601,7 +602,8 @@ func runCodalPublish(ctx context.Context, args []string, stdout, stderr io.Write
 	password := getMinisignPassword()
 
 	manifestDir := filepath.Dir(*manifestFlag)
-	err = snapshot.PublishSnapshotSet(ctx, http.DefaultClient, token, owner, repoName, tag, manifestDir, manifest, privKey, password)
+	httpClient := &http.Client{Timeout: 600 * time.Second}
+	err = snapshot.PublishSnapshotSet(ctx, httpClient, token, owner, repoName, tag, manifestDir, manifest, privKey, password)
 	if err != nil {
 		fmt.Fprintf(stderr, "error publishing snapshot set: %v\n", err)
 		return 1

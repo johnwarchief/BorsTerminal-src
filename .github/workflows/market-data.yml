@@ -1,4 +1,4 @@
-name: Publish market data asset
+name: Publish market data asset and Stage 4 snapshot
 
 on:
   push:
@@ -7,65 +7,180 @@ on:
       - 'market.db.lzma'
       - '.github/workflows/market-data.yml'
   workflow_dispatch:
+    inputs:
+      target_tag:
+        description: 'Release Tag for Stage 4 Snapshot'
+        required: false
+        default: 'v1.0.98'
 
 permissions:
   contents: read
 
 jobs:
-  publish-market-data:
-    # Bootstrap once from the last source commit that still contained the DB; later runs may override SOURCE_REF.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+  publish-stage4-snapshot:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       DATA_REPO: johnwarchief/BorsTerminal
-      DATA_TAG: data-latest
+      TARGET_TAG: ${{ inputs.target_tag || 'v1.0.98' }}
       SOURCE_REF: 2e73cf1cec1f90bd965ecf59cca02f4295a15c8a
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Restore market baseline from source history
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Require publishing secrets
         shell: bash
         run: |
-          curl --fail --location --retry 3 --output market.db.lzma \
-            "https://raw.githubusercontent.com/johnwarchief/BorsTerminal-src/$SOURCE_REF/market.db.lzma"
-          test -s market.db.lzma
+          test -n "$GH_TOKEN" || { echo "::error::RELEASE_TOKEN is required"; exit 1; }
+          test -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" || { echo "::error::TAURI_SIGNING_PRIVATE_KEY is required"; exit 1; }
 
-      - name: Require publishing token
+      - name: Audit Minisign Secret Key Match (Zero Secret Exposure)
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          python - <<'PY'
+          import os, sys, base64, hashlib
+          sys.path.insert(0, '.')
+          from api.update import UPDATE_PUBKEY
+          import bors_minisign
+
+          raw_key = os.environ.get('KEY', '').strip()
+          if not raw_key:
+              print('::error::TAURI_SIGNING_PRIVATE_KEY is empty', file=sys.stderr)
+              sys.exit(1)
+
+          text = raw_key
+          if not text.startswith('untrusted comment:'):
+              text = base64.b64decode(raw_key).decode('utf-8', 'replace')
+
+          lines = [l.strip() for l in text.splitlines() if l.strip() and not l.startswith('untrusted') and not l.startswith('trusted')]
+          sec_blob = base64.b64decode(lines[0])
+          key_id = sec_blob[2:10].hex().upper()
+
+          pub_armored = base64.b64decode(UPDATE_PUBKEY.strip()).decode('utf-8')
+          pub_lines = [l.strip() for l in pub_armored.splitlines() if l.strip() and not l.startswith('untrusted')]
+          pub_blob = base64.b64decode(pub_lines[0])
+          pub_key_id = pub_blob[2:10].hex().upper()
+
+          if key_id != pub_key_id:
+              print(f'::error::Key ID mismatch: secret={key_id} pubkey={pub_key_id}', file=sys.stderr)
+              sys.exit(1)
+
+          # Verify mathematical signing
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+          priv = Ed25519PrivateKey.from_private_bytes(sec_blob[42:74])
+          test_msg = b'BorsTerminal Stage 4 Production Activation Key Audit'
+          digest = hashlib.blake2b(test_msg, digest_size=64).digest()
+          sig = priv.sign(digest)
+          if not bors_minisign._ed25519_verify(pub_blob[10:42], digest, sig):
+              print('::error::Signature verification failed with UPDATE_PUBKEY', file=sys.stderr)
+              sys.exit(1)
+
+          print(f'::notice::[key-audit] Secret TAURI_SIGNING_PRIVATE_KEY mathematically matches client UPDATE_PUBKEY (KeyID: {key_id}). Zero secret values exposed.')
+          PY
+
+      - name: Build bors-producer binary
         shell: bash
         run: |
-          test -n "$GH_TOKEN" || { echo "RELEASE_TOKEN is required"; exit 1; }
+          cd backend-go
+          go build -v -o ../bin/bors-producer ./cmd/bors-producer
+          cd ..
+          ./bin/bors-producer --version
 
-      - name: Generate metadata
+      - name: Prepare Stage 4 Snapshot Assets
+        shell: bash
+        run: |
+          mkdir -p dist/snapshots
+
+          # 1. Download market.db.lzma from data-latest
+          echo "Downloading market.db.lzma from data-latest..."
+          gh release download data-latest --repo "$DATA_REPO" -p "market.db.lzma" --dir dist/snapshots
+          test -s dist/snapshots/market.db.lzma
+
+          # 2. Download codal.db.lzma from target tag (or v1.0.98 baseline)
+          echo "Downloading codal.db.lzma from $TARGET_TAG..."
+          if ! gh release download "$TARGET_TAG" --repo "$DATA_REPO" -p "codal.db.lzma" --dir dist/snapshots 2>/dev/null; then
+            echo "Falling back to v1.0.98 for codal.db.lzma..."
+            gh release download v1.0.98 --repo "$DATA_REPO" -p "codal.db.lzma" --dir dist/snapshots
+          fi
+          test -s dist/snapshots/codal.db.lzma
+
+          # 3. Generate manifest.json
+          python - <<'PY'
+          import datetime, hashlib, json, os, pathlib
+
+          tag = os.environ.get('TARGET_TAG', 'v1.0.98')
+          p_market = pathlib.Path("dist/snapshots/market.db.lzma")
+          p_codal = pathlib.Path("dist/snapshots/codal.db.lzma")
+
+          manifest = {
+              "snapshot_set_id": tag,
+              "created_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "schema_version": 1,
+              "assets": {
+                  "market": {
+                      "path": "market.db.lzma",
+                      "sha256": hashlib.sha256(p_market.read_bytes()).hexdigest(),
+                      "size_bytes": p_market.stat().st_size
+                  },
+                  "codal": {
+                      "path": "codal.db.lzma",
+                      "sha256": hashlib.sha256(p_codal.read_bytes()).hexdigest(),
+                      "size_bytes": p_codal.stat().st_size
+                  }
+              }
+          }
+          out_file = pathlib.Path("dist/snapshots/manifest.json")
+          out_file.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          print("Manifest generated:")
+          print(json.dumps(manifest, indent=2))
+          PY
+
+      - name: Publish and Sign Snapshot Set via bors-producer
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          BORS_MINISIGN_SECRET_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          ./bin/bors-producer codal publish \
+            --tag="${TARGET_TAG}" \
+            --manifest=dist/snapshots/manifest.json \
+            --repo="${DATA_REPO}"
+
+      - name: Verify Published Release Assets
         shell: bash
         run: |
           python - <<'PY'
-          import datetime, hashlib, json, pathlib, os
-          p = pathlib.Path("market.db.lzma")
-          meta = {
-              "asset": p.name,
-              "size": p.stat().st_size,
-              "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
-              "source_repo": "johnwarchief/BorsTerminal-src",
-              "source_commit": os.environ["SOURCE_REF"],
-              "published_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-          }
-          pathlib.Path("market.db.meta.json").write_text(
-              json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-          )
+          import os, sys, subprocess, json
+          tag = os.environ.get('TARGET_TAG', 'v1.0.98')
+          repo = os.environ.get('DATA_REPO', 'johnwarchief/BorsTerminal')
+          out = subprocess.check_output(["gh", "release", "view", tag, "--repo", repo, "--json", "assets"], text=True)
+          data = json.loads(out)
+          asset_names = {a["name"]: a for a in data.get("assets", [])}
+          required = [
+              "market.db.lzma",
+              "market.db.lzma.sig",
+              "codal.db.lzma",
+              "codal.db.lzma.sig",
+              "manifest.json",
+              "manifest.json.sig"
+          ]
+          missing = [r for r in required if r not in asset_names]
+          if missing:
+              print(f"::error::Missing required snapshot release assets: {missing}", file=sys.stderr)
+              sys.exit(1)
+          for r in required:
+              print(f"[OK] Asset present in {tag}: {r} (size={asset_names[r]['size']})")
+          print(f"::notice::[release-verified] All 6 Stage 4 snapshot assets successfully published to {repo} at {tag}")
           PY
-
-      - name: Create or update data release
-        shell: bash
-        run: |
-          if gh release view "$DATA_TAG" --repo "$DATA_REPO" >/dev/null 2>&1; then
-            echo "[=] release $DATA_TAG exists"
-          else
-            gh release create "$DATA_TAG" --repo "$DATA_REPO" \
-              --title "BorsTerminal Market Data (latest)" \
-              --prerelease \
-              --notes "External market.db.lzma baseline. The source repository intentionally does not track this database."
-          fi
-          gh release upload "$DATA_TAG" market.db.lzma market.db.meta.json \
-            --repo "$DATA_REPO" --clobber

@@ -53,6 +53,18 @@ func ParsePrivateKey(privKeyStr, password string) (minisign.PrivateKey, error) {
 
 	var key minisign.PrivateKey
 	if err := key.UnmarshalText(raw); err != nil {
+		// If UnmarshalText failed, try base64 decoding clean string first (e.g. Tauri base64-wrapped format)
+		if dec, decErr := base64.StdEncoding.DecodeString(clean); decErr == nil {
+			if minisign.IsEncrypted(dec) {
+				if decKey, decErr2 := minisign.DecryptKey(password, dec); decErr2 == nil {
+					return decKey, nil
+				}
+			}
+			if err2 := key.UnmarshalText(dec); err2 == nil {
+				return key, nil
+			}
+		}
+
 		// If UnmarshalText failed and a password is provided, attempt decryption as fallback
 		if password != "" {
 			if decKey, decErr := minisign.DecryptKey(password, raw); decErr == nil {

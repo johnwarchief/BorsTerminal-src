@@ -73,7 +73,7 @@ func NewPublisher(cfg PublisherConfig) (*Publisher, error) {
 	}
 
 	if cfg.Client == nil {
-		cfg.Client = &http.Client{Timeout: 60 * time.Second}
+		cfg.Client = &http.Client{Timeout: 600 * time.Second}
 	}
 
 	if strings.TrimSpace(cfg.BaseURL) == "" {
