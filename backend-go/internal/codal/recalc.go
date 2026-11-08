@@ -751,3 +751,102 @@ func formatExclusionReasons(v any) string {
 		return ""
 	}
 }
+
+// RecalculateAllUniverseFTS تمام نمادهای یکتا را از صورت‌های مالی و فروش ماهانه استخراج،
+// در pipeline_dirty ثبت و به صورت دسته‌ای بازمحاسبه FTS را اجرا می‌کند.
+func RecalculateAllUniverseFTS(ctx context.Context, marketDB *sql.DB) (int, error) {
+	if marketDB == nil {
+		return 0, errors.New("nil database connection")
+	}
+	if err := EnsureRecalcSchema(marketDB); err != nil {
+		return 0, fmt.Errorf("ensure recalc schema: %w", err)
+	}
+
+	fsTbl := findTable(ctx, marketDB, "financial_statements")
+	msTbl := findTable(ctx, marketDB, "monthly_sales")
+
+	var unionParts []string
+	if fsTbl != "" {
+		unionParts = append(unionParts, fmt.Sprintf("SELECT symbol FROM %s WHERE symbol IS NOT NULL AND TRIM(symbol) != ''", fsTbl))
+	}
+	if msTbl != "" {
+		unionParts = append(unionParts, fmt.Sprintf("SELECT symbol FROM %s WHERE symbol IS NOT NULL AND TRIM(symbol) != ''", msTbl))
+	}
+	if len(unionParts) == 0 {
+		return 0, nil
+	}
+
+	query := fmt.Sprintf("SELECT DISTINCT symbol FROM (%s) ORDER BY symbol", strings.Join(unionParts, " UNION "))
+	rows, err := marketDB.QueryContext(ctx, query)
+	if err != nil {
+		return 0, fmt.Errorf("query universe symbols: %w", err)
+	}
+	defer rows.Close()
+
+	var symbols []string
+	seen := make(map[string]bool)
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			return 0, fmt.Errorf("scan universe symbol: %w", err)
+		}
+		sym := strings.TrimSpace(symbolid.Norm(s))
+		if sym != "" && !seen[sym] {
+			seen[sym] = true
+			symbols = append(symbols, sym)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return 0, fmt.Errorf("rows universe symbols: %w", err)
+	}
+
+	if len(symbols) == 0 {
+		return 0, nil
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	tx, err := marketDB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin tx for mark dirty: %w", err)
+	}
+	defer tx.Rollback()
+	stmt, err := tx.PrepareContext(ctx, "INSERT OR REPLACE INTO pipeline_dirty (symbol, source, created_at_utc) VALUES (?, 'universe_bootstrap', ?)")
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("prepare mark dirty: %w", err)
+	}
+	for _, sym := range symbols {
+		if _, err := stmt.ExecContext(ctx, sym, now); err != nil {
+			_ = stmt.Close()
+			_ = tx.Rollback()
+			return 0, fmt.Errorf("exec mark dirty %s: %w", sym, err)
+		}
+	}
+	_ = stmt.Close()
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("commit mark dirty: %w", err)
+	}
+
+	const batchSize = 50
+	totalUpdated := 0
+	for i := 0; i < len(symbols); i += batchSize {
+		select {
+		case <-ctx.Done():
+			return totalUpdated, ctx.Err()
+		default:
+		}
+		end := i + batchSize
+		if end > len(symbols) {
+			end = len(symbols)
+		}
+		batch := symbols[i:end]
+		n, err := RecalculateDirtyFTS(ctx, marketDB, batch)
+		totalUpdated += n
+		if err != nil {
+			return totalUpdated, fmt.Errorf("recalculate batch [%d:%d]: %w", i, end, err)
+		}
+	}
+
+	return totalUpdated, nil
+}
+

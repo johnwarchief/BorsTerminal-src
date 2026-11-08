@@ -132,6 +132,9 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	case "market":
 		return runMarket(ctx, rest, stdout, stderr)
 
+	case "audit":
+		return runAudit(ctx, rest, stdout, stderr)
+
 	case "daemon":
 		return runDaemon(ctx, rest, stdout, stderr)
 
@@ -154,9 +157,11 @@ Usage:
 Available Commands:
   codal run       Discover, extract, validate, and ingest CODAL notices, then recalc dirty FTS
   codal backfill  Backfill pending/unprocessed notices from codal_notices
+  codal recalc    Recalculate FTS 5-axis fundamental metrics (--all or --symbols)
   codal snapshot  Create compressed LZMA snapshots and manifest (signs if keys present)
   codal publish   Publish snapshot set to GitHub Release (requires GITHUB_TOKEN in env)
   market run      Ingest TSETMC market watch, client type history, and corporate events
+  audit universe  Audit data coverage, anomalies, duplicate notices, and FTS statistics
   daemon          Run the background worker daemon orchestrating periodic tasks
   version         Print producer binary version
   help            Print this usage help message
@@ -164,9 +169,11 @@ Available Commands:
 Examples:
   bors-producer codal run --mode=update --data-dir=./data --limit=50
   bors-producer codal backfill --limit=100 --data-dir=./data
+  bors-producer codal recalc --all --data-dir=./data
   bors-producer codal snapshot --data-dir=./data --out=dist/snapshots --tag=v1.0.95
   bors-producer codal publish --tag=v1.0.95 --manifest=dist/snapshots/manifest.json --repo=owner/repo
   bors-producer market run --data-dir=./data --history=true --events=true
+  bors-producer audit universe --data-dir=./data --out=universe_report.json
   bors-producer daemon --config=producer_config.json --data-dir=./data
 `
 	fmt.Fprint(w, helpText)

@@ -342,3 +342,52 @@ func TestRecalculateDirtyFTS_ExplicitSymbols(t *testing.T) {
 		t.Errorf("expected symbol 'فولاد', got %q", storedSym)
 	}
 }
+
+func TestRecalculateAllUniverseFTS(t *testing.T) {
+	db := setupRecalcTestDB(t)
+	ctx := context.Background()
+
+	// درج داده‌های نمادهای نمونه
+	_, err := db.Exec(`
+		INSERT INTO instruments (ins_code, l_val18, l_val30, sector_name, updated_at, paper_type, total_shares)
+		VALUES ('IRO1FOLD0001', 'فولاد', 'فولاد مبارکه', 'فلزات اساسی', '2026-11-01 12:00:00', 1, 100000000000);
+		INSERT INTO instruments (ins_code, l_val18, l_val30, sector_name, updated_at, paper_type, total_shares)
+		VALUES ('IRO1MSMS0001', 'فملی', 'ملی مس', 'فلزات اساسی', '2026-11-01 12:00:00', 1, 100000000000);
+
+		INSERT INTO financial_statements (tracing_no, symbol, period_end, revenue, period_months, basic_eps)
+		VALUES (1001, 'فولاد', '1403/06/31', 1000000000, 6, 120);
+
+		INSERT INTO monthly_sales (tracing_no, symbol, period_end, year, month, monthly_revenue)
+		VALUES (2001, 'فملی', '1403/05/31', 1403, 5, 200000000);
+	`)
+	if err != nil {
+		t.Fatalf("setup universe tables failed: %v", err)
+	}
+
+	count, err := RecalculateAllUniverseFTS(ctx, db)
+	if err != nil {
+		t.Fatalf("RecalculateAllUniverseFTS failed: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("expected 2 recalculated symbols, got %d", count)
+	}
+
+	// بررسی درج هر دو نماد در fts_results
+	var c int
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM fts_results WHERE symbol IN ('فولاد', 'فملی')").Scan(&c); err != nil {
+		t.Fatalf("query fts_results count failed: %v", err)
+	}
+	if c != 2 {
+		t.Errorf("fts_results count = %d, want 2", c)
+	}
+
+	// pipeline_dirty باید پاک شده باشد
+	dirty, err := GetDirtySymbols(ctx, db)
+	if err != nil {
+		t.Fatalf("GetDirtySymbols failed: %v", err)
+	}
+	if len(dirty) != 0 {
+		t.Errorf("expected 0 dirty symbols, got %v", dirty)
+	}
+}
+

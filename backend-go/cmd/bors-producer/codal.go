@@ -30,6 +30,8 @@ func runCodal(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		return runCodalRun(ctx, rest, stdout, stderr)
 	case "backfill":
 		return runCodalBackfill(ctx, rest, stdout, stderr)
+	case "recalc":
+		return runCodalRecalc(ctx, rest, stdout, stderr)
 	case "snapshot":
 		return runCodalSnapshot(ctx, rest, stdout, stderr)
 	case "publish":
@@ -49,6 +51,7 @@ func printCodalHelp(w io.Writer) {
 Subcommands:
   run       Discover feed, extract, validate & ingest notices, recalc FTS
   backfill  Ingest pending/unprocessed notices from codal_notices
+  recalc    Recalculate FTS 5-axis fundamental metrics for symbols
   snapshot  Create compressed LZMA snapshots and signed manifest
   publish   Upload and publish snapshot set to GitHub Release
 
@@ -61,6 +64,11 @@ Flags for 'run':
 Flags for 'backfill':
   --limit=N           Max pending notices to backfill (default: 0 = all)
   --data-dir=PATH     Directory containing database files (default: .)
+
+Flags for 'recalc':
+  --data-dir=PATH     Directory containing database files (default: .)
+  --all               Recalculate FTS for all symbols with financial/sales data
+  --symbols=SYM1,SYM2 Comma-separated list of symbols to recalculate
 
 Flags for 'snapshot':
   --data-dir=PATH     Directory containing database files (default: .)
@@ -323,6 +331,71 @@ func isFinancialStatementNotice(title, letterCode string) bool {
 	return strings.Contains(t, "صورت") || strings.Contains(t, "مالی") ||
 		strings.HasPrefix(lc, "ن-۱") || strings.HasPrefix(lc, "ن۱") ||
 		strings.HasPrefix(lc, "ن-۲") || strings.HasPrefix(lc, "ن۲")
+}
+
+func runCodalRecalc(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
+		return 1
+	}
+
+	fs := flag.NewFlagSet("codal recalc", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	dataDirFlag := fs.String("data-dir", ".", "Directory holding market.db")
+	allFlag := fs.Bool("all", false, "Recalculate FTS for all symbols in database")
+	symbolsFlag := fs.String("symbols", "", "Comma-separated list of symbols to recalculate")
+
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+
+	marketPath := filepath.Join(*dataDirFlag, "market.db")
+	dbConn, err := db.OpenRWC(marketPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "failed to open %s: %v\n", marketPath, err)
+		return 1
+	}
+	defer dbConn.Close()
+
+	if err := codal.EnsureRecalcSchema(dbConn); err != nil {
+		fmt.Fprintf(stderr, "failed to ensure recalc schema: %v\n", err)
+		return 1
+	}
+
+	if *allFlag {
+		fmt.Fprintln(stdout, "Starting full-universe FTS recalculation...")
+		total, err := codal.RecalculateAllUniverseFTS(ctx, dbConn)
+		if err != nil {
+			fmt.Fprintf(stderr, "full universe recalculation failed: %v\n", err)
+			return 1
+		}
+		fmt.Fprintf(stdout, "Full universe FTS recalculation complete: %d symbols updated in fts_results\n", total)
+		return 0
+	}
+
+	var targetSymbols []string
+	if *symbolsFlag != "" {
+		for _, s := range strings.Split(*symbolsFlag, ",") {
+			sym := strings.TrimSpace(s)
+			if sym != "" {
+				targetSymbols = append(targetSymbols, sym)
+			}
+		}
+	}
+
+	if len(targetSymbols) > 0 {
+		fmt.Fprintf(stdout, "Recalculating FTS for %d specified symbols...\n", len(targetSymbols))
+	} else {
+		fmt.Fprintln(stdout, "Recalculating FTS for pending dirty symbols...")
+	}
+
+	count, err := codal.RecalculateDirtyFTS(ctx, dbConn, targetSymbols)
+	if err != nil {
+		fmt.Fprintf(stderr, "recalculation failed: %v\n", err)
+		return 1
+	}
+
+	fmt.Fprintf(stdout, "FTS recalculation complete: %d symbols updated in fts_results\n", count)
+	return 0
 }
 
 // getMinisignSecretKey returns the minisign secret key from environment variables or a key file.
