@@ -107,7 +107,10 @@ func TestOrchestrator_Lifecycle(t *testing.T) {
 	}
 
 	// Wait for task to run at least once
-	time.Sleep(50 * time.Millisecond)
+	startWait := time.Now()
+	for atomic.LoadInt64(&runs) < 1 && time.Since(startWait) < 500*time.Millisecond {
+		time.Sleep(10 * time.Millisecond)
+	}
 	countAfterStart := atomic.LoadInt64(&runs)
 	if countAfterStart < 1 {
 		t.Fatalf("expected task to have run, got count %d", countAfterStart)
@@ -139,7 +142,10 @@ func TestOrchestrator_Lifecycle(t *testing.T) {
 		t.Fatalf("expected RUNNING status, got %v", orch.Status())
 	}
 
-	time.Sleep(50 * time.Millisecond)
+	startResume := time.Now()
+	for atomic.LoadInt64(&runs) <= countAfterWait && time.Since(startResume) < 500*time.Millisecond {
+		time.Sleep(10 * time.Millisecond)
+	}
 	if atomic.LoadInt64(&runs) <= countAfterWait {
 		t.Fatalf("expected task to resume execution: before %d, after %d", countAfterWait, atomic.LoadInt64(&runs))
 	}
@@ -180,7 +186,13 @@ func TestOrchestrator_ScheduledTaskHealth(t *testing.T) {
 	defer orch.Stop()
 
 	// Wait for runs
-	time.Sleep(70 * time.Millisecond)
+	startWaitHealth := time.Now()
+	for time.Since(startWaitHealth) < 500*time.Millisecond {
+		if h, exists := orch.TaskHealth("health_test"); exists && h.RunCount >= 2 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	health, exists := orch.TaskHealth("health_test")
 	if !exists {
@@ -540,7 +552,10 @@ func TestOrchestrator_RegisterWhilePaused(t *testing.T) {
 		t.Fatalf("resume failed: %v", err)
 	}
 
-	time.Sleep(40 * time.Millisecond)
+	startResumeWait := time.Now()
+	for atomic.LoadInt64(&runs) == 0 && time.Since(startResumeWait) < 500*time.Millisecond {
+		time.Sleep(10 * time.Millisecond)
+	}
 	if atomic.LoadInt64(&runs) == 0 {
 		t.Fatal("expected task to execute after resume")
 	}

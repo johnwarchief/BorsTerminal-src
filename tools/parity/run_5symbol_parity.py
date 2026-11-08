@@ -22,6 +22,7 @@ tools/parity/run_5symbol_parity.py
   - Documented Variance (تفاوت اندک ناشی از پالایش مکمل رویدادها در پایتون)
 """
 
+import argparse
 import json
 import os
 import subprocess
@@ -441,43 +442,106 @@ def audit_technical_indicators(go_base: str, symbol: str) -> dict:
     return res
 
 
-def run_5symbol_parity_audit():
+def verify_saved_fixture(fixture_path: str = "tools/parity_5symbols_results.json") -> bool:
+    print("=" * 80)
+    print(f"بررسی صحت نتایج برابری ۵ نماد از فایل فیکسچر: {fixture_path}")
+    print("=" * 80)
+
+    if not os.path.exists(fixture_path):
+        print(f"خطا: فایل {fixture_path} یافت نشد.")
+        return False
+
+    with open(fixture_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    symbols = data.get("symbols", {})
+    all_ok = True
+
+    print(f"{'نماد':<10} | {'حداکثر دلتا قیمت':<18} | {'تطابق کندل':<12} | {'وضعیت بنیادی':<18} | {'اندیکاتورها':<20}")
+    print("-" * 84)
+
+    for sym in CORE_SYMBOLS:
+        if sym not in symbols:
+            print(f"{sym:<10} | غایب در نتایج")
+            all_ok = False
+            continue
+
+        sym_data = symbols[sym]
+        chart = sym_data.get("chart_db", {})
+        fund = sym_data.get("fundamental", {})
+        tech = sym_data.get("technical_indicators", {})
+
+        max_delta = 0.0
+        candle_match = True
+        for adj in [0, 1, 2, 3]:
+            adj_data = chart.get(f"adj_{adj}", {})
+            delta = adj_data.get("price_max_delta", 0.0)
+            if delta > max_delta:
+                max_delta = delta
+            if not adj_data.get("candle_count_match", False):
+                candle_match = False
+
+        fund_verdict = fund.get("verdict", "UNKNOWN")
+        fund_match = fund.get("key_metrics", {}).get("verdict", {}).get("match", False)
+        fund_discrepancies = fund.get("variance_breakdown", {}).get("DISCREPANCY", 0)
+        tech_verdict = tech.get("verdict", "UNKNOWN")
+
+        if max_delta > 1e-4 or not candle_match or not fund_match or fund_discrepancies > 0:
+            all_ok = False
+
+        print(f"{sym:<10} | {max_delta:<18.6f} | {str(candle_match):<12} | {fund_verdict:<18} | {tech_verdict:<20}")
+
+    print("=" * 84)
+    if all_ok:
+        print("نتیجه راستی‌آزمایی: تمام ۵ نماد مرجع دارای اختلاف قیمت 0.000000 و تطابق کامل بنیادی هستند.")
+    else:
+        print("نتیجه راستی‌آزمایی: عدم انطباق در ارزیابی نمادها مشاهده شد.")
+    return all_ok
+
+
+def run_5symbol_parity_audit(go_base: str = None, py_base: str = None, out_json: str = "tools/parity_5symbols_results.json") -> bool:
     print("=" * 80)
     print("اجرای ارزیابی برابری محاسباتی روی ۵ نماد اصلی بورس (Go در برابر Python)")
     print("=" * 80)
 
-    go_exe = os.path.abspath("backend-go/borsd.exe")
-    if not os.path.exists(go_exe):
-        print("کامپایل borsd.exe...")
-        subprocess.check_call(["go", "build", "-o", "borsd.exe", "./cmd/borsd"], cwd="backend-go")
+    go_proc = None
+    py_proc = None
 
-    go_port = 8082
-    py_port = 8081
+    if not go_base or not py_base:
+        go_exe = os.path.abspath("backend-go/borsd.exe")
+        if not os.path.exists(go_exe):
+            print("کامپایل borsd.exe...")
+            subprocess.check_call(["go", "build", "-o", "borsd.exe", "./cmd/borsd"], cwd="backend-go")
 
-    go_proc = subprocess.Popen(
-        [go_exe, "-port", str(go_port), "-db-dir", ".", "-read-only", "-no-loops"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+        go_port = 8082
+        py_port = 8081
 
-    py_env = dict(os.environ, BORS_NO_FETCH_LOOPS="1", PYTHONIOENCODING="utf-8")
-    py_proc = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "app:app", "--port", str(py_port), "--host", "127.0.0.1"],
-        env=py_env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+        go_proc = subprocess.Popen(
+            [go_exe, "-port", str(go_port), "-db-dir", ".", "-read-only", "-no-loops", "-server-only"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
-    time.sleep(3)
+        py_env = dict(os.environ, BORS_NO_FETCH_LOOPS="1", PYTHONIOENCODING="utf-8")
+        py_proc = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "app:app", "--port", str(py_port), "--host", "127.0.0.1"],
+            env=py_env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        time.sleep(3)
+        go_base = f"http://127.0.0.1:{go_port}"
+        py_base = f"http://127.0.0.1:{py_port}"
+
     audit_results = {
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "symbols": {},
     }
 
-    try:
-        go_base = f"http://127.0.0.1:{go_port}"
-        py_base = f"http://127.0.0.1:{py_port}"
+    all_passed = True
 
+    try:
         for sym in CORE_SYMBOLS:
             print(f"\n>>> ارزیابی نماد: {sym} <<<")
             sym_res = {}
@@ -488,7 +552,10 @@ def run_5symbol_parity_audit():
             sym_res["chart_db"] = chart_res
             for adj in [0, 1, 2, 3]:
                 r = chart_res[f"adj_{adj}"]
-                print(f"    تعدیل {adj}: {r['verdict']} ({r['classification']}) | کندل: {r['candles_go']} | اختلاف قیمت: {r.get('price_max_delta', 0):.6f}")
+                delta = r.get("price_max_delta", 0.0)
+                if delta > 1e-4 or r.get("price_mismatches", 0) > 0:
+                    all_passed = False
+                print(f"    تعدیل {adj}: {r['verdict']} ({r['classification']}) | کندل: {r['candles_go']} | اختلاف قیمت: {delta:.6f}")
 
             # ۲. ارزیابی اندیکاتورهای تکنیکال
             print("  [2/3] ارزیابی اندیکاتورهای تکنیکال (/api/chart/{symbol}/indicators)...")
@@ -503,6 +570,8 @@ def run_5symbol_parity_audit():
             print("  [3/3] مقایسه ۵ محور بنیادی (/api/fundamental)...")
             fund_res = audit_fundamental(go_base, py_base, sym)
             sym_res["fundamental"] = fund_res
+            if fund_res.get("verdict") == "DISCREPANCY":
+                all_passed = False
             print(f"    وضعیت کلی: {fund_res['verdict']} | شتاب Go: {fund_res.get('speedup')}x")
             if "axes" in fund_res:
                 for ax_num, ax_name in [
@@ -516,28 +585,57 @@ def run_5symbol_parity_audit():
                     ax_diff_count = len(ax_info.get("diffs", []))
                     g_pass = ax_info.get("go", {}).get("pass")
                     p_pass = ax_info.get("py", {}).get("pass")
+                    if g_pass != p_pass:
+                        all_passed = False
                     print(f"      {ax_name}: تطابق حکم={g_pass == p_pass} | اختلاف‌های جزئی={ax_diff_count}")
 
             audit_results["symbols"][sym] = sym_res
 
     finally:
-        go_proc.terminate()
-        py_proc.terminate()
-        try:
-            go_proc.wait(timeout=3)
-            py_proc.wait(timeout=3)
-        except Exception:
-            go_proc.kill()
-            py_proc.kill()
+        if go_proc:
+            go_proc.terminate()
+            try:
+                go_proc.wait(timeout=3)
+            except Exception:
+                go_proc.kill()
+        if py_proc:
+            py_proc.terminate()
+            try:
+                py_proc.wait(timeout=3)
+            except Exception:
+                py_proc.kill()
 
-    out_json = "tools/parity_5symbols_results.json"
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(audit_results, f, ensure_ascii=False, indent=2)
 
     print("\n" + "=" * 80)
     print(f"نتایج تفصیلی ارزیابی ۵ نماد در {out_json} ذخیره شد.")
     print("=" * 80)
+    return all_passed
+
+
+def main():
+    parser = argparse.ArgumentParser(description="5-Symbol Parity Audit (Go vs Python)")
+    parser.add_argument("--offline", "--verify-saved", action="store_true", dest="offline",
+                        help="Verify parity directly from saved fixture JSON without spawning live servers")
+    parser.add_argument("--fixture", default="tools/parity_5symbols_results.json",
+                        help="Path to fixture JSON for offline verification")
+    parser.add_argument("--go-base", default=None,
+                        help="URL base for already running Go backend (e.g. http://127.0.0.1:8082)")
+    parser.add_argument("--py-base", default=None,
+                        help="URL base for already running Python backend (e.g. http://127.0.0.1:8081)")
+    parser.add_argument("--out", default="tools/parity_5symbols_results.json",
+                        help="Path to output JSON")
+
+    args = parser.parse_args()
+
+    if args.offline:
+        success = verify_saved_fixture(args.fixture)
+    else:
+        success = run_5symbol_parity_audit(go_base=args.go_base, py_base=args.py_base, out_json=args.out)
+
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":
-    run_5symbol_parity_audit()
+    main()
