@@ -148,3 +148,59 @@
 | Strategy/Experiment/Opportunity وجود ندارد | S13، S14، بازبینی schema |
 | FTS کانونیکال و رأی‌محور است | S18، S19، S26 |
 | Stage 3 کامل و Stage 4 در جریان است | S24، S25، `git` |
+
+---
+
+## ۵) منابع فاز ۲ (اعتبارسنجی، متریک، اجرا، FTS)
+
+| ID | منبع | ناشر/نویسنده | سال | نشانی | کاربرد | لایه |
+|---|---|---|---|---|---|---|
+| R53 | “The Probability of Backtest Overfitting” | Bailey, Borwein, López de Prado, Zhu / SSRN | 2017 | https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253 | PBO/CSCV | Peer-reviewed |
+| R54 | “The Deflated Sharpe Ratio” | Bailey & López de Prado / SSRN | 2014 | https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551 | DSR | Peer-reviewed |
+| R55 | *Advances in Financial Machine Learning* | López de Prado / Wiley | 2018 | https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086 | Purged CV/CPCV، متدولوژی | Primary |
+| R56 | “A Test for Superior Predictive Ability” | Hansen / JBES | 2005 | https://doi.org/10.1198/073500105000000063 | SPA | Peer-reviewed |
+| R57 | “Backtesting” | Harvey & Liu / JPM | 2015 | https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2345489 | پروتکل بک‌تست | Peer-reviewed |
+| R58 | “Detection of false investment strategies using unsupervised learning methods” | López de Prado & Lewis / SSRN | 2019 | https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3167017 | خوشه‌بندی Trialها/N_eff | Peer-reviewed |
+| R59 | “Controlling the False Discovery Rate” | Benjamini & Hochberg / JRSS-B | 1995 | https://doi.org/10.1111/j.2517-6161.1995.tb02031.x | BH/FDR | Peer-reviewed |
+| R60 | “The control of the false discovery rate in multiple testing under dependency” | Benjamini & Yekutieli / Annals of Statistics | 2001 | https://doi.org/10.1214/aos/1013699998 | BY/FDR وابسته | Peer-reviewed |
+| R61 | “The Stationary Bootstrap” | Politis & Romano / JASA | 1994 | https://doi.org/10.1080/01621459.1994.10476870 | Bootstrap سری زمانی | Peer-reviewed |
+| R62 | “Automatic Block-Length Selection for the Dependent Bootstrap” | Patton, Politis & White / Econometric Reviews | 2009 | — (نشانی تأییدنشده) | طول بلوک Bootstrap | Peer-reviewed |
+| R63 | “The Sharpe Ratio” | Sharpe / JPM | 1994 | https://doi.org/10.3905/jpm.1994.409501 | Sharpe و خطا | Peer-reviewed |
+| R64 | “The Statistics of Sharpe Ratios” | Lo / FAJ | 2002 | https://doi.org/10.2469/faj.v58.n4.2453 | خودهمبستگی/N_eff | Peer-reviewed |
+| R65 | “Performance Measurement in a Downside Risk Framework” | Sortino & Price / JOI | 1994 | https://doi.org/10.3905/joi.3.3.59 | Sortino | Peer-reviewed |
+| R66 | “Maximum Drawdown” | Magdon-Ismail & Atiya / Risk | 2004 | https://www.cs.rpi.edu/~magdon/ps/journal/drawdown_risk.pdf | MDD | Peer-reviewed |
+| R67 | “Optimization of Conditional Value-at-Risk” | Rockafellar & Uryasev / J. Risk | 2000 | https://doi.org/10.21314/JOR.2000.038 | CVaR | Peer-reviewed |
+| R68 | “On the coherence of expected shortfall” | Acerbi & Tasche / JBF | 2002 | https://doi.org/10.1016/S0378-4266(02)00283-2 | ES/CVaR | Peer-reviewed |
+| R69 | “Robust performance hypothesis testing with the Sharpe ratio” | Ledoit & Wolf / JEF | 2008 | https://doi.org/10.1016/j.jempfin.2008.03.002 | مقایسهٔ Sharp | Peer-reviewed |
+| R70 | “Illiquidity and stock returns” | Amihud / JFM | 2002 | https://doi.org/10.1016/S1386-4181(01)00024-6 | نقدشوندگی/ظرفیت | Peer-reviewed |
+| R71 | “Optimal execution of portfolio transactions” | Almgren & Chriss / J. Risk | 2001 | https://doi.org/10.21314/JOR.2001.041 | اثر بازار | Peer-reviewed |
+| R72 | “Trading Costs” | Frazzini, Israel & Moskowitz / SSRN | 2018 | https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3229719 | هزینهٔ معامله | Industry Research |
+| R73 | “A Taxonomy of Anomalies and Their Trading Costs” | Novy-Marx & Velikov / RFS | 2016 | https://doi.org/10.1093/rfs/hhv063 | هزینه و ظرفیت | Peer-reviewed |
+| R74 | تسویهٔ معاملات سهام (T+2) | Bourse24 | — | https://www.bourse24.ir/news/334229 | T+2 | Secondary |
+| R75 | کارمزد معاملات بورس ۱۴۰۵ | Charisma | — | https://learning.charisma.ir/beginning-investing/%DA%A9%D8%A7%D8%B1%D9%85%D8%B2%D8%AF-%D9%85%D8%B9%D8%A7%D9%85%D9%84%D8%A7%D8%AA/ | کارمزد نامتقارن | Secondary |
+
+### شواهد تازهٔ مخزن (فاز ۲)
+
+| ID | مسیر | چه چیزی را ثابت می‌کند |
+|---|---|---|
+| S31 | `docs/execution/SARKHATI-ARCHITECTURE.md:71-75` | عمق `order_book` فقط یک سطح و تازگی حدود ۹۰ ثانیه |
+| S32 | `execution_contract.py:207-217` | `None` = نامعلوم؛ صفر جعلی ممنوع |
+| S33 | `symbol_identity.py:96-120,244-279` | تداوم هویت با `ins_code`/ISIN |
+| S34 | `adjustment_engine.py:82-91,142-187` | Back-adjustment ضربی با لنگر Close |
+| S35 | `corporate_ledger.py:19,151-165` | رویدادهای شرکتی و تفکیک تاریخ انتشار |
+| S36 | `api/fundamental.py:1412` | `evaluate_v10` و پنج محور/سه‌حالتی |
+| S37 | `api/chart.py:5603,6011,6083` | FTS تکنیکال و `as_of` |
+| S38 | `funnel_engine.py:1471,1742` | `status_matrix` و موتور قیف |
+| S39 | `backend-go/internal/funnel/funnel.go:40-150` | قیف Go فعلاً Stub |
+| S40 | `backend-go/internal/screener/screener.go:48,148` | اسکرینر Go فقط کش می‌خواند |
+| S41 | `backend-go/internal/chart/fts_swings.go:20` | Ruleset تکنیکال Go = «3» |
+| S42 | `backend-go/internal/ftsconfig/store.go:14-150` | Config FTS در SQLite، جدا از فایل Python |
+| S43 | `api/screener.py:430` | Config Hash فقط داخلی است |
+| S44 | `fts_engine.py:272-278,438-517` | `fts_results` به‌عنوان کش، نه منبع حقیقت |
+| S45 | `api/bot.py:234-235` | دامنهٔ نشست عمداً `None` است، نه ±٪ |
+| S46 | `backtest_engine.py:155-165` | Digest فعلی؛ نبود Data Hash/Seed/Trial Count |
+| S47 | `trade_sim.py:263-272` | سقف ۲٪ حجم و Partial Fill |
+| S48 | `market_universe.py:104-112` | وضعیت توقف/سوسپانس |
+| S49 | `codal_periods.py` | Canonical `publish_date` و دوره |
+| S50 | `price_basis.py` | تنها resolver مبنای قیمت |
+

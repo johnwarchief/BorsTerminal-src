@@ -8,8 +8,8 @@
 | فاز | وضعیت | خروجی |
 |---|---|---|
 | ۱ — Product Discovery | تکمیل‌شده | `01-PRODUCT-DISCOVERY.md` |
-| ۲ — Strategy Intelligence | در انتظار شروع | `02-STRATEGY-INTELLIGENCE.md` |
-| ۳ — UX & Product Experience | در انتظار فاز ۲ | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `prototype/` |
+| ۲ — Strategy Intelligence | تکمیل‌شده | `02-STRATEGY-INTELLIGENCE.md` |
+| ۳ — UX & Product Experience | در حال اجرا | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `prototype/` |
 | ۴ — Technical Architecture | **مسدود تا پذیرش نهایی Stage 4** | `04-TECHNICAL-ARCHITECTURE.md` |
 | گزارش نهایی | در انتظار فازها | گزارش جامع در گفت‌وگو + `IMPLEMENTATION-ROADMAP.md` |
 
