@@ -40,13 +40,19 @@ func NewHandler(dataDir string) *Handler {
 		pubKey = DefaultUpdatePubKey
 	}
 
+	// No client-wide Timeout: it also bounds response-body reads, and a full
+	// snapshot set is ~80 MB. runSnapshotDownloadAndApply bounds the operation
+	// with a context instead; the transport still fails fast on a dead peer.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ResponseHeaderTimeout = 60 * time.Second
+
 	return &Handler{
 		dataDir:         dataDir,
 		clock:           time.Now,
 		prober:          defaultProber{},
 		pubKey:          pubKey,
 		snapshotBaseURL: baseURL,
-		httpClient:      &http.Client{Timeout: 60 * time.Second},
+		httpClient:      &http.Client{Transport: transport},
 	}
 }
 
@@ -167,7 +173,7 @@ func (h *Handler) runSnapshotDownloadAndApply(baseURL string) {
 		dbdlMu.Unlock()
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
 	defer cancel()
 
 	_ = h.DownloadAndApplySnapshot(ctx, baseURL)

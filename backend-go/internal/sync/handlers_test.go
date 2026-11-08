@@ -19,6 +19,21 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+func TestNewHandlerDownloadClientHasNoOverallTimeout(t *testing.T) {
+	h := NewHandler(t.TempDir())
+
+	if h.httpClient.Timeout != 0 {
+		t.Fatalf("httpClient.Timeout = %v, want 0: a client-wide timeout also cuts off slow snapshot body reads", h.httpClient.Timeout)
+	}
+	tr, ok := h.httpClient.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("httpClient.Transport = %T, want *http.Transport", h.httpClient.Transport)
+	}
+	if tr.ResponseHeaderTimeout != 60*time.Second {
+		t.Fatalf("ResponseHeaderTimeout = %v, want 60s", tr.ResponseHeaderTimeout)
+	}
+}
+
 func TestSyncHandlers(t *testing.T) {
 	tmp := t.TempDir()
 	h := NewHandler(tmp)

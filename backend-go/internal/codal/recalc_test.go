@@ -342,3 +342,128 @@ func TestRecalculateDirtyFTS_ExplicitSymbols(t *testing.T) {
 		t.Errorf("expected symbol 'فولاد', got %q", storedSym)
 	}
 }
+
+func TestRecalculateAllUniverseFTS(t *testing.T) {
+	db := setupRecalcTestDB(t)
+	ctx := context.Background()
+
+	// درج داده‌های نمادهای نمونه
+	_, err := db.Exec(`
+		INSERT INTO instruments (ins_code, l_val18, l_val30, sector_name, updated_at, paper_type, total_shares)
+		VALUES ('IRO1FOLD0001', 'فولاد', 'فولاد مبارکه', 'فلزات اساسی', '2026-11-01 12:00:00', 1, 100000000000);
+		INSERT INTO instruments (ins_code, l_val18, l_val30, sector_name, updated_at, paper_type, total_shares)
+		VALUES ('IRO1MSMS0001', 'فملی', 'ملی مس', 'فلزات اساسی', '2026-11-01 12:00:00', 1, 100000000000);
+
+		INSERT INTO financial_statements (tracing_no, symbol, period_end, revenue, period_months, basic_eps)
+		VALUES (1001, 'فولاد', '1403/06/31', 1000000000, 6, 120);
+
+		INSERT INTO monthly_sales (tracing_no, symbol, period_end, year, month, monthly_revenue)
+		VALUES (2001, 'فملی', '1403/05/31', 1403, 5, 200000000);
+	`)
+	if err != nil {
+		t.Fatalf("setup universe tables failed: %v", err)
+	}
+
+	count, err := RecalculateAllUniverseFTS(ctx, db)
+	if err != nil {
+		t.Fatalf("RecalculateAllUniverseFTS failed: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("expected 2 recalculated symbols, got %d", count)
+	}
+
+	// بررسی درج هر دو نماد در fts_results
+	var c int
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM fts_results WHERE symbol IN ('فولاد', 'فملی')").Scan(&c); err != nil {
+		t.Fatalf("query fts_results count failed: %v", err)
+	}
+	if c != 2 {
+		t.Errorf("fts_results count = %d, want 2", c)
+	}
+
+	// pipeline_dirty باید پاک شده باشد
+	dirty, err := GetDirtySymbols(ctx, db)
+	if err != nil {
+		t.Fatalf("GetDirtySymbols failed: %v", err)
+	}
+	if len(dirty) != 0 {
+		t.Errorf("expected 0 dirty symbols, got %v", dirty)
+	}
+}
+
+func TestEnsureRecalcSchemaMigratesLegacyPipelineDirty(t *testing.T) {
+	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "legacy_dirty.db"))
+	if err != nil {
+		t.Fatalf("open test db: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	if _, err := db.Exec(`CREATE TABLE pipeline_dirty (
+		symbol TEXT NOT NULL,
+		axis TEXT NOT NULL,
+		reason TEXT,
+		marked_at TEXT,
+		PRIMARY KEY (symbol, axis)
+	)`); err != nil {
+		t.Fatalf("create legacy pipeline_dirty: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO pipeline_dirty (symbol, axis, reason, marked_at)
+		VALUES ('فولاد', 'fundamental', 'legacy row', '2026-01-02T03:04:05Z')`); err != nil {
+		t.Fatalf("seed legacy row: %v", err)
+	}
+
+	if err := EnsureRecalcSchema(db); err != nil {
+		t.Fatalf("EnsureRecalcSchema migrate: %v", err)
+	}
+
+	cols := make(map[string]bool)
+	rows, err := db.Query(`PRAGMA table_info(pipeline_dirty)`)
+	if err != nil {
+		t.Fatalf("read migrated columns: %v", err)
+	}
+	for rows.Next() {
+		var (
+			cid     int
+			name    string
+			ctype   string
+			notNull int
+			dflt    any
+			pk      int
+		)
+		if err := rows.Scan(&cid, &name, &ctype, &notNull, &dflt, &pk); err != nil {
+			_ = rows.Close()
+			t.Fatalf("scan migrated column: %v", err)
+		}
+		cols[name] = true
+	}
+	_ = rows.Close()
+	if !cols["source"] || !cols["created_at_utc"] {
+		t.Fatalf("migrated columns = %v, want source and created_at_utc", cols)
+	}
+
+	var source, createdAt string
+	if err := db.QueryRow(`SELECT source, created_at_utc FROM pipeline_dirty WHERE symbol='فولاد'`).Scan(&source, &createdAt); err != nil {
+		t.Fatalf("read migrated row: %v", err)
+	}
+	if source != "fundamental" {
+		t.Errorf("migrated source = %q, want fundamental", source)
+	}
+	if createdAt != "2026-01-02T03:04:05Z" {
+		t.Errorf("migrated created_at_utc = %q, want legacy marked_at", createdAt)
+	}
+
+	if err := MarkDirty(context.Background(), db, "فملی", "codal"); err != nil {
+		t.Fatalf("MarkDirty after migration: %v", err)
+	}
+	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pipeline_dirty`).Scan(&count); err != nil {
+		t.Fatalf("count migrated rows: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("pipeline_dirty rows = %d, want 2", count)
+	}
+
+	if err := EnsureRecalcSchema(db); err != nil {
+		t.Fatalf("EnsureRecalcSchema idempotent: %v", err)
+	}
+}

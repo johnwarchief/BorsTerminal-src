@@ -201,10 +201,21 @@ func GetSyncStatus(dataDir string, now time.Time) map[string]any {
 
 	merged["ban_until"] = getString(st, "ban_until")
 
-	return map[string]any{
+	res := map[string]any{
 		"status": "success",
 		"sync":   merged,
 	}
+
+	activeGenPath := filepath.Join(dataDir, "active_generation.json")
+	if _, err := os.Stat(activeGenPath); err == nil {
+		activeGen := safeReadJSON(activeGenPath)
+		if len(activeGen) > 0 {
+			res["active_generation"] = activeGen
+			merged["active_generation"] = activeGen
+		}
+	}
+
+	return res
 }
 
 func getString(m map[string]any, key string) string {

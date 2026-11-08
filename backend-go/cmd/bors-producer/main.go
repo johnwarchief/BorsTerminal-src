@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"borsterminal/backend/internal/snapshot"
 )
 
 var version = "1.0.95"
@@ -16,6 +20,42 @@ var version = "1.0.95"
 // Version returns the current bors-producer binary version.
 func Version() string {
 	return version
+}
+
+// initLogging sets up the default slog structured logger based on level and format strings.
+// Environment variables LOG_LEVEL and LOG_FORMAT take precedence when present and non-empty.
+func initLogging(levelStr, formatStr string) {
+	if envL := strings.TrimSpace(os.Getenv("LOG_LEVEL")); envL != "" {
+		levelStr = envL
+	}
+	if envF := strings.TrimSpace(os.Getenv("LOG_FORMAT")); envF != "" {
+		formatStr = envF
+	}
+
+	var level slog.Level
+	switch strings.ToLower(strings.TrimSpace(levelStr)) {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn", "warning":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+
+	opts := &slog.HandlerOptions{
+		Level: level,
+	}
+
+	var handler slog.Handler
+	if strings.EqualFold(strings.TrimSpace(formatStr), "json") {
+		handler = slog.NewJSONHandler(os.Stderr, opts)
+	} else {
+		handler = slog.NewTextHandler(os.Stderr, opts)
+	}
+
+	slog.SetDefault(slog.New(handler))
 }
 
 var blockedFlags = map[string]struct{}{
@@ -56,6 +96,7 @@ func checkSensitiveCLIArgs(args []string, stderr io.Writer) error {
 }
 
 func main() {
+	initLogging(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_FORMAT"))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -66,6 +107,7 @@ func main() {
 // Run parses command-line arguments and dispatches to the appropriate subcommand.
 // Returns an exit code: 0 for success, non-zero for error.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	initLogging(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_FORMAT"))
 	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
 		return 1
 	}
@@ -93,8 +135,23 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	case "market":
 		return runMarket(ctx, rest, stdout, stderr)
 
+	case "audit":
+		return runAudit(ctx, rest, stdout, stderr)
+
 	case "daemon":
 		return runDaemon(ctx, rest, stdout, stderr)
+
+	case "keygen":
+		pub, priv, err := snapshot.GenerateTestKeyPair()
+		if err != nil {
+			fmt.Fprintf(stderr, "keygen failed: %v\n", err)
+			return 1
+		}
+		outMap := map[string]string{"public_key": pub, "secret_key": priv}
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(outMap)
+		return 0
 
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\nRun 'bors-producer help' for usage.\n", cmd)
@@ -115,9 +172,11 @@ Usage:
 Available Commands:
   codal run       Discover, extract, validate, and ingest CODAL notices, then recalc dirty FTS
   codal backfill  Backfill pending/unprocessed notices from codal_notices
+  codal recalc    Recalculate FTS 5-axis fundamental metrics (--all or --symbols)
   codal snapshot  Create compressed LZMA snapshots and manifest (signs if keys present)
   codal publish   Publish snapshot set to GitHub Release (requires GITHUB_TOKEN in env)
   market run      Ingest TSETMC market watch, client type history, and corporate events
+  audit universe  Audit data coverage, anomalies, duplicate notices, and FTS statistics
   daemon          Run the background worker daemon orchestrating periodic tasks
   version         Print producer binary version
   help            Print this usage help message
@@ -125,9 +184,11 @@ Available Commands:
 Examples:
   bors-producer codal run --mode=update --data-dir=./data --limit=50
   bors-producer codal backfill --limit=100 --data-dir=./data
+  bors-producer codal recalc --all --data-dir=./data
   bors-producer codal snapshot --data-dir=./data --out=dist/snapshots --tag=v1.0.95
   bors-producer codal publish --tag=v1.0.95 --manifest=dist/snapshots/manifest.json --repo=owner/repo
   bors-producer market run --data-dir=./data --history=true --events=true
+  bors-producer audit universe --data-dir=./data --out=universe_report.json
   bors-producer daemon --config=producer_config.json --data-dir=./data
 `
 	fmt.Fprint(w, helpText)

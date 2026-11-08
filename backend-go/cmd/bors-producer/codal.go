@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"borsterminal/backend/internal/codal"
 	"borsterminal/backend/internal/db"
@@ -30,6 +31,8 @@ func runCodal(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		return runCodalRun(ctx, rest, stdout, stderr)
 	case "backfill":
 		return runCodalBackfill(ctx, rest, stdout, stderr)
+	case "recalc":
+		return runCodalRecalc(ctx, rest, stdout, stderr)
 	case "snapshot":
 		return runCodalSnapshot(ctx, rest, stdout, stderr)
 	case "publish":
@@ -49,6 +52,7 @@ func printCodalHelp(w io.Writer) {
 Subcommands:
   run       Discover feed, extract, validate & ingest notices, recalc FTS
   backfill  Ingest pending/unprocessed notices from codal_notices
+  recalc    Recalculate FTS 5-axis fundamental metrics for symbols
   snapshot  Create compressed LZMA snapshots and signed manifest
   publish   Upload and publish snapshot set to GitHub Release
 
@@ -61,6 +65,11 @@ Flags for 'run':
 Flags for 'backfill':
   --limit=N           Max pending notices to backfill (default: 0 = all)
   --data-dir=PATH     Directory containing database files (default: .)
+
+Flags for 'recalc':
+  --data-dir=PATH     Directory containing database files (default: .)
+  --all               Recalculate FTS for all symbols with financial/sales data
+  --symbols=SYM1,SYM2 Comma-separated list of symbols to recalculate
 
 Flags for 'snapshot':
   --data-dir=PATH     Directory containing database files (default: .)
@@ -325,6 +334,101 @@ func isFinancialStatementNotice(title, letterCode string) bool {
 		strings.HasPrefix(lc, "ن-۲") || strings.HasPrefix(lc, "ن۲")
 }
 
+func runCodalRecalc(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
+		return 1
+	}
+
+	fs := flag.NewFlagSet("codal recalc", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	dataDirFlag := fs.String("data-dir", ".", "Directory holding market.db")
+	allFlag := fs.Bool("all", false, "Recalculate FTS for all symbols in database")
+	symbolsFlag := fs.String("symbols", "", "Comma-separated list of symbols to recalculate")
+
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+
+	marketPath := filepath.Join(*dataDirFlag, "market.db")
+	dbConn, err := db.OpenRWC(marketPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "failed to open %s: %v\n", marketPath, err)
+		return 1
+	}
+	defer dbConn.Close()
+
+	if err := codal.EnsureRecalcSchema(dbConn); err != nil {
+		fmt.Fprintf(stderr, "failed to ensure recalc schema: %v\n", err)
+		return 1
+	}
+
+	if *allFlag {
+		fmt.Fprintln(stdout, "Starting full-universe FTS recalculation...")
+		total, err := codal.RecalculateAllUniverseFTS(ctx, dbConn)
+		if err != nil {
+			fmt.Fprintf(stderr, "full universe recalculation failed: %v\n", err)
+			return 1
+		}
+		fmt.Fprintf(stdout, "Full universe FTS recalculation complete: %d symbols updated in fts_results\n", total)
+		return 0
+	}
+
+	var targetSymbols []string
+	if *symbolsFlag != "" {
+		for _, s := range strings.Split(*symbolsFlag, ",") {
+			sym := strings.TrimSpace(s)
+			if sym != "" {
+				targetSymbols = append(targetSymbols, sym)
+			}
+		}
+	}
+
+	if len(targetSymbols) > 0 {
+		fmt.Fprintf(stdout, "Recalculating FTS for %d specified symbols...\n", len(targetSymbols))
+	} else {
+		fmt.Fprintln(stdout, "Recalculating FTS for pending dirty symbols...")
+	}
+
+	count, err := codal.RecalculateDirtyFTS(ctx, dbConn, targetSymbols)
+	if err != nil {
+		fmt.Fprintf(stderr, "recalculation failed: %v\n", err)
+		return 1
+	}
+
+	fmt.Fprintf(stdout, "FTS recalculation complete: %d symbols updated in fts_results\n", count)
+	return 0
+}
+
+// getMinisignSecretKey returns the minisign secret key from environment variables or a key file.
+// Precedence: BORS_MINISIGN_SECRET_KEY -> MINISIGN_SECRET_KEY -> BORS_MINISIGN_KEY_FILE -> MINISIGN_KEY_FILE.
+func getMinisignSecretKey() string {
+	if k := os.Getenv("BORS_MINISIGN_SECRET_KEY"); strings.TrimSpace(k) != "" {
+		return strings.TrimSpace(k)
+	}
+	if k := os.Getenv("MINISIGN_SECRET_KEY"); strings.TrimSpace(k) != "" {
+		return strings.TrimSpace(k)
+	}
+	kf := os.Getenv("BORS_MINISIGN_KEY_FILE")
+	if strings.TrimSpace(kf) == "" {
+		kf = os.Getenv("MINISIGN_KEY_FILE")
+	}
+	if strings.TrimSpace(kf) != "" {
+		if b, err := os.ReadFile(strings.TrimSpace(kf)); err == nil {
+			return strings.TrimSpace(string(b))
+		}
+	}
+	return ""
+}
+
+// getMinisignPassword returns the minisign password from environment variables.
+// Precedence: BORS_MINISIGN_PASSWORD -> MINISIGN_PASSWORD.
+func getMinisignPassword() string {
+	if p := os.Getenv("BORS_MINISIGN_PASSWORD"); p != "" {
+		return p
+	}
+	return os.Getenv("MINISIGN_PASSWORD")
+}
+
 func runCodalSnapshot(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
 		return 1
@@ -423,18 +527,21 @@ func runCodalSnapshot(ctx context.Context, args []string, stdout, stderr io.Writ
 
 	fmt.Fprintf(stdout, "Created snapshot set %s with %d assets in %s\n", manifest.SnapshotSetID, len(manifest.Assets), outDir)
 
-	privKey := os.Getenv("MINISIGN_SECRET_KEY")
-	if privKey == "" {
-		if keyFile := os.Getenv("MINISIGN_KEY_FILE"); keyFile != "" {
-			b, err := os.ReadFile(keyFile)
-			if err == nil {
-				privKey = string(b)
-			}
-		}
-	}
-
-	password := os.Getenv("MINISIGN_PASSWORD")
+	privKey := getMinisignSecretKey()
+	password := getMinisignPassword()
 	if privKey != "" {
+		for name, assetMeta := range manifest.Assets {
+			assetPath := assetMeta.Path
+			if !filepath.IsAbs(assetPath) {
+				assetPath = filepath.Join(outDir, assetPath)
+			}
+			asig, err := snapshot.SignAsset(assetPath, privKey, password)
+			if err != nil {
+				fmt.Fprintf(stderr, "error signing asset %s: %v\n", name, err)
+				return 1
+			}
+			fmt.Fprintf(stdout, "Asset signature generated: %s -> %s\n", name, asig)
+		}
 		manifestPath := filepath.Join(outDir, "manifest.json")
 		sigPath, err := snapshot.SignAsset(manifestPath, privKey, password)
 		if err != nil {
@@ -487,23 +594,16 @@ func runCodalPublish(ctx context.Context, args []string, stdout, stderr io.Write
 		return 1
 	}
 
-	privKey := os.Getenv("MINISIGN_SECRET_KEY")
-	if privKey == "" {
-		if keyFile := os.Getenv("MINISIGN_KEY_FILE"); keyFile != "" {
-			b, err := os.ReadFile(keyFile)
-			if err == nil {
-				privKey = string(b)
-			}
-		}
-	}
+	privKey := getMinisignSecretKey()
 	if strings.TrimSpace(privKey) == "" {
-		fmt.Fprintf(stderr, "error: MINISIGN_SECRET_KEY or MINISIGN_KEY_FILE environment variable is required to sign release assets for publishing\n")
+		fmt.Fprintf(stderr, "error: BORS_MINISIGN_SECRET_KEY, MINISIGN_SECRET_KEY or MINISIGN_KEY_FILE environment variable is required to sign release assets for publishing\n")
 		return 1
 	}
-	password := os.Getenv("MINISIGN_PASSWORD")
+	password := getMinisignPassword()
 
 	manifestDir := filepath.Dir(*manifestFlag)
-	err = snapshot.PublishSnapshotSet(ctx, http.DefaultClient, token, owner, repoName, tag, manifestDir, manifest, privKey, password)
+	httpClient := &http.Client{Timeout: 600 * time.Second}
+	err = snapshot.PublishSnapshotSet(ctx, httpClient, token, owner, repoName, tag, manifestDir, manifest, privKey, password)
 	if err != nil {
 		fmt.Fprintf(stderr, "error publishing snapshot set: %v\n", err)
 		return 1

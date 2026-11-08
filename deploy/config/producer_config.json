@@ -1,0 +1,15 @@
+{
+  "data_dir": "/app/data",
+  "peak_interval_sec": 600,
+  "off_peak_interval_sec": 7200,
+  "market_interval_sec": 60,
+  "corporate_interval_sec": 7200,
+  "snapshot_daily_utc": "06:00",
+  "catchup_missed_daily": true,
+  "snapshot_out_dir": "/app/snapshots",
+  "publish_enabled": false,
+  "publish_repo": "johnwarchief/BorsTerminal",
+  "drain_timeout_sec": 10,
+  "log_level": "info",
+  "log_format": "json"
+}

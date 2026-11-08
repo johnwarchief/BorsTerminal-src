@@ -370,6 +370,64 @@ func TestCodalSnapshot(t *testing.T) {
 			t.Errorf("expected error message about specified database, got: %s", stderr.String())
 		}
 	})
+
+	t.Run("SnapshotWithBorsMinisignSecretKey", func(t *testing.T) {
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", privStr)
+		t.Setenv("MINISIGN_SECRET_KEY", "")
+		t.Setenv("BORS_MINISIGN_KEY_FILE", "")
+		t.Setenv("MINISIGN_KEY_FILE", "")
+
+		outDir := filepath.Join(t.TempDir(), "snapshots_bors_key")
+		var stdout, stderr bytes.Buffer
+		code := Run(ctx, []string{
+			"codal", "snapshot",
+			"--data-dir=" + dataDir,
+			"--out=" + outDir,
+			"--tag=v1.0.95-bors-key",
+		}, &stdout, &stderr)
+
+		if code != 0 {
+			t.Fatalf("codal snapshot failed with code %d; stderr: %s", code, stderr.String())
+		}
+		sigPath := filepath.Join(outDir, "manifest.json.sig")
+		if _, err := os.Stat(sigPath); err != nil {
+			t.Fatalf("signature file missing: %v", err)
+		}
+		if err := snapshot.VerifyAsset(filepath.Join(outDir, "manifest.json"), sigPath, pubStr); err != nil {
+			t.Errorf("signature verification failed: %v", err)
+		}
+	})
+
+	t.Run("SnapshotWithBorsMinisignKeyFile", func(t *testing.T) {
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", "")
+		t.Setenv("MINISIGN_SECRET_KEY", "")
+		keyPath := filepath.Join(t.TempDir(), "secret.key")
+		if err := os.WriteFile(keyPath, []byte(privStr), 0600); err != nil {
+			t.Fatalf("write secret key: %v", err)
+		}
+		t.Setenv("BORS_MINISIGN_KEY_FILE", keyPath)
+		t.Setenv("MINISIGN_KEY_FILE", "")
+
+		outDir := filepath.Join(t.TempDir(), "snapshots_bors_key_file")
+		var stdout, stderr bytes.Buffer
+		code := Run(ctx, []string{
+			"codal", "snapshot",
+			"--data-dir=" + dataDir,
+			"--out=" + outDir,
+			"--tag=v1.0.95-bors-file",
+		}, &stdout, &stderr)
+
+		if code != 0 {
+			t.Fatalf("codal snapshot failed with code %d; stderr: %s", code, stderr.String())
+		}
+		sigPath := filepath.Join(outDir, "manifest.json.sig")
+		if _, err := os.Stat(sigPath); err != nil {
+			t.Fatalf("signature file missing: %v", err)
+		}
+		if err := snapshot.VerifyAsset(filepath.Join(outDir, "manifest.json"), sigPath, pubStr); err != nil {
+			t.Errorf("signature verification failed: %v", err)
+		}
+	})
 }
 
 func TestMarketRun(t *testing.T) {
@@ -683,5 +741,203 @@ func TestDaemonGracefulShutdown(t *testing.T) {
 	}
 	if !strings.Contains(outStr, "Producer daemon stopped cleanly.") {
 		t.Errorf("stdout does not confirm clean shutdown: %s", outStr)
+	}
+}
+
+func TestMinisignSecretKeyAliases(t *testing.T) {
+	_, privKey1, err := snapshot.GenerateTestKeyPair()
+	if err != nil {
+		t.Fatalf("generate key 1: %v", err)
+	}
+	_, privKey2, err := snapshot.GenerateTestKeyPair()
+	if err != nil {
+		t.Fatalf("generate key 2: %v", err)
+	}
+
+	t.Run("DirectEnvBorsMinisignSecretKey", func(t *testing.T) {
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", privKey1)
+		t.Setenv("MINISIGN_SECRET_KEY", "")
+		t.Setenv("BORS_MINISIGN_KEY_FILE", "")
+		t.Setenv("MINISIGN_KEY_FILE", "")
+
+		got := getMinisignSecretKey()
+		if got != privKey1 {
+			t.Errorf("expected %s, got %s", privKey1, got)
+		}
+	})
+
+	t.Run("PrecedenceBorsOverMinisign", func(t *testing.T) {
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", privKey1)
+		t.Setenv("MINISIGN_SECRET_KEY", privKey2)
+		t.Setenv("BORS_MINISIGN_KEY_FILE", "")
+		t.Setenv("MINISIGN_KEY_FILE", "")
+
+		got := getMinisignSecretKey()
+		if got != privKey1 {
+			t.Errorf("expected BORS_MINISIGN_SECRET_KEY precedence (%s), got %s", privKey1, got)
+		}
+	})
+
+	t.Run("FallbackToMinisignSecretKey", func(t *testing.T) {
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", "")
+		t.Setenv("MINISIGN_SECRET_KEY", privKey2)
+		t.Setenv("BORS_MINISIGN_KEY_FILE", "")
+		t.Setenv("MINISIGN_KEY_FILE", "")
+
+		got := getMinisignSecretKey()
+		if got != privKey2 {
+			t.Errorf("expected fallback to MINISIGN_SECRET_KEY (%s), got %s", privKey2, got)
+		}
+	})
+
+	t.Run("KeyFileBorsMinisignKeyFile", func(t *testing.T) {
+		tmpKeyFile := filepath.Join(t.TempDir(), "minisign_bors.key")
+		if err := os.WriteFile(tmpKeyFile, []byte(privKey1), 0600); err != nil {
+			t.Fatalf("write key file: %v", err)
+		}
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", "")
+		t.Setenv("MINISIGN_SECRET_KEY", "")
+		t.Setenv("BORS_MINISIGN_KEY_FILE", tmpKeyFile)
+		t.Setenv("MINISIGN_KEY_FILE", "")
+
+		got := getMinisignSecretKey()
+		if got != privKey1 {
+			t.Errorf("expected key from BORS_MINISIGN_KEY_FILE (%s), got %s", privKey1, got)
+		}
+	})
+
+	t.Run("KeyFileFallbackMinisignKeyFile", func(t *testing.T) {
+		tmpKeyFile := filepath.Join(t.TempDir(), "minisign_std.key")
+		if err := os.WriteFile(tmpKeyFile, []byte(privKey2), 0600); err != nil {
+			t.Fatalf("write key file: %v", err)
+		}
+		t.Setenv("BORS_MINISIGN_SECRET_KEY", "")
+		t.Setenv("MINISIGN_SECRET_KEY", "")
+		t.Setenv("BORS_MINISIGN_KEY_FILE", "")
+		t.Setenv("MINISIGN_KEY_FILE", tmpKeyFile)
+
+		got := getMinisignSecretKey()
+		if got != privKey2 {
+			t.Errorf("expected key from MINISIGN_KEY_FILE (%s), got %s", privKey2, got)
+		}
+	})
+
+	t.Run("PasswordAliases", func(t *testing.T) {
+		t.Setenv("BORS_MINISIGN_PASSWORD", "pass1")
+		t.Setenv("MINISIGN_PASSWORD", "pass2")
+		if got := getMinisignPassword(); got != "pass1" {
+			t.Errorf("expected pass1 from BORS_MINISIGN_PASSWORD, got %s", got)
+		}
+
+		t.Setenv("BORS_MINISIGN_PASSWORD", "")
+		t.Setenv("MINISIGN_PASSWORD", "pass2")
+		if got := getMinisignPassword(); got != "pass2" {
+			t.Errorf("expected pass2 from MINISIGN_PASSWORD, got %s", got)
+		}
+	})
+}
+
+func TestDaemonScheduledSnapshot(t *testing.T) {
+	dataDir := t.TempDir()
+	snapshotOutDir := filepath.Join(t.TempDir(), "scheduled_snapshots")
+	configFile := filepath.Join(t.TempDir(), "test_daemon_snapshot_config.json")
+
+	// 1. Create a dummy sqlite database in dataDir
+	dbPath := filepath.Join(dataDir, "market.db")
+	marketDB, err := db.OpenRWC(dbPath)
+	if err != nil {
+		t.Fatalf("open market.db: %v", err)
+	}
+	_, err = marketDB.Exec(`
+		CREATE TABLE instruments (id INTEGER PRIMARY KEY, symbol TEXT);
+		INSERT INTO instruments (id, symbol) VALUES (1, 'فولاد');
+	`)
+	marketDB.Close()
+	if err != nil {
+		t.Fatalf("populate market.db: %v", err)
+	}
+
+	// 2. Setup Minisign key for signing
+	pubStr, privStr, err := snapshot.GenerateTestKeyPair()
+	if err != nil {
+		t.Fatalf("generate minisign key: %v", err)
+	}
+	t.Setenv("BORS_MINISIGN_SECRET_KEY", privStr)
+
+	// 3. Write daemon config with SnapshotIntervalSec = 1
+	cfg := DaemonConfig{
+		DataDir:              dataDir,
+		PeakIntervalSec:      10,
+		OffPeakIntervalSec:   20,
+		MarketIntervalSec:    10,
+		CorporateIntervalSec: 20,
+		SnapshotIntervalSec:  1, // 1 second interval
+		SnapshotOutDir:       snapshotOutDir,
+		DrainTimeoutSec:      2,
+		LogLevel:             "debug",
+		LogFormat:            "json",
+	}
+	cfgBytes, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatalf("marshal daemon config: %v", err)
+	}
+	if err := os.WriteFile(configFile, cfgBytes, 0644); err != nil {
+		t.Fatalf("write daemon config: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan int, 1)
+	var stdout, stderr bytes.Buffer
+
+	go func() {
+		code := Run(ctx, []string{
+			"daemon",
+			"--config=" + configFile,
+			"--data-dir=" + dataDir,
+		}, &stdout, &stderr)
+		done <- code
+	}()
+
+	manifestFile := filepath.Join(snapshotOutDir, "manifest.json")
+	sigFile := manifestFile + ".sig"
+
+	deadline := time.Now().Add(4 * time.Second)
+	found := false
+	for time.Now().Before(deadline) {
+		if _, err := os.Stat(manifestFile); err == nil {
+			if _, err := os.Stat(sigFile); err == nil {
+				found = true
+				break
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	cancel()
+
+	select {
+	case code := <-done:
+		if code != 0 {
+			t.Fatalf("daemon exited with code %d; stderr: %s", code, stderr.String())
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("daemon did not stop within timeout")
+	}
+
+	if !found {
+		t.Fatalf("snapshot manifest or signature was not created in %s within deadline; stdout: %s; stderr: %s",
+			snapshotOutDir, stdout.String(), stderr.String())
+	}
+
+	// Verify manifest and signature
+	manifest, err := snapshot.LoadManifest(manifestFile)
+	if err != nil {
+		t.Fatalf("load manifest failed: %v", err)
+	}
+	if _, ok := manifest.Assets["market"]; !ok {
+		t.Errorf("expected asset 'market' in manifest, got: %v", manifest.Assets)
+	}
+	if err := snapshot.VerifyAsset(manifestFile, sigFile, pubStr); err != nil {
+		t.Fatalf("signature verification failed: %v", err)
 	}
 }
