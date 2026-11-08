@@ -77,7 +77,11 @@ func NewPublisher(cfg PublisherConfig) (*Publisher, error) {
 	}
 
 	if strings.TrimSpace(cfg.BaseURL) == "" {
-		cfg.BaseURL = "https://api.github.com"
+		if envBase := os.Getenv("GITHUB_API_BASE_URL"); strings.TrimSpace(envBase) != "" {
+			cfg.BaseURL = envBase
+		} else {
+			cfg.BaseURL = "https://api.github.com"
+		}
 	}
 	cfg.BaseURL = strings.TrimRight(strings.TrimSpace(cfg.BaseURL), "/")
 
@@ -209,6 +213,8 @@ func (p *Publisher) uploadAsset(ctx context.Context, release *githubRelease, loc
 		uploadBase = fmt.Sprintf("%s/repos/%s/%s/releases/%d/assets", p.cfg.BaseURL, p.cfg.Owner, p.cfg.Repo, release.ID)
 	} else if strings.HasPrefix(uploadBase, "/") {
 		uploadBase = p.cfg.BaseURL + uploadBase
+	} else if !strings.HasPrefix(uploadBase, "http://") && !strings.HasPrefix(uploadBase, "https://") {
+		uploadBase = p.cfg.BaseURL + "/" + strings.TrimLeft(uploadBase, "/")
 	}
 
 	uploadURL := fmt.Sprintf("%s?name=%s", uploadBase, url.QueryEscape(fileName))
@@ -245,6 +251,8 @@ func (p *Publisher) verifyAssetAvailability(ctx context.Context, asset *githubAs
 		verifyURL = fmt.Sprintf("%s/repos/%s/%s/releases/assets/%d", p.cfg.BaseURL, p.cfg.Owner, p.cfg.Repo, asset.ID)
 	} else if strings.HasPrefix(verifyURL, "/") {
 		verifyURL = p.cfg.BaseURL + verifyURL
+	} else if !strings.HasPrefix(verifyURL, "http://") && !strings.HasPrefix(verifyURL, "https://") {
+		verifyURL = p.cfg.BaseURL + "/" + strings.TrimLeft(verifyURL, "/")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, verifyURL, nil)
@@ -366,13 +374,20 @@ func (p *Publisher) PublishSnapshotSet(ctx context.Context, manifestDir string, 
 }
 
 // PublishSnapshotSet creates a Publisher and executes PublishSnapshotSet.
-func PublishSnapshotSet(ctx context.Context, client *http.Client, token, owner, repo, tag, manifestDir string, manifest *Manifest, privKeyStr, password string) error {
+// An optional baseURL can be provided (e.g. for mock testing or staging); if omitted,
+// it uses GITHUB_API_BASE_URL env or "https://api.github.com".
+func PublishSnapshotSet(ctx context.Context, client *http.Client, token, owner, repo, tag, manifestDir string, manifest *Manifest, privKeyStr, password string, baseURL ...string) error {
+	var base string
+	if len(baseURL) > 0 && strings.TrimSpace(baseURL[0]) != "" {
+		base = strings.TrimSpace(baseURL[0])
+	}
 	pub, err := NewPublisher(PublisherConfig{
-		Owner:  owner,
-		Repo:   repo,
-		Tag:    tag,
-		Token:  token,
-		Client: client,
+		Owner:   owner,
+		Repo:    repo,
+		Tag:     tag,
+		Token:   token,
+		Client:  client,
+		BaseURL: base,
 	})
 	if err != nil {
 		return err
