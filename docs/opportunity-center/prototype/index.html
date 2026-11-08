@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Opportunity Center — Prototype</title>
+<style>
+@font-face{font-family:'Vazirmatn';src:url('vendor/fonts/vazirmatn-400.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'Vazirmatn';src:url('vendor/fonts/vazirmatn-600.ttf') format('truetype');font-weight:600;font-display:swap}
+@font-face{font-family:'Vazirmatn';src:url('vendor/fonts/vazirmatn-700.ttf') format('truetype');font-weight:700;font-display:swap}
+:root{
+  --bg:#101215;--panel:#15181c;--panel-2:#1a1e23;--panel-3:#20252b;
+  --line:#2a2f36;--line-strong:#363d46;--text:#e2ddd2;--text-2:#a9a396;--text-3:#908a7e;
+  --accent:#c9a45c;--accent-2:#55bda8;--accent-ink:#171307;
+  --accent-soft:rgba(201,164,92,.12);--up:#4fbd8c;--down:#e07480;--flat:#8f8a80;--warn:#d3a04a;
+  --up-soft:rgba(79,189,140,.11);--down-soft:rgba(224,116,128,.11);
+  --rail-w:208px;--radius-xs:2px;--radius-sm:3px;--radius-md:4px;--row-h:34px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Vazirmatn',Tahoma,sans-serif;font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent-2);text-decoration:none}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.ltr{direction:ltr;unicode-bidi:isolate;text-align:left}
+.muted{color:var(--text-3)}
+.t9{font-size:9px}.t10{font-size:10px}.t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}
+.icon{width:15px;height:15px;flex:0 0 15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex:0 0 6px}
+.dot.ok{background:var(--up)}.dot.warn{background:var(--warn)}.dot.down{background:var(--down)}.dot.off{background:var(--flat)}
+.demo-bar{height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#241d10;border-bottom:1px solid #4a3a1a;color:#eadbb4;font-size:10.5px}
+.demo-badge{background:var(--accent);color:var(--accent-ink);border-radius:2px;padding:1px 6px;font-weight:700;font-size:9.5px}
+.demo-bar .sp{margin-inline-start:auto;color:#b9a67a;font-size:9.5px}
+.shell{display:flex;height:calc(100vh - 30px);min-height:0}
+.rail{width:var(--rail-w);flex:0 0 var(--rail-w);background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{height:52px;display:flex;align-items:center;gap:9px;padding:0 12px;border-bottom:1px solid var(--line)}
+.brand-mark{width:28px;height:28px;border-radius:3px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.brand-name{font-weight:800;font-size:12px;line-height:1.25}
+.brand-sub{font-size:8px;letter-spacing:.14em;color:var(--text-3);direction:ltr}
+.nav{flex:1;min-height:0;overflow:auto;padding:6px}
+.nav-group{margin-bottom:7px}
+.nav-title{padding:0 8px 3px;font-size:8.5px;font-weight:700;color:var(--text-3)}
+.nav-item{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:3px;color:var(--text-2);font-size:11px;width:100%;background:transparent;border:0;text-align:right;white-space:nowrap}
+.nav-item:hover{background:var(--panel-2);color:var(--text)}
+.nav-item.active{background:var(--panel-3);color:var(--text);box-shadow:inset -2px 0 0 var(--accent)}
+.nav-item.disabled{color:color-mix(in srgb,var(--text-3) 70%,transparent);cursor:not-allowed}
+.nav-item.disabled:hover{background:transparent;color:color-mix(in srgb,var(--text-3) 70%,transparent)}
+.nav-foot{border-top:1px solid var(--line);padding:8px 10px;font-size:9px;color:var(--text-3);display:flex;align-items:center;gap:6px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.topbar{height:44px;flex:0 0 44px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:10px;padding:0 12px}
+.topbar .status{display:flex;align-items:center;gap:6px;font-size:10px;white-space:nowrap}
+.search{display:flex;align-items:center;gap:6px;height:27px;width:184px;padding:0 8px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--text-3);font-size:10px}
+.search kbd{font-size:8.5px;border:1px solid var(--line);border-radius:2px;padding:0 3px;margin-inline-start:auto;direction:ltr}
+.crumb{font-size:10px;color:var(--text-3);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.crumb b{color:var(--text-2);font-weight:600}
+.views{flex:1;min-height:0;overflow:auto}
+.view{display:none;min-height:100%}
+.view.active{display:block}
+.page-head{display:flex;align-items:center;gap:10px;padding:10px 12px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.page-title{font-size:14.5px;font-weight:800;line-height:1.2}
+.page-sub{font-size:9.5px;color:var(--text-3);margin-top:1px}
+.page-head .sp{margin-inline-start:auto}
+.btn{height:26px;padding:0 10px;border:1px solid var(--line-strong);border-radius:3px;background:var(--panel-2);color:var(--text-2);font-size:10.5px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--text)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.primary:hover{color:var(--accent-ink);filter:brightness(1.05)}
+.btn.ghost{background:transparent}
+.btn.sm{height:22px;padding:0 7px;font-size:9.5px}
+.filters{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 6px;border:1px solid var(--line-strong);border-radius:2px;background:transparent;color:var(--text-2);font-size:9.5px;white-space:nowrap}
+.chip.on{border-color:var(--accent-2);color:var(--accent-2);background:color-mix(in srgb,var(--accent-2) 9%,transparent)}
+.chip.warn{border-color:var(--warn);color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.chip.down{border-color:var(--down);color:var(--down);background:var(--down-soft)}
+.chip.up{border-color:var(--up);color:var(--up);background:var(--up-soft)}
+.chip.plain{color:var(--text-3);border-color:var(--line)}
+.select{height:24px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--text-2);font-size:10px;padding:0 6px}
+.board-wrap{padding:0 12px 10px}
+.board{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.board th{height:27px;background:var(--panel-2);border-bottom:1px solid var(--line-strong);color:var(--text-3);font-size:8.5px;font-weight:700;padding:0 8px;text-align:right;position:sticky;top:0;z-index:2;white-space:nowrap}
+.board td{height:var(--row-h);border-bottom:1px solid var(--line);padding:0 8px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.board tbody tr{cursor:pointer}
+.board tbody tr:hover{background:color-mix(in srgb,var(--accent) 4.5%,transparent)}
+.board tbody tr.selected{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
+.sym{display:flex;flex-direction:column;line-height:1.15}
+.sym b{font-size:11px;font-weight:700}
+.sym span{font-size:8.5px;color:var(--text-3)}
+.tone-up{color:var(--up)}.tone-down{color:var(--down)}.tone-flat{color:var(--flat)}
+.right{text-align:left}
+.board-foot{display:flex;align-items:center;gap:10px;height:26px;border-top:1px solid var(--line);padding:0 8px;font-size:9px;color:var(--text-3);background:var(--panel)}
+.board-foot .sp{margin-inline-start:auto}
+.panel{border:1px solid var(--line);background:var(--panel)}
+.panel-head{height:28px;display:flex;align-items:center;gap:8px;padding:0 8px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:10.5px;font-weight:700}
+.panel-head .sp{margin-inline-start:auto;font-weight:400;color:var(--text-3);font-size:9px}
+.inspector{width:380px;flex:0 0 380px;border-right:1px solid var(--line);background:var(--panel);overflow:auto;display:none}
+.inspector .insp-head{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:8px}
+.inspector .insp-title{font-size:16px;font-weight:800;line-height:1.2}
+.inspector .insp-name{font-size:9.5px;color:var(--text-3)}
+.inspector .price{font-size:15px;font-weight:700;margin-inline-start:auto;text-align:left}
+.inspector .price small{display:block;font-size:9.5px;font-weight:600}
+.insp-tags{display:flex;gap:4px;flex-wrap:wrap;padding:7px 11px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 6px;gap:1px}
+.tab{height:28px;padding:0 9px;border:0;background:transparent;color:var(--text-3);font-size:10px}
+.tab.active{background:var(--panel-3);color:var(--text);font-weight:700;box-shadow:inset 0 -2px 0 var(--accent)}
+.insp-body{padding:9px 11px}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-bottom:9px}
+.kv .k{font-size:8.5px;color:var(--text-3)}
+.kv .v{font-size:10.5px;font-weight:600;margin-top:1px}
+.note{font-size:9px;color:var(--text-3);line-height:1.6}
+.ev{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:2px}
+.ev th{text-align:right;font-size:8.5px;color:var(--text-3);font-weight:700;border-bottom:1px solid var(--line-strong);padding:4px 5px;white-space:nowrap}
+.ev td{border-bottom:1px solid var(--line);padding:5px 5px;vertical-align:top}
+.ev .val{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;text-align:left}
+.spark{width:100%;height:52px;display:block;margin-top:3px}
+.bars{display:flex;align-items:flex-end;gap:2px;height:34px;margin-top:4px}
+.bars i{flex:1;background:color-mix(in srgb,var(--accent-2) 55%,var(--panel-3));min-height:2px}
+.insp-actions{display:flex;gap:5px;flex-wrap:wrap;padding:9px 11px;border-top:1px solid var(--line);background:var(--panel-2)}
+.insp-actions .btn{flex:0 0 auto}
+.close{display:none;background:transparent;border:1px solid var(--line);border-radius:3px;width:24px;height:24px;color:var(--text-3);margin-inline-start:auto}
+.scrim{display:none;position:fixed;inset:30px 0 0 0;background:rgba(0,0,0,.45);z-index:30}
+.scrim.on{display:block}
+.inspector.hidden{display:none!important}
+@media(min-width:1600px){.inspector{display:block}.close{display:none}}
+@media(max-width:1599px){.inspector.open{display:block;position:fixed;left:0;top:30px;bottom:0;width:390px;z-index:40;border-right:1px solid var(--line-strong)}.inspector.open .close{display:inline-grid;place-items:center}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:10px;padding:10px 12px}
+@media(max-width:1500px){.lab{grid-template-columns:minmax(0,1fr) 300px}}
+@media(max-width:1280px){.lab{grid-template-columns:1fr}.lab .config{order:2}}
+.config .panel-head{justify-content:space-between}
+.form{padding:8px 9px;display:grid;gap:7px}
+.field{display:grid;gap:3px}
+.field label{font-size:8.5px;color:var(--text-3);font-weight:700}
+.field .input,.field select{height:25px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--text);font-size:10px;padding:0 6px;width:100%}
+.field textarea{min-height:42px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--text);font-size:9.5px;padding:5px 6px;resize:vertical;width:100%;line-height:1.6}
+.slot-row{display:grid;grid-template-columns:78px 1fr;gap:5px;align-items:center;font-size:9.5px}
+.slot-row .k{color:var(--text-3)}
+.slot-row .v{border:1px solid var(--line);border-radius:2px;padding:3px 5px;background:var(--panel-2);font-size:9.5px}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.metric{background:var(--panel);padding:7px 8px;min-width:0}
+.metric .k{font-size:8.5px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric .v{font-size:14px;font-weight:700;margin-top:1px}
+.metric .s{font-size:8.5px;color:var(--text-3)}
+@media(max-width:1500px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.panel-body{padding:8px 9px}
+.gates{width:100%;border-collapse:collapse;font-size:9.5px}
+.gates th{text-align:right;font-size:8.5px;color:var(--text-3);border-bottom:1px solid var(--line-strong);padding:4px 5px}
+.gates td{border-bottom:1px solid var(--line);padding:5px 5px;vertical-align:top}
+.gates .pass{color:var(--up);font-weight:700}.gates .fail{color:var(--down);font-weight:700}.gates .warn{color:var(--warn);font-weight:700}
+.run-list{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+.run{background:var(--panel);padding:6px 8px;display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:9.5px}
+.run b{font-size:10px}
+.run .meta{color:var(--text-3);font-size:8.5px;grid-column:1/2}
+.run .state{grid-column:2;grid-row:1/3;align-self:center}
+.cmp-wrap{padding:10px 12px}
+.cmp{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+.cmp th,.cmp td{border-bottom:1px solid var(--line);padding:6px 7px;vertical-align:middle}
+.cmp thead th{background:var(--panel-2);border-bottom:1px solid var(--line-strong);position:sticky;top:0;z-index:2;text-align:right}
+.cmp thead th .nm{font-size:10.5px;font-weight:700;display:block}
+.cmp thead th .mt{font-size:8.5px;color:var(--text-3);display:block}
+.cmp tbody th{font-weight:600;color:var(--text-2);font-size:9.5px;text-align:right}
+.cmp td{font-variant-numeric:tabular-nums}
+.ci{height:4px;background:var(--panel-3);position:relative;margin-top:3px;border-radius:1px;overflow:hidden}
+.ci i{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--accent-2) 70%,transparent)}
+.verdict-row{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0}
+.mon-wrap{padding:10px 12px}
+.mon{width:100%;border-collapse:collapse;font-size:10px}
+.mon th{text-align:right;font-size:8.5px;color:var(--text-3);border-bottom:1px solid var(--line-strong);padding:5px 7px;background:var(--panel-2)}
+.mon td{border-bottom:1px solid var(--line);padding:6px 7px;vertical-align:middle}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--panel-3);border:1px solid var(--line-strong);color:var(--text);padding:7px 11px;border-radius:3px;font-size:10px;z-index:80;transition:.18s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.hr{height:1px;background:var(--line);margin:8px 0}
+.pill{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 5px;border:1px dashed color-mix(in srgb,var(--accent-2) 40%,transparent);border-radius:2px;background:color-mix(in srgb,var(--accent-2) 9%,transparent);color:var(--accent-2);font-size:8.5px;font-weight:700}
+.section-title{font-size:9px;font-weight:700;color:var(--text-3);margin:9px 0 4px}
+.rowline{display:flex;align-items:center;gap:6px;font-size:9.5px;color:var(--text-2);padding:3px 0}
+.rowline .sp{margin-inline-start:auto;color:var(--text-3);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 16l4-5 3 3 5-7 2 3"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l2-5 3 10 2-6h7"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></symbol>
+  <symbol id="i-funnel" viewBox="0 0 24 24"><path d="M4 4h16l-6 8v7l-4-2v-5z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M8 4v13"/><path d="M11 8h4"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M8 15h8"/></symbol>
+  <symbol id="i-columns" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="16"/><rect x="13" y="4" width="7" height="16"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="i-pie" viewBox="0 0 24 24"><path d="M12 3v9h9"/><path d="M20 12a8 8 0 1 1-8-8"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L5 14h6l-1 8 9-13h-6z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9 17H3z"/><path d="M12 9v5"/><circle cx="12" cy="17" r=".7"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+</svg>
+
+<div class="demo-bar">
+  <span class="demo-badge">دمو</span>
+  <span>این صفحه یک Prototype مستقل است؛ همهٔ نمادها، اعداد و نتایج نمایشی‌اند و به دادهٔ واقعی متصل نیست.</span>
+  <span class="sp">Opportunity Center · 2026-11-08 · v0.1</span>
+</div>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark"><svg class="icon" style="width:16px;height:16px"><use href="#i-bolt"/></svg></div>
+      <div>
+        <div class="brand-name">بورس‌ترمینال</div>
+        <div class="brand-sub">OPPORTUNITY CENTER</div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="ناوبری اصلی">
+      <div class="nav-group">
+        <div class="nav-title">فضای تحلیل</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-grid"/></svg>بازار</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-chart"/></svg>تکنیکال</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-file"/></svg>بنیادی</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-pulse"/></svg>وضعیت بازار</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">کشف فرصت</div>
+        <button class="nav-item active" data-view="today"><svg class="icon"><use href="#i-compass"/></svg>فرصت‌ها</button>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-funnel"/></svg>غربالگری FTS</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">پژوهش</div>
+        <button class="nav-item" data-view="library"><svg class="icon"><use href="#i-book"/></svg>کتابخانهٔ استراتژی</button>
+        <button class="nav-item" data-view="lab"><svg class="icon"><use href="#i-flask"/></svg>آزمایشگاه</button>
+        <button class="nav-item" data-view="compare"><svg class="icon"><use href="#i-columns"/></svg>مقایسه</button>
+        <button class="nav-item" data-view="monitor"><svg class="icon"><use href="#i-pulse"/></svg>پایش</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">سرمایه و اجرا</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-eye"/></svg>دیده‌بان</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-pie"/></svg>پرتفوی</div>
+        <div class="nav-item disabled"><svg class="icon"><use href="#i-bolt"/></svg>سرخطی</div>
+      </div>
+    </nav>
+    <div class="nav-foot"><span class="dot ok"></span>دمو · بدون اتصال به دادهٔ واقعی</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="status"><span class="dot ok"></span><span class="muted">داده دمو</span><span>·</span><span class="num">۰۹:۴۲</span><span class="muted">آخرین محاسبه</span></div>
+      <div class="search"><svg class="icon" style="width:13px;height:13px"><use href="#i-search"/></svg><span>جستجو یا فرمان</span><kbd>Ctrl K</kbd></div>
+      <div class="crumb" id="crumb"><b>امروز</b><span>/</span><span>فرصت‌ها</span></div>
+      <button class="btn ghost sm" style="margin-inline-start:auto" data-demo>راهنما</button>
+    </header>
+
+    <div class="views">
+      <section class="view active" data-panel="today">
+        <div class="page-head">
+          <div>
+            <div class="page-title">فرصت‌ها</div>
+            <div class="page-sub"><span class="num">۷</span> فرصت از <span class="num">۳</span> استراتژی تأییدشده · آخرین محاسبه <span class="num">۰۹:۴۲</span> · <span class="tone-up">داده تازه</span></div>
+          </div>
+          <div class="sp"></div>
+          <button class="btn primary" id="review-first">بررسی اولین فرصت</button>
+        </div>
+        <div class="filters" aria-label="فیلترها">
+          <span class="chip on">همهٔ استراتژی‌ها</span>
+          <span class="chip">FTS کانونیکال</span>
+          <span class="chip">شکست جت</span>
+          <span class="chip">پولبک فیبوناچی</span>
+          <span class="chip plain">وضعیت بازار: صعودی</span>
+          <span class="chip plain">تازگی: کمتر از ۱۵ دقیقه</span>
+          <span class="chip plain">فقط در آستانهٔ ابطال</span>
+          <span class="sp" style="margin-inline-start:auto"></span>
+          <span class="note">مرتب‌سازی: تازگی، سپس اعتبار استراتژی</span>
+        </div>
+        <div class="board-wrap">
+          <table class="board">
+            <colgroup><col style="width:132px"><col style="width:150px"><col><col style="width:78px"><col style="width:82px"><col style="width:170px"><col style="width:86px"></colgroup>
+            <thead><tr><th>نماد</th><th>استراتژی / نسخه</th><th>شرایط محرک</th><th>شواهد</th><th>تازگی</th><th>ابطال</th><th>وضعیت</th></tr></thead>
+            <tbody id="opp-body"></tbody>
+          </table>
+          <div class="board-foot"><span><span class="num">۷</span> فرصت · همه نمایش داده شده</span><span class="sp"></span><span>واحدها: قیمت تومان · شواهد = تعداد شرایط سنجیده‌شده</span><span class="sp"></span><span>جهت‌ها: <span class="ltr" style="display:inline-block;direction:ltr">j / k</span> · Enter · Esc</span></div>
+        </div>
+      </section>
+
+      <section class="view" data-panel="library">
+        <div class="page-head">
+          <div><div class="page-title">کتابخانهٔ استراتژی</div><div class="page-sub"><span class="num">۶</span> استراتژی · <span class="num">۳</span> تأییدشده · <span class="num">۱</span> در آزمایش · <span class="num">۱</span> معلق · <span class="num">۱</span> پیش‌نویس</div></div>
+          <div class="sp"></div>
+          <button class="btn" data-view="lab">فرضیهٔ تازه</button>
+        </div>
+        <div class="filters"><span class="chip on">همه</span><span class="chip">تأییدشده</span><span class="chip">در آزمایش</span><span class="chip">معلق</span><span class="chip">پیش‌نویس</span><span class="chip plain">دسته: همه</span><span class="note" style="margin-inline-start:auto">هر ردیف یک هویت پایدار؛ نسخه‌ها تغییرناپذیرند.</span></div>
+        <div class="board-wrap">
+          <table class="board">
+            <colgroup><col style="width:170px"><col style="width:118px"><col style="width:90px"><col style="width:120px"><col><col style="width:100px"><col style="width:78px"></colgroup>
+            <thead><tr><th>استراتژی</th><th>دسته</th><th>نسخه</th><th>وضعیت</th><th>آخرین اعتبارسنجی</th><th>آخرین اجرا</th><th>فرصت‌ها</th></tr></thead>
+            <tbody id="lib-body"></tbody>
+          </table>
+          <div class="board-foot"><span>دروازهٔ Approved: اعتبارسنجی معتبر + تأیید انسانی</span><span class="sp"></span><span>Approved مجوز معامله نیست</span></div>
+        </div>
+      </section>
+
+      <section class="view" data-panel="lab">
+        <div class="page-head">
+          <div><div class="page-title">آزمایشگاه</div><div class="page-sub">کتابخانه / شکست جت / نسخهٔ <span class="num">۱٫۲٫۰</span> · اجرا <span class="num">run_1042</span> · داده تا <span class="num">۱۴۰۵/۰۸/۱۶</span></div></div>
+          <div class="sp"></div>
+          <span class="chip warn">آمادهٔ بازبینی</span>
+          <button class="btn" data-demo>ثبت در تاریخچه</button>
+        </div>
+        <div class="lab">
+          <div>
+            <div class="metrics">
+              <div class="metric"><div class="k">بازده خالص سالانه</div><div class="v tone-up">+۲۴٫۶٪</div><div class="s">CI: ۱۲٫۱ تا ۳۷٫۸</div></div>
+              <div class="metric"><div class="k">حداکثر افت</div><div class="v tone-down">−۱۶٫۳٪</div><div class="s">بازیابی: ۵۸ نشست</div></div>
+              <div class="metric"><div class="k">شارپ</div><div class="v">۱٫۳۴</div><div class="s">± ۰٫۴۱</div></div>
+              <div class="metric"><div class="k">انتظار هر معامله</div><div class="v tone-up">+۰٫۲۱R</div><div class="s">± ۰٫۱۴</div></div>
+              <div class="metric"><div class="k">معاملات / N_eff</div><div class="v">۱۲۴ / ۳۱</div><div class="s">حداقل نمونه: ۱۰۰</div></div>
+              <div class="metric"><div class="k">تمرکز رژیم</div><div class="v">۴۸٪</div><div class="s">آستانهٔ پیشنهادی: ۷۰٪</div></div>
+            </div>
+            <div class="grid2" style="padding:10px 0 0">
+              <div class="panel">
+                <div class="panel-head">منحنی حقوق صاحبان سهام <span class="sp">دمو</span></div>
+                <div class="panel-body"><svg class="spark" viewBox="0 0 400 80" preserveAspectRatio="none" id="equity-svg"></svg><div class="note">خط: خالص پس از هزینه · مبنا: سری قیمتی تعدیل‌شده · بازهٔ نمایشی</div></div>
+              </div>
+              <div class="panel">
+                <div class="panel-head">افت سرمایه <span class="sp">دمو</span></div>
+                <div class="panel-body"><svg class="spark" viewBox="0 0 400 80" preserveAspectRatio="none" id="drawdown-svg"></svg><div class="note">حداکثر افت: −۱۶٫۳٪ · بازهٔ نمایشی</div></div>
+              </div>
+            </div>
+            <div class="panel" style="margin-top:10px">
+              <div class="panel-head">دروازه‌های اعتبارسنجی <span class="sp">آستانه‌ها پیشنهادی‌اند؛ منتظر رأی مالک</span></div>
+              <div class="panel-body">
+                <table class="gates">
+                  <thead><tr><th>دروازه</th><th>مقدار</th><th>آستانهٔ پیشنهادی</th><th>نتیجه</th><th>یادداشت</th></tr></thead>
+                  <tbody>
+                    <tr><td>Walk-Forward (۴ فولد)</td><td class="num">۴ / ۴</td><td class="num">≥ ۴</td><td class="pass">عبور</td><td>Embargo: ۷ نشست</td></tr>
+                    <tr><td>PBO / CSCV</td><td class="num">۰٫۱۸</td><td class="num">≤ ۰٫۲۵</td><td class="pass">عبور</td><td>N = ۱۲۰ آزمایش</td></tr>
+                    <tr><td>DSR</td><td class="num">۰٫۹۶</td><td class="num">≥ ۰٫۹۵</td><td class="pass">عبور</td><td>SR0 = ۱٫۱۲</td></tr>
+                    <tr><td>SPA در برابر Benchmark</td><td class="num">۰٫۰۳</td><td class="num">≤ ۰٫۰۵</td><td class="pass">عبور</td><td>B = ۵٬۰۰۰</td></tr>
+                    <tr><td>استرس هزینه ۲×</td><td class="num">+۸٫۴٪</td><td class="num">&gt; ۰</td><td class="pass">عبور</td><td>Break-even: ۳٫۱×</td></tr>
+                    <tr><td>تمرکز رژیم</td><td class="num">۴۸٪</td><td class="num">&lt; ۷۰٪</td><td class="pass">عبور</td><td>صعودی: ۴۸٪</td></tr>
+                    <tr><td>Holdout قفل‌شده</td><td class="num">۱ بار</td><td class="num">۱ بار</td><td class="warn">مصرف‌شده</td><td>نتیجه ثبت شده است</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="panel" style="margin-top:10px">
+              <div class="panel-head">تاریخچهٔ اجراها <span class="sp">Append-Only</span></div>
+              <div class="panel-body" id="run-history"></div>
+            </div>
+          </div>
+          <aside class="panel config">
+            <div class="panel-head">پیکربندی <span class="sp">نسخهٔ تغییرناپذیر</span></div>
+            <div class="form">
+              <div class="field"><label>فرضیه</label><textarea readonly>شکست مقاومت جت با تأیید قدرت خرید حقیقی در رژیم صعودی، بازده خارج‌نمونهٔ مثبت پس از هزینه دارد.</textarea></div>
+              <div class="field"><label>یونیورس</label><div class="slot-row"><span class="k">قاعده</span><span class="v">TSETMC equity · حداقل ۲۵۲ نشست</span></div><div class="slot-row"><span class="k">نقدشوندگی</span><span class="v">ADV20 · حداقل ۲٪ مشارکت</span></div></div>
+              <div class="field"><label>اسلات‌ها</label>
+                <div class="slot-row"><span class="k">رژیم</span><span class="v">روند صعودی (t−1)</span></div>
+                <div class="slot-row"><span class="k">ستاپ</span><span class="v">شکست مقاومت ۲۱ روزه</span></div>
+                <div class="slot-row"><span class="k">تأیید</span><span class="v">قدرت خرید ≥ ۱٫۸</span></div>
+                <div class="slot-row"><span class="k">خروج</span><span class="v">ATR ۱۴ × ۲ · حد زمانی ۲۰</span></div>
+                <div class="slot-row"><span class="k">اندازه</span><span class="v">۱۰٪ سرمایه · حداکثر ۱۰ موقعیت</span></div>
+              </div>
+              <div class="field"><label>پروتکل</label><div class="slot-row"><span class="k">تقسیم</span><span class="v">۶۰ / ۲۰ / ۲۰ · Holdout قفل</span></div><div class="slot-row"><span class="k">پنجره</span><span class="v">۱۳۹۹/۰۱/۰۱ تا ۱۴۰۵/۰۸/۱۶</span></div><div class="slot-row"><span class="k">هزینه</span><span class="v">نامتقارن · T+2 · صف قفل = عدم پرشدن</span></div></div>
+              <div class="hr"></div>
+              <button class="btn primary" data-demo>اجرای آزمایش</button>
+              <div class="note">اجرای واقعی در Prototype غیرفعال است. N و Manifest در Trial Registry ثبت می‌شوند.</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" data-panel="compare">
+        <div class="page-head">
+          <div><div class="page-title">مقایسه</div><div class="page-sub"><span class="num">۳</span> اجرای Pin‌شده · پنجره، یونیورس و مدل هزینه یکسان · بازهٔ نمایشی</div></div>
+          <div class="sp"></div>
+          <button class="btn" data-demo>افزودن اجرا</button>
+        </div>
+        <div class="cmp-wrap">
+          <div class="verdict-row">
+            <span class="chip down">شکست جت بر پولبک فیبوناچی غالب نیست</span>
+            <span class="chip warn">بازه‌های اطمینان هم‌پوشان‌اند</span>
+            <span class="chip plain">FTS قابل مقایسهٔ مستقیم نیست: قواعد و مبنای متفاوت</span>
+          </div>
+          <table class="cmp">
+            <colgroup><col style="width:210px"><col><col><col></colgroup>
+            <thead><tr><th>متریک</th><th><span class="nm">شکست جت</span><span class="mt">v1.2.0 · N=۱۲۰ · ۱۲۴ معامله</span></th><th><span class="nm">پولبک فیبوناچی</span><span class="mt">v1.1.0 · N=۸۴ · ۹۶ معامله</span></th><th><span class="nm">FTS کانونیکال</span><span class="mt">v10 · N/A · قواعد ثابت</span></th></tr></thead>
+            <tbody>
+              <tr><th>بازده خالص سالانه</th><td>+۲۴٫۶٪<div class="ci"><i style="left:18%;width:56%"></i></div><span class="muted t9">CI: ۱۲٫۱–۳۷٫۸</span></td><td>+۱۸٫۲٪<div class="ci"><i style="left:24%;width:48%"></i></div><span class="muted t9">CI: ۷٫۴–۲۹٫۰</span></td><td>—<div class="ci"><i style="left:40%;width:2%"></i></div><span class="muted t9">مقایسهٔ مستقیم مجاز نیست</span></td></tr>
+              <tr><th>حداکثر افت</th><td>−۱۶٫۳٪</td><td>−۲۱٫۱٪</td><td>—</td></tr>
+              <tr><th>شارپ</th><td>۱٫۳۴ ± ۰٫۴۱</td><td>۱٫۰۸ ± ۰٫۵۰</td><td>—</td></tr>
+              <tr><th>انتظار هر معامله</th><td>+۰٫۲۱R ± ۰٫۱۴</td><td>+۰٫۱۴R ± ۰٫۱۹</td><td>—</td></tr>
+              <tr><th>معاملات / N_eff</th><td>۱۲۴ / ۳۱</td><td>۹۶ / ۲۴</td><td>—</td></tr>
+              <tr><th>ظرفیت (تخمین)</th><td>۱۸ همت</td><td>۹ همت</td><td>—</td></tr>
+              <tr><th>هزینهٔ رفت‌وبرگشت</th><td>۱٫۲۵٪ · Drag ۲٫۹pp</td><td>۱٫۲۵٪ · Drag ۳٫۷pp</td><td>—</td></tr>
+              <tr><th>تمرکز رژیم</th><td>۴۸٪</td><td>۶۳٪</td><td>—</td></tr>
+              <tr><th>حکم مقایسه</th><td><span class="chip up">قابل بازبینی</span></td><td><span class="chip warn">شواهد مرزی</span></td><td><span class="chip plain">ستون مرجع</span></td></tr>
+            </tbody>
+          </table>
+          <div class="note" style="margin-top:8px">هیچ امتیاز مرکبی محاسبه نمی‌شود. برچسب «غالب» فقط با جدا شدن بازه‌های اطمینان و عبور از حداقل تفاوت معنادار ممکن است. «قابل تفکیک نیست» یک نتیجهٔ معتبر است.</div>
+        </div>
+      </section>
+
+      <section class="view" data-panel="monitor">
+        <div class="page-head">
+          <div><div class="page-title">پایش</div><div class="page-sub"><span class="num">۳</span> استراتژی تأییدشده · <span class="num">۱</span> هشدار Drift · <span class="num">۱</span> معلق · آخرین بررسی <span class="num">۰۹:۴۲</span></div></div>
+          <div class="sp"></div>
+          <button class="btn" data-demo>بازبینی هشدارها</button>
+        </div>
+        <div class="mon-wrap">
+          <table class="mon">
+            <thead><tr><th>استراتژی</th><th>نسخه</th><th>وضعیت</th><th>آخرین بررسی</th><th>نشانهٔ Drift</th><th>فرصت‌های ۷ روز</th><th>اقدام</th></tr></thead>
+            <tbody id="mon-body"></tbody>
+          </table>
+          <div class="note" style="margin-top:8px">پایش، تأیید خودکار نمی‌سازد. هر تغییر وضعیت نیازمند دلیل و ثبت در Audit Log است. تعلیق، فرصت‌های آن استراتژی را از رتبه‌بندی خارج می‌کند.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <aside class="inspector" id="inspector" aria-label="جزئیات فرصت">
+    <div class="insp-head">
+      <div><div class="insp-title" id="i-sym">فولاد</div><div class="insp-name" id="i-name">فولاد مبارکه اصفهان</div></div>
+      <div class="price" id="i-price">۴٬۸۲۰ <small class="tone-up">+۳٫۲٪</small></div>
+      <button class="close" id="i-close" aria-label="بستن"><svg class="icon" style="width:14px;height:14px"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="insp-tags" id="i-tags"></div>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="why">چرا؟</button>
+      <button class="tab" data-tab="history">تاریخچه</button>
+      <button class="tab" data-tab="invalidate">ابطال</button>
+      <button class="tab" data-tab="version">نسخه</button>
+    </div>
+    <div class="insp-body" id="i-body"></div>
+    <div class="insp-actions">
+      <button class="btn" data-demo><svg class="icon" style="width:13px;height:13px"><use href="#i-chart"/></svg>چارت</button>
+      <button class="btn" data-demo><svg class="icon" style="width:13px;height:13px"><use href="#i-file"/></svg>بنیادی</button>
+      <button class="btn" data-demo><svg class="icon" style="width:13px;height:13px"><use href="#i-eye"/></svg>دیده‌بان</button>
+      <button class="btn ghost" data-demo style="margin-inline-start:auto">مقایسه</button>
+    </div>
+  </aside>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const FA='۰۱۲۳۴۵۶۷۸۹';
+const toFa=v=>String(v).replace(/[0-9]/g,d=>FA[+d]);
+const faNum=(v,d=0)=>v==null||!Number.isFinite(+v)?'—':new Intl.NumberFormat('fa-IR',{maximumFractionDigits:d,minimumFractionDigits:0}).format(+v);
+const faPct=(v,d=1)=>{if(v==null||!Number.isFinite(+v))return '—';const n=+v;return (n>0?'+':n<0?'−':'')+faNum(Math.abs(n),d)+'٪'};
+const tone=v=>v>0?'tone-up':v<0?'tone-down':'tone-flat';
+
+const STRATEGIES=[
+ {id:'fts',name:'FTS کانونیکال',cat:'rule_based',ver:'v10',state:'approved',stateFa:'تأییدشده',val:'OOS pass · PBO ۰٫۱۲ · DSR ۰٫۹۷',run:'۰۹:۳۰',opp:3,cls:'up'},
+ {id:'jet',name:'شکست جت',cat:'rule_based',ver:'v1.2.0',state:'approved',stateFa:'تأییدشده',val:'OOS pass · PBO ۰٫۱۸ · DSR ۰٫۹۶',run:'۰۹:۳۸',opp:2,cls:'up'},
+ {id:'fib',name:'پولبک فیبوناچی',cat:'pattern',ver:'v1.1.0',state:'approved',stateFa:'تأییدشده',val:'OOS pass · DSR ۰٫۹۱ · نمونهٔ مرزی',run:'۰۹:۳۵',opp:2,cls:'up'},
+ {id:'smart',name:'پول هوشمند',cat:'rule_based',ver:'v0.9.0',state:'paper',stateFa:'در آزمایش',val:'PBO ۰٫۲۲ · DSR ۰٫۹۳',run:'۰۹:۲۰',opp:0,cls:'warn'},
+ {id:'weekly',name:'روند هفتگی',cat:'rule_based',ver:'v2.0.1',state:'suspended',stateFa:'معلق',val:'OOS pass · PBO ۰٫۰۹ · DSR ۰٫۹۸',run:'۰۹:۱۰',opp:0,cls:'down'},
+ {id:'range',name:'بازگشت در رنج',cat:'rule_based',ver:'v0.4.0',state:'draft',stateFa:'پیش‌نویس',val:'شواهد ناکافی',run:'۰۸:۵۵',opp:0,cls:'plain'}
+];
+
+const OPPS=[
+ {sym:'فولاد',name:'فولاد مبارکه اصفهان',price:4820,chg:3.2,strat:'fts',trig:['۵ از ۵ محور','روند هفتگی صعودی','قدرت خرید ۱٫۹'],ev:'۵ / ۵',fresh:'۰۹:۴۲',freshM:2,inv:'بسته شدن زیر ۴٬۲۰۰',invPct:12.8,status:'تازه',scls:'up',
+  evRows:[['محور ۱ — رشد فروش','+۲۸٪','≥ ۲۰٪','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['محور ۲ — روند EPS','صعودی ۳ ساله','≥ ۳ سال','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['محور ۳ — حاشیهٔ ناخالص','۳۴٪','≥ ۳۰٪','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['روند هفتگی','صعودی','PERMITTED','تکنیکال · ۱۴۰۵/۰۸/۱۶','pass'],['قدرت خرید حقیقی','۱٫۹','≥ ۱٫۸','تابلو · ۱۴۰۵/۰۸/۱۷','pass']],
+  base:18,sample:124,ci:'۱۵–۲۱٪',
+  prov:{engine:'fts.fundamental / fts.technical',ruleset:'FTS-v10 / tech-6',config:'sha256:9f2c…a41d',asof:'۱۴۰۵/۰۸/۱۶',fresh:'تازه'}},
+ {sym:'شپنا',name:'پالایش نفت اصفهان',price:3140,chg:2.1,strat:'jet',trig:['شکست مقاومت ۲۱ روزه','قدرت خرید ۲٫۱','حجم ۱٫۷×'],ev:'۴ / ۵',fresh:'۰۹:۴۰',freshM:4,inv:'برگشت زیر ۳٬۱۰۰',invPct:1.3,status:'تازه',scls:'up',
+  evRows:[['شکست مقاومت ۲۱ روزه','۳٬۱۴۰','> ۳٬۰۹۰','تابلو · ۱۴۰۵/۰۸/۱۷','pass'],['قدرت خرید حقیقی','۲٫۱','≥ ۱٫۸','تابلو · ۱۴۰۵/۰۸/۱۷','pass'],['حجم نسبت به میانگین','۱٫۷×','≥ ۱٫۵×','تابلو · ۱۴۰۵/۰۸/۱۷','pass'],['رژیم بازار','صعودی','PERMITTED','نبض بازار · ۱۴۰۵/۰۸/۱۷','pass'],['نقدشوندگی','۱٫۲٪ ADV','≥ ۲٪ مشارکت','داده · ۱۴۰۵/۰۸/۱۶','warn']],
+  base:14,sample:96,ci:'۹–۱۹٪',
+  prov:{engine:'oc.rule / tape',ruleset:'v1.2.0',config:'sha256:7b1e…c09a',asof:'۱۴۰۵/۰۸/۱۶',fresh:'تازه'}},
+ {sym:'خودرو',name:'ایران خودرو',price:2860,chg:1.4,strat:'fib',trig:['ناحیهٔ طلایی ۰٫۵–۰٫۶۱۸','کندل بازگشتی','روند صعودی'],ev:'۳ / ۵',fresh:'۰۹:۳۵',freshM:9,inv:'شکست ۲٬۸۰۰',invPct:2.1,status:'تازه',scls:'up',
+  evRows:[['ناحیهٔ فیبوناچی','۰٫۵۷','۰٫۵۰–۰٫۶۱۸','تکنیکال · ۱۴۰۵/۰۸/۱۶','pass'],['کندل بازگشتی','صعودی','بدنهٔ صعودی','تکنیکال · ۱۴۰۵/۰۸/۱۷','pass'],['روند روزانه','صعودی','HH/HL','تکنیکال · ۱۴۰۵/۰۸/۱۶','pass'],['تأیید حجم','۰٫۹×','≥ ۱٫۲×','تابلو · ۱۴۰۵/۰۸/۱۷','fail'],['نقدشوندگی','۰٫۸٪ ADV','≥ ۲٪ مشارکت','داده · ۱۴۰۵/۰۸/۱۶','warn']],
+  base:11,sample:84,ci:'۶–۱۷٪',
+  prov:{engine:'oc.pattern / technical',ruleset:'v1.1.0',config:'sha256:41c9…7e2b',asof:'۱۴۰۵/۰۸/۱۶',fresh:'تازه'}},
+ {sym:'وبملت',name:'بانک ملت',price:5120,chg:0.8,strat:'fts',trig:['۴ از ۵ محور','روند هفتگی صعودی'],ev:'۴ / ۵',fresh:'۰۹:۳۱',freshM:13,inv:'نقض محور ۳',invPct:8.4,status:'تازه',scls:'up',
+  evRows:[['محور ۱ — رشد فروش','+۲۲٪','≥ ۲۰٪','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['محور ۲ — روند EPS','صعودی','≥ ۳ سال','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['محور ۳ — حاشیهٔ ناخالص','۲۸٪','≥ ۳۰٪','کدال · ۱۴۰۵/۰۸/۱۲','fail'],['روند هفتگی','صعودی','PERMITTED','تکنیکال · ۱۴۰۵/۰۸/۱۶','pass'],['محور ۴ — فروش/ارزش بازار','۰٫۸','≥ ۱٫۰','کدال · ۱۴۰۵/۰۸/۱۲','pass']],
+  base:9,sample:71,ci:'۴–۱۵٪',prov:{engine:'fts.fundamental',ruleset:'FTS-v10',config:'sha256:9f2c…a41d',asof:'۱۴۰۵/۰۸/۱۶',fresh:'تازه'}},
+ {sym:'شستا',name:'سرمایه‌گذاری تأمین اجتماعی',price:1980,chg:2.6,strat:'jet',trig:['شکست مقاومت','حجم ۱٫۹×'],ev:'۴ / ۵',fresh:'۰۹:۰۵',freshM:37,inv:'برگشت زیر ۱٬۹۲۰',invPct:3.0,status:'کهنه',scls:'warn',
+  evRows:[['شکست مقاومت ۲۱ روزه','۱٬۹۸۰','> ۱٬۹۵۰','تابلو · ۱۴۰۵/۰۸/۱۷','pass'],['قدرت خرید حقیقی','۱٫۹','≥ ۱٫۸','تابلو · ۱۴۰۵/۰۸/۱۷','pass'],['حجم نسبت به میانگین','۱٫۹×','≥ ۱٫۵×','تابلو · ۱۴۰۵/۰۸/۱۷','pass'],['رژیم بازار','صعودی','PERMITTED','نبض بازار · ۱۴۰۵/۰۸/۱۷','pass'],['نقدشوندگی','۲٫۴٪ ADV','≥ ۲٪ مشارکت','داده · ۱۴۰۵/۰۸/۱۶','pass']],
+  base:13,sample:103,ci:'۸–۱۸٪',prov:{engine:'oc.rule / tape',ruleset:'v1.2.0',config:'sha256:7b1e…c09a',asof:'۱۴۰۵/۰۸/۱۶',fresh:'تازه'}},
+ {sym:'کگل',name:'گل‌گهر',price:7420,chg:1.1,strat:'fts',trig:['۵ از ۵ محور','روند هفتگی صعودی'],ev:'۵ / ۵',fresh:'۰۹:۳۰',freshM:14,inv:'بسته شدن زیر ۶٬۹۰۰',invPct:7.0,status:'تازه',scls:'up',
+  evRows:[['محور ۱ — رشد فروش','+۳۱٪','≥ ۲۰٪','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['محور ۲ — روند EPS','صعودی','≥ ۳ سال','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['محور ۳ — حاشیهٔ ناخالص','۳۸٪','≥ ۳۰٪','کدال · ۱۴۰۵/۰۸/۱۲','pass'],['روند هفتگی','صعودی','PERMITTED','تکنیکال · ۱۴۰۵/۰۸/۱۶','pass'],['قدرت خرید حقیقی','۱٫۷','≥ ۱٫۸','تابلو · ۱۴۰۵/۰۸/۱۷','warn']],
+  base:16,sample:118,ci:'۱۲–۲۰٪',prov:{engine:'fts.fundamental / fts.technical',ruleset:'FTS-v10 / tech-6',config:'sha256:9f2c…a41d',asof:'۱۴۰۵/۰۸/۱۶',fresh:'تازه'}},
+ {sym:'خساپا',name:'سایپا',price:1640,chg:-1.2,strat:'fib',trig:['ناحیهٔ فیبوناچی','تأیید ناقص'],ev:'۲ / ۵',fresh:'۰۹:۱۵',freshM:29,inv:'شکست ۱٬۶۲۰',invPct:1.2,status:'در آستانهٔ ابطال',scls:'down',
+  evRows:[['ناحیهٔ فیبوناچی','۰٫۶۱','۰٫۵۰–۰٫۶۱۸','تکنیکال · ۱۴۰۵/۰۸/۱۶','pass'],['کندل بازگشتی','خنثی','بدنهٔ صعودی','تکنیکال · ۱۴۰۵/۰۸/۱۷','fail'],['روند روزانه','نزولی','HH/HL','تکنیکال · ۱۴۰۵/۰۸/۱۶','fail'],['تأیید حجم','۰٫۷×','≥ ۱٫۲×','تابلو · ۱۴۰۵/۰۸/۱۷','fail'],['نقدشوندگی','۰٫۵٪ ADV','≥ ۲٪ مشارکت','داده · ۱۴۰۵/۰۸/۱۶','warn']],
+  base:6,sample:42,ci:'۱–۱۱٪',prov:{engine:'oc.pattern / technical',ruleset:'v1.1.0',config:'sha256:41c9…7e2b',asof:'۱۴۰۵/۰۸/۱۶',fresh:'کهنه'}}
+];
+
+const stById=id=>STRATEGIES.find(s=>s.id===id);
+let selected=0;
+
+function renderOpps(){
+ const tb=document.getElementById('opp-body');
+ tb.innerHTML=OPPS.map((o,i)=>{
+   const s=stById(o.strat);
+   return `<tr data-i="${i}" class="${i===selected?'selected':''}">
+    <td><div class="sym"><b>${o.sym}</b><span>${o.name}</span></div></td>
+    <td><div class="sym"><b>${s.name}</b><span>${s.ver} · ${s.stateFa}</span></div></td>
+    <td>${o.trig.map(t=>`<span class="chip" style="margin-inline-end:3px">${t}</span>`).join('')}</td>
+    <td class="num">${o.ev}</td>
+    <td><span class="num">${o.fresh}</span> <span class="muted t9">· ${toFa(o.freshM)}′</span></td>
+    <td>${o.inv} <span class="muted t9">· ${faPct(-o.invPct)}</span></td>
+    <td><span class="chip ${o.scls}">${o.status}</span></td>
+   </tr>`}).join('');
+ tb.querySelectorAll('tr').forEach(tr=>tr.addEventListener('click',()=>selectOpp(+tr.dataset.i,true)));
+}
+function selectOpp(i,open){
+ selected=i; renderOpps(); renderInspector();
+ if(open&&window.matchMedia('(max-width:1599px)').matches){document.getElementById('inspector').classList.add('open');document.getElementById('scrim').classList.add('on')}
+}
+function renderInspector(){
+ const o=OPPS[selected],s=stById(o.strat);
+ document.getElementById('i-sym').textContent=o.sym;
+ document.getElementById('i-name').textContent=o.name;
+ document.getElementById('i-price').innerHTML=`${faNum(o.price)} <small class="${tone(o.chg)}">${faPct(o.chg)}</small>`;
+ document.getElementById('i-tags').innerHTML=`<span class="chip on">${s.name} ${s.ver}</span><span class="chip ${s.cls}">${s.stateFa}</span><span class="chip plain">${o.status}</span><span class="pill">Approved ≠ مجوز معامله</span>`;
+ renderTab('why');
+}
+function renderTab(tab){
+ const o=OPPS[selected],s=stById(o.strat);
+ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+ const b=document.getElementById('i-body');
+ if(tab==='why'){
+  b.innerHTML=`<div class="kv-grid">
+    <div class="kv"><div class="k">قیمت نمایشی</div><div class="v num">${faNum(o.price)}</div></div>
+    <div class="kv"><div class="k">تغییر</div><div class="v ${tone(o.chg)} num">${faPct(o.chg)}</div></div>
+    <div class="kv"><div class="k">پوشش شواهد</div><div class="v">${o.ev} شرط سنجیده</div></div>
+    <div class="kv"><div class="k">تازگی</div><div class="v">${o.fresh} · ${toFa(o.freshM)} دقیقه</div></div>
+  </div>
+  <div class="section-title">زنجیرهٔ شروط</div>
+  <table class="ev"><thead><tr><th>شرط</th><th>مقدار</th><th>آستانه</th><th>منبع / زمان</th></tr></thead><tbody>
+   ${o.evRows.map(r=>`<tr><td>${r[0]}</td><td class="val">${r[1]}</td><td class="val">${r[2]}</td><td><span class="dot ${r[4]==='pass'?'ok':r[4]==='warn'?'warn':'down'}"></span> ${r[3]}</td></tr>`).join('')}
+  </tbody></table>
+  <div class="section-title">منشأ و اعتبار</div>
+  <div class="rowline"><span>موتور</span><span class="sp">${o.prov.engine}</span></div>
+  <div class="rowline"><span>نسخهٔ قواعد</span><span class="sp">${o.prov.ruleset}</span></div>
+  <div class="rowline"><span>Config Hash</span><span class="sp">${o.prov.config}</span></div>
+  <div class="rowline"><span>داده تا</span><span class="sp">${o.prov.asof}</span></div>
+  <div class="rowline"><span>وضعیت</span><span class="sp">${o.prov.fresh}</span></div>
+  <div class="note" style="margin-top:6px">این پنل عمداً همهٔ اعداد را با منبع و زمان نشان می‌دهد؛ عدد بدون منبع در محصول نمایش داده نمی‌شود.</div>`;
+ }
+ if(tab==='history'){
+  b.innerHTML=`<div class="section-title">پایهٔ تاریخی همان استراتژی در شرایط مشابه</div>
+   <svg class="spark" viewBox="0 0 360 60" preserveAspectRatio="none">${sparkPath([4,5,4.5,6,5.5,7,6.5,8,7.2,8.5,7.8,9,8.4,9.2],360,60,'var(--accent-2)')}</svg>
+   <div class="rowline"><span>نمونه</span><span class="sp">${faNum(o.sample)} معاملهٔ مشابه</span></div>
+   <div class="rowline"><span>نرخ موفقیت</span><span class="sp">${faNum(o.base)}٪</span></div>
+   <div class="rowline"><span>بازهٔ اطمینان</span><span class="sp">${o.ci}</span></div>
+   <div class="rowline"><span>مبنای مقایسه</span><span class="sp">پنجره/یونیورس/هزینهٔ یکسان</span></div>
+   <div class="note" style="margin-top:6px">پایهٔ تاریخی، پیش‌بینی نیست؛ فقط نشان می‌دهد در نمونهٔ موجود چه رخ داده است.</div>`;
+ }
+ if(tab==='invalidate'){
+  b.innerHTML=`<div class="section-title">شرایط ابطال</div>
+   <div class="rowline"><span>قیمت</span><span class="sp">${o.inv}</span></div>
+   <div class="rowline"><span>فاصله تا ابطال</span><span class="sp">${faPct(-o.invPct)}</span></div>
+   <div class="rowline"><span>داده</span><span class="sp">کهنه‌شدن بیش از ۱۵ دقیقه</span></div>
+   <div class="rowline"><span>رژیم</span><span class="sp">خروج از رژیم صعودی</span></div>
+   <div class="rowline"><span>استراتژی</span><span class="sp">تعلیق/ابطال نسخه</span></div>
+   <div class="note" style="margin-top:6px">ابطال، وضعیت فرصت را تغییر می‌دهد؛ تاریخچه حذف نمی‌شود.</div>`;
+ }
+ if(tab==='version'){
+  b.innerHTML=`<div class="section-title">نسخهٔ مولد فرصت</div>
+   <div class="rowline"><span>استراتژی</span><span class="sp">${s.name}</span></div>
+   <div class="rowline"><span>نسخه</span><span class="sp">${s.ver}</span></div>
+   <div class="rowline"><span>وضعیت</span><span class="sp">${s.stateFa}</span></div>
+   <div class="rowline"><span>اعتبارسنجی</span><span class="sp">${s.val}</span></div>
+   <div class="rowline"><span>آخرین اجرا</span><span class="sp">${s.run}</span></div>
+   <div class="note" style="margin-top:6px">هر تغییر در IR، نسخهٔ جدید می‌سازد. متن نسخهٔ قبلی حذف نمی‌شود.</div>`;
+ }
+}
+
+function renderLibrary(){
+ const tb=document.getElementById('lib-body');
+ tb.innerHTML=STRATEGIES.map(s=>`<tr>
+  <td><div class="sym"><b>${s.name}</b><span>${s.id}</span></div></td>
+  <td><span class="chip plain">${s.cat}</span></td>
+  <td class="num">${s.ver}</td>
+  <td><span class="chip ${s.cls}">${s.stateFa}</span></td>
+  <td>${s.val}</td>
+  <td class="num">${s.run}</td>
+  <td class="num">${toFa(s.opp)}</td>
+ </tr>`).join('');
+}
+function renderRuns(){
+ const el=document.getElementById('run-history');
+ const runs=[
+  ['run_1042','jet v1.2.0','امروز ۰۹:۳۸','N=۱۲۰ · PBO ۰٫۱۸ · DSR ۰٫۹۶','آمادهٔ بازبینی','warn'],
+  ['run_1041','fib v1.1.0','امروز ۰۹:۳۵','N=۸۴ · PBO ۰٫۳۱ · DSR ۰٫۸۹','شواهد مرزی','warn'],
+  ['run_1040','smart v0.9.0','امروز ۰۹:۲۰','N=۲۱۰ · PBO ۰٫۲۲ · DSR ۰٫۹۳','قابل بازبینی','up'],
+  ['run_1039','range v0.4.0','امروز ۰۸:۵۵','N=۴۲ · PBO ۰٫۴۱','رد','down']
+ ];
+ el.innerHTML=`<div class="run-list">${runs.map(r=>`<div class="run"><b class="ltr">${r[0]}</b><span class="state"><span class="chip ${r[5]}">${r[4]}</span></span><span class="meta">${r[1]} · ${r[2]} · ${r[3]}</span></div>`).join('')}</div>`;
+}
+function renderMon(){
+ const rows=[
+  ['FTS کانونیکال','v10','تأییدشده','up','۰۹:۴۲','پایدار','۴','بازبینی'],
+  ['شکست جت','v1.2.0','تأییدشده','up','۰۹:۴۲','هشدار: نرخ برد −۶pp','۲','بررسی'],
+  ['پولبک فیبوناچی','v1.1.0','Paper','warn','۰۹:۴۰','پایدار','۲','بازبینی'],
+  ['روند هفتگی','v2.0.1','معلق','down','۰۹:۱۰','نقض شرط رژیم','۰','مشاهده دلیل'],
+  ['پول هوشمند','v0.9.0','در آزمایش','warn','۰۹:۲۰','نمونهٔ مرزی','۰','بررسی']
+ ];
+ document.getElementById('mon-body').innerHTML=rows.map(r=>`<tr><td><b>${r[0]}</b></td><td class="num">${r[1]}</td><td><span class="chip ${r[3]}">${r[2]}</span></td><td class="num">${r[4]}</td><td>${r[5]}</td><td class="num">${r[6]}</td><td><button class="btn sm" data-demo>${r[7]}</button></td></tr>`).join('');
+}
+function sparkPath(vals,w,h,color){
+ const min=Math.min(...vals),max=Math.max(...vals),pad=4;
+ const pts=vals.map((v,i)=>[pad+i*(w-pad*2)/(vals.length-1),h-pad-(v-min)/(max-min||1)*(h-pad*2)]);
+ return `<polyline points="${pts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+}
+function renderCharts(){
+ const eq=[100,101,100.5,103,102,105,104,107,106,109,108,111,110,114,113,116,115,118,117,120];
+ document.getElementById('equity-svg').innerHTML=sparkPath(eq,400,80,'var(--accent)');
+ const dd=[0,-1,-2,-1.5,-3,-2,-4,-3.5,-5,-4,-6,-8,-7,-9,-8,-10,-9.5,-12,-11,-10];
+ document.getElementById('drawdown-svg').innerHTML=sparkPath(dd,400,80,'var(--down)');
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(window.__tt);window.__tt=setTimeout(()=>t.classList.remove('on'),2200)}
+function switchView(v){
+ document.querySelectorAll('.view').forEach(p=>p.classList.toggle('active',p.dataset.panel===v));
+ document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+ const insp=document.getElementById('inspector');
+ insp.classList.toggle('hidden',v!=='today');
+ if(v!=='today'){insp.classList.remove('open');document.getElementById('scrim').classList.remove('on')}
+ const names={today:['امروز','فرصت‌ها'],library:['پژوهش','کتابخانهٔ استراتژی'],lab:['پژوهش','آزمایشگاه'],compare:['پژوهش','مقایسه'],monitor:['پژوهش','پایش']};
+ const n=names[v]||['امروز','فرصت‌ها'];
+ document.getElementById('crumb').innerHTML=`<b>${n[0]}</b><span>/</span><span>${n[1]}</span>`;
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+document.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>toast('این اقدام در Prototype شبیه‌سازی شده است؛ به سیستم واقعی متصل نیست.')));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>renderTab(t.dataset.tab)));
+document.getElementById('i-close').addEventListener('click',()=>{document.getElementById('inspector').classList.remove('open');document.getElementById('scrim').classList.remove('on')});
+document.getElementById('scrim').addEventListener('click',()=>{document.getElementById('inspector').classList.remove('open');document.getElementById('scrim').classList.remove('on')});
+document.getElementById('review-first').addEventListener('click',()=>{selectOpp(0,true);document.querySelector('.views').scrollTo({top:0,behavior:'smooth'})});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){document.getElementById('inspector').classList.remove('open');document.getElementById('scrim').classList.remove('on')}
+ if(e.key==='/'){e.preventDefault();document.querySelector('.search').focus()}
+ if(document.querySelector('.view.active')?.dataset.panel!=='today')return;
+ if(e.key==='j'||e.key==='k'){e.preventDefault();selectOpp(Math.max(0,Math.min(OPPS.length-1,selected+(e.key==='j'?1:-1))),false);document.querySelector(`tr[data-i="${selected}"]`)?.scrollIntoView({block:'nearest'})}
+ if(e.key==='Enter'){e.preventDefault();selectOpp(selected,true)}
+});
+renderOpps();renderInspector();renderLibrary();renderRuns();renderMon();renderCharts();
+</script>
+</body>
+</html>

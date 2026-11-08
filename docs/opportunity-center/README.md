@@ -9,7 +9,7 @@
 |---|---|---|
 | ۱ — Product Discovery | تکمیل‌شده | `01-PRODUCT-DISCOVERY.md` |
 | ۲ — Strategy Intelligence | تکمیل‌شده | `02-STRATEGY-INTELLIGENCE.md` |
-| ۳ — UX & Product Experience | در حال اجرا | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `prototype/` |
+| ۳ — UX & Product Experience | تکمیل‌شده | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `PRODUCT-REQUIREMENTS.md`، `prototype/` (۹ اسکرین‌شات؛ صفر خطا) |
 | ۴ — Technical Architecture | **مسدود تا پذیرش نهایی Stage 4** | `04-TECHNICAL-ARCHITECTURE.md` |
 | گزارش نهایی | در انتظار فازها | گزارش جامع در گفت‌وگو + `IMPLEMENTATION-ROADMAP.md` |
 
