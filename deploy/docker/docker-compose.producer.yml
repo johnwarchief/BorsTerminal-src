@@ -1,0 +1,18 @@
+services:
+  bors-producer:
+    build:
+      context: ../../backend-go
+      dockerfile: ../deploy/docker/Dockerfile.producer
+    image: bors-producer:latest
+    container_name: bors-producer
+    restart: always
+    env_file:
+      - ../config/producer.env
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+    volumes:
+      - ../../data:/app/data
+      - ../../snapshots:/app/snapshots
+      - ../config/producer_config.json:/app/config/producer_config.json:ro
+    command: ["daemon", "--config=/app/config/producer_config.json"]

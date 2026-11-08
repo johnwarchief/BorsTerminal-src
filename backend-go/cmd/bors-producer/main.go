@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,6 +17,42 @@ var version = "1.0.95"
 // Version returns the current bors-producer binary version.
 func Version() string {
 	return version
+}
+
+// initLogging sets up the default slog structured logger based on level and format strings.
+// Environment variables LOG_LEVEL and LOG_FORMAT take precedence when present and non-empty.
+func initLogging(levelStr, formatStr string) {
+	if envL := strings.TrimSpace(os.Getenv("LOG_LEVEL")); envL != "" {
+		levelStr = envL
+	}
+	if envF := strings.TrimSpace(os.Getenv("LOG_FORMAT")); envF != "" {
+		formatStr = envF
+	}
+
+	var level slog.Level
+	switch strings.ToLower(strings.TrimSpace(levelStr)) {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn", "warning":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+
+	opts := &slog.HandlerOptions{
+		Level: level,
+	}
+
+	var handler slog.Handler
+	if strings.EqualFold(strings.TrimSpace(formatStr), "json") {
+		handler = slog.NewJSONHandler(os.Stderr, opts)
+	} else {
+		handler = slog.NewTextHandler(os.Stderr, opts)
+	}
+
+	slog.SetDefault(slog.New(handler))
 }
 
 var blockedFlags = map[string]struct{}{
@@ -56,6 +93,7 @@ func checkSensitiveCLIArgs(args []string, stderr io.Writer) error {
 }
 
 func main() {
+	initLogging(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_FORMAT"))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -66,6 +104,7 @@ func main() {
 // Run parses command-line arguments and dispatches to the appropriate subcommand.
 // Returns an exit code: 0 for success, non-zero for error.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	initLogging(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_FORMAT"))
 	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
 		return 1
 	}

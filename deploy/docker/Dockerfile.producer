@@ -1,0 +1,29 @@
+# Stage 1: Build producer binary
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /src
+RUN apk add --no-cache git ca-certificates
+
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code and build statically linked executable
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /bin/bors-producer ./cmd/bors-producer
+
+# Stage 2: Minimal runtime image
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+
+COPY --from=builder /bin/bors-producer /usr/local/bin/bors-producer
+
+# Create runtime directories for data, snapshots, and config
+RUN mkdir -p /app/data /app/snapshots /app/config
+
+VOLUME ["/app/data", "/app/snapshots"]
+
+ENTRYPOINT ["/usr/local/bin/bors-producer"]
+CMD ["daemon", "--config=/app/config/producer_config.json"]

@@ -1,0 +1,12 @@
+{
+  "data_dir": "/app/data",
+  "peak_interval_sec": 600,
+  "off_peak_interval_sec": 7200,
+  "market_interval_sec": 60,
+  "corporate_interval_sec": 7200,
+  "snapshot_interval_sec": 86400,
+  "snapshot_out_dir": "/app/snapshots",
+  "drain_timeout_sec": 10,
+  "log_level": "info",
+  "log_format": "json"
+}

@@ -325,6 +325,36 @@ func isFinancialStatementNotice(title, letterCode string) bool {
 		strings.HasPrefix(lc, "ن-۲") || strings.HasPrefix(lc, "ن۲")
 }
 
+// getMinisignSecretKey returns the minisign secret key from environment variables or a key file.
+// Precedence: BORS_MINISIGN_SECRET_KEY -> MINISIGN_SECRET_KEY -> BORS_MINISIGN_KEY_FILE -> MINISIGN_KEY_FILE.
+func getMinisignSecretKey() string {
+	if k := os.Getenv("BORS_MINISIGN_SECRET_KEY"); strings.TrimSpace(k) != "" {
+		return strings.TrimSpace(k)
+	}
+	if k := os.Getenv("MINISIGN_SECRET_KEY"); strings.TrimSpace(k) != "" {
+		return strings.TrimSpace(k)
+	}
+	kf := os.Getenv("BORS_MINISIGN_KEY_FILE")
+	if strings.TrimSpace(kf) == "" {
+		kf = os.Getenv("MINISIGN_KEY_FILE")
+	}
+	if strings.TrimSpace(kf) != "" {
+		if b, err := os.ReadFile(strings.TrimSpace(kf)); err == nil {
+			return strings.TrimSpace(string(b))
+		}
+	}
+	return ""
+}
+
+// getMinisignPassword returns the minisign password from environment variables.
+// Precedence: BORS_MINISIGN_PASSWORD -> MINISIGN_PASSWORD.
+func getMinisignPassword() string {
+	if p := os.Getenv("BORS_MINISIGN_PASSWORD"); p != "" {
+		return p
+	}
+	return os.Getenv("MINISIGN_PASSWORD")
+}
+
 func runCodalSnapshot(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
 		return 1
@@ -423,17 +453,8 @@ func runCodalSnapshot(ctx context.Context, args []string, stdout, stderr io.Writ
 
 	fmt.Fprintf(stdout, "Created snapshot set %s with %d assets in %s\n", manifest.SnapshotSetID, len(manifest.Assets), outDir)
 
-	privKey := os.Getenv("MINISIGN_SECRET_KEY")
-	if privKey == "" {
-		if keyFile := os.Getenv("MINISIGN_KEY_FILE"); keyFile != "" {
-			b, err := os.ReadFile(keyFile)
-			if err == nil {
-				privKey = string(b)
-			}
-		}
-	}
-
-	password := os.Getenv("MINISIGN_PASSWORD")
+	privKey := getMinisignSecretKey()
+	password := getMinisignPassword()
 	if privKey != "" {
 		manifestPath := filepath.Join(outDir, "manifest.json")
 		sigPath, err := snapshot.SignAsset(manifestPath, privKey, password)
@@ -487,20 +508,12 @@ func runCodalPublish(ctx context.Context, args []string, stdout, stderr io.Write
 		return 1
 	}
 
-	privKey := os.Getenv("MINISIGN_SECRET_KEY")
-	if privKey == "" {
-		if keyFile := os.Getenv("MINISIGN_KEY_FILE"); keyFile != "" {
-			b, err := os.ReadFile(keyFile)
-			if err == nil {
-				privKey = string(b)
-			}
-		}
-	}
+	privKey := getMinisignSecretKey()
 	if strings.TrimSpace(privKey) == "" {
-		fmt.Fprintf(stderr, "error: MINISIGN_SECRET_KEY or MINISIGN_KEY_FILE environment variable is required to sign release assets for publishing\n")
+		fmt.Fprintf(stderr, "error: BORS_MINISIGN_SECRET_KEY, MINISIGN_SECRET_KEY or MINISIGN_KEY_FILE environment variable is required to sign release assets for publishing\n")
 		return 1
 	}
-	password := os.Getenv("MINISIGN_PASSWORD")
+	password := getMinisignPassword()
 
 	manifestDir := filepath.Dir(*manifestFlag)
 	err = snapshot.PublishSnapshotSet(ctx, http.DefaultClient, token, owner, repoName, tag, manifestDir, manifest, privKey, password)

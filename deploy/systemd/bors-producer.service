@@ -1,0 +1,34 @@
+[Unit]
+Description=BorsTerminal Producer Daemon
+Documentation=https://github.com/johnwarchief/BorsTerminal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bors
+Group=bors
+WorkingDirectory=/var/lib/bors-producer
+EnvironmentFile=-/etc/bors-producer/producer.env
+ExecStart=/usr/local/bin/bors-producer daemon --config=/etc/bors-producer/producer_config.json
+
+# Process supervision & lifecycle
+Restart=always
+RestartSec=10
+KillMode=mixed
+TimeoutStopSec=30
+
+# Security hardening directives
+ProtectSystem=full
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+ReadWritePaths=/var/lib/bors-producer
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bors-producer
+
+[Install]
+WantedBy=multi-user.target

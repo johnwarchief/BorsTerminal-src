@@ -2,18 +2,22 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"borsterminal/backend/internal/codal"
 	"borsterminal/backend/internal/db"
+	"borsterminal/backend/internal/snapshot"
 	"borsterminal/backend/internal/tsetmc"
 	"borsterminal/backend/internal/worker"
 )
@@ -25,7 +29,11 @@ type DaemonConfig struct {
 	OffPeakIntervalSec   int    `json:"off_peak_interval_sec"`
 	MarketIntervalSec    int    `json:"market_interval_sec"`
 	CorporateIntervalSec int    `json:"corporate_interval_sec"`
+	SnapshotIntervalSec  int    `json:"snapshot_interval_sec"`
+	SnapshotOutDir       string `json:"snapshot_out_dir"`
 	DrainTimeoutSec      int    `json:"drain_timeout_sec"`
+	LogLevel             string `json:"log_level"`
+	LogFormat            string `json:"log_format"`
 }
 
 func defaultDaemonConfig() DaemonConfig {
@@ -35,7 +43,11 @@ func defaultDaemonConfig() DaemonConfig {
 		OffPeakIntervalSec:   7200,  // 2 hours
 		MarketIntervalSec:    60,    // 1 minute
 		CorporateIntervalSec: 7200,  // 2 hours
+		SnapshotIntervalSec:  0,     // disabled by default (e.g. 86400 = 24h)
+		SnapshotOutDir:       "",
 		DrainTimeoutSec:      10,    // 10 seconds
+		LogLevel:             "info",
+		LogFormat:            "text",
 	}
 }
 
@@ -66,7 +78,14 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		cfg.DataDir = *dataDirFlag
 	}
 
+	if cfg.SnapshotOutDir == "" {
+		cfg.SnapshotOutDir = filepath.Join(cfg.DataDir, "snapshots")
+	}
+
+	initLogging(cfg.LogLevel, cfg.LogFormat)
+
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
+		slog.Error("failed to create data dir", "dir", cfg.DataDir, "err", err)
 		fmt.Fprintf(stderr, "failed to create data dir %s: %v\n", cfg.DataDir, err)
 		return 1
 	}
@@ -92,6 +111,16 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		drainTimeout = 10 * time.Second
 	}
 
+	slog.Info("initializing bors-producer daemon",
+		"data_dir", cfg.DataDir,
+		"peak_interval", peakInterval,
+		"off_peak_interval", offPeakInterval,
+		"market_interval", marketInterval,
+		"corporate_interval", corporateInterval,
+		"snapshot_interval_sec", cfg.SnapshotIntervalSec,
+		"snapshot_out_dir", cfg.SnapshotOutDir,
+	)
+
 	cadenceMgr := worker.NewCadenceManager(worker.CadenceConfig{
 		PeakInterval:    peakInterval,
 		OffPeakInterval: offPeakInterval,
@@ -104,9 +133,11 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		Name:    "codal_poll",
 		Cadence: cadenceMgr.Interval,
 		Fn: func(taskCtx context.Context) error {
+			slog.Info("codal_poll: task executing")
 			marketPath := filepath.Join(cfg.DataDir, "market.db")
 			dbConn, err := db.OpenRWC(marketPath)
 			if err != nil {
+				slog.Error("codal_poll: open market.db failed", "err", err)
 				return err
 			}
 			defer dbConn.Close()
@@ -121,6 +152,7 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 			for _, cat := range []int{1, 3} {
 				catNotices, err := codal.DiscoverFeed(taskCtx, client, dbConn, cat)
 				if err != nil {
+					slog.Error("codal_poll: feed discovery failed", "category", cat, "err", err)
 					return err
 				}
 				for _, n := range catNotices {
@@ -131,11 +163,17 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 				}
 			}
 			_ = processNotices(taskCtx, dbConn, client, notices, 0, io.Discard, stderr)
-			_, err = codal.RecalculateDirtyFTS(taskCtx, dbConn, nil)
-			return err
+			recalcCount, err := codal.RecalculateDirtyFTS(taskCtx, dbConn, nil)
+			if err != nil {
+				slog.Error("codal_poll: recalc dirty FTS failed", "err", err)
+				return err
+			}
+			slog.Info("codal_poll: task completed", "discovered", len(notices), "recalculated_fts", recalcCount)
+			return nil
 		},
 	})
 	if err != nil {
+		slog.Error("failed to register codal_poll task", "err", err)
 		fmt.Fprintf(stderr, "failed to register codal_poll task: %v\n", err)
 		return 1
 	}
@@ -145,8 +183,10 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		Name:     "market_sync",
 		Interval: marketInterval,
 		Fn: func(taskCtx context.Context) error {
+			slog.Info("market_sync: task started")
 			lock, err := tsetmc.AcquireWriterLockWithTimeout(taskCtx, cfg.DataDir, 100*time.Millisecond)
 			if err != nil {
+				slog.Warn("market_sync: writer lock acquisition timed out", "err", err)
 				return err
 			}
 			defer lock.Release()
@@ -154,6 +194,7 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 			marketPath := filepath.Join(cfg.DataDir, "market.db")
 			marketDB, err := db.OpenRWC(marketPath)
 			if err != nil {
+				slog.Error("market_sync: open market.db failed", "err", err)
 				return err
 			}
 			defer marketDB.Close()
@@ -164,19 +205,23 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 			client := tsetmc.NewClient("", nil)
 			mwRows, instRows, err := client.FetchMarketWatch(taskCtx)
 			if err != nil {
+				slog.Error("market_sync: fetch market watch failed", "err", err)
 				return err
 			}
 			if err := tsetmc.IngestMarketWatch(taskCtx, marketDB, mwRows, instRows); err != nil {
+				slog.Error("market_sync: ingest market watch failed", "err", err)
 				return err
 			}
 			pts, err := client.FetchClientTypeAll(taskCtx)
 			if err == nil && len(pts) > 0 {
 				_ = tsetmc.IngestClientType(taskCtx, marketDB, pts)
 			}
+			slog.Info("market_sync: completed", "market_watch_rows", len(mwRows))
 			return nil
 		},
 	})
 	if err != nil {
+		slog.Error("failed to register market_sync task", "err", err)
 		fmt.Fprintf(stderr, "failed to register market_sync task: %v\n", err)
 		return 1
 	}
@@ -186,8 +231,10 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 		Name:     "corporate_actions",
 		Interval: corporateInterval,
 		Fn: func(taskCtx context.Context) error {
+			slog.Info("corporate_actions: task started")
 			lock, err := tsetmc.AcquireWriterLockWithTimeout(taskCtx, cfg.DataDir, 100*time.Millisecond)
 			if err != nil {
+				slog.Warn("corporate_actions: writer lock acquisition timed out", "err", err)
 				return err
 			}
 			defer lock.Release()
@@ -195,26 +242,121 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 			marketPath := filepath.Join(cfg.DataDir, "market.db")
 			marketDB, err := db.OpenRWC(marketPath)
 			if err != nil {
+				slog.Error("corporate_actions: open market.db failed", "err", err)
 				return err
 			}
 			defer marketDB.Close()
 
 			_ = tsetmc.EnsureCorporateSchema(taskCtx, marketDB)
 			client := tsetmc.NewClient("", nil)
-			return tsetmc.SyncCorporateEvents(taskCtx, client.HTTPClient, marketDB, "")
+			if err := tsetmc.SyncCorporateEvents(taskCtx, client.HTTPClient, marketDB, ""); err != nil {
+				slog.Error("corporate_actions: sync failed", "err", err)
+				return err
+			}
+			slog.Info("corporate_actions: completed successfully")
+			return nil
 		},
 	})
 	if err != nil {
+		slog.Error("failed to register corporate_actions task", "err", err)
 		fmt.Fprintf(stderr, "failed to register corporate_actions task: %v\n", err)
 		return 1
 	}
 
+	// 4. Task: Scheduled Snapshot Creation (if enabled)
+	if cfg.SnapshotIntervalSec > 0 {
+		snapshotInterval := time.Duration(cfg.SnapshotIntervalSec) * time.Second
+		err = orchestrator.Register(worker.WorkerTask{
+			Name:     "snapshot_builder",
+			Interval: snapshotInterval,
+			Fn: func(taskCtx context.Context) error {
+				slog.Info("snapshot_builder: task started", "out_dir", cfg.SnapshotOutDir)
+
+				lock, err := tsetmc.AcquireWriterLockWithTimeout(taskCtx, cfg.DataDir, 1*time.Second)
+				if err != nil {
+					slog.Warn("snapshot_builder: lock acquisition timed out", "err", err)
+					return err
+				}
+				defer lock.Release()
+
+				entries, err := os.ReadDir(cfg.DataDir)
+				if err != nil {
+					slog.Error("snapshot_builder: read data dir failed", "dir", cfg.DataDir, "err", err)
+					return err
+				}
+
+				dbs := make(map[string]*sql.DB)
+				defer func() {
+					for _, conn := range dbs {
+						if conn != nil {
+							_ = conn.Close()
+						}
+					}
+				}()
+
+				for _, entry := range entries {
+					if entry.IsDir() {
+						continue
+					}
+					name := entry.Name()
+					if strings.EqualFold(filepath.Ext(name), ".db") {
+						dbPath := filepath.Join(cfg.DataDir, name)
+						conn, err := db.OpenRW(dbPath)
+						if err != nil {
+							slog.Warn("snapshot_builder: failed to open db", "path", dbPath, "err", err)
+							continue
+						}
+						key := strings.TrimSuffix(name, filepath.Ext(name))
+						dbs[key] = conn
+					}
+				}
+
+				if len(dbs) == 0 {
+					slog.Warn("snapshot_builder: no database files found to snapshot", "dir", cfg.DataDir)
+					return nil
+				}
+
+				manifest, err := snapshot.BuildSnapshotSet(taskCtx, dbs, cfg.SnapshotOutDir, "")
+				if err != nil {
+					slog.Error("snapshot_builder: build snapshot set failed", "err", err)
+					return err
+				}
+
+				privKey := getMinisignSecretKey()
+				if privKey != "" {
+					password := getMinisignPassword()
+					manifestPath := filepath.Join(cfg.SnapshotOutDir, "manifest.json")
+					sigPath, err := snapshot.SignAsset(manifestPath, privKey, password)
+					if err != nil {
+						slog.Error("snapshot_builder: signing manifest failed", "err", err)
+						return err
+					}
+					slog.Info("snapshot_builder: manifest signed", "sig_path", sigPath)
+				}
+
+				slog.Info("snapshot_builder: snapshot set completed successfully",
+					"snapshot_set_id", manifest.SnapshotSetID,
+					"asset_count", len(manifest.Assets),
+					"out_dir", cfg.SnapshotOutDir,
+				)
+				return nil
+			},
+		})
+		if err != nil {
+			slog.Error("failed to register snapshot_builder task", "err", err)
+			fmt.Fprintf(stderr, "failed to register snapshot_builder task: %v\n", err)
+			return 1
+		}
+	}
+
 	// Start orchestrator
 	if err := orchestrator.Start(ctx); err != nil {
+		slog.Error("failed to start orchestrator", "err", err)
 		fmt.Fprintf(stderr, "failed to start orchestrator: %v\n", err)
 		return 1
 	}
 
+	slog.Info("bors-producer orchestrator started")
 	fmt.Fprintf(stdout, "BorsTerminal Producer Daemon started (data: %s, peak: %v, off-peak: %v, market: %v). Press Ctrl+C to terminate.\n",
 		cfg.DataDir, peakInterval, offPeakInterval, marketInterval)
 
@@ -224,16 +366,20 @@ func runDaemon(ctx context.Context, args []string, stdout, stderr io.Writer) int
 
 	select {
 	case <-ctx.Done():
+		slog.Info("daemon context cancelled; draining tasks...")
 		fmt.Fprintln(stdout, "Context cancelled; draining daemon tasks...")
 	case sig := <-sigCh:
+		slog.Info("daemon received signal; draining tasks...", "signal", sig.String())
 		fmt.Fprintf(stdout, "Received signal %v; draining daemon tasks...\n", sig)
 	}
 
 	if drainErr := orchestrator.Drain(drainTimeout); drainErr != nil {
+		slog.Warn("daemon drain timeout exceeded", "err", drainErr)
 		fmt.Fprintf(stderr, "warning: drain timeout exceeded: %v\n", drainErr)
 	}
 	_ = orchestrator.Stop()
 
+	slog.Info("producer daemon stopped cleanly")
 	fmt.Fprintln(stdout, "Producer daemon stopped cleanly.")
 	return 0
 }
