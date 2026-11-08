@@ -4,6 +4,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -63,9 +68,11 @@ class FakeSession:
 
 def run():
     old_image = codal_captcha.CAPTCHA_IMAGE
+    old_opener = codal_captcha.open_captcha_image
     old_pause, old_sleep, old_backoff = cf.polite_pause, cf._control_sleep, cf._trigger_backoff
     with tempfile.TemporaryDirectory() as tmp:
         codal_captcha.CAPTCHA_IMAGE = Path(tmp) / "captcha.png"
+        codal_captcha.open_captcha_image = lambda path: None
         cf.polite_pause = lambda: None
         cf._control_sleep = lambda s: None
         cf._trigger_backoff = lambda s: None
@@ -94,6 +101,7 @@ def run():
                   not any(p[0].endswith("/begin") or p[0].endswith("/end") for p in s2.posts))
         finally:
             codal_captcha.CAPTCHA_IMAGE = old_image
+            codal_captcha.open_captcha_image = old_opener
             cf.polite_pause, cf._control_sleep, cf._trigger_backoff = old_pause, old_sleep, old_backoff
             cf._CAPTCHA_ENABLED = False
     print("codal fetch captcha guard: %d passed / %d failed" % (PASS, FAIL))
