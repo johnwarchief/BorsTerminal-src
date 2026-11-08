@@ -57,10 +57,12 @@ func EnsureSchema(db *sql.DB) error {
 		url TEXT,
 		fetched_at TEXT,
 		pdf_url TEXT,
-		excel_url TEXT
+		excel_url TEXT,
+		processed_at TEXT
 	);
 	CREATE INDEX IF NOT EXISTS ix_codal_symbol ON codal_notices(symbol);
 	CREATE INDEX IF NOT EXISTS ix_codal_date ON codal_notices(publish_date DESC);
+	CREATE INDEX IF NOT EXISTS ix_codal_processed ON codal_notices(processed_at);
 
 	CREATE TABLE IF NOT EXISTS pipeline_cursor (
 		key TEXT PRIMARY KEY,
@@ -71,7 +73,11 @@ func EnsureSchema(db *sql.DB) error {
 	);
 	`
 	_, err := db.Exec(ddl)
-	return err
+	if err != nil {
+		return err
+	}
+	_, _ = db.Exec("ALTER TABLE codal_notices ADD COLUMN processed_at TEXT")
+	return nil
 }
 
 // DiscoverFeed واکشی فید سراسری جستجوی کدال برای دسته مشخص‌شده (۱ برای صورت‌های مالی، ۳ برای گزارش فعالیت ماهانه)

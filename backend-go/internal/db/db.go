@@ -145,6 +145,11 @@ func OpenRW(path string) (*sql.DB, error) {
 	return open(path, "rw")
 }
 
+// OpenRWC opens or creates a database file in read-write-create mode.
+func OpenRWC(path string) (*sql.DB, error) {
+	return open(path, "rwc")
+}
+
 // OpenWritableForTest صرفاً برای فیکسچرهای تست در دایرکتوری‌های موقت t.TempDir()
 // است تا تست‌های اجزای تحلیل‌گر بتوانند داده‌های ساختگی/لبه‌ای را شبیه‌سازی کنند.
 func OpenWritableForTest(dataDir string) (*Handles, error) {

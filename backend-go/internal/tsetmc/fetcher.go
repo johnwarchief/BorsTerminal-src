@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -37,6 +38,9 @@ type Client struct {
 
 // NewClient creates a new TSETMC API client.
 func NewClient(baseURL string, httpClient *http.Client) *Client {
+	if baseURL == "" {
+		baseURL = os.Getenv("TSETMC_BASE_URL")
+	}
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
 	}

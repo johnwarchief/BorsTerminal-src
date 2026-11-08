@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -87,6 +88,9 @@ func NewPoliteClient(configs ...PoliteClientConfig) *PoliteClient {
 	}
 
 	bURL := cfg.BaseURL
+	if bURL == "" {
+		bURL = os.Getenv("CODAL_BASE_URL")
+	}
 	if bURL == "" {
 		bURL = defaultBaseURL
 	}
