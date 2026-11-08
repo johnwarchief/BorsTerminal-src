@@ -49,10 +49,11 @@ jobs:
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
+          python -m pip install --quiet cryptography
           python - <<'PY'
-          import os, sys, base64, hashlib
-          sys.path.insert(0, '.')
-          from api.update import UPDATE_PUBKEY
+          import os, sys, base64, hashlib, runpy
+          update_mod = runpy.run_path("api/update.py")
+          UPDATE_PUBKEY = update_mod["UPDATE_PUBKEY"]
           import bors_minisign
 
           raw_key = os.environ.get('KEY', '').strip()
