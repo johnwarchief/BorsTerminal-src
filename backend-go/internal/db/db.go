@@ -24,6 +24,9 @@ type Handles struct {
 // _pragma در DSN می‌نشیند تا هر اتصالِ استخرِ database/sql آن را بگیرد؛ Exec بعد از Open
 // فقط یک اتصال را می‌گیرد و بقیه بی‌تنظیم می‌مانند.
 func dsn(path, mode string) string {
+	if abs, err := filepath.Abs(path); err == nil {
+		path = abs
+	}
 	u := url.URL{Scheme: "file", Path: "/" + filepath.ToSlash(path)}
 	q := u.Query()
 	q.Set("mode", mode)

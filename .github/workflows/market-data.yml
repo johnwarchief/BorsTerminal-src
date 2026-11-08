@@ -44,57 +44,6 @@ jobs:
           test -n "$GH_TOKEN" || { echo "::error::RELEASE_TOKEN is required"; exit 1; }
           test -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" || { echo "::error::TAURI_SIGNING_PRIVATE_KEY is required"; exit 1; }
 
-      - name: Audit Minisign Secret Key Match (Zero Secret Exposure)
-        shell: bash
-        env:
-          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          python -m pip install --quiet cryptography
-          python - <<'PY'
-          import os, sys, base64, hashlib, ast
-          tree = ast.parse(open("api/update.py", encoding="utf-8").read())
-          matches = [n.value.value for n in tree.body if getattr(n, "targets", [None])[0] and getattr(n.targets[0], "id", None) == "UPDATE_PUBKEY"]
-          if not matches:
-              print('::error::Could not find UPDATE_PUBKEY in api/update.py', file=sys.stderr)
-              sys.exit(1)
-          UPDATE_PUBKEY = matches[0]
-          import bors_minisign
-
-          raw_key = os.environ.get('KEY', '').strip()
-          if not raw_key:
-              print('::error::TAURI_SIGNING_PRIVATE_KEY is empty', file=sys.stderr)
-              sys.exit(1)
-
-          text = raw_key
-          if not text.startswith('untrusted comment:'):
-              text = base64.b64decode(raw_key).decode('utf-8', 'replace')
-
-          lines = [l.strip() for l in text.splitlines() if l.strip() and not l.startswith('untrusted') and not l.startswith('trusted')]
-          sec_blob = base64.b64decode(lines[0])
-          key_id = sec_blob[2:10].hex().upper()
-
-          pub_armored = base64.b64decode(UPDATE_PUBKEY.strip()).decode('utf-8')
-          pub_lines = [l.strip() for l in pub_armored.splitlines() if l.strip() and not l.startswith('untrusted')]
-          pub_blob = base64.b64decode(pub_lines[0])
-          pub_key_id = pub_blob[2:10].hex().upper()
-
-          if key_id != pub_key_id:
-              print(f'::error::Key ID mismatch: secret={key_id} pubkey={pub_key_id}', file=sys.stderr)
-              sys.exit(1)
-
-          # Verify mathematical signing
-          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-          priv = Ed25519PrivateKey.from_private_bytes(sec_blob[42:74])
-          test_msg = b'BorsTerminal Stage 4 Production Activation Key Audit'
-          digest = hashlib.blake2b(test_msg, digest_size=64).digest()
-          sig = priv.sign(digest)
-          if not bors_minisign._ed25519_verify(pub_blob[10:42], digest, sig):
-              print('::error::Signature verification failed with UPDATE_PUBKEY', file=sys.stderr)
-              sys.exit(1)
-
-          print(f'::notice::[key-audit] Secret TAURI_SIGNING_PRIVATE_KEY mathematically matches client UPDATE_PUBKEY (KeyID: {key_id}). Zero secret values exposed.')
-          PY
-
       - name: Build bors-producer binary
         shell: bash
         run: |
@@ -102,6 +51,14 @@ jobs:
           go build -v -o ../bin/bors-producer ./cmd/bors-producer
           cd ..
           ./bin/bors-producer --version
+
+      - name: Audit Minisign Secret Key Match (Zero Secret Exposure)
+        shell: bash
+        env:
+          BORS_MINISIGN_SECRET_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          BORS_MINISIGN_PASSWORD: ''
+        run: |
+          ./bin/bors-producer audit key
 
       - name: Prepare Stage 4 Snapshot Assets
         shell: bash
@@ -157,6 +114,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           BORS_MINISIGN_SECRET_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          BORS_MINISIGN_PASSWORD: ''
         run: |
           ./bin/bors-producer codal publish \
             --tag="${TARGET_TAG}" \

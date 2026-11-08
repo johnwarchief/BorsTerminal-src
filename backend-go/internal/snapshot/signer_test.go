@@ -240,6 +240,23 @@ func TestSigner_EncryptedPrivateKey(t *testing.T) {
 	}
 }
 
+func TestSigner_DiskUpdaterKey(t *testing.T) {
+	keyPath := filepath.Join("..", "..", "..", ".tauri", "updater.key")
+	raw, err := os.ReadFile(keyPath)
+	if err != nil {
+		t.Skip("updater.key not found")
+	}
+	t.Logf("Found updater.key, len=%d", len(raw))
+
+	// Try ParsePrivateKey with ""
+	priv, err := ParsePrivateKey(string(raw), "")
+	if err != nil {
+		t.Logf("ParsePrivateKey with '' failed: %v", err)
+	} else {
+		t.Logf("ParsePrivateKey SUCCESS! Key ID: %X", priv.ID())
+	}
+}
+
 func TestSigner_InvalidInputs(t *testing.T) {
 	if _, err := ParsePublicKey(""); err == nil {
 		t.Fatal("expected error on empty public key")

@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -225,7 +224,7 @@ func (p *Publisher) uploadAsset(ctx context.Context, release *githubRelease, loc
 
 	p.setHeaders(req, "application/vnd.github+json")
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
+	req.ContentLength = fi.Size()
 
 	resp, err := p.cfg.Client.Do(req)
 	if err != nil {

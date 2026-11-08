@@ -8,9 +8,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"borsterminal/backend/internal/codal"
 	"borsterminal/backend/internal/db"
+	"borsterminal/backend/internal/snapshot"
+	"borsterminal/backend/internal/sync"
 )
 
 func runAudit(ctx context.Context, args []string, stdout, stderr io.Writer) int {
@@ -25,6 +28,8 @@ func runAudit(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 	switch sub {
 	case "universe":
 		return runAuditUniverse(ctx, rest, stdout, stderr)
+	case "key":
+		return runAuditKey(ctx, rest, stdout, stderr)
 	case "help", "-h", "--help":
 		printAuditHelp(stdout)
 		return 0
@@ -39,10 +44,14 @@ func printAuditHelp(w io.Writer) {
 
 Subcommands:
   universe  Comprehensive data coverage and anomaly audit across market universe
+  key       Cryptographic validation that signing key matches client UPDATE_PUBKEY
 
 Flags for 'universe':
   --data-dir=PATH  Directory containing database files (default: .)
   --out=PATH       Optional path to write detailed JSON report
+
+Flags for 'key':
+  --pubkey=STR     Expected public key (default: built-in DefaultUpdatePubKey)
 `
 	fmt.Fprint(w, help)
 }
@@ -118,5 +127,72 @@ func runAuditUniverse(ctx context.Context, args []string, stdout, stderr io.Writ
 		fmt.Fprintf(stdout, "Audit report JSON written to %s\n", outPath)
 	}
 
+	return 0
+}
+
+func runAuditKey(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if err := checkSensitiveCLIArgs(args, stderr); err != nil {
+		return 1
+	}
+
+	fs := flag.NewFlagSet("audit key", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	pubKeyFlag := fs.String("pubkey", sync.DefaultUpdatePubKey, "Expected Minisign public key string")
+
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+
+	privKeyStr := getMinisignSecretKey()
+	if strings.TrimSpace(privKeyStr) == "" {
+		fmt.Fprintf(stderr, "error: BORS_MINISIGN_SECRET_KEY, MINISIGN_SECRET_KEY, or BORS_MINISIGN_KEY_FILE is required\n")
+		return 1
+	}
+	password := getMinisignPassword()
+
+	priv, err := snapshot.ParsePrivateKey(privKeyStr, password)
+	if err != nil {
+		fmt.Fprintf(stderr, "error parsing/decrypting secret key: %v\n", err)
+		return 1
+	}
+
+	pub, err := snapshot.ParsePublicKey(*pubKeyFlag)
+	if err != nil {
+		fmt.Fprintf(stderr, "error parsing public key: %v\n", err)
+		return 1
+	}
+
+	if priv.ID() != pub.ID() {
+		fmt.Fprintf(stderr, "Key ID mismatch: secret=%X pubkey=%X\n", priv.ID(), pub.ID())
+		return 1
+	}
+
+	// Test sign & verify a cryptographic block
+	tmpDir, err := os.MkdirTemp("", "keyaudit_*")
+	if err != nil {
+		fmt.Fprintf(stderr, "create tmp dir: %v\n", err)
+		return 1
+	}
+	defer os.RemoveAll(tmpDir)
+
+	testFile := filepath.Join(tmpDir, "test.bin")
+	if err := os.WriteFile(testFile, []byte("BorsTerminal Stage 4 Key Audit Validation Payload"), 0600); err != nil {
+		fmt.Fprintf(stderr, "write test file: %v\n", err)
+		return 1
+	}
+
+	sigFile, err := snapshot.SignAsset(testFile, privKeyStr, password)
+	if err != nil {
+		fmt.Fprintf(stderr, "sign asset failed: %v\n", err)
+		return 1
+	}
+
+	if err := snapshot.VerifyAsset(testFile, sigFile, *pubKeyFlag); err != nil {
+		fmt.Fprintf(stderr, "verification failed against expected public key: %v\n", err)
+		return 1
+	}
+
+	fmt.Fprintf(stdout, "::notice::[key-audit] Secret key mathematically matches client UPDATE_PUBKEY (KeyID: %X). Zero secret values exposed.\n", priv.ID())
+	fmt.Fprintf(stdout, "KEY AUDIT PASS: KeyID %X matches public key\n", priv.ID())
 	return 0
 }

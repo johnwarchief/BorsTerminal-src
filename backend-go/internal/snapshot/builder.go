@@ -56,14 +56,20 @@ func VacuumInto(ctx context.Context, srcDB *sql.DB, targetPath string) error {
 	}
 
 	normalizedPath := filepath.ToSlash(cleanPath)
-	// Try parameterized VACUUM INTO ? first; fallback to clean escaped string literal if needed.
-	_, err := srcDB.ExecContext(ctx, "VACUUM INTO ?", normalizedPath)
+	// SQLite syntax requires string literal for VACUUM INTO: VACUUM INTO 'path'
+	escaped := strings.ReplaceAll(normalizedPath, "'", "''")
+	vacuumSQL := fmt.Sprintf("VACUUM INTO '%s'", escaped)
+	_, err := srcDB.ExecContext(ctx, vacuumSQL)
 	if err != nil {
-		escaped := strings.ReplaceAll(normalizedPath, "'", "''")
-		_, err = srcDB.ExecContext(ctx, fmt.Sprintf("VACUUM INTO '%s'", escaped))
-		if err != nil {
-			return fmt.Errorf("vacuum into %s: %w", cleanPath, err)
+		// Fallback to relative path if absolute path with drive letter fails in pure-go driver
+		if rel, relErr := filepath.Rel(".", cleanPath); relErr == nil {
+			relNorm := filepath.ToSlash(rel)
+			relEsc := strings.ReplaceAll(relNorm, "'", "''")
+			if _, relExecErr := srcDB.ExecContext(ctx, fmt.Sprintf("VACUUM INTO '%s'", relEsc)); relExecErr == nil {
+				return nil
+			}
 		}
+		return fmt.Errorf("vacuum into %s (sql: %s): %w", cleanPath, vacuumSQL, err)
 	}
 
 	fi, err := os.Stat(cleanPath)
