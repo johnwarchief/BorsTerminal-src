@@ -83,57 +83,64 @@ def main():
 
     server_httpd = None
     proc = None
+    is_live_github = "--live-github" in sys.argv
 
     try:
-        # 1. Generate test Minisign key pair using bors-producer keygen
-        print("  [1] Generating Minisign Ed25519 keypair via dist/bors-producer.exe keygen...")
-        keygen_res = subprocess.check_output([PRODUCER_EXE, "keygen"]).decode("utf-8")
-        keys = json.loads(keygen_res)
-        pubkey_str = keys["public_key"]
-        privkey_str = keys["secret_key"]
-        print(f"      Public key: {pubkey_str.splitlines()[-1][:32]}...")
+        if is_live_github:
+            server_url = "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.98"
+            pubkey_str = None
+            print(f"  [1] Live GitHub Release mode: targeting {server_url}")
+            print("      Using default built-in client public key (KeyID 830BF752EF10076).")
+        else:
+            # 1. Generate test Minisign key pair using bors-producer keygen
+            print("  [1] Generating Minisign Ed25519 keypair via dist/bors-producer.exe keygen...")
+            keygen_res = subprocess.check_output([PRODUCER_EXE, "keygen"]).decode("utf-8")
+            keys = json.loads(keygen_res)
+            pubkey_str = keys["public_key"]
+            privkey_str = keys["secret_key"]
+            print(f"      Public key: {pubkey_str.splitlines()[-1][:32]}...")
 
-        # 2. Setup source databases to snapshot
-        src_market_db = os.path.join(src_data_dir, "market.db")
-        sconn = sqlite3.connect(src_market_db)
-        sconn.execute("CREATE TABLE instruments (ins_code TEXT PRIMARY KEY, symbol TEXT);")
-        sconn.execute("CREATE TABLE fts_results (symbol TEXT PRIMARY KEY, score INT, verdict TEXT);")
-        sconn.execute("INSERT INTO instruments VALUES ('1001', 'فولاد');")
-        sconn.execute("INSERT INTO instruments VALUES ('1002', 'شستا');")
-        sconn.execute("INSERT INTO fts_results VALUES ('فولاد', 5, 'STRONG');")
-        sconn.execute("INSERT INTO fts_results VALUES ('شستا', 4, 'WATCH');")
-        sconn.commit()
-        sconn.close()
+            # 2. Setup source databases to snapshot
+            src_market_db = os.path.join(src_data_dir, "market.db")
+            sconn = sqlite3.connect(src_market_db)
+            sconn.execute("CREATE TABLE instruments (ins_code TEXT PRIMARY KEY, symbol TEXT);")
+            sconn.execute("CREATE TABLE fts_results (symbol TEXT PRIMARY KEY, score INT, verdict TEXT);")
+            sconn.execute("INSERT INTO instruments VALUES ('1001', 'فولاد');")
+            sconn.execute("INSERT INTO instruments VALUES ('1002', 'شستا');")
+            sconn.execute("INSERT INTO fts_results VALUES ('فولاد', 5, 'STRONG');")
+            sconn.execute("INSERT INTO fts_results VALUES ('شستا', 4, 'WATCH');")
+            sconn.commit()
+            sconn.close()
 
-        src_codal_db = os.path.join(src_data_dir, "codal.db")
-        cconn = sqlite3.connect(src_codal_db)
-        cconn.execute("CREATE TABLE codal_notices (tracing_no INT PRIMARY KEY, symbol TEXT);")
-        cconn.execute("INSERT INTO codal_notices VALUES (9999, 'فولاد');")
-        cconn.commit()
-        cconn.close()
+            src_codal_db = os.path.join(src_data_dir, "codal.db")
+            cconn = sqlite3.connect(src_codal_db)
+            cconn.execute("CREATE TABLE codal_notices (tracing_no INT PRIMARY KEY, symbol TEXT);")
+            cconn.execute("INSERT INTO codal_notices VALUES (9999, 'فولاد');")
+            cconn.commit()
+            cconn.close()
 
-        # 3. Create and sign snapshot set using bors-producer codal snapshot
-        print("  [2] Creating compressed LZMA2 snapshot set and Minisign signatures...")
-        snap_env = os.environ.copy()
-        snap_env["BORS_MINISIGN_SECRET_KEY"] = privkey_str
-        snap_cmd = [
-            PRODUCER_EXE, "codal", "snapshot",
-            f"--data-dir={src_data_dir}",
-            f"--out={server_dir}",
-            "--tag=gen-win-client-live-20261108"
-        ]
-        rc = subprocess.call(snap_cmd, env=snap_env)
-        if rc != 0:
-            print(f"[FAIL] bors-producer codal snapshot failed with code {rc}")
-            return 1
-
-        # Check required files exist in server_dir
-        for req_file in ["manifest.json", "manifest.json.sig", "market.db.lzma", "market.db.lzma.sig", "codal.db.lzma", "codal.db.lzma.sig"]:
-            p = os.path.join(server_dir, req_file)
-            if not os.path.isfile(p):
-                print(f"[FAIL] Snapshot asset {req_file} missing in {server_dir}")
+            # 3. Create and sign snapshot set using bors-producer codal snapshot
+            print("  [2] Creating compressed LZMA2 snapshot set and Minisign signatures...")
+            snap_env = os.environ.copy()
+            snap_env["BORS_MINISIGN_SECRET_KEY"] = privkey_str
+            snap_cmd = [
+                PRODUCER_EXE, "codal", "snapshot",
+                f"--data-dir={src_data_dir}",
+                f"--out={server_dir}",
+                "--tag=gen-win-client-live-20261108"
+            ]
+            rc = subprocess.call(snap_cmd, env=snap_env)
+            if rc != 0:
+                print(f"[FAIL] bors-producer codal snapshot failed with code {rc}")
                 return 1
-        print("      Created and signed all 6 release assets (market, codal, manifest + .sig files).")
+
+            # Check required files exist in server_dir
+            for req_file in ["manifest.json", "manifest.json.sig", "market.db.lzma", "market.db.lzma.sig", "codal.db.lzma", "codal.db.lzma.sig"]:
+                p = os.path.join(server_dir, req_file)
+                if not os.path.isfile(p):
+                    print(f"[FAIL] Snapshot asset {req_file} missing in {server_dir}")
+                    return 1
+            print("      Created and signed all 6 release assets (market, codal, manifest + .sig files).")
 
         # 4. Setup client user.db with personal user watchlist and notes matching watchlist/store.go schema
         user_db_path = os.path.join(client_dir, "user.db")
@@ -172,11 +179,14 @@ def main():
         print(f"  [3] Seeded user.db successfully (size: {initial_user_size} bytes)")
         print(f"      Initial user.db SHA-256: {initial_user_sha}")
 
-        # 5. Start mock HTTP distribution server
-        server_port = 8196
-        server_httpd = run_http_server(server_dir, server_port)
-        server_url = f"http://127.0.0.1:{server_port}"
-        print(f"  [4] Mock distribution server listening at: {server_url}")
+        # 5. Start distribution server if in mock mode
+        if not is_live_github:
+            server_port = 8196
+            server_httpd = run_http_server(server_dir, server_port)
+            server_url = f"http://127.0.0.1:{server_port}"
+            print(f"  [4] Mock distribution server listening at: {server_url}")
+        else:
+            print(f"  [4] Targeting live production release server at: {server_url}")
 
         # 6. Launch BorsTerminal_Ultimate.exe Windows binary
         client_port = 8197
@@ -188,7 +198,8 @@ def main():
             "-no-loops"
         ]
         client_env = os.environ.copy()
-        client_env["BORS_UPDATE_PUBKEY"] = pubkey_str
+        if pubkey_str:
+            client_env["BORS_UPDATE_PUBKEY"] = pubkey_str
         client_env["BORS_SNAPSHOT_BASE_URL"] = server_url
 
         print(f"  [5] Launching live Windows binary BorsTerminal_Ultimate.exe on port {client_port}...")
@@ -229,8 +240,9 @@ def main():
         print("  [7] Polling client download, Minisign verification, and atomic apply status...")
         done = False
         last_log = ""
-        for attempt in range(120):
-            time.sleep(0.25)
+        poll_attempts = 5400 if is_live_github else 300
+        for attempt in range(poll_attempts):
+            time.sleep(0.5)
             try:
                 with urllib.request.urlopen(f"{client_url}/api/sync/codal/db-status", timeout=2) as resp:
                     status_data = json.loads(resp.read().decode("utf-8"))

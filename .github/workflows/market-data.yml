@@ -1,29 +1,35 @@
 name: Publish market data asset and Stage 4 snapshot
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'market.db.lzma'
-      - '.github/workflows/market-data.yml'
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'audit = key check only; publish = rebuild FTS snapshot and publish'
+        type: choice
+        options:
+          - audit
+          - publish
+        default: audit
       target_tag:
-        description: 'Release Tag for Stage 4 Snapshot'
+        description: 'Release tag for the Stage 4 snapshot'
         required: false
         default: 'v1.0.98'
 
 permissions:
   contents: read
 
+concurrency:
+  group: stage4-snapshot-publish
+  cancel-in-progress: false
+
 jobs:
   publish-stage4-snapshot:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       DATA_REPO: johnwarchief/BorsTerminal
       TARGET_TAG: ${{ inputs.target_tag || 'v1.0.98' }}
-      SOURCE_REF: 2e73cf1cec1f90bd965ecf59cca02f4295a15c8a
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -40,9 +46,11 @@ jobs:
 
       - name: Require publishing secrets
         shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           test -n "$GH_TOKEN" || { echo "::error::RELEASE_TOKEN is required"; exit 1; }
-          test -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" || { echo "::error::TAURI_SIGNING_PRIVATE_KEY is required"; exit 1; }
+          test -n "$SIGNING_KEY" || { echo "::error::TAURI_SIGNING_PRIVATE_KEY is required"; exit 1; }
 
       - name: Build bors-producer binary
         shell: bash
@@ -60,56 +68,97 @@ jobs:
         run: |
           ./bin/bors-producer audit key
 
-      - name: Prepare Stage 4 Snapshot Assets
+      - name: Audit-only notice
+        if: inputs.mode != 'publish'
         shell: bash
         run: |
-          mkdir -p dist/snapshots
+          echo "::notice::[audit-only] Key audit passed; snapshot publish skipped (mode=audit)."
+          echo "Re-run this workflow with mode=publish to rebuild and publish the snapshot."
 
-          # 1. Download market.db.lzma from data-latest
-          echo "Downloading market.db.lzma from data-latest..."
-          gh release download data-latest --repo "$DATA_REPO" -p "market.db.lzma" --dir dist/snapshots
-          test -s dist/snapshots/market.db.lzma
+      - name: Materialize source databases
+        if: inputs.mode == 'publish'
+        shell: bash
+        run: |
+          mkdir -p dist/downloads dist/work dist/snapshots
+          gh release download data-latest --repo "$DATA_REPO" \
+            -p "market.db.lzma" -p "market.db.meta.json" --dir dist/downloads --clobber
+          test -s dist/downloads/market.db.lzma
 
-          # 2. Download codal.db.lzma from target tag (or v1.0.98 baseline)
-          echo "Downloading codal.db.lzma from $TARGET_TAG..."
-          if ! gh release download "$TARGET_TAG" --repo "$DATA_REPO" -p "codal.db.lzma" --dir dist/snapshots 2>/dev/null; then
+          if ! gh release download "$TARGET_TAG" --repo "$DATA_REPO" \
+            -p "codal.db.lzma" --dir dist/downloads --clobber 2>/dev/null; then
             echo "Falling back to v1.0.98 for codal.db.lzma..."
-            gh release download v1.0.98 --repo "$DATA_REPO" -p "codal.db.lzma" --dir dist/snapshots
+            gh release download v1.0.98 --repo "$DATA_REPO" \
+              -p "codal.db.lzma" --dir dist/downloads --clobber
           fi
-          test -s dist/snapshots/codal.db.lzma
+          test -s dist/downloads/codal.db.lzma
 
-          # 3. Generate manifest.json
           python - <<'PY'
-          import datetime, hashlib, json, os, pathlib
+          import hashlib, json, lzma, pathlib
 
-          tag = os.environ.get('TARGET_TAG', 'v1.0.98')
-          p_market = pathlib.Path("dist/snapshots/market.db.lzma")
-          p_codal = pathlib.Path("dist/snapshots/codal.db.lzma")
+          dl = pathlib.Path("dist/downloads")
+          meta = json.loads((dl / "market.db.meta.json").read_text(encoding="utf-8"))
+          actual = hashlib.sha256((dl / "market.db.lzma").read_bytes()).hexdigest()
+          if actual != meta["sha256"]:
+              raise SystemExit(f"market.db.lzma sha256 mismatch: {actual} != {meta['sha256']}")
 
-          manifest = {
-              "snapshot_set_id": tag,
-              "created_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-              "schema_version": 1,
-              "assets": {
-                  "market": {
-                      "path": "market.db.lzma",
-                      "sha256": hashlib.sha256(p_market.read_bytes()).hexdigest(),
-                      "size_bytes": p_market.stat().st_size
-                  },
-                  "codal": {
-                      "path": "codal.db.lzma",
-                      "sha256": hashlib.sha256(p_codal.read_bytes()).hexdigest(),
-                      "size_bytes": p_codal.stat().st_size
-                  }
-              }
-          }
-          out_file = pathlib.Path("dist/snapshots/manifest.json")
-          out_file.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-          print("Manifest generated:")
-          print(json.dumps(manifest, indent=2))
+          for src, dst in [("market.db.lzma", "market.db"), ("codal.db.lzma", "codal.db")]:
+              out = pathlib.Path("dist/work") / dst
+              with lzma.open(dl / src, "rb") as f, open(out, "wb") as g:
+                  while True:
+                      chunk = f.read(1 << 20)
+                      if not chunk:
+                          break
+                      g.write(chunk)
+              print(f"materialized {dst}: {out.stat().st_size} bytes")
+          print("[OK] market.db.lzma matches data-latest meta sha256")
+          PY
+
+      - name: Recalculate FTS across universe
+        if: inputs.mode == 'publish'
+        shell: bash
+        run: |
+          ./bin/bors-producer codal recalc --all --data-dir=dist/work
+          python - <<'PY'
+          import sqlite3
+          con = sqlite3.connect("dist/work/market.db")
+          total = con.execute("SELECT count(*) FROM fts_results").fetchone()[0]
+          if total <= 0:
+              raise SystemExit("refusing to publish a snapshot with zero FTS verdicts")
+          print(f"fts_results rows: {total}")
+          for verdict, count in con.execute(
+              "SELECT verdict, count(*) FROM fts_results GROUP BY verdict ORDER BY 2 DESC"
+          ):
+              print(f"  {verdict}: {count}")
+          con.close()
+          PY
+
+      - name: Build and sign snapshot set
+        if: inputs.mode == 'publish'
+        shell: bash
+        env:
+          BORS_MINISIGN_SECRET_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          BORS_MINISIGN_PASSWORD: ''
+        run: |
+          rm -f dist/snapshots/*.lzma dist/snapshots/*.sig dist/snapshots/manifest.json
+          ./bin/bors-producer codal snapshot \
+            --data-dir=dist/work \
+            --out=dist/snapshots \
+            --tag="${TARGET_TAG}"
+
+          python - <<'PY'
+          import hashlib, json, pathlib
+
+          manifest = json.loads(pathlib.Path("dist/snapshots/manifest.json").read_text(encoding="utf-8"))
+          for name, meta in manifest["assets"].items():
+              path = pathlib.Path("dist/snapshots", meta["path"])
+              actual = hashlib.sha256(path.read_bytes()).hexdigest()
+              if actual != meta["sha256"]:
+                  raise SystemExit(f"local {name} hash mismatch: {actual} != {meta['sha256']}")
+              print(f"[OK] local {name}: {meta['size_bytes']} bytes sha256={actual[:16]}...")
           PY
 
       - name: Publish and Sign Snapshot Set via bors-producer
+        if: inputs.mode == 'publish'
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -122,13 +171,30 @@ jobs:
             --repo="${DATA_REPO}"
 
       - name: Verify Published Release Assets
+        if: inputs.mode == 'publish'
         shell: bash
         run: |
+          mkdir -p dist/published
+          gh release download "$TARGET_TAG" --repo "$DATA_REPO" \
+            -p "manifest.json" -p "manifest.json.sig" --dir dist/published --clobber
+
           python - <<'PY'
-          import os, sys, subprocess, json
-          tag = os.environ.get('TARGET_TAG', 'v1.0.98')
-          repo = os.environ.get('DATA_REPO', 'johnwarchief/BorsTerminal')
-          out = subprocess.check_output(["gh", "release", "view", tag, "--repo", repo, "--json", "assets"], text=True)
+          import json, os, pathlib, subprocess, sys
+
+          tag = os.environ["TARGET_TAG"]
+          repo = os.environ["DATA_REPO"]
+
+          local = json.loads(pathlib.Path("dist/snapshots/manifest.json").read_text(encoding="utf-8"))
+          published = json.loads(pathlib.Path("dist/published/manifest.json").read_text(encoding="utf-8"))
+          if local["snapshot_set_id"] != published["snapshot_set_id"]:
+              raise SystemExit("published snapshot_set_id differs from local manifest")
+          if local["assets"] != published["assets"]:
+              raise SystemExit("published manifest assets differ from local manifest")
+          print("[OK] published manifest matches local manifest")
+
+          out = subprocess.check_output(
+              ["gh", "release", "view", tag, "--repo", repo, "--json", "assets"], text=True
+          )
           data = json.loads(out)
           asset_names = {a["name"]: a for a in data.get("assets", [])}
           required = [
@@ -137,7 +203,7 @@ jobs:
               "codal.db.lzma",
               "codal.db.lzma.sig",
               "manifest.json",
-              "manifest.json.sig"
+              "manifest.json.sig",
           ]
           missing = [r for r in required if r not in asset_names]
           if missing:
