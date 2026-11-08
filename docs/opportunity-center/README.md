@@ -10,16 +10,16 @@
 | ۱ — Product Discovery | تکمیل‌شده | `01-PRODUCT-DISCOVERY.md` |
 | ۲ — Strategy Intelligence | تکمیل‌شده | `02-STRATEGY-INTELLIGENCE.md` |
 | ۳ — UX & Product Experience | تکمیل‌شده | `03-UX-AND-PRODUCT-EXPERIENCE.md`، `PRODUCT-REQUIREMENTS.md`، `prototype/` (۹ اسکرین‌شات؛ صفر خطا) |
-| ۴ — Technical Architecture | **مسدود تا پذیرش نهایی Stage 4** | `04-TECHNICAL-ARCHITECTURE.md` |
-| گزارش نهایی | در انتظار فازها | گزارش جامع در گفت‌وگو + `IMPLEMENTATION-ROADMAP.md` |
+| ۴ — Technical Architecture | تکمیل‌شده روی Stage 4 پذیرفته‌شده `11f4b128` | `04-TECHNICAL-ARCHITECTURE.md`، `adr/`، `IMPLEMENTATION-ROADMAP.md` |
+| گزارش نهایی | تکمیل‌شده | `FINAL-REPORT.md` + گزارش گفت‌وگو |
 
 فازهای ۱ تا ۳ مستقل از Stage 4 پیش می‌روند. فاز ۴ فقط پس از پذیرش نهایی Stage 4 و با بررسی معماری واقعی و تأییدشدهٔ آن نهایی می‌شود. Stage 4 در Worktree جداگانهٔ خود دست‌نخورده می‌ماند.
 
 ## مبنا و جداسازی
 
-- `main` اجداد `da6d6177` است؛ بنابراین نوک Stage 3 همهٔ کامیت‌های `main` را دارد و مبنای دقیق‌تری برای توصیف معماری Go است.
-- Stage 3 روی `main` ادغام نشده است؛ به همین دلیل `main` مبنای این طراحی نیست.
-- Stage 4 در این مبنا نیست و کارهای uncommitted آن نیز خوانده یا کپی نشده‌اند. وضعیت Stage 4 در اسناد «در جریان / تأییدنشده» ثبت می‌شود.
+- فازهای ۱ تا ۳ روی `da6d6177` (نوک Stage 3) ساخته شدند.
+- **Stage 4 پذیرفته شد** و معماری فاز ۴ بر `11f4b128` استوار است؛ این commit در شاخهٔ طراحی ادغام شده است (merge `9c3676d4`). Stage 4 Worktree همچنان دست‌نخورده می‌ماند.
+- `main` هنوز Stage 3/4 را ندارد؛ مبنای طراحی نیست.
 - شاخهٔ مأموریت مستقل است؛ هیچ Merge به `main` و هیچ انتشار نسخه‌ای انجام نمی‌شود.
 
 ## نقشهٔ فایل‌ها
@@ -30,12 +30,14 @@
 | `01-PRODUCT-DISCOVERY.md` | چشم‌انداز، مسئله، کاربر و Job، مدل مفهومی، جایگاه، دامنه، روش‌های تولید، پژوهش رقابتی، مدل محصول |
 | `02-STRATEGY-INTELLIGENCE.md` | مدل استراتژی، تولید، ارزیابی، اعتبارسنجی، چرخهٔ عمر، قیدهای ایران، قرارداد FTS |
 | `03-UX-AND-PRODUCT-EXPERIENCE.md` | IA، ناوبری، جریان‌ها، مشخصات صفحات، Lab، مقایسه، Prototype، اعتبارسنجی UX |
-| `04-TECHNICAL-ARCHITECTURE.md` | معماری فنی، قرارداد موتورها، داده، API، امنیت، کارایی، تست — پس از Stage 4 |
+| `04-TECHNICAL-ARCHITECTURE.md` | معماری فنی روی Stage 4 پذیرفته‌شده، قراردادها، داده، Registry، API، امنیت، شکست/بازیابی، Q1/Q5/Q11 |
+| `adr/` | ADRهای `ADR-OC-001..014` + فهرست و قالب |
+| `IMPLEMENTATION-ROADMAP.md` | مراحل P0–P6، وابستگی، Gate و معیار پذیرش |
+| `FINAL-REPORT.md` | گزارش جامع فازهای ۱–۴، شواهد، تصمیم‌ها، ریسک‌ها و وضعیت راستی‌آزمایی |
 | `PRODUCT-REQUIREMENTS.md` | PRD تجمیعی با ارجاع به فازها، بدون تکرار |
 | `DECISION-LOG.md` | تصمیم، گزینه‌ها، دلیل، تاریخ، وضعیت |
 | `RESEARCH-REFERENCES.md` | منبع، ناشر، تاریخ دسترسی، کاربرد، لایهٔ اعتبار |
 | `OPEN-QUESTIONS.md` | تصمیم‌های واقعاً مالکانه با پیش‌فرض صریح |
-| `IMPLEMENTATION-ROADMAP.md` | مأموریت‌های توسعه، وابستگی، معیار پذیرش |
 | `prototype/` | Prototype مستقل و دمو، خارج از Runtime |
 
 ## لایه‌بندی شواهد
@@ -62,8 +64,13 @@
 6. Kronos و مدل‌های پیش‌بینی متعلق به Technical Intelligence‌اند و پیش‌فرض Opportunity Center نیستند.
 7. Python فقط مرجع پژوهش، منطق تاریخی یا Oracle تست است؛ Runtime آینده Go است.
 8. Prototype مستقل می‌ماند و وارد Runtime تولید نمی‌شود.
-9. هیچ داده‌ای از ماشین کاربر خارج نمی‌شود.
+9. هیچ داده‌ای از ماشین کاربر خارج نمی‌شود؛ استثنای صریح: GPU موقت با Opt-in مالک.
 10. Approved یعنی مجوز استفاده در کشف فرصت، نه مجوز معاملهٔ واقعی.
+11. آموزش، تکامل، تأیید و انتشار Stable فقط روی سیستم مالک.
+12. سه کاربر فقط نسخه‌های Stable را دریافت می‌کنند؛ Watchlist/Portfolio/Workspace محلی می‌ماند.
+13. Registry خصوصی است و هیچ سرور/هزینهٔ میزبانی دائمی مفروض نیست.
+14. Python برای Research/Training؛ Runtime محصول Go + Tauri است.
+15. Kronos و پیش‌بینی در Technical Intelligence می‌ماند و وارد Strategy Intelligence نمی‌شود.
 
 ## رابطه با اسناد پژوهشی موجود
 
