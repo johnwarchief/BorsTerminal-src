@@ -260,10 +260,10 @@ backend-go/
 - `func FetchClientTypeHistory(ctx context.Context, client *http.Client, insCode string) ([]ClientTypePoint, error)`
 - `func IngestMarketSnapshot(ctx context.Context, db *sql.DB, rows []MarketWatchRow) error`
 
-- [ ] **Step 1: نوشتن تست واکشی تابلوی بازار و تاریخچه حقیقی/حقوقی از روی فیکسچرهای JSON تستی**
-- [ ] **Step 2: پیاده‌سازی کلاینت CDN رسمی TSETMC در `fetcher.go` با پین کردن IP بهینه**
-- [ ] **Step 3: درج و بروزرسانی دسته‌ای در جداول `market_watch`, `client_type`, `instruments` دیتابیس `market.db`**
-- [ ] **Step 4: کامیت Task 8**
+- [x] **Step 1: نوشتن تست واکشی تابلوی بازار و تاریخچه حقیقی/حقوقی از روی فیکسچرهای JSON تستی**
+- [x] **Step 2: پیاده‌سازی کلاینت CDN رسمی TSETMC در `fetcher.go` با پین کردن IP بهینه**
+- [x] **Step 3: درج و بروزرسانی دسته‌ای در جداول `market_watch`, `client_type`, `instruments` دیتابیس `market.db`**
+- [x] **Step 4: کامیت Task 8**
   `git commit -m "feat(tsetmc): implement live market watch and client type history ingestion"`
 
 ---
