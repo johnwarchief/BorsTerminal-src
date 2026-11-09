@@ -348,7 +348,7 @@ git merge-base --is-ancestor 11f4b128 HEAD && echo "Stage4 base OK"
 
 # شمارش مصنوعات طراحی
 ls docs/opportunity-center/adr/ADR-OC-*.md | wc -l          # انتظار: 15
-grep -c '^| OC-D-' docs/opportunity-center/DECISION-LOG.md   # انتظار: 73
+grep -c '^| OC-D-' docs/opportunity-center/DECISION-LOG.md   # انتظار: 76
 grep -c '^| FR-OC-' docs/opportunity-center/PRODUCT-REQUIREMENTS.md  # انتظار: 76
 grep -c '^| NFR-OC-' docs/opportunity-center/PRODUCT-REQUIREMENTS.md # انتظار: 18
 ls docs/opportunity-center/prototype/evidence/*.png | wc -l  # انتظار: 9
