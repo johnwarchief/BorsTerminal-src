@@ -37,6 +37,8 @@ python tools/phase48/continuation/verify_artifacts.py
 | `tools/phase48/verify_symbol_identity.py` | S4: بررسیِ `ins_code` و هویتِ نماد |
 | `tools/phase48/repair/` | S5: هارنسِ Repairِ تعاملی، نسخهٔ مسیر‌پارامتری‌شده |
 | `tools/phase48/continuation/evidence/` | شواهدِ JSONِ S4/S5 (خلاصه و آمار، نه سریِ خام) |
+| `data/phase48/db/` | نسخهٔ فشردهٔ LZMA سه DBِ منبع/Work/Verify با SHA-256 |
+| `tools/phase48/continuation/compress_db_lzma.py` | ابزارِ فشرده‌سازیِ LZMA با اثباتِ round-trip |
 | `data/ra365_corrections/ra365-r32b-v2/` | پکِ اصلاحِ مشتق و پراکنده (از قبل در گیت بود) |
 | `FINAL-REPORT.md` | گزارشِ نهایی با اعدادِ اندازه‌گیری‌شده |
 
@@ -47,9 +49,9 @@ python tools/phase48/continuation/verify_artifacts.py
 | `_audit/phase48/parity/ref/bars.ndjson.gz` | 6,710,605 | `68a1c803…` | دادهٔ اشتراکِ مالک؛ متادیتای ضبط: «not redistributable» |
 | `_audit/phase48/parity/ref/symbols.json` | 4,447 | `d1b62739…` | فهرستِ ۳۰ نماد؛ همراهِ بستهٔ مرجع |
 | `_audit/phase48/parity/ref/coverage.json` | 64,061 | `3333e660…` | پوششِ ۱۸۰ سریِ مرجع |
-| `_audit/phase48/lab/market.db` | 267,472,896 | `bb57564b…` | DBِ منبعِ S4 |
-| `_audit/phase48closeout/backfill/work/market.db` | 294,793,216 | `2b701ea3…` | DBِ کارِ S4 با ۷۲,۲۲۲ ردیفِ backfill |
-| `_audit/phase48closeout/backfill/verify/market.db` | 294,793,216 | `2b701ea3…` | کپیِ بایت‌یکسان برای سنجشِ API |
+| `_audit/phase48/lab/market.db` | 267,472,896 | `bb57564b…` | DBِ خامِ منبعِ S4 |
+| `_audit/phase48closeout/backfill/work/market.db` | 294,793,216 | `2b701ea3…` | DBِ خامِ کارِ S4 با ۷۲,۲۲۲ ردیفِ backfill |
+| `_audit/phase48closeout/backfill/verify/market.db` | 294,793,216 | `2b701ea3…` | کپیِ بایت‌یکسانِ خام برای سنجشِ API |
 | `_audit/phase48closeout/backfill/borsd_backfill_test.exe` | 22,161,920 | `aa448e77…` | بک‌اندِ آزمایشیِ S4 |
 | `_audit/phase48closeout/installer/bundle/` | ۱۹۱ MB | چند فایل | باندلِ آزمایشیِ Repair |
 | `_audit/phase48closeout/repair/out/BorsTerminal_RepairTest_Setup_v1.0.95.exe` | 22,221,082 | `0015050f…` | نصب‌کنندهٔ آزمایشیِ S5 |
@@ -63,6 +65,38 @@ python tools/phase48/continuation/verify_artifacts.py
 `tools/phase45/rahavard/capture_rahavard.mjs` و
 `tools/phase45/rahavard/import_capture.py` دوباره ضبط می‌شود؛ این کار به نشستِ
 مرورگرِ مالک نیاز دارد (رجوع به `tools/phase45/rahavard/PROVENANCE.md`).
+
+نسخهٔ فشردهٔ هر سه DB در `data/phase48/db/` **در گیت است** (بخشِ بعد)؛ DBهای خامِ بالا
+فقط خوانده شدند و حذف یا بازنویسی نشدند.
+
+## نسخهٔ فشردهٔ DBها
+
+| DB | خام | raw sha256 | آرشیوِ گیت | archive sha256 | حجمِ آرشیو |
+| --- | --- | --- | --- | --- | --- |
+| منبع (S4) | `_audit/phase48/lab/market.db` | `bb57564b…` | `data/phase48/db/phase48-source-market.db.lzma` | `42cd1567…` | 67,034,328 |
+| Work (S4) | `_audit/phase48closeout/backfill/work/market.db` | `2b701ea3…` | `data/phase48/db/phase48-backfill-work-market.db.lzma` | `db214908…` | 68,915,820 |
+| Verify (S4) | `_audit/phase48closeout/backfill/verify/market.db` | `2b701ea3…` | `data/phase48/db/phase48-backfill-verify-market.db.lzma` | `db214908…` | 68,915,820 |
+
+- Work و Verify خام بایت‌یکسان‌اند؛ آرشیوهایشان هم بایت‌یکسان شد.
+- هر آرشیو با `lzma` (XZ، preset 9) ساخته و با round-trip کامل تأیید شد:
+  SHA-256ِ باز‌شده = SHA-256ِ خام. گزارش‌ها در
+  `tools/phase48/continuation/evidence/archives/` هستند.
+- DBهای خام فقط خوانده شدند؛ اندازه و mtimeشان قبل/بعد یکسان است. آرشیو با copy
+  ساخته شد، نه move.
+- آرشیوهای Work/Verify ردیف‌هایِ `src='rahavard365'` دارند (پکِ مرجعِ ضبط‌شده
+  «not redistributable»). این آرشیوها فقط برایِ ادامهٔ کار رویِ شاخهٔ خصوصیِ منبع‌اند؛
+  به مخزنِ توزیعِ عمومی یا Release پیوست نشوند.
+- `*.lzma` به‌طورِ کلی در `.gitignore` است؛ این مسیر با استثنایِ ثبت‌شده
+  (`!data/phase48/db/*.lzma`) عمداً قابلِ ردیابی شده است.
+- برای بازگردانی، آرشیو را به مسیرِ نو باز کنید و هش را با manifest بسنجید؛ DBِ اصلی
+  را بازنویسی نکنید:
+
+```bash
+python -c "import lzma,sys; open(sys.argv[2],'wb').write(lzma.decompress(open(sys.argv[1],'rb').read()))" \
+  data/phase48/db/phase48-backfill-work-market.db.lzma \
+  _audit/phase48closeout/continuation/db/restored-work.db
+sha256sum _audit/phase48closeout/continuation/db/restored-work.db
+```
 
 ## بازتولیدِ S4 (Backfill)
 

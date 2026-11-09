@@ -8,8 +8,8 @@
       "path": "FINAL-REPORT.md",
       "role": "final report (statuses and measured numbers)",
       "git": "committed",
-      "size": 21427,
-      "sha256": "bd3ac0f33eaa421f86640f8d417066f50fb144f848a6198de14faee53e942cf3"
+      "size": 21504,
+      "sha256": "843183ca0cf11083d4d434c71c97c1d20aedd7a7ee8bf503f7630c9bda066f13"
     },
     {
       "path": "tools/phase48/backfill_reference.py",
@@ -64,8 +64,8 @@
       "path": "tools/phase48/continuation/README.md",
       "role": "continuation instructions",
       "git": "committed",
-      "size": 10673,
-      "sha256": "16f1b2768dd974ef00b22dbf817ece127260e4aed0aafd3ce4457cc8d01d9ccf"
+      "size": 13300,
+      "sha256": "7f0058029b61e4bea37f2e7f8d35e1ab7b4b6d9cab84821b5c4585a9060bd241"
     },
     {
       "path": "tools/phase48/continuation/verify_artifacts.py",
@@ -201,6 +201,76 @@
       "sha256": "db994a4188f03112a1a9c53d3993c968d35003529c90f8f595a228b80b70e170"
     },
     {
+      "path": "data/phase48/db/phase48-source-market.db.lzma",
+      "role": "compressed S4 source DB (LZMA/XZ preset 9)",
+      "git": "committed",
+      "size": 67034328,
+      "sha256": "42cd1567da50bd4c507b0f8503d015ba44b9005b1bd8ecd077a28b03cb1eb93f",
+      "raw_path": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48\\lab\\market.db",
+      "raw_size": 267472896,
+      "raw_sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca",
+      "archive_format": "xz",
+      "archive_preset": 9,
+      "roundtrip_ok": true,
+      "note": "round-trip verified; raw DB untouched"
+    },
+    {
+      "path": "data/phase48/db/phase48-backfill-work-market.db.lzma",
+      "role": "compressed S4 work DB (LZMA/XZ preset 9)",
+      "git": "committed",
+      "size": 68915820,
+      "sha256": "db214908de84f25778a7d7cabfe44bf17c37c302a79a0627526f57ef378bafca",
+      "raw_path": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\backfill\\work\\market.db",
+      "raw_size": 294793216,
+      "raw_sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+      "archive_format": "xz",
+      "archive_preset": 9,
+      "roundtrip_ok": true,
+      "note": "round-trip verified; contains src=rahavard365 rows"
+    },
+    {
+      "path": "data/phase48/db/phase48-backfill-verify-market.db.lzma",
+      "role": "compressed S4 verification DB (LZMA/XZ preset 9)",
+      "git": "committed",
+      "size": 68915820,
+      "sha256": "db214908de84f25778a7d7cabfe44bf17c37c302a79a0627526f57ef378bafca",
+      "raw_path": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\backfill\\verify\\market.db",
+      "raw_size": 294793216,
+      "raw_sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+      "archive_format": "xz",
+      "archive_preset": 9,
+      "roundtrip_ok": true,
+      "note": "byte-identical to the work archive; round-trip verified"
+    },
+    {
+      "path": "tools/phase48/continuation/compress_db_lzma.py",
+      "role": "LZMA compressor with read-only source and round-trip proof",
+      "git": "committed",
+      "size": 3335,
+      "sha256": "d092eea4863231135f0e1f31fd6cddd173995dd725353fca2998ecc004b0d70e"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/archives/source.json",
+      "role": "compression/round-trip report for the source DB",
+      "git": "committed",
+      "size": 638,
+      "sha256": "95315b23386d499fa9b96da96ee4833dc9c74f6bc3249b169cf0933a9e5f2889"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/archives/work.json",
+      "role": "compression/round-trip report for the work DB",
+      "git": "committed",
+      "size": 664,
+      "sha256": "377b86bbba7bba862ed3b5f7e79da0e61472f3ceb5bb24bbe95b4933b297360a"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/archives/verify.json",
+      "role": "compression/round-trip report for the verify DB",
+      "git": "committed",
+      "size": 668,
+      "sha256": "a1f75461cf5b9e5126b25f5343465818b5e41ad5c7b5987bb9c86f55cb601bf3"
+    },
+    {
       "path": "_audit/phase48/parity/ref/bars.ndjson.gz",
       "role": "reference pack (owner subscription; not redistributable)",
       "git": "local",
@@ -223,24 +293,27 @@
     },
     {
       "path": "_audit/phase48/lab/market.db",
-      "role": "S4 source DB (lab copy)",
+      "role": "raw S4 source DB (read-only during compression; archive committed)",
       "git": "local",
       "size": 267472896,
-      "sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca"
+      "sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca",
+      "archive_path": "data/phase48/db/phase48-source-market.db.lzma"
     },
     {
       "path": "_audit/phase48closeout/backfill/work/market.db",
-      "role": "S4 work DB with 72,222 backfilled rows",
+      "role": "raw S4 work DB with 72,222 backfilled rows (read-only; archive committed)",
       "git": "local",
       "size": 294793216,
-      "sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5"
+      "sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+      "archive_path": "data/phase48/db/phase48-backfill-work-market.db.lzma"
     },
     {
       "path": "_audit/phase48closeout/backfill/verify/market.db",
-      "role": "S4 API-verification DB (byte-identical copy)",
+      "role": "raw S4 verification DB, byte-identical to work (read-only; archive committed)",
       "git": "local",
       "size": 294793216,
-      "sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5"
+      "sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+      "archive_path": "data/phase48/db/phase48-backfill-verify-market.db.lzma"
     },
     {
       "path": "_audit/phase48closeout/backfill/borsd_backfill_test.exe",

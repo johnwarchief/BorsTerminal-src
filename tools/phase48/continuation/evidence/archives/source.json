@@ -1,0 +1,14 @@
+{
+ "raw": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48\\lab\\market.db",
+ "raw_size": 267472896,
+ "raw_sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca",
+ "archived": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\continuation\\db\\phase48-source-market.db.lzma",
+ "archived_size": 67034328,
+ "archived_sha256": "42cd1567da50bd4c507b0f8503d015ba44b9005b1bd8ecd077a28b03cb1eb93f",
+ "format": "xz",
+ "preset": 9,
+ "decompressed_size": 267472896,
+ "decompressed_sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca",
+ "roundtrip_ok": true,
+ "seconds": 105.8
+}

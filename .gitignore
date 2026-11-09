@@ -267,3 +267,9 @@ _audit/phase47/
 
 # Phase 4.8 Closeout lab artifacts (raw data and local evidence only)
 _audit/phase48closeout/
+
+# Phase 4.8 continuation archives — deliberately tracked on the private source
+# branch so the next session can restore them; never attach to a public release.
+!data/phase48/db/
+!data/phase48/db/*.lzma
+

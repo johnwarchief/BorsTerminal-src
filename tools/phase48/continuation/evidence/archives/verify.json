@@ -1,0 +1,14 @@
+{
+ "raw": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\backfill\\verify\\market.db",
+ "raw_size": 294793216,
+ "raw_sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+ "archived": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\continuation\\db\\phase48-backfill-verify-market.db.lzma",
+ "archived_size": 68915820,
+ "archived_sha256": "db214908de84f25778a7d7cabfe44bf17c37c302a79a0627526f57ef378bafca",
+ "format": "xz",
+ "preset": 9,
+ "decompressed_size": 294793216,
+ "decompressed_sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+ "roundtrip_ok": true,
+ "seconds": 111.0
+}
