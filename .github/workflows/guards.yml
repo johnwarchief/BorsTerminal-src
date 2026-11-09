@@ -137,11 +137,16 @@ jobs:
         run: go test ./...
 
   delivery-contract:
-    name: bundle contract / data packs / artifact hashes
+    name: desktop delivery (Windows bundle + Tauri shell + installer)
     runs-on: windows-latest
     needs: [go-windows]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -149,6 +154,16 @@ jobs:
           go-version: '1.27.3'
           check-latest: true
           cache-dependency-path: backend-go/go.sum
+
+      - name: Set up Rust (stable, MSVC)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri
 
       - uses: actions/setup-node@v4
         with:
@@ -162,41 +177,70 @@ jobs:
           npm ci
           npm run build
 
-      - name: Assemble bundle
+      - name: Assemble production-shaped bundle (Go + Tauri + data)
         shell: bash
         run: |
           set -e
-          mkdir -p dist-ci/frontend dist-ci/data/ra365_calendar
-          cp -r frontend-v2/dist/. dist-ci/frontend/
-          test -f dist-ci/frontend/index.html
-          cp -r data/ra365_calendar/ra365-r32d dist-ci/data/ra365_calendar/ra365-r32d
-          test -n "$(ls -A dist-ci/data/ra365_calendar/ra365-r32d)"
+          B=dist-ci/BorsTerminal_Ultimate
+          mkdir -p "$B/frontend" "$B/data/ra365_calendar"
+          cp -r frontend-v2/dist/. "$B/frontend/"
+          test -f "$B/frontend/index.html"
+          cp -r data/ra365_calendar/ra365-r32d "$B/data/ra365_calendar/ra365-r32d"
+          test -n "$(ls -A "$B/data/ra365_calendar/ra365-r32d")"
           if [ -d data/ra365_corrections ]; then
-            cp -r data/ra365_corrections dist-ci/data/ra365_corrections
-            test -n "$(ls -A dist-ci/data/ra365_corrections)"
+            cp -r data/ra365_corrections "$B/data/ra365_corrections"
+            test -n "$(ls -A "$B/data/ra365_corrections")"
           fi
-          ( cd backend-go && go build -o ../dist-ci/BorsTerminal_Ultimate.exe ./cmd/borsd )
+          test -f market.db
+          cp market.db "$B/market.db"
+          cp scripts/apply_update.bat "$B/apply_update.bat"
+          ( cd backend-go && go build -o ../dist-ci/BorsTerminal_Ultimate/BorsTerminal_Ultimate.exe ./cmd/borsd )
+          python scripts/build_shell.py --dist "$B"
+          test -f "$B/BorsTerminal_Shell.exe"
+          ls -l "$B"
 
-      - name: Bundle contract (zero python/uvicorn/fastapi)
+      - name: Bundle contract (Go + Tauri + SPA, zero python)
         shell: bash
         run: |
           set -e
-          ( cd backend-go && go run ./cmd/bundlecheck -path ../dist-ci -json )
+          python dev/onedir_contract_v11.py --dist dist-ci
+          ( cd backend-go && go run ./cmd/bundlecheck -path ../dist-ci/BorsTerminal_Ultimate -json )
 
       - name: Artifact hashes
         shell: bash
         run: |
           set -e
-          sha256sum dist-ci/BorsTerminal_Ultimate.exe > delivery-artifacts.sha256
-          find dist-ci/frontend dist-ci/data -type f -print0 | sort -z | xargs -0 sha256sum >> delivery-artifacts.sha256
+          find dist-ci/BorsTerminal_Ultimate -type f -print0 | sort -z | xargs -0 sha256sum > delivery-artifacts.sha256
           echo "--- artifact manifest ---"
           cat delivery-artifacts.sha256
 
-      - name: Upload artifact manifest
+      - name: Build Windows installer artifact
+        shell: bash
+        run: |
+          set -e
+          # CI-only password; the release workflow supplies the real one.
+          printf '#define SetupPassword "ci-test-only"\n' > installer/.setup_password.iss
+          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          if [ ! -f "$ISCC" ]; then choco install innosetup --no-progress -y; fi
+          python - <<'PY' > appver.txt
+          import re
+          s = open('bors_config.py', encoding='utf-8').read()
+          print(re.search(r"APP_VERSION\s*=\s*['\"]([^'\"]+)", s).group(1))
+          PY
+          APP_VERSION=$(cat appver.txt)
+          echo "APP_VERSION=$APP_VERSION"
+          MSYS_NO_PATHCONV=1 "$ISCC" "/DAppVersion=$APP_VERSION" "/DBundleDir=$(pwd -W)/dist-ci/BorsTerminal_Ultimate" installer/bors_setup.iss
+          test -f "installer/out/BorsTerminal_Ultimate_Setup_v${APP_VERSION}.exe"
+          sha256sum "installer/out/BorsTerminal_Ultimate_Setup_v${APP_VERSION}.exe" | tee installer-artifact.sha256
+
+      - name: Upload delivery artifacts
         uses: actions/upload-artifact@v4
         with:
           name: delivery-artifacts
-          path: delivery-artifacts.sha256
+          path: |
+            delivery-artifacts.sha256
+            installer-artifact.sha256
+            installer/out/BorsTerminal_Ultimate_Setup_v*.exe
           if-no-files-found: error
 
   data-integrity:

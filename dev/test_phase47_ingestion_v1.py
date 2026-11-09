@@ -239,6 +239,72 @@ def test_market_watch_guard():
     con2.close()
 
 
+def test_market_watch_field_semantics():
+    section("۵) معنایِ depth / price_change / eps / pe")
+    import test_tsetmc as T
+
+    ddl = ("CREATE TABLE market_watch (ins_code TEXT PRIMARY KEY, "
+           + ", ".join("%s REAL" % c for c in T.MW_COLS[1:]) + ")")
+    ck("price_first" in T._MW_KEEP_IF_ZERO and "price_change" not in T._MW_KEEP_IF_ZERO
+       and "eps" not in T._MW_KEEP_IF_ZERO and "pe" not in T._MW_KEEP_IF_ZERO,
+       "price_change/eps/pe عمداً keep-if-zero نیستند (صفرشان معتبر است)")
+
+    rich = _mw_tuple(d_even=20261011, h_even=125959, p_closing=4180.0, p_last=4180.0,
+                     price_first=4100.0, price_min=4000.0, price_max=4220.0,
+                     price_yesterday=4100.0, q_tot_tran=5e6, q_tot_cap=2.1e13,
+                     z_tot_tran=1000.0, price_change=120.0, eps=850.0, pe=4.9,
+                     buy_q1_vol=120.0, fetched_at="t1")
+    thin = _mw_tuple(d_even=20261011, p_closing=4180.0, p_last=4180.0,
+                     price_first=0.0, price_min=0.0, price_max=0.0,
+                     q_tot_tran=0.0, price_change=0.0, eps=None, pe=None,
+                     buy_q1_vol=0.0, fetched_at="t2")
+    con = sqlite3.connect(":memory:")
+    con.execute(ddl)
+    con.execute(T._MW_INSERT, rich)
+    con.execute(T._MW_INSERT, thin)
+    con.commit()
+    got = con.execute("SELECT price_change, eps, pe, buy_q1_vol FROM market_watch").fetchone()
+    ck(got == (120.0, 850.0, 4.9, 120.0),
+       "پاسخِ لاغرِ همان نشست price_change/eps/pe/عمق را عوض نمی‌کند", got)
+
+    trade = _mw_tuple(d_even=20261011, h_even=131000, p_closing=4190.0, p_last=4230.0,
+                      price_first=4100.0, price_min=3990.0, price_max=4230.0,
+                      price_yesterday=4100.0, q_tot_tran=6e6, q_tot_cap=2.2e13,
+                      z_tot_tran=1200.0, price_change=0.0, eps=0.0, pe=None,
+                      buy_q1_vol=0.0, fetched_at="t3")
+    con.execute(T._MW_INSERT, trade)
+    con.commit()
+    got = con.execute("SELECT price_change, eps, pe, buy_q1_vol, q_tot_tran"
+                      " FROM market_watch").fetchone()
+    ck(got == (0.0, 0.0, None, 0.0, 6e6),
+       "صفرِ price_change/eps و عمقِ خالیِ پس از بستن، مقدارِ واقعی نوشته می‌شوند", got)
+
+    # کنترلِ منفی: همان SQLِ قدیمی، همان دو ردیف ⇒ صفر/تهی شدنِ مقادیر.
+    con2 = sqlite3.connect(":memory:")
+    con2.execute(ddl)
+    old_sql = T._upsert("market_watch", T.MW_COLS, T._STICKY_MARKET_WATCH)
+    con2.execute(old_sql, rich)
+    con2.execute(old_sql, thin)
+    con2.commit()
+    legacy = con2.execute("SELECT price_change, eps, pe, buy_q1_vol FROM market_watch").fetchone()
+    ck(legacy == (0.0, None, None, 0.0),
+       "کنترلِ منفی: بدونِ گارد، price_change/eps/pe/عمق پاک می‌شوند", legacy)
+
+    # نمادِ متوقف در نشستِ تازه: حجم و اولین قیمتِ دیروز نمی‌ماند؛ epsِ گفته‌شده می‌نشیند.
+    halted = _mw_tuple(d_even=20261012, p_closing=4190.0, p_last=4190.0,
+                       price_first=0.0, price_min=0.0, price_max=0.0,
+                       q_tot_tran=0.0, price_change=0.0, eps=800.0, pe=None,
+                       fetched_at="t4")
+    con.execute(T._MW_INSERT, halted)
+    con.commit()
+    got = con.execute("SELECT d_even, q_tot_tran, price_first, eps FROM market_watch").fetchone()
+    ck(got[:3] == (20261012, 0.0, 0.0),
+       "نشستِ تازه حجم/اولین قیمتِ دیروزِ نمادِ متوقف را نشان نمی‌دهد", got)
+    ck(got[3] == 800.0, "epsِ گفته‌شده در نشستِ تازه می‌نشیند", got)
+    con.close()
+    con2.close()
+
+
 def test_no_live_fabrication():
     section("۳) بی‌ساختنِ عدد و بی‌هرسِ دادهٔ منتشرشده")
     ck(CC.candle("X", "2026-01-01", 10, 11, 9, 10.5, 0) is None,
@@ -257,6 +323,7 @@ def main():
     test_provenance()
     test_daily_snapshot_guard()
     test_market_watch_guard()
+    test_market_watch_field_semantics()
     test_no_live_fabrication()
     print("\n%d passed / %d failed" % (len(PASSED), len(FAILED)))
     if FAILED:
