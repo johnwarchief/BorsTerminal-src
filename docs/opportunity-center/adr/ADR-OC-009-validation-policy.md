@@ -1,6 +1,6 @@
 # ADR-OC-009 — Validation Policy به‌عنوان دادهٔ امضاشده
 
-- **وضعیت:** Owner Sign-off Pending (Q1) — ساختار فنی Accepted
+- **وضعیت:** Owner Decision: Deferred (2026-11-09) — `approval_enabled=false`
 - **تاریخ:** ۲۰۲۶-۱۱-۰۸
 - **مرجع:** Phase 2 §۵.۱۲–۵.۱۴؛ OC-D-022/027/031
 
@@ -13,7 +13,7 @@
 1. `oc.validation_policy/1` یک سند JSON امضاشده با Approval Key است.
 2. فیلدها: `policy_id`, `split` (train/validation/holdout), `holdout` (locked/one-shot/access log), `walk_forward` (folds/embargo), `pbo_max`, `dsr_min`, `spa_max`, `min_trades`, `min_trades_per_fold`, `min_n_eff`, `cost_stress_multiplier`, `break_even_min`, `regime_concentration_max`, `sample_adequacy`, `verdict_rules`, `approval_enabled`, `effective_from`.
 3. Validation/Approval فقط `policy_hash` را حمل می‌کنند؛ Runtime هیچ عدد آستانه‌ای را Hardcode نمی‌کند.
-4. تا امضای مالک: `approval_enabled=false`؛ هیچ استراتژی جدید Stable نمی‌شود. FTS می‌تواند با `approval_basis=canonical_baseline` و امضای جدا مسیر v1 را باز کند.
+4. تصمیم مالک در ۲۰۲۶-۱۱-۰۹: Q1 به آینده موکول شد؛ `approval_enabled=false` باقی می‌ماند. هیچ استراتژی جدید، از جمله FTS، بدون Policy فعال و تأیید صریح بعدی Stable نمی‌شود. `canonical_baseline` فقط هویت/مبنای استراتژی را توصیف می‌کند و مجوز دور زدن Approval نیست.
 5. تغییر Policy = Policy جدید؛ Approvalهای قبلی با `policy_hash` قدیم معتبر می‌مانند تا Expire/Review؛ مالک می‌تواند Revalidation اجباری کند.
 6. Candidate Profile پیشنهادی Phase 2 (زیر) فقط «پیشنهاد» است، نه تصمیم مالک.
 
@@ -32,7 +32,7 @@
 | تمرکز رژیم | <۷۰٪ PnL از یک رژیم |
 | نمونه | `N_eff`/MDE؛ کمبود ⇒ `insufficient_evidence` |
 
-> این اعداد از Phase 2 آمده‌اند و در این ADR «پیشنهاد» هستند. مالک باید یک Policy را امضا کند؛ هیچ استراتژی جدیدی تا آن زمان Stable نمی‌شود.
+> این اعداد از Phase 2 آمده‌اند و صرفاً Candidate Profile هستند. طبق تصمیم مالک، تا بازگشت به Q1 و امضای Policy، هیچ استراتژی جدیدی Stable نمی‌شود.
 
 ## Consequences
 
@@ -53,5 +53,5 @@
 ## Evidence
 
 - Phase 2 §۵.۱۲ جدول دروازه‌ها؛ §۵.۱۳ واقعیت نمونه؛ §۵.۱۴ تاکسونومی.
-- `OPEN-QUESTIONS.md` Q1.
+- `OPEN-QUESTIONS.md` Q1؛ تصمیم مالک Deferred در `OC-D-074`.
 - `04-TECHNICAL-ARCHITECTURE.md` §۱۸.۱.
