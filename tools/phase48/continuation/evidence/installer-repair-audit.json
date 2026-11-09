@@ -1,0 +1,65 @@
+{
+  "production_iss": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\installer\\bors_setup.iss",
+  "production_iss_sha256": "7861f31ca9c220e4ee41cdf5ce27189673aab4ac9e2285267a4d93f79b2da651",
+  "test_iss": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\bors_setup_repairtest.iss",
+  "test_iss_sha256": "c22dce203d36370fa9f6c5703dad11a7f97b201fd4f5503013c24ab5aa45f020",
+  "test_setup": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\out\\BorsTerminal_RepairTest_Setup_v1.0.95.exe",
+  "test_setup_sha256": "0015050f9184e10309397555c515f00d272764fbb792d57892d0d198123d3556",
+  "production_appid": "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}",
+  "test_appid": "{C3D84F60-2A19-4E7B-8C55-6F9A1B2D3E40}",
+  "maintenance_page": {
+    "code_line": 220,
+    "options": [
+      "نصبِ مجدد / تعمیر فایلها در همان مسیر (توصیه‌شده)",
+      "نصبِ مجدد + بازنشانی دیتابیس بازار",
+      "حذفِ کامل برنامه و نصبِ دوباره از صفر",
+      "فقط حذفِ کامل برنامه (بدون نصبِ دوباره)"
+    ],
+    "default_selected": 0,
+    "shown_when": "not WizardSilent and PriorInstallLocation resolves",
+    "repair_is_option_0": true
+  },
+  "prepare_to_install": {
+    "choice_0": "no destructive action; repair in place",
+    "choice_1": "DeleteRuntimeDb only (market db reset)",
+    "choice_2": "RunFullUninstall then DeleteRuntimeDb, then reinstall",
+    "choice_3": "RunFullUninstall then abort install"
+  },
+  "ensure_app_not_running": {
+    "code_line": 247,
+    "called_by": [
+      "RunFullUninstall"
+    ],
+    "not_called_by_repair": true,
+    "test_installer_neutralised": "Exit; before the two taskkill Exec calls"
+  },
+  "sweep_orphan_leftovers": {
+    "code_line": 262,
+    "called": false,
+    "observation": "defined but never invoked in the production script",
+    "test_installer_neutralised": "Exit; before the DelTree loop"
+  },
+  "user_data_rules": {
+    "user_db_or_fts_in_files": false,
+    "user_db_or_fts_in_install_delete": false,
+    "user_db_or_fts_in_uninstall_delete": false,
+    "market_db_wildcard_excluded": true,
+    "market_db_copy_rule": "onlyifdoesntexist"
+  },
+  "test_installer_deltas": [
+    "unique test AppId/AppRegID",
+    "password/encryption removed (no auth dialog is automated)",
+    "DefaultDirName and former LocalAppData delete root redirected to the sandbox",
+    "[Icons]/[Tasks]/[Run] removed",
+    "EnsureAppNotRunning and SweepOrphanLeftovers exit before their bodies",
+    "seed .gz/.lzma sources removed from this harness (seed delivery was measured in S2/S3)"
+  ],
+  "real_environment_guards": {
+    "production_installer_launched": false,
+    "production_registry_key_written": false,
+    "real_bors_processes_killed": false,
+    "operational_market_db_touched": false,
+    "test_sandbox": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+    "test_port": 8158
+  }
+}

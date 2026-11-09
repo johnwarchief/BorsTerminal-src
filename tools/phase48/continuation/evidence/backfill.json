@@ -1,0 +1,4477 @@
+{
+ "tool": "phase48-backfill-v1",
+ "run_id": "rahavard-backfill-2026-11-09",
+ "dry_run": false,
+ "started_at": "2026-11-09T19:05:45+00:00",
+ "finished_at": "2026-11-09T19:05:49+00:00",
+ "source_db": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48\\lab\\market.db",
+ "source_db_sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca",
+ "work_db": "_audit/phase48closeout/backfill/work\\market.db",
+ "work_db_sha256_before": "3dd99e4653516a2fb4f7d0baa9933f975203983c2e566e8ee369dbf7800979d8",
+ "work_db_sha256_after": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5",
+ "ref_path": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48\\parity\\ref\\bars.ndjson.gz",
+ "ref_sha256": "68a1c803740cc8d7f5db86565888b56a582efc26b6b2a8b1d003351336fc171b",
+ "symbols": 30,
+ "ref_rows": 83364,
+ "ref_duplicates": 0,
+ "duplicate_conflicts": 0,
+ "inserted": 72222,
+ "would_insert": 0,
+ "skipped_existing": 0,
+ "invalid": 21,
+ "changed_existing": 0,
+ "missing_existing": 0,
+ "totals": {
+  "rows_before": 438917,
+  "rows_after": 511139,
+  "local_before": 12086,
+  "local_after": 84308,
+  "inserted": 72222,
+  "would_insert": 0,
+  "skipped_existing": 0,
+  "ref_only": 72243,
+  "overlap": 11121,
+  "invalid": 21,
+  "invalid_reasons": {
+   "geometry": 21
+  },
+  "inserted_by_period": {
+   "2010-2024": 71158,
+   "post2024": 1064
+  },
+  "ref_only_by_period": {
+   "2010-2024": 71179,
+   "post2024": 1064
+  },
+  "src_before": {
+   "legacy-unknown": 11217,
+   "board": 869
+  },
+  "src_after": {
+   "rahavard365": 72222,
+   "legacy-unknown": 11217,
+   "board": 869
+  }
+ },
+ "non_destructive": {
+  "changed_existing": 0,
+  "missing_existing": 0,
+  "digest_before": "62497a0054524623c304cde0487a0888dfa96b479f0e6f9e86730d6dcad641b0",
+  "digest_after": "06f49c764f92d42875d7a3daa64b808944800f4f9aeb7c76979f85b308d7410c"
+ },
+ "raw_compare": {
+  "local": 11181,
+  "ref": 83364,
+  "common": 11121,
+  "only_local": 60,
+  "only_ref": 72243,
+  "local_not_candle": 905,
+  "open_match": 7870,
+  "open_mismatch": 3251,
+  "high_match": 9793,
+  "high_mismatch": 1328,
+  "low_match": 9613,
+  "low_mismatch": 1508,
+  "low_auction": 22,
+  "close_by_last": 156,
+  "close_by_closing": 2355,
+  "close_other": 8610,
+  "last_missing": 10911,
+  "volume_match": 11006,
+  "volume_mismatch": 115,
+  "ref_degenerate": 2377
+ },
+ "per_symbol": [
+  {
+   "symbol": "شبندر",
+   "local_before": 508,
+   "ref": 2814,
+   "overlap": 414,
+   "ref_only": 2400,
+   "inserted": 2400,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-03",
+   "first_after": "2012-06-24",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 25
+   },
+   "raw_compare": {
+    "local": 416,
+    "ref": 2814,
+    "common": 414,
+    "only_local": 2,
+    "only_ref": 2400,
+    "local_not_candle": 92,
+    "open_match": 54,
+    "open_mismatch": 360,
+    "high_match": 322,
+    "high_mismatch": 92,
+    "low_match": 272,
+    "low_mismatch": 142,
+    "low_auction": 1,
+    "close_by_last": 1,
+    "close_by_closing": 120,
+    "close_other": 293,
+    "last_missing": 412,
+    "volume_match": 410,
+    "volume_mismatch": 4,
+    "ref_degenerate": 95,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7580.0,
+        "ref": 7600
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7710.0,
+        "ref": 7670
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7820.0,
+        "ref": 7860
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 7880.0,
+        "ref": 7950
+       },
+       {
+        "field": "close",
+        "bors": 7880.0,
+        "ref": 7970
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 7910.0,
+        "ref": 8030
+       },
+       {
+        "field": "close",
+        "bors": 7910.0,
+        "ref": 8030
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8210.0,
+        "ref": 8220
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8190.0,
+        "ref": 8080
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8040.0,
+        "ref": 8100
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "شپنا",
+   "local_before": 508,
+   "ref": 3268,
+   "overlap": 437,
+   "ref_only": 2831,
+   "inserted": 2831,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-03",
+   "first_after": "2010-02-16",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 25
+   },
+   "raw_compare": {
+    "local": 439,
+    "ref": 3268,
+    "common": 437,
+    "only_local": 2,
+    "only_ref": 2831,
+    "local_not_candle": 69,
+    "open_match": 57,
+    "open_mismatch": 380,
+    "high_match": 355,
+    "high_mismatch": 82,
+    "low_match": 302,
+    "low_mismatch": 135,
+    "low_auction": 1,
+    "close_by_last": 1,
+    "close_by_closing": 101,
+    "close_other": 335,
+    "last_missing": 435,
+    "volume_match": 433,
+    "volume_mismatch": 4,
+    "ref_degenerate": 83,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4092.0,
+        "ref": 4093
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4118.0,
+        "ref": 4097
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4133.0,
+        "ref": 4146
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4210.0,
+        "ref": 4215
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4344.0,
+        "ref": 4319
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4301.0,
+        "ref": 4319
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4253.0,
+        "ref": 4209
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4141.0,
+        "ref": 4199
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "فملي",
+   "local_before": 424,
+   "ref": 3739,
+   "overlap": 422,
+   "ref_only": 3317,
+   "inserted": 3317,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 393,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 424,
+    "ref": 3739,
+    "common": 422,
+    "only_local": 2,
+    "only_ref": 3317,
+    "local_not_candle": 0,
+    "open_match": 417,
+    "open_mismatch": 5,
+    "high_match": 418,
+    "high_mismatch": 4,
+    "low_match": 418,
+    "low_mismatch": 4,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 125,
+    "close_other": 291,
+    "last_missing": 414,
+    "volume_match": 418,
+    "volume_mismatch": 4,
+    "ref_degenerate": 65,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6520.0,
+        "ref": 6540
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6590.0,
+        "ref": 6580
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6570.0,
+        "ref": 6560
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6560.0,
+        "ref": 6550
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6680.0,
+        "ref": 6650
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6590.0,
+        "ref": 6550
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6430.0,
+        "ref": 6450
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6320.0,
+        "ref": 6330
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "فولاد",
+   "local_before": 390,
+   "ref": 3687,
+   "overlap": 388,
+   "ref_only": 3299,
+   "inserted": 3299,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 359,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 390,
+    "ref": 3687,
+    "common": 388,
+    "only_local": 2,
+    "only_ref": 3299,
+    "local_not_candle": 0,
+    "open_match": 384,
+    "open_mismatch": 4,
+    "high_match": 384,
+    "high_mismatch": 4,
+    "low_match": 383,
+    "low_mismatch": 5,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 62,
+    "close_other": 320,
+    "last_missing": 380,
+    "volume_match": 384,
+    "volume_mismatch": 4,
+    "ref_degenerate": 38,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4415.0,
+        "ref": 4432
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4446.0,
+        "ref": 4419
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4456.0,
+        "ref": 4440
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4471.0,
+        "ref": 4474
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4555.0,
+        "ref": 4560
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4566.0,
+        "ref": 4542
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4493.0,
+        "ref": 4475
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 4386.0,
+        "ref": 4359
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "وبملت",
+   "local_before": 438,
+   "ref": 3523,
+   "overlap": 436,
+   "ref_only": 3087,
+   "inserted": 3087,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 407,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 438,
+    "ref": 3523,
+    "common": 436,
+    "only_local": 2,
+    "only_ref": 3087,
+    "local_not_candle": 0,
+    "open_match": 432,
+    "open_mismatch": 4,
+    "high_match": 429,
+    "high_mismatch": 7,
+    "low_match": 432,
+    "low_mismatch": 4,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 86,
+    "close_other": 344,
+    "last_missing": 428,
+    "volume_match": 432,
+    "volume_mismatch": 4,
+    "ref_degenerate": 58,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1988.0,
+        "ref": 1991
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1993.0,
+        "ref": 1990
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2002.0,
+        "ref": 1998
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2016.0,
+        "ref": 2023
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2092.0,
+        "ref": 2094
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2086.0,
+        "ref": 2107
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2045.0,
+        "ref": 2024
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2010.0,
+        "ref": 2001
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "وتجارت",
+   "local_before": 428,
+   "ref": 3483,
+   "overlap": 426,
+   "ref_only": 3057,
+   "inserted": 3057,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 397,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 428,
+    "ref": 3483,
+    "common": 426,
+    "only_local": 2,
+    "only_ref": 3057,
+    "local_not_candle": 0,
+    "open_match": 422,
+    "open_mismatch": 4,
+    "high_match": 406,
+    "high_mismatch": 20,
+    "low_match": 413,
+    "low_mismatch": 13,
+    "low_auction": 2,
+    "close_by_last": 6,
+    "close_by_closing": 126,
+    "close_other": 294,
+    "last_missing": 418,
+    "volume_match": 421,
+    "volume_mismatch": 5,
+    "ref_degenerate": 90,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1271.0,
+        "ref": 1285
+       },
+       {
+        "field": "close",
+        "bors": 1271.0,
+        "ref": 1285
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1276.0,
+        "ref": 1296
+       },
+       {
+        "field": "close",
+        "bors": 1276.0,
+        "ref": 1296
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1283.0,
+        "ref": 1301
+       },
+       {
+        "field": "close",
+        "bors": 1283.0,
+        "ref": 1301
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1287.0,
+        "ref": 1308
+       },
+       {
+        "field": "close",
+        "bors": 1287.0,
+        "ref": 1308
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1290.0,
+        "ref": 1312
+       },
+       {
+        "field": "close",
+        "bors": 1290.0,
+        "ref": 1312
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1307.0,
+        "ref": 1315
+       },
+       {
+        "field": "close",
+        "bors": 1307.0,
+        "ref": 1315
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1355.0,
+        "ref": 1350
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1378.0,
+        "ref": 1376
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "شتران",
+   "local_before": 508,
+   "ref": 2726,
+   "overlap": 432,
+   "ref_only": 2294,
+   "inserted": 2294,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-03",
+   "first_after": "2012-10-10",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 25
+   },
+   "raw_compare": {
+    "local": 434,
+    "ref": 2726,
+    "common": 432,
+    "only_local": 2,
+    "only_ref": 2294,
+    "local_not_candle": 74,
+    "open_match": 52,
+    "open_mismatch": 380,
+    "high_match": 343,
+    "high_mismatch": 89,
+    "low_match": 296,
+    "low_mismatch": 136,
+    "low_auction": 1,
+    "close_by_last": 1,
+    "close_by_closing": 94,
+    "close_other": 337,
+    "last_missing": 430,
+    "volume_match": 429,
+    "volume_mismatch": 3,
+    "ref_degenerate": 84,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2171.0,
+        "ref": 2180
+       },
+       {
+        "field": "close",
+        "bors": 2171.0,
+        "ref": 2197
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2212.0,
+        "ref": 2190
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2245.0,
+        "ref": 2256
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2264.0,
+        "ref": 2281
+       },
+       {
+        "field": "close",
+        "bors": 2264.0,
+        "ref": 2289
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2375.0,
+        "ref": 2368
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2339.0,
+        "ref": 2304
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2278.0,
+        "ref": 2279
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2306.0,
+        "ref": 2301
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "شستا",
+   "local_before": 450,
+   "ref": 1376,
+   "overlap": 448,
+   "ref_only": 928,
+   "inserted": 928,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2020-04-15",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 419,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 450,
+    "ref": 1376,
+    "common": 448,
+    "only_local": 2,
+    "only_ref": 928,
+    "local_not_candle": 0,
+    "open_match": 443,
+    "open_mismatch": 5,
+    "high_match": 440,
+    "high_mismatch": 8,
+    "low_match": 442,
+    "low_mismatch": 6,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 103,
+    "close_other": 339,
+    "last_missing": 440,
+    "volume_match": 444,
+    "volume_mismatch": 4,
+    "ref_degenerate": 53,
+    "examples": [
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1130.0,
+        "ref": 1121
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1140.0,
+        "ref": 1138
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1162.0,
+        "ref": 1151
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1144.0,
+        "ref": 1139
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1133.0,
+        "ref": 1126
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1119.0,
+        "ref": 1117
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1130.0,
+        "ref": 1133
+       }
+      ]
+     },
+     {
+      "date": "2024-09-10",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1124.0,
+        "ref": 1125
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "شپديس",
+   "local_before": 394,
+   "ref": 3386,
+   "overlap": 392,
+   "ref_only": 2994,
+   "inserted": 2994,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2011-04-18",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 363,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 394,
+    "ref": 3386,
+    "common": 392,
+    "only_local": 2,
+    "only_ref": 2994,
+    "local_not_candle": 0,
+    "open_match": 388,
+    "open_mismatch": 4,
+    "high_match": 380,
+    "high_mismatch": 12,
+    "low_match": 387,
+    "low_mismatch": 5,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 81,
+    "close_other": 305,
+    "last_missing": 384,
+    "volume_match": 388,
+    "volume_mismatch": 4,
+    "ref_degenerate": 62,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 197330.0,
+        "ref": 197810
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 198130.0,
+        "ref": 198840
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 199260.0,
+        "ref": 198200
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 199360.0,
+        "ref": 197420
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 201610.0,
+        "ref": 201950
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 201160.0,
+        "ref": 199900
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 200470.0,
+        "ref": 200340
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 198200.0,
+        "ref": 194460
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "فارس",
+   "local_before": 401,
+   "ref": 2977,
+   "overlap": 399,
+   "ref_only": 2578,
+   "inserted": 2578,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2013-04-16",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 375,
+    "board": 26
+   },
+   "raw_compare": {
+    "local": 401,
+    "ref": 2977,
+    "common": 399,
+    "only_local": 2,
+    "only_ref": 2578,
+    "local_not_candle": 0,
+    "open_match": 396,
+    "open_mismatch": 3,
+    "high_match": 391,
+    "high_mismatch": 8,
+    "low_match": 393,
+    "low_mismatch": 6,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 95,
+    "close_other": 298,
+    "last_missing": 391,
+    "volume_match": 395,
+    "volume_mismatch": 4,
+    "ref_degenerate": 52,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6870.0,
+        "ref": 6950
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6910.0,
+        "ref": 6880
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6900.0,
+        "ref": 6910
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6960.0,
+        "ref": 7030
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6980.0,
+        "ref": 7000
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6970.0,
+        "ref": 6900
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6930.0,
+        "ref": 6970
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6910.0,
+        "ref": 6850
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "فزر",
+   "local_before": 429,
+   "ref": 1027,
+   "overlap": 427,
+   "ref_only": 600,
+   "inserted": 600,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2022-02-09",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 402,
+    "board": 27
+   },
+   "raw_compare": {
+    "local": 429,
+    "ref": 1027,
+    "common": 427,
+    "only_local": 2,
+    "only_ref": 600,
+    "local_not_candle": 0,
+    "open_match": 423,
+    "open_mismatch": 4,
+    "high_match": 422,
+    "high_mismatch": 5,
+    "low_match": 421,
+    "low_mismatch": 6,
+    "low_auction": 1,
+    "close_by_last": 4,
+    "close_by_closing": 82,
+    "close_other": 341,
+    "last_missing": 421,
+    "volume_match": 423,
+    "volume_mismatch": 4,
+    "ref_degenerate": 55,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 55250.0,
+        "ref": 55300
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 56650.0,
+        "ref": 56700
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 55950.0,
+        "ref": 56350
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 57000.0,
+        "ref": 57050
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 57400.0,
+        "ref": 57300
+       }
+      ]
+     },
+     {
+      "date": "2024-09-22",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 34300.0,
+        "ref": 34500
+       }
+      ]
+     },
+     {
+      "date": "2024-09-23",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 35100.0,
+        "ref": 35300
+       }
+      ]
+     },
+     {
+      "date": "2024-09-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 35350.0,
+        "ref": 35250
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "شصفها",
+   "local_before": 360,
+   "ref": 2496,
+   "overlap": 356,
+   "ref_only": 2140,
+   "inserted": 2140,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-31",
+   "last_before": "2026-09-30",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 344,
+    "board": 16
+   },
+   "raw_compare": {
+    "local": 360,
+    "ref": 2496,
+    "common": 356,
+    "only_local": 4,
+    "only_ref": 2140,
+    "local_not_candle": 0,
+    "open_match": 356,
+    "open_mismatch": 0,
+    "high_match": 213,
+    "high_mismatch": 143,
+    "low_match": 338,
+    "low_mismatch": 18,
+    "low_auction": 0,
+    "close_by_last": 1,
+    "close_by_closing": 60,
+    "close_other": 295,
+    "last_missing": 355,
+    "volume_match": 355,
+    "volume_mismatch": 1,
+    "ref_degenerate": 193,
+    "examples": [
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 144250.0,
+        "ref": 146050
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 146400.0,
+        "ref": 147100
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 147100.0,
+        "ref": 148400
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 146550.0,
+        "ref": 144500
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 148500.0,
+        "ref": 149450
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 149300.0,
+        "ref": 151000
+       },
+       {
+        "field": "close",
+        "bors": 149300.0,
+        "ref": 151450
+       }
+      ]
+     },
+     {
+      "date": "2024-09-11",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 155150.0,
+        "ref": 155250
+       }
+      ]
+     },
+     {
+      "date": "2024-09-14",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 157850.0,
+        "ref": 158200
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "ولقمان",
+   "local_before": 387,
+   "ref": 999,
+   "overlap": 385,
+   "ref_only": 614,
+   "inserted": 614,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-31",
+   "last_before": "2026-10-06",
+   "first_after": "2021-03-15",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 359,
+    "board": 28
+   },
+   "raw_compare": {
+    "local": 387,
+    "ref": 999,
+    "common": 385,
+    "only_local": 2,
+    "only_ref": 614,
+    "local_not_candle": 0,
+    "open_match": 382,
+    "open_mismatch": 3,
+    "high_match": 325,
+    "high_mismatch": 60,
+    "low_match": 337,
+    "low_mismatch": 48,
+    "low_auction": 0,
+    "close_by_last": 4,
+    "close_by_closing": 63,
+    "close_other": 318,
+    "last_missing": 380,
+    "volume_match": 382,
+    "volume_mismatch": 3,
+    "ref_degenerate": 103,
+    "examples": [
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1608.0,
+        "ref": 1576
+       },
+       {
+        "field": "close",
+        "bors": 1608.0,
+        "ref": 1576
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1608.0,
+        "ref": 1560
+       },
+       {
+        "field": "close",
+        "bors": 1608.0,
+        "ref": 1560
+       }
+      ]
+     },
+     {
+      "date": "2024-09-10",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1607.0,
+        "ref": 1560
+       },
+       {
+        "field": "close",
+        "bors": 1607.0,
+        "ref": 1560
+       }
+      ]
+     },
+     {
+      "date": "2024-09-11",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1606.0,
+        "ref": 1527
+       },
+       {
+        "field": "close",
+        "bors": 1606.0,
+        "ref": 1527
+       }
+      ]
+     },
+     {
+      "date": "2024-09-14",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1606.0,
+        "ref": 1558
+       },
+       {
+        "field": "close",
+        "bors": 1606.0,
+        "ref": 1558
+       }
+      ]
+     },
+     {
+      "date": "2024-09-15",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1606.0,
+        "ref": 1558
+       },
+       {
+        "field": "close",
+        "bors": 1606.0,
+        "ref": 1558
+       }
+      ]
+     },
+     {
+      "date": "2024-09-16",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1606.0,
+        "ref": 1558
+       },
+       {
+        "field": "close",
+        "bors": 1606.0,
+        "ref": 1558
+       }
+      ]
+     },
+     {
+      "date": "2024-09-17",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 1606.0,
+        "ref": 1558
+       },
+       {
+        "field": "close",
+        "bors": 1606.0,
+        "ref": 1558
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "وملت",
+   "local_before": 377,
+   "ref": 3358,
+   "overlap": 376,
+   "ref_only": 2982,
+   "inserted": 2981,
+   "invalid": 1,
+   "invalid_reasons": {
+    "geometry": 1
+   },
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-10-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 348,
+    "board": 29
+   },
+   "raw_compare": {
+    "local": 377,
+    "ref": 3358,
+    "common": 376,
+    "only_local": 1,
+    "only_ref": 2982,
+    "local_not_candle": 0,
+    "open_match": 373,
+    "open_mismatch": 3,
+    "high_match": 270,
+    "high_mismatch": 106,
+    "low_match": 285,
+    "low_mismatch": 91,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 53,
+    "close_other": 317,
+    "last_missing": 368,
+    "volume_match": 373,
+    "volume_mismatch": 3,
+    "ref_degenerate": 204,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3469.0,
+        "ref": 3400
+       },
+       {
+        "field": "close",
+        "bors": 3469.0,
+        "ref": 3400
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3462.0,
+        "ref": 3410
+       },
+       {
+        "field": "close",
+        "bors": 3462.0,
+        "ref": 3400
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3449.0,
+        "ref": 3393
+       },
+       {
+        "field": "close",
+        "bors": 3449.0,
+        "ref": 3393
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3448.0,
+        "ref": 3381
+       },
+       {
+        "field": "close",
+        "bors": 3448.0,
+        "ref": 3381
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3442.0,
+        "ref": 3380
+       },
+       {
+        "field": "close",
+        "bors": 3442.0,
+        "ref": 3380
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3427.0,
+        "ref": 3381
+       },
+       {
+        "field": "close",
+        "bors": 3427.0,
+        "ref": 3374
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3409.0,
+        "ref": 3359
+       },
+       {
+        "field": "close",
+        "bors": 3409.0,
+        "ref": 3359
+       }
+      ]
+     },
+     {
+      "date": "2024-09-10",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3408.0,
+        "ref": 3341
+       },
+       {
+        "field": "close",
+        "bors": 3408.0,
+        "ref": 3341
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "پشاهن",
+   "local_before": 267,
+   "ref": 938,
+   "overlap": 265,
+   "ref_only": 673,
+   "inserted": 673,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-26",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-11",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 236,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 267,
+    "ref": 938,
+    "common": 265,
+    "only_local": 2,
+    "only_ref": 673,
+    "local_not_candle": 0,
+    "open_match": 261,
+    "open_mismatch": 4,
+    "high_match": 158,
+    "high_mismatch": 107,
+    "low_match": 218,
+    "low_mismatch": 47,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 58,
+    "close_other": 201,
+    "last_missing": 257,
+    "volume_match": 261,
+    "volume_mismatch": 4,
+    "ref_degenerate": 169,
+    "examples": [
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 103800.0,
+        "ref": 101750
+       },
+       {
+        "field": "close",
+        "bors": 103800.0,
+        "ref": 101750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 99700.0,
+        "ref": 101000
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 99700.0,
+        "ref": 98750
+       },
+       {
+        "field": "close",
+        "bors": 99700.0,
+        "ref": 98750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-10",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 99700.0,
+        "ref": 96750
+       },
+       {
+        "field": "close",
+        "bors": 99700.0,
+        "ref": 96750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-16",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 99700.0,
+        "ref": 96750
+       },
+       {
+        "field": "close",
+        "bors": 99700.0,
+        "ref": 96750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-17",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 99700.0,
+        "ref": 96750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-18",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 99700.0,
+        "ref": 96750
+       },
+       {
+        "field": "close",
+        "bors": 99700.0,
+        "ref": 96750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-22",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 99550.0,
+        "ref": 98000
+       },
+       {
+        "field": "close",
+        "bors": 99550.0,
+        "ref": 96750
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "فنوال",
+   "local_before": 514,
+   "ref": 3273,
+   "overlap": 429,
+   "ref_only": 2844,
+   "inserted": 2843,
+   "invalid": 1,
+   "invalid_reasons": {
+    "geometry": 1
+   },
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-05",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 431,
+    "ref": 3273,
+    "common": 429,
+    "only_local": 2,
+    "only_ref": 2844,
+    "local_not_candle": 83,
+    "open_match": 65,
+    "open_mismatch": 364,
+    "high_match": 371,
+    "high_mismatch": 58,
+    "low_match": 298,
+    "low_mismatch": 131,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 99,
+    "close_other": 324,
+    "last_missing": 421,
+    "volume_match": 425,
+    "volume_mismatch": 4,
+    "ref_degenerate": 81,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 5270.0,
+        "ref": 5330
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 5280.0,
+        "ref": 5310
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 5310.0,
+        "ref": 5330
+       },
+       {
+        "field": "close",
+        "bors": 5310.0,
+        "ref": 5380
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 5330.0,
+        "ref": 5410
+       },
+       {
+        "field": "close",
+        "bors": 5330.0,
+        "ref": 5410
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 5340.0,
+        "ref": 5430
+       },
+       {
+        "field": "close",
+        "bors": 5340.0,
+        "ref": 5430
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 5370.0,
+        "ref": 5440
+       },
+       {
+        "field": "close",
+        "bors": 5370.0,
+        "ref": 5440
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 5420.0,
+        "ref": 5470
+       },
+       {
+        "field": "close",
+        "bors": 5420.0,
+        "ref": 5470
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 5570.0,
+        "ref": 5580
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "كچاد",
+   "local_before": 430,
+   "ref": 3666,
+   "overlap": 428,
+   "ref_only": 3238,
+   "inserted": 3238,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 399,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 430,
+    "ref": 3666,
+    "common": 428,
+    "only_local": 2,
+    "only_ref": 3238,
+    "local_not_candle": 0,
+    "open_match": 424,
+    "open_mismatch": 4,
+    "high_match": 409,
+    "high_mismatch": 19,
+    "low_match": 407,
+    "low_mismatch": 21,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 70,
+    "close_other": 352,
+    "last_missing": 420,
+    "volume_match": 424,
+    "volume_mismatch": 4,
+    "ref_degenerate": 61,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2952.0,
+        "ref": 2967
+       },
+       {
+        "field": "close",
+        "bors": 2952.0,
+        "ref": 3006
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2962.0,
+        "ref": 3011
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2972.0,
+        "ref": 3021
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2976.0,
+        "ref": 3001
+       },
+       {
+        "field": "close",
+        "bors": 2976.0,
+        "ref": 3031
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 3024.0,
+        "ref": 3031
+       },
+       {
+        "field": "close",
+        "bors": 3024.0,
+        "ref": 3035
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 3045.0,
+        "ref": 3077
+       },
+       {
+        "field": "close",
+        "bors": 3045.0,
+        "ref": 3084
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 3064.0,
+        "ref": 3089
+       },
+       {
+        "field": "close",
+        "bors": 3064.0,
+        "ref": 3104
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 3064.0,
+        "ref": 3063
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "كگل",
+   "local_before": 415,
+   "ref": 3587,
+   "overlap": 413,
+   "ref_only": 3174,
+   "inserted": 3174,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 384,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 415,
+    "ref": 3587,
+    "common": 413,
+    "only_local": 2,
+    "only_ref": 3174,
+    "local_not_candle": 0,
+    "open_match": 409,
+    "open_mismatch": 4,
+    "high_match": 396,
+    "high_mismatch": 17,
+    "low_match": 405,
+    "low_mismatch": 8,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 65,
+    "close_other": 342,
+    "last_missing": 405,
+    "volume_match": 409,
+    "volume_mismatch": 4,
+    "ref_degenerate": 39,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2976.0,
+        "ref": 2996
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2983.0,
+        "ref": 3005
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2990.0,
+        "ref": 3015
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 3025.0,
+        "ref": 3027
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 3029.0,
+        "ref": 3022
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 3027.0,
+        "ref": 3009
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 3022.0,
+        "ref": 2970
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 3001.0,
+        "ref": 2990
+       },
+       {
+        "field": "close",
+        "bors": 3001.0,
+        "ref": 2970
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "ولانا",
+   "local_before": 369,
+   "ref": 1891,
+   "overlap": 367,
+   "ref_only": 1524,
+   "inserted": 1524,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2013-11-30",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 338,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 369,
+    "ref": 1891,
+    "common": 367,
+    "only_local": 2,
+    "only_ref": 1524,
+    "local_not_candle": 0,
+    "open_match": 364,
+    "open_mismatch": 3,
+    "high_match": 309,
+    "high_mismatch": 58,
+    "low_match": 297,
+    "low_mismatch": 70,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 91,
+    "close_other": 270,
+    "last_missing": 359,
+    "volume_match": 363,
+    "volume_mismatch": 4,
+    "ref_degenerate": 161,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 28100.0,
+        "ref": 27550
+       },
+       {
+        "field": "close",
+        "bors": 28100.0,
+        "ref": 27550
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 28100.0,
+        "ref": 27550
+       },
+       {
+        "field": "close",
+        "bors": 28100.0,
+        "ref": 27550
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 28100.0,
+        "ref": 27550
+       },
+       {
+        "field": "close",
+        "bors": 28100.0,
+        "ref": 27550
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 28000.0,
+        "ref": 27550
+       },
+       {
+        "field": "close",
+        "bors": 28000.0,
+        "ref": 27550
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 25600.0,
+        "ref": 26350
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 25500.0,
+        "ref": 24850
+       }
+      ]
+     },
+     {
+      "date": "2024-09-10",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 25450.0,
+        "ref": 24750
+       },
+       {
+        "field": "close",
+        "bors": 25450.0,
+        "ref": 24750
+       }
+      ]
+     },
+     {
+      "date": "2024-09-11",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "high",
+        "bors": 25450.0,
+        "ref": 24700
+       },
+       {
+        "field": "close",
+        "bors": 25450.0,
+        "ref": 24700
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "ومعادن",
+   "local_before": 426,
+   "ref": 3578,
+   "overlap": 424,
+   "ref_only": 3154,
+   "inserted": 3154,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-31",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 396,
+    "board": 30
+   },
+   "raw_compare": {
+    "local": 426,
+    "ref": 3578,
+    "common": 424,
+    "only_local": 2,
+    "only_ref": 3154,
+    "local_not_candle": 0,
+    "open_match": 419,
+    "open_mismatch": 5,
+    "high_match": 408,
+    "high_mismatch": 16,
+    "low_match": 413,
+    "low_mismatch": 11,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 79,
+    "close_other": 339,
+    "last_missing": 416,
+    "volume_match": 420,
+    "volume_mismatch": 4,
+    "ref_degenerate": 47,
+    "examples": [
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2679.0,
+        "ref": 2708
+       },
+       {
+        "field": "close",
+        "bors": 2679.0,
+        "ref": 2708
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2757.0,
+        "ref": 2765
+       },
+       {
+        "field": "close",
+        "bors": 2757.0,
+        "ref": 2782
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2719.0,
+        "ref": 2713
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2698.0,
+        "ref": 2690
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2702.0,
+        "ref": 2700
+       }
+      ]
+     },
+     {
+      "date": "2024-09-10",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2718.0,
+        "ref": 2730
+       }
+      ]
+     },
+     {
+      "date": "2024-09-11",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2718.0,
+        "ref": 2719
+       }
+      ]
+     },
+     {
+      "date": "2024-09-14",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2716.0,
+        "ref": 2710
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "حآفرين",
+   "local_before": 417,
+   "ref": 1121,
+   "overlap": 415,
+   "ref_only": 706,
+   "inserted": 706,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2021-09-13",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 387,
+    "board": 30
+   },
+   "raw_compare": {
+    "local": 417,
+    "ref": 1121,
+    "common": 415,
+    "only_local": 2,
+    "only_ref": 706,
+    "local_not_candle": 0,
+    "open_match": 412,
+    "open_mismatch": 3,
+    "high_match": 390,
+    "high_mismatch": 25,
+    "low_match": 406,
+    "low_mismatch": 9,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 78,
+    "close_other": 331,
+    "last_missing": 407,
+    "volume_match": 411,
+    "volume_mismatch": 4,
+    "ref_degenerate": 68,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1055.0,
+        "ref": 1058
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1037.0,
+        "ref": 1034
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1054.0,
+        "ref": 1057
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1074.0,
+        "ref": 1075
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 1085.0,
+        "ref": 1091
+       },
+       {
+        "field": "close",
+        "bors": 1085.0,
+        "ref": 1095
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1103.0,
+        "ref": 1102
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1111.0,
+        "ref": 1100
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 1097.0,
+        "ref": 1085
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "هانيكو",
+   "local_before": 136,
+   "ref": 154,
+   "overlap": 133,
+   "ref_only": 21,
+   "inserted": 21,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2025-12-13",
+   "last_before": "2026-10-11",
+   "first_after": "2025-12-13",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 108,
+    "board": 28
+   },
+   "raw_compare": {
+    "local": 136,
+    "ref": 154,
+    "common": 133,
+    "only_local": 3,
+    "only_ref": 21,
+    "local_not_candle": 0,
+    "open_match": 130,
+    "open_mismatch": 3,
+    "high_match": 130,
+    "high_mismatch": 3,
+    "low_match": 131,
+    "low_mismatch": 2,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 34,
+    "close_other": 93,
+    "last_missing": 125,
+    "volume_match": 130,
+    "volume_mismatch": 3,
+    "ref_degenerate": 25,
+    "examples": [
+     {
+      "date": "2025-12-13",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8656.0,
+        "ref": 8512
+       }
+      ]
+     },
+     {
+      "date": "2025-12-23",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 10600.0,
+        "ref": 10620
+       }
+      ]
+     },
+     {
+      "date": "2025-12-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 10580.0,
+        "ref": 10550
+       }
+      ]
+     },
+     {
+      "date": "2025-12-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 10560.0,
+        "ref": 10530
+       }
+      ]
+     },
+     {
+      "date": "2025-12-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 10360.0,
+        "ref": 10300
+       }
+      ]
+     },
+     {
+      "date": "2025-12-29",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 10080.0,
+        "ref": 10050
+       }
+      ]
+     },
+     {
+      "date": "2025-12-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 9650.0,
+        "ref": 9800
+       }
+      ]
+     },
+     {
+      "date": "2026-01-04",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 9390.0,
+        "ref": 9370
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "چكاوه",
+   "local_before": 417,
+   "ref": 3309,
+   "overlap": 415,
+   "ref_only": 2894,
+   "inserted": 2888,
+   "invalid": 6,
+   "invalid_reasons": {
+    "geometry": 6
+   },
+   "first_before": "2024-08-26",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-04",
+   "last_after": "2026-11-02",
+   "src_before": {
+    "legacy-unknown": 386,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 417,
+    "ref": 3309,
+    "common": 415,
+    "only_local": 2,
+    "only_ref": 2894,
+    "local_not_candle": 0,
+    "open_match": 410,
+    "open_mismatch": 5,
+    "high_match": 373,
+    "high_mismatch": 42,
+    "low_match": 399,
+    "low_mismatch": 16,
+    "low_auction": 2,
+    "close_by_last": 6,
+    "close_by_closing": 77,
+    "close_other": 332,
+    "last_missing": 407,
+    "volume_match": 411,
+    "volume_mismatch": 4,
+    "ref_degenerate": 82,
+    "examples": [
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8060.0,
+        "ref": 7930
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7960.0,
+        "ref": 7900
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7980.0,
+        "ref": 8110
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 8010.0,
+        "ref": 8110
+       },
+       {
+        "field": "close",
+        "bors": 8010.0,
+        "ref": 8130
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 8040.0,
+        "ref": 8050
+       },
+       {
+        "field": "close",
+        "bors": 8040.0,
+        "ref": 8130
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8010.0,
+        "ref": 7880
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7870.0,
+        "ref": 7880
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 8040.0,
+        "ref": 8100
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "سبهان",
+   "local_before": 514,
+   "ref": 3366,
+   "overlap": 445,
+   "ref_only": 2921,
+   "inserted": 2919,
+   "invalid": 2,
+   "invalid_reasons": {
+    "geometry": 2
+   },
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-06",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 447,
+    "ref": 3366,
+    "common": 445,
+    "only_local": 2,
+    "only_ref": 2921,
+    "local_not_candle": 67,
+    "open_match": 56,
+    "open_mismatch": 389,
+    "high_match": 374,
+    "high_mismatch": 71,
+    "low_match": 330,
+    "low_mismatch": 115,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 77,
+    "close_other": 362,
+    "last_missing": 437,
+    "volume_match": 440,
+    "volume_mismatch": 5,
+    "ref_degenerate": 71,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2255.0,
+        "ref": 2274
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2215.0,
+        "ref": 2210
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2183.0,
+        "ref": 2222
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2177.0,
+        "ref": 2182
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2217.0,
+        "ref": 2220
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2296.0,
+        "ref": 2306
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2428.0,
+        "ref": 2434
+       }
+      ]
+     },
+     {
+      "date": "2024-09-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2487.0,
+        "ref": 2490
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "سخاش",
+   "local_before": 514,
+   "ref": 3138,
+   "overlap": 449,
+   "ref_only": 2689,
+   "inserted": 2686,
+   "invalid": 3,
+   "invalid_reasons": {
+    "geometry": 3
+   },
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-16",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 451,
+    "ref": 3138,
+    "common": 449,
+    "only_local": 2,
+    "only_ref": 2689,
+    "local_not_candle": 63,
+    "open_match": 65,
+    "open_mismatch": 384,
+    "high_match": 395,
+    "high_mismatch": 54,
+    "low_match": 296,
+    "low_mismatch": 153,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 98,
+    "close_other": 345,
+    "last_missing": 441,
+    "volume_match": 444,
+    "volume_mismatch": 5,
+    "ref_degenerate": 81,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 2169.0,
+        "ref": 2206
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2175.0,
+        "ref": 2191
+       },
+       {
+        "field": "close",
+        "bors": 2175.0,
+        "ref": 2212
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2196.0,
+        "ref": 2217
+       },
+       {
+        "field": "close",
+        "bors": 2196.0,
+        "ref": 2218
+       }
+      ]
+     },
+     {
+      "date": "2024-08-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2209.0,
+        "ref": 2239
+       },
+       {
+        "field": "close",
+        "bors": 2209.0,
+        "ref": 2239
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2210.0,
+        "ref": 2253
+       },
+       {
+        "field": "close",
+        "bors": 2210.0,
+        "ref": 2253
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2219.0,
+        "ref": 2254
+       },
+       {
+        "field": "close",
+        "bors": 2219.0,
+        "ref": 2254
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2228.0,
+        "ref": 2263
+       },
+       {
+        "field": "close",
+        "bors": 2228.0,
+        "ref": 2263
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 2233.0,
+        "ref": 2294
+       },
+       {
+        "field": "close",
+        "bors": 2233.0,
+        "ref": 2294
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "سرود",
+   "local_before": 514,
+   "ref": 3676,
+   "overlap": 389,
+   "ref_only": 3287,
+   "inserted": 3283,
+   "invalid": 4,
+   "invalid_reasons": {
+    "geometry": 4
+   },
+   "first_before": "2024-08-24",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 483,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 391,
+    "ref": 3676,
+    "common": 389,
+    "only_local": 2,
+    "only_ref": 3287,
+    "local_not_candle": 123,
+    "open_match": 71,
+    "open_mismatch": 318,
+    "high_match": 346,
+    "high_mismatch": 43,
+    "low_match": 273,
+    "low_mismatch": 116,
+    "low_auction": 2,
+    "close_by_last": 6,
+    "close_by_closing": 97,
+    "close_other": 286,
+    "last_missing": 381,
+    "volume_match": 385,
+    "volume_mismatch": 4,
+    "ref_degenerate": 55,
+    "examples": [
+     {
+      "date": "2024-08-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 39140.0,
+        "ref": 39250
+       },
+       {
+        "field": "close",
+        "bors": 39140.0,
+        "ref": 39820
+       }
+      ]
+     },
+     {
+      "date": "2024-08-26",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 39580.0,
+        "ref": 39910
+       },
+       {
+        "field": "close",
+        "bors": 39580.0,
+        "ref": 39920
+       }
+      ]
+     },
+     {
+      "date": "2024-08-27",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 40190.0,
+        "ref": 40370
+       },
+       {
+        "field": "close",
+        "bors": 40190.0,
+        "ref": 40370
+       }
+      ]
+     },
+     {
+      "date": "2024-08-31",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "low",
+        "bors": 41650.0,
+        "ref": 41670
+       },
+       {
+        "field": "close",
+        "bors": 41650.0,
+        "ref": 41800
+       }
+      ]
+     },
+     {
+      "date": "2024-09-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 42310.0,
+        "ref": 42230
+       }
+      ]
+     },
+     {
+      "date": "2024-09-03",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 42650.0,
+        "ref": 42810
+       }
+      ]
+     },
+     {
+      "date": "2024-09-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 42790.0,
+        "ref": 42860
+       }
+      ]
+     },
+     {
+      "date": "2024-09-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 42430.0,
+        "ref": 41850
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "خودرو",
+   "local_before": 79,
+   "ref": 3570,
+   "overlap": 77,
+   "ref_only": 3493,
+   "inserted": 3493,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2026-06-13",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 48,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 79,
+    "ref": 3570,
+    "common": 77,
+    "only_local": 2,
+    "only_ref": 3493,
+    "local_not_candle": 0,
+    "open_match": 71,
+    "open_mismatch": 6,
+    "high_match": 74,
+    "high_mismatch": 3,
+    "low_match": 72,
+    "low_mismatch": 5,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 19,
+    "close_other": 52,
+    "last_missing": 69,
+    "volume_match": 73,
+    "volume_mismatch": 4,
+    "ref_degenerate": 9,
+    "examples": [
+     {
+      "date": "2026-06-16",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 575.0,
+        "ref": 562
+       }
+      ]
+     },
+     {
+      "date": "2026-06-17",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 563.0,
+        "ref": 572
+       }
+      ]
+     },
+     {
+      "date": "2026-06-21",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 582.0,
+        "ref": 576
+       }
+      ]
+     },
+     {
+      "date": "2026-06-22",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 567.0,
+        "ref": 571
+       }
+      ]
+     },
+     {
+      "date": "2026-06-23",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 582.0,
+        "ref": 584
+       }
+      ]
+     },
+     {
+      "date": "2026-06-29",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 539.0,
+        "ref": 542
+       }
+      ]
+     },
+     {
+      "date": "2026-06-30",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 549.0,
+        "ref": 555
+       }
+      ]
+     },
+     {
+      "date": "2026-07-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 590.0,
+        "ref": 570
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "دالبر",
+   "local_before": 80,
+   "ref": 3622,
+   "overlap": 78,
+   "ref_only": 3544,
+   "inserted": 3541,
+   "invalid": 3,
+   "invalid_reasons": {
+    "geometry": 3
+   },
+   "first_before": "2026-06-13",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 49,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 80,
+    "ref": 3622,
+    "common": 78,
+    "only_local": 2,
+    "only_ref": 3544,
+    "local_not_candle": 0,
+    "open_match": 71,
+    "open_mismatch": 7,
+    "high_match": 72,
+    "high_mismatch": 6,
+    "low_match": 73,
+    "low_mismatch": 5,
+    "low_auction": 1,
+    "close_by_last": 6,
+    "close_by_closing": 35,
+    "close_other": 37,
+    "last_missing": 70,
+    "volume_match": 74,
+    "volume_mismatch": 4,
+    "ref_degenerate": 35,
+    "examples": [
+     {
+      "date": "2026-06-16",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6890.0,
+        "ref": 6880
+       }
+      ]
+     },
+     {
+      "date": "2026-06-17",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 7030.0,
+        "ref": 7090
+       }
+      ]
+     },
+     {
+      "date": "2026-06-20",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6940.0,
+        "ref": 6820
+       }
+      ]
+     },
+     {
+      "date": "2026-06-21",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6780.0,
+        "ref": 6740
+       }
+      ]
+     },
+     {
+      "date": "2026-06-22",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6590.0,
+        "ref": 6580
+       }
+      ]
+     },
+     {
+      "date": "2026-06-23",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6770.0,
+        "ref": 6780
+       }
+      ]
+     },
+     {
+      "date": "2026-06-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6780.0,
+        "ref": 6810
+       }
+      ]
+     },
+     {
+      "date": "2026-06-29",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "close",
+        "bors": 6960.0,
+        "ref": 6980
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "دعبيد",
+   "local_before": 497,
+   "ref": 3225,
+   "overlap": 411,
+   "ref_only": 2814,
+   "inserted": 2813,
+   "invalid": 1,
+   "invalid_reasons": {
+    "geometry": 1
+   },
+   "first_before": "2024-09-22",
+   "last_before": "2026-10-11",
+   "first_after": "2010-01-02",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 466,
+    "board": 31
+   },
+   "raw_compare": {
+    "local": 413,
+    "ref": 3225,
+    "common": 411,
+    "only_local": 2,
+    "only_ref": 2814,
+    "local_not_candle": 84,
+    "open_match": 36,
+    "open_mismatch": 375,
+    "high_match": 281,
+    "high_mismatch": 130,
+    "low_match": 308,
+    "low_mismatch": 103,
+    "low_auction": 0,
+    "close_by_last": 6,
+    "close_by_closing": 81,
+    "close_other": 324,
+    "last_missing": 403,
+    "volume_match": 407,
+    "volume_mismatch": 4,
+    "ref_degenerate": 115,
+    "examples": [
+     {
+      "date": "2024-09-22",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13390.0,
+        "ref": 13790
+       },
+       {
+        "field": "low",
+        "bors": 13390.0,
+        "ref": 13780
+       },
+       {
+        "field": "close",
+        "bors": 13420.0,
+        "ref": 13790
+       }
+      ]
+     },
+     {
+      "date": "2024-09-23",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13420.0,
+        "ref": 13820
+       },
+       {
+        "field": "low",
+        "bors": 13420.0,
+        "ref": 13790
+       },
+       {
+        "field": "close",
+        "bors": 13520.0,
+        "ref": 13820
+       }
+      ]
+     },
+     {
+      "date": "2024-09-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13520.0,
+        "ref": 13800
+       },
+       {
+        "field": "low",
+        "bors": 13520.0,
+        "ref": 13790
+       },
+       {
+        "field": "close",
+        "bors": 13730.0,
+        "ref": 13920
+       }
+      ]
+     },
+     {
+      "date": "2024-09-25",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13730.0,
+        "ref": 14100
+       },
+       {
+        "field": "low",
+        "bors": 13730.0,
+        "ref": 13990
+       },
+       {
+        "field": "close",
+        "bors": 13870.0,
+        "ref": 14140
+       }
+      ]
+     },
+     {
+      "date": "2024-09-28",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13870.0,
+        "ref": 13740
+       },
+       {
+        "field": "high",
+        "bors": 13870.0,
+        "ref": 13770
+       },
+       {
+        "field": "close",
+        "bors": 13850.0,
+        "ref": 13740
+       }
+      ]
+     },
+     {
+      "date": "2024-09-29",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13850.0,
+        "ref": 13720
+       },
+       {
+        "field": "high",
+        "bors": 13850.0,
+        "ref": 13780
+       },
+       {
+        "field": "close",
+        "bors": 13830.0,
+        "ref": 13720
+       }
+      ]
+     },
+     {
+      "date": "2024-09-30",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13830.0,
+        "ref": 13700
+       },
+       {
+        "field": "close",
+        "bors": 13820.0,
+        "ref": 13700
+       }
+      ]
+     },
+     {
+      "date": "2024-10-01",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 13820.0,
+        "ref": 13690
+       },
+       {
+        "field": "high",
+        "bors": 13820.0,
+        "ref": 13690
+       },
+       {
+        "field": "close",
+        "bors": 13820.0,
+        "ref": 13690
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "symbol": "مبين",
+   "local_before": 495,
+   "ref": 2391,
+   "overlap": 245,
+   "ref_only": 2146,
+   "inserted": 2146,
+   "invalid": 0,
+   "invalid_reasons": {},
+   "first_before": "2024-09-22",
+   "last_before": "2026-10-11",
+   "first_after": "2015-04-28",
+   "last_after": "2026-11-09",
+   "src_before": {
+    "legacy-unknown": 473,
+    "board": 22
+   },
+   "raw_compare": {
+    "local": 245,
+    "ref": 2391,
+    "common": 245,
+    "only_local": 0,
+    "only_ref": 2146,
+    "local_not_candle": 250,
+    "open_match": 27,
+    "open_mismatch": 218,
+    "high_match": 209,
+    "high_mismatch": 36,
+    "low_match": 168,
+    "low_mismatch": 77,
+    "low_auction": 2,
+    "close_by_last": 6,
+    "close_by_closing": 46,
+    "close_other": 193,
+    "last_missing": 237,
+    "volume_match": 242,
+    "volume_mismatch": 3,
+    "ref_degenerate": 43,
+    "examples": [
+     {
+      "date": "2024-09-24",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 7830.0,
+        "ref": 8060
+       },
+       {
+        "field": "low",
+        "bors": 7830.0,
+        "ref": 8060
+       }
+      ]
+     },
+     {
+      "date": "2024-09-25",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 8060.0,
+        "ref": 8300
+       },
+       {
+        "field": "low",
+        "bors": 8060.0,
+        "ref": 8300
+       }
+      ]
+     },
+     {
+      "date": "2024-10-02",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 6500.0,
+        "ref": 6560
+       },
+       {
+        "field": "low",
+        "bors": 6500.0,
+        "ref": 6540
+       },
+       {
+        "field": "close",
+        "bors": 6550.0,
+        "ref": 6560
+       }
+      ]
+     },
+     {
+      "date": "2024-10-05",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 6550.0,
+        "ref": 6610
+       },
+       {
+        "field": "low",
+        "bors": 6550.0,
+        "ref": 6610
+       },
+       {
+        "field": "close",
+        "bors": 6560.0,
+        "ref": 6610
+       }
+      ]
+     },
+     {
+      "date": "2024-10-06",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 6560.0,
+        "ref": 6620
+       },
+       {
+        "field": "low",
+        "bors": 6560.0,
+        "ref": 6620
+       },
+       {
+        "field": "close",
+        "bors": 6580.0,
+        "ref": 6620
+       }
+      ]
+     },
+     {
+      "date": "2024-10-07",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 6580.0,
+        "ref": 6640
+       },
+       {
+        "field": "low",
+        "bors": 6580.0,
+        "ref": 6640
+       },
+       {
+        "field": "close",
+        "bors": 6590.0,
+        "ref": 6640
+       }
+      ]
+     },
+     {
+      "date": "2024-10-08",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 6590.0,
+        "ref": 6650
+       },
+       {
+        "field": "low",
+        "bors": 6590.0,
+        "ref": 6650
+       },
+       {
+        "field": "close",
+        "bors": 6600.0,
+        "ref": 6650
+       }
+      ]
+     },
+     {
+      "date": "2024-10-09",
+      "src": "legacy-unknown",
+      "diffs": [
+       {
+        "field": "open",
+        "bors": 6600.0,
+        "ref": 6660
+       },
+       {
+        "field": "low",
+        "bors": 6600.0,
+        "ref": 6660
+       },
+       {
+        "field": "close",
+        "bors": 6600.0,
+        "ref": 6660
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

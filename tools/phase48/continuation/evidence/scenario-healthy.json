@@ -1,0 +1,30 @@
+{
+  "label": "healthy",
+  "damage": null,
+  "bundle_hashes": {
+    "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+    "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+    "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+    "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+  },
+  "before": {
+    "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+    "oc/oc_client.db": "8e4d07dcbf620d93df230cd1a4d0197f9c44d6619f66faeef82442c9752e51ed",
+    "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+    ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+    "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+    "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+    "user_sentinel": true,
+    "oc_sentinel": true,
+    "market_sentinel": true
+  },
+  "installed_before": {
+    "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+    "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+    "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+    "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+  },
+  "setup_pid": 38116,
+  "setup_log": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\setup-healthy.log",
+  "started_at": "2026-11-09 23:17:23"
+}

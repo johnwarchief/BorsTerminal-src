@@ -1,0 +1,502 @@
+{
+  "meta": {
+    "sandbox": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+    "setup": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\out\\BorsTerminal_RepairTest_Setup_v1.0.95.exe",
+    "bundle": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\installer\\bundle",
+    "appid": "C3D84F60-2A19-4E7B-8C55-6F9A1B2D3E40",
+    "port": 8158,
+    "setup_sha256": "0015050f9184e10309397555c515f00d272764fbb792d57892d0d198123d3556",
+    "setup_size": 22221082,
+    "iss_sha256": "c22dce203d36370fa9f6c5703dad11a7f97b201fd4f5503013c24ab5aa45f020",
+    "zero_pids_before": 0,
+    "reg_before": {
+      "root": "HKCU",
+      "location": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\"
+    },
+    "real_install_guard": {
+      "test_appid": "C3D84F60-2A19-4E7B-8C55-6F9A1B2D3E40",
+      "production_appid": "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}",
+      "test_iss_has_exit_before_taskkill": true
+    },
+    "ui_driver": "computer-use (ComputerUse SDK)",
+    "test_iss": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\bors_setup_repairtest.iss"
+  },
+  "scenarios": {
+    "healthy": {
+      "label": "healthy",
+      "damage": null,
+      "bundle_hashes": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "before": {
+        "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+        "oc/oc_client.db": "8e4d07dcbf620d93df230cd1a4d0197f9c44d6619f66faeef82442c9752e51ed",
+        "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+        ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+        "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+        "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+        "user_sentinel": true,
+        "oc_sentinel": true,
+        "market_sentinel": true
+      },
+      "installed_before": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "setup_pid": 38116,
+      "setup_log": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\setup-healthy.log",
+      "started_at": "2026-11-09 23:17:23",
+      "setup_rc": 0,
+      "waiter": {
+        "label": "healthy",
+        "pid": 38116,
+        "rc": 0,
+        "finished_at": "2026-11-09 23:19:19",
+        "leftover_test_setup_pids": []
+      },
+      "setup_log_succeeded": true,
+      "setup_log_closed": true,
+      "setup_log_tail": "pairTest\\app\\frontend\\vendor\\fonts\\vazirmatn.css\r\n2026-11-09 23:19:03.129   Time stamp of our file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:19:03.129   Dest file exists.\r\n2026-11-09 23:19:03.129   Time stamp of existing file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:19:03.129   Installing the file.\r\n2026-11-09 23:19:03.131   Successfully installed the file.\r\n2026-11-09 23:19:03.131   -- File entry --\r\n2026-11-09 23:19:03.131   Dest filename: C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\market.db\r\n2026-11-09 23:19:03.131   Time stamp of our file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:19:03.131   Dest file exists.\r\n2026-11-09 23:19:03.131   Skipping due to \"onlyifdoesntexist\" flag.\r\n2026-11-09 23:19:03.133   Saving uninstall information.\r\n2026-11-09 23:19:03.133   Renaming uninstaller.\r\n2026-11-09 23:19:03.134   Deleting uninstall key left over from previous non administrative install.\r\n2026-11-09 23:19:03.135   Creating new uninstall key: HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{C3D84F60-2A19-4E7B-8C55-6F9A1B2D3E40}_is1\r\n2026-11-09 23:19:03.135   Writing uninstall key values.\r\n2026-11-09 23:19:03.136   Detected previous administrative 64-bit install? No\r\n2026-11-09 23:19:03.136   Detected previous administrative 32-bit install? No\r\n2026-11-09 23:19:03.142   Installation process succeeded.\r\n2026-11-09 23:19:03.145   Need to restart Windows? No\r\n2026-11-09 23:19:18.963   Deinitializing Setup.\r\n2026-11-09 23:19:19.006   Log closed.\r\n",
+      "uia": {
+        "ok": true,
+        "error": null,
+        "source": "computer-use",
+        "setup_pid": 38116,
+        "pages": {
+          "maintenance": {
+            "options": [
+              {
+                "name": "نصبِ مجدد / تعمیر فایلها در همان مسیر (توصیه‌شده)",
+                "selected": true
+              },
+              {
+                "name": "نصبِ مجدد + بازنشانی دیتابیس بازار",
+                "selected": false
+              },
+              {
+                "name": "حذفِ کامل برنامه و نصبِ دوباره از صفر",
+                "selected": false
+              },
+              {
+                "name": "فقط حذفِ کامل برنامه (بدون نصبِ دوباره)",
+                "selected": false
+              }
+            ],
+            "selected_index": 0,
+            "texts": [
+              "تعمیر یا نصبِ مجدد",
+              "نسخهٔ قبلی برنامه در این مسیر نصب شده است:\r\nC:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\",
+              "می‌خواهید چه کاری انجام شود؟"
+            ]
+          },
+          "directory": {
+            "chosen": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app"
+          },
+          "ready": {
+            "destination": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+            "install_button": "Install"
+          }
+        },
+        "observed_tree": "check box (focused) repair option selected; prior install path in page text; directory page Value matches sandbox; Ready page Install focused"
+      },
+      "after": {
+        "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+        "oc/oc_client.db": "8e4d07dcbf620d93df230cd1a4d0197f9c44d6619f66faeef82442c9752e51ed",
+        "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+        ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+        "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+        "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+        "user_sentinel": true,
+        "oc_sentinel": true,
+        "market_sentinel": true
+      },
+      "user_diff": {},
+      "installed_after": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "files_match_bundle": true,
+      "market_db_unchanged": true,
+      "app": {
+        "started": true,
+        "pid": 1972,
+        "health": {
+          "data_dir": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+          "go": "go1.27.3",
+          "loops": "off",
+          "market_mode": "read-only",
+          "rss_mb": 10.76953125,
+          "status": "ok",
+          "uptime_s": 0.4932389,
+          "version": "dev"
+        },
+        "ma": {
+          "status": 200,
+          "bytes": 271
+        },
+        "market": {
+          "status": 200,
+          "bytes": 3797954
+        },
+        "stopped": true,
+        "leftover_pids": []
+      },
+      "checks": {
+        "ui_source_computer_use": true,
+        "setup_finished": true,
+        "four_options": true,
+        "repair_option_first": true,
+        "repair_option_selected": true,
+        "directory_is_sandbox": true,
+        "user_data_unchanged": true,
+        "sentinels_intact": true,
+        "market_db_unchanged": true,
+        "program_files_restored": true,
+        "app_health": true
+      },
+      "reasons": [],
+      "status": "PASS"
+    },
+    "deleted_file": {
+      "label": "deleted_file",
+      "damage": {
+        "file": "BorsTerminal_Ultimate.exe",
+        "action": "delete",
+        "pre_sha": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "bundle_sha": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "missing_after_damage": true
+      },
+      "bundle_hashes": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "before": {
+        "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+        "oc/oc_client.db": "47c991aedf50906fa6a9769bc9632e3ba3e925f32ac868e44f6a8e117aeae03a",
+        "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+        ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+        "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+        "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+        "user_sentinel": true,
+        "oc_sentinel": true,
+        "market_sentinel": true
+      },
+      "installed_before": {
+        "BorsTerminal_Ultimate.exe": null,
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "setup_pid": 43316,
+      "setup_log": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\setup-deleted_file.log",
+      "started_at": "2026-11-09 23:19:50",
+      "setup_rc": 0,
+      "waiter": {
+        "label": "deleted_file",
+        "pid": 43316,
+        "rc": 0,
+        "finished_at": "2026-11-09 23:21:15",
+        "leftover_test_setup_pids": []
+      },
+      "setup_log_succeeded": true,
+      "setup_log_closed": true,
+      "setup_log_tail": "pairTest\\app\\frontend\\vendor\\fonts\\vazirmatn.css\r\n2026-11-09 23:21:00.807   Time stamp of our file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:21:00.807   Dest file exists.\r\n2026-11-09 23:21:00.807   Time stamp of existing file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:21:00.807   Installing the file.\r\n2026-11-09 23:21:00.808   Successfully installed the file.\r\n2026-11-09 23:21:00.808   -- File entry --\r\n2026-11-09 23:21:00.812   Dest filename: C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\market.db\r\n2026-11-09 23:21:00.812   Time stamp of our file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:21:00.812   Dest file exists.\r\n2026-11-09 23:21:00.812   Skipping due to \"onlyifdoesntexist\" flag.\r\n2026-11-09 23:21:00.813   Saving uninstall information.\r\n2026-11-09 23:21:00.814   Renaming uninstaller.\r\n2026-11-09 23:21:00.815   Deleting uninstall key left over from previous non administrative install.\r\n2026-11-09 23:21:00.815   Creating new uninstall key: HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{C3D84F60-2A19-4E7B-8C55-6F9A1B2D3E40}_is1\r\n2026-11-09 23:21:00.815   Writing uninstall key values.\r\n2026-11-09 23:21:00.816   Detected previous administrative 64-bit install? No\r\n2026-11-09 23:21:00.816   Detected previous administrative 32-bit install? No\r\n2026-11-09 23:21:00.819   Installation process succeeded.\r\n2026-11-09 23:21:00.822   Need to restart Windows? No\r\n2026-11-09 23:21:15.164   Deinitializing Setup.\r\n2026-11-09 23:21:15.192   Log closed.\r\n",
+      "uia": {
+        "ok": true,
+        "error": null,
+        "source": "computer-use",
+        "setup_pid": 43316,
+        "pages": {
+          "maintenance": {
+            "options": [
+              {
+                "name": "نصبِ مجدد / تعمیر فایلها در همان مسیر (توصیه‌شده)",
+                "selected": true
+              },
+              {
+                "name": "نصبِ مجدد + بازنشانی دیتابیس بازار",
+                "selected": false
+              },
+              {
+                "name": "حذفِ کامل برنامه و نصبِ دوباره از صفر",
+                "selected": false
+              },
+              {
+                "name": "فقط حذفِ کامل برنامه (بدون نصبِ دوباره)",
+                "selected": false
+              }
+            ],
+            "selected_index": 0,
+            "texts": [
+              "تعمیر یا نصبِ مجدد",
+              "نسخهٔ قبلی برنامه در این مسیر نصب شده است:\r\nC:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\",
+              "می‌خواهید چه کاری انجام شود؟"
+            ]
+          },
+          "directory": {
+            "chosen": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app"
+          },
+          "ready": {
+            "destination": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+            "install_button": "Install"
+          }
+        }
+      },
+      "after": {
+        "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+        "oc/oc_client.db": "47c991aedf50906fa6a9769bc9632e3ba3e925f32ac868e44f6a8e117aeae03a",
+        "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+        ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+        "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+        "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+        "user_sentinel": true,
+        "oc_sentinel": true,
+        "market_sentinel": true
+      },
+      "user_diff": {},
+      "installed_after": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "files_match_bundle": true,
+      "market_db_unchanged": true,
+      "app": {
+        "started": true,
+        "pid": 25284,
+        "health": {
+          "data_dir": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+          "go": "go1.27.3",
+          "loops": "off",
+          "market_mode": "read-only",
+          "rss_mb": 6.26953125,
+          "status": "ok",
+          "uptime_s": 0.0026859,
+          "version": "dev"
+        },
+        "ma": {
+          "status": 200,
+          "bytes": 271
+        },
+        "market": {
+          "status": 200,
+          "bytes": 3797954
+        },
+        "stopped": true,
+        "leftover_pids": []
+      },
+      "checks": {
+        "ui_source_computer_use": true,
+        "setup_finished": true,
+        "four_options": true,
+        "repair_option_first": true,
+        "repair_option_selected": true,
+        "directory_is_sandbox": true,
+        "user_data_unchanged": true,
+        "sentinels_intact": true,
+        "market_db_unchanged": true,
+        "program_files_restored": true,
+        "app_health": true
+      },
+      "reasons": [],
+      "status": "PASS"
+    },
+    "corrupted_frontend": {
+      "label": "corrupted_frontend",
+      "damage": {
+        "file": "frontend/index.html",
+        "action": "corrupt",
+        "pre_sha": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "corrupt_sha": "ebcef068c674f2bea0ecf4327de08e303d7aa14db1acb0325a39e560bcf88d04",
+        "bundle_sha": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c"
+      },
+      "bundle_hashes": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "before": {
+        "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+        "oc/oc_client.db": "47c991aedf50906fa6a9769bc9632e3ba3e925f32ac868e44f6a8e117aeae03a",
+        "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+        ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+        "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+        "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+        "user_sentinel": true,
+        "oc_sentinel": true,
+        "market_sentinel": true
+      },
+      "installed_before": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "ebcef068c674f2bea0ecf4327de08e303d7aa14db1acb0325a39e560bcf88d04",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "setup_pid": 19004,
+      "setup_log": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\phase48closeout\\repair\\setup-corrupted_frontend.log",
+      "started_at": "2026-11-09 23:21:42",
+      "setup_rc": 0,
+      "waiter": {
+        "label": "corrupted_frontend",
+        "pid": 19004,
+        "rc": 0,
+        "finished_at": "2026-11-09 23:23:10",
+        "leftover_test_setup_pids": []
+      },
+      "setup_log_succeeded": true,
+      "setup_log_closed": true,
+      "setup_log_tail": "pairTest\\app\\frontend\\vendor\\fonts\\vazirmatn.css\r\n2026-11-09 23:22:54.675   Time stamp of our file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:22:54.675   Dest file exists.\r\n2026-11-09 23:22:54.675   Time stamp of existing file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:22:54.675   Installing the file.\r\n2026-11-09 23:22:54.675   Successfully installed the file.\r\n2026-11-09 23:22:54.677   -- File entry --\r\n2026-11-09 23:22:54.677   Dest filename: C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\market.db\r\n2026-11-09 23:22:54.677   Time stamp of our file: 2026-11-09 21:34:30.000\r\n2026-11-09 23:22:54.677   Dest file exists.\r\n2026-11-09 23:22:54.677   Skipping due to \"onlyifdoesntexist\" flag.\r\n2026-11-09 23:22:54.679   Saving uninstall information.\r\n2026-11-09 23:22:54.679   Renaming uninstaller.\r\n2026-11-09 23:22:54.680   Deleting uninstall key left over from previous non administrative install.\r\n2026-11-09 23:22:54.680   Creating new uninstall key: HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{C3D84F60-2A19-4E7B-8C55-6F9A1B2D3E40}_is1\r\n2026-11-09 23:22:54.680   Writing uninstall key values.\r\n2026-11-09 23:22:54.680   Detected previous administrative 64-bit install? No\r\n2026-11-09 23:22:54.680   Detected previous administrative 32-bit install? No\r\n2026-11-09 23:22:54.684   Installation process succeeded.\r\n2026-11-09 23:22:54.687   Need to restart Windows? No\r\n2026-11-09 23:23:10.093   Deinitializing Setup.\r\n2026-11-09 23:23:10.145   Log closed.\r\n",
+      "uia": {
+        "ok": true,
+        "error": null,
+        "source": "computer-use",
+        "setup_pid": 19004,
+        "pages": {
+          "maintenance": {
+            "options": [
+              {
+                "name": "نصبِ مجدد / تعمیر فایلها در همان مسیر (توصیه‌شده)",
+                "selected": true
+              },
+              {
+                "name": "نصبِ مجدد + بازنشانی دیتابیس بازار",
+                "selected": false
+              },
+              {
+                "name": "حذفِ کامل برنامه و نصبِ دوباره از صفر",
+                "selected": false
+              },
+              {
+                "name": "فقط حذفِ کامل برنامه (بدون نصبِ دوباره)",
+                "selected": false
+              }
+            ],
+            "selected_index": 0,
+            "texts": [
+              "تعمیر یا نصبِ مجدد",
+              "نسخهٔ قبلی برنامه در این مسیر نصب شده است:\r\nC:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\",
+              "می‌خواهید چه کاری انجام شود؟"
+            ]
+          },
+          "directory": {
+            "chosen": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app"
+          },
+          "ready": {
+            "destination": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+            "install_button": "Install"
+          }
+        }
+      },
+      "after": {
+        "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+        "oc/oc_client.db": "47c991aedf50906fa6a9769bc9632e3ba3e925f32ac868e44f6a8e117aeae03a",
+        "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+        ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+        "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+        "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+        "user_sentinel": true,
+        "oc_sentinel": true,
+        "market_sentinel": true
+      },
+      "user_diff": {},
+      "installed_after": {
+        "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+        "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+        "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+        "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+      },
+      "files_match_bundle": true,
+      "market_db_unchanged": true,
+      "app": {
+        "started": true,
+        "pid": 43732,
+        "health": {
+          "data_dir": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+          "go": "go1.27.3",
+          "loops": "off",
+          "market_mode": "read-only",
+          "rss_mb": 10.26953125,
+          "status": "ok",
+          "uptime_s": 0.5234585,
+          "version": "dev"
+        },
+        "ma": {
+          "status": 200,
+          "bytes": 271
+        },
+        "market": {
+          "status": 200,
+          "bytes": 3797954
+        },
+        "stopped": true,
+        "leftover_pids": []
+      },
+      "checks": {
+        "ui_source_computer_use": true,
+        "setup_finished": true,
+        "four_options": true,
+        "repair_option_first": true,
+        "repair_option_selected": true,
+        "directory_is_sandbox": true,
+        "user_data_unchanged": true,
+        "sentinels_intact": true,
+        "market_db_unchanged": true,
+        "program_files_restored": true,
+        "app_health": true
+      },
+      "reasons": [],
+      "status": "PASS"
+    }
+  },
+  "base_install": {
+    "rc": 0,
+    "seconds": 1.79,
+    "stdout_tail": "",
+    "stderr_tail": "",
+    "files": {
+      "BorsTerminal_Ultimate.exe": true,
+      "BorsTerminal_Shell.exe": true,
+      "frontend/index.html": true,
+      "apply_update.bat": true,
+      "market.db": true,
+      "unins000.exe": false
+    },
+    "registry": {
+      "root": "HKCU",
+      "location": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\"
+    }
+  },
+  "bundle_hashes": {
+    "BorsTerminal_Ultimate.exe": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6",
+    "BorsTerminal_Shell.exe": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11",
+    "frontend/index.html": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c",
+    "apply_update.bat": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+  },
+  "base_state": {
+    "user.db": "5deed8fc4604fb4110b54f90f312c3d6c027e5621a3dcd8241fedf30fd2abf46",
+    "oc/oc_client.db": "8e4d07dcbf620d93df230cd1a4d0197f9c44d6619f66faeef82442c9752e51ed",
+    "fts_thresholds.json": "0fe3e9bda6020e3c786a8924cd4d1f7a05104863feb3c28118578dc3092adcfb",
+    ".screener_cache.json": "91c14b7cb6530dc43b0eb93289f4528abd0be765bb4a5371accad3bc65a5d8c0",
+    "price_basis.json": "be8a75ee9645ff08e02ea8336e784e9856e57ac2ee606f47bec2d07052f65aa0",
+    "market.db": "1666dd028450a8c9c73d38267e7ef6ce78135b8eaba6f43ef8e3cbc1db091206",
+    "user_sentinel": true,
+    "oc_sentinel": true,
+    "market_sentinel": true
+  },
+  "summary": {
+    "scenarios": 3,
+    "failures": [],
+    "pass": 3
+  }
+}

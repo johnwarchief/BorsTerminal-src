@@ -1,0 +1,320 @@
+{
+  "schema": "phase48-continuation-manifest-v1",
+  "generated_at": "2026-11-10",
+  "branch": "mission/phase48-closeout-2026-11-09",
+  "base_head": "3b4edb12",
+  "entries": [
+    {
+      "path": "FINAL-REPORT.md",
+      "role": "final report (statuses and measured numbers)",
+      "git": "committed",
+      "size": 21427,
+      "sha256": "bd3ac0f33eaa421f86640f8d417066f50fb144f848a6198de14faee53e942cf3"
+    },
+    {
+      "path": "tools/phase48/backfill_reference.py",
+      "role": "S4 backfill apply/rollback with provenance",
+      "git": "committed",
+      "size": 28710,
+      "sha256": "dbac46a48b5e53f7f0649c60ec1d95f76fea7c75cd2f5ecb7f95f148869fed77"
+    },
+    {
+      "path": "tools/phase48/verify_history_api.py",
+      "role": "S4 API and adjustment-chain verification",
+      "git": "committed",
+      "size": 31439,
+      "sha256": "2aa9c0ab9a4fa11551e51b271890da04219777d539a30ea86b0036823fdaa03d"
+    },
+    {
+      "path": "tools/phase48/verify_symbol_identity.py",
+      "role": "S4 ins_code/symbol identity check",
+      "git": "committed",
+      "size": 3701,
+      "sha256": "e627d79446ff485b9c80c3915ffc4c522401a69203afd44f5da8df5dd8522364"
+    },
+    {
+      "path": "tools/phase48/repair/make_repair_iss.py",
+      "role": "S5 isolated test-installer generator",
+      "git": "committed",
+      "size": 5638,
+      "sha256": "44082ec5ab6dc8dba0a6f215c0e98aa4f9ee2a566109668190b540cf3190cc0f"
+    },
+    {
+      "path": "tools/phase48/repair/repair_helpers.py",
+      "role": "S5 repair harness helpers (path-parameterized copy)",
+      "git": "committed",
+      "size": 9542,
+      "sha256": "32805bebcfdf2b27c55b0ce3d361c83b9b10c636edd929ccadee6dd252650700"
+    },
+    {
+      "path": "tools/phase48/repair/manual_repair.py",
+      "role": "S5 staged interactive repair harness",
+      "git": "committed",
+      "size": 13034,
+      "sha256": "1ea29c72b0297641923aa49b0eccdddc76bc1481d35d77ab8e8bd624bc7ca179"
+    },
+    {
+      "path": "tools/phase48/repair/README.md",
+      "role": "S5 harness usage and safety notes",
+      "git": "committed",
+      "size": 2562,
+      "sha256": "d4ca9e46176af31e0adc3c39a80dde28085053b59fb21de83ab00964a4ee805b"
+    },
+    {
+      "path": "tools/phase48/continuation/README.md",
+      "role": "continuation instructions",
+      "git": "committed",
+      "size": 10673,
+      "sha256": "16f1b2768dd974ef00b22dbf817ece127260e4aed0aafd3ce4457cc8d01d9ccf"
+    },
+    {
+      "path": "tools/phase48/continuation/verify_artifacts.py",
+      "role": "manifest verifier",
+      "git": "committed",
+      "size": 3356,
+      "sha256": "52cf187db4a9faad5b060cc6fe719b96f1ba0357819b9b5dcca059100d037d8b"
+    },
+    {
+      "path": "data/ra365_corrections/ra365-r32b-v2/factors.jsonl",
+      "role": "tracked derived correction factors",
+      "git": "committed",
+      "size": 5287181,
+      "sha256": "2194b4dfaaaf851f1256c8227963e089ee1503accc134a22057515fb346dc716"
+    },
+    {
+      "path": "data/ra365_corrections/ra365-r32b-v2/raw_ohlc.jsonl",
+      "role": "tracked sparse per-field corrections",
+      "git": "committed",
+      "size": 2843503,
+      "sha256": "1acc53b26d578e5f4452a17a1d62d391d0d3f600a310759059477862f6143dbe"
+    },
+    {
+      "path": "data/ra365_corrections/ra365-r32b-v2/manifest.json",
+      "role": "correction pack manifest",
+      "git": "committed",
+      "size": 1590,
+      "sha256": "578a8576e146ca70bf7ebae42dfeae16e94d292595f2a43e09358d68a929fe2c"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/backfill.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 82550,
+      "sha256": "0acefbfff1d6d0f6be8760b542f75b3415e0f408b1363cc5703fbb166a8be5bb"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/backfill.md",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 3949,
+      "sha256": "fd18692671bd467f13363a05d4a16a71610afe9a50205607f96908311fa1c74e"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/verify-api.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 115667,
+      "sha256": "ec44cba3840322f27006dc49faff53f3e49eb2fe8b71681a212dff3b1688f1d9"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/verify-api.md",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 9593,
+      "sha256": "453cff02a08be1498f77bc8619c31393c1b783cbfc7d11f653e315d56eb5129c"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/repair-evidence.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 26185,
+      "sha256": "c95d2751c1b4b0f4a114846c8c5ea9db64a0fc3bc8b1d35425d8a0de6c056d62"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/installer-repair-audit.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 2987,
+      "sha256": "04c59eee319057db0f6eea769b2d7a5356fbf41d87667495f1aed2182e30be63"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/manual-ui-healthy.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 1476,
+      "sha256": "702154272875f2ea6219e8f1280fdd487620110b5903cba9660a5fb90d300008"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/manual-ui-deleted_file.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 1312,
+      "sha256": "2452bad4b15e2cd8c09f33192bf05a60a301b9e052871e04d0f7d3c20211f0e8"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/manual-ui-corrupted_frontend.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 1312,
+      "sha256": "7245661946bd67997c0e6caf664e85d3f6f21be0af6daf56ac4cb87c37a7d9b0"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/scenario-healthy.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 1679,
+      "sha256": "6f95b8dc4156cbcdc7fc0d8c12f3997e300738ee629c3ff658e2bc4106356cab"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/scenario-deleted_file.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 1895,
+      "sha256": "e8aa8ab00fbadfc91d66b9ce27031bf1d1f26de18253327f4a5d1bd198f12669"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/scenario-corrupted_frontend.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 2017,
+      "sha256": "86f571852613e8affd4d3dccc02976a87b1f3b23719fe76506b5038abb750e79"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/rc-healthy.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 125,
+      "sha256": "9a79e2954ef3483d6ad419314edf515786c7ddb0ba2509bd0d9b7002a2cf14fb"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/rc-deleted_file.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 130,
+      "sha256": "b54edea34a3c5f92f33e2f734cc2d56e20d1e29ab7c1e71edc23f974ef8bd041"
+    },
+    {
+      "path": "tools/phase48/continuation/evidence/rc-corrupted_frontend.json",
+      "role": "S4/S5 evidence copy",
+      "git": "committed",
+      "size": 136,
+      "sha256": "db994a4188f03112a1a9c53d3993c968d35003529c90f8f595a228b80b70e170"
+    },
+    {
+      "path": "_audit/phase48/parity/ref/bars.ndjson.gz",
+      "role": "reference pack (owner subscription; not redistributable)",
+      "git": "local",
+      "size": 6710605,
+      "sha256": "68a1c803740cc8d7f5db86565888b56a582efc26b6b2a8b1d003351336fc171b"
+    },
+    {
+      "path": "_audit/phase48/parity/ref/symbols.json",
+      "role": "30-symbol selection",
+      "git": "local",
+      "size": 4447,
+      "sha256": "d1b62739f38196d5b28b65d51278bbcb7a3ceaaabf171ebcb5b47e291b42e699"
+    },
+    {
+      "path": "_audit/phase48/parity/ref/coverage.json",
+      "role": "reference coverage",
+      "git": "local",
+      "size": 64061,
+      "sha256": "3333e660435fd9b2e731440c2745cfd9650841fe5164c5096607a630547805d0"
+    },
+    {
+      "path": "_audit/phase48/lab/market.db",
+      "role": "S4 source DB (lab copy)",
+      "git": "local",
+      "size": 267472896,
+      "sha256": "bb57564b2671162238f5760641e05dd5fd0fe0e44501383fb8c2f96a26efb8ca"
+    },
+    {
+      "path": "_audit/phase48closeout/backfill/work/market.db",
+      "role": "S4 work DB with 72,222 backfilled rows",
+      "git": "local",
+      "size": 294793216,
+      "sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5"
+    },
+    {
+      "path": "_audit/phase48closeout/backfill/verify/market.db",
+      "role": "S4 API-verification DB (byte-identical copy)",
+      "git": "local",
+      "size": 294793216,
+      "sha256": "2b701ea3d32dcb30c5c0bc248cd160b1aa5bc5f38598a71e6b056c355e1ed3b5"
+    },
+    {
+      "path": "_audit/phase48closeout/backfill/borsd_backfill_test.exe",
+      "role": "S4 test backend binary",
+      "git": "local",
+      "size": 22161920,
+      "sha256": "aa448e7752e39588b53605538b95d6193bce3f14eac9efd03761ca854d4464a3"
+    },
+    {
+      "path": "_audit/phase48closeout/installer/bundle/BorsTerminal_Ultimate.exe",
+      "role": "S5 bundle: Go backend",
+      "git": "local",
+      "size": 21950976,
+      "sha256": "1b203399b33d686ae21efe822a47c699597639f44fb15e2abcc588703d0856c6"
+    },
+    {
+      "path": "_audit/phase48closeout/installer/bundle/BorsTerminal_Shell.exe",
+      "role": "S5 bundle: Tauri shell",
+      "git": "local",
+      "size": 12756480,
+      "sha256": "93afb2141fe04d28706df7e40bc624dd5084427f24e31e317ca2860aa3211d11"
+    },
+    {
+      "path": "_audit/phase48closeout/installer/bundle/frontend/index.html",
+      "role": "S5 bundle: SPA entry",
+      "git": "local",
+      "size": 760,
+      "sha256": "32b8ecfd0d56cbd37e3908ca2b37cae92ac97f6bcc05b073145205b7c2cabe2c"
+    },
+    {
+      "path": "_audit/phase48closeout/installer/bundle/apply_update.bat",
+      "role": "S5 bundle: update launcher",
+      "git": "local",
+      "size": 6132,
+      "sha256": "d30afb549d62ae224a24bec1ef476dfbbc7812bd1f68c1a48b17f1110aebaf2b"
+    },
+    {
+      "path": "_audit/phase48closeout/installer/bundle/market.db",
+      "role": "S5 bundle: base market DB",
+      "git": "local",
+      "size": 26378240,
+      "sha256": "c0979d4e61a369c4107952b8b70a7df21a887da8bf2db73d9114cb3e1511c8a9"
+    },
+    {
+      "path": "_audit/phase48closeout/installer/bundle/market.db.gz",
+      "role": "S5 bundle: fast seed",
+      "git": "local",
+      "size": 118482671,
+      "sha256": "63be9247093f89763f34c4970b06d216724b8626c54513e232f09de60ad3bb89"
+    },
+    {
+      "path": "_audit/phase48closeout/repair/out/BorsTerminal_RepairTest_Setup_v1.0.95.exe",
+      "role": "S5 test installer",
+      "git": "local",
+      "size": 22221082,
+      "sha256": "0015050f9184e10309397555c515f00d272764fbb792d57892d0d198123d3556"
+    }
+  ],
+  "excluded": [
+    {
+      "path": "_audit/phase48closeout/update/keys/test_ed25519.hex",
+      "reason": "private test signing key; never commit"
+    },
+    {
+      "path": "_audit/phase48closeout/backfill/work/api_token.txt",
+      "reason": "test API token; never commit"
+    },
+    {
+      "path": "_audit/phase48closeout/backfill/verify/api_token.txt",
+      "reason": "test API token; never commit"
+    },
+    {
+      "path": "installer/.setup_password.iss",
+      "reason": "installer password; gitignored"
+    }
+  ]
+}

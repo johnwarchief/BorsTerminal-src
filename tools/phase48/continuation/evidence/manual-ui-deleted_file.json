@@ -1,0 +1,41 @@
+{
+  "ok": true,
+  "error": null,
+  "source": "computer-use",
+  "setup_pid": 43316,
+  "pages": {
+    "maintenance": {
+      "options": [
+        {
+          "name": "نصبِ مجدد / تعمیر فایلها در همان مسیر (توصیه‌شده)",
+          "selected": true
+        },
+        {
+          "name": "نصبِ مجدد + بازنشانی دیتابیس بازار",
+          "selected": false
+        },
+        {
+          "name": "حذفِ کامل برنامه و نصبِ دوباره از صفر",
+          "selected": false
+        },
+        {
+          "name": "فقط حذفِ کامل برنامه (بدون نصبِ دوباره)",
+          "selected": false
+        }
+      ],
+      "selected_index": 0,
+      "texts": [
+        "تعمیر یا نصبِ مجدد",
+        "نسخهٔ قبلی برنامه در این مسیر نصب شده است:\r\nC:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app\\",
+        "می‌خواهید چه کاری انجام شود؟"
+      ]
+    },
+    "directory": {
+      "chosen": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app"
+    },
+    "ready": {
+      "destination": "C:\\Users\\PCMOD\\AppData\\Local\\BorsTerminal_Phase48RepairTest\\app",
+      "install_button": "Install"
+    }
+  }
+}
