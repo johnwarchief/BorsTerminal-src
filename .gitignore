@@ -249,3 +249,5 @@ backend-go/**/zz_tmp_*
 !backend-go/internal/fundamental/zz_tmp_insights_parity_test.go
 !market.db
 !models/kronos/README.md
+_audit/phase47/lab/
+_audit/phase47/bundle/
