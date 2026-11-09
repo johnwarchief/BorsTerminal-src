@@ -196,7 +196,9 @@ describe('نماهای ذخیره‌شدهٔ تابلو', () => {
   it('نرخ پایشِ نمای ذخیره‌شده در ناظرِ نوار بالا هم اعمال می‌شود', () => {
     useMarketPrefs.setState({ pollMs: 15_000 });
     mockedUseBoard.mockClear();
-    render(<Topbar />);
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><Topbar /></QueryClientProvider>);
     expect(mockedUseBoard).toHaveBeenCalledWith(15_000);
   });
 
