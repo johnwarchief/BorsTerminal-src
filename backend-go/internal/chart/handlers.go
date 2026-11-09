@@ -28,7 +28,15 @@ func intQuery(w http.ResponseWriter, r *http.Request, name string, def int) (int
 func (s *Service) ChartDB(w http.ResponseWriter, r *http.Request) {
 	// پارامترِ adjustment در قراردادِ کانونیک حذف شده است؛ FastAPI هم کلیدِ
 	// ناشناخته را نادیده می‌گیرد، پس این مسیر هم آن را اعتبارسنجی نمی‌کند.
-	httpapi.WriteJSON(w, http.StatusOK, s.chartDBBody(r.Context(), r.PathValue("symbol"), 3))
+	symbol := r.PathValue("symbol")
+	body := s.chartDBBody(r.Context(), symbol, 3)
+	// معادلِ wrapperِ مسیرِ پایتون (`get_chart_db_visible`): کندلِ دیدنی
+	// literal + تصحیح‌های فیلد خامِ بستهٔ نسخه‌دار، پس از price_basis و FTS.
+	if cands, ok := body["candles"].([]map[string]any); ok {
+		ins := s.resolveInsCode(r.Context(), symbol)
+		body["candles"] = literalDisplayCandles(LoadPack(s.dataDir), ins, symbol, cands)
+	}
+	httpapi.WriteJSON(w, http.StatusOK, body)
 }
 
 func (s *Service) FTS(w http.ResponseWriter, r *http.Request) {
@@ -294,4 +302,3 @@ func (s *Service) Indicators(w http.ResponseWriter, r *http.Request) {
 
 	httpapi.WriteJSON(w, http.StatusOK, resp)
 }
-

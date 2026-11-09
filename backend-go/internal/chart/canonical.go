@@ -520,14 +520,14 @@ func (s *Service) officialPriceAdjustEvents(ctx context.Context, symbol string, 
 	}
 	sort.Strings(candleDates)
 	type row struct {
-		dEven   any
-		ratio   float64
-		source  string
-		pcl     float64
-		pna     float64
-		hasPcl  bool
-		hasPna  bool
-		ctype   sql.NullFloat64
+		dEven  any
+		ratio  float64
+		source string
+		pcl    float64
+		pna    float64
+		hasPcl bool
+		hasPna bool
+		ctype  sql.NullFloat64
 	}
 	rs, err := s.market.QueryContext(ctx,
 		"SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted, corporate_type_code "+
@@ -760,6 +760,7 @@ func filterShareChanges(rows [][2]float64) [][2]float64 {
 func shareChangesAsPairs(ctx context.Context, s *Service, symbol string) [][2]float64 {
 	return s.shareChangeEvents(ctx, symbol)
 }
+
 // applyLongGapShareChanges معادلِ _apply_long_gap_share_changes.
 func applyLongGapShareChanges(events []canonEvent, shareChanges [][2]float64, times []string, closings map[string]float64) []canonEvent {
 	if len(closings) == 0 || len(shareChanges) == 0 || len(times) == 0 {
@@ -965,11 +966,17 @@ func (s *Service) canonicalAdjustment(ctx context.Context, symbol string, times 
 		corrVersion = stringValue(corrMeta["version"])
 	}
 	for _, e := range suppressed {
-		corrRejected = append(corrRejected, map[string]any{
+		rej := map[string]any{
 			"date": date10(e.Date), "ratio": e.Ratio,
 			"factor_status":      "suppressed-by-rahavard-reference-correction",
 			"correction_version": nilIfEmpty(corrVersion),
-		})
+		}
+		if e.Extra != nil {
+			if dedupe, ok := e.Extra["dedupe"]; ok {
+				rej["dedupe"] = dedupe
+			}
+		}
+		corrRejected = append(corrRejected, rej)
 	}
 	applied, engineRejected, chainEvents, _ := engineEvents(events)
 	// ترتیبِ پایتون: ردیف‌هایِ ردشدهٔ موتور نخست، سپس تکراری‌هایِ ادغام،
@@ -1938,9 +1945,9 @@ func (s *Service) adjustCapabilityFull(ctx context.Context, applied []canonEvent
 		"functional_reason": reason, "functional_blockers": blockers,
 		"availability": availability, "event_count": len(applied),
 		"ledger_sharpened": nil, "ledger_ambiguous": nil,
-		"chain_complete": chainComplete,
+		"chain_complete":          chainComplete,
 		"chain_incomplete_events": intVal(chain["incomplete_events"]),
-		"coverage": coverage, "corrections": corr,
+		"coverage":                coverage, "corrections": corr,
 	}
 }
 

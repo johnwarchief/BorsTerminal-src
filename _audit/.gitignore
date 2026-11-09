@@ -123,3 +123,13 @@ live-baseline-20261010/*
 # live-fund/ untracked files
 live-fund/master_screening.json
 live-fund/stale_switch.json
+
+# phase49 local artifacts: DB copies, evidence, packs and the local API runtime
+# (the runtime directory carries a local API token — must never be committed).
+# Mission scripts stay trackable: phase49/continuation/*.py and api/*.py.
+phase49/continuation/api/sandbox/
+phase49/continuation/api/python/
+phase49/continuation/db/
+phase49/continuation/evidence/
+phase49/continuation/packs/
+phase49/continuation/*.exe~

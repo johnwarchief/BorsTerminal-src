@@ -1,0 +1,29 @@
+{
+ "schema": "ra365-correction-pack-v1",
+ "correction_version": "test-p49",
+ "created_at": "2026-11-10",
+ "mode": "overlay",
+ "reference_sha256": "test-ref-sha",
+ "files": {
+  "factors": "factors.jsonl",
+  "raw_ohlc": "raw_ohlc.jsonl"
+ },
+ "file_sha256": {
+  "factors": "8e1b0b9da28167c9edcac05fcf8158618f64c76e38e20b4e1f73c6ebe269047a",
+  "raw_ohlc": "bce3cd32f2363452f7b1d74b5a7f3881c2dfdf024ef72bec62742c1fe804689f"
+ },
+ "source": "test-reference",
+ "method": "test",
+ "counts": {
+  "factor_replace_step": 2,
+  "factor_suppress_step": 1,
+  "raw_fields": {
+   "open": 1,
+   "high_raw": 1,
+   "close": 2,
+   "last": 1,
+   "low_raw": 1,
+   "high": 1
+  }
+ }
+}

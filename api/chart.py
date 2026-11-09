@@ -2417,7 +2417,7 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
         reason = "زنجیره/پوششِ این نماد سنجیده نشده است."
     else:
         reason = _ADJ_FUNCTIONAL_REASON
-    corr = AC.capability(symbol)
+    corr = AC.capability(symbol, _ins_code_for(symbol) if symbol else None)
     result = {
         "source": source,
         "combined_available": (source in _ADJ_KNOWN_SOURCES

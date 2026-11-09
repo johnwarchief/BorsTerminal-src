@@ -1,0 +1,279 @@
+{
+ "schema": "phase49-correction-parity-v1",
+ "pack": "backend-go/internal/chart/testdata/phase49/pack",
+ "ins_code": "INS1",
+ "symbol": "TESTSYM",
+ "candles": [
+  {
+   "symbol": "TESTSYM",
+   "time": "2024-06-27",
+   "open": 100,
+   "high": 102,
+   "low": 99,
+   "high_raw": 101,
+   "low_raw": 99.5,
+   "close": 100,
+   "last": 101,
+   "volume": 1000
+  },
+  {
+   "symbol": "TESTSYM",
+   "time": "2024-06-29",
+   "open": 69,
+   "high": 71,
+   "low": 68,
+   "high_raw": 70,
+   "low_raw": 68.5,
+   "close": 70,
+   "last": 70.5,
+   "volume": 900
+  },
+  {
+   "symbol": "TESTSYM",
+   "time": "2024-07-01",
+   "open": 63,
+   "high": 65,
+   "low": 62,
+   "high_raw": 64,
+   "low_raw": 62.5,
+   "close": 63,
+   "last": 64,
+   "volume": 800
+  },
+  {
+   "symbol": "TESTSYM",
+   "time": "2024-07-03",
+   "open": 64,
+   "high": 66,
+   "low": 63,
+   "high_raw": 65,
+   "low_raw": 63.5,
+   "close": 64,
+   "last": 65,
+   "volume": 700
+  },
+  {
+   "symbol": "TESTSYM",
+   "time": "2025-06-09",
+   "open": 50,
+   "high": 52,
+   "low": 49,
+   "high_raw": 51,
+   "low_raw": 49.5,
+   "close": 50,
+   "last": 51,
+   "volume": 600
+  },
+  {
+   "symbol": "TESTSYM",
+   "time": "2025-06-10",
+   "open": 40,
+   "high": 42,
+   "low": 39,
+   "high_raw": 41,
+   "low_raw": 39.5,
+   "close": 40,
+   "last": 41,
+   "volume": 500
+  }
+ ],
+ "events": [
+  {
+   "date": "2024-06-27",
+   "ratio": 0.95,
+   "source": "test-product"
+  },
+  {
+   "date": "2024-06-30",
+   "ratio": 0.85,
+   "source": "test-product"
+  },
+  {
+   "date": "2024-07-01",
+   "ratio": 0.9,
+   "source": "test-product"
+  },
+  {
+   "date": "2024-07-03",
+   "ratio": 0.6,
+   "source": "test-product"
+  },
+  {
+   "date": "2024-07-10",
+   "ratio": 0.98,
+   "source": "test-product"
+  },
+  {
+   "date": "2024-07-12",
+   "ratio": 0.97,
+   "source": "test-product"
+  },
+  {
+   "date": "2025-06-09",
+   "ratio": 0.8004,
+   "source": "test-product"
+  }
+ ],
+ "expected": {
+  "display_candles": [
+   {
+    "time": "2024-06-27",
+    "open": 100,
+    "high": 101,
+    "low": 99.5,
+    "high_raw": 101,
+    "low_raw": 99.5,
+    "close": 100,
+    "last": 101,
+    "volume": 1000
+   },
+   {
+    "time": "2024-06-29",
+    "open": 69.5,
+    "high": 71.5,
+    "low": 68.5,
+    "high_raw": 71.5,
+    "low_raw": 68.5,
+    "close": 70.25,
+    "last": 70.75,
+    "volume": 900
+   },
+   {
+    "time": "2024-07-01",
+    "open": 63,
+    "high": 64,
+    "low": 62.5,
+    "high_raw": 64,
+    "low_raw": 62.5,
+    "close": 63,
+    "last": 64,
+    "volume": 800
+   },
+   {
+    "time": "2024-07-03",
+    "open": 64,
+    "high": 66.0,
+    "low": 63.25,
+    "high_raw": 65,
+    "low_raw": 63.25,
+    "close": 64,
+    "last": 65,
+    "volume": 700
+   },
+   {
+    "time": "2025-06-09",
+    "open": 50,
+    "high": 51,
+    "low": 49.5,
+    "high_raw": 51,
+    "low_raw": 49.5,
+    "close": 50,
+    "last": 51,
+    "volume": 600
+   },
+   {
+    "time": "2025-06-10",
+    "open": 40,
+    "high": 41,
+    "low": 39.5,
+    "high_raw": 41,
+    "low_raw": 39.5,
+    "close": 40.5,
+    "last": 41,
+    "volume": 500
+   }
+  ],
+  "kept_events": [
+   {
+    "date": "2024-06-27",
+    "ratio": 0.95,
+    "source": "test-product"
+   },
+   {
+    "date": "2024-06-30",
+    "ratio": 0.85,
+    "source": "test-product"
+   },
+   {
+    "date": "2024-07-01",
+    "ratio": 0.9,
+    "source": "rahavard-reference-correction"
+   },
+   {
+    "date": "2024-07-10",
+    "ratio": 0.98,
+    "source": "test-product"
+   },
+   {
+    "date": "2024-07-12",
+    "ratio": 0.97,
+    "source": "test-product"
+   },
+   {
+    "date": "2025-06-10",
+    "ratio": 0.8,
+    "source": "rahavard-reference-correction"
+   }
+  ],
+  "suppressed_events": [
+   {
+    "date": "2024-07-01",
+    "ratio": 0.9,
+    "source": "test-product"
+   },
+   {
+    "date": "2024-07-03",
+    "ratio": 0.6,
+    "source": "test-product"
+   },
+   {
+    "date": "2025-06-09",
+    "ratio": 0.8004,
+    "source": "test-product",
+    "dedupe": {
+     "reason": "same-action-near-pack-step",
+     "pack_date": "2025-06-10",
+     "pack_ratio": 0.8,
+     "delta_days": 1
+    }
+   }
+  ],
+  "factors": [
+   {
+    "time": "2024-06-27",
+    "factor": 0.5817672
+   },
+   {
+    "time": "2024-06-29",
+    "factor": 0.5817672
+   },
+   {
+    "time": "2024-07-01",
+    "factor": 0.76048
+   },
+   {
+    "time": "2024-07-03",
+    "factor": 0.76048
+   },
+   {
+    "time": "2025-06-09",
+    "factor": 0.8
+   },
+   {
+    "time": "2025-06-10",
+    "factor": 1.0
+   }
+  ],
+  "chain_anchored_last": true,
+  "chain_complete": true,
+  "near_deduped": [
+   {
+    "date": "2025-06-09",
+    "pack_date": "2025-06-10",
+    "delta_days": 1,
+    "ratio": 0.8004,
+    "pack_ratio": 0.8
+   }
+  ]
+ }
+}

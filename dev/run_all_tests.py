@@ -359,6 +359,8 @@ SUITES = [
                                       'Round 32B: versioned factor/raw corrections replace or suppress by effective date'),
     ('dev/test_ra365_round32c_corrections_fixes_v1.py',
                                       'Round 32C: future events survive the pack horizon; corrected high_raw moves the visible high/low'),
+    ('dev/test_phase49_correction_parity_v1.py',
+                                      'Phase 4.9: Python↔Go parity fixture — literal H/L + raw pack corrections, overlay near-date dedup, canonical factors'),
     ('dev/test_ra365_round32d_calendar_v1.py',
                                       'Round 32D: non-comparable W/M keys get the reference calendar bar, or an explicit unavailable'),
     ('dev/test_ra365_round32e_fts_calendar_v1.py',

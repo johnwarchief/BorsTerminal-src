@@ -37,6 +37,15 @@ KNOWN_SCHEMAS = ("ra365-correction-pack-v1", "ra365-reference-pack-v1")
 FACTOR_ACTIONS = ("replace_step", "suppress_step")
 RAW_FIELDS = ("open", "high_raw", "high", "low_raw", "low", "close", "last")
 
+# A product event may be the same corporate action as a pack step observed on
+# a neighbouring trading day (the base-gap discovery dates the gap one session
+# before the effective date; a later backfill can move the effective day).
+# Only a replace step carries a ratio, so only it can prove identity; the
+# window and the ratio tolerance are deliberately tight and every suppressed
+# event is reported with its evidence.
+NEAR_DEDUPE_DAYS = 3
+NEAR_DEDUPE_RATIO_TOL = 0.01
+
 
 class CorrectionPackError(RuntimeError):
     pass
@@ -341,11 +350,41 @@ def capability(symbol=None, ins_code=None):
                 "error": str(e)}
 
 
+def _near_pack_replace(rep, date, ratio):
+    """(pack_date, pack_row, delta_days) for a replace step that proves identity
+    with a product event on a neighbouring day, else None. Evidence: |delta| day
+    <= NEAR_DEDUPE_DAYS and |ratio/pack_ratio - 1| <= NEAR_DEDUPE_RATIO_TOL."""
+    if not rep or ratio is None:
+        return None
+    try:
+        import datetime as _dt
+        d0 = _dt.date.fromisoformat(str(date)[:10])
+    except ValueError:
+        return None
+    best = None
+    for pd, row in rep.items():
+        try:
+            delta = abs((_dt.date.fromisoformat(str(pd)[:10]) - d0).days)
+        except ValueError:
+            continue
+        pr = row.get("ratio")
+        if delta == 0 or delta > NEAR_DEDUPE_DAYS or not pr:
+            continue
+        if abs(float(ratio) / float(pr) - 1.0) > NEAR_DEDUPE_RATIO_TOL:
+            continue
+        if best is None or delta < best[2]:
+            best = (pd, row, delta)
+    return best
+
+
 def apply_factor_events(symbol, events, ins_code=None):
     """(events, suppressed, meta) — لایهٔ عامل را روی فهرست رویدادها اعمال می‌کند.
 
     `suppressed` رویدادهای اصلیِ حذف‌شده است تا caller آن‌ها را با وضعیت
     `suppressed-by-correction` در `adjustRejected` نگه دارد (بی‌حذفِ خاموش).
+    در حالت `overlay`، یک رویدادِ Product که در پنجرهٔ ±۳ روزهٔ یک گامِ
+    `replace_step` با نسبتِ سازگار (≤۱٪) باشد، همان اقدام است و یک‌بار
+    (به‌صورتِ گامِ بسته) اعمال می‌شود؛ شاهد در `dedupe` ثبت می‌شود.
     """
     pack = get_pack()
     if pack is None:
@@ -359,6 +398,7 @@ def apply_factor_events(symbol, events, ins_code=None):
     allowed = set(rep)
     cutoff = pack.as_of if authoritative else ""
     future_kept = 0
+    near_deduped = []
     for e in events or []:
         d = str(e.get("date") or "")[:10]
         if authoritative and cutoff and d > cutoff:
@@ -370,6 +410,22 @@ def apply_factor_events(symbol, events, ins_code=None):
         if d in rep or d in sup or (authoritative and d not in allowed):
             suppressed.append(dict(e))
             continue
+        if not authoritative:
+            near = _near_pack_replace(rep, d, e.get("ratio"))
+            if near is not None:
+                pd, row, delta = near
+                ev = dict(e)
+                ev["dedupe"] = {
+                    "reason": "same-action-near-pack-step",
+                    "pack_date": pd, "pack_ratio": row.get("ratio"),
+                    "delta_days": delta,
+                }
+                suppressed.append(ev)
+                near_deduped.append({"date": d, "pack_date": pd,
+                                     "delta_days": delta,
+                                     "ratio": e.get("ratio"),
+                                     "pack_ratio": row.get("ratio")})
+                continue
         kept.append(dict(e))
     for date, r in sorted(rep.items()):
         kept.append({
@@ -394,10 +450,14 @@ def apply_factor_events(symbol, events, ins_code=None):
             },
         })
     kept.sort(key=lambda e: str(e.get("date"))[:10])
-    return kept, suppressed, {"enabled": True, "covered": True,
-                              "version": pack.version, "mode": pack.mode,
-                              "as_of": pack.as_of, "future_events_kept": future_kept,
-                              "replace_steps": len(rep), "suppress_steps": len(sup)}
+    meta = {"enabled": True, "covered": True,
+            "version": pack.version, "mode": pack.mode,
+            "as_of": pack.as_of, "future_events_kept": future_kept,
+            "replace_steps": len(rep), "suppress_steps": len(sup)}
+    if not authoritative:
+        meta["near_deduped"] = near_deduped
+        meta["near_deduped_count"] = len(near_deduped)
+    return kept, suppressed, meta
 
 
 def apply_raw_candles(symbol, candles, ins_code=None):

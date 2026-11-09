@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -205,246 +206,251 @@ func FindCorrectionsDir(dataDir string) string {
 // LoadPack loads and parses the authoritative correction pack once
 func LoadPack(dataDir string) *CorrectionPack {
 	packOnce.Do(func() {
-		dir := FindCorrectionsDir(dataDir)
-		if dir == "" {
+		packInst = loadPackFromDir(FindCorrectionsDir(dataDir))
+	})
+	return packInst
+}
+
+// loadPackFromDir parses one pack directory; also used by the parity tests so
+// they never depend on the process-wide sync.Once or a global env override.
+func loadPackFromDir(dir string) *CorrectionPack {
+	if dir == "" {
+		return nil
+	}
+	manBytes, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
+	if err != nil {
+		return nil
+	}
+	var man manifestJSON
+	if err := json.Unmarshal(manBytes, &man); err != nil {
+		return nil
+	}
+	ver := man.CorrectionVersion
+	if ver == "" {
+		ver = "ra365-r32b-v2"
+	}
+	factorsName := man.Files.Factors
+	if factorsName == "" {
+		factorsName = "factors.jsonl"
+	}
+	rawName := man.Files.RawOHLC
+	if rawName == "" {
+		rawName = "raw_ohlc.jsonl"
+	}
+	factorsPath := factorsName
+	if !filepath.IsAbs(factorsPath) {
+		factorsPath = filepath.Join(dir, factorsPath)
+	}
+	rawPath := rawName
+	if !filepath.IsAbs(rawPath) {
+		rawPath = filepath.Join(dir, rawPath)
+	}
+	if want := man.FileSHA["factors"]; want != "" {
+		if _, statErr := os.Stat(factorsPath); statErr == nil {
+			if got := sha256File(factorsPath); got != "" && got != want {
+				return nil
+			}
+		}
+	}
+	if want := man.FileSHA["raw_ohlc"]; want != "" {
+		if _, statErr := os.Stat(rawPath); statErr == nil {
+			if got := sha256File(rawPath); got != "" && got != want {
+				return nil
+			}
+		}
+	}
+	mode := man.Mode
+	if mode != "overlay" && mode != "authoritative" {
+		mode = "overlay"
+	}
+	cp := &CorrectionPack{
+		Version: ver, Mode: mode, Directory: stablePackDirectory(dir),
+		RefSHA: man.ReferenceSHA, CreatedAt: man.CreatedAt,
+		ByIns:            make(map[string][]CorrectionStep),
+		BySymbol:         make(map[string][]CorrectionStep),
+		SuppIns:          make(map[string]map[string]bool),
+		SuppSym:          make(map[string]map[string]bool),
+		RawIns:           make(map[string][]RawCorrection),
+		RawSym:           make(map[string][]RawCorrection),
+		AmbiguousSymbols: make(map[string]bool),
+	}
+	f, err := os.Open(factorsPath)
+	if err != nil {
+		return nil
+	}
+	symbolIns := map[string]map[string]bool{}
+	noteSymbol := func(sym, ins string) {
+		if sym == "" {
 			return
 		}
-		manBytes, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
-		if err != nil {
-			return
+		set := symbolIns[sym]
+		if set == nil {
+			set = map[string]bool{}
+			symbolIns[sym] = set
 		}
-		var man manifestJSON
-		if err := json.Unmarshal(manBytes, &man); err != nil {
-			return
+		set[ins] = true
+	}
+	scanner := bufio.NewScanner(f)
+	buf := make([]byte, 1024*1024)
+	scanner.Buffer(buf, 32*1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
 		}
-		ver := man.CorrectionVersion
-		if ver == "" {
-			ver = "ra365-r32b-v2"
+		var row factorRowJSON
+		if err := json.Unmarshal([]byte(line), &row); err != nil {
+			continue
 		}
-		factorsName := man.Files.Factors
-		if factorsName == "" {
-			factorsName = "factors.jsonl"
+		ins := strings.TrimSpace(firstNonEmpty(row.InsCode, row.Instrument))
+		sym := strings.TrimSpace(row.Symbol)
+		date := str10(firstNonEmpty(row.EffectiveDate, row.Date))
+		action := strings.TrimSpace(row.Action)
+		if action == "" {
+			action = "replace_step"
 		}
-		rawName := man.Files.RawOHLC
-		if rawName == "" {
-			rawName = "raw_ohlc.jsonl"
+		if !correctionActions[action] {
+			action = "replace_step"
 		}
-		factorsPath := factorsName
-		if !filepath.IsAbs(factorsPath) {
-			factorsPath = filepath.Join(dir, factorsPath)
+		ratio := row.Ratio
+		if ratio == 0 {
+			ratio = row.TargetRatio
 		}
-		rawPath := rawName
-		if !filepath.IsAbs(rawPath) {
-			rawPath = filepath.Join(dir, rawPath)
+		if ratio == 0 {
+			ratio = row.Factor
 		}
-		if want := man.FileSHA["factors"]; want != "" {
-			if _, statErr := os.Stat(factorsPath); statErr == nil {
-				if got := sha256File(factorsPath); got != "" && got != want {
-					return
+		if date == "" || (action == "replace_step" && ratio <= 0) {
+			continue
+		}
+		if date > cp.AsOf {
+			cp.AsOf = date
+		}
+		step := CorrectionStep{
+			Date: date, Ratio: ratio, Action: action, EventSig: row.EventSig,
+			Type: sigToType(row.EventSig), Class: row.Class, Confidence: row.Confidence,
+			FieldsUsed: row.FieldsUsed, Samples: row.Samples, MaxFieldDev: row.MaxFieldDev,
+			ProdRatio: row.ProdRatio, RefRatio: row.RefRatio,
+			Source: row.Source, Method: row.Method,
+			RefBarsSHA:        firstNonEmpty(row.RefBarsSHA, man.ReferenceSHA),
+			CorrectionVersion: firstNonEmpty(row.Version, ver),
+			CreatedAt:         firstNonEmpty(row.CreatedAt, man.CreatedAt),
+			Reason:            row.Reason,
+		}
+		if action == "replace_step" {
+			if ins != "" {
+				cp.ByIns[ins] = append(cp.ByIns[ins], step)
+			}
+			if sym != "" {
+				cp.BySymbol[sym] = append(cp.BySymbol[sym], step)
+				noteSymbol(sym, ins)
+				if norm := normalizeSymbol(sym); norm != sym {
+					cp.BySymbol[norm] = append(cp.BySymbol[norm], step)
+				}
+			}
+		} else {
+			if ins != "" {
+				if cp.SuppIns[ins] == nil {
+					cp.SuppIns[ins] = map[string]bool{}
+				}
+				cp.SuppIns[ins][date] = true
+			}
+			if sym != "" {
+				noteSymbol(sym, ins)
+				if cp.SuppSym[sym] == nil {
+					cp.SuppSym[sym] = map[string]bool{}
+				}
+				cp.SuppSym[sym][date] = true
+				if norm := normalizeSymbol(sym); norm != sym {
+					if cp.SuppSym[norm] == nil {
+						cp.SuppSym[norm] = map[string]bool{}
+					}
+					cp.SuppSym[norm][date] = true
 				}
 			}
 		}
-		if want := man.FileSHA["raw_ohlc"]; want != "" {
-			if _, statErr := os.Stat(rawPath); statErr == nil {
-				if got := sha256File(rawPath); got != "" && got != want {
-					return
-				}
-			}
-		}
-		mode := man.Mode
-		if mode != "overlay" && mode != "authoritative" {
-			mode = "overlay"
-		}
-		cp := &CorrectionPack{
-			Version: ver, Mode: mode, Directory: stablePackDirectory(dir),
-			RefSHA: man.ReferenceSHA, CreatedAt: man.CreatedAt,
-			ByIns:            make(map[string][]CorrectionStep),
-			BySymbol:         make(map[string][]CorrectionStep),
-			SuppIns:          make(map[string]map[string]bool),
-			SuppSym:          make(map[string]map[string]bool),
-			RawIns:           make(map[string][]RawCorrection),
-			RawSym:           make(map[string][]RawCorrection),
-			AmbiguousSymbols: make(map[string]bool),
-		}
-		f, err := os.Open(factorsPath)
-		if err != nil {
-			return
-		}
-		symbolIns := map[string]map[string]bool{}
-		noteSymbol := func(sym, ins string) {
-			if sym == "" {
-				return
-			}
-			set := symbolIns[sym]
-			if set == nil {
-				set = map[string]bool{}
-				symbolIns[sym] = set
-			}
-			set[ins] = true
-		}
-		scanner := bufio.NewScanner(f)
-		buf := make([]byte, 1024*1024)
-		scanner.Buffer(buf, 32*1024*1024)
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
+	}
+	f.Close()
+
+	if rf, err := os.Open(rawPath); err == nil {
+		rsc := bufio.NewScanner(rf)
+		rsc.Buffer(buf, 32*1024*1024)
+		for rsc.Scan() {
+			line := strings.TrimSpace(rsc.Text())
 			if line == "" {
 				continue
 			}
-			var row factorRowJSON
+			var row rawRowJSON
 			if err := json.Unmarshal([]byte(line), &row); err != nil {
 				continue
 			}
 			ins := strings.TrimSpace(firstNonEmpty(row.InsCode, row.Instrument))
 			sym := strings.TrimSpace(row.Symbol)
-			date := str10(firstNonEmpty(row.EffectiveDate, row.Date))
-			action := strings.TrimSpace(row.Action)
-			if action == "" {
-				action = "replace_step"
-			}
-			if !correctionActions[action] {
-				action = "replace_step"
-			}
-			ratio := row.Ratio
-			if ratio == 0 {
-				ratio = row.TargetRatio
-			}
-			if ratio == 0 {
-				ratio = row.Factor
-			}
-			if date == "" || (action == "replace_step" && ratio <= 0) {
+			date := str10(firstNonEmpty(row.Date, row.EffectiveDate))
+			field := strings.TrimSpace(row.Field)
+			if date == "" || field == "" {
 				continue
 			}
-			if date > cp.AsOf {
-				cp.AsOf = date
+			val := row.ReferenceVal
+			if val == 0 {
+				val = row.Value
 			}
-			step := CorrectionStep{
-				Date: date, Ratio: ratio, Action: action, EventSig: row.EventSig,
-				Type: sigToType(row.EventSig), Class: row.Class, Confidence: row.Confidence,
-				FieldsUsed: row.FieldsUsed, Samples: row.Samples, MaxFieldDev: row.MaxFieldDev,
-				ProdRatio: row.ProdRatio, RefRatio: row.RefRatio,
-				Source: row.Source, Method: row.Method,
+			if val == 0 {
+				continue
+			}
+			rc := RawCorrection{
+				Date: date, Field: field, Value: val, ProductValue: row.ProductValue,
+				AbsDiff: row.AbsDiff, Source: row.Source, Method: row.Method,
+				Confidence:        row.Confidence,
 				RefBarsSHA:        firstNonEmpty(row.RefBarsSHA, man.ReferenceSHA),
 				CorrectionVersion: firstNonEmpty(row.Version, ver),
 				CreatedAt:         firstNonEmpty(row.CreatedAt, man.CreatedAt),
 				Reason:            row.Reason,
 			}
-			if action == "replace_step" {
-				if ins != "" {
-					cp.ByIns[ins] = append(cp.ByIns[ins], step)
-				}
-				if sym != "" {
-					cp.BySymbol[sym] = append(cp.BySymbol[sym], step)
-					noteSymbol(sym, ins)
-					if norm := normalizeSymbol(sym); norm != sym {
-						cp.BySymbol[norm] = append(cp.BySymbol[norm], step)
-					}
-				}
-			} else {
-				if ins != "" {
-					if cp.SuppIns[ins] == nil {
-						cp.SuppIns[ins] = map[string]bool{}
-					}
-					cp.SuppIns[ins][date] = true
-				}
-				if sym != "" {
-					noteSymbol(sym, ins)
-					if cp.SuppSym[sym] == nil {
-						cp.SuppSym[sym] = map[string]bool{}
-					}
-					cp.SuppSym[sym][date] = true
-					if norm := normalizeSymbol(sym); norm != sym {
-						if cp.SuppSym[norm] == nil {
-							cp.SuppSym[norm] = map[string]bool{}
-						}
-						cp.SuppSym[norm][date] = true
-					}
+			if ins != "" {
+				cp.RawIns[ins] = append(cp.RawIns[ins], rc)
+			}
+			if sym != "" {
+				cp.RawSym[sym] = append(cp.RawSym[sym], rc)
+				noteSymbol(sym, ins)
+				if norm := normalizeSymbol(sym); norm != sym {
+					cp.RawSym[norm] = append(cp.RawSym[norm], rc)
 				}
 			}
 		}
-		f.Close()
-
-		if rf, err := os.Open(rawPath); err == nil {
-			rsc := bufio.NewScanner(rf)
-			rsc.Buffer(buf, 32*1024*1024)
-			for rsc.Scan() {
-				line := strings.TrimSpace(rsc.Text())
-				if line == "" {
-					continue
-				}
-				var row rawRowJSON
-				if err := json.Unmarshal([]byte(line), &row); err != nil {
-					continue
-				}
-				ins := strings.TrimSpace(firstNonEmpty(row.InsCode, row.Instrument))
-				sym := strings.TrimSpace(row.Symbol)
-				date := str10(firstNonEmpty(row.Date, row.EffectiveDate))
-				field := strings.TrimSpace(row.Field)
-				if date == "" || field == "" {
-					continue
-				}
-				val := row.ReferenceVal
-				if val == 0 {
-					val = row.Value
-				}
-				if val == 0 {
-					continue
-				}
-				rc := RawCorrection{
-					Date: date, Field: field, Value: val, ProductValue: row.ProductValue,
-					AbsDiff: row.AbsDiff, Source: row.Source, Method: row.Method,
-					Confidence: row.Confidence,
-					RefBarsSHA: firstNonEmpty(row.RefBarsSHA, man.ReferenceSHA),
-					CorrectionVersion: firstNonEmpty(row.Version, ver),
-					CreatedAt:         firstNonEmpty(row.CreatedAt, man.CreatedAt),
-					Reason:            row.Reason,
-				}
-				if ins != "" {
-					cp.RawIns[ins] = append(cp.RawIns[ins], rc)
-				}
-				if sym != "" {
-					cp.RawSym[sym] = append(cp.RawSym[sym], rc)
-					noteSymbol(sym, ins)
-					if norm := normalizeSymbol(sym); norm != sym {
-						cp.RawSym[norm] = append(cp.RawSym[norm], rc)
-					}
-				}
-			}
-			rf.Close()
-		}
-		for sym, insSet := range symbolIns {
-			distinct := 0
-			for ins := range insSet {
-				if ins != "" {
-					distinct++
-				}
-			}
-			if distinct > 1 {
-				cp.AmbiguousSymbols[sym] = true
+		rf.Close()
+	}
+	for sym, insSet := range symbolIns {
+		distinct := 0
+		for ins := range insSet {
+			if ins != "" {
+				distinct++
 			}
 		}
-		for sym := range cp.AmbiguousSymbols {
-			delete(cp.BySymbol, sym)
-			delete(cp.RawSym, sym)
-			delete(cp.SuppSym, sym)
+		if distinct > 1 {
+			cp.AmbiguousSymbols[sym] = true
 		}
-		cp.FactorIndex = map[string]map[string]CorrectionStep{}
-		cp.SuppressIndex = map[string]map[string]bool{}
-		for ins, rows := range cp.ByIns {
-			cp.indexFactor(ins, rows)
-		}
-		for sym, rows := range cp.BySymbol {
-			cp.indexFactor(sym, rows)
-		}
-		cp.RawIndex = map[string]map[string]RawCorrection{}
-		for ins, rows := range cp.RawIns {
-			cp.indexRaw(ins, rows)
-		}
-		for sym, rows := range cp.RawSym {
-			cp.indexRaw(sym, rows)
-		}
-		packInst = cp
-	})
-	return packInst
+	}
+	for sym := range cp.AmbiguousSymbols {
+		delete(cp.BySymbol, sym)
+		delete(cp.RawSym, sym)
+		delete(cp.SuppSym, sym)
+	}
+	cp.FactorIndex = map[string]map[string]CorrectionStep{}
+	cp.SuppressIndex = map[string]map[string]bool{}
+	for ins, rows := range cp.ByIns {
+		cp.indexFactor(ins, rows)
+	}
+	for sym, rows := range cp.BySymbol {
+		cp.indexFactor(sym, rows)
+	}
+	cp.RawIndex = map[string]map[string]RawCorrection{}
+	for ins, rows := range cp.RawIns {
+		cp.indexRaw(ins, rows)
+	}
+	for sym, rows := range cp.RawSym {
+		cp.indexRaw(sym, rows)
+	}
+	return cp
 }
 
 func str10(s string) string {
@@ -616,6 +622,7 @@ func (cp *CorrectionPack) ApplyFactorEvents(insCode, symbol string, events []can
 	}
 	kept := []canonEvent{}
 	suppressed := []canonEvent{}
+	nearDeduped := []map[string]any{}
 	futureKept := 0
 	for _, e := range events {
 		d := date10(e.Date)
@@ -627,6 +634,22 @@ func (cp *CorrectionPack) ApplyFactorEvents(insCode, symbol string, events []can
 		_, inRep := rep[d]
 		if inRep || sup[d] || authoritative {
 			suppressed = append(suppressed, e)
+			continue
+		}
+		if pd, st, delta, ok := nearPackReplace(rep, d, e.Ratio); ok {
+			ev := e
+			if ev.Extra == nil {
+				ev.Extra = map[string]any{}
+			}
+			ev.Extra["dedupe"] = map[string]any{
+				"reason": "same-action-near-pack-step", "pack_date": pd,
+				"pack_ratio": st.Ratio, "delta_days": delta,
+			}
+			suppressed = append(suppressed, ev)
+			nearDeduped = append(nearDeduped, map[string]any{
+				"date": d, "pack_date": pd, "delta_days": delta,
+				"ratio": e.Ratio, "pack_ratio": st.Ratio,
+			})
 			continue
 		}
 		kept = append(kept, e)
@@ -651,13 +674,81 @@ func (cp *CorrectionPack) ApplyFactorEvents(insCode, symbol string, events []can
 			Source: "rahavard-reference-correction", Extra: map[string]any{"correction": corr}})
 	}
 	sort.SliceStable(kept, func(i, j int) bool { return date10(kept[i].Date) < date10(kept[j].Date) })
-	return kept, suppressed, map[string]any{"enabled": true, "covered": true,
+	meta := map[string]any{"enabled": true, "covered": true,
 		"version": cp.Version, "mode": cp.Mode, "as_of": cp.AsOf,
 		"future_events_kept": futureKept, "replace_steps": len(rep),
 		"suppress_steps": len(sup)}
+	if !authoritative {
+		meta["near_deduped"] = nearDeduped
+		meta["near_deduped_count"] = len(nearDeduped)
+	}
+	return kept, suppressed, meta
 }
 
 var rawCorrectionFields = []string{"open", "high_raw", "high", "low_raw", "low", "close", "last"}
+
+// A product event may be the same corporate action as a pack replace step
+// observed on a neighbouring trading day. Only a replace step carries a ratio,
+// so only it can prove identity; window and tolerance mirror the Python
+// constants NEAR_DEDUPE_DAYS / NEAR_DEDUPE_RATIO_TOL.
+const (
+	nearDedupeDays     = 3
+	nearDedupeRatioTol = 0.01
+)
+
+// nearPackReplace returns (packDate, step, deltaDays, true) when a product
+// event on `date` with `ratio` is provably the same action as a replace step
+// on a neighbouring day.
+func nearPackReplace(rep map[string]CorrectionStep, date string, ratio float64) (string, CorrectionStep, int, bool) {
+	if len(rep) == 0 || ratio <= 0 {
+		return "", CorrectionStep{}, 0, false
+	}
+	bestDate := ""
+	var best CorrectionStep
+	bestDelta := nearDedupeDays + 1
+	for pd, st := range rep {
+		delta, ok := daysBetween(pd, date)
+		if !ok || delta == 0 || delta > nearDedupeDays || st.Ratio <= 0 {
+			continue
+		}
+		if math.Abs(ratio/st.Ratio-1.0) > nearDedupeRatioTol {
+			continue
+		}
+		if delta < bestDelta {
+			bestDate, best, bestDelta = pd, st, delta
+		}
+	}
+	if bestDelta > nearDedupeDays {
+		return "", CorrectionStep{}, 0, false
+	}
+	return bestDate, best, bestDelta, true
+}
+
+// literalDisplayCandles mirrors the Python route wrapper
+// `_literal_display_candles` (api/chart.py): the user-visible H/L are the
+// literal published extremes (high_raw/low_raw), then the versioned pack's
+// per-field raw corrections are applied to that display copy only. Internal
+// candles used for factors/FTS stay untouched.
+func literalDisplayCandles(pack *CorrectionPack, insCode, symbol string, candles []map[string]any) []map[string]any {
+	out := make([]map[string]any, 0, len(candles))
+	for _, c := range candles {
+		d := make(map[string]any, len(c)+2)
+		for k, v := range c {
+			d[k] = v
+		}
+		if v, ok := d["high_raw"]; ok && v != nil {
+			d["high"] = v
+		}
+		if v, ok := d["low_raw"]; ok && v != nil {
+			d["low"] = v
+		}
+		out = append(out, d)
+	}
+	if pack != nil {
+		pack.ApplyRawCandles(insCode, symbol, out)
+	}
+	return out
+}
 
 // ApplyRawCandles معادلِ AC.apply_raw_candles: تصحیحِ نمایشی، in-place.
 func (cp *CorrectionPack) ApplyRawCandles(insCode, symbol string, candles []map[string]any) (int, map[string]any) {
