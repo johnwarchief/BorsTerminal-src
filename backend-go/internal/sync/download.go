@@ -157,6 +157,15 @@ func (h *Handler) DownloadAndApplySnapshot(ctx context.Context, baseURL string) 
 		return fmt.Errorf("apply snapshot set: %w", err)
 	}
 
+	// بدون این تعویض، API تا ری‌استارت دستی همان نسلِ قبلی را سرو می‌کرد.
+	if h.reloadHook != nil {
+		if err := h.reloadHook(); err != nil {
+			_ = writeCodalDBStatus(h.dataDir, "error", 95,
+				"اسنپ‌شات اعمال شد اما بارگذاری نسل جدید ناموفق بود", err.Error(), h.clock())
+			return fmt.Errorf("snapshot applied but reload failed: %w", err)
+		}
+	}
+
 	// Stage: Done
 	_ = writeCodalDBStatus(h.dataDir, "done", 100.0, "اسنپ‌شات با موفقیت اعمال شد.", "", h.clock())
 	return nil

@@ -1,12 +1,40 @@
 package chart
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"time"
 
 	"borsterminal/backend/internal/pyround"
 )
+
+// g2j همان الگوریتمِ jalaali-js است که پایتون (`wm_calendar.g2j`) و فرانت
+// (`jalaliDate.ts`) دارند — تنها تبدیلِ تقویمِ مجاز، نه یک نسخهٔ سومی.
+var gdm = [12]int{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334}
+
+func g2j(gy, gm, gd int) (int, int, int) {
+	gy2 := gy
+	if gm > 2 {
+		gy2++
+	}
+	days := 355666 + 365*gy + (gy2+3)/4 - (gy2+99)/100 + (gy2+399)/400 + gd + gdm[gm-1]
+	jy := -1595 + 33*(days/12053)
+	days %= 12053
+	jy += 4 * (days / 1461)
+	days %= 1461
+	if days > 365 {
+		jy += (days - 1) / 365
+		days = (days - 1) % 365
+	}
+	var jm, jd int
+	if days < 186 {
+		jm, jd = 1+days/31, 1+days%31
+	} else {
+		jm, jd = 7+(days-186)/30, 1+(days-186)%30
+	}
+	return jy, jm, jd
+}
 
 // ثابت‌هایِ موتورِ FTS — عینِ api/chart.py (۱۴۰۹–۱۴۳۰).
 const (
@@ -20,6 +48,7 @@ const (
 	ftsTechRulesetVersion = "3"
 	ftsCHochDays          = 2
 	ftsCHochMargin        = 0.01
+	ftsPointTouchTol      = 0.005
 )
 
 // candle نمایِ داخلیِ سریِ روزانه؛ موتور فقط همین شش ستون را می‌خواند.
@@ -29,6 +58,9 @@ type candle struct {
 	Time                   string
 	Open, High, Low, Close float64
 	Volume                 float64
+	// LiveForming همان نشانهٔ ردیفِ تکمیل‌نشدهٔ جلسه است؛ ساختارِ جهت آن را
+	// نمی‌بیند (`major_swings.closed_only`).
+	LiveForming bool
 }
 
 type swing struct {
@@ -36,6 +68,10 @@ type swing struct {
 	Price float64
 	Kind  string // "high" | "low"
 	Time  string
+	// زمانِ وقوع از زمانِ شناخت جدا است (anti-repaint): پیوتِ idx در کندلِ
+	// idx+k تأیید می‌شود و رابط فقط از confirm_time به بعد مجاز است آن را رسم کند.
+	ConfirmIdx  int
+	ConfirmTime string
 }
 
 // resample معادلِ _fts_resample: تجمیعِ روزانه به هفتهٔ شنبه‌محور یا ماهِ میلادی.
@@ -64,7 +100,11 @@ func resample(candles []candle, bucket string) []candle {
 			wd := (int(d.Weekday()) + 6) % 7 // Go: یکشنبه=۰ → پایتون‌وار
 			key = d.AddDate(0, 0, -((wd + 2) % 7)).Format("2006-01-02")
 		} else {
-			key = t[:7]
+			// «ماه» ماهِ جلالی است، نه میلادی: سبدِ ماهانهٔ موتور باید با تقویمِ
+			// بازار و چارت یکی باشد (`WMC.month_key`). کلیدِ عددی با عرضِ ثابت
+			// تا مرتب‌سازیِ رشته‌ای همان ترتیبِ زمانی باشد.
+			jy, jm, _ := g2j(d.Year(), int(d.Month()), d.Day())
+			key = fmt.Sprintf("%06d", jy*12+jm-1)
 		}
 		a := out[key]
 		if a == nil {
@@ -97,42 +137,65 @@ func resample(candles []candle, bucket string) []candle {
 	return res
 }
 
-// swings معادلِ _fts_swings: پیوتِ fractal؛ شرطِ هر دو طرف غیراکید است و
-// اکیداً بزرگ‌تر بودنِ یک طرف از قرارداد نیست (پلاتویِ تخت چند پیوت می‌دهد).
+// swingsOf معادلِ _fts_swings: پیوتِ fractal با قاعدهٔ اکیدِ یک‌طرفه.
+//
+// سقف پیوت است اگر high[i] دست‌کم برابرِ هر دو طرفِ پنجره باشد و دست‌کم یک طرف
+// را *اکیداً* بشکند؛ قرینه‌اش برایِ کف. دو clause یعنی دو سرِ یک فلات همچنان
+// پیوت می‌مانند و فقط میانهٔ فلات حذف می‌شود — با «>= دوطرفه» هر روزِ تک‌قیمتیِ
+// TSETMC یک پیوتِ بی‌معنا می‌ساخت (api/chart.py:3990-4011).
 func swingsOf(series []candle, k int) []swing {
 	n := len(series)
 	if n < 2*k+2 {
 		return nil
 	}
 	out := []swing{}
+	trim := func(s string) string {
+		if len(s) > 10 {
+			return s[:10]
+		}
+		return s
+	}
 	for i := k; i < n-k; i++ {
 		hi, lo := series[i].High, series[i].Low
-		hiOK, loOK := true, true
+		maxLH, maxRH := series[i-k].High, series[i+1].High
+		minLL, minRL := series[i-k].Low, series[i+1].Low
 		for j := i - k; j < i; j++ {
-			if series[j].High > hi {
-				hiOK = false
+			if series[j].High > maxLH {
+				maxLH = series[j].High
 			}
-			if series[j].Low < lo {
-				loOK = false
+			if series[j].Low < minLL {
+				minLL = series[j].Low
 			}
 		}
 		for j := i + 1; j <= i+k; j++ {
-			if series[j].High > hi {
-				hiOK = false
+			if series[j].High > maxRH {
+				maxRH = series[j].High
 			}
-			if series[j].Low < lo {
-				loOK = false
+			if series[j].Low < minRL {
+				minRL = series[j].Low
 			}
 		}
-		t := series[i].Time
-		if len(t) > 10 {
-			t = t[:10]
+		t := trim(series[i].Time)
+		ct := trim(series[i+k].Time)
+		if (hi > maxLH && hi >= maxRH) || (hi >= maxLH && hi > maxRH) {
+			out = append(out, swing{Idx: i, Price: hi, Kind: "high", Time: t,
+				ConfirmIdx: i + k, ConfirmTime: ct})
 		}
-		if hiOK {
-			out = append(out, swing{Idx: i, Price: hi, Kind: "high", Time: t})
+		if (lo < minLL && lo <= minRL) || (lo <= minLL && lo < minRL) {
+			out = append(out, swing{Idx: i, Price: lo, Kind: "low", Time: t,
+				ConfirmIdx: i + k, ConfirmTime: ct})
 		}
-		if loOK {
-			out = append(out, swing{Idx: i, Price: lo, Kind: "low", Time: t})
+	}
+	return out
+}
+
+// closedOnly معادلِ major_swings.closed_only: کندلِ تکمیل‌نشدهٔ جلسه بیرون
+// می‌ماند تا یک تیکِ درون‌جلسه پیوتِ «تأییدشده» نسازد.
+func closedOnly(series []candle) []candle {
+	out := make([]candle, 0, len(series))
+	for _, c := range series {
+		if !c.LiveForming {
+			out = append(out, c)
 		}
 	}
 	return out

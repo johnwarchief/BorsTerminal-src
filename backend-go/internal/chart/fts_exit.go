@@ -72,7 +72,7 @@ func exitLayer1(candles []candle, entryHint *float64) map[string]any {
 	out := map[string]any{
 		"hard_stop": nil, "stop_basis": nil, "stop_hit": nil,
 		"ma14_exit": nil, "ma14_exit_pending": nil,
-		"ma14": nil, "close": nil,
+		"ma14": nil, "close": nil, "stop_reason": nil,
 	}
 	if len(candles) == 0 {
 		return out
@@ -113,6 +113,13 @@ func exitLayer1(candles []candle, entryHint *float64) map[string]any {
 	}
 	out["hard_stop"] = round2(stopPx)
 	out["stop_basis"] = basis
+	// P0 #5: کفِ نوسان‌گیر ۲۰ کندلِ بسته می‌خواهد؛ با کمتر از آن عدد منتشر
+	// می‌شود ولی با پرچمِ «در حال تشکیل» — نه رأیِ با اقتدارِ کامل.
+	if len(closed) < 20 && basis == "swing_low" {
+		out["stop_basis"] = "swing_low_forming"
+		out["stop_reason"] = "کفِ ۲۰ کندلِ بسته هنوز کامل نیست (" + ftsFa(len(closed)) +
+			" از ۲۰) — حد ضرر در حال تشکیل"
+	}
 	out["stop_hit"] = closeP < stopPx
 
 	closes := make([]float64, len(candles))
@@ -120,23 +127,30 @@ func exitLayer1(candles []candle, entryHint *float64) map[string]any {
 		closes[i] = c.Close
 	}
 	ma14 := ftsMa(closes, 14)
-	var maLast *float64
+	var maLastP *float64
 	if len(ma14) > 0 {
-		maLast = ma14[len(ma14)-1]
+		maLastP = ma14[len(ma14)-1]
+		out["ma14"] = maLastP
 	}
-	if maLast == nil {
+	// اشاره‌گرِ nil داخلِ any، خودش nil نیست؛ باید خودِ اشاره‌گر سنجیده شود
+	// وگرنه سریِ زیرِ ۱۴ کندل با panic می‌میرد (پایتون: ma14[-1] is None).
+	if maLastP == nil {
 		return out
 	}
-	out["ma14"] = *maLast
-	bodyTop := math.Max(last.Open, closeP)
-	bodyBelow := bodyTop < *maLast
-	prevBelow := false
+	maLast := *maLastP
+	// مرجع (FTS.CHART_3 ص۳ / جزوه ص۲۲): «MA=14 — تشکیل یک کندل کامل زیر MA».
+	// کندلِ کاملِ بسته، همه‌قد (سایه‌ها هم): high < MA14 همان کندل ⇒ خروجِ تأیید.
+	// دو بدنهٔ متوالی زیرِ MA افزودهٔ کد بود و ممیزی آن را MISMATCH دانست.
+	var prevBelow *bool
 	if len(candles) >= 2 && ma14[len(ma14)-2] != nil {
-		p := candles[len(candles)-2]
-		prevBelow = math.Max(p.Open, p.Close) < *ma14[len(ma14)-2]
+		b := candles[len(candles)-2].High < *ma14[len(ma14)-2]
+		prevBelow = &b
 	}
-	out["ma14_exit"] = bodyBelow && prevBelow
-	out["ma14_exit_pending"] = bodyBelow && !prevBelow
+	if prevBelow == nil {
+		return out
+	}
+	out["ma14_exit"] = *prevBelow
+	out["ma14_exit_pending"] = last.High < maLast && !*prevBelow
 	return out
 }
 
@@ -176,13 +190,20 @@ func exitLayer2(candles []candle, swingsD []swing) map[string]any {
 func exitLayer3(candles []candle, sw []swing) map[string]any {
 	out := map[string]any{
 		"third_peak": nil, "double_top": nil, "hs_break": nil,
-		"neckline": nil, "level": nil, "third_peak_level": nil,
+		"neckline": nil, "level": nil, "third_peak_level": nil, "reason": nil,
 	}
 	if len(candles) < 15 {
+		// P0 #6: زیرِ کفِ معلوم، همه None می‌مانند — ولی با پیام، نه بی‌صدا.
+		out["reason"] = "لایهٔ ۳ سنجیده نشد (" + ftsFa(len(candles)) +
+			" کندل، حداقل ۱۵ لازم)"
 		return out
 	}
 	highs := highsOf(sw)
 	lows := lowsOf(sw)
+	if len(highs) < 2 || len(lows) < 2 {
+		out["reason"] = "پیوتِ الگو کافی نیست (سقف‌ها " + ftsFa(len(highs)) +
+			"، کف‌ها " + ftsFa(len(lows)) + ")"
+	}
 	last := candles[len(candles)-1].Close
 	if len(highs) >= 3 {
 		h1, h2, h3 := highs[len(highs)-3].Price, highs[len(highs)-2].Price, highs[len(highs)-1].Price
@@ -193,6 +214,8 @@ func exitLayer3(candles []candle, sw []swing) map[string]any {
 			out["third_peak_level"] = round2(m)
 		}
 	}
+	// عرض باندِ اطرافِ سطحِ سقف سوم — پارامترِ اجرایى (جزوه آن را نمی‌گوید).
+	out["third_peak_band_pct"] = 2.0
 	if len(highs) >= 2 {
 		h1, h2 := highs[len(highs)-2].Price, highs[len(highs)-1].Price
 		m := math.Max(h1, h2)
@@ -245,8 +268,12 @@ func exitLayer3(candles []candle, sw []swing) map[string]any {
 func exitLayer4(candles []candle) map[string]any {
 	out := map[string]any{
 		"rsi_divergence": nil, "rsi_rollover": nil, "rsi": nil, "rsi_prev_peak": nil,
+		"reason": nil,
 	}
 	if len(candles) < 30 {
+		// P0 #6: بی‌صدا نبودنِ لایه باید «علت با تعداد» داشته باشد.
+		out["reason"] = "لایهٔ ۴ سنجیده نشد (" + ftsFa(len(candles)) +
+			" کندل، حداقل ۳۰ لازم)"
 		return out
 	}
 	closes := make([]float64, len(candles))
@@ -259,6 +286,11 @@ func exitLayer4(candles []candle) map[string]any {
 	}
 	sw := swingsOf(candles, ftsSwingK)
 	highs := highsOf(sw)
+	if out["rsi"] == nil {
+		out["reason"] = "RSI(14) نپخته است (" + ftsFa(len(closes)) + " کندل، حداقل ۱۶ لازم)"
+	} else if len(highs) < 2 {
+		out["reason"] = "دو سقفِ پیوت برایِ واگرایی نیست (" + ftsFa(len(highs)) + " سقف)"
+	}
 	if len(highs) >= 2 {
 		h1, h2 := highs[len(highs)-2], highs[len(highs)-1]
 		rsiPeak := func(sw swing) *float64 {

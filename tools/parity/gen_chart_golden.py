@@ -90,7 +90,7 @@ def main() -> int:
     for name, sym in (("chartdb_uptrend", UP), ("chartdb_downtrend", DOWN),
                       ("chartdb_fund", FUND), ("chartdb_short", SHORT),
                       ("chartdb_nodata", NODATA), ("chartdb_dualspell", DUAL)):
-        dump("s1", name, ch.get_chart_db(sym, 3))
+        dump("s1", name, ch.get_chart_db(sym))
     for name, sym in (("keylevels_uptrend", UP), ("keylevels_short", SHORT),
                       ("keylevels_nodata", NODATA)):
         dump("s1", name, ch.get_key_levels(sym))
@@ -125,7 +125,7 @@ def main() -> int:
         "hourglass_ma52_position": "above",
     })
     dump("s3", "fts_uptrend", ch.get_fts(UP, None))
-    dump("s3", "chartdb_uptrend", ch.get_chart_db(UP, 3))
+    dump("s3", "chartdb_uptrend", ch.get_chart_db(UP))
 
     # ---------- s4: مبنای closing ----------
     clear_caches(ch)
@@ -134,7 +134,7 @@ def main() -> int:
     dump("s4", "keylevels_uptrend", ch.get_key_levels(UP))
     dump("s4", "ma_uptrend", ch.get_ma_events(UP, 730))
     dump("s4", "patterns_uptrend", ch.get_patterns(UP))
-    dump("s4", "chartdb_uptrend", ch.get_chart_db(UP, 3))
+    dump("s4", "chartdb_uptrend", ch.get_chart_db(UP))
     dump("s4", "fts_uptrend", ch.get_fts(UP, None))
 
     # ---------- s5: گیتِ جهتِ MA52 خاموش (ma52_position = either) ----------
@@ -150,7 +150,7 @@ def main() -> int:
     })
     dump("s5", "fts_uptrend", ch.get_fts(UP, None))
     dump("s5", "fts_downtrend", ch.get_fts(DOWN, None))
-    dump("s5", "chartdb_uptrend", ch.get_chart_db(UP, 3))
+    dump("s5", "chartdb_uptrend", ch.get_chart_db(UP))
 
     # ---------- s6: سبدی که حدِ ضررش بالای کفِ ساختاری است ----------
     # entry_hint فقط درِ /api/fts وارد موتور می‌شود؛ بی‌این صحنه، قیمتِ سبد

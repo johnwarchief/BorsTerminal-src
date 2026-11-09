@@ -4,17 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
-)
-
-var (
-	// قفل‌های همگام‌سازی جهت جلوگیری از اجرای موازی
-	marketSyncMu sync.Mutex
-	marketSyncRunning bool
-
-	dbdlMu sync.Mutex
-	dbdlRunning bool
 )
 
 // WriteControl فرمان کنترلی کاربر (pause/resume/stop) را در codal_control.json می‌نویسد.

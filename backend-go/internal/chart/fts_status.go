@@ -4,6 +4,7 @@ package chart
 var ftsRoles = map[string]string{
 	"jet": "entry", "choch_bullish": "entry", "point_hunt": "entry",
 	"double_bottom": "entry", "range_break": "entry", "hourglass": "entry",
+	"pullback": "entry",
 	"fib_zone": "context", "trend": "context", "support_resistance": "context",
 	"third_peak": "warning", "rsi_divergence": "warning",
 	"rsi_rollover": "warning", "ma14_pending": "warning",
@@ -13,6 +14,7 @@ var ftsRoles = map[string]string{
 
 var ftsTriggerLabels = map[string]string{
 	"jet":           "جت",
+	"pullback":      "پولبک",
 	"point_hunt":    "شکار نقطه",
 	"choch_bullish": "تغییرِ ساختارِ صعودی",
 	"double_bottom": "کفِ دوقلو",
@@ -90,8 +92,10 @@ func statusBlock(candles []candle, out map[string]any) map[string]any {
 		price any
 		date  any
 	}
+	pb := subMap(out, "pullback")
 	trigCands := []trigCand{
 		{"jet", jet["active"], jet["resistance"], lastDate},
+		{"pullback", pb["active"], pb["level"], lastDate},
 		{"point_hunt", ph["active"], ph["floor_price"], ph["trigger_date"]},
 		{"choch_bullish", ch["bullish"], ch["level"], lastDate},
 		{"double_bottom", dbl["active"], dbl["neckline"], lastDate},
@@ -187,6 +191,14 @@ func statusBlock(candles []candle, out map[string]any) map[string]any {
 	text := ftsStatusText[code]
 	if code == "entry_trigger" {
 		text = text + ": " + trig["label"].(string)
+	}
+	if code == "insufficient" {
+		// «بی‌داده» با تعدادِ واقعی، نه متنِ برهنه.
+		avail, okA := out["setups_bars_available"].(int)
+		req, okR := out["setups_bars_required"].(int)
+		if okA && okR {
+			text = text + " (سابقه: " + ftsFa(avail) + " کندل، حداقل لازم " + ftsFa(req) + ")"
+		}
 	}
 	if code == "weekly_veto" && flagged(jet["active"], true) {
 		text = text + " (جتِ امروز هم فعال است، ولی وتو بر ورود غالب است)"

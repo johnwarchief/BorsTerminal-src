@@ -15,23 +15,9 @@ import (
 	"syscall"
 	"time"
 
-	"borsterminal/backend/internal/chart"
+	"borsterminal/backend/internal/auth"
 	"borsterminal/backend/internal/config"
-	"borsterminal/backend/internal/db"
-	"borsterminal/backend/internal/export"
-	"borsterminal/backend/internal/ftsconfig"
-	"borsterminal/backend/internal/fundamental"
-	"borsterminal/backend/internal/funnel"
-	"borsterminal/backend/internal/httpapi"
-	"borsterminal/backend/internal/live"
-	"borsterminal/backend/internal/market"
-	"borsterminal/backend/internal/marketindex"
-	"borsterminal/backend/internal/mstat"
-	"borsterminal/backend/internal/notifications"
-	"borsterminal/backend/internal/screener"
-	"borsterminal/backend/internal/selection"
-	borssync "borsterminal/backend/internal/sync"
-	"borsterminal/backend/internal/watchlist"
+	"borsterminal/backend/internal/instance"
 )
 
 func main() {
@@ -41,112 +27,56 @@ func main() {
 	}
 
 	// بررسی اتصال پورت پیش از باز کردن دیتابیس‌ها تا در صورت اشغال بودن، خطای فوری با کد ۱ داده شود
-	ln, err := net.Listen("tcp", cfg.Addr)
+	ln, err := bindListener(cfg.Addr)
 	if err != nil {
 		slog.Error("bind failed", "addr", cfg.Addr, "err", err)
-		os.Exit(1)
-	}
-
-	handles, err := db.Open(cfg.DataDir, cfg.ReadOnly)
-	if err != nil {
-		slog.Error("db open failed", "err", err)
-		_ = ln.Close()
 		os.Exit(1)
 	}
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	mkt := market.NewWithOptions(handles, cfg.DataDir, cfg.ReadOnly, cfg.NoLoops)
-	var liveFeed *live.Feed
-	// Only one TSE live loop may exist at a time (owner decision §9). The Go
-	// feed is opt-in so a Python live loop can stay the sole owner until the
-	// operator flips BORS_GO_LIVE=1 and stops it.
-	// In addition, if cfg.NoLoops is active, no background loop may start.
-	// And if cfg.ReadOnly is active, live persistence to market.db is strictly forbidden.
-	if !cfg.NoLoops && (os.Getenv("BORS_GO_LIVE") == "1" || os.Getenv("BORS_GO_LIVE") == "true" || os.Getenv("BORS_GO_LIVE") == "yes") {
-		interval := 1500 * time.Millisecond
-		if ms, err := strconv.Atoi(os.Getenv("BORS_GO_LIVE_MS")); err == nil && ms >= 500 {
-			interval = time.Duration(ms) * time.Millisecond
-		}
-		feed := live.New(interval)
-		if !cfg.ReadOnly && (os.Getenv("BORS_GO_LIVE_PERSIST") != "0" && os.Getenv("BORS_GO_LIVE_PERSIST") != "false" && os.Getenv("BORS_GO_LIVE_PERSIST") != "no") {
-			feed.EnablePersistence(filepath.Join(cfg.DataDir, "market.db"), 5*time.Second)
-		}
-		mkt.Live = feed
-		liveFeed = feed
-		feed.Start(rootCtx)
-		slog.Info("live TSE feed enabled", "interval", interval.String())
-	}
-	ms := mstat.NewWithOptions(handles.Market, cfg.DataDir, mkt, cfg.NoLoops)
-	ch := chart.New(chart.Config{Market: handles.Market, User: handles.User,
-		DataDir: cfg.DataDir, CalendarPath: cfg.CalendarPath})
-	fd := fundamental.New(handles.Market, cfg.DataDir)
-
-	wlStore, err := watchlist.NewStore(handles.User, cfg.DataDir)
+	// یک borsd برایِ هر dataDir؛ دو نویسنده رویِ oc_client.db مجاز نیست.
+	lock, err := instance.Acquire(cfg.DataDir)
 	if err != nil {
-		slog.Error("watchlist store init failed", "err", err)
-		if liveFeed != nil {
-			_ = liveFeed.Close()
-		}
-		_ = ch.Close()
-		_ = fd.Close()
-		_ = handles.Close()
+		slog.Error("single-instance lock failed", "err", err, "data", cfg.DataDir)
 		_ = ln.Close()
 		os.Exit(1)
 	}
-	wl := watchlist.NewHandler(wlStore, cfg.ReadOnly)
 
-	ntSvc := notifications.NewService(handles.Market)
-	nt := notifications.NewHandler(ntSvc)
-
-	sy := borssync.NewHandler(cfg.DataDir)
-	sel := selection.NewService(handles.Market, handles.User)
-	mi := marketindex.NewService(cfg.DataDir, nil)
-	exp := export.NewService(handles.Market)
-	scr := screener.NewService(handles.Market, cfg.DataDir)
-	fn := funnel.NewService(handles.Market, cfg.DataDir)
-
-	ftsCfgStore, err := ftsconfig.NewStore(handles.User)
+	rt, err := newRuntime(rootCtx, cfg)
 	if err != nil {
-		slog.Error("fts config store init failed", "err", err)
+		slog.Error("runtime init failed", "err", err)
+		_ = lock.Release()
+		_ = ln.Close()
+		os.Exit(1)
 	}
-	ftsCfg := ftsconfig.NewHandler(ftsCfgStore, cfg.ReadOnly)
 
-	apiHandler := httpapi.NewWithServices(cfg, handles, httpapi.Services{
-		Market:        mkt,
-		Mstat:         ms,
-		Chart:         ch,
-		Fundamental:   fd,
-		Watchlist:     wl,
-		Notifications: nt,
-		Sync:          sy,
-		Selection:     sel,
-		MarketIndex:   mi,
-		Export:        exp,
-		Screener:      scr,
-		Funnel:        fn,
-		FtsConfig:     ftsCfg,
+	tok, err := auth.NewToken(cfg.DataDir, os.Getenv)
+	if err != nil {
+		slog.Error("api token init failed", "err", err)
+		rt.Close()
+		_ = lock.Release()
+		_ = ln.Close()
+		os.Exit(1)
+	}
+	port := ln.Addr().(*net.TCPAddr).Port
+	hosts := auth.LoopbackHosts(port)
+	guard := auth.NewGuard(auth.GuardConfig{
+		Token:          tok.Value,
+		AllowedHosts:   hosts,
+		AllowedOrigins: auth.OriginsFor(hosts),
 	})
 
 	tracker := NewRequestTracker()
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: tracker.Wrap(apiHandler),
+		Handler: tracker.Wrap(guard.Wrap(rt)),
 	}
 
-	closeAll := func() {
-		if liveFeed != nil {
-			_ = liveFeed.Close()
-		}
-		_ = ch.Close()
-		_ = fd.Close()
-		_ = ntSvc.Close()
-		_ = handles.Close()
-		slog.Info("all database handles and background resources closed")
-	}
-
-	slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "static", cfg.StaticDir, "version", httpapi.Version())
+	slog.Info("listening", "addr", ln.Addr().String(), "data", cfg.DataDir, "static", cfg.StaticDir,
+		"service_version", serviceVersion(), "generation", rt.DataStatus()["serving"],
+		"token_file", tok.File)
 
 	if !cfg.NoShell {
 		shellExe := findShellExe()
@@ -173,6 +103,12 @@ func main() {
 		HardKillTimeout: 5 * time.Second,
 	}
 
+	closeAll := func() {
+		rt.Close()
+		_ = lock.Release()
+		slog.Info("all database handles and background resources closed")
+	}
+
 	if err := RunServer(rootCtx, srv, ln, tracker, shutdownCfg, closeAll); err != nil {
 		if errors.Is(err, ErrShutdownTimeout) {
 			slog.Error("server forced exit: active in-flight requests did not drain in time", "err", err)
@@ -181,6 +117,17 @@ func main() {
 		slog.Error("server error", "err", err)
 		os.Exit(1)
 	}
+}
+
+func serviceVersion() string {
+	// نسخهٔ کامل سرویس در httpapi.Version است؛ این فقط شناسهٔ لایهٔ P0 است.
+	return "oc-p0"
+}
+
+// bindListener تنها درگاهِ ساختِ Listener است تا پورتِ اشغال در تست هم همان
+// رفتارِ fail-fastِ اجرایِ واقعی را داشته باشد.
+func bindListener(addr string) (net.Listener, error) {
+	return net.Listen("tcp", addr)
 }
 
 func findShellExe() string {

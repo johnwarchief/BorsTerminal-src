@@ -8,14 +8,28 @@ func pointHunt(candles []candle, sw []swing) map[string]any {
 	out := map[string]any{
 		"touches": nil, "floor_price": nil, "active": nil, "bounced": nil,
 		"floor_idx": nil, "floor_date": nil, "trigger_idx": nil,
-		"trigger_date": nil,
-		"reason":       "دو سقفِ جدا یا ده کندل سابقه نیست — کانال سنجیده نشد",
+		"trigger_date": nil, "reason": nil,
 	}
-	if len(highs) < 2 || len(lows) == 0 || len(candles) < 10 {
+	// P0 #3: سه علتِ متمایز، سه پیام با تعداد — «سقف کم است» با «سابقه کم است»
+	// با «سقف‌ها چسبیده‌اند» یکی نیست.
+	if len(highs) < 2 {
+		out["reason"] = "سقفِ مستقلِ کافی نیست (" + ftsFa(len(highs)) +
+			" از ۲ لازم) — کانال سنجیده نشد"
+		return out
+	}
+	if len(lows) == 0 {
+		out["reason"] = "هیچ کفِ تأییدشده‌ای نیست — کانال سنجیده نشد"
+		return out
+	}
+	if len(candles) < 10 {
+		out["reason"] = "سابقه کم است (" + ftsFa(len(candles)) +
+			" کندل، حداقل ۱۰ لازم) — کانال سنجیده نشد"
 		return out
 	}
 	h2, h1 := highs[len(highs)-2], highs[len(highs)-1]
 	if h1.Idx-h2.Idx < 3 {
+		out["reason"] = "دو سقفِ آخر چسبیده‌اند (فاصله " + ftsFa(h1.Idx-h2.Idx) +
+			" کندل، حداقل ۳ لازم) — الگو در حال تشکیل"
 		return out
 	}
 	out["reason"] = nil

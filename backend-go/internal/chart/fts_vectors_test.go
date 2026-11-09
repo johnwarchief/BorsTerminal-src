@@ -36,7 +36,21 @@ func candlesFrom(v any) []candle {
 		c, _ := numOf(m["close"])
 		vol, _ := numOf(m["volume"])
 		tm, _ := m["time"].(string)
-		out = append(out, candle{Time: tm, Open: o, High: h, Low: l, Close: c, Volume: vol})
+		lf, _ := m["live_forming"].(bool)
+		out = append(out, candle{Time: tm, Open: o, High: h, Low: l, Close: c,
+			Volume: vol, LiveForming: lf})
+	}
+	return out
+}
+
+// candlesToAnyFields همان تبدیلِ candlesToAny است و نشانهٔ «تکمیل‌نشده» را هم
+// نگه می‌دارد؛ ورودیِ analyzeCandles باید همان چیزی باشد که پایتون دید.
+func candlesToAnyFields(cs []candle) []map[string]any {
+	out := candlesToAny(cs)
+	for i, c := range cs {
+		if c.LiveForming {
+			out[i]["live_forming"] = true
+		}
 	}
 	return out
 }
@@ -46,9 +60,59 @@ func swingsToAny(sw []swing) []map[string]any {
 	for _, s := range sw {
 		out = append(out, map[string]any{
 			"idx": s.Idx, "price": s.Price, "kind": s.Kind, "time": s.Time,
+			"confirm_idx": s.ConfirmIdx, "confirm_time": s.ConfirmTime,
 		})
 	}
 	return out
+}
+
+func gradedToAny(gs []gradedSwing) []map[string]any {
+	out := make([]map[string]any, 0, len(gs))
+	for _, g := range gs {
+		var major, leg, legIn, legOut, legAtr, ma100 any
+		if g.Major != nil {
+			major = *g.Major
+		}
+		if g.LegPct != nil {
+			leg = *g.LegPct
+		}
+		if g.LegPctIn != nil {
+			legIn = *g.LegPctIn
+		}
+		if g.LegPctOut != nil {
+			legOut = *g.LegPctOut
+		}
+		if g.LegAtrX != nil {
+			legAtr = *g.LegAtrX
+		}
+		if g.MA100Ctx != nil {
+			ma100 = *g.MA100Ctx
+		}
+		out = append(out, map[string]any{
+			"idx": g.Idx, "price": g.Price, "kind": g.Kind, "time": g.Time,
+			"confirm_idx": g.ConfirmIdx, "confirm_time": g.ConfirmTime,
+			"major": major, "leg_pct": leg, "leg_pct_in": legIn,
+			"leg_pct_out": legOut, "out_pending": g.OutPending,
+			"leg_atr_x": legAtr, "recent": g.Recent,
+			"confirm_age_bars": g.ConfirmAgeBars, "ma100_ctx": ma100,
+		})
+	}
+	return out
+}
+
+type tfPackTest struct {
+	graded  []gradedSwing
+	majors  []gradedSwing
+	info    map[string]any
+	series  []candle
+	verdict map[string]any
+}
+
+func buildPack(series []candle, k int) tfPackTest {
+	graded := majorGrade(swingsOf(series, k), series)
+	majors, info := majorSummarize(graded)
+	return tfPackTest{graded: graded, majors: majors, info: info, series: series,
+		verdict: classifyTrend(majorSwingsOf(majors), ftsEqualTol, series, ftsStaleBars)}
 }
 
 func candlesToAny(cs []candle) []map[string]any {
@@ -103,19 +167,47 @@ func TestFTSVectors(t *testing.T) {
 		sw := swingsOf(candles, ftsSwingK)
 		w := resample(candles, "W")
 		m := resample(candles, "M")
+		structD := closedOnly(candles)
+		wStruct := resample(structD, "W")
+		mStruct := resample(structD, "M")
+		packs := map[string]tfPackTest{
+			"D": buildPack(structD, ftsSwingK),
+			"W": buildPack(wStruct, 2),
+			"M": buildPack(mStruct, 2),
+		}
 		label := func(k string) string { return kind + "/" + k }
 		compareJSON(t, label("swings"), c["swings"], swingsToAny(sw))
 		compareJSON(t, label("weekly"), c["weekly"], candlesToAny(w))
 		compareJSON(t, label("monthly"), c["monthly"], candlesToAny(m))
-		compareJSON(t, label("trend_d"), c["trend_d"],
-			classifyTrend(sw, ftsEqualTol, candles, ftsStaleBars))
-		compareJSON(t, label("trend_w"), c["trend_w"],
-			classifyTrend(swingsOf(w, 2), ftsEqualTol, w, ftsStaleBars))
-		compareJSON(t, label("trend_m"), c["trend_m"],
-			classifyTrend(swingsOf(m, 2), ftsEqualTol, m, ftsStaleBars))
+		compareJSON(t, label("trend_d"), c["trend_d"], packs["D"].verdict)
+		compareJSON(t, label("trend_w"), c["trend_w"], packs["W"].verdict)
+		compareJSON(t, label("trend_m"), c["trend_m"], packs["M"].verdict)
+		compareJSON(t, label("swings_w"), c["swings_w"], swingsToAny(swingsOf(wStruct, 2)))
+		compareJSON(t, label("swings_m"), c["swings_m"], swingsToAny(swingsOf(mStruct, 2)))
+		compareJSON(t, label("majors_d"), c["majors_d"], gradedToAny(packs["D"].graded))
+		compareJSON(t, label("majors_w"), c["majors_w"], gradedToAny(packs["W"].graded))
+		compareJSON(t, label("majors_m"), c["majors_m"], gradedToAny(packs["M"].graded))
+		compareJSON(t, label("info_d"), c["info_d"], packs["D"].info)
+		compareJSON(t, label("info_w"), c["info_w"], packs["W"].info)
+		compareJSON(t, label("info_m"), c["info_m"], packs["M"].info)
+		full := map[string][]candle{"D": candles, "W": w, "M": m}
+		kFor := map[string]int{"D": ftsSwingK, "W": 2, "M": 2}
+		ctx := map[string]map[string]any{}
+		for _, tf := range []string{"D", "W", "M"} {
+			p := packs[tf]
+			ctx[tf] = majorContext(tf, p.graded, p.majors, p.info, p.series,
+				structD, full[tf], p.verdict, kFor[tf])
+		}
+		compareJSON(t, label("context_d"), c["major_context_d"], ctx["D"])
+		compareJSON(t, label("context_w"), c["major_context_w"], ctx["W"])
+		compareJSON(t, label("context_m"), c["major_context_m"], ctx["M"])
+		compareJSON(t, label("structure_d"), c["structure_points_d"],
+			structurePoints(majorSwingsOf(packs["D"].majors), 14))
+		compareJSON(t, label("structure_w"), c["structure_points_w"],
+			structurePoints(majorSwingsOf(packs["W"].majors), 14))
 		compareJSON(t, label("recent"), c["recent"], recentWindowTrend(candles, ftsStaleWindow))
 		compareJSON(t, label("reason_d"), c["reason_d"],
-			trendReason(classifyTrend(sw, ftsEqualTol, candles, ftsStaleBars)))
+			trendReasonCtx(packs["D"].verdict, ctx["D"]))
 		compareJSON(t, label("fib"), c["fib"], fibZones(candles, sw))
 		compareJSON(t, label("jet"), c["jet"], jetSetup(candles, 250, 6, 3))
 		compareJSON(t, label("choch"), c["choch"], choch(candles, sw, ftsCHochDays, ftsCHochMargin))
@@ -143,7 +235,43 @@ func TestFTSVectors(t *testing.T) {
 		compareJSON(t, label("ma14"), c["ma14"], ptrsToAny(ftsMa(closes, 14)))
 		compareJSON(t, label("rsi14"), c["rsi14"], ptrsToAny(ftsRsi(closes, 14)))
 		compareJSON(t, label("hybrid_d"), c["hybrid_d"], classifyTrendHybrid(sw, candles))
+		// کلِ خروجیِ موتور رویِ همان ورودی — قراردادِ /api/fts؛ ماژورها،
+		// structure_points، pullback و setups_state هم اینجا سنجیده می‌شوند.
+		svc := &Service{engine: "legacy"}
+		compareJSON(t, label("analyze"), c["analyze"],
+			svc.analyzeCandles(candlesToAny(candles), "TEST", nil))
 	}
+}
+
+// TestFTSRealSymbolParity مقایسهٔ موتور رویِ سریِ واقعیِ نمادهاست. فایلِ ورودی
+// با tools/parity/gen_fts_real_vectors.py ساخته می‌شود و در گیت نیست؛ نبودش
+// یعنی «اندازه‌گیری نشد»، نه پاس.
+func TestFTSRealSymbolParity(t *testing.T) {
+	path := os.Getenv("BORS_FTS_REAL_VECTORS")
+	if path == "" {
+		t.Skip("BORS_FTS_REAL_VECTORS not set — real-symbol parity NOT_MEASURED")
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read real vectors: %v", err)
+	}
+	var v map[string]any
+	if err := json.Unmarshal(raw, &v); err != nil {
+		t.Fatalf("parse real vectors: %v", err)
+	}
+	cases, _ := v["cases"].([]any)
+	if len(cases) == 0 {
+		t.Fatal("real vectors contain no cases")
+	}
+	for _, item := range cases {
+		m, _ := item.(map[string]any)
+		name, _ := m["name"].(string)
+		symbol, _ := m["symbol"].(string)
+		candles := candlesFrom(m["candles"])
+		got := (&Service{engine: "legacy"}).analyzeCandles(candlesToAnyFields(candles), symbol, nil)
+		compareJSON(t, "real/"+name, m["analyze"], got)
+	}
+	t.Logf("real-symbol cases compared: %d", len(cases))
 }
 
 func TestFTSStatusVectors(t *testing.T) {

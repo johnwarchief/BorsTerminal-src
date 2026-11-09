@@ -109,6 +109,16 @@ def main():
             shutil.rmtree(dest_corrections)
         shutil.copytree(corrections_dir, dest_corrections)
 
+    # پکِ تقویمِ مرجعِ هفتگی/ماهانه: بدونِ آن borsd به هفته/ماهِ میلادی برمی‌گردد
+    # و W/M با پایتون/گلدن ناهمخوان می‌شود (chart/wmcalendar.go).
+    calendar_dir = os.path.join(ROOT, 'data', 'ra365_calendar', 'ra365-r32d')
+    if os.path.isdir(calendar_dir):
+        dest_calendar = os.path.join(OUT, 'data', 'ra365_calendar', 'ra365-r32d')
+        print(f'[calendar] copying {calendar_dir} -> {dest_calendar}')
+        if os.path.isdir(dest_calendar):
+            shutil.rmtree(dest_calendar)
+        shutil.copytree(calendar_dir, dest_calendar)
+
     # 6. Verify Production Bundle Contract (ZERO Python)
     print('\n=== Verifying Production Bundle Contract ===')
     main_exe = os.path.join(OUT, 'BorsTerminal_Ultimate.exe')

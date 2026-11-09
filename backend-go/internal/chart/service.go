@@ -52,6 +52,8 @@ type Service struct {
 	basis        *pricebasis.Resolver
 	ftsPath      string
 	engine       string
+	calOnce      sync.Once
+	calPack      *calendarPack
 
 	mu        sync.Mutex
 	keyLevels map[string]cacheEntry
@@ -99,6 +101,20 @@ func trendEngine() string {
 }
 
 func (s *Service) now() time.Time { return s.clock() }
+
+// wmPack بستهٔ پلِ تقویم را یک‌بار می‌خواند؛ نبودش nil است (رفتارِ پایتون).
+func (s *Service) wmPack() *calendarPack {
+	s.calOnce.Do(func() { s.calPack = loadCalendarPack(s.dataDir) })
+	return s.calPack
+}
+
+// resampleFor معادلِ _fts_resample(..., symbol=symbol): تجمیع، سپس نوارِ مرجعِ
+// همان نماد رویِ کلیدهایی که بسته پوشش می‌دهد.
+func (s *Service) resampleFor(candles []candle, bucket, symbol string) []candle {
+	out := resample(candles, bucket)
+	s.wmPack().applyPackRefs(out, bucket, symbol)
+	return out
+}
 
 // pred معادلِ sym_pred: خطایِ لایهٔ هویت ⇒ همان برابریِ سادهٔ پایتون.
 func (s *Service) pred(ctx context.Context, col, symbol string) (string, []any) {

@@ -30,7 +30,7 @@ func IntQuery(w http.ResponseWriter, r *http.Request, name string, def int) (int
 		return def, true
 	}
 	raw := vals[len(vals)-1]
-	v, ok := parseFastAPIInt(raw)
+	v, ok := parseLaxInt(raw)
 	if !ok {
 		UnprocessableAs(w, "int_parsing", []string{"query", name},
 			"Input should be a valid integer, unable to parse string as an integer", raw)
@@ -39,7 +39,7 @@ func IntQuery(w http.ResponseWriter, r *http.Request, name string, def int) (int
 	return v, true
 }
 
-// parseFastAPIInt همان «int در برابر رشته»ِ pydantic در حالتِ lax است، با همین
+// parseLaxInt همان «int در برابر رشته»ِ pydantic در حالتِ lax است، با همین
 // قاعدۀ سنجیده‌شده: پیرایشِ فضای Unicode، یکِ نشانه، جداکنندۀ `_` فقط میانِ
 // رقم‌ها (Python-style)، و شکلِ اعشاریِ «رقم‌ها.رقم‌ها» که فقط وقتی پذیرفتنی است
 // کسرش تمام‌صفر باشد (`5.` و `.5` و توانیِ `1e2` هر سه 422).
@@ -48,7 +48,7 @@ func IntQuery(w http.ResponseWriter, r *http.Request, name string, def int) (int
 // IntQuery پیش از هر کاری min/max می‌زنند (`clampLimit`ِ بنیادی تا 40 و
 // `tapehistory.ClampDays` تا 120)، پس سیرابه با عددِ بی‌سقفِ پایتون یکِ نتیجه
 // می‌دهد؛ هر مصرف‌کنندۀ تازه‌ای که limit را بی‌clamp بکار ببرد باید این را بداند.
-func parseFastAPIInt(raw string) (int, bool) {
+func parseLaxInt(raw string) (int, bool) {
 	s := strings.TrimFunc(raw, unicode.IsSpace)
 	if s == "" {
 		return 0, false

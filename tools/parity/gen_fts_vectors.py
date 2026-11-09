@@ -62,6 +62,29 @@ def series(kind):
                     1000 + 4 * i) for i in range(140)]
     if kind == "short":
         return wave(40, 1000.0, 3.0, 30.0, 1.4)
+    if kind == "flat":
+        # قاعدهٔ اکیدِ پیوت: سریِ کاملاً تخت باید صفر پیوت بدهد. با شرطِ «>= در
+        # دو طرف» هر سطر یک پیوت بود (شاهدِ TSETMC: ردیف‌هایِ H==L).
+        return [row(i, 1000.0, 1000.0, 1000.0, 1000.0) for i in range(40)]
+    if kind == "plateau":
+        # دو سرِ یک فلاتِ تخت باید پیوت بمانند و میانه‌اش نه.
+        out = []
+        for i in range(60):
+            if 20 <= i <= 30:
+                out.append(row(i, 1150.0, 1200.0, 1150.0, 1170.0))
+            else:
+                c = 1050 + 10 * math.sin(i / 2.0)
+                out.append(row(i, c - 5, c + 8, c - 9, c))
+        return out
+    if kind == "ma14one":
+        # «یک کندلِ کامل زیرِ MA14» — نه دو بدنهٔ متوالی (FTS.CHART_3 ص۳).
+        out = []
+        for i in range(40):
+            c = 1000 + 2.4 * i
+            out.append(row(i, c - 3, c + 5, c - 4, c))
+        out.append(row(40, 1070, 1072, 1040, 1050))
+        out.append(row(41, 1050, 1130, 1048, 1120))
+        return out
     if kind == "jet":
         out = []
         for i in range(120):
@@ -245,27 +268,57 @@ def main():
     tmp = tempfile.mkdtemp(prefix="bors-fts-vectors-")
     prepare(tmp)
     import api.chart as ch
+    import major_swings
     import price_basis
     import trend_classify
 
     data = {"series": {}, "cases": {}, "status": {}}
     for kind in ("up", "down", "range", "oneway", "short", "jet", "choch",
-                 "point", "dbl", "stop", "trail", "roll", "tops", "hs"):
+                 "point", "dbl", "stop", "trail", "roll", "tops", "hs",
+                 "flat", "plateau", "ma14one"):
         candles = series(kind)
         sw = ch._fts_swings(candles, k=ch._FTS_SWING_K)
         w = ch._fts_resample(candles, "W")
         m = ch._fts_resample(candles, "M")
+        struct_d = major_swings.closed_only(candles)
+        w_struct = ch._fts_resample(struct_d, "W")
+        m_struct = ch._fts_resample(struct_d, "M")
+        packs = {}
+        for _tf, _series, _k in (("D", struct_d, ch._FTS_SWING_K),
+                                 ("W", w_struct, 2), ("M", m_struct, 2)):
+            _g = major_swings.grade(ch._fts_swings(_series, k=_k), _series)
+            _mj, _info = major_swings.summarize(_g)
+            packs[_tf] = {"graded": _g, "majors": _mj, "info": _info,
+                          "series": _series,
+                          "verdict": ch._fts_classify_trend(_mj, series=_series)}
+        _full = {"D": candles, "W": w, "M": m}
+        _ctx = {_tf: ch._fts_major_context(
+                    _tf, packs[_tf], struct_d, full_series=_full[_tf])
+                for _tf in ("D", "W", "M")}
         dbl = ch._fts_double_bottom(candles, sw)
         exit_hint = 1400.0 if kind in ("up", "stop") else None
         out = {
             "swings": sw,
             "weekly": w,
             "monthly": m,
-            "trend_d": ch._fts_classify_trend(sw, series=candles),
-            "trend_w": ch._fts_classify_trend(ch._fts_swings(w, k=2), series=w),
-            "trend_m": ch._fts_classify_trend(ch._fts_swings(m, k=2), series=m),
+            "trend_d": packs["D"]["verdict"],
+            "trend_w": packs["W"]["verdict"],
+            "trend_m": packs["M"]["verdict"],
             "recent": ch._fts_recent_window_trend(candles),
-            "reason_d": ch._fts_trend_reason(ch._fts_classify_trend(sw, series=candles)),
+            "reason_d": ch._fts_trend_reason(packs["D"]["verdict"], ctx=_ctx["D"]),
+            "swings_w": ch._fts_swings(w_struct, k=2),
+            "swings_m": ch._fts_swings(m_struct, k=2),
+            "majors_d": packs["D"]["graded"],
+            "majors_w": packs["W"]["graded"],
+            "majors_m": packs["M"]["graded"],
+            "info_d": packs["D"]["info"],
+            "info_w": packs["W"]["info"],
+            "info_m": packs["M"]["info"],
+            "major_context_d": _ctx["D"],
+            "major_context_w": _ctx["W"],
+            "major_context_m": _ctx["M"],
+            "structure_points_d": ch._fts_structure_points(packs["D"]["majors"]),
+            "structure_points_w": ch._fts_structure_points(packs["W"]["majors"]),
             "fib": ch._fts_fib_zones(candles, sw),
             "jet": ch._fts_jet_setup(candles),
             "choch": ch._fts_choch(candles, sw),
@@ -274,6 +327,7 @@ def main():
             "range_box": dbl["range_box"],
             "setups": ch._fts_setup_history(candles, sw),
             "exit": ch._fts_exit_engine(candles, entry_hint=exit_hint),
+            "analyze": ch._fts_analyze_candles("TEST", candles),
             "ma14": ch._fts_ma([c["close"] for c in candles], 14),
             "rsi14": ch._fts_rsi([c["close"] for c in candles], 14),
             "hybrid_d": trend_classify.classify_trend(sw, series=candles),
@@ -438,7 +492,7 @@ def main():
         "series": "range"}
 
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
+    with open(args.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
         f.write("\n")
     print("wrote", args.out, os.path.getsize(args.out), "bytes")

@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 
 const backend = process.env.BORS_BACKEND || process.env.BORS_BACKEND_GO || 'http://127.0.0.1:8198';
+// borsd یک توکنِ per-launch می‌خواهد. در dev، همان مقدار را به هر دو پروسه
+// بدهید تا پروکسی آن را به‌عنوان Bearer بفرستد؛ در نصبِ واقعی SPA کوکی می‌گیرد.
+const apiToken = process.env.BORS_API_TOKEN || '';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -18,7 +21,12 @@ export default defineConfig({
     port: Number(process.env.BORS_VITE_PORT) || 5180,
     strictPort: true,
     proxy: {
-      '/api': { target: backend, changeOrigin: false },
+      '/api': {
+        target: backend,
+        // Host باید 127.0.0.1:<port> باشد؛ guard هر Host غیرِ loopback را رد می‌کند.
+        changeOrigin: true,
+        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined,
+      },
     },
   },
   build: { outDir: 'dist', sourcemap: false },

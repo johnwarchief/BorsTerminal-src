@@ -73,30 +73,43 @@ func openMemory(mode string) (*sql.DB, error) {
 // ۳. user.db در حالت عادی نوشتنی (rwc) است؛ اما اگر readOnly=true باشد، اجباراً با mode=ro باز می‌شود
 //    و اگر فایل روی دیسک نباشد، به هیچ وجه فایل صفر-بایتی نمی‌سازد و در حافظه مدیریت می‌شود.
 func Open(dataDir string, readOnly bool) (*Handles, error) {
-	market := filepath.Join(dataDir, "market.db")
-	if _, err := os.Stat(market); err != nil {
+	return OpenResolved(
+		filepath.Join(dataDir, "market.db"),
+		filepath.Join(dataDir, "codal.db"),
+		dataDir, readOnly,
+	)
+}
+
+// OpenResolved همان Open است با مسیرهایِ صریحِ market/codal (نسل فعال) و
+// userDir که همیشه dataDir می‌ماند. codalPath تهی یعنی این نسل codal.db ندارد.
+func OpenResolved(marketPath, codalPath, userDir string, readOnly bool) (*Handles, error) {
+	if marketPath == "" {
+		return nil, ErrMarketMissing
+	}
+	if _, err := os.Stat(marketPath); err != nil {
 		return nil, ErrMarketMissing
 	}
 	// قاعده ساختاری فاز ۱: Go هرگز در market.db نمی‌نویسد
-	m, err := open(market, "ro")
+	m, err := open(marketPath, "ro")
 	if err != nil {
 		return nil, fmt.Errorf("open market.db: %w", err)
 	}
 
 	// قاعده ساختاری: codal.db در صورت وجود، همیشه mode=ro است
 	var c *sql.DB
-	codalPath := filepath.Join(dataDir, "codal.db")
-	if _, err := os.Stat(codalPath); err == nil {
-		c, err = open(codalPath, "ro")
-		if err != nil {
-			m.Close()
-			return nil, fmt.Errorf("open codal.db: %w", err)
+	if codalPath != "" {
+		if _, statErr := os.Stat(codalPath); statErr == nil {
+			c, err = open(codalPath, "ro")
+			if err != nil {
+				m.Close()
+				return nil, fmt.Errorf("open codal.db: %w", err)
+			}
 		}
 	}
 
 	// قاعده user.db:
 	var u *sql.DB
-	userPath := filepath.Join(dataDir, "user.db")
+	userPath := filepath.Join(userDir, "user.db")
 	if readOnly {
 		if _, err := os.Stat(userPath); err == nil {
 			u, err = open(userPath, "ro")

@@ -259,13 +259,13 @@ func TestParseFastAPIIntRule(t *testing.T) {
 		{"99999999999999999999.0", int64(math.MaxInt), true},
 		{"-99999999999999999999", int64(math.MinInt), true},
 	} {
-		got, ok := parseFastAPIInt(c.in)
+		got, ok := parseLaxInt(c.in)
 		if ok != c.wantOK {
-			t.Errorf("parseFastAPIInt(%q) ok=%v want %v (value %d)", c.in, ok, c.wantOK, got)
+			t.Errorf("parseLaxInt(%q) ok=%v want %v (value %d)", c.in, ok, c.wantOK, got)
 			continue
 		}
 		if ok && int64(got) != c.want {
-			t.Errorf("parseFastAPIInt(%q) = %d want %d", c.in, got, c.want)
+			t.Errorf("parseLaxInt(%q) = %d want %d", c.in, got, c.want)
 		}
 	}
 }

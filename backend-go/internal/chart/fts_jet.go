@@ -18,7 +18,11 @@ func jetSetup(candles []candle, ceilingWin, ceilingSkip, entryWindowDays int) ma
 			"pct_above_res": nil, "ceiling": nil, "ceiling_date": nil,
 			"static_broke": nil, "breakout_date": nil,
 			"entry_window_days": entryWindowDays, "days_remaining": nil,
-			"tier": nil, "reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد",
+			"tier": nil,
+			// P0 #2: پیامِ ناکافی با تعداد؛ active عمداً None می‌ماند.
+			"reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد (" +
+				ftsFa(n) + " کندل موجود، حداقل لازم " + ftsFa(ftsJetMinBars) + ")",
+			"bars_available": n, "bars_required": ftsJetMinBars,
 		}
 	}
 

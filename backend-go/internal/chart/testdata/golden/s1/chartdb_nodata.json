@@ -73,10 +73,94 @@
    "matrix": {
     "decision": "UNKNOWN",
     "setup": "NONE",
-    "desc": "روند هفتگی قابل تشخیص نیست (کمتر از دو پیوت کامل) — نظر داده نمی‌شود — مبنا: کمتر از دو پیوتِ کامل",
+    "desc": "روند هفتگی قابل تشخیص نیست (کمتر از دو پیوت کامل) — نظر داده نمی‌شود — مبنا: کمتر از دو پیوتِ کامل (کمبود داده)",
     "basis": {
-     "weekly": "مبنا: کمتر از دو پیوتِ کامل",
-     "daily": "مبنا: کمتر از دو پیوتِ کامل"
+     "weekly": "مبنا: کمتر از دو پیوتِ کامل (کمبود داده)",
+     "daily": "مبنا: کمتر از دو پیوتِ کامل (کمبود داده)"
+    }
+   },
+   "as_of": null,
+   "major_swings": {
+    "D": {
+     "as_of": null,
+     "bars": 0,
+     "bucket_forming": null,
+     "confirmed_trend": "na",
+     "counts": {
+      "dropped_minor": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "majors": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "pivots": 0,
+      "undecided": 0
+     },
+     "daily_as_of": null,
+     "enough_extremes": false,
+     "major_swings": [],
+     "provisional": null,
+     "reason": null,
+     "threshold": {
+      "atr_x": 2,
+      "floor_pct": 0.005
+     },
+     "timeframe": "D",
+     "verdict_basis": "pivots"
+    },
+    "M": {
+     "as_of": null,
+     "bars": 0,
+     "bucket_forming": null,
+     "confirmed_trend": "na",
+     "counts": {
+      "dropped_minor": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "majors": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "pivots": 0,
+      "undecided": 0
+     },
+     "daily_as_of": null,
+     "enough_extremes": false,
+     "major_swings": [],
+     "provisional": null,
+     "reason": null,
+     "threshold": {
+      "atr_x": 2,
+      "floor_pct": 0.005
+     },
+     "timeframe": "M",
+     "verdict_basis": "pivots"
+    },
+    "W": {
+     "as_of": null,
+     "bars": 0,
+     "bucket_forming": null,
+     "confirmed_trend": "na",
+     "counts": {
+      "dropped_minor": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "majors": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "pivots": 0,
+      "undecided": 0
+     },
+     "daily_as_of": null,
+     "enough_extremes": false,
+     "major_swings": [],
+     "provisional": null,
+     "reason": null,
+     "threshold": {
+      "atr_x": 2,
+      "floor_pct": 0.005
+     },
+     "timeframe": "W",
+     "verdict_basis": "pivots"
     }
    }
   },
@@ -96,7 +180,9 @@
    "entry_window_days": 3,
    "days_remaining": null,
    "tier": null,
-   "reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد"
+   "reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد (۰ کندل موجود، حداقل لازم ۶۰)",
+   "bars_available": 0,
+   "bars_required": 60
   },
   "choch": {
    "bearish": null,
@@ -116,7 +202,7 @@
    "floor_date": null,
    "trigger_idx": null,
    "trigger_date": null,
-   "reason": "دو سقفِ جدا یا ده کندل سابقه نیست — کانال سنجیده نشد"
+   "reason": "سقفِ مستقلِ کافی نیست (۰ از ۲ لازم) — کانال سنجیده نشد"
   },
   "double_bottom": {
    "active": null,
@@ -129,7 +215,9 @@
    "top": null,
    "bottom": null,
    "pct_above_top": null,
-   "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد"
+   "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد",
+   "end_date": null,
+   "start_date": null
   },
   "exit_engine": {
    "verdict": "unknown",
@@ -153,7 +241,8 @@
     "ma14_exit": null,
     "ma14_exit_pending": null,
     "ma14": null,
-    "close": null
+    "close": null,
+    "stop_reason": null
    },
    "l2": {
     "choch_break": null,
@@ -167,13 +256,15 @@
     "hs_break": null,
     "neckline": null,
     "level": null,
-    "third_peak_level": null
+    "third_peak_level": null,
+    "reason": "لایهٔ ۳ سنجیده نشد (۰ کندل، حداقل ۱۵ لازم)"
    },
    "l4": {
     "rsi_divergence": null,
     "rsi_rollover": null,
     "rsi": null,
-    "rsi_prev_peak": null
+    "rsi_prev_peak": null,
+    "reason": "لایهٔ ۴ سنجیده نشد (۰ کندل، حداقل ۳۰ لازم)"
    }
   },
   "hourglass": {
@@ -182,23 +273,24 @@
    "ma52": null,
    "weekly_bars": 0,
    "weekly_rsi": null,
-   "weekly_rsi5": null,
    "rsi_period": 7,
    "rsi_oversold": 30.0,
    "ma52_position_mode": "below",
    "ma52_position_match": null,
    "action": "UNKNOWN",
-   "desc": "MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+   "desc": "MA52 سنجیده نشد (۰ کندل هفتگی، حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد",
+   "ma52_band_pct": 3
   },
   "setups": [],
   "status": {
    "code": "insufficient",
-   "text": "داده برایِ داوری کافی نیست — سنجیده نشد",
+   "text": "داده برایِ داوری کافی نیست — سنجیده نشد (سابقه: ۰ کندل، حداقل لازم ۶۱)",
    "trigger": null,
    "exits": [],
    "warnings": [],
    "unknown": [
     "jet",
+    "pullback",
     "point_hunt",
     "choch_bullish",
     "double_bottom",
@@ -246,7 +338,8 @@
     "choch_bearish": "exit",
     "channel_break": "exit",
     "double_top": "exit",
-    "hs_break": "exit"
+    "hs_break": "exit",
+    "pullback": "entry"
    }
   },
   "roles": {
@@ -268,7 +361,25 @@
    "choch_bearish": "exit",
    "channel_break": "exit",
    "double_top": "exit",
-   "hs_break": "exit"
+   "hs_break": "exit",
+   "pullback": "entry"
+  },
+  "pullback": {
+   "active": null,
+   "gap_pct": null,
+   "level": null,
+   "level_age_bars": null,
+   "level_date": null,
+   "reason": "روند روزانه سنجیده نشد (۰ سقفِ تأییدشده) — پولبک ارزیابی نشد",
+   "touching": null,
+   "weekly_confirms": null
+  },
+  "setups_bars_available": 0,
+  "setups_bars_required": 61,
+  "setups_state": "insufficient_history",
+  "structure_points": {
+   "D": [],
+   "W": []
   }
  }
 }

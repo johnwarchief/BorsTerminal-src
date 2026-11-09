@@ -408,7 +408,7 @@ func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int
 	// پایتون این صدازدن را در try می‌گذارد و خطا را `fts: null` می‌کند؛ چارت
 	// هرگز بی‌تحلیل نمی‌میرد. get_chart_db entry_hint نمی‌دهد (فقط /api/fts).
 	if body, failure := s.analyzeCandlesSafe(
-		s.scaleCandles(rows, facts, vols, s.basis.Current()), nil); failure == "" {
+		s.scaleCandles(rows, facts, vols, s.basis.Current()), symbol, nil); failure == "" {
 		fts = body
 	}
 	body := map[string]any{

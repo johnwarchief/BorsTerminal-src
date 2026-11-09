@@ -230,15 +230,15 @@ func ExecuteScheduledSnapshotPipeline(ctx context.Context, cfg DaemonConfig, now
 	}
 	slog.Info("pipeline: dirty FTS recalculation complete", "recalculated", recalcCount)
 
-	// 3. Collect databases
-	entries, err := os.ReadDir(cfg.DataDir)
+	// 3. Collect databases — allowlist صریح، نه اسکنِ پوشه.
+	// Snapshot فقط دادهٔ مشترکِ بازار است؛ research.db / oc_client.db / user.db و
+	// هر .db دیگر هرگز نباید منتشر شود (P0.2). اسکنِ قبلی هر فایلی را برمی‌داشت.
+	dbs, err := collectProducerDBs(cfg.DataDir)
 	if err != nil {
-		errStr := fmt.Sprintf("read data dir failed: %v", err)
-		recordPipelineFailure(cfg, startedAt, "read_data_dir", errStr)
+		errStr := fmt.Sprintf("collect databases failed: %v", err)
+		recordPipelineFailure(cfg, startedAt, "collect_dbs", errStr)
 		return nil, errors.New(errStr)
 	}
-
-	dbs := make(map[string]*sql.DB)
 	defer func() {
 		for _, conn := range dbs {
 			if conn != nil {
@@ -246,28 +246,8 @@ func ExecuteScheduledSnapshotPipeline(ctx context.Context, cfg DaemonConfig, now
 			}
 		}
 	}()
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if strings.EqualFold(filepath.Ext(name), ".db") {
-			dbPath := filepath.Join(cfg.DataDir, name)
-			conn, err := db.OpenRW(dbPath)
-			if err != nil {
-				slog.Warn("pipeline: failed to open db for snapshot", "path", dbPath, "err", err)
-				continue
-			}
-			key := strings.TrimSuffix(name, filepath.Ext(name))
-			dbs[key] = conn
-		}
-	}
-
-	if len(dbs) == 0 {
-		errStr := "no database files found to snapshot in data dir"
-		recordPipelineFailure(cfg, startedAt, "collect_dbs", errStr)
-		return nil, errors.New(errStr)
+	if rejected, rerr := rejectedProducerDBs(cfg.DataDir); rerr == nil && len(rejected) > 0 {
+		slog.Info("pipeline: ignoring non-producer databases", "names", rejected)
 	}
 
 	tag := strings.TrimSpace(cfg.PublishTag)
@@ -360,7 +340,10 @@ func ExecuteScheduledSnapshotPipeline(ctx context.Context, cfg DaemonConfig, now
 	}
 
 	// 7. Record Success
-	finishedAt := time.Now().UTC().Format(time.RFC3339)
+	// زمانِ پایان از همان لنگرِ اجرا می‌آید، نه ساعتِ دیوار: شناسهٔ SnapshotSet و
+	// تاریخِ «آخرین موفقیت» باید به یک اجرا تعلق داشته باشند و تست با لنگرِ ثابت
+	// قابلِ بازتولید بماند.
+	finishedAt := now.UTC().Format(time.RFC3339)
 	_ = RecordPipelineRun(marketDB, startedAt, finishedAt, "scheduled_snapshot", "complete", "", 1, 0)
 
 	meta := PipelineStatusMeta{

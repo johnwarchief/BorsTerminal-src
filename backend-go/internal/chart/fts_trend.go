@@ -300,29 +300,3 @@ func faDigits(s string) string {
 	}
 	return b.String()
 }
-
-// trendReason معادلِ _fts_trend_reason.
-func trendReason(t map[string]any) string {
-	if t == nil {
-		return ""
-	}
-	if b, _ := t["basis"].(string); b == "recent-window" {
-		pos := "زیر"
-		if pyTruthy(t["above_ma"]) {
-			pos = "بالای"
-		}
-		txt := "مبنا: " + ftsFa(t["window"]) + " کندلِ اخیر، " +
-			ftsFa(t["move_pct"]) + "٪ جابه‌جایی، قیمت " + pos + " میانگینِ ۵۲ دوره"
-		if t["stale_bars"] != nil {
-			txt += " (تازه‌ترین پیوتِ تأییدشده " + ftsFa(t["stale_bars"]) + " کندل عقب است)"
-		}
-		return txt
-	}
-	if tr, _ := t["trend"].(string); tr == "na" {
-		return "مبنا: کمتر از دو پیوتِ کامل"
-	}
-	return "مبنا: سقف‌ها " + ftsFa(t["prev_high_time"]) + " (" + ftsFa(t["prev_high"]) +
-		") ← " + ftsFa(t["last_high_time"]) + " (" + ftsFa(t["last_high"]) +
-		")، کف‌ها " + ftsFa(t["prev_low_time"]) + " (" + ftsFa(t["prev_low"]) +
-		") ← " + ftsFa(t["last_low_time"]) + " (" + ftsFa(t["last_low"]) + ")"
-}

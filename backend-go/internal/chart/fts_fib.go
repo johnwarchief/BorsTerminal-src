@@ -23,20 +23,28 @@ func fibLeg(candles []candle, sw []swing) map[string]any {
 	highs := highsOf(sw)
 	lows := lowsOf(sw)
 	if len(highs) == 0 && len(lows) == 0 {
-		hiIdx := 0
+		hiIdx, loIdx := 0, 0
 		for i := 1; i < n; i++ {
 			if candles[i].High > candles[hiIdx].High {
 				hiIdx = i
 			}
-		}
-		lo := candles[0].Low
-		for _, c := range candles[1:] {
-			if c.Low < lo {
-				lo = c.Low
+			if candles[i].Low < candles[loIdx].Low {
+				loIdx = i
 			}
 		}
-		return map[string]any{"direction": "up", "start_idx": 0, "end_idx": n - 1,
-			"high": candles[hiIdx].High, "low": lo}
+		// هیچ پیوتی نیست ⇒ جهت را حدس نمی‌زنیم: جایِ نسبیِ دو Extreme خودش را
+		// می‌گوید. موجِ بی‌پیوت «در حالِ تشکیل» است (provisional)، نه ساختارِ
+		// تأییدشده (api/chart.py:4432-4453).
+		direction := "up"
+		if loIdx > hiIdx {
+			direction = "down"
+		}
+		start := hiIdx
+		if loIdx < start {
+			start = loIdx
+		}
+		return map[string]any{"direction": direction, "start_idx": start, "end_idx": n - 1,
+			"high": candles[hiIdx].High, "low": candles[loIdx].Low, "provisional": true}
 	}
 	closeP := make([]float64, n)
 	for i, c := range candles {
@@ -129,17 +137,35 @@ func fibZones(candles []candle, sw []swing) map[string]any {
 	if direction == "" {
 		direction = "up"
 	}
+	last := 0.0
+	if len(candles) > 0 {
+		last = candles[len(candles)-1].Close
+	}
+	// عمقِ اصلاح رویِ همان مقیاسِ لگاریتمیِ کمربندها: ۰ سرِ موج، ۱ کلِ موج
+	// برگشته؛ موجِ نزولی قرینه است (۱ − raw).
+	var retrace any
+	if span := math.Log(top) - math.Log(bot); span > 0 && last > 0 {
+		raw := (math.Log(top) - math.Log(last)) / span
+		v := 100.0 * raw
+		if direction != "up" {
+			v = 100.0 * (1.0 - raw)
+		}
+		retrace = round2(v)
+	}
 	for _, belt := range fibBelts {
 		a := fibRetrace(top, bot, belt.p1, direction)
 		b := fibRetrace(top, bot, belt.p2, direction)
 		hiP, loP := math.Max(a, b), math.Min(a, b)
-		last := 0.0
-		if len(candles) > 0 {
-			last = candles[len(candles)-1].Close
+		var gapLo, gapHi any
+		if loP > 0 && last > 0 {
+			gapLo = round2(100.0 * (last - loP) / loP)
+			gapHi = round2(100.0 * (last - hiP) / hiP)
 		}
 		zones[belt.key] = map[string]any{
 			"lo": round2(loP), "hi": round2(hiP),
-			"in_zone": loP <= last && last <= hiP,
+			"from_ratio": belt.p1, "to_ratio": belt.p2,
+			"in_zone":    loP <= last && last <= hiP,
+			"gap_lo_pct": gapLo, "gap_hi_pct": gapHi,
 		}
 	}
 	levels := make([]map[string]any, 0, len(fibLevels))
@@ -152,6 +178,7 @@ func fibZones(candles []candle, sw []swing) map[string]any {
 	endIdx, _ := leg["end_idx"].(int)
 	return map[string]any{
 		"retrace_base_high": round2(top), "retrace_base_low": round2(bot),
+		"retrace_pct": retrace, "last_close": round2(last),
 		"zone_33_40":  zones["zone_33_40"],
 		"zone_618_70": zones["zone_618_70"],
 		"levels":      levels,
@@ -160,6 +187,7 @@ func fibZones(candles []candle, sw []swing) map[string]any {
 			"start":     trim10(candles[startIdx].Time),
 			"end":       trim10(candles[endIdx].Time),
 			"high":      round2(top), "low": round2(bot),
+			"provisional": pyTruthy(leg["provisional"]),
 		},
 	}
 }

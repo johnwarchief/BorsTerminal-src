@@ -2,6 +2,7 @@ package sync
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"go/ast"
@@ -15,9 +16,25 @@ import (
 	"testing"
 	"time"
 
+	"borsterminal/backend/internal/jobs"
 	"borsterminal/backend/internal/snapshot"
 	_ "modernc.org/sqlite"
 )
+
+func waitForJobState(t *testing.T, h *Handler, id string, want jobs.State) jobs.Job {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		job, ok := h.jobs.Get(id)
+		if ok && job.State == want {
+			return job
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	job, _ := h.jobs.Get(id)
+	t.Fatalf("job %s did not reach %s; last=%+v", id, want, job)
+	return job
+}
 
 func TestNewHandlerDownloadClientHasNoOverallTimeout(t *testing.T) {
 	h := NewHandler(t.TempDir())
@@ -37,6 +54,7 @@ func TestNewHandlerDownloadClientHasNoOverallTimeout(t *testing.T) {
 func TestSyncHandlers(t *testing.T) {
 	tmp := t.TempDir()
 	h := NewHandler(tmp)
+	var res map[string]any
 
 	// 1. GET /api/sync/status
 	rec := httptest.NewRecorder()
@@ -62,56 +80,64 @@ func TestSyncHandlers(t *testing.T) {
 		t.Errorf("Diagnose code = %d", rec.Code)
 	}
 
-	// 4. POST /api/sync/market
+	// 4. POST /api/sync/market — no implementation ⇒ 501, never a fake job.
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest("POST", "/api/sync/market", nil)
 	h.SyncMarket(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Errorf("SyncMarket code = %d", rec.Code)
+	if rec.Code != http.StatusNotImplemented {
+		t.Errorf("SyncMarket code = %d, want 501", rec.Code)
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &res)
+	if res["code"] != "NOT_IMPLEMENTED" {
+		t.Errorf("SyncMarket code field = %v", res["code"])
+	}
+	if _, ok := res["job_id"]; ok {
+		t.Errorf("SyncMarket must not invent a job_id: %v", res)
 	}
 
-	// 5. POST /api/sync/codal
+	// 5. POST /api/sync/codal — same honesty rule.
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest("POST", "/api/sync/codal?mode=optimized", nil)
 	h.SyncCodal(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Errorf("SyncCodal code = %d", rec.Code)
+	if rec.Code != http.StatusNotImplemented {
+		t.Errorf("SyncCodal code = %d, want 501", rec.Code)
 	}
-	var res map[string]any
 	_ = json.Unmarshal(rec.Body.Bytes(), &res)
-	if res["mode"] != "optimized" {
-		t.Errorf("expected mode=optimized, got %v", res["mode"])
+	if _, ok := res["job_id"]; ok {
+		t.Errorf("SyncCodal must not invent a job_id: %v", res)
 	}
 
-	// 6. POST /api/sync/codal/fts-refresh
+	// 6. POST /api/sync/codal/fts-refresh — same honesty rule.
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest("POST", "/api/sync/codal/fts-refresh?mode=full", nil)
 	h.SyncCodalFTSRefresh(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Errorf("SyncCodalFTSRefresh code = %d", rec.Code)
-	}
-	_ = json.Unmarshal(rec.Body.Bytes(), &res)
-	if res["mode"] != "full" {
-		t.Errorf("expected mode=full, got %v", res["mode"])
+	if rec.Code != http.StatusNotImplemented {
+		t.Errorf("SyncCodalFTSRefresh code = %d, want 501", rec.Code)
 	}
 
-	// 7. POST /api/sync/codal/db-download (with already running check)
-	dbdlMu.Lock()
-	dbdlRunning = true
-	dbdlMu.Unlock()
+	// 7. POST /api/sync/codal/db-download while a real job of the same kind is
+	// running ⇒ 409 with that job id, not a second job and not 200.
+	blockCtx, blockCancel := context.WithCancel(context.Background())
+	blocking, _, err := h.jobs.StartExclusive(blockCtx, kindCodalDBDownload, true,
+		func(ctx context.Context) error { <-ctx.Done(); return ctx.Err() })
+	if err != nil {
+		t.Fatal(err)
+	}
 	rec = httptest.NewRecorder()
 	req = httptest.NewRequest("POST", "/api/sync/codal/db-download", nil)
 	h.SyncCodalDBDownload(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Errorf("SyncCodalDBDownload code = %d", rec.Code)
+	if rec.Code != http.StatusConflict {
+		t.Errorf("SyncCodalDBDownload conflict code = %d, want 409", rec.Code)
 	}
 	_ = json.Unmarshal(rec.Body.Bytes(), &res)
-	if res["status"] != "already_running" {
-		t.Errorf("expected status=already_running, got %v", res["status"])
+	if res["job_id"] != blocking.ID {
+		t.Errorf("conflict job_id = %v, want %s", res["job_id"], blocking.ID)
 	}
-	dbdlMu.Lock()
-	dbdlRunning = false
-	dbdlMu.Unlock()
+	if res["code"] != "JOB_ALREADY_RUNNING" {
+		t.Errorf("conflict code = %v", res["code"])
+	}
+	blockCancel()
+	waitForJobState(t, h, blocking.ID, jobs.Failed)
 
 	// 8. POST /api/codal/control (invalid body)
 	rec = httptest.NewRecorder()
@@ -297,7 +323,7 @@ func TestSyncCodalDBDownload_MockServerSuccess(t *testing.T) {
 	req := httptest.NewRequest("POST", "/api/sync/codal/db-download", nil)
 	h.SyncCodalDBDownload(rec, req)
 
-	if rec.Code != http.StatusOK {
+	if rec.Code != http.StatusAccepted {
 		t.Fatalf("SyncCodalDBDownload returned status %d, body: %s", rec.Code, rec.Body.String())
 	}
 
@@ -305,9 +331,17 @@ func TestSyncCodalDBDownload_MockServerSuccess(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &startResp); err != nil {
 		t.Fatalf("parse start response: %v", err)
 	}
-	if startResp["status"] != "success" {
-		t.Fatalf("expected status=success, got %v", startResp)
+	if startResp["status"] != "started" {
+		t.Fatalf("expected status=started, got %v", startResp)
 	}
+	jobID, _ := startResp["job_id"].(string)
+	if jobID == "" {
+		t.Fatalf("expected a real job_id, got %v", startResp)
+	}
+	if startResp["status_url"] != "/api/jobs/"+jobID {
+		t.Fatalf("status_url = %v", startResp["status_url"])
+	}
+	job := waitForJobState(t, h, jobID, jobs.Succeeded)
 
 	// 10. Poll for completion of background goroutine
 	deadline := time.Now().Add(10 * time.Second)
@@ -366,12 +400,12 @@ func TestSyncCodalDBDownload_MockServerSuccess(t *testing.T) {
 		t.Errorf("expected symbol='فولاد', got %q", sym)
 	}
 
-	// 13. Verify dbdlRunning is safely reset to false
-	dbdlMu.Lock()
-	running := dbdlRunning
-	dbdlMu.Unlock()
-	if running {
-		t.Errorf("expected dbdlRunning=false after completion")
+	// 13. The real job finished successfully and no other download is running.
+	if job.State != jobs.Succeeded || job.Error != "" {
+		t.Fatalf("job = %+v", job)
+	}
+	if running, ok := h.jobs.Running(kindCodalDBDownload); ok {
+		t.Errorf("a download job is still running: %+v", running)
 	}
 }
 
@@ -420,6 +454,21 @@ func TestSyncCodalDBDownload_TamperedSignature(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/api/sync/codal/db-download", nil)
 	h.SyncCodalDBDownload(rec, req)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("start status = %d, body: %s", rec.Code, rec.Body.String())
+	}
+	var startResp map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &startResp); err != nil {
+		t.Fatal(err)
+	}
+	jobID, _ := startResp["job_id"].(string)
+	if jobID == "" {
+		t.Fatalf("missing job_id: %v", startResp)
+	}
+	job := waitForJobState(t, h, jobID, jobs.Failed)
+	if job.Error == "" {
+		t.Fatal("failed job must report its error")
+	}
 
 	// Poll until error status
 	deadline := time.Now().Add(5 * time.Second)
@@ -444,12 +493,9 @@ func TestSyncCodalDBDownload_TamperedSignature(t *testing.T) {
 		t.Errorf("expected non-empty error message")
 	}
 
-	// Verify dbdlRunning is false
-	dbdlMu.Lock()
-	running := dbdlRunning
-	dbdlMu.Unlock()
-	if running {
-		t.Errorf("expected dbdlRunning=false after error")
+	// The same job reports the failure; nothing is left "running".
+	if running, ok := h.jobs.Running(kindCodalDBDownload); ok {
+		t.Errorf("tampered download left a running job: %+v", running)
 	}
 }
 

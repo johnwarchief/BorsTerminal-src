@@ -4,16 +4,25 @@ import "borsterminal/backend/internal/tapeflags"
 
 var ftsSetupLabels = map[string]string{"choch": "CHoCH", "dbl": "دابل‌باتم"}
 
-// setupHistory معادلِ _fts_setup_history: مارکرهایِ گذشته با همان قاعدهٔ پنلِ
-// امروز. جت عمداً مارکرِ تاریخی ندارد (رأیِ مالک، دورِ J).
-func setupHistory(candles []candle, sw []swing, limit int) []map[string]any {
+// setupsHistoryNeed معادلِ `1 + max(JET_LADDER)` پایتون: کفِ حلقهٔ مارکرها.
+func setupsHistoryNeed() int {
 	need := 1
 	for _, k := range tapeflags.JetLadder {
 		if k > need {
 			need = k
 		}
 	}
-	need++
+	return need + 1
+}
+
+// setupsRequiredBars معادلِ `1 + max(JET_LADDER) + 1` — کفِ تاریخچهٔ ستاپ‌ها؛
+// زیرِ آن `setups_state=insufficient_history` است.
+func setupsRequiredBars() int { return setupsHistoryNeed() + 1 }
+
+// setupHistory معادلِ _fts_setup_history: مارکرهایِ گذشته با همان قاعدهٔ پنلِ
+// امروز. جت عمداً مارکرِ تاریخی ندارد (رأیِ مالک، دورِ J).
+func setupHistory(candles []candle, sw []swing, limit int) []map[string]any {
+	need := setupsHistoryNeed()
 	n := len(candles)
 	if n < need+1 {
 		return []map[string]any{}

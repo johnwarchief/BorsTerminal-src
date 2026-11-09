@@ -121,7 +121,7 @@ func (s *Service) analyzeSymbol(ctx context.Context, symbol, asOf string) map[st
 	if body, ok := s.cacheGet(s.fts, key, ftsTTL); ok {
 		return body
 	}
-	fts, failure := s.analyzeCandlesSafe(candles, hint)
+	fts, failure := s.analyzeCandlesSafe(candles, symbol, hint)
 	if failure != "" {
 		// معادلِ `except Exception as e` درِ _fts_analyze_symbol: متنِ خطا
 		// درایور-وابسته است، شکلِ بدنه نه.

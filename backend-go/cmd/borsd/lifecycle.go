@@ -86,7 +86,8 @@ type ShutdownConfig struct {
 // ۴. در صورت انقضای مهلت (مهلت ۵ ثانیه‌ای): اجرای srv.Close() برای بستن سوکت‌ها
 // ۵. انتظار کنترل‌شده برای تخلیه Handlerها با tracker.WaitWithTimeout()
 // ۶. تضمین قطعی معماری: فراخوانی closeResources فقط و فقط زمانی که تمام Handlerها تخلیه شده باشند؛
-//    اگر Handler غیرهمکاری همچنان در جریان باشد، دیتابیس هرگز زیر پای آن بسته نمی‌شود.
+//
+//	اگر Handler غیرهمکاری همچنان در جریان باشد، دیتابیس هرگز زیر پای آن بسته نمی‌شود.
 func RunServer(rootCtx context.Context, srv *http.Server, ln net.Listener, tracker *RequestTracker, cfg ShutdownConfig, closeResources func()) error {
 	if cfg.DrainTimeout <= 0 {
 		cfg.DrainTimeout = 5 * time.Second

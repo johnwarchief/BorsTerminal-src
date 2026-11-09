@@ -119,7 +119,8 @@ func cleanCandles(rows []map[string]any) []candle {
 		if v, ok := toFloat(c["volume"]); ok {
 			vol = v
 		}
-		byTime[t] = candle{Time: t, Open: o, High: h, Low: l, Close: cl, Volume: vol}
+		byTime[t] = candle{Time: t, Open: o, High: h, Low: l, Close: cl, Volume: vol,
+			LiveForming: pyTruthy(c["live_forming"])}
 	}
 	keys := make([]string, 0, len(byTime))
 	for k := range byTime {
@@ -134,21 +135,44 @@ func cleanCandles(rows []map[string]any) []candle {
 }
 
 // entry_hint همان قیمتِ سبد است — حدِ ضررِ تفکیکی به آن وابسته است.
-func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out map[string]any) {
+func (s *Service) analyzeCandles(rows []map[string]any, symbol string, entryHint *float64) (out map[string]any) {
 	candles := cleanCandles(rows)
 	swingsD := swingsOf(candles, ftsSwingK)
-	w := resample(candles, "W")
-	m := resample(candles, "M")
-	tf := func(sw []swing, series []candle) map[string]any {
+	// ساختارِ جهت کندلِ تکمیل‌نشده را نمی‌بیند؛ ستاپ‌ها (جت/خروج/ساعت‌شنی) مثلِ
+	// پایتون خودِ جلسه را می‌بینند (api/chart.py:5621-5636).
+	structD := closedOnly(candles)
+	wStruct := s.resampleFor(structD, "W", symbol)
+	mStruct := s.resampleFor(structD, "M", symbol)
+	w := s.resampleFor(candles, "W", symbol)
+	m := s.resampleFor(candles, "M", symbol)
+
+	type tfPack struct {
+		graded  []gradedSwing
+		majors  []gradedSwing
+		info    map[string]any
+		series  []candle
+		verdict map[string]any
+	}
+	makeTF := func(series []candle, sw []swing) tfPack {
+		graded := majorGrade(sw, series)
+		majors, info := majorSummarize(graded)
+		ms := majorSwingsOf(majors)
+		var verdict map[string]any
 		if s.engine == "hybrid" {
-			return classifyTrendHybrid(sw, series)
+			verdict = classifyTrendHybrid(ms, series)
+		} else {
+			verdict = classifyTrend(ms, ftsEqualTol, series, ftsStaleBars)
 		}
-		return classifyTrend(sw, ftsEqualTol, series, ftsStaleBars)
+		return tfPack{graded: graded, majors: majors, info: info,
+			series: series, verdict: verdict}
+	}
+	packs := map[string]tfPack{
+		"D": makeTF(structD, swingsOf(structD, ftsSwingK)),
+		"W": makeTF(wStruct, swingsOf(wStruct, 2)),
+		"M": makeTF(mStruct, swingsOf(mStruct, 2)),
 	}
 	trend := map[string]any{
-		"D":         tf(swingsD, candles),
-		"W":         tf(swingsOf(w, 2), w),
-		"M":         tf(swingsOf(m, 2), m),
+		"D": packs["D"].verdict, "W": packs["W"].verdict, "M": packs["M"].verdict,
 		"alignment": "na",
 	}
 	tD := trend["D"].(map[string]any)["trend"].(string)
@@ -157,6 +181,20 @@ func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out
 	if tD != "na" && tD == tW && tW == tM && (tD == "up" || tD == "down") {
 		trend["alignment"] = tD
 	}
+
+	// پروندهِٔ «چه چیزی رأی را ساخت» — کنارِ رأی، نه داخلِ آن. `provisional` از
+	// سریِ کامل (با کندلِ جلسه) خوانده می‌شود و هرگز رأی نمی‌سازد.
+	fullSeries := map[string][]candle{"D": candles, "W": w, "M": m}
+	kFor := map[string]int{"D": ftsSwingK, "W": 2, "M": 2}
+	majorCtx := map[string]map[string]any{}
+	for _, tf := range []string{"D", "W", "M"} {
+		p := packs[tf]
+		majorCtx[tf] = majorContext(tf, p.graded, p.majors, p.info,
+			p.series, structD, fullSeries[tf], p.verdict, kFor[tf])
+	}
+	trend["major_swings"] = map[string]any{
+		"D": majorCtx["D"], "W": majorCtx["W"], "M": majorCtx["M"]}
+	trend["as_of"] = majorCtx["D"]["as_of"]
 
 	var matrix map[string]any
 	switch tW {
@@ -186,8 +224,8 @@ func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out
 		}
 	}
 	if matrix != nil {
-		wReason := trendReason(trend["W"].(map[string]any))
-		dReason := trendReason(trend["D"].(map[string]any))
+		wReason := trendReasonCtx(trend["W"].(map[string]any), majorCtx["W"])
+		dReason := trendReasonCtx(trend["D"].(map[string]any), majorCtx["D"])
 		matrix["basis"] = map[string]any{"weekly": wReason, "daily": dReason}
 		decision := matrix["decision"].(string)
 		if decision == "REJECT" || decision == "UNKNOWN" {
@@ -254,9 +292,12 @@ func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out
 			hgDesc = "ساعت شنی فعال: RSI هفتگی در آستانه اشباع فروش؛ گیت جهت MA52 خاموش است (افزایش خرید ۲ تا ۴ برابر)"
 		}
 	case !maOK:
-		hgDesc = "MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+		// P0 #7: تعدادِ موجود درِ خودِ متن — نه فقط کناریِ payload.
+		hgDesc = "MA52 سنجیده نشد (" + ftsFa(len(closesW)) +
+			" کندل هفتگی، حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد"
 	case !rsiOK:
-		hgDesc = "RSI(" + strconv.Itoa(rsiPeriod) + ") هفتگی سنجیده نشد — سابقه کافی نیست"
+		hgDesc = "RSI(" + ftsFa(rsiPeriod) + ") هفتگی سنجیده نشد — سابقه کافی نیست (" +
+			ftsFa(len(closesW)) + " کندل هفتگی، حداقل " + ftsFa(rsiPeriod+2) + " لازم)"
 	default:
 		hgDesc = "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
 	}
@@ -282,10 +323,12 @@ func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out
 	}
 	hourglass := map[string]any{
 		"active": hgActive, "weekly_close": weeklyClose, "ma52": ma52Out,
-		"weekly_bars": len(closesW), "weekly_rsi": weeklyRsiOut, "weekly_rsi5": weeklyRsiOut,
+		"weekly_bars": len(closesW), "weekly_rsi": weeklyRsiOut,
 		"rsi_period": rsiPeriod, "rsi_oversold": rsiOversold,
 		"ma52_position_mode": ma52Mode, "ma52_position_match": match,
-		"action": action, "desc": hgDesc,
+		// پهنای سایۀ MA52 — پارامترِ اجرایىِ سرور (B4)، نه ساختۀ رابط.
+		"ma52_band_pct": 3.0,
+		"action":        action, "desc": hgDesc,
 	}
 
 	out = map[string]any{
@@ -296,12 +339,28 @@ func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out
 		"point_hunt":  pointHunt(candles, swingsD),
 		"exit_engine": nil,
 		"hourglass":   hourglass,
+		// نقاطِ ساختاریِ HH/HL/LH/LL — فقط ماژورها، با confirm_time جدا از وقتِ
+		// وقوع (anti-repaint). روزانه تحلیل اصلی است؛ هفتگی زمینه/فیلتر.
+		"structure_points": map[string]any{
+			"D": structurePoints(majorSwingsOf(packs["D"].majors), 14),
+			"W": structurePoints(majorSwingsOf(packs["W"].majors), 14),
+		},
 	}
 	box := doubleBottom(candles, swingsD)
 	out["double_bottom"] = box["double_bottom"]
 	out["range_box"] = box["range_box"]
+	out["pullback"] = pullbackSetup(candles, swingsD, tD, tW)
 	out["exit_engine"] = exitEngine(candles, entryHint)
 	out["setups"] = setupHistory(candles, swingsD, 40)
+	// P0 #11: فهرستِ خالیِ زیرِ کفِ تاریخچه «۰ ستاپ» نیست؛ «ستاپ‌ها سنجیده نشد».
+	need := setupsRequiredBars()
+	state := "insufficient_history"
+	if len(candles) >= need {
+		state = "ok"
+	}
+	out["setups_state"] = state
+	out["setups_bars_available"] = len(candles)
+	out["setups_bars_required"] = need
 	out["status"] = statusBlock(candles, out)
 	out["roles"] = rolesCopy()
 	return out
@@ -315,12 +374,12 @@ func matrixOf(decision, setup, desc string) map[string]any {
 // خطا را به `{"status":"error"}` می‌بَرَد و `get_chart_db` کلیدِ `fts` را `null`
 // می‌گذارد. موتورِ hybrid رویِ سریِ تهی (و هر اشکالِ دیگری که پایتون در آن
 // IndexError می‌گیرد) panic می‌کند؛ اینجا همان نقطه‌ای است که باید مهار شود.
-func (s *Service) analyzeCandlesSafe(rows []map[string]any, entryHint *float64) (
+func (s *Service) analyzeCandlesSafe(rows []map[string]any, symbol string, entryHint *float64) (
 	out map[string]any, failure string) {
 	defer func() {
 		if r := recover(); r != nil {
 			out, failure = nil, fmt.Sprint(r)
 		}
 	}()
-	return s.analyzeCandles(rows, entryHint), ""
+	return s.analyzeCandles(rows, symbol, entryHint), ""
 }

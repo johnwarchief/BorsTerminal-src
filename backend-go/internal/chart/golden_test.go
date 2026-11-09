@@ -3,6 +3,7 @@ package chart
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +12,10 @@ import (
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/parity"
 )
+
+// -update گلدن‌ها را از خروجیِ فعلی بازمی‌نویسد؛ فقط وقتی مجاز است که تغییر
+// عمدی و با اوراکلِ پایتون (TestFTSVectors) اثبات شده باشد.
+var updateGolden = flag.Bool("update", false, "rewrite chart goldens from current output")
 
 const (
 	goldUp    = "عادی01"
@@ -175,6 +180,18 @@ func TestChartGoldens(t *testing.T) {
 			s = openService(t, c.scenario)
 			services[c.scenario] = s
 		}
-		compareGolden(t, c.scenario+"/"+c.name, loadGolden(t, c.scenario, c.name), c.run(s))
+		got := c.run(s)
+		if *updateGolden {
+			raw, err := json.MarshalIndent(got, "", " ")
+			if err != nil {
+				t.Fatalf("%s: marshal: %v", c.name, err)
+			}
+			path := filepath.Join("testdata", "golden", c.scenario, c.name+".json")
+			if err := os.WriteFile(path, append(raw, '\n'), 0o644); err != nil {
+				t.Fatalf("%s: write: %v", c.name, err)
+			}
+			continue
+		}
+		compareGolden(t, c.scenario+"/"+c.name, loadGolden(t, c.scenario, c.name), got)
 	}
 }

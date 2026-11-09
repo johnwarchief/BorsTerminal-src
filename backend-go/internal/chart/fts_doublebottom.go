@@ -46,6 +46,7 @@ func doubleBottom(candles []candle, sw []swing) map[string]any {
 	}
 	box := map[string]any{
 		"active": nil, "top": nil, "bottom": nil, "pct_above_top": nil,
+		"start_date": nil, "end_date": nil,
 		"reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد",
 	}
 	if len(candles) >= 21 {
@@ -65,6 +66,9 @@ func doubleBottom(candles []candle, sw []swing) map[string]any {
 		box["active"] = broke
 		box["top"] = round2(top)
 		box["bottom"] = round2(bot)
+		// دو کرانۀ زمانیِ همان ۲۰ کندل — اطلاعِ «جعبه کجاست» برایِ رسمِ درست.
+		box["start_date"] = trim10(win[0].Time)
+		box["end_date"] = trim10(win[len(win)-1].Time)
 		if broke {
 			box["pct_above_top"] = round2((last.Close - top) / top * 100.0)
 		} else {

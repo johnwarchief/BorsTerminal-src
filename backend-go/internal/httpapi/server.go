@@ -152,6 +152,32 @@ type FtsConfig interface {
 	Post(http.ResponseWriter, *http.Request)
 }
 
+// OCData وضعیت/تعویضِ نسلِ دادهٔ فعال (P0.1). وضعیت شاملِ «نسلی که سرو
+// می‌شود» و «اشاره‌گری که روی دیسک است» جدا است.
+type OCData interface {
+	Status(http.ResponseWriter, *http.Request)
+	Reload(http.ResponseWriter, *http.Request)
+	Rollback(http.ResponseWriter, *http.Request)
+}
+
+// Jobs وضعیتِ Jobهایِ پس‌زمینه با شناسهٔ واقعی (P0.6).
+type Jobs interface {
+	StatusHTTP(http.ResponseWriter, *http.Request)
+}
+
+// OCNotify پایهٔ اعلان (P0.8): فهرست/شمارش/تحویل/تنظیمات از oc_client.db.
+type OCNotify interface {
+	List(http.ResponseWriter, *http.Request)
+	UnreadCount(http.ResponseWriter, *http.Request)
+	Pending(http.ResponseWriter, *http.Request)
+	MarkRead(http.ResponseWriter, *http.Request)
+	MarkAllRead(http.ResponseWriter, *http.Request)
+	Ack(http.ResponseWriter, *http.Request)
+	GetPrefs(http.ResponseWriter, *http.Request)
+	PutPrefs(http.ResponseWriter, *http.Request)
+	Status(http.ResponseWriter, *http.Request)
+}
+
 // Services مجموعه‌ی کلیه سرویس‌های HTTP بورس‌ترمینال.
 type Services struct {
 	Market        Market
@@ -167,6 +193,9 @@ type Services struct {
 	Screener      Screener
 	Funnel        Funnel
 	FtsConfig     FtsConfig
+	OCData        OCData
+	Jobs          Jobs
+	OCNotify      OCNotify
 }
 
 func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications, sy Sync) http.Handler {
@@ -289,6 +318,25 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("POST /api/funnel", srv.Funnel.PostFunnel)
 		mux.HandleFunc("GET /api/funnel/registry", srv.Funnel.Registry)
 		mux.HandleFunc("GET /api/funnel/trace", srv.Funnel.Trace)
+	}
+	if srv.OCData != nil {
+		mux.HandleFunc("GET /api/oc/data", srv.OCData.Status)
+		mux.HandleFunc("POST /api/oc/data/reload", srv.OCData.Reload)
+		mux.HandleFunc("POST /api/oc/data/rollback", srv.OCData.Rollback)
+	}
+	if srv.Jobs != nil {
+		mux.HandleFunc("GET /api/jobs/{id}", srv.Jobs.StatusHTTP)
+	}
+	if srv.OCNotify != nil {
+		mux.HandleFunc("GET /api/oc/notifications", srv.OCNotify.List)
+		mux.HandleFunc("GET /api/oc/notifications/unread-count", srv.OCNotify.UnreadCount)
+		mux.HandleFunc("GET /api/oc/notifications/pending", srv.OCNotify.Pending)
+		mux.HandleFunc("POST /api/oc/notifications/read-all", srv.OCNotify.MarkAllRead)
+		mux.HandleFunc("GET /api/oc/notifications/preferences", srv.OCNotify.GetPrefs)
+		mux.HandleFunc("PUT /api/oc/notifications/preferences", srv.OCNotify.PutPrefs)
+		mux.HandleFunc("GET /api/oc/notifications/status", srv.OCNotify.Status)
+		mux.HandleFunc("POST /api/oc/notifications/{id}/read", srv.OCNotify.MarkRead)
+		mux.HandleFunc("POST /api/oc/notifications/{id}/ack", srv.OCNotify.Ack)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

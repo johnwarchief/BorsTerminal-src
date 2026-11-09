@@ -102,6 +102,28 @@ fn watch_parent(pid: u32, app: tauri::AppHandle) {
 #[cfg(not(windows))]
 fn watch_parent(_pid: u32, _app: tauri::AppHandle) {}
 
+/// پوسته فقط webview محلیِ borsd را باز می‌کند؛ `--url` نمی‌تواند به میزبانِ
+/// بیرونی یا scheme دیگری اشاره کند (P0.4).
+fn ensure_loopback_shell_url(url: &tauri::Url) -> Result<(), String> {
+    // host_str برایِ IPv6 بسته به نسخهٔ url با/بی‌براکت برمی‌گردد؛ هر دو را
+    // یکسان می‌سنجیم تا `http://[::1]` هم همان loopback باشد.
+    let host = url
+        .host_str()
+        .unwrap_or("")
+        .trim_start_matches('[')
+        .trim_end_matches(']');
+    let loopback = host == "127.0.0.1" || host == "localhost" || host == "::1";
+    if url.scheme() != "http" || !loopback {
+        return Err(format!(
+            "refusing non-loopback shell url: {} (host={}, scheme={})",
+            url,
+            host,
+            url.scheme()
+        ));
+    }
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -123,6 +145,7 @@ pub fn run() {
             let builder = match args.url.as_deref() {
                 Some(u) => {
                     let url: tauri::Url = u.parse()?;
+                    ensure_loopback_shell_url(&url)?;
                     WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
                 }
                 None => {
@@ -241,6 +264,31 @@ mod tests {
         assert!(a.profile.is_some());
         assert!(a.settings.is_some());
         assert!(a.ready.is_some());
+    }
+
+    #[test]
+    fn shell_url_accepts_only_http_loopback() {
+        for raw in [
+            "http://127.0.0.1:8198/",
+            "http://localhost:8198/index.html",
+            "http://[::1]:8198/",
+        ] {
+            let url: tauri::Url = raw.parse().unwrap();
+            assert!(ensure_loopback_shell_url(&url).is_ok(), "{raw} must be allowed");
+        }
+        for raw in [
+            "http://192.168.1.10:8198/",
+            "http://example.com/",
+            "https://127.0.0.1:8198/",
+            "file:///C:/Windows/System32/calc.exe",
+            "javascript:alert(1)",
+        ] {
+            let url: tauri::Url = raw.parse().unwrap();
+            assert!(
+                ensure_loopback_shell_url(&url).is_err(),
+                "{raw} must be rejected"
+            );
+        }
     }
 
     #[test]
