@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"borsterminal/backend/internal/db"
+	"borsterminal/backend/internal/pointerfile"
 	_ "modernc.org/sqlite"
 )
 
@@ -72,7 +73,7 @@ func NewApplier(cfg ApplierConfig) (*Applier, error) {
 // ActiveGeneration reads and unmarshals active_generation.json.
 func (a *Applier) ActiveGeneration() (*GenerationPointer, error) {
 	activeFile := filepath.Join(a.cfg.DataDir, "active_generation.json")
-	data, err := os.ReadFile(activeFile)
+	data, err := pointerfile.Read(activeFile)
 	if err != nil {
 		return nil, fmt.Errorf("read active generation: %w", err)
 	}
@@ -273,12 +274,9 @@ func (a *Applier) ApplySnapshotSet(stagingDir string, manifest *Manifest) error 
 		return fmt.Errorf("write active_generation.json.tmp: %w", err)
 	}
 
-	if err := os.Rename(tmpFile, activeFile); err != nil {
-		_ = os.Remove(activeFile)
-		if err2 := os.Rename(tmpFile, activeFile); err2 != nil {
-			_ = os.Remove(tmpFile)
-			return fmt.Errorf("atomic rename active generation pointer: %w", err2)
-		}
+	if err := pointerfile.Replace(tmpFile, activeFile); err != nil {
+		_ = os.Remove(tmpFile)
+		return fmt.Errorf("atomic rename active generation pointer: %w", err)
 	}
 
 	success = true
@@ -338,12 +336,9 @@ func (a *Applier) Rollback() error {
 		return fmt.Errorf("write active_generation.json.tmp for rollback: %w", err)
 	}
 
-	if err := os.Rename(tmpFile, activeFile); err != nil {
-		_ = os.Remove(activeFile)
-		if err2 := os.Rename(tmpFile, activeFile); err2 != nil {
-			_ = os.Remove(tmpFile)
-			return fmt.Errorf("atomic rename active generation pointer during rollback: %w", err2)
-		}
+	if err := pointerfile.Replace(tmpFile, activeFile); err != nil {
+		_ = os.Remove(tmpFile)
+		return fmt.Errorf("atomic rename active generation pointer during rollback: %w", err)
 	}
 
 	return nil

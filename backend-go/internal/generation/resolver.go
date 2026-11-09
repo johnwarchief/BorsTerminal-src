@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"borsterminal/backend/internal/pointerfile"
 )
 
 const PointerFile = "active_generation.json"
@@ -79,7 +81,7 @@ func (r *Resolver) Resolve() (Info, error) {
 		CodalPath:  filepath.Join(r.dataDir, "codal.db"),
 	}
 
-	raw, err := os.ReadFile(filepath.Join(r.dataDir, PointerFile))
+	raw, err := pointerfile.Read(filepath.Join(r.dataDir, PointerFile))
 	if errors.Is(err, os.ErrNotExist) {
 		return info, nil
 	}
@@ -114,14 +116,33 @@ func (r *Resolver) Resolve() (Info, error) {
 	if err != nil || !fi.IsDir() {
 		return Info{}, fmt.Errorf("%w: generation_dir %s is not a directory", ErrInvalidPointer, genDir)
 	}
+	// مقایسهٔ متنی کافی نیست: symlink/junction می‌تواند مسیرِ داخلِ dataDir را
+	// به بیرون وصل کند. مسیرِ واقعیِ هر دو طرف را حل و دوباره محدود می‌کنیم.
+	realBase, err := filepath.EvalSymlinks(r.dataDir)
+	if err != nil {
+		return Info{}, fmt.Errorf("%w: resolve data dir: %v", ErrInvalidPointer, err)
+	}
+	realGen, err := filepath.EvalSymlinks(genDir)
+	if err != nil {
+		return Info{}, fmt.Errorf("%w: resolve generation_dir %s: %v", ErrInvalidPointer, genDir, err)
+	}
+	if !within(realBase, realGen) {
+		return Info{}, fmt.Errorf("%w: generation_dir %s resolves outside data dir", ErrInvalidPointer, genDir)
+	}
 
 	marketPath := filepath.Join(genDir, "market.db")
 	if fi, err := os.Stat(marketPath); err != nil || fi.IsDir() {
 		return Info{}, fmt.Errorf("%w: generation %s has no market.db", ErrInvalidPointer, p.SnapshotSetID)
 	}
+	realMarket, err := filepath.EvalSymlinks(marketPath)
+	if err != nil || !within(realGen, realMarket) {
+		return Info{}, fmt.Errorf("%w: generation %s market.db resolves outside the generation", ErrInvalidPointer, p.SnapshotSetID)
+	}
 	codalPath := filepath.Join(genDir, "codal.db")
 	if fi, err := os.Stat(codalPath); err != nil || fi.IsDir() {
 		codalPath = ""
+	} else if realCodal, err := filepath.EvalSymlinks(codalPath); err != nil || !within(realGen, realCodal) {
+		return Info{}, fmt.Errorf("%w: generation %s codal.db resolves outside the generation", ErrInvalidPointer, p.SnapshotSetID)
 	}
 
 	ptr := p
@@ -145,7 +166,7 @@ func within(base, path string) bool {
 // CurrentPointer فایلِ اشاره‌گر روی دیسک را (حتی اگر instance هنوز آن را
 // بارگذاری نکرده باشد) می‌خواند؛ برایِ وضعیتِ صادقانهٔ apply-بدون-reload.
 func (r *Resolver) CurrentPointer() (*Pointer, error) {
-	raw, err := os.ReadFile(filepath.Join(r.dataDir, PointerFile))
+	raw, err := pointerfile.Read(filepath.Join(r.dataDir, PointerFile))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}

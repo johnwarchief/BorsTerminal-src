@@ -5,11 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"borsterminal/backend/internal/pointerfile"
 )
 
 // safeReadJSON یک فایل JSON را خوانده و در صورت خطا map خالی برمی‌گرداند.
 func safeReadJSON(path string) map[string]any {
-	data, err := os.ReadFile(path)
+	data, err := pointerfile.Read(path)
 	if err != nil {
 		return map[string]any{}
 	}

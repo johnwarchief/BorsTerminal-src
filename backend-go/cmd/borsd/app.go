@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -87,8 +88,15 @@ type runtime struct {
 	oc       *ocdb.Store
 	notify   *ocnotify.Store
 
-	swapMu sync.Mutex
-	cur    atomic.Pointer[appInstance]
+	swapMu sync.Mutex   // Reload/Rollback/Close را سریالی می‌کند
+	ptrMu  sync.RWMutex // اشاره‌گرِ نسل + گرفتنِ ref را اتمیک می‌کند
+	cur    *appInstance
+	drain  sync.WaitGroup // درخواست‌هایِ پذیرفته‌شده تا بسته‌شدنِ منبع‌هایِ سطحِ runtime
+	closed bool           // پس از Close هیچ Reloadی نسل تازه نمی‌سازد
+
+	// testHook پس از پذیرشِ اتمیکِ درخواست اجرا می‌شود تا تست بتواند ترتیبِ
+	// Reload/acquire را قطعی بازتولید کند؛ در تولید nil است.
+	testHook func(*appInstance)
 }
 
 func newRuntime(ctx context.Context, cfg config.Config) (*runtime, error) {
@@ -110,20 +118,43 @@ func newRuntime(ctx context.Context, cfg config.Config) (*runtime, error) {
 		_ = ocStore.Close()
 		return nil, err
 	}
-	rt.cur.Store(inst)
+	rt.cur = inst
 	return rt, nil
 }
 
+// acquireCurrent اشاره‌گر و ref را زیرِ یک قفلِ خواندن می‌گیرد؛ تعویض/بازنشسته
+// کردن زیرِ قفلِ نوشتن است، پس درخواست هرگز به نسخهٔ بسته‌شده نمی‌رسد.
+func (rt *runtime) acquireCurrent() *appInstance {
+	rt.ptrMu.RLock()
+	defer rt.ptrMu.RUnlock()
+	inst := rt.cur
+	if inst == nil {
+		return nil
+	}
+	rt.drain.Add(1)
+	inst.acquire()
+	return inst
+}
+
+func (rt *runtime) current() *appInstance {
+	rt.ptrMu.RLock()
+	defer rt.ptrMu.RUnlock()
+	return rt.cur
+}
+
 func (rt *runtime) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	inst := rt.cur.Load()
+	inst := rt.acquireCurrent()
 	if inst == nil {
 		httpapi.WriteJSON(w, http.StatusServiceUnavailable, map[string]any{
 			"status": "error", "code": "NO_ACTIVE_GENERATION",
 		})
 		return
 	}
-	inst.acquire()
+	defer rt.drain.Done()
 	defer inst.release()
+	if rt.testHook != nil {
+		rt.testHook(inst)
+	}
 	inst.handler.ServeHTTP(w, r)
 }
 
@@ -132,12 +163,15 @@ func (rt *runtime) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (rt *runtime) Reload() error {
 	rt.swapMu.Lock()
 	defer rt.swapMu.Unlock()
+	if rt.closed {
+		return errors.New("runtime is closed")
+	}
 
 	info, err := rt.resolver.Resolve()
 	if err != nil {
 		return err
 	}
-	cur := rt.cur.Load()
+	cur := rt.current()
 	if cur != nil && cur.info.Identity() == info.Identity() {
 		return nil
 	}
@@ -145,10 +179,15 @@ func (rt *runtime) Reload() error {
 	if err != nil {
 		return err
 	}
-	rt.cur.Store(inst)
-	if cur != nil {
-		cur.retired.Store(true)
-		cur.release() // ref پایه؛ close فقط بعد از تخلیهٔ درخواست‌ها
+	rt.ptrMu.Lock()
+	old := rt.cur
+	rt.cur = inst
+	if old != nil {
+		old.retired.Store(true)
+	}
+	rt.ptrMu.Unlock()
+	if old != nil {
+		old.release() // ref پایه؛ close فقط بعد از تخلیهٔ درخواست‌ها
 	}
 	slog.Info("active generation switched", "generation", info.Identity(),
 		"market_db", info.MarketPath)
@@ -156,6 +195,12 @@ func (rt *runtime) Reload() error {
 }
 
 func (rt *runtime) Rollback() error {
+	rt.swapMu.Lock()
+	closed := rt.closed
+	rt.swapMu.Unlock()
+	if closed {
+		return errors.New("runtime is closed")
+	}
 	applier, err := newSnapshotApplier(rt.cfg.DataDir)
 	if err != nil {
 		return err
@@ -169,7 +214,7 @@ func (rt *runtime) Rollback() error {
 // DataStatus وضعیتِ «آن‌چه سرو می‌شود» و «آن‌چه روی دیسک است» را جدا می‌دهد؛
 // اختلافشان یعنی Apply انجام شده ولی Reload نه.
 func (rt *runtime) DataStatus() map[string]any {
-	inst := rt.cur.Load()
+	inst := rt.current()
 	serving := map[string]any{"mode": "none"}
 	if inst != nil {
 		info := inst.info
@@ -350,15 +395,25 @@ func newSnapshotApplier(dataDir string) (*snapshot.Applier, error) {
 }
 
 // Close پس از تخلیهٔ درخواست‌ها فراخوانی می‌شود (RunServer تضمین می‌کند)؛
-// نسخهٔ فعلی را بازنشسته و آزاد می‌کند.
+// نسخهٔ فعلی را بازنشسته و آزاد می‌کند. اگر مستقیم و در حضورِ درخواستِ فعال
+// صدا زده شود، تا پایانِ آن‌ها صبر می‌کند و منبع‌هایِ سطحِ runtime را زودتر
+// از موعد نمی‌بندد.
 func (rt *runtime) Close() {
 	rt.swapMu.Lock()
-	defer rt.swapMu.Unlock()
-	inst := rt.cur.Swap(nil)
+	rt.closed = true
+	rt.ptrMu.Lock()
+	inst := rt.cur
+	rt.cur = nil
 	if inst != nil {
 		inst.retired.Store(true)
+	}
+	rt.ptrMu.Unlock()
+	rt.swapMu.Unlock()
+
+	if inst != nil {
 		inst.release()
 	}
+	rt.drain.Wait()
 	if rt.oc != nil {
 		_ = rt.oc.Close()
 	}

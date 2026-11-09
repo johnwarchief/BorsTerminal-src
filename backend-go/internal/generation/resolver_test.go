@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -140,5 +142,59 @@ func TestCurrentPointer(t *testing.T) {
 	p, err := New(dataDir).CurrentPointer()
 	if err != nil || p == nil || p.SnapshotSetID != "p1" {
 		t.Fatalf("pointer=%+v err=%v", p, err)
+	}
+}
+
+// dirLink یک symlink (یا رویِ ویندوز junction که بدونِ ادمین ساخته می‌شود)
+// می‌سازد؛ اگر محیط اجازه نداد تست skip می‌شود، نه پاس.
+func dirLink(t *testing.T, target, link string) {
+	t.Helper()
+	if err := os.Symlink(target, link); err == nil {
+		return
+	}
+	if runtime.GOOS == "windows" {
+		if out, err := exec.Command("cmd", "/c", "mklink", "/J", link, target).CombinedOutput(); err == nil {
+			return
+		} else {
+			t.Skipf("cannot create symlink or junction: %v (%s)", err, out)
+		}
+	}
+	t.Skip("cannot create symlink in this environment")
+}
+
+func TestResolveRejectsSymlinkedGenerationEscape(t *testing.T) {
+	dataDir := t.TempDir()
+	outside := t.TempDir()
+	writeFile(t, filepath.Join(outside, "market.db"), "outside")
+
+	link := filepath.Join(dataDir, "gens", "link")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	dirLink(t, outside, link)
+	writePointer(t, dataDir, Pointer{SnapshotSetID: "link", GenerationDir: "gens/link", SchemaVersion: 1})
+
+	_, err := New(dataDir).Resolve()
+	if !errors.Is(err, ErrInvalidPointer) {
+		t.Fatalf("generation_dir via reparse point must be rejected, got %v", err)
+	}
+}
+
+func TestResolveRejectsSymlinkedMarketDB(t *testing.T) {
+	dataDir := t.TempDir()
+	gen := filepath.Join(dataDir, "gens", "gen_linked_db")
+	if err := os.MkdirAll(gen, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outsideDB := filepath.Join(t.TempDir(), "outside.db")
+	writeFile(t, outsideDB, "outside")
+	if err := os.Symlink(outsideDB, filepath.Join(gen, "market.db")); err != nil {
+		t.Skipf("cannot create file symlink: %v", err)
+	}
+	writePointer(t, dataDir, Pointer{SnapshotSetID: "linked_db", GenerationDir: "gens/gen_linked_db", SchemaVersion: 1})
+
+	_, err := New(dataDir).Resolve()
+	if !errors.Is(err, ErrInvalidPointer) {
+		t.Fatalf("symlinked market.db must be rejected, got %v", err)
 	}
 }

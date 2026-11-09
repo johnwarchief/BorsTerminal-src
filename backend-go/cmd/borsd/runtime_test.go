@@ -52,7 +52,7 @@ func testConfig(dataDir string) config.Config {
 
 func currentMarker(t *testing.T, rt *runtime) string {
 	t.Helper()
-	inst := rt.cur.Load()
+	inst := rt.current()
 	if inst == nil {
 		t.Fatal("no active instance")
 	}
@@ -121,7 +121,7 @@ func TestGenerationApplyRestartQueryRollback(t *testing.T) {
 	rtRestart.Close()
 
 	// Apply: pointer moves to gen_two; reload swaps without restart.
-	old := rt.cur.Load()
+	old := rt.current()
 	writeGenPointer(t, dataDir, generation.Pointer{
 		SnapshotSetID: "two", GenerationDir: "gens/gen_two", SchemaVersion: 1,
 		AppliedAtUTC:          "2026-11-09T00:10:00Z",
