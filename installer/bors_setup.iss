@@ -70,7 +70,15 @@ Name: "desktopicon"; Description: "ساخت آیکون روی دسکتاپ"; Gro
 Name: "startmenuicon"; Description: "ساخت آیکون در منوی استارت"; GroupDescription: "آیکون‌های اضافه:"; Flags: checkedonce
 
 [Files]
-Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+; market.dbِ همراهِ بسته فقط «قالبِ اسکیمایِ جاری + تابلوِ همان روزِ بیلد»
+; است؛ تاریخچهٔ کامل در seed (‏market.db.gz/.lzma) است و borsd در اولین اجرا
+; آن را در همین قالب ادغام می‌کند. پس در ارتقا هرگز رویِ بازار‌دیتابیسِ کاربر
+; نوشته نمی‌شود: حذف از wildcard و کپی فقط وقتی فایل وجود ندارد.
+Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion; Excludes: "market.db,market.db-wal,market.db-shm,market.db.lzma"
+Source: "{#BundleDir}\market.db"; DestDir: "{app}"; Flags: onlyifdoesntexist ignoreversion skipifsourcedoesntexist
+; seedِ سریع (gzip) در بیلد از market.db.lzma ساخته می‌شود؛ Go آن را در ~۲
+; ثانیه باز می‌کند، در حالی که XZِ خالص‌Go در همین ماشین ~۳ دقیقه بود.
+Source: "{#BundleDir}\market.db.gz"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\market.db.lzma"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 ; v1.0.10: اعمال‌کنندهٔ پچ دلتا. باید قبل از رسیدنِ هر پچ روی دیسک باشد تا
 ; آپدیتِرِ درون‌برنامه‌ای بتواند آن را spawn کند. این فایل خودش را در %TEMP%
@@ -107,6 +115,12 @@ Type: files; Name: "{app}\market.db"
 Type: files; Name: "{app}\market.db-wal"
 Type: files; Name: "{app}\market.db-shm"
 Type: files; Name: "{app}\market.db.lzma"
+Type: files; Name: "{app}\market.db.gz"
+Type: files; Name: "{app}\market_seed.json"
+Type: files; Name: "{app}\market_seed.json.tmp"
+Type: files; Name: "{app}\market.db.seed.src"
+Type: files; Name: "{app}\market.db.seed.src-wal"
+Type: files; Name: "{app}\market.db.seed.src-shm"
 Type: files; Name: "{app}\market.db.baseline"
 Type: files; Name: "{app}\market.db.stale"
 Type: files; Name: "{app}\market.db.stale-wal"
@@ -138,6 +152,12 @@ Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db-wal"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db-shm"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.lzma"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.gz"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market_seed.json"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market_seed.json.tmp"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.seed.src"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.seed.src-wal"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.seed.src-shm"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.baseline"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.stale"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.stale-wal"
@@ -274,7 +294,8 @@ begin
             Continue;                       // نصبِ ثبت‌شده — به آن دست نزن
           ExePath := Dir + '\BorsTerminal_Ultimate.exe';
           HasPayload := FileExists(ExePath) or FileExists(Dir + '\market.db')
-                        or FileExists(Dir + '\market.db.lzma');
+                        or FileExists(Dir + '\market.db.lzma')
+                        or FileExists(Dir + '\market.db.gz');
           if not HasPayload then
             Continue;                       // پوشهٔ بی‌ربطِ همنام
           if DelTree(Dir, True, True, True) then
@@ -305,10 +326,13 @@ begin
     Result := (ResultCode = 0);
 end;
 
-// market.db ای که برنامه در زمانِ اجرا از market.db.lzma استخراج کرده.
+// market.db ای که برنامه در زمانِ اجرا از seed ساخته.
 procedure DeleteRuntimeDb;
 begin
   DeleteFile(ExpandConstant('{app}\market.db'));
+  // وضعیتِ seedِ کهنه پاک شود تا اجرای بعدی با seedِ همین نسخه دوباره بسازد
+  DeleteFile(ExpandConstant('{app}\market_seed.json'));
+  DeleteFile(ExpandConstant('{app}\market.db.seed.src'));
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -336,6 +360,8 @@ begin
         begin
           DeleteFile(ExpandConstant('{app}\market.db'));
           DeleteFile(ExpandConstant('{app}\market.db.lzma'));
+          DeleteFile(ExpandConstant('{app}\market.db.gz'));
+          DeleteFile(ExpandConstant('{app}\market_seed.json'));
           // برگرداندنِ متنِ غیرخالی = توقفِ نصب (با یک پیام به کاربر)
           Result := 'برنامه به‌طور کامل حذف شد. نصبِ نسخهٔ جدید لغو شد.';
         end

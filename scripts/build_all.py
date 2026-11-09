@@ -7,7 +7,8 @@
   - BorsTerminal_Ultimate.exe (بک‌اند سبک و فوق‌سریع Go)
   - BorsTerminal_Shell.exe (پوسته پنجره بومی دسکتاپ Tauri Rust)
   - frontend/ (دارایی‌های کامپایل‌شده React + TypeScript مدرن frontend-v2)
-  - market.db (دیتابیس بازار در صورت وجود)
+  - market.db (قالبِ اسکیمای جاری برای نصب تازه؛ در ارتقا دست‌نخورده می‌ماند)
+  - market.db.gz (seed تاریخی برای ادغام در اولین اجرا؛ از market.db.lzma)
 """
 import argparse
 import os
@@ -100,6 +101,16 @@ def main():
         if not os.path.isfile(dest_db) or os.path.getsize(dest_db) != os.path.getsize(market_db):
             print(f'[db] copying market.db -> {dest_db}')
             shutil.copy2(market_db, dest_db)
+
+    # seedِ تاریخی: XZ برای آرشیو می‌ماند، اما نسخهٔ gzip کنارِ آن ساخته می‌شود
+    # تا borsd در اولین اجرا آن را با stdlib در چند ثانیه باز کند (خواندنِ
+    # XZِ خالص‌Go برای ۲۸۰ مگابایت حدودِ سه دقیقه است). اگر .lzma نبود،
+    # بسته مثلِ قبل با market.dbِ قالب بالا می‌آید و seed در دسترس نیست.
+    seed_lzma = os.path.join(ROOT, 'market.db.lzma')
+    if os.path.isfile(seed_lzma):
+        fast_seed = os.path.join(OUT, 'market.db.gz')
+        run(f'"{sys.executable}" "{os.path.join(ROOT, "scripts", "make_fast_seed.py")}" '
+            f'"{seed_lzma}" "{fast_seed}"', ROOT, 'seed: market.db.gz')
 
     corrections_dir = os.path.join(ROOT, 'data', 'ra365_corrections')
     if os.path.isdir(corrections_dir):

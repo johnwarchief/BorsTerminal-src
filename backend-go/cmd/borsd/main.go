@@ -18,6 +18,7 @@ import (
 	"borsterminal/backend/internal/auth"
 	"borsterminal/backend/internal/config"
 	"borsterminal/backend/internal/instance"
+	"borsterminal/backend/internal/seed"
 )
 
 func main() {
@@ -42,6 +43,26 @@ func main() {
 		slog.Error("single-instance lock failed", "err", err, "data", cfg.DataDir)
 		_ = ln.Close()
 		os.Exit(1)
+	}
+
+	// نگه‌داشتنِ دادهٔ تاریخیِ بسته: نصاب یک market.dbِ تک‌روزه و یک
+	// market.db.lzmaِ کامل کنارِ هم می‌گذارد. این مرحله پیش از باز شدنِ
+	// دیتابیس (و پیش از هر نویسندهٔ دیگر، چون قفلِ تک‌نمونه گرفته شده) یا
+	// seed را استخراج می‌کند یا ردیف‌هایش را در یک کپی ادغام می‌کند و فقط
+	// پس از اعتبارسنجی، فایل را اتمیک جایگزین می‌کند.
+	seedRes, seedErr := seed.Ensure(seed.Options{DataDir: cfg.DataDir, SeedPath: os.Getenv("BORS_SEED_PATH"), Logger: slog.Default()})
+	if seedErr != nil {
+		slog.Warn("market seed not applied; continuing with the existing database", "err", seedErr, "data", cfg.DataDir)
+	} else if seedRes.Applied {
+		slog.Info("market seed applied",
+			"mode", seedRes.Mode,
+			"price_rows", seedRes.State.PriceHistoryRows,
+			"first_candle", seedRes.State.PriceHistoryFirst,
+			"last_candle", seedRes.State.PriceHistoryLast,
+			"backup", seedRes.State.Backup,
+			"data", cfg.DataDir)
+	} else {
+		slog.Info("market seed skipped", "reason", seedRes.Reason, "data", cfg.DataDir)
 	}
 
 	rt, err := newRuntime(rootCtx, cfg)

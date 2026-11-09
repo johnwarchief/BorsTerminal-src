@@ -240,6 +240,14 @@ market.db.baseline.*
 market.db.*-backup*
 market.db.*-back*-*
 market.db.meta.json
+# runtime seed products/state (borsd builds these beside the database)
+market.db.gz
+market.db.part
+market.db.part-*
+market.db.seed.src
+market.db.seed.src-*
+market_seed.json
+market_seed.json.tmp
 # لاگِ خروجیِ فرمان‌هایِ تست/بیلد که ریشه می‌نشیند (بازتولیدشدنی)
 /tests_output.txt
 /build_log.txt
@@ -256,3 +264,6 @@ _audit/phase47/lab/
 _audit/phase47/bundle/
 _audit/phase47/install/
 _audit/phase47/
+
+# Phase 4.8 Closeout lab artifacts (raw data and local evidence only)
+_audit/phase48closeout/

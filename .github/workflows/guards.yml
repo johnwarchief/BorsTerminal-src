@@ -193,6 +193,17 @@ jobs:
           fi
           test -f market.db
           cp market.db "$B/market.db"
+          # دادهٔ کامل: seed از مخزن نیست (*.lzma ایگنور است)، پس از ریلیزِ
+          # دادهٔ موجود دانلود می‌شود. market.db.gz مشتقِ سریعِ همان seed است
+          # که borsd در اولین اجرا در قالبِ market.db ادغام می‌کند.
+          if [ ! -f market.db.lzma ]; then
+            echo "::notice::[seed] downloading canonical data baseline from data-latest"
+            curl -fsSL --retry 2 --output market.db.lzma \
+              "https://github.com/johnwarchief/BorsTerminal/releases/download/data-latest/market.db.lzma"
+          fi
+          test -f market.db.lzma
+          python scripts/make_fast_seed.py market.db.lzma "$B/market.db.gz"
+          python scripts/make_fast_seed.py --verify "$B/market.db.gz"
           cp scripts/apply_update.bat "$B/apply_update.bat"
           ( cd backend-go && go build -o ../dist-ci/BorsTerminal_Ultimate/BorsTerminal_Ultimate.exe ./cmd/borsd )
           python scripts/build_shell.py --dist "$B"
@@ -205,6 +216,14 @@ jobs:
           set -e
           python dev/onedir_contract_v11.py --dist dist-ci
           ( cd backend-go && go run ./cmd/bundlecheck -path ../dist-ci/BorsTerminal_Ultimate -json )
+
+      - name: Seed merge test (real 445k-row seed)
+        shell: bash
+        working-directory: backend-go
+        env:
+          BORS_REAL_SEED: ${{ github.workspace }}/dist-ci/BorsTerminal_Ultimate/market.db.gz
+          BORS_REAL_TEMPLATE: ${{ github.workspace }}/dist-ci/BorsTerminal_Ultimate/market.db
+        run: go test ./internal/seed -run TestRealSeedMerge -count=1 -v
 
       - name: Artifact hashes
         shell: bash

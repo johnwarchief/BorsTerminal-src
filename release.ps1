@@ -290,18 +290,17 @@ function Clear-DistRuntime {
 function Build-Setup {
     Assert-DistFresh
     if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe") -or -not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) { Build-Frontend; Build-Exe }
-    if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$Bundle\market.db.lzma" -Force }
     # هر باقی‌ماندهٔ زمانِ اجرا از باندل بیرون می‌ماند؛ خودِ این پاک‌سازی در
     # Assert-DistFresh است تا مسیرهایِ portable/patch هم از آن بی‌بهره نمانند.
     # بازارِ داده کنارِ EXE باندل می‌شود، داخلِ آن نه. نبودش یعنی اپ بالا
     # می‌آید ولی تابلو خالی است — و نصاب هم ساخته می‌شود، پس این تنها جایی است
     # که می‌توان جلویِ ریلیزِ بی‌داده را گرفت.
-    $distLzma = "$Bundle\market.db.lzma"
-    if (-not (Test-Path $distLzma) -or (Get-Item $distLzma).Length -lt 1MB) {
-        Write-Error '[setup] market.db.lzma is not beside the EXE (missing or under 1 MB) - nothing would be installed. ABORT.'
+    $distSeed = "$Bundle\market.db.gz"
+    if (-not (Test-Path $distSeed) -or (Get-Item $distSeed).Length -lt 1MB) {
+        Write-Error '[setup] market.db.gz is not beside the EXE (missing or under 1 MB) - fresh installs would have no candle history. ABORT.'
         exit 1
     }
-    Write-Host ('[setup] market.db.lzma beside exe: ' + [math]::Round((Get-Item $distLzma).Length / 1MB, 1) + ' MB')
+    Write-Host ('[setup] market.db.gz beside exe: ' + [math]::Round((Get-Item $distSeed).Length / 1MB, 1) + ' MB')
     Write-Host '[setup] Inno Setup'
     & $ISCC "/DBundleDir=$Bundle" "$root\installer\bors_setup.iss"
     if ($LASTEXITCODE -ne 0) {
@@ -407,13 +406,10 @@ function Build-Portable {
         Copy-Item -LiteralPath $_.FullName -Destination $stage -Recurse -Force
     }
 
-    # market.db.lzma کنارِ EXE: پرتابیل هم دادۀ بازار را از همین مسیر باز
+    # market.db.gz کنارِ EXE: پرتابیل هم دادۀ بازار را از همین مسیر باز
     # می‌کند (onedirِ کنارِ باینری، نه داخلِ آن). نبودش یعنی تابلویِ خالی.
-    if (-not (Test-Path (Join-Path $stage 'market.db.lzma'))) {
-        if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' $stage -Force }
-    }
-    if (-not (Test-Path (Join-Path $stage 'market.db.lzma'))) {
-        Write-Error '[portable] market.db.lzma درِ بسته نیست: پرتابیل بالا می‌آید ولی تابلو خالی می‌ماند. ABORT.'
+    if (-not (Test-Path (Join-Path $stage 'market.db.gz'))) {
+        Write-Error '[portable] market.db.gz درِ بسته نیست: پرتابیل بالا می‌آید ولی تابلو خالی می‌ماند. ABORT.'
         exit 1
     }
 
