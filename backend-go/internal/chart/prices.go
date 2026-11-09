@@ -29,7 +29,7 @@ func strOrNil(v sql.NullString) any {
 
 // priceRows تاریخچهٔ یک نماد را با حذفِ تکرارِ روز (پرحجم‌تر می‌ماند) و
 // ترتیبِ صعودی برمی‌گرداند — همان قراردادِ key-levels/patterns.
-func (s *Service) priceRows(ctx context.Context, symbol string, limit int) ([]map[string]any, error) {
+func (s *Service) priceRows(ctx context.Context, symbol string, limit int) ([]map[string]any, int, error) {
 	pred, params := s.pred(ctx, "symbol", symbol)
 	q := fmt.Sprintf("SELECT symbol, date, open, high, low, close, volume, last "+
 		"FROM price_history WHERE %s ORDER BY date DESC, volume DESC", pred)
@@ -39,17 +39,19 @@ func (s *Service) priceRows(ctx context.Context, symbol string, limit int) ([]ma
 	}
 	rs, err := s.market.QueryContext(ctx, q, params...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rs.Close()
 	seen := map[string]bool{}
 	rows := []map[string]any{}
+	rawRows := 0
 	for rs.Next() {
 		var sym, date string
 		var open, high, low, closeP, volume, last sql.NullFloat64
 		if err := rs.Scan(&sym, &date, &open, &high, &low, &closeP, &volume, &last); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		rawRows++
 		if seen[date] {
 			continue
 		}
@@ -61,10 +63,10 @@ func (s *Service) priceRows(ctx context.Context, symbol string, limit int) ([]ma
 		})
 	}
 	if err := rs.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	reverseRows(rows)
-	return rows, nil
+	return rows, rawRows, nil
 }
 
 func reverseRows(rows []map[string]any) {

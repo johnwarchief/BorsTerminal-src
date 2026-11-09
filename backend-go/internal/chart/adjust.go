@@ -43,23 +43,7 @@ func (s *Service) storedAdjustEvents(ctx context.Context, symbol string) []adjus
 				out = append(out, ev)
 			}
 		}
-		if len(out) > 0 {
-			return out
-		}
-	}
-
-	pack := LoadPack(s.dataDir)
-	if pack != nil {
-		if steps, covered := pack.GetPackSteps("", symbol); covered {
-			out := make([]adjustEvent, 0, len(steps))
-			for _, st := range steps {
-				out = append(out, adjustEvent{
-					Date:  st.Date,
-					Ratio: st.Ratio,
-				})
-			}
-			return out
-		}
+		return out
 	}
 	return nil
 }
@@ -71,12 +55,8 @@ func (s *Service) storedAdjustSource(ctx context.Context, symbol string) string 
 	if err == nil && src.Valid && src.String != "" {
 		return src.String
 	}
-	pack := LoadPack(s.dataDir)
-	if pack != nil {
-		if _, covered := pack.GetPackSteps("", symbol); covered {
-			return "local-cache"
-		}
-	}
+	// بستهٔ تصحیح منبعِ «داوریِ ذخیره‌شده» نیست: پایتون آن را فقط داخلِ
+	// `_factors_from_events` اعمال می‌کند، نه در `_stored_adjust_source`.
 	return ""
 }
 

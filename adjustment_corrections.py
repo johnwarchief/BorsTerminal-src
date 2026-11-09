@@ -261,11 +261,17 @@ class Pack:
     def capability(self, symbol=None, ins_code=None):
         rep, sup, key = self.factor_rows(symbol, ins_code)
         raw, _ = self.raw_rows(symbol, ins_code)
+        # مسیرِ مطلق ماشینِ سازنده در پاسخِ API نمی‌نشیند: گلدن/پاریتی باید روی
+        # هر ماشینی یکسان باشد و مسیرِ محلی هم افشا نشود.
+        try:
+            directory = os.path.relpath(self.directory, ROOT).replace(os.sep, "/")
+        except ValueError:                 # درایوِ دیگر در ویندوز
+            directory = self.directory.replace(os.sep, "/")
         return {
             "enabled": True,
             "version": self.version,
             "mode": self.mode,
-            "directory": self.directory,
+            "directory": directory,
             "reference_sha256": self.ref_sha,
             "covered": key is not None,
             "as_of": self.as_of,

@@ -121,7 +121,8 @@ func (s *Service) watchLiveBar(ctx context.Context, symbol, afterDate string) (m
 	hi, lo := candlecontract.Widen(o, pMax, pMin, pClose)
 	bar := map[string]any{
 		"time": sessionDate, "open": o, "high": hi, "low": lo,
-		"close": pClose, "volume": vol,
+		"high_raw": pMax, "low_raw": pMin,
+		"close": pClose, "volume": vol, "live_forming": true,
 	}
 	if pLast > 0 {
 		bar["last"] = pLast
@@ -320,6 +321,9 @@ func (s *Service) scaleCandles(rows []map[string]any, factors, volumes []map[str
 			row["closing"] = nil
 		}
 		row["last"] = last
+		if pyTruthy(c["live_forming"]) {
+			row["live_forming"] = true
+		}
 		out = append(out, row)
 	}
 	pricebasis.ApplyBasis(out, false, basis)
@@ -339,9 +343,12 @@ func numOr0(v any) float64 {
 
 func floorv(x float64) float64 { return math.Floor(x) }
 
-// chartDBBody معادلِ get_chart_db: تاریخچۀ کامل + کندلِ زنده + تعدیل + fts.
+// chartDBBody معادلِ get_chart_db: تاریخچۀ کاملِ قراردادی + کندلِ زنده +
+// زنجیرهٔ کانونیکِ تعدیل + fts. پارامترِ adjustment حذف‌شدهٔ پایتون است؛
+// برایِ سازگاریِ مسیرِ HTTP پذیرفته می‌شود ولی هیچ شاخه‌ای به آن وصل نیست.
 func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int) map[string]any {
-	rows, err := s.priceHistoryFull(ctx, symbol)
+	_ = adjustment
+	rows, dbRows, noTrade, invalid, err := s.canonicalPriceHistory(ctx, symbol)
 	if err != nil {
 		return map[string]any{"status": "error", "message": err.Error()}
 	}
@@ -367,61 +374,77 @@ func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int
 			"time": c["time"], "value": numOr0(c["volume"]), "color": color})
 		times = append(times, stringValue(c["time"]))
 	}
-	evs := s.storedAdjustEvents(ctx, symbol)
-	src := s.storedAdjustSource(ctx, symbol)
-	if len(evs) > 0 {
-		src = "local-cache"
-	} else if src == "" {
-		src = "local-db-unseen"
+	evs, _, _ := s.storedCanonicalEvents(ctx, symbol)
+	evs, falseRejected := s.filterUnproven(ctx, symbol, evs, times)
+	src := s.priceHistorySource(ctx, symbol, evs)
+	known := adjKnownSources[src]
+	canonEvents := evs
+	if !known {
+		canonEvents = nil
 	}
-	adjCap := s.adjustCapability(evs, src)
-	var fct []float64
-	if adjustment == 0 {
-		fct = make([]float64, len(times))
-		for i := range fct {
-			fct[i] = 1.0
+	closings := map[string]float64{}
+	for _, c := range rows {
+		if v := c["close"]; v != nil {
+			closings[date10(stringValue(c["time"]))] = numOr0(v)
 		}
-	} else if adjustment == 1 || adjustment == 2 {
-		autoEvents := s.LoadAutonomousAdjustmentEvents(ctx, symbol)
-		fct = ComputeAdjustmentFactors(times, autoEvents, AdjustmentMode(adjustment))
-	} else {
-		var fctEvents []adjustEvent
-		if pyTruthy(adjCap["combined_available"]) {
-			fctEvents = evs
-		}
-		fct = factorsFromEvents(times, fctEvents)
 	}
-
+	applied, rejected, factors, chain, coverage := s.canonicalAdjustment(
+		ctx, symbol, times, canonEvents, closings)
+	if falseRejected == nil {
+		falseRejected = []map[string]any{}
+	}
+	rejected = append(rejected, falseRejected...)
+	fundN := 0
+	for _, e := range applied {
+		if strings.HasPrefix(e.Source, "fund-portal") {
+			fundN++
+		}
+	}
+	if fundN > 0 {
+		switch src {
+		case "local-cache", "local-db-unseen", "no-adjustment-event", "base-not-anchored":
+			src = "fund-portal"
+		default:
+			if !strings.HasPrefix(src, "fund-portal") {
+				src = "fund-portal+" + src
+			}
+		}
+	}
+	cap := s.adjustCapabilityFull(ctx, applied, chain, coverage, symbol, src, times,
+		!liveInjected && candlesStale(rows, s.now()))
 	facts := make([]map[string]any, 0, len(rows))
 	for i, c := range rows {
-		facts = append(facts, map[string]any{"time": c["time"], "factor": fct[i]})
-	}
-	evMaps := make([]map[string]any, 0, len(evs))
-	for _, e := range evs {
-		var date any = e.Date
-		if e.NullDate {
-			date = nil
+		f := 1.0
+		if i < len(factors) {
+			f = factors[i]
 		}
-		evMaps = append(evMaps, map[string]any{"date": date, "ratio": e.Ratio})
+		facts = append(facts, map[string]any{"time": c["time"], "factor": f})
+	}
+	evMaps := make([]map[string]any, 0, len(applied))
+	for _, e := range applied {
+		evMaps = append(evMaps, e.Map())
+	}
+	if rejected == nil {
+		rejected = []map[string]any{}
 	}
 	var fts any
-	// پایتون این صدازدن را در try می‌گذارد و خطا را `fts: null` می‌کند؛ چارت
-	// هرگز بی‌تحلیل نمی‌میرد. get_chart_db entry_hint نمی‌دهد (فقط /api/fts).
+	// پایتون این صدازدن را در try می‌گذارد و خطا را `fts: null` می‌کند.
 	if body, failure := s.analyzeCandlesSafe(
 		s.scaleCandles(rows, facts, vols, s.basis.Current()), symbol, nil); failure == "" {
 		fts = body
 	}
 	body := map[string]any{
 		"status": "success", "symbol": symbol, "count": len(rows),
+		"dbRows": dbRows, "dbNoTradeRows": noTrade, "dbInvalidRows": invalid,
 		"candles": rows, "volumes": vols, "factors": facts,
-		"adjustEvents": evMaps, "adjustSource": src, "adjustCapability": adjCap,
-
+		"adjustEvents": evMaps, "adjustRejected": rejected,
+		"adjustSource": src, "adjustCapability": cap,
 		"corporateEvents": s.corporateEvents(ctx, symbol),
 		"liveInjected":    liveInjected, "liveError": nilIfEmpty(liveErr),
-		"adjustment": adjustment, "fts": fts,
+		"fts": fts,
 	}
-	return pricebasis.ResolvePayload(body, "candles",
-		[2]string{"#10b981", "#f43f5e"}, s.basis.Current())
+	return s.stampDataTime(pricebasis.ResolvePayload(body, "candles",
+		[2]string{"#10b981", "#f43f5e"}, s.basis.Current()))
 }
 
 func nilIfEmpty(s string) any {

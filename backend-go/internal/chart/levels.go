@@ -2,7 +2,6 @@ package chart
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"borsterminal/backend/internal/pricebasis"
@@ -217,20 +216,24 @@ func (s *Service) keyLevelsBody(ctx context.Context, symbol string) map[string]a
 	if body, ok := s.cacheGet(s.keyLevels, ck, keyLevelsTTL); ok {
 		return body
 	}
-	rows, err := s.priceRows(ctx, symbol, 250)
+	rows, rawRows, err := s.priceRows(ctx, symbol, 250)
 	if err != nil {
 		return map[string]any{"status": "error", "message": err.Error()}
 	}
+	barsEffective := len(rows)
 	pricebasis.ApplyBasis(rows, false, basis)
-	if len(rows) < 60 {
+	if barsEffective < 60 {
 		return map[string]any{"status": "ok", "symbol": symbol, "levels": []map[string]any{},
 			"blocks": []map[string]any{}, "count": 0,
-			"message": "تاریخچهٔ کافی نیست (< 60 روز)"}
+			"insufficient_history": true, "raw_rows": rawRows, "bars_effective": barsEffective,
+			"message": "تاریخچهٔ موجود: " + ftsFa(barsEffective) + " روز؛ حداقل لازم: ۶۰"}
 	}
 	res := keyLevelsFromHistory(rows)
 	res["status"] = "ok"
 	res["symbol"] = symbol
-	res["message"] = fmt.Sprintf("%d روز آخر", len(rows))
+	res["raw_rows"] = rawRows
+	res["bars_effective"] = barsEffective
+	res["message"] = ftsFa(barsEffective) + " روزِ آخر (از " + ftsFa(rawRows) + " ردیف خام)"
 	s.cachePut(s.keyLevels, ck, res)
 	return res
 }

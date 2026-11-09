@@ -186,5 +186,7 @@
    }
   }
  ],
- "count": 9
+ "count": 9,
+ "raw_rows": 250,
+ "bars_effective": 240
 }

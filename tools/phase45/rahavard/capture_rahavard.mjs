@@ -39,7 +39,8 @@ const TYPE_TO_ADJUST = {
 };
 
 function parseArgs(argv) {
-  const out = { port: 9333, types: 'type0,type7', res: 'D,W', countback: 400, marks: false };
+  const out = { port: 9333, types: 'type0,type7', res: 'D,W', countback: 400, marks: false,
+    retries: 3, delayMs: 400 };
   for (let i = 2; i < argv.length; i += 1) {
     const a = argv[i];
     const take = () => argv[++i];
@@ -54,6 +55,8 @@ function parseArgs(argv) {
     else if (a === '--launch') out.launch = true;
     else if (a === '--probe-auth') out.probeAuth = true;
     else if (a === '--marks') out.marks = true;
+    else if (a === '--retries') out.retries = Number(take());
+    else if (a === '--delay-ms') out.delayMs = Number(take());
     else if (a === '--browser') out.browser = take();
     else if (a === '--profile') out.profile = take();
     else if (a === '--help' || a === '-h') out.help = true;
@@ -272,7 +275,14 @@ async function main() {
           parts.push('from=' + encodeURIComponent(from));
           parts.push('to=' + encodeURIComponent(to));
           const url = '/api/v2/chart/bars?' + parts.join('&');
-          const r = await cdp.evaluate(IN_PAGE_FETCH, url);
+          // خطایِ شبکه/نشستِ موقت است، نه پاسخِ معتبر؛ چند بار همان سری تکرار
+          // می‌شود تا «سریِ خالی» با «خطایِ گذرا» اشتباه نشود.
+          let r = null;
+          for (let attempt = 0; attempt <= a.retries; attempt += 1) {
+            r = await cdp.evaluate(IN_PAGE_FETCH, url);
+            if (r && r.status !== -1) break;
+            await new Promise((r2) => setTimeout(r2, a.delayMs * (attempt + 2)));
+          }
           const bars = r.json && Array.isArray(r.json.data) ? r.json.data : [];
           const rec = {
             asset_id: assetId, symbol: item.symbol, ticker, basis,

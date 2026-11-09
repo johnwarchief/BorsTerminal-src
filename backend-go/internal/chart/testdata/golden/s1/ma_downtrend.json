@@ -5155,5 +5155,8 @@
    "published_at": "2026-10-22T08:00:00"
   }
  ],
- "bars": 320
+ "bars": 320,
+ "basis": "last",
+ "adjusted": true,
+ "adjustSource": "no-adjustment-event"
 }

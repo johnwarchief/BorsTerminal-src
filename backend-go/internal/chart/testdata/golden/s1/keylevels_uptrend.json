@@ -41,5 +41,7 @@
  "count": 6,
  "status": "ok",
  "symbol": "عادی01",
- "message": "240 روز آخر"
+ "raw_rows": 250,
+ "bars_effective": 240,
+ "message": "۲۴۰ روزِ آخر (از ۲۵۰ ردیف خام)"
 }

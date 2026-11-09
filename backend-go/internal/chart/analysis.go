@@ -117,7 +117,8 @@ func (s *Service) analyzeSymbol(ctx context.Context, symbol, asOf string) map[st
 	}
 	hint := s.basketEntry(symbol)
 	hg := s.hourglassSettings()
-	key := ftsCacheKey(symbol, candles[len(candles)-1]["close"], hint, basis, asOf, s.engine, hg)
+	lastClose := candles[len(candles)-1]["close"]
+	key := ftsCacheKey(symbol, lastClose, hint, basis, asOf, s.engine, hg)
 	if body, ok := s.cacheGet(s.fts, key, ftsTTL); ok {
 		return body
 	}
@@ -136,11 +137,17 @@ func (s *Service) analyzeSymbol(ctx context.Context, symbol, asOf string) map[st
 			src = "local-db-unseen"
 		}
 	}
+	capEvents := make([]canonEvent, len(evs))
+	for i, e := range evs {
+		capEvents[i] = canonEvent{Date: e.Date, Ratio: e.Ratio}
+	}
 	result := map[string]any{
 		"status": "success", "symbol": symbol, "fts": fts,
 		"analysis_basis": basis, "bars": len(candles),
-		"trend_engine":     s.engine,
-		"adjustCapability": s.adjustCapability(evs, src),
+		"ref_close":    lastClose,
+		"trend_engine": s.engine,
+		"adjustCapability": s.adjustCapabilityFull(ctx, capEvents, nil, nil,
+			symbol, src, nil, false),
 	}
 	if asOf != "" {
 		result["as_of"] = asOf

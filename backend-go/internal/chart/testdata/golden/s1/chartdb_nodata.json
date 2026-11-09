@@ -2,23 +2,79 @@
  "status": "success",
  "symbol": "بی‌معامله04",
  "count": 0,
+ "dbRows": 0,
+ "dbNoTradeRows": 0,
+ "dbInvalidRows": 0,
  "candles": [],
  "volumes": [],
  "factors": [],
  "adjustEvents": [],
+ "adjustRejected": [],
  "adjustSource": "local-db-unseen",
  "adjustCapability": {
   "source": "local-db-unseen",
   "combined_available": false,
-  "indexed_available": true,
   "functional_available": false,
-  "functional_reason": "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. ادعایِ پیشینِ همین کامنت — «هیچ‌یک از این‌ها درِ فیدِ TSETMC نیست» — با سنجشِ زنده ۱۴۰۵-۰۷-۱۳ رد شد: `ClosingPrice/GetPriceAdjustByFlow` دو پایانیِ `pClosing` و `pClosingNotAdjusted` را برایِ بازارِ کامل می‌دهد و `Instrument/GetInstrumentShareChangeByFlow` تعدادِ سهامِ قبل/بعد را؛ هر دو حالا درِ `price_adjust_events` و `share_change_events` می‌نشینند (docs/TSETMC-DATA-GAP-MATRIX.md §17). چیزی که هنوز مبدأ ندارد **نوعِ رویداد** است: `corporateTypeCode` کلیدش درِ پاسخ هست ولی ۱۴۰۵-۰۷-۱۳ درِ ۴۰۱۸ ردیفِ زنده همه null بود، و هیچ مرجعِ بازبینی‌شده‌ای معنای کدهایش را بدونِ حدس نگفته، و تفکیکِ «سودِ نقدی» از «افزایشِ سرمایه» از «معافیت» همان چیزی است که برایِ تعدیلِ عملکردی لازم است. پس فاکتورِ تجمعی از رویدادِ مبدأ ساختنی است، ولی برچسبِ نوعِ رویداد را حدس نمی‌زنیم.",
-  "event_count": 0
+  "functional_status": "SOURCE_GAP",
+  "functional_reason": "دادهٔ رسمیِ رویداد برای این نماد ناقص است؛ تعدیلِ عملکردی تأیید نشد.",
+  "functional_blockers": [
+   "ledger-unavailable:no such column: corporate_type_code"
+  ],
+  "availability": {
+   "status": "SOURCE_GAP",
+   "source": "local-db-unseen",
+   "requested_start": null,
+   "requested_end": null,
+   "covered_start": null,
+   "covered_end": null,
+   "window_start": null,
+   "window_end": null,
+   "valid_points": 0,
+   "incomplete_points": 0,
+   "window_available": false,
+   "stale": false,
+   "kind": "unknown"
+  },
+  "event_count": 0,
+  "ledger_sharpened": null,
+  "ledger_ambiguous": null,
+  "chain_complete": true,
+  "chain_incomplete_events": 0,
+  "coverage": {
+   "available": false,
+   "ins_code": "INS-بی‌معامله04",
+   "error": "no such column: corporate_type_code",
+   "rows_total": 0,
+   "rows_valid": 0,
+   "rows_rejected": 0,
+   "rows_unmatched": 0,
+   "coverage_start": null,
+   "coverage_end": null,
+   "pre_coverage_candles": null,
+   "typed_events": 0,
+   "unresolved_events": 0,
+   "needs_offer_price_events": 0,
+   "truncated_flow": false,
+   "flow_cap": null
+  },
+  "corrections": {
+   "enabled": true,
+   "version": "ra365-r32b-v2",
+   "mode": "authoritative",
+   "directory": "data/ra365_corrections/ra365-r32b-v2",
+   "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+   "covered": false,
+   "as_of": "2026-10-19",
+   "replace_steps": 0,
+   "suppress_steps": 0,
+   "raw_fields": 0,
+   "ambiguous_symbol": false,
+   "error": null
+  }
  },
  "corporateEvents": [],
  "liveInjected": false,
  "liveError": null,
- "adjustment": 3,
  "fts": {
   "trend": {
    "D": {
@@ -70,6 +126,90 @@
     "window": null
    },
    "alignment": "na",
+   "major_swings": {
+    "D": {
+     "timeframe": "D",
+     "confirmed_trend": "na",
+     "verdict_basis": "pivots",
+     "as_of": null,
+     "daily_as_of": null,
+     "bars": 0,
+     "bucket_forming": null,
+     "major_swings": [],
+     "counts": {
+      "pivots": 0,
+      "majors": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "undecided": 0,
+      "dropped_minor": 0
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": null,
+     "reason": null
+    },
+    "W": {
+     "timeframe": "W",
+     "confirmed_trend": "na",
+     "verdict_basis": "pivots",
+     "as_of": null,
+     "daily_as_of": null,
+     "bars": 0,
+     "bucket_forming": null,
+     "major_swings": [],
+     "counts": {
+      "pivots": 0,
+      "majors": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "undecided": 0,
+      "dropped_minor": 0
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": null,
+     "reason": null
+    },
+    "M": {
+     "timeframe": "M",
+     "confirmed_trend": "na",
+     "verdict_basis": "pivots",
+     "as_of": null,
+     "daily_as_of": null,
+     "bars": 0,
+     "bucket_forming": null,
+     "major_swings": [],
+     "counts": {
+      "pivots": 0,
+      "majors": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "undecided": 0,
+      "dropped_minor": 0
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": null,
+     "reason": null
+    }
+   },
+   "as_of": null,
    "matrix": {
     "decision": "UNKNOWN",
     "setup": "NONE",
@@ -77,90 +217,6 @@
     "basis": {
      "weekly": "مبنا: کمتر از دو پیوتِ کامل (کمبود داده)",
      "daily": "مبنا: کمتر از دو پیوتِ کامل (کمبود داده)"
-    }
-   },
-   "as_of": null,
-   "major_swings": {
-    "D": {
-     "as_of": null,
-     "bars": 0,
-     "bucket_forming": null,
-     "confirmed_trend": "na",
-     "counts": {
-      "dropped_minor": 0,
-      "major_highs": 0,
-      "major_lows": 0,
-      "majors": 0,
-      "minor_highs": 0,
-      "minor_lows": 0,
-      "pivots": 0,
-      "undecided": 0
-     },
-     "daily_as_of": null,
-     "enough_extremes": false,
-     "major_swings": [],
-     "provisional": null,
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "D",
-     "verdict_basis": "pivots"
-    },
-    "M": {
-     "as_of": null,
-     "bars": 0,
-     "bucket_forming": null,
-     "confirmed_trend": "na",
-     "counts": {
-      "dropped_minor": 0,
-      "major_highs": 0,
-      "major_lows": 0,
-      "majors": 0,
-      "minor_highs": 0,
-      "minor_lows": 0,
-      "pivots": 0,
-      "undecided": 0
-     },
-     "daily_as_of": null,
-     "enough_extremes": false,
-     "major_swings": [],
-     "provisional": null,
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "M",
-     "verdict_basis": "pivots"
-    },
-    "W": {
-     "as_of": null,
-     "bars": 0,
-     "bucket_forming": null,
-     "confirmed_trend": "na",
-     "counts": {
-      "dropped_minor": 0,
-      "major_highs": 0,
-      "major_lows": 0,
-      "majors": 0,
-      "minor_highs": 0,
-      "minor_lows": 0,
-      "pivots": 0,
-      "undecided": 0
-     },
-     "daily_as_of": null,
-     "enough_extremes": false,
-     "major_swings": [],
-     "provisional": null,
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "W",
-     "verdict_basis": "pivots"
     }
    }
   },
@@ -215,9 +271,9 @@
    "top": null,
    "bottom": null,
    "pct_above_top": null,
-   "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد",
+   "start_date": null,
    "end_date": null,
-   "start_date": null
+   "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد"
   },
   "exit_engine": {
    "verdict": "unknown",
@@ -241,8 +297,7 @@
     "ma14_exit": null,
     "ma14_exit_pending": null,
     "ma14": null,
-    "close": null,
-    "stop_reason": null
+    "close": null
    },
    "l2": {
     "choch_break": null,
@@ -267,6 +322,10 @@
     "reason": "لایهٔ ۴ سنجیده نشد (۰ کندل، حداقل ۳۰ لازم)"
    }
   },
+  "structure_points": {
+   "D": [],
+   "W": []
+  },
   "hourglass": {
    "active": null,
    "weekly_close": null,
@@ -277,11 +336,24 @@
    "rsi_oversold": 30.0,
    "ma52_position_mode": "below",
    "ma52_position_match": null,
+   "ma52_band_pct": 3.0,
    "action": "UNKNOWN",
-   "desc": "MA52 سنجیده نشد (۰ کندل هفتگی، حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد",
-   "ma52_band_pct": 3
+   "desc": "MA52 سنجیده نشد (۰ کندل هفتگی، حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد"
+  },
+  "pullback": {
+   "active": null,
+   "touching": null,
+   "level": null,
+   "level_date": null,
+   "level_age_bars": null,
+   "weekly_confirms": null,
+   "gap_pct": null,
+   "reason": "روند روزانه سنجیده نشد (۰ سقفِ تأییدشده) — پولبک ارزیابی نشد"
   },
   "setups": [],
+  "setups_state": "insufficient_history",
+  "setups_bars_available": 0,
+  "setups_bars_required": 61,
   "status": {
    "code": "insufficient",
    "text": "داده برایِ داوری کافی نیست — سنجیده نشد (سابقه: ۰ کندل، حداقل لازم ۶۱)",
@@ -326,6 +398,7 @@
     "double_bottom": "entry",
     "range_break": "entry",
     "hourglass": "entry",
+    "pullback": "entry",
     "fib_zone": "context",
     "trend": "context",
     "support_resistance": "context",
@@ -338,8 +411,7 @@
     "choch_bearish": "exit",
     "channel_break": "exit",
     "double_top": "exit",
-    "hs_break": "exit",
-    "pullback": "entry"
+    "hs_break": "exit"
    }
   },
   "roles": {
@@ -349,6 +421,7 @@
    "double_bottom": "entry",
    "range_break": "entry",
    "hourglass": "entry",
+   "pullback": "entry",
    "fib_zone": "context",
    "trend": "context",
    "support_resistance": "context",
@@ -361,25 +434,8 @@
    "choch_bearish": "exit",
    "channel_break": "exit",
    "double_top": "exit",
-   "hs_break": "exit",
-   "pullback": "entry"
-  },
-  "pullback": {
-   "active": null,
-   "gap_pct": null,
-   "level": null,
-   "level_age_bars": null,
-   "level_date": null,
-   "reason": "روند روزانه سنجیده نشد (۰ سقفِ تأییدشده) — پولبک ارزیابی نشد",
-   "touching": null,
-   "weekly_confirms": null
-  },
-  "setups_bars_available": 0,
-  "setups_bars_required": 61,
-  "setups_state": "insufficient_history",
-  "structure_points": {
-   "D": [],
-   "W": []
+   "hs_break": "exit"
   }
- }
+ },
+ "lastDataTime": null
 }

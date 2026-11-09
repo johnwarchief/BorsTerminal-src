@@ -5,34 +5,34 @@
   "trend": {
    "D": {
     "trend": "range",
+    "basis": "recent-window",
+    "window": 40,
+    "move_pct": 0.1,
+    "ma": 918.2,
+    "last_close": 925.0,
+    "above_ma": true,
+    "stale_bars": 15,
+    "last_pivot_time": "2026-10-06",
     "hh": null,
     "hl": null,
-    "basis": "recent-window",
     "last_high": null,
     "prev_high": null,
     "last_low": null,
     "prev_low": null,
-    "stale_bars": 16,
-    "window": 41,
-    "above_ma": true,
-    "last_close": 928,
-    "last_pivot_time": "2026-10-06",
-    "ma": 918.44,
-    "move_pct": 0.3,
     "pivots": {
-     "basis": "pivots",
+     "trend": "down",
      "hh": true,
      "hl": false,
-     "last_high": 934,
+     "basis": "pivots",
+     "last_high": 934.0,
+     "prev_high": 923.0,
+     "last_low": 908.0,
+     "prev_low": 913.0,
      "last_high_time": "2026-09-26",
-     "last_low": 908,
-     "last_low_time": "2026-10-06",
-     "prev_high": 923,
      "prev_high_time": "2026-09-12",
-     "prev_low": 913,
+     "last_low_time": "2026-10-06",
      "prev_low_time": "2026-09-15",
      "stale_bars": null,
-     "trend": "down",
      "window": null
     }
    },
@@ -69,284 +69,286 @@
     "window": null
    },
    "alignment": "na",
+   "major_swings": {
+    "D": {
+     "timeframe": "D",
+     "confirmed_trend": "range",
+     "verdict_basis": "recent-window",
+     "as_of": "2026-10-27",
+     "daily_as_of": "2026-10-27",
+     "bars": 40,
+     "bucket_forming": null,
+     "major_swings": [
+      {
+       "idx": 6,
+       "time": "2026-09-12",
+       "kind": "high",
+       "price": 923.0,
+       "confirm_idx": 9,
+       "confirm_time": "2026-09-15",
+       "confirm_age_bars": 30,
+       "leg_pct": 0.010834,
+       "leg_pct_in": null,
+       "leg_pct_out": 0.010834,
+       "out_pending": false,
+       "leg_atr_x": null,
+       "recent": false,
+       "ma100_ctx": null
+      },
+      {
+       "idx": 9,
+       "time": "2026-09-15",
+       "kind": "low",
+       "price": 913.0,
+       "confirm_idx": 12,
+       "confirm_time": "2026-09-20",
+       "confirm_age_bars": 27,
+       "leg_pct": 0.023001,
+       "leg_pct_in": 0.010834,
+       "leg_pct_out": 0.023001,
+       "out_pending": false,
+       "leg_atr_x": null,
+       "recent": false,
+       "ma100_ctx": null
+      },
+      {
+       "idx": 16,
+       "time": "2026-09-26",
+       "kind": "high",
+       "price": 934.0,
+       "confirm_idx": 19,
+       "confirm_time": "2026-09-29",
+       "confirm_age_bars": 20,
+       "leg_pct": 0.027837,
+       "leg_pct_in": 0.023001,
+       "leg_pct_out": 0.027837,
+       "out_pending": false,
+       "leg_atr_x": 3.0843,
+       "recent": false,
+       "ma100_ctx": null
+      },
+      {
+       "idx": 24,
+       "time": "2026-10-06",
+       "kind": "low",
+       "price": 908.0,
+       "confirm_idx": 27,
+       "confirm_time": "2026-10-11",
+       "confirm_age_bars": 12,
+       "leg_pct": 0.027837,
+       "leg_pct_in": 0.027837,
+       "leg_pct_out": 0.01652,
+       "out_pending": false,
+       "leg_atr_x": 3.0029,
+       "recent": false,
+       "ma100_ctx": null
+      }
+     ],
+     "counts": {
+      "pivots": 7,
+      "majors": 4,
+      "major_highs": 2,
+      "major_lows": 2,
+      "minor_highs": 1,
+      "minor_lows": 2,
+      "undecided": 0,
+      "dropped_minor": 3
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": true,
+     "provisional": {
+      "since_pivot_time": "2026-10-21",
+      "bars_since_last_pivot": 5,
+      "high": {
+       "idx": 40,
+       "time": "2026-10-28",
+       "price": 942.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 3
+      },
+      "low": {
+       "idx": 40,
+       "time": "2026-10-28",
+       "price": 942.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 3
+      },
+      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"
+     },
+     "reason": null
+    },
+    "W": {
+     "timeframe": "W",
+     "confirmed_trend": "na",
+     "verdict_basis": "pivots",
+     "as_of": "2026-10-27",
+     "daily_as_of": "2026-10-27",
+     "bars": 9,
+     "bucket_forming": true,
+     "major_swings": [
+      {
+       "idx": 4,
+       "time": "2026-09-30",
+       "kind": "high",
+       "price": 934.0,
+       "confirm_idx": 6,
+       "confirm_time": "2026-10-14",
+       "confirm_age_bars": 2,
+       "leg_pct": 0.027837,
+       "leg_pct_in": null,
+       "leg_pct_out": 0.027837,
+       "out_pending": false,
+       "leg_atr_x": null,
+       "recent": true,
+       "ma100_ctx": null
+      },
+      {
+       "idx": 5,
+       "time": "2026-10-07",
+       "kind": "low",
+       "price": 908.0,
+       "confirm_idx": 7,
+       "confirm_time": "2026-10-21",
+       "confirm_age_bars": 1,
+       "leg_pct": 0.027837,
+       "leg_pct_in": 0.027837,
+       "leg_pct_out": null,
+       "out_pending": true,
+       "leg_atr_x": null,
+       "recent": true,
+       "ma100_ctx": null
+      }
+     ],
+     "counts": {
+      "pivots": 2,
+      "majors": 2,
+      "major_highs": 1,
+      "major_lows": 1,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "undecided": 0,
+      "dropped_minor": 0
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": {
+      "since_pivot_time": "2026-10-07",
+      "bars_since_last_pivot": 3,
+      "high": {
+       "idx": 8,
+       "time": "2026-10-28",
+       "price": 942.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 2
+      },
+      "low": {
+       "idx": 8,
+       "time": "2026-10-28",
+       "price": 942.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 2
+      },
+      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"
+     },
+     "reason": "تنها ۱ سقف و ۱ کفِ ماژور از ۲ پیوت (آستانه ۲.۰×ATR)"
+    },
+    "M": {
+     "timeframe": "M",
+     "confirmed_trend": "na",
+     "verdict_basis": "pivots",
+     "as_of": "2026-10-27",
+     "daily_as_of": "2026-10-27",
+     "bars": 3,
+     "bucket_forming": true,
+     "major_swings": [],
+     "counts": {
+      "pivots": 0,
+      "majors": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "undecided": 0,
+      "dropped_minor": 0
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": {
+      "since_pivot_time": null,
+      "bars_since_last_pivot": 3,
+      "high": {
+       "idx": 2,
+       "time": "2026-10-28",
+       "price": 942.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 2
+      },
+      "low": {
+       "idx": 0,
+       "time": "2026-09-22",
+       "price": 896.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 2,
+       "bars_to_confirm": 0
+      },
+      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"
+     },
+     "reason": null
+    }
+   },
+   "as_of": "2026-10-27",
    "matrix": {
     "decision": "UNKNOWN",
     "setup": "NONE",
     "desc": "روند هفتگی قابل تشخیص نیست (کمتر از دو پیوت کامل) — نظر داده نمی‌شود — مبنا: تنها ۱ سقف و ۱ کفِ ماژور از ۲ پیوت (آستانه ۲.۰×ATR) — دو Extreme ماژور نیست، جهت اعلام نمی‌شود",
     "basis": {
      "weekly": "مبنا: تنها ۱ سقف و ۱ کفِ ماژور از ۲ پیوت (آستانه ۲.۰×ATR) — دو Extreme ماژور نیست، جهت اعلام نمی‌شود",
-     "daily": "مبنا: ۴۱ کندلِ اخیر، ۰.۳٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۱۶ کندل عقب است)"
-    }
-   },
-   "as_of": "2026-10-28",
-   "major_swings": {
-    "D": {
-     "as_of": "2026-10-28",
-     "bars": 41,
-     "bucket_forming": null,
-     "confirmed_trend": "range",
-     "counts": {
-      "dropped_minor": 3,
-      "major_highs": 2,
-      "major_lows": 2,
-      "majors": 4,
-      "minor_highs": 1,
-      "minor_lows": 2,
-      "pivots": 7,
-      "undecided": 0
-     },
-     "daily_as_of": "2026-10-28",
-     "enough_extremes": true,
-     "major_swings": [
-      {
-       "confirm_age_bars": 31,
-       "confirm_idx": 9,
-       "confirm_time": "2026-09-15",
-       "idx": 6,
-       "kind": "high",
-       "leg_atr_x": null,
-       "leg_pct": 0.010834,
-       "leg_pct_in": null,
-       "leg_pct_out": 0.010834,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 923,
-       "recent": false,
-       "time": "2026-09-12"
-      },
-      {
-       "confirm_age_bars": 28,
-       "confirm_idx": 12,
-       "confirm_time": "2026-09-20",
-       "idx": 9,
-       "kind": "low",
-       "leg_atr_x": null,
-       "leg_pct": 0.023001,
-       "leg_pct_in": 0.010834,
-       "leg_pct_out": 0.023001,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 913,
-       "recent": false,
-       "time": "2026-09-15"
-      },
-      {
-       "confirm_age_bars": 21,
-       "confirm_idx": 19,
-       "confirm_time": "2026-09-29",
-       "idx": 16,
-       "kind": "high",
-       "leg_atr_x": 3.0843,
-       "leg_pct": 0.027837,
-       "leg_pct_in": 0.023001,
-       "leg_pct_out": 0.027837,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 934,
-       "recent": false,
-       "time": "2026-09-26"
-      },
-      {
-       "confirm_age_bars": 13,
-       "confirm_idx": 27,
-       "confirm_time": "2026-10-11",
-       "idx": 24,
-       "kind": "low",
-       "leg_atr_x": 3.0029,
-       "leg_pct": 0.027837,
-       "leg_pct_in": 0.027837,
-       "leg_pct_out": 0.01652,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 908,
-       "recent": false,
-       "time": "2026-10-06"
-      }
-     ],
-     "provisional": {
-      "bars_since_last_pivot": 5,
-      "high": {
-       "bars_since": 0,
-       "bars_to_confirm": 3,
-       "confirmed": false,
-       "idx": 40,
-       "price": 942,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "low": {
-       "bars_since": 0,
-       "bars_to_confirm": 3,
-       "confirmed": false,
-       "idx": 40,
-       "price": 942,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود",
-      "since_pivot_time": "2026-10-21"
-     },
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "D",
-     "verdict_basis": "recent-window"
-    },
-    "M": {
-     "as_of": "2026-10-28",
-     "bars": 3,
-     "bucket_forming": true,
-     "confirmed_trend": "na",
-     "counts": {
-      "dropped_minor": 0,
-      "major_highs": 0,
-      "major_lows": 0,
-      "majors": 0,
-      "minor_highs": 0,
-      "minor_lows": 0,
-      "pivots": 0,
-      "undecided": 0
-     },
-     "daily_as_of": "2026-10-28",
-     "enough_extremes": false,
-     "major_swings": [],
-     "provisional": {
-      "bars_since_last_pivot": 3,
-      "high": {
-       "bars_since": 0,
-       "bars_to_confirm": 2,
-       "confirmed": false,
-       "idx": 2,
-       "price": 942,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "low": {
-       "bars_since": 2,
-       "bars_to_confirm": 0,
-       "confirmed": false,
-       "idx": 0,
-       "price": 896,
-       "provisional": true,
-       "time": "2026-09-22"
-      },
-      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود",
-      "since_pivot_time": null
-     },
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "M",
-     "verdict_basis": "pivots"
-    },
-    "W": {
-     "as_of": "2026-10-28",
-     "bars": 9,
-     "bucket_forming": false,
-     "confirmed_trend": "na",
-     "counts": {
-      "dropped_minor": 0,
-      "major_highs": 1,
-      "major_lows": 1,
-      "majors": 2,
-      "minor_highs": 0,
-      "minor_lows": 0,
-      "pivots": 2,
-      "undecided": 0
-     },
-     "daily_as_of": "2026-10-28",
-     "enough_extremes": false,
-     "major_swings": [
-      {
-       "confirm_age_bars": 2,
-       "confirm_idx": 6,
-       "confirm_time": "2026-10-14",
-       "idx": 4,
-       "kind": "high",
-       "leg_atr_x": null,
-       "leg_pct": 0.027837,
-       "leg_pct_in": null,
-       "leg_pct_out": 0.027837,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 934,
-       "recent": true,
-       "time": "2026-09-30"
-      },
-      {
-       "confirm_age_bars": 1,
-       "confirm_idx": 7,
-       "confirm_time": "2026-10-21",
-       "idx": 5,
-       "kind": "low",
-       "leg_atr_x": null,
-       "leg_pct": 0.027837,
-       "leg_pct_in": 0.027837,
-       "leg_pct_out": null,
-       "ma100_ctx": null,
-       "out_pending": true,
-       "price": 908,
-       "recent": true,
-       "time": "2026-10-07"
-      }
-     ],
-     "provisional": {
-      "bars_since_last_pivot": 3,
-      "high": {
-       "bars_since": 0,
-       "bars_to_confirm": 2,
-       "confirmed": false,
-       "idx": 8,
-       "price": 942,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "low": {
-       "bars_since": 0,
-       "bars_to_confirm": 2,
-       "confirmed": false,
-       "idx": 8,
-       "price": 942,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود",
-      "since_pivot_time": "2026-10-07"
-     },
-     "reason": "تنها ۱ سقف و ۱ کفِ ماژور از ۲ پیوت (آستانه ۲.۰×ATR)",
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "W",
-     "verdict_basis": "pivots"
+     "daily": "مبنا: ۴۰ کندلِ اخیر، ۰.۱٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۱۵ کندل عقب است)"
     }
    }
   },
   "fib": {
    "retrace_base_high": 934.0,
    "retrace_base_low": 901.0,
+   "retrace_pct": 82.08,
+   "last_close": 928.0,
    "zone_33_40": {
     "lo": 911.76,
     "hi": 914.06,
-    "in_zone": false,
     "from_ratio": 0.33,
-    "gap_hi_pct": 1.53,
+    "to_ratio": 0.4,
+    "in_zone": false,
     "gap_lo_pct": 1.78,
-    "to_ratio": 0.4
+    "gap_hi_pct": 1.53
    },
    "zone_618_70": {
     "lo": 921.25,
     "hi": 923.98,
-    "in_zone": false,
     "from_ratio": 0.618,
-    "gap_hi_pct": 0.44,
+    "to_ratio": 0.7,
+    "in_zone": false,
     "gap_lo_pct": 0.73,
-    "to_ratio": 0.7
+    "gap_hi_pct": 0.44
    },
    "levels": [
     {
@@ -385,9 +387,7 @@
     "high": 934.0,
     "low": 901.0,
     "provisional": false
-   },
-   "last_close": 928,
-   "retrace_pct": 82.08
+   }
   },
   "jet": {
    "active": null,
@@ -439,9 +439,9 @@
    "top": 928.0,
    "bottom": 908.0,
    "pct_above_top": null,
-   "reason": null,
+   "start_date": "2026-09-30",
    "end_date": "2026-10-27",
-   "start_date": "2026-09-30"
+   "reason": null
   },
   "exit_engine": {
    "verdict": "hold",
@@ -471,7 +471,7 @@
     "level": null,
     "third_peak_level": null,
     "reason": null,
-    "third_peak_band_pct": 2
+    "third_peak_band_pct": 2.0
    },
    "l4": {
     "rsi_divergence": false,
@@ -480,6 +480,78 @@
     "rsi_prev_peak": 97.0,
     "reason": null
    }
+  },
+  "structure_points": {
+   "D": [
+    {
+     "idx": 6,
+     "time": "2026-09-12",
+     "confirm_idx": 9,
+     "confirm_time": "2026-09-15",
+     "price": 923.0,
+     "kind": "high",
+     "label": "H",
+     "ref_time": null,
+     "ref_price": null
+    },
+    {
+     "idx": 9,
+     "time": "2026-09-15",
+     "confirm_idx": 12,
+     "confirm_time": "2026-09-20",
+     "price": 913.0,
+     "kind": "low",
+     "label": "L",
+     "ref_time": null,
+     "ref_price": null
+    },
+    {
+     "idx": 16,
+     "time": "2026-09-26",
+     "confirm_idx": 19,
+     "confirm_time": "2026-09-29",
+     "price": 934.0,
+     "kind": "high",
+     "label": "HH",
+     "ref_time": "2026-09-12",
+     "ref_price": 923.0
+    },
+    {
+     "idx": 24,
+     "time": "2026-10-06",
+     "confirm_idx": 27,
+     "confirm_time": "2026-10-11",
+     "price": 908.0,
+     "kind": "low",
+     "label": "LL",
+     "ref_time": "2026-09-15",
+     "ref_price": 913.0
+    }
+   ],
+   "W": [
+    {
+     "idx": 4,
+     "time": "2026-09-30",
+     "confirm_idx": 6,
+     "confirm_time": "2026-10-14",
+     "price": 934.0,
+     "kind": "high",
+     "label": "H",
+     "ref_time": null,
+     "ref_price": null
+    },
+    {
+     "idx": 5,
+     "time": "2026-10-07",
+     "confirm_idx": 7,
+     "confirm_time": "2026-10-21",
+     "price": 908.0,
+     "kind": "low",
+     "label": "L",
+     "ref_time": null,
+     "ref_price": null
+    }
+   ]
   },
   "hourglass": {
    "active": null,
@@ -491,11 +563,24 @@
    "rsi_oversold": 30.0,
    "ma52_position_mode": "below",
    "ma52_position_match": null,
+   "ma52_band_pct": 3.0,
    "action": "UNKNOWN",
-   "desc": "MA52 سنجیده نشد (۹ کندل هفتگی، حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد",
-   "ma52_band_pct": 3
+   "desc": "MA52 سنجیده نشد (۹ کندل هفتگی، حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد"
+  },
+  "pullback": {
+   "active": false,
+   "touching": false,
+   "level": null,
+   "level_date": null,
+   "level_age_bars": null,
+   "weekly_confirms": null,
+   "gap_pct": null,
+   "reason": "شاخۀ پولبک فقط در روند صعودی تعریف شده — روند روزانه صعودی نیست"
   },
   "setups": [],
+  "setups_state": "insufficient_history",
+  "setups_bars_available": 41,
+  "setups_bars_required": 61,
   "status": {
    "code": "no_signal",
    "text": "هیچِ سیگنالِ فعالی نیست",
@@ -526,6 +611,7 @@
     "double_bottom": "entry",
     "range_break": "entry",
     "hourglass": "entry",
+    "pullback": "entry",
     "fib_zone": "context",
     "trend": "context",
     "support_resistance": "context",
@@ -538,8 +624,7 @@
     "choch_bearish": "exit",
     "channel_break": "exit",
     "double_top": "exit",
-    "hs_break": "exit",
-    "pullback": "entry"
+    "hs_break": "exit"
    }
   },
   "roles": {
@@ -549,6 +634,7 @@
    "double_bottom": "entry",
    "range_break": "entry",
    "hourglass": "entry",
+   "pullback": "entry",
    "fib_zone": "context",
    "trend": "context",
    "support_resistance": "context",
@@ -561,104 +647,56 @@
    "choch_bearish": "exit",
    "channel_break": "exit",
    "double_top": "exit",
-   "hs_break": "exit",
-   "pullback": "entry"
-  },
-  "pullback": {
-   "active": false,
-   "gap_pct": null,
-   "level": null,
-   "level_age_bars": null,
-   "level_date": null,
-   "reason": "شاخۀ پولبک فقط در روند صعودی تعریف شده — روند روزانه صعودی نیست",
-   "touching": false,
-   "weekly_confirms": null
-  },
-  "setups_bars_available": 41,
-  "setups_bars_required": 61,
-  "setups_state": "insufficient_history",
-  "structure_points": {
-   "D": [
-    {
-     "confirm_idx": 9,
-     "confirm_time": "2026-09-15",
-     "idx": 6,
-     "kind": "high",
-     "label": "H",
-     "price": 923,
-     "ref_price": null,
-     "ref_time": null,
-     "time": "2026-09-12"
-    },
-    {
-     "confirm_idx": 12,
-     "confirm_time": "2026-09-20",
-     "idx": 9,
-     "kind": "low",
-     "label": "L",
-     "price": 913,
-     "ref_price": null,
-     "ref_time": null,
-     "time": "2026-09-15"
-    },
-    {
-     "confirm_idx": 19,
-     "confirm_time": "2026-09-29",
-     "idx": 16,
-     "kind": "high",
-     "label": "HH",
-     "price": 934,
-     "ref_price": 923,
-     "ref_time": "2026-09-12",
-     "time": "2026-09-26"
-    },
-    {
-     "confirm_idx": 27,
-     "confirm_time": "2026-10-11",
-     "idx": 24,
-     "kind": "low",
-     "label": "LL",
-     "price": 908,
-     "ref_price": 913,
-     "ref_time": "2026-09-15",
-     "time": "2026-10-06"
-    }
-   ],
-   "W": [
-    {
-     "confirm_idx": 6,
-     "confirm_time": "2026-10-14",
-     "idx": 4,
-     "kind": "high",
-     "label": "H",
-     "price": 934,
-     "ref_price": null,
-     "ref_time": null,
-     "time": "2026-09-30"
-    },
-    {
-     "confirm_idx": 7,
-     "confirm_time": "2026-10-21",
-     "idx": 5,
-     "kind": "low",
-     "label": "L",
-     "price": 908,
-     "ref_price": null,
-     "ref_time": null,
-     "time": "2026-10-07"
-    }
-   ]
+   "hs_break": "exit"
   }
  },
  "analysis_basis": "local-db-raw",
  "bars": 41,
+ "ref_close": 928.0,
  "trend_engine": "legacy",
  "adjustCapability": {
   "source": "local-db-unseen",
   "combined_available": false,
-  "indexed_available": true,
   "functional_available": false,
-  "functional_reason": "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. ادعایِ پیشینِ همین کامنت — «هیچ‌یک از این‌ها درِ فیدِ TSETMC نیست» — با سنجشِ زنده ۱۴۰۵-۰۷-۱۳ رد شد: `ClosingPrice/GetPriceAdjustByFlow` دو پایانیِ `pClosing` و `pClosingNotAdjusted` را برایِ بازارِ کامل می‌دهد و `Instrument/GetInstrumentShareChangeByFlow` تعدادِ سهامِ قبل/بعد را؛ هر دو حالا درِ `price_adjust_events` و `share_change_events` می‌نشینند (docs/TSETMC-DATA-GAP-MATRIX.md §17). چیزی که هنوز مبدأ ندارد **نوعِ رویداد** است: `corporateTypeCode` کلیدش درِ پاسخ هست ولی ۱۴۰۵-۰۷-۱۳ درِ ۴۰۱۸ ردیفِ زنده همه null بود، و هیچ مرجعِ بازبینی‌شده‌ای معنای کدهایش را بدونِ حدس نگفته، و تفکیکِ «سودِ نقدی» از «افزایشِ سرمایه» از «معافیت» همان چیزی است که برایِ تعدیلِ عملکردی لازم است. پس فاکتورِ تجمعی از رویدادِ مبدأ ساختنی است، ولی برچسبِ نوعِ رویداد را حدس نمی‌زنیم.",
-  "event_count": 0
+  "functional_status": "UNMEASURED",
+  "functional_reason": "زنجیره/پوششِ این نماد سنجیده نشده است.",
+  "functional_blockers": [
+   "unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"
+  ],
+  "availability": {
+   "status": "UNMEASURED",
+   "source": "local-db-unseen",
+   "requested_start": null,
+   "requested_end": null,
+   "covered_start": null,
+   "covered_end": null,
+   "window_start": null,
+   "window_end": null,
+   "valid_points": 0,
+   "incomplete_points": 0,
+   "window_available": false,
+   "stale": false,
+   "kind": "unknown"
+  },
+  "event_count": 0,
+  "ledger_sharpened": null,
+  "ledger_ambiguous": null,
+  "chain_complete": null,
+  "chain_incomplete_events": 0,
+  "coverage": null,
+  "corrections": {
+   "enabled": true,
+   "version": "ra365-r32b-v2",
+   "mode": "authoritative",
+   "directory": "data/ra365_corrections/ra365-r32b-v2",
+   "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+   "covered": false,
+   "as_of": "2026-10-19",
+   "replace_steps": 0,
+   "suppress_steps": 0,
+   "raw_fields": 0,
+   "ambiguous_symbol": false,
+   "error": null
+  }
  }
 }

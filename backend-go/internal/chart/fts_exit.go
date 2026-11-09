@@ -72,7 +72,7 @@ func exitLayer1(candles []candle, entryHint *float64) map[string]any {
 	out := map[string]any{
 		"hard_stop": nil, "stop_basis": nil, "stop_hit": nil,
 		"ma14_exit": nil, "ma14_exit_pending": nil,
-		"ma14": nil, "close": nil, "stop_reason": nil,
+		"ma14": nil, "close": nil,
 	}
 	if len(candles) == 0 {
 		return out
@@ -119,6 +119,8 @@ func exitLayer1(candles []candle, entryHint *float64) map[string]any {
 		out["stop_basis"] = "swing_low_forming"
 		out["stop_reason"] = "کفِ ۲۰ کندلِ بسته هنوز کامل نیست (" + ftsFa(len(closed)) +
 			" از ۲۰) — حد ضرر در حال تشکیل"
+	} else {
+		out["stop_reason"] = nil
 	}
 	out["stop_hit"] = closeP < stopPx
 

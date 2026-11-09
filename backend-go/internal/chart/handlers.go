@@ -26,11 +26,9 @@ func intQuery(w http.ResponseWriter, r *http.Request, name string, def int) (int
 }
 
 func (s *Service) ChartDB(w http.ResponseWriter, r *http.Request) {
-	adjustment, ok := intQuery(w, r, "adjustment", 3)
-	if !ok {
-		return
-	}
-	httpapi.WriteJSON(w, http.StatusOK, s.chartDBBody(r.Context(), r.PathValue("symbol"), adjustment))
+	// پارامترِ adjustment در قراردادِ کانونیک حذف شده است؛ FastAPI هم کلیدِ
+	// ناشناخته را نادیده می‌گیرد، پس این مسیر هم آن را اعتبارسنجی نمی‌کند.
+	httpapi.WriteJSON(w, http.StatusOK, s.chartDBBody(r.Context(), r.PathValue("symbol"), 3))
 }
 
 func (s *Service) FTS(w http.ResponseWriter, r *http.Request) {

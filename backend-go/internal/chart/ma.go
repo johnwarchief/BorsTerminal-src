@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"borsterminal/backend/internal/pricebasis"
 	"borsterminal/backend/internal/pyround"
@@ -71,14 +72,40 @@ func (s *Service) maBody(ctx context.Context, symbol string, days int) map[strin
 		maRows[i] = map[string]any{"time": r["date"], "close": r["close"], "last": r["last"]}
 	}
 	pricebasis.ApplyBasis(maRows, false, basis)
+	evs := s.storedAdjustEvents(ctx, symbol)
+	src := "local-cache"
+	if len(evs) == 0 {
+		src = s.storedAdjustSource(ctx, symbol)
+		if src == "" {
+			src = "local-db-unseen"
+		}
+	}
+	adjusted := adjKnownSources[src] || strings.HasPrefix(src, "fund-portal") ||
+		strings.HasPrefix(src, "rahavard-reference-correction")
+	times := make([]string, len(maRows))
+	for i, c := range maRows {
+		times[i] = stringValue(c["time"])
+	}
+	factors := make([]float64, len(maRows))
+	for i := range factors {
+		factors[i] = 1.0
+	}
+	if adjusted {
+		canonEvents := make([]canonEvent, len(evs))
+		for i, e := range evs {
+			canonEvents[i] = canonEvent{Date: e.Date, Ratio: e.Ratio}
+		}
+		factors = s.factorsFromStoredEvents(ctx, symbol, times, canonEvents)
+	}
 	type point struct {
 		day   string
 		close float64
 	}
 	closes := []point{}
-	for _, c := range maRows {
+	for i, c := range maRows {
 		if v, ok := c["close"].(float64); ok {
-			closes = append(closes, point{c["time"].(string), v})
+			closes = append(closes, point{c["time"].(string),
+				pyround.Round(v*factors[i], 6)})
 		}
 	}
 	ma := map[string]any{}
@@ -100,7 +127,8 @@ func (s *Service) maBody(ctx context.Context, symbol string, days int) map[strin
 	}
 	out := map[string]any{"status": "ok", "symbol": symbol,
 		"periods": append([]int(nil), maWindows...), "ma": ma,
-		"events": s.calEventsFor(symbol), "bars": len(closes)}
+		"events": s.calEventsFor(symbol), "bars": len(closes),
+		"basis": basis, "adjusted": adjusted, "adjustSource": src}
 	s.cachePut(s.ma, ck, out)
 	return out
 }

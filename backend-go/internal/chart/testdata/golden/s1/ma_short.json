@@ -658,5 +658,8 @@
   ]
  },
  "events": [],
- "bars": 40
+ "bars": 40,
+ "basis": "last",
+ "adjusted": false,
+ "adjustSource": "local-db-unseen"
 }

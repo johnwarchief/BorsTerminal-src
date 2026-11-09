@@ -22,24 +22,33 @@ func (s *Service) patternsBody(ctx context.Context, symbol string) map[string]an
 	if body, ok := s.cacheGet(s.patterns, ck, patternsTTL); ok {
 		return body
 	}
-	rows, err := s.priceRows(ctx, symbol, 250)
+	rows, rawRows, err := s.priceRows(ctx, symbol, 250)
 	if err != nil {
 		return map[string]any{"status": "error", "message": err.Error()}
 	}
-	if len(rows) < 60 {
+	barsEffective := len(rows)
+	if barsEffective < 60 {
 		return map[string]any{"status": "ok", "symbol": symbol,
-			"overlays": []map[string]any{}, "count": 0, "message": "تاریخچه کافی نیست"}
+			"overlays": []map[string]any{}, "count": 0,
+			"insufficient_history": true, "raw_rows": rawRows, "bars_effective": barsEffective,
+			"message": "تاریخچهٔ موجود: " + ftsFa(barsEffective) + " روز؛ حداقل لازم: ۶۰"}
 	}
 	evs := s.storedAdjustEvents(ctx, symbol)
 	pricebasis.ApplyBasis(rows, false, basis)
 	// سطح‌ها در فضایِ تعدیل‌شده (چارت با factor رسم می‌کند) — وگرنه Y-mismatch.
+	times := make([]string, 0, len(rows))
 	for _, r := range rows {
+		times = append(times, stringValue(r["date"]))
+	}
+	canonEvents := make([]canonEvent, len(evs))
+	for i, e := range evs {
+		canonEvents[i] = canonEvent{Date: e.Date, Ratio: e.Ratio}
+	}
+	factors := s.factorsFromStoredEvents(ctx, symbol, times, canonEvents)
+	for i, r := range rows {
 		f := 1.0
-		day, _ := r["date"].(string)
-		for _, e := range evs {
-			if e.Date > day {
-				f *= e.Ratio
-			}
+		if i < len(factors) {
+			f = factors[i]
 		}
 		for _, k := range []string{"high", "low", "close", "closing", "last",
 			"high_raw", "low_raw"} {
@@ -128,7 +137,8 @@ func (s *Service) patternsBody(ctx context.Context, symbol string) map[string]an
 		"styles": map[string]any{"color": "#2962ff"},
 	})
 	result := map[string]any{"status": "ok", "symbol": symbol,
-		"overlays": overlays, "count": len(overlays)}
+		"overlays": overlays, "count": len(overlays),
+		"raw_rows": rawRows, "bars_effective": barsEffective}
 	s.cachePut(s.patterns, ck, result)
 	return result
 }

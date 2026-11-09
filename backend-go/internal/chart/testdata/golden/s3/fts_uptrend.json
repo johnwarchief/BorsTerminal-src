@@ -8,10 +8,10 @@
     "basis": "recent-window",
     "window": 52,
     "move_pct": 15.8,
-    "ma": 2005.62,
-    "last_close": 2149.0,
+    "ma": 2000.1,
+    "last_close": 2171.0,
     "above_ma": true,
-    "stale_bars": 25,
+    "stale_bars": 24,
     "last_pivot_time": "2026-09-23",
     "hh": null,
     "hl": null,
@@ -41,9 +41,9 @@
     "trend": "up",
     "basis": "recent-window",
     "window": 52,
-    "move_pct": 73.0,
-    "ma": 1517.06,
-    "last_close": 2149.0,
+    "move_pct": 73.1,
+    "ma": 1517.48,
+    "last_close": 2171.0,
     "above_ma": true,
     "stale_bars": 34,
     "last_pivot_time": "2026-03-04",
@@ -58,9 +58,9 @@
     "trend": "up",
     "basis": "recent-window",
     "window": 16,
-    "move_pct": 90.1,
-    "ma": 1464.44,
-    "last_close": 2149.0,
+    "move_pct": 90.5,
+    "ma": 1465.81,
+    "last_close": 2171.0,
     "above_ma": true,
     "stale_bars": 16,
     "last_pivot_time": null,
@@ -72,412 +72,414 @@
     "prev_low": null
    },
    "alignment": "up",
+   "major_swings": {
+    "D": {
+     "timeframe": "D",
+     "confirmed_trend": "up",
+     "verdict_basis": "recent-window",
+     "as_of": "2026-10-27",
+     "daily_as_of": "2026-10-27",
+     "bars": 320,
+     "bucket_forming": null,
+     "major_swings": [
+      {
+       "idx": 167,
+       "time": "2026-03-29",
+       "kind": "low",
+       "price": 1323.0,
+       "confirm_idx": 170,
+       "confirm_time": "2026-04-01",
+       "confirm_age_bars": 149,
+       "leg_pct": 0.097506,
+       "leg_pct_in": 0.007502,
+       "leg_pct_out": 0.097506,
+       "out_pending": false,
+       "leg_atr_x": 12.3212,
+       "recent": false,
+       "ma100_ctx": "mid-ma100"
+      },
+      {
+       "idx": 189,
+       "time": "2026-04-28",
+       "kind": "high",
+       "price": 1452.0,
+       "confirm_idx": 192,
+       "confirm_time": "2026-05-03",
+       "confirm_age_bars": 127,
+       "leg_pct": 0.097506,
+       "leg_pct_in": 0.097506,
+       "leg_pct_out": 0.010331,
+       "out_pending": false,
+       "leg_atr_x": 12.0,
+       "recent": false,
+       "ma100_ctx": "above-ma100"
+      },
+      {
+       "idx": 206,
+       "time": "2026-05-23",
+       "kind": "low",
+       "price": 1443.0,
+       "confirm_idx": 209,
+       "confirm_time": "2026-05-26",
+       "confirm_age_bars": 110,
+       "leg_pct": 0.209979,
+       "leg_pct_in": 0.009609,
+       "leg_pct_out": 0.209979,
+       "out_pending": false,
+       "leg_atr_x": 28.7392,
+       "recent": false,
+       "ma100_ctx": "mid-ma100"
+      },
+      {
+       "idx": 208,
+       "time": "2026-05-25",
+       "kind": "low",
+       "price": 1443.0,
+       "confirm_idx": 211,
+       "confirm_time": "2026-05-30",
+       "confirm_age_bars": 108,
+       "leg_pct": 0.209979,
+       "leg_pct_in": 0.009609,
+       "leg_pct_out": 0.209979,
+       "out_pending": false,
+       "leg_atr_x": 28.8526,
+       "recent": false,
+       "ma100_ctx": "mid-ma100"
+      },
+      {
+       "idx": 230,
+       "time": "2026-06-24",
+       "kind": "high",
+       "price": 1746.0,
+       "confirm_idx": 233,
+       "confirm_time": "2026-06-29",
+       "confirm_age_bars": 86,
+       "leg_pct": 0.209979,
+       "leg_pct_in": 0.209979,
+       "leg_pct_out": 0.006873,
+       "out_pending": false,
+       "leg_atr_x": 27.5934,
+       "recent": false,
+       "ma100_ctx": "above-ma100"
+      },
+      {
+       "idx": 234,
+       "time": "2026-06-30",
+       "kind": "low",
+       "price": 1734.0,
+       "confirm_idx": 237,
+       "confirm_time": "2026-07-05",
+       "confirm_age_bars": 82,
+       "leg_pct": 0.018454,
+       "leg_pct_in": 0.006873,
+       "leg_pct_out": 0.018454,
+       "out_pending": false,
+       "leg_atr_x": 2.9142,
+       "recent": false,
+       "ma100_ctx": "mid-ma100"
+      },
+      {
+       "idx": 241,
+       "time": "2026-07-11",
+       "kind": "high",
+       "price": 1766.0,
+       "confirm_idx": 244,
+       "confirm_time": "2026-07-14",
+       "confirm_age_bars": 75,
+       "leg_pct": 0.018454,
+       "leg_pct_in": 0.018454,
+       "leg_pct_out": 0.012458,
+       "out_pending": false,
+       "leg_atr_x": 2.8556,
+       "recent": false,
+       "ma100_ctx": "above-ma100"
+      },
+      {
+       "idx": 247,
+       "time": "2026-07-19",
+       "kind": "low",
+       "price": 1744.0,
+       "confirm_idx": 250,
+       "confirm_time": "2026-07-22",
+       "confirm_age_bars": 69,
+       "leg_pct": 0.096904,
+       "leg_pct_in": 0.012458,
+       "leg_pct_out": 0.096904,
+       "out_pending": false,
+       "leg_atr_x": 14.5938,
+       "recent": false,
+       "ma100_ctx": "mid-ma100"
+      },
+      {
+       "idx": 281,
+       "time": "2026-09-05",
+       "kind": "high",
+       "price": 1913.0,
+       "confirm_idx": 284,
+       "confirm_time": "2026-09-08",
+       "confirm_age_bars": 35,
+       "leg_pct": 0.096904,
+       "leg_pct_in": 0.096904,
+       "leg_pct_out": 0.0115,
+       "out_pending": false,
+       "leg_atr_x": 13.6538,
+       "recent": false,
+       "ma100_ctx": "above-ma100"
+      },
+      {
+       "idx": 285,
+       "time": "2026-09-09",
+       "kind": "low",
+       "price": 1891.0,
+       "confirm_idx": 288,
+       "confirm_time": "2026-09-14",
+       "confirm_age_bars": 31,
+       "leg_pct": 0.068218,
+       "leg_pct_in": 0.0115,
+       "leg_pct_out": 0.068218,
+       "out_pending": false,
+       "leg_atr_x": 10.4607,
+       "recent": false,
+       "ma100_ctx": "mid-ma100"
+      },
+      {
+       "idx": 294,
+       "time": "2026-09-22",
+       "kind": "high",
+       "price": 2020.0,
+       "confirm_idx": 297,
+       "confirm_time": "2026-09-27",
+       "confirm_age_bars": 22,
+       "leg_pct": 0.068218,
+       "leg_pct_in": 0.068218,
+       "leg_pct_out": 0.005446,
+       "out_pending": false,
+       "leg_atr_x": 10.4221,
+       "recent": false,
+       "ma100_ctx": "above-ma100"
+      },
+      {
+       "idx": 295,
+       "time": "2026-09-23",
+       "kind": "high",
+       "price": 2020.0,
+       "confirm_idx": 298,
+       "confirm_time": "2026-09-28",
+       "confirm_age_bars": 21,
+       "leg_pct": 0.068218,
+       "leg_pct_in": 0.068218,
+       "leg_pct_out": 0.005446,
+       "out_pending": false,
+       "leg_atr_x": 10.3702,
+       "recent": false,
+       "ma100_ctx": "above-ma100"
+      }
+     ],
+     "counts": {
+      "pivots": 38,
+      "majors": 33,
+      "major_highs": 17,
+      "major_lows": 16,
+      "minor_highs": 2,
+      "minor_lows": 3,
+      "undecided": 0,
+      "dropped_minor": 5
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": true,
+     "provisional": {
+      "since_pivot_time": "2026-09-28",
+      "bars_since_last_pivot": 22,
+      "high": {
+       "idx": 320,
+       "time": "2026-10-28",
+       "price": 2192.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 3
+      },
+      "low": {
+       "idx": 299,
+       "time": "2026-09-29",
+       "price": 2011.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 21,
+       "bars_to_confirm": 0
+      },
+      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"
+     },
+     "reason": null
+    },
+    "W": {
+     "timeframe": "W",
+     "confirmed_trend": "up",
+     "verdict_basis": "recent-window",
+     "as_of": "2026-10-27",
+     "daily_as_of": "2026-10-27",
+     "bars": 65,
+     "bucket_forming": true,
+     "major_swings": [
+      {
+       "idx": 24,
+       "time": "2026-01-21",
+       "kind": "low",
+       "price": 1174.0,
+       "confirm_idx": 26,
+       "confirm_time": "2026-02-04",
+       "confirm_age_bars": 38,
+       "leg_pct": 0.130324,
+       "leg_pct_in": null,
+       "leg_pct_out": 0.130324,
+       "out_pending": false,
+       "leg_atr_x": 6.6266,
+       "recent": false,
+       "ma100_ctx": null
+      },
+      {
+       "idx": 30,
+       "time": "2026-03-04",
+       "kind": "high",
+       "price": 1327.0,
+       "confirm_idx": 32,
+       "confirm_time": "2026-03-18",
+       "confirm_age_bars": 32,
+       "leg_pct": 0.130324,
+       "leg_pct_in": 0.130324,
+       "leg_pct_out": 0.018086,
+       "out_pending": false,
+       "leg_atr_x": 6.5498,
+       "recent": false,
+       "ma100_ctx": null
+      }
+     ],
+     "counts": {
+      "pivots": 3,
+      "majors": 2,
+      "major_highs": 1,
+      "major_lows": 1,
+      "minor_highs": 0,
+      "minor_lows": 1,
+      "undecided": 0,
+      "dropped_minor": 1
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": {
+      "since_pivot_time": "2026-03-18",
+      "bars_since_last_pivot": 32,
+      "high": {
+       "idx": 64,
+       "time": "2026-10-28",
+       "price": 2192.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 2
+      },
+      "low": {
+       "idx": 33,
+       "time": "2026-03-25",
+       "price": 1320.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 31,
+       "bars_to_confirm": 0
+      },
+      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"
+     },
+     "reason": "تنها ۱ سقف و ۱ کفِ ماژور از ۳ پیوت (آستانه ۲.۰×ATR)"
+    },
+    "M": {
+     "timeframe": "M",
+     "confirmed_trend": "up",
+     "verdict_basis": "recent-window",
+     "as_of": "2026-10-27",
+     "daily_as_of": "2026-10-27",
+     "bars": 16,
+     "bucket_forming": true,
+     "major_swings": [],
+     "counts": {
+      "pivots": 0,
+      "majors": 0,
+      "major_highs": 0,
+      "major_lows": 0,
+      "minor_highs": 0,
+      "minor_lows": 0,
+      "undecided": 0,
+      "dropped_minor": 0
+     },
+     "threshold": {
+      "atr_x": 2.0,
+      "floor_pct": 0.005
+     },
+     "enough_extremes": false,
+     "provisional": {
+      "since_pivot_time": null,
+      "bars_since_last_pivot": 16,
+      "high": {
+       "idx": 15,
+       "time": "2026-10-28",
+       "price": 2192.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 0,
+       "bars_to_confirm": 2
+      },
+      "low": {
+       "idx": 0,
+       "time": "2025-08-20",
+       "price": 851.0,
+       "provisional": true,
+       "confirmed": false,
+       "bars_since": 15,
+       "bars_to_confirm": 0
+      },
+      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"
+     },
+     "reason": null
+    }
+   },
+   "as_of": "2026-10-27",
    "matrix": {
     "decision": "PERMITTED",
     "setup": "JET_OR_PULLBACK_HOLD",
     "desc": "هفتگی صعودی + روزانه صعودی: ستاپ جت یا پولبک؛ نگهداری روندی بدون نوسان‌گیری",
     "basis": {
-     "weekly": "مبنا: ۵۲ کندلِ اخیر، ۷۳.۰٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۳۴ کندل عقب است) — ساختارِ ماژور کافی نبود: تنها ۱ سقف و ۱ کفِ ماژور از ۳ پیوت (آستانه ۲.۰×ATR)",
-     "daily": "مبنا: ۵۲ کندلِ اخیر، ۱۵.۸٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۲۵ کندل عقب است)"
-    }
-   },
-   "as_of": "2026-10-28",
-   "major_swings": {
-    "D": {
-     "as_of": "2026-10-28",
-     "bars": 321,
-     "bucket_forming": null,
-     "confirmed_trend": "up",
-     "counts": {
-      "dropped_minor": 5,
-      "major_highs": 17,
-      "major_lows": 16,
-      "majors": 33,
-      "minor_highs": 2,
-      "minor_lows": 3,
-      "pivots": 38,
-      "undecided": 0
-     },
-     "daily_as_of": "2026-10-28",
-     "enough_extremes": true,
-     "major_swings": [
-      {
-       "confirm_age_bars": 150,
-       "confirm_idx": 170,
-       "confirm_time": "2026-04-01",
-       "idx": 167,
-       "kind": "low",
-       "leg_atr_x": 12.3212,
-       "leg_pct": 0.097506,
-       "leg_pct_in": 0.007502,
-       "leg_pct_out": 0.097506,
-       "ma100_ctx": "mid-ma100",
-       "out_pending": false,
-       "price": 1323,
-       "recent": false,
-       "time": "2026-03-29"
-      },
-      {
-       "confirm_age_bars": 128,
-       "confirm_idx": 192,
-       "confirm_time": "2026-05-03",
-       "idx": 189,
-       "kind": "high",
-       "leg_atr_x": 12,
-       "leg_pct": 0.097506,
-       "leg_pct_in": 0.097506,
-       "leg_pct_out": 0.010331,
-       "ma100_ctx": "above-ma100",
-       "out_pending": false,
-       "price": 1452,
-       "recent": false,
-       "time": "2026-04-28"
-      },
-      {
-       "confirm_age_bars": 111,
-       "confirm_idx": 209,
-       "confirm_time": "2026-05-26",
-       "idx": 206,
-       "kind": "low",
-       "leg_atr_x": 28.7392,
-       "leg_pct": 0.209979,
-       "leg_pct_in": 0.009609,
-       "leg_pct_out": 0.209979,
-       "ma100_ctx": "mid-ma100",
-       "out_pending": false,
-       "price": 1443,
-       "recent": false,
-       "time": "2026-05-23"
-      },
-      {
-       "confirm_age_bars": 109,
-       "confirm_idx": 211,
-       "confirm_time": "2026-05-30",
-       "idx": 208,
-       "kind": "low",
-       "leg_atr_x": 28.8526,
-       "leg_pct": 0.209979,
-       "leg_pct_in": 0.009609,
-       "leg_pct_out": 0.209979,
-       "ma100_ctx": "mid-ma100",
-       "out_pending": false,
-       "price": 1443,
-       "recent": false,
-       "time": "2026-05-25"
-      },
-      {
-       "confirm_age_bars": 87,
-       "confirm_idx": 233,
-       "confirm_time": "2026-06-29",
-       "idx": 230,
-       "kind": "high",
-       "leg_atr_x": 27.5934,
-       "leg_pct": 0.209979,
-       "leg_pct_in": 0.209979,
-       "leg_pct_out": 0.006873,
-       "ma100_ctx": "above-ma100",
-       "out_pending": false,
-       "price": 1746,
-       "recent": false,
-       "time": "2026-06-24"
-      },
-      {
-       "confirm_age_bars": 83,
-       "confirm_idx": 237,
-       "confirm_time": "2026-07-05",
-       "idx": 234,
-       "kind": "low",
-       "leg_atr_x": 2.9142,
-       "leg_pct": 0.018454,
-       "leg_pct_in": 0.006873,
-       "leg_pct_out": 0.018454,
-       "ma100_ctx": "mid-ma100",
-       "out_pending": false,
-       "price": 1734,
-       "recent": false,
-       "time": "2026-06-30"
-      },
-      {
-       "confirm_age_bars": 76,
-       "confirm_idx": 244,
-       "confirm_time": "2026-07-14",
-       "idx": 241,
-       "kind": "high",
-       "leg_atr_x": 2.8556,
-       "leg_pct": 0.018454,
-       "leg_pct_in": 0.018454,
-       "leg_pct_out": 0.012458,
-       "ma100_ctx": "above-ma100",
-       "out_pending": false,
-       "price": 1766,
-       "recent": false,
-       "time": "2026-07-11"
-      },
-      {
-       "confirm_age_bars": 70,
-       "confirm_idx": 250,
-       "confirm_time": "2026-07-22",
-       "idx": 247,
-       "kind": "low",
-       "leg_atr_x": 14.5938,
-       "leg_pct": 0.096904,
-       "leg_pct_in": 0.012458,
-       "leg_pct_out": 0.096904,
-       "ma100_ctx": "mid-ma100",
-       "out_pending": false,
-       "price": 1744,
-       "recent": false,
-       "time": "2026-07-19"
-      },
-      {
-       "confirm_age_bars": 36,
-       "confirm_idx": 284,
-       "confirm_time": "2026-09-08",
-       "idx": 281,
-       "kind": "high",
-       "leg_atr_x": 13.6538,
-       "leg_pct": 0.096904,
-       "leg_pct_in": 0.096904,
-       "leg_pct_out": 0.0115,
-       "ma100_ctx": "above-ma100",
-       "out_pending": false,
-       "price": 1913,
-       "recent": false,
-       "time": "2026-09-05"
-      },
-      {
-       "confirm_age_bars": 32,
-       "confirm_idx": 288,
-       "confirm_time": "2026-09-14",
-       "idx": 285,
-       "kind": "low",
-       "leg_atr_x": 10.4607,
-       "leg_pct": 0.068218,
-       "leg_pct_in": 0.0115,
-       "leg_pct_out": 0.068218,
-       "ma100_ctx": "mid-ma100",
-       "out_pending": false,
-       "price": 1891,
-       "recent": false,
-       "time": "2026-09-09"
-      },
-      {
-       "confirm_age_bars": 23,
-       "confirm_idx": 297,
-       "confirm_time": "2026-09-27",
-       "idx": 294,
-       "kind": "high",
-       "leg_atr_x": 10.4221,
-       "leg_pct": 0.068218,
-       "leg_pct_in": 0.068218,
-       "leg_pct_out": 0.005446,
-       "ma100_ctx": "above-ma100",
-       "out_pending": false,
-       "price": 2020,
-       "recent": false,
-       "time": "2026-09-22"
-      },
-      {
-       "confirm_age_bars": 22,
-       "confirm_idx": 298,
-       "confirm_time": "2026-09-28",
-       "idx": 295,
-       "kind": "high",
-       "leg_atr_x": 10.3702,
-       "leg_pct": 0.068218,
-       "leg_pct_in": 0.068218,
-       "leg_pct_out": 0.005446,
-       "ma100_ctx": "above-ma100",
-       "out_pending": false,
-       "price": 2020,
-       "recent": false,
-       "time": "2026-09-23"
-      }
-     ],
-     "provisional": {
-      "bars_since_last_pivot": 22,
-      "high": {
-       "bars_since": 0,
-       "bars_to_confirm": 3,
-       "confirmed": false,
-       "idx": 320,
-       "price": 2192,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "low": {
-       "bars_since": 21,
-       "bars_to_confirm": 0,
-       "confirmed": false,
-       "idx": 299,
-       "price": 2011,
-       "provisional": true,
-       "time": "2026-09-29"
-      },
-      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود",
-      "since_pivot_time": "2026-09-28"
-     },
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "D",
-     "verdict_basis": "recent-window"
-    },
-    "M": {
-     "as_of": "2026-10-28",
-     "bars": 16,
-     "bucket_forming": true,
-     "confirmed_trend": "up",
-     "counts": {
-      "dropped_minor": 0,
-      "major_highs": 0,
-      "major_lows": 0,
-      "majors": 0,
-      "minor_highs": 0,
-      "minor_lows": 0,
-      "pivots": 0,
-      "undecided": 0
-     },
-     "daily_as_of": "2026-10-28",
-     "enough_extremes": false,
-     "major_swings": [],
-     "provisional": {
-      "bars_since_last_pivot": 16,
-      "high": {
-       "bars_since": 0,
-       "bars_to_confirm": 2,
-       "confirmed": false,
-       "idx": 15,
-       "price": 2192,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "low": {
-       "bars_since": 15,
-       "bars_to_confirm": 0,
-       "confirmed": false,
-       "idx": 0,
-       "price": 851,
-       "provisional": true,
-       "time": "2025-08-20"
-      },
-      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود",
-      "since_pivot_time": null
-     },
-     "reason": null,
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "M",
-     "verdict_basis": "recent-window"
-    },
-    "W": {
-     "as_of": "2026-10-28",
-     "bars": 65,
-     "bucket_forming": false,
-     "confirmed_trend": "up",
-     "counts": {
-      "dropped_minor": 1,
-      "major_highs": 1,
-      "major_lows": 1,
-      "majors": 2,
-      "minor_highs": 0,
-      "minor_lows": 1,
-      "pivots": 3,
-      "undecided": 0
-     },
-     "daily_as_of": "2026-10-28",
-     "enough_extremes": false,
-     "major_swings": [
-      {
-       "confirm_age_bars": 38,
-       "confirm_idx": 26,
-       "confirm_time": "2026-02-04",
-       "idx": 24,
-       "kind": "low",
-       "leg_atr_x": 6.6266,
-       "leg_pct": 0.130324,
-       "leg_pct_in": null,
-       "leg_pct_out": 0.130324,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 1174,
-       "recent": false,
-       "time": "2026-01-21"
-      },
-      {
-       "confirm_age_bars": 32,
-       "confirm_idx": 32,
-       "confirm_time": "2026-03-18",
-       "idx": 30,
-       "kind": "high",
-       "leg_atr_x": 6.5498,
-       "leg_pct": 0.130324,
-       "leg_pct_in": 0.130324,
-       "leg_pct_out": 0.018086,
-       "ma100_ctx": null,
-       "out_pending": false,
-       "price": 1327,
-       "recent": false,
-       "time": "2026-03-04"
-      }
-     ],
-     "provisional": {
-      "bars_since_last_pivot": 32,
-      "high": {
-       "bars_since": 0,
-       "bars_to_confirm": 2,
-       "confirmed": false,
-       "idx": 64,
-       "price": 2192,
-       "provisional": true,
-       "time": "2026-10-28"
-      },
-      "low": {
-       "bars_since": 31,
-       "bars_to_confirm": 0,
-       "confirmed": false,
-       "idx": 33,
-       "price": 1320,
-       "provisional": true,
-       "time": "2026-03-25"
-      },
-      "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود",
-      "since_pivot_time": "2026-03-18"
-     },
-     "reason": "تنها ۱ سقف و ۱ کفِ ماژور از ۳ پیوت (آستانه ۲.۰×ATR)",
-     "threshold": {
-      "atr_x": 2,
-      "floor_pct": 0.005
-     },
-     "timeframe": "W",
-     "verdict_basis": "recent-window"
+     "weekly": "مبنا: ۵۲ کندلِ اخیر، ۷۳.۱٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۳۴ کندل عقب است) — ساختارِ ماژور کافی نبود: تنها ۱ سقف و ۱ کفِ ماژور از ۳ پیوت (آستانه ۲.۰×ATR)",
+     "daily": "مبنا: ۵۲ کندلِ اخیر، ۱۵.۸٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۲۴ کندل عقب است)"
     }
    }
   },
   "fib": {
    "retrace_base_high": 2192.0,
    "retrace_base_low": 1443.0,
+   "retrace_pct": 4.74,
+   "last_close": 2149.0,
    "zone_33_40": {
     "lo": 1854.43,
     "hi": 1909.51,
-    "in_zone": false,
     "from_ratio": 0.33,
-    "gap_hi_pct": 12.54,
+    "to_ratio": 0.4,
+    "in_zone": false,
     "gap_lo_pct": 15.88,
-    "to_ratio": 0.4
+    "gap_hi_pct": 12.54
    },
    "zone_618_70": {
     "lo": 1635.83,
     "hi": 1692.89,
-    "in_zone": false,
     "from_ratio": 0.618,
-    "gap_hi_pct": 26.94,
+    "to_ratio": 0.7,
+    "in_zone": false,
     "gap_lo_pct": 31.37,
-    "to_ratio": 0.7
+    "gap_hi_pct": 26.94
    },
    "levels": [
     {
@@ -516,9 +518,7 @@
     "high": 2192.0,
     "low": 1443.0,
     "provisional": false
-   },
-   "last_close": 2149,
-   "retrace_pct": 4.74
+   }
   },
   "jet": {
    "active": false,
@@ -568,9 +568,9 @@
    "top": 2176.0,
    "bottom": 2013.0,
    "pct_above_top": null,
-   "reason": null,
+   "start_date": "2026-09-30",
    "end_date": "2026-10-27",
-   "start_date": "2026-09-30"
+   "reason": null
   },
   "exit_engine": {
    "verdict": "hold",
@@ -602,7 +602,7 @@
     "level": null,
     "third_peak_level": null,
     "reason": null,
-    "third_peak_band_pct": 2
+    "third_peak_band_pct": 2.0
    },
    "l4": {
     "rsi_divergence": false,
@@ -611,6 +611,188 @@
     "rsi_prev_peak": 93.6,
     "reason": null
    }
+  },
+  "structure_points": {
+   "D": [
+    {
+     "idx": 157,
+     "time": "2026-03-15",
+     "confirm_idx": 160,
+     "confirm_time": "2026-03-18",
+     "price": 1303.0,
+     "kind": "low",
+     "label": "LE",
+     "ref_time": "2026-03-14",
+     "ref_price": 1303.0
+    },
+    {
+     "idx": 164,
+     "time": "2026-03-24",
+     "confirm_idx": 167,
+     "confirm_time": "2026-03-29",
+     "price": 1333.0,
+     "kind": "high",
+     "label": "HE",
+     "ref_time": "2026-03-07",
+     "ref_price": 1327.0
+    },
+    {
+     "idx": 167,
+     "time": "2026-03-29",
+     "confirm_idx": 170,
+     "confirm_time": "2026-04-01",
+     "price": 1323.0,
+     "kind": "low",
+     "label": "HL",
+     "ref_time": "2026-03-15",
+     "ref_price": 1303.0
+    },
+    {
+     "idx": 189,
+     "time": "2026-04-28",
+     "confirm_idx": 192,
+     "confirm_time": "2026-05-03",
+     "price": 1452.0,
+     "kind": "high",
+     "label": "HH",
+     "ref_time": "2026-03-24",
+     "ref_price": 1333.0
+    },
+    {
+     "idx": 206,
+     "time": "2026-05-23",
+     "confirm_idx": 209,
+     "confirm_time": "2026-05-26",
+     "price": 1443.0,
+     "kind": "low",
+     "label": "HL",
+     "ref_time": "2026-03-29",
+     "ref_price": 1323.0
+    },
+    {
+     "idx": 208,
+     "time": "2026-05-25",
+     "confirm_idx": 211,
+     "confirm_time": "2026-05-30",
+     "price": 1443.0,
+     "kind": "low",
+     "label": "LE",
+     "ref_time": "2026-05-23",
+     "ref_price": 1443.0
+    },
+    {
+     "idx": 230,
+     "time": "2026-06-24",
+     "confirm_idx": 233,
+     "confirm_time": "2026-06-29",
+     "price": 1746.0,
+     "kind": "high",
+     "label": "HH",
+     "ref_time": "2026-04-28",
+     "ref_price": 1452.0
+    },
+    {
+     "idx": 234,
+     "time": "2026-06-30",
+     "confirm_idx": 237,
+     "confirm_time": "2026-07-05",
+     "price": 1734.0,
+     "kind": "low",
+     "label": "HL",
+     "ref_time": "2026-05-25",
+     "ref_price": 1443.0
+    },
+    {
+     "idx": 241,
+     "time": "2026-07-11",
+     "confirm_idx": 244,
+     "confirm_time": "2026-07-14",
+     "price": 1766.0,
+     "kind": "high",
+     "label": "HH",
+     "ref_time": "2026-06-24",
+     "ref_price": 1746.0
+    },
+    {
+     "idx": 247,
+     "time": "2026-07-19",
+     "confirm_idx": 250,
+     "confirm_time": "2026-07-22",
+     "price": 1744.0,
+     "kind": "low",
+     "label": "HL",
+     "ref_time": "2026-06-30",
+     "ref_price": 1734.0
+    },
+    {
+     "idx": 281,
+     "time": "2026-09-05",
+     "confirm_idx": 284,
+     "confirm_time": "2026-09-08",
+     "price": 1913.0,
+     "kind": "high",
+     "label": "HH",
+     "ref_time": "2026-07-11",
+     "ref_price": 1766.0
+    },
+    {
+     "idx": 285,
+     "time": "2026-09-09",
+     "confirm_idx": 288,
+     "confirm_time": "2026-09-14",
+     "price": 1891.0,
+     "kind": "low",
+     "label": "HL",
+     "ref_time": "2026-07-19",
+     "ref_price": 1744.0
+    },
+    {
+     "idx": 294,
+     "time": "2026-09-22",
+     "confirm_idx": 297,
+     "confirm_time": "2026-09-27",
+     "price": 2020.0,
+     "kind": "high",
+     "label": "HH",
+     "ref_time": "2026-09-05",
+     "ref_price": 1913.0
+    },
+    {
+     "idx": 295,
+     "time": "2026-09-23",
+     "confirm_idx": 298,
+     "confirm_time": "2026-09-28",
+     "price": 2020.0,
+     "kind": "high",
+     "label": "HE",
+     "ref_time": "2026-09-22",
+     "ref_price": 2020.0
+    }
+   ],
+   "W": [
+    {
+     "idx": 24,
+     "time": "2026-01-21",
+     "confirm_idx": 26,
+     "confirm_time": "2026-02-04",
+     "price": 1174.0,
+     "kind": "low",
+     "label": "L",
+     "ref_time": null,
+     "ref_price": null
+    },
+    {
+     "idx": 30,
+     "time": "2026-03-04",
+     "confirm_idx": 32,
+     "confirm_time": "2026-03-18",
+     "price": 1327.0,
+     "kind": "high",
+     "label": "H",
+     "ref_time": null,
+     "ref_price": null
+    }
+   ]
   },
   "hourglass": {
    "active": false,
@@ -622,9 +804,19 @@
    "rsi_oversold": 40.0,
    "ma52_position_mode": "above",
    "ma52_position_match": true,
+   "ma52_band_pct": 3.0,
    "action": "NORMAL",
-   "desc": "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست",
-   "ma52_band_pct": 3
+   "desc": "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
+  },
+  "pullback": {
+   "active": false,
+   "touching": false,
+   "level": 2020.0,
+   "level_date": "2026-09-23",
+   "level_age_bars": 25,
+   "weekly_confirms": true,
+   "gap_pct": 3.76,
+   "reason": "قیمت به آخرین سقف نرسیده (۳.۷۶٪ فاصلۀ کفِ امروز تا سطح ۲۰۲۰.۰)"
   },
   "setups": [
    {
@@ -652,10 +844,13 @@
     "date": "2026-09-13",
     "kind": "choch",
     "label": "CHoCH",
-    "price": 1913,
+    "price": 1913.0,
     "side": "above"
    }
   ],
+  "setups_state": "ok",
+  "setups_bars_available": 321,
+  "setups_bars_required": 61,
   "status": {
    "code": "no_signal",
    "text": "هیچِ سیگنالِ فعالی نیست",
@@ -686,6 +881,7 @@
     "double_bottom": "entry",
     "range_break": "entry",
     "hourglass": "entry",
+    "pullback": "entry",
     "fib_zone": "context",
     "trend": "context",
     "support_resistance": "context",
@@ -698,8 +894,7 @@
     "choch_bearish": "exit",
     "channel_break": "exit",
     "double_top": "exit",
-    "hs_break": "exit",
-    "pullback": "entry"
+    "hs_break": "exit"
    }
   },
   "roles": {
@@ -709,6 +904,7 @@
    "double_bottom": "entry",
    "range_break": "entry",
    "hourglass": "entry",
+   "pullback": "entry",
    "fib_zone": "context",
    "trend": "context",
    "support_resistance": "context",
@@ -721,214 +917,56 @@
    "choch_bearish": "exit",
    "channel_break": "exit",
    "double_top": "exit",
-   "hs_break": "exit",
-   "pullback": "entry"
-  },
-  "pullback": {
-   "active": false,
-   "gap_pct": 3.76,
-   "level": 2020,
-   "level_age_bars": 25,
-   "level_date": "2026-09-23",
-   "reason": "قیمت به آخرین سقف نرسیده (۳.۷۶٪ فاصلۀ کفِ امروز تا سطح ۲۰۲۰.۰)",
-   "touching": false,
-   "weekly_confirms": true
-  },
-  "setups_bars_available": 321,
-  "setups_bars_required": 61,
-  "setups_state": "ok",
-  "structure_points": {
-   "D": [
-    {
-     "confirm_idx": 160,
-     "confirm_time": "2026-03-18",
-     "idx": 157,
-     "kind": "low",
-     "label": "LE",
-     "price": 1303,
-     "ref_price": 1303,
-     "ref_time": "2026-03-14",
-     "time": "2026-03-15"
-    },
-    {
-     "confirm_idx": 167,
-     "confirm_time": "2026-03-29",
-     "idx": 164,
-     "kind": "high",
-     "label": "HE",
-     "price": 1333,
-     "ref_price": 1327,
-     "ref_time": "2026-03-07",
-     "time": "2026-03-24"
-    },
-    {
-     "confirm_idx": 170,
-     "confirm_time": "2026-04-01",
-     "idx": 167,
-     "kind": "low",
-     "label": "HL",
-     "price": 1323,
-     "ref_price": 1303,
-     "ref_time": "2026-03-15",
-     "time": "2026-03-29"
-    },
-    {
-     "confirm_idx": 192,
-     "confirm_time": "2026-05-03",
-     "idx": 189,
-     "kind": "high",
-     "label": "HH",
-     "price": 1452,
-     "ref_price": 1333,
-     "ref_time": "2026-03-24",
-     "time": "2026-04-28"
-    },
-    {
-     "confirm_idx": 209,
-     "confirm_time": "2026-05-26",
-     "idx": 206,
-     "kind": "low",
-     "label": "HL",
-     "price": 1443,
-     "ref_price": 1323,
-     "ref_time": "2026-03-29",
-     "time": "2026-05-23"
-    },
-    {
-     "confirm_idx": 211,
-     "confirm_time": "2026-05-30",
-     "idx": 208,
-     "kind": "low",
-     "label": "LE",
-     "price": 1443,
-     "ref_price": 1443,
-     "ref_time": "2026-05-23",
-     "time": "2026-05-25"
-    },
-    {
-     "confirm_idx": 233,
-     "confirm_time": "2026-06-29",
-     "idx": 230,
-     "kind": "high",
-     "label": "HH",
-     "price": 1746,
-     "ref_price": 1452,
-     "ref_time": "2026-04-28",
-     "time": "2026-06-24"
-    },
-    {
-     "confirm_idx": 237,
-     "confirm_time": "2026-07-05",
-     "idx": 234,
-     "kind": "low",
-     "label": "HL",
-     "price": 1734,
-     "ref_price": 1443,
-     "ref_time": "2026-05-25",
-     "time": "2026-06-30"
-    },
-    {
-     "confirm_idx": 244,
-     "confirm_time": "2026-07-14",
-     "idx": 241,
-     "kind": "high",
-     "label": "HH",
-     "price": 1766,
-     "ref_price": 1746,
-     "ref_time": "2026-06-24",
-     "time": "2026-07-11"
-    },
-    {
-     "confirm_idx": 250,
-     "confirm_time": "2026-07-22",
-     "idx": 247,
-     "kind": "low",
-     "label": "HL",
-     "price": 1744,
-     "ref_price": 1734,
-     "ref_time": "2026-06-30",
-     "time": "2026-07-19"
-    },
-    {
-     "confirm_idx": 284,
-     "confirm_time": "2026-09-08",
-     "idx": 281,
-     "kind": "high",
-     "label": "HH",
-     "price": 1913,
-     "ref_price": 1766,
-     "ref_time": "2026-07-11",
-     "time": "2026-09-05"
-    },
-    {
-     "confirm_idx": 288,
-     "confirm_time": "2026-09-14",
-     "idx": 285,
-     "kind": "low",
-     "label": "HL",
-     "price": 1891,
-     "ref_price": 1744,
-     "ref_time": "2026-07-19",
-     "time": "2026-09-09"
-    },
-    {
-     "confirm_idx": 297,
-     "confirm_time": "2026-09-27",
-     "idx": 294,
-     "kind": "high",
-     "label": "HH",
-     "price": 2020,
-     "ref_price": 1913,
-     "ref_time": "2026-09-05",
-     "time": "2026-09-22"
-    },
-    {
-     "confirm_idx": 298,
-     "confirm_time": "2026-09-28",
-     "idx": 295,
-     "kind": "high",
-     "label": "HE",
-     "price": 2020,
-     "ref_price": 2020,
-     "ref_time": "2026-09-22",
-     "time": "2026-09-23"
-    }
-   ],
-   "W": [
-    {
-     "confirm_idx": 26,
-     "confirm_time": "2026-02-04",
-     "idx": 24,
-     "kind": "low",
-     "label": "L",
-     "price": 1174,
-     "ref_price": null,
-     "ref_time": null,
-     "time": "2026-01-21"
-    },
-    {
-     "confirm_idx": 32,
-     "confirm_time": "2026-03-18",
-     "idx": 30,
-     "kind": "high",
-     "label": "H",
-     "price": 1327,
-     "ref_price": null,
-     "ref_time": null,
-     "time": "2026-03-04"
-    }
-   ]
+   "hs_break": "exit"
   }
  },
  "analysis_basis": "local-db-adjusted",
  "bars": 321,
+ "ref_close": 2149.0,
  "trend_engine": "legacy",
  "adjustCapability": {
   "source": "base-price-discontinuity",
   "combined_available": true,
-  "indexed_available": true,
   "functional_available": false,
-  "functional_reason": "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. ادعایِ پیشینِ همین کامنت — «هیچ‌یک از این‌ها درِ فیدِ TSETMC نیست» — با سنجشِ زنده ۱۴۰۵-۰۷-۱۳ رد شد: `ClosingPrice/GetPriceAdjustByFlow` دو پایانیِ `pClosing` و `pClosingNotAdjusted` را برایِ بازارِ کامل می‌دهد و `Instrument/GetInstrumentShareChangeByFlow` تعدادِ سهامِ قبل/بعد را؛ هر دو حالا درِ `price_adjust_events` و `share_change_events` می‌نشینند (docs/TSETMC-DATA-GAP-MATRIX.md §17). چیزی که هنوز مبدأ ندارد **نوعِ رویداد** است: `corporateTypeCode` کلیدش درِ پاسخ هست ولی ۱۴۰۵-۰۷-۱۳ درِ ۴۰۱۸ ردیفِ زنده همه null بود، و هیچ مرجعِ بازبینی‌شده‌ای معنای کدهایش را بدونِ حدس نگفته، و تفکیکِ «سودِ نقدی» از «افزایشِ سرمایه» از «معافیت» همان چیزی است که برایِ تعدیلِ عملکردی لازم است. پس فاکتورِ تجمعی از رویدادِ مبدأ ساختنی است، ولی برچسبِ نوعِ رویداد را حدس نمی‌زنیم.",
-  "event_count": 2
+  "functional_status": "UNMEASURED",
+  "functional_reason": "زنجیره/پوششِ این نماد سنجیده نشده است.",
+  "functional_blockers": [
+   "unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"
+  ],
+  "availability": {
+   "status": "UNMEASURED",
+   "source": "base-price-discontinuity",
+   "requested_start": null,
+   "requested_end": null,
+   "covered_start": null,
+   "covered_end": null,
+   "window_start": null,
+   "window_end": null,
+   "valid_points": 0,
+   "incomplete_points": 0,
+   "window_available": false,
+   "stale": false,
+   "kind": "unknown"
+  },
+  "event_count": 2,
+  "ledger_sharpened": null,
+  "ledger_ambiguous": null,
+  "chain_complete": null,
+  "chain_incomplete_events": 0,
+  "coverage": null,
+  "corrections": {
+   "enabled": true,
+   "version": "ra365-r32b-v2",
+   "mode": "authoritative",
+   "directory": "data/ra365_corrections/ra365-r32b-v2",
+   "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+   "covered": false,
+   "as_of": "2026-10-19",
+   "replace_steps": 0,
+   "suppress_steps": 0,
+   "raw_fields": 0,
+   "ambiguous_symbol": false,
+   "error": null
+  }
  }
 }

@@ -215,8 +215,10 @@ func TestTechFundIntegration(t *testing.T) {
 		if sym, ok := bodyAdj3["symbol"].(string); !ok || sym != symAdadi01 {
 			t.Errorf("expected symbol %q, got %v", symAdadi01, bodyAdj3["symbol"])
 		}
-		if adj, ok := bodyAdj3["adjustment"].(float64); !ok || int(adj) != 3 {
-			t.Errorf("expected adjustment=3, got %v", bodyAdj3["adjustment"])
+		if adj, exists := bodyAdj3["adjustment"]; exists {
+			// قراردادِ کانونیک: پارامترِ adjustment حذف شده و پاسخ هم کلیدش را
+			// ندارد؛ سری همیشه از زنجیرهٔ تعدیلِ کانونیک می‌آید.
+			t.Errorf("canonical chart-db must not echo adjustment, got %v", adj)
 		}
 
 		candles, ok := bodyAdj3["candles"].([]any)
@@ -238,22 +240,21 @@ func TestTechFundIntegration(t *testing.T) {
 			t.Fatalf("expected non-empty factors array, got %T", bodyAdj3["factors"])
 		}
 
-		// Test raw UTF-8 path with adjustment=0 (unadjusted: all factors must be 1.0)
+		// Test raw UTF-8 path with adjustment=0: canonical ignores the removed
+		// parameter, so the factor series must be identical to the adj=3 query.
 		rawPath := "/api/chart-db/" + symAdadi01 + "?adjustment=0"
 		_, bodyAdj0 := getReq(t, handler, rawPath)
-		if adj, ok := bodyAdj0["adjustment"].(float64); !ok || int(adj) != 0 {
-			t.Errorf("expected adjustment=0, got %v", bodyAdj0["adjustment"])
+		if _, exists := bodyAdj0["adjustment"]; exists {
+			t.Errorf("canonical chart-db must not echo adjustment for adj=0")
 		}
 		factorsAdj0, ok := bodyAdj0["factors"].([]any)
 		if !ok || len(factorsAdj0) == 0 {
 			t.Fatalf("expected non-empty factors in adj=0")
 		}
-		firstFactor, ok := factorsAdj0[0].(map[string]any)
-		if !ok {
-			t.Fatalf("expected factor object, got %T", factorsAdj0[0])
-		}
-		if fVal, ok := firstFactor["factor"].(float64); !ok || fVal != 1.0 {
-			t.Errorf("expected factor=1.0 for unadjusted mode, got %v", firstFactor["factor"])
+		raw3, _ := json.Marshal(bodyAdj3["factors"])
+		raw0, _ := json.Marshal(factorsAdj0)
+		if string(raw3) != string(raw0) {
+			t.Errorf("factors must not depend on the removed adjustment parameter")
 		}
 
 		// Test URL-encoded Foolad symbol

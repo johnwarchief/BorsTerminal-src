@@ -128,9 +128,12 @@ func TestChartDBAndFTSHandlers(t *testing.T) {
 		t.Fatalf("chart-db status = %d", rec.Code)
 	}
 	body := decode(rec)
-	if body["status"] != "success" || body["adjustment"] != float64(3) ||
+	if body["status"] != "success" || body["adjustSource"] == nil ||
 		body["count"].(float64) < 300 {
-		t.Fatalf("chart-db body = %v / %v / %v", body["status"], body["adjustment"], body["count"])
+		t.Fatalf("chart-db body = %v / %v / %v", body["status"], body["adjustSource"], body["count"])
+	}
+	if _, ok := body["adjustment"]; ok {
+		t.Fatal("chart-db must not echo the removed adjustment parameter")
 	}
 	if _, ok := body["fts"]; !ok {
 		t.Fatal("chart-db must carry the fts block")
@@ -138,21 +141,11 @@ func TestChartDBAndFTSHandlers(t *testing.T) {
 
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/chart-db/عادی01?adjustment=abc", nil))
-	if rec.Code != http.StatusUnprocessableEntity {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("adjustment=abc status = %d", rec.Code)
 	}
-	var detail struct {
-		Detail []struct {
-			Type string   `json:"type"`
-			Loc  []string `json:"loc"`
-		} `json:"detail"`
-	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &detail); err != nil {
-		t.Fatal(err)
-	}
-	if len(detail.Detail) != 1 || detail.Detail[0].Type != "int_parsing" ||
-		detail.Detail[0].Loc[1] != "adjustment" {
-		t.Fatalf("detail = %+v", detail.Detail)
+	if body := decode(rec); body["status"] != "success" {
+		t.Fatalf("unknown query must be ignored: %v", body["status"])
 	}
 
 	rec = httptest.NewRecorder()
