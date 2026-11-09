@@ -9,8 +9,8 @@
   "raw_ohlc": "raw_ohlc.jsonl"
  },
  "file_sha256": {
-  "factors": "8e1b0b9da28167c9edcac05fcf8158618f64c76e38e20b4e1f73c6ebe269047a",
-  "raw_ohlc": "bce3cd32f2363452f7b1d74b5a7f3881c2dfdf024ef72bec62742c1fe804689f"
+  "factors": "b40eefaba59e89ee3344938b3aa581fbf5f0fb36e390c3237c895d0ed7bc0034",
+  "raw_ohlc": "3793f3a104badfe7f4fea356d653c151573f6418e2bfafc1c441cfd886eca168"
  },
  "source": "test-reference",
  "method": "test",
