@@ -182,6 +182,11 @@ SUITES = [
     # نمی‌کند (با کنترلِ منفی رویِ INSERT OR REPLACE)، و اجرایِ دوباره idempotent است.
     ('dev/test_phase47_ingestion_v1.py',
      'Phase4.7 ingestion: NULL src is legacy-unknown (never published), thin board snapshot never erases a traded daily_prices row, idempotent replay'),
+    # Phase 4.8 closeout S4: backfillِ مرجع رویِ کپیِ آزمایشگاهی + سنجشِ API.
+    ('dev/test_phase48_backfill_history_v1.py',
+     'Phase4.8 S4: reference backfill writes only missing dates, provenance+rollback, idempotent, never overwrites'),
+    ('dev/test_phase48_history_verify_v1.py',
+     'Phase4.8 S4: API raw/adjusted split, close basis, factor chain and constant-offset classification'),
     # Phase 4 (مرحلۀِ ۵/۷): موتورِ canonicalِ نوع‌محورِ تعدیل — فرمولِ هر نوع با مثالِ دستی،
     # مرز/نامعتبر/مفقود → incomplete/invalid (بی‌حدس، بی‌خنثیِ خاموش)، زنجیرۀِ deterministic با
     # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.
