@@ -8,7 +8,7 @@
 
 | مرحله | نام | خروجی | Gate ورود | Gate خروج |
 |---|---|---|---|---|
-| P0 | پایه‌های امن و قابل‌اعتماد | Generation Resolver، Producer Allowlist، Schema Migration، Local API Token، FTS Parity Harness، Notification Base | پذیرش Stage 4 | تست‌های P0 سبز |
+| P0 | پایه‌های امن و قابل‌اعتماد | Generation Resolver، Producer Allowlist، Schema Migration، Local API Token، FTS Source-of-Truth Reconciliation/Parity Harness، Notification Base | پذیرش Stage 4 | تست‌های P0 سبز |
 | P1 | قراردادها و Registry | Schemaها، Canonicalization، Bundle Builder/Signer، Verifier/Installer، Transport فایل، Notification Contract | P0 | Verify/Install/Rollback/Offline سبز |
 | P2 | Research Workbench | Dataset/IR/Trial/Experiment/Validation در Python، research.db | P1 | بازتولید Experiment روی Snapshot |
 | P3 | FTS Adapter و Today v1 | Envelope، FTS Parity، Read Model، API Today/Inspector | P0 + P2 | FTS Stable + Today بدون Stub |
@@ -26,12 +26,12 @@
 | P0.2 Producer Allowlist | Snapshot فقط `market.db` و `codal.db`؛ `research.db`/`oc_client.db`/`user.db` رد شوند | تست: گذاشتن DB اضافی در dataDir ⇒ منتشر نشود؛ Manifest فقط دو دارایی |
 | P0.3 Schema Versioning | `PRAGMA user_version` + Migration Runner + Backup/Rollback برای `oc_client.db` و `research.db`؛ Manifest Schema سازگاری | Migration idempotent؛ Backup/Restore تست |
 | P0.4 Local API Security | Token per-launch، Cookie/Header، Origin/Host strict، CORS بسته، محدودکردن `--url` Tauri | تست CSRF/Origin null/پورت اشغال؛ UI فقط با Token |
-| P0.5 FTS Parity Harness | Golden Vectors Python↔Go برای Ruleset/Config؛ گزارش تفاوت‌ها | حداقل ۵ نماد مرجع + برش‌های رژیم؛ `PASS/FAIL/INSUFFICIENT` شفاف |
+| P0.5 FTS Source-of-Truth Reconciliation + Parity Harness | استخراج Rule Inventory از `docs/جزوه FTS.pdf` و OWNER_RULINGS؛ ممیزی رفتار/نمایش FTS روی چارت؛ ممیزی Python و Go؛ تعیین یک قرارداد/خروجی مرجع برای موتور Go و مصرف همان خروجی در نمودار و OC؛ Golden Vectors برای Ruleset/Config/سه‌حالتی. هیچ پیاده‌سازی موجودی از پیش درست فرض نشود و ابهام جزوه به تصمیم‌سازی مالک ارجاع شود. | پوشش قابل‌ردیابی تمام قواعد داخل دامنه؛ مقایسهٔ نماد/سناریو/رژیم؛ خروجی‌های Python/Go/Chart منطبق با مرجع؛ صفر اختلاف حل‌نشده در قواعد حیاتی؛ هر مورد نامعلوم `INSUFFICIENT` و مانع Today/Stable؛ حداقل ۵ نماد واقعی و چند برش رژیم |
 | P0.6 API Honesty | Job ID/Status برای Sync/Registry؛ حذف 200=started | تست: Job واقعی + Status + خطا |
 | P0.7 Build Contract | اسکن بسته/Process Tree برای نبود Python | تست ساخت: هیچ Python/Uvicorn/FastAPI در بستهٔ کلاینت |
 | P0.8 Notification Base | Schema `oc_client.db` برای Event/Delivery/Prefs؛ Publisher Interface؛ Token فایل ACL‌دار برای پل؛ Single-instance guard | Migration+Rollback؛ تست Token؛ دو نمونهٔ هم‌زمان |
 
-**P0 Gate:** همهٔ تست‌ها + گزارش `NOT_MEASURED`ها؛ اگر FTS Parity کامل نیست، P3 مسدود می‌شود؛ اگر Notification Base نیست، P4.8 مسدود می‌شود.
+**P0 Gate:** همهٔ تست‌ها + گزارش `NOT_MEASURED`ها. اگر تطابق جزوه/چارت/Python/Go در P0.5 اثبات نشود، FTS و P3 مسدود می‌مانند و هیچ خروجی نامنطبق `pass` نمی‌گیرد؛ اگر Notification Base نیست، P4.8 مسدود می‌شود. Q1 Deferred است و مانع زیرساخت P0 نیست، اما Approved/Stable جدید فعال نمی‌شود.
 
 ## ۲) P1 — قراردادها و Registry
 
@@ -72,13 +72,13 @@
 | کار | جزئیات | معیار پذیرش |
 |---|---|---|
 | P3.1 FTS Adapter | Envelope، Config canonical، tri-state | Golden Vectors؛ `unknown≠fail` |
-| P3.2 Ruleset/Config alignment | هم‌ترازی Go/Python؛ حذف Config دوگانه از مسیر Approved | Config Hash در Envelope؛ Override جدا |
+| P3.2 Ruleset/Config alignment | هم‌ترازی نهایی Go/Python/Chart با Rule Inventory مرجع؛ حذف Config دوگانه از مسیر Approved | Config Hash در Envelope؛ Override جدا؛ تطابق سه‌جانبهٔ تأییدشده |
 | P3.3 FTS Strategy Bundle | Descriptor + Evidence + Approval Basis | Bundle بدون فرمول؛ Verify |
 | P3.4 Read Model Today | فرصت FTS + Inspector + استناد | API/UI ۱۳۶۶/۱۹۲۰؛ دادهٔ واقعی |
 | P3.5 Data State | stale/degraded/unavailable/insufficient | No fake pass؛ بنر/جزئیات |
 | P3.6 Owner FTS Bootstrap | Approval امضاشده برای FTS کانونیکال (پس از Parity) | فقط با امضای مالک؛ Registry/Install |
 
-**P3 Gate:** FTS Parity سبز + Bundle امضاشده + Today واقعی + هیچ Stub در مسیر. اگر Parity ناقص است، FTS `unavailable` و P3 متوقف می‌شود.
+**P3 Gate:** تطابق جزوه/چارت/Python/Go سبز + Bundle مجاز و امضاشده طبق Policy مالک + Today واقعی + هیچ Stub در مسیر. اگر Parity ناقص یا ابهام قاعده باز است، FTS `unavailable` و P3 متوقف می‌شود؛ `approval_enabled=false` نباید دور زده شود.
 
 ## ۵) P4 — Runtime و سه کاربر
 
@@ -101,8 +101,8 @@
 
 | کار | جزئیات | معیار پذیرش |
 |---|---|---|
-| P5.1 Validation Policy | امضای مالک (Q1)؛ اعمال در Validation/Approval | `policy_hash`؛ تغییر Policy |
-| P5.2 Ranking Policy | امضای مالک (Q11)؛ `rank_trace` | ترتیب قابل‌توضیح؛ Fallback |
+| P5.1 Validation Policy | پس از رفع Deferred و تصویب/امضای مالک (Q1)؛ تا آن زمان `approval_enabled=false` | `policy_hash`؛ عدم ایجاد Approved/Stable جدید پیش از فعال‌سازی صریح |
+| P5.2 Ranking Policy | روش Lexicographic تأیید شده؛ ترتیب معیارها باید جداگانه به تصویب مالک برسد؛ `rank_trace` | هیچ Composite/Weight؛ ترتیب فقط پس از تصویب و امضای Policy فعال شود |
 | P5.3 Compare | ۲–۴ Stable؛ CI/N_eff؛ incomparable | FTS reference؛ no composite |
 | P5.4 Lab Client | Evidence/Gates/Runs کامل read-only | بدون دکمهٔ اجرا |
 | P5.5 Revocation/Deprecation | ایندکس/Sequence/آفلاین | اعمال در Sync؛ برچسب |
