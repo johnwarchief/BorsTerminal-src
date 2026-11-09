@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -19,9 +20,20 @@ import (
 	"borsterminal/backend/internal/config"
 	"borsterminal/backend/internal/instance"
 	"borsterminal/backend/internal/seed"
+	"borsterminal/backend/internal/update"
 )
 
 func main() {
+	// The detached updater runs as a copy of this exe with a different entry
+	// point; it must not load config, take the single-instance lock or open
+	// any database.
+	if len(os.Args) >= 3 && os.Args[1] == "--update-watch" {
+		if err := update.RunWatcher(os.Args[2]); err != nil {
+			slog.Error("update watcher failed", "err", err)
+			os.Exit(1)
+		}
+		return
+	}
 	cfg, err := config.Load(os.Args[1:], os.Getenv)
 	if err != nil {
 		log.Fatal(err)
@@ -33,9 +45,13 @@ func main() {
 		slog.Error("bind failed", "addr", cfg.Addr, "err", err)
 		os.Exit(1)
 	}
+	actualPort := ln.Addr().(*net.TCPAddr).Port
+	cfg.Port = actualPort
+	cfg.Args = relaunchArgs(cfg.Args, cfg.DataDir, actualPort)
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	cfg.Shutdown = stop
 
 	// یک borsd برایِ هر dataDir؛ دو نویسنده رویِ oc_client.db مجاز نیست.
 	lock, err := instance.Acquire(cfg.DataDir)
@@ -81,8 +97,7 @@ func main() {
 		_ = ln.Close()
 		os.Exit(1)
 	}
-	port := ln.Addr().(*net.TCPAddr).Port
-	hosts := auth.LoopbackHosts(port)
+	hosts := auth.LoopbackHosts(actualPort)
 	guard := auth.NewGuard(auth.GuardConfig{
 		Token:          tok.Value,
 		AllowedHosts:   hosts,
@@ -143,6 +158,34 @@ func main() {
 func serviceVersion() string {
 	// نسخهٔ کامل سرویس در httpapi.Version است؛ این فقط شناسهٔ لایهٔ P0 است.
 	return "oc-p0"
+}
+
+// relaunchArgs rewrites the original CLI so the updater can restart the app
+// with the same behavior but an unambiguous data dir and port (the watcher
+// starts it with WorkingDir=installDir, where "." may mean something else).
+func relaunchArgs(args []string, dataDir string, port int) []string {
+	out := make([]string, 0, len(args)+4)
+	skipNext := false
+	for i, a := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		name := a
+		if i := strings.IndexByte(name, '='); i >= 0 {
+			name = name[:i]
+		}
+		switch name {
+		case "--port", "-port", "--db-dir", "-db-dir":
+			if !strings.Contains(a, "=") && i+1 < len(args) {
+				skipNext = true
+			}
+			continue
+		}
+		out = append(out, a)
+	}
+	out = append(out, "--db-dir", dataDir, "--port", strconv.Itoa(port))
+	return out
 }
 
 // bindListener تنها درگاهِ ساختِ Listener است تا پورتِ اشغال در تست هم همان

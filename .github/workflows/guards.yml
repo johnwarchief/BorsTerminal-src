@@ -97,7 +97,7 @@ jobs:
         run: gcc --version
 
       - name: Race Detector (borsd)
-        run: go test -race -count=1 ./cmd/borsd
+        run: go test -race -count=1 ./cmd/borsd ./internal/update
 
       - name: Race Detector (generation runtime)
         run: go test -race -count=1 ./internal/generation/... ./internal/snapshot/... ./internal/pointerfile/...
@@ -205,7 +205,15 @@ jobs:
           python scripts/make_fast_seed.py market.db.lzma "$B/market.db.gz"
           python scripts/make_fast_seed.py --verify "$B/market.db.gz"
           cp scripts/apply_update.bat "$B/apply_update.bat"
-          ( cd backend-go && go build -o ../dist-ci/BorsTerminal_Ultimate/BorsTerminal_Ultimate.exe ./cmd/borsd )
+          APP_VERSION=$(python - <<'PY'
+          import re
+          s = open('bors_config.py', encoding='utf-8').read()
+          print(re.search(r"APP_VERSION\s*=\s*['\"]([^'\"]+)", s).group(1))
+          PY
+          )
+          echo "APP_VERSION=$APP_VERSION"
+          ( cd backend-go && go build -ldflags "-X borsterminal/backend/internal/httpapi.version=$APP_VERSION" -o ../dist-ci/BorsTerminal_Ultimate/BorsTerminal_Ultimate.exe ./cmd/borsd )
+          printf 'app_version=%s\nsource=ci-guards\n' "$APP_VERSION" > "$B/Version.txt"
           python scripts/build_shell.py --dist "$B"
           test -f "$B/BorsTerminal_Shell.exe"
           ls -l "$B"

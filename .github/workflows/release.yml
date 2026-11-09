@@ -197,8 +197,10 @@ jobs:
         with:
           workspaces: 'frontend/src-tauri'
 
-      - name: Build Python Backend (PyInstaller + bundle data)
-        run: python scripts/build_all.py
+      - name: Build Go backend + V2 frontend + Tauri shell
+        # --version stamps the exe (httpapi.version), Version.txt (the updater's
+        # current version) and the installer from the same tag.
+        run: python scripts/build_all.py --version $($env:TAG -replace '^v','')
 
       - name: Compile Inno Installer
         # /D overrides AppVersion in bors_setup.iss so the tag and the built
@@ -243,6 +245,21 @@ jobs:
         run: |
           cd frontend
           npx tauri signer sign -f ..\.tauri\updater.key "..\installer\out\BorsTerminal_Ultimate_Setup_$env:TAG.exe"
+
+      - name: Generate Go update channel manifest
+        # کانالِ Go جدا از latest.jsonِ legacy است: backend-go/internal/update
+        # فقط مانیفستِ channel="go" را می‌پذیرد و همان نصابِ امضاشده را نصب
+        # می‌کند. خروجی توسط publish_github_release.py آپلود و تأیید می‌شود.
+        shell: pwsh
+        run: |
+          $ver = $env:TAG -replace '^v',''
+          $setup = "installer/out/BorsTerminal_Ultimate_Setup_$env:TAG.exe"
+          python scripts/make_go_update_manifest.py --version $ver `
+            --installer $setup --signature "$setup.sig" `
+            --out dist/latest-go.json `
+            --url "https://github.com/johnwarchief/BorsTerminal/releases/download/$env:TAG/BorsTerminal_Ultimate_Setup_$env:TAG.exe" `
+            --notes-file "docs/RELEASE_NOTES.md"
+          if ($LASTEXITCODE -ne 0) { Write-Output "::error::[go-manifest] generation failed"; exit 1 }
 
       # دلتای واقعی فقط وقتی کوچک می‌ماند که هر دو طرفِ diff با همان زنجیره
       # (پایتونِ 3.12ِ همین CI) ساخته شده باشند — بیلدِ محلی روی 3.14 صدها

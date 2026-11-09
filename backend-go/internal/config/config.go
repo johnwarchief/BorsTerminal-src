@@ -17,6 +17,14 @@ type Config struct {
 	ReadOnly     bool
 	NoLoops      bool
 	NoShell      bool
+	// Port is the actual bound port (set by main after Listen). The in-app
+	// updater needs it to health-check the restarted process.
+	Port int
+	// Args is the original CLI, replayed when the updater restarts the app.
+	Args []string
+	// Shutdown gracefully stops the process; the updater calls it after the
+	// detached watcher has started.
+	Shutdown func()
 }
 
 func Load(args []string, getenv func(string) string) (Config, error) {
@@ -88,6 +96,8 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 		ReadOnly:     *ro && !*rw,
 		NoLoops:      *noLoops,
 		NoShell:      isNoShell,
+		Port:         *port,
+		Args:         append([]string(nil), args...),
 	}, nil
 }
 

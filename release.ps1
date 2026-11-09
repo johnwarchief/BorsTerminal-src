@@ -122,7 +122,13 @@ $ExeSpec = 'fts_terminal.spec'
 
 function Build-Exe {
     Write-Host "[build] running Go + V2 + Tauri production build (scripts/build_all.py)"
-    & $PY scripts\build_all.py
+    $verLine = Select-String -Path (Join-Path $root 'bors_config.py') -Pattern '^APP_VERSION\s*=\s*"([^"]+)"' | Select-Object -First 1
+    if ($verLine) {
+        $buildVer = $verLine.Matches[0].Groups[1].Value
+        & $PY scripts\build_all.py --version $buildVer
+    } else {
+        & $PY scripts\build_all.py
+    }
     if ($LASTEXITCODE -ne 0) { Write-Error '[build] production build failed. ABORT.'; exit 1 }
     if (-not (Test-DistBundle)) { Write-Error '[build] onedir contract FAILED. ABORT.'; exit 1 }
     if (-not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) {

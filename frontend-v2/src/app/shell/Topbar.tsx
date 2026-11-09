@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { jalaliFromYmd } from '@shared/lib/jalali';
 import { useBoard } from '@features/market/api/useBoard';
 import { useMarketPrefs } from '@features/market/stores/prefs';
+import { UpdateChip } from '@features/updater/ui/UpdateChip';
 
 function SearchIcon() {
   return (
@@ -42,20 +43,23 @@ export function Topbar() {
         </kbd>
       </button>
 
-      <div className="ms-auto flex items-center gap-1" role="tablist" aria-label="تب‌ها">
-        <span
-          role="tab"
-          aria-selected="true"
-          className="flex h-7 items-center gap-1.5 rounded-[var(--radius-sm)] bg-panel-3 px-2 t-10 text-text"
-        >
-          بازار
-        </span>
-        <span
-          className="grid h-7 w-7 cursor-not-allowed place-items-center rounded-[var(--radius-sm)] t-115 text-text-3/70"
-          title="تبِ تازه — در مرحلهٔ بعد"
-        >
-          +
-        </span>
+      <div className="ms-auto flex items-center gap-2">
+        <UpdateChip />
+        <div className="flex items-center gap-1" role="tablist" aria-label="تب‌ها">
+          <span
+            role="tab"
+            aria-selected="true"
+            className="flex h-7 items-center gap-1.5 rounded-[var(--radius-sm)] bg-panel-3 px-2 t-10 text-text"
+          >
+            بازار
+          </span>
+          <span
+            className="grid h-7 w-7 cursor-not-allowed place-items-center rounded-[var(--radius-sm)] t-115 text-text-3/70"
+            title="تبِ تازه — در مرحلهٔ بعد"
+          >
+            +
+          </span>
+        </div>
       </div>
     </header>
   );

@@ -91,9 +91,11 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app
 
 [Run]
 ; آپدیتِ درون‌برنامه‌ای نصب را با /VERYSILENT اجرا می‌کند. در حالتِ سایلنت
-; skipifsilent جلوی اجرای برنامه را می‌گرفت و نسخهٔ جدید بالا نمی‌آمد؛
-; nowait یعنی Inno منتظرِ بسته‌شدنِ برنامه نمی‌ماند.
-Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall
+; skipifsilent جلوی اجرای برنامه را می‌گیرد؛ در آپدیتِ Go، خودِ watcher پس از
+; نصب نسخهٔ تازه را بالا می‌آورد و Health Check می‌کند. اگر Inno هم برنامه را
+; اجرا کند، دو نمونه با هم مسابقه می‌دهند و بازگشت به نسخهٔ قبلی به‌خاطرِ
+; قفلِ فایل شکست می‌خورد.
+Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
 
 [InstallDelete]
 ; پاک‌سازی *پیش از* کپیِ فایل‌هایِ جدید. ریشه: Inno فقط فایل‌هایِ Listِ نصبِ

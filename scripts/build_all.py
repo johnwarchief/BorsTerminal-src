@@ -11,6 +11,7 @@
   - market.db.gz (seed تاریخی برای ادغام در اولین اجرا؛ از market.db.lzma)
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -21,6 +22,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_V2 = os.path.join(ROOT, 'frontend-v2')
 BACKEND_GO = os.path.join(ROOT, 'backend-go')
 OUT = os.path.join(ROOT, 'dist', 'BorsTerminal_Ultimate')
+
+
+def default_version():
+    try:
+        with open(os.path.join(FRONTEND_V2, 'package.json'), encoding='utf-8') as f:
+            return str(json.load(f).get('version') or '0.0.0')
+    except (OSError, ValueError):
+        return '0.0.0'
 
 
 def run(cmd, cwd, label):
@@ -38,7 +47,10 @@ def main():
     ap.add_argument('--skip-npm', action='store_true', help='skip frontend-v2 npm build')
     ap.add_argument('--skip-go', action='store_true', help='skip Go backend build')
     ap.add_argument('--skip-shell', action='store_true', help='skip Tauri shell build')
+    ap.add_argument('--version', default=default_version(),
+                    help='application version stamped into the exe and Version.txt')
     args = ap.parse_args()
+    version = args.version.strip().lstrip('v')
 
     # Clean old build output (removes any legacy Python _internal from prior builds)
     if os.path.isdir(OUT):
@@ -73,8 +85,23 @@ def main():
     # 2. Build Go Backend (BorsTerminal_Ultimate.exe)
     if not args.skip_go:
         exe_out = os.path.join(OUT, 'BorsTerminal_Ultimate.exe')
-        run(['go', 'build', '-o', exe_out, './cmd/borsd'], BACKEND_GO,
-            'backend-go: BorsTerminal_Ultimate.exe')
+        # ldflags: /healthz, the updater's current version and Version.txt must
+        # all agree; the updater refuses to run without a known version.
+        go_build = ['go', 'build',
+                    '-ldflags', f'-X borsterminal/backend/internal/httpapi.version={version}',
+                    '-o', exe_out, './cmd/borsd']
+        run(go_build, BACKEND_GO, f'backend-go: BorsTerminal_Ultimate.exe (v{version})')
+
+    # Version.txt is the on-disk source of truth for the in-app updater.
+    try:
+        commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT,
+                                         text=True, stderr=subprocess.DEVNULL).strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = 'unknown'
+    with open(os.path.join(OUT, 'Version.txt'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(f'app_version={version}\nsource=build_all\ngit_commit={commit}\n'
+                f'built_at_utc={time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}\n')
+    print(f'[version] Version.txt -> {version} ({commit})')
 
     # 3. Build Tauri Desktop Shell (BorsTerminal_Shell.exe)
     if not args.skip_shell:

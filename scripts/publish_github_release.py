@@ -126,6 +126,8 @@ print(f"[=] ریلیزِ هدف: {TAG}  (RELEASE_TAG unset means bors_config.APP
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
+# مانيفستِ كانالِ Go (backend-go/internal/update)؛ جدا از latest.jsonِ legacy.
+GO_MANIFEST = os.path.join(ROOT, "dist", "latest-go.json")
 # فهرستِ sha256ِ فایل‌های همین بیلد. نسخهٔ بعد پچِ دلتایش را از رویِ همین فایل
 # می‌سازد — بدونِ دانلودکردنِ نصاب و بدونِ اجرایِ installer روی رانیِر، که منبعِ
 # شکستِ خاموش بود. نبودش ریلیز را متوقف نمی‌کند؛ فقط نسخهٔ بعد مجبور می‌شود
@@ -460,7 +462,7 @@ def main():
     existing_names = {a.get("name") for a in assets}
     # v1.0.10: نامِ پچ هم در لیستِ پاکسازی است تا جایگزینیِ پچ روی یک ریلیزِ
     # موجود (GitHub روی اسمِ تکراری ۴۲۲ می‌دهد) بدونِ مانع بماند.
-    stale_names = {os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json"}
+    stale_names = {os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json", "latest-go.json"}
     if os.path.isfile(PORTABLE_ZIP):
         stale_names.add(os.path.basename(PORTABLE_ZIP))
     for e in PATCHES:
@@ -574,6 +576,18 @@ def main():
     except OSError:
         pass
 
+    # 5b) مانیفستِ کانالِ Go: آپدیتِرِ Go (backend-go/internal/update) فقط همین
+    # را می‌خواند و latest.json را عمداً رد می‌کند (کانالِ legacy). اگر نسخه‌ای
+    # منتشر شود و این فایل نباشد، آپدیتِ خودکارِ Go در کاربران اثری ندارد؛ پس
+    # نبودش با ::error:: ثبت می‌شود.
+    go_manifest_uploaded = False
+    if os.path.isfile(GO_MANIFEST):
+        go_manifest_uploaded = bool(upload_asset(GO_MANIFEST))
+        if not go_manifest_uploaded:
+            print("::error::[publish] آپلودِ latest-go.json ناموفق بود")
+    else:
+        print("::error::[publish] latest-go.json روی دیسک نیست؛ کانالِ Go مانیفستِ منتشرشده ندارد")
+
     if patch_uploaded:
         print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + "
               f"{len(PATCHES)} پچ + .sig‌هایشان + latest.json) "
@@ -677,6 +691,12 @@ def main():
             verify_ok = False
         else:
             print("[✓] نسخۀ Portable از راهِ دورِ خودِ ریلیز خوانده و تأیید شد.")
+
+    if go_manifest_uploaded:
+        if verify_asset_bytes(GO_MANIFEST, os.path.basename(GO_MANIFEST)) is None:
+            verify_ok = False
+        else:
+            print("[✓] latest-go.json از راهِ دورِ خودِ ریلیز خوانده و تأیید شد.")
 
     # ۷. منتقل‌کردنِ codal.db.lzma به این ریلیز.
     #

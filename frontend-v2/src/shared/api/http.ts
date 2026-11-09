@@ -21,6 +21,9 @@ export async function requestJson<T>(
     signal,
     headers: {
       Accept: 'application/json',
+      // The SPA authenticates with the local API cookie the server sets on the
+      // first static request; cookie-authenticated writes need this marker.
+      ...(method !== 'GET' ? { 'X-OC-CSRF': '1' } : {}),
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),

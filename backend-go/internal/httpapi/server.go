@@ -178,6 +178,16 @@ type OCNotify interface {
 	Status(http.ResponseWriter, *http.Request)
 }
 
+// Update شش مسیرِ آپدیتِرِ امضاشدهٔ کانالِ Go؛ nil یعنی پورت نشده.
+type Update interface {
+	HandleVersion(http.ResponseWriter, *http.Request)
+	HandleCheck(http.ResponseWriter, *http.Request)
+	HandleDownload(http.ResponseWriter, *http.Request)
+	HandleProgress(http.ResponseWriter, *http.Request)
+	HandleInstall(http.ResponseWriter, *http.Request)
+	HandleRollback(http.ResponseWriter, *http.Request)
+}
+
 // Services مجموعه‌ی کلیه سرویس‌های HTTP بورس‌ترمینال.
 type Services struct {
 	Market        Market
@@ -196,6 +206,7 @@ type Services struct {
 	OCData        OCData
 	Jobs          Jobs
 	OCNotify      OCNotify
+	Update        Update
 }
 
 func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications, sy Sync) http.Handler {
@@ -337,6 +348,17 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("GET /api/oc/notifications/status", srv.OCNotify.Status)
 		mux.HandleFunc("POST /api/oc/notifications/{id}/read", srv.OCNotify.MarkRead)
 		mux.HandleFunc("POST /api/oc/notifications/{id}/ack", srv.OCNotify.Ack)
+	}
+	if srv.Update != nil {
+		mux.HandleFunc("GET /api/update/version", srv.Update.HandleVersion)
+		mux.HandleFunc("GET /api/update/check", srv.Update.HandleCheck)
+		mux.HandleFunc("POST /api/update/download", srv.Update.HandleDownload)
+		mux.HandleFunc("GET /api/update/progress", srv.Update.HandleProgress)
+		mux.HandleFunc("POST /api/update/install", srv.Update.HandleInstall)
+		mux.HandleFunc("POST /api/update/rollback", srv.Update.HandleRollback)
+		// آپلودِ محلیِ بستهٔ پایتون بخشی از قراردادِ کانالِ Go نیست؛ مسیر
+		// عمداً 501 می‌ماند تا کلاینتِ قدیمی گمراه نشود.
+		mux.HandleFunc("POST /api/update/install-local", s.notPortedRoute)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

@@ -35,6 +35,7 @@ import (
 	"borsterminal/backend/internal/selection"
 	"borsterminal/backend/internal/snapshot"
 	borssync "borsterminal/backend/internal/sync"
+	"borsterminal/backend/internal/update"
 	"borsterminal/backend/internal/watchlist"
 )
 
@@ -339,6 +340,21 @@ func (rt *runtime) build(info generation.Info) (*appInstance, error) {
 	}
 	ftsCfg := ftsconfig.NewHandler(ftsCfgStore, cfg.ReadOnly)
 
+	// آپدیتِرِ کانالِ Go: امضای minisign، نصبِ سایلنتِ Inno و بازگشتِ خودکار.
+	// نسخهٔ خالی یعنی بیلدِ توسعه؛ در آن حالت به‌روزرسانی عمداً غیرفعال است.
+	curVersion := httpapi.Version()
+	if strings.EqualFold(curVersion, "dev") {
+		curVersion = ""
+	}
+	upd := update.New(update.Config{
+		DataDir:        cfg.DataDir,
+		CurrentVersion: curVersion,
+		Port:           cfg.Port,
+		Args:           cfg.Args,
+		Shutdown:       cfg.Shutdown,
+		Logger:         slog.Default(),
+	})
+
 	apiHandler := httpapi.NewWithServices(cfg, handles, httpapi.Services{
 		Market:        mkt,
 		Mstat:         ms,
@@ -356,6 +372,7 @@ func (rt *runtime) build(info generation.Info) (*appInstance, error) {
 		OCData:        rt.data,
 		Jobs:          rt.jobs,
 		OCNotify:      ocnotify.NewHandler(rt.notify),
+		Update:        upd,
 	})
 
 	inst := &appInstance{
