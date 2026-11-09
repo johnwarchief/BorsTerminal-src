@@ -1,0 +1,31 @@
+﻿symbol,ins_code,isin,asset_id,stratum,reason,first_date,last_date,candles,zero_volume,max_gap,adjust_events,share_events,correction_pack,halt_state,rahavard_access,raw_status,adjusted_status
+شبندر,35366681030756042,IRO1PNBA0001,591,high_liquidity,رتبهٔ 5 از 553 سهمِ ≥۱۲۰ جلسه؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 5.33e+12 (ضریبِ واحد 1),2024-08-24,2026-11-04,511,92,23,19,5,16,مجاز-متوقف,pack-mapped,NOT_MEASURED,NOT_MEASURED
+شپنا,7745894403636165,IRO1PNES0001,484,high_liquidity,لنگرِ R32 (asset 484): 512 کندلِ محلی، مرجع 1608D/1256W/396M؛ رتبهٔ نقدشوندگی 4,2024-08-24,2026-11-04,512,69,22,27,10,27,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+فملي,35425587644337450,IRO1MSMI0001,451,high_liquidity,رتبهٔ 1 از 553 سهمِ ≥۱۲۰ جلسه؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 1.01e+13 (ضریبِ واحد 1),2024-08-24,2026-11-04,437,0,83,32,13,29,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+فولاد,46348559193224090,IRO1FOLD0001,453,high_liquidity,لنگرِ R32 (asset 453): 403 کندلِ محلی، مرجع 1532D/1376W/460M؛ رتبهٔ نقدشوندگی 3,2024-08-24,2026-11-04,403,0,164,28,12,28,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+وبملت,778253364357513,IRO1BMLT0001,462,high_liquidity,لنگرِ R32 (asset 462): 451 کندلِ محلی، مرجع 1620D/1274W/406M؛ رتبهٔ نقدشوندگی 2,2024-08-24,2026-11-04,451,0,83,26,13,22,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+وتجارت,63917421733088077,IRO1BTEJ0001,461,high_liquidity,رتبهٔ 6 از 553 سهمِ ≥۱۲۰ جلسه؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 4.22e+12 (ضریبِ واحد 1),2024-08-24,2026-10-31,440,0,83,21,7,10,ممنوع-محفوظ,pack-mapped,NOT_MEASURED,NOT_MEASURED
+شتران,51617145873056483,IRO1PTEH0001,637,mid_liquidity,رتبهٔ 9 از 553 (باندِ میانه)؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 3.81e+12,2024-08-24,2026-11-04,512,74,22,19,13,24,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+شستا,2400322364771558,IRO1TAMN0001,7836,mid_liquidity,رتبهٔ 7 از 553 (باندِ میانه)؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 4.22e+12,2024-08-24,2026-11-04,461,0,83,10,2,9,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+شپديس,20562694899904339,IRO1PRDZ0001,636,mid_liquidity,رتبهٔ 12 از 553 (باندِ میانه)؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 2.65e+12,2024-08-24,2026-11-04,407,0,97,0,4,8,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+فارس,25244329144808274,IRO1PKLJ0001,703,mid_liquidity,رتبهٔ 11 از 553 (باندِ میانه)؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 2.70e+12,2024-08-24,2026-11-04,414,0,111,23,8,20,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+فزر,8175784894140974,IRO3PZAZ0001,16449,mid_liquidity,رتبهٔ 8 از 553 (باندِ میانه)؛ ارزشِ میانهٔ ۹۰ جلسه ≈ 3.85e+12,2024-08-24,2026-11-04,442,0,83,7,1,6,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+شصفها,18346219759153870,IRO7PESP0001,322,low_liquidity,دُمِ پایینِ نقدشوندگی: رتبهٔ 552 از 553؛ 369 کندل؛ asset 322,2024-08-31,2026-11-04,369,0,83,0,0,1,ممنوع,pack-mapped,NOT_MEASURED,NOT_MEASURED
+ولقمان,31959715133485440,IRO7LOIP0001,2052,low_liquidity,دُمِ پایینِ نقدشوندگی: رتبهٔ 546 از 553؛ 399 کندل؛ asset 2052,2024-08-31,2026-11-04,399,0,87,0,0,8,ممنوع,pack-mapped,NOT_MEASURED,NOT_MEASURED
+وملت,10055255678920880,IRO7MIVP0001,64,low_liquidity,دُمِ پایینِ نقدشوندگی: رتبهٔ 550 از 553؛ 390 کندل؛ asset 64,2024-08-24,2026-11-04,390,0,90,0,0,3,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+پشاهن,44052047028305231,IRO7SHIP0001,181,low_liquidity,دُمِ پایینِ نقدشوندگی: رتبهٔ 548 از 553؛ 280 کندل؛ asset 181,2024-08-26,2026-11-04,280,0,83,0,0,7,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+فنوال,57875847776839336,IRO1NALM0001,149,corporate_events,لنگرِ R32 (asset 149): 527 کندلِ محلی، مرجع 1610D/1364W/680M؛ رتبهٔ نقدشوندگی 263,2024-08-24,2026-11-04,527,83,7,20,5,19,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+كچاد,18027801615184692,IRO1CHML0001,382,corporate_events,73 رویداد (adjust 46 + share 27 + price-adjust 2) زیرِ کلیدِ کچاد؛ دو املا: كچاد، کچاد,2024-08-24,2026-11-04,443,0,90,46,27,15,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+كگل,35700344742885862,IRO1GOLG0001,419,corporate_events,133 رویداد (adjust 96 + share 37 + price-adjust 2) زیرِ کلیدِ کگل؛ دو املا: كگل، کگل,2024-08-24,2026-11-04,428,0,90,96,37,17,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+ولانا,66830065858417081,IRO7VLNP0001,599,corporate_events,لنگرِ R32 (asset 599): 382 کندلِ محلی، مرجع 1480D/888W/234M؛ رتبهٔ نقدشوندگی 493,2024-08-24,2026-11-04,382,0,87,16,0,12,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+ومعادن,58931793851445922,IRO1MADN0001,291,corporate_events,78 رویداد (adjust 49 + share 29 + price-adjust 2) زیرِ کلیدِ ومعادن,2024-08-31,2026-11-04,439,0,84,49,29,31,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+حآفرين,21432551703060846,IRO3RPAZ0001,6475,halt_reopen,وضعیت «مجاز-متوقف»؛ بزرگ‌ترین شکافِ تقویمی 88 روز در 430 کندل؛ 9 اعلانِ توقف,2024-08-24,2026-11-04,430,0,88,0,2,6,مجاز-متوقف,pack-mapped,NOT_MEASURED,NOT_MEASURED
+هانيكو,41529644566373651,IRO3HANI0001,38716,halt_reopen,وضعیت «مجاز-متوقف»؛ بزرگ‌ترین شکافِ تقویمی 90 روز در 149 کندل؛ 2 اعلانِ توقف,2025-12-13,2026-11-04,149,0,90,0,1,2,مجاز-متوقف,pack-mapped,NOT_MEASURED,NOT_MEASURED
+چكاوه,24254843881948059,IRO1KSKA0001,238,halt_reopen,بازگشایی: 3 اعلانِ توقف + 3 اعلانِ بازگشایی؛ شکافِ 123 روز؛ وضعیتِ فعلی در instrument_state ثبت نشده,2024-08-26,2026-10-31,428,0,123,16,5,4,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+سبهان,32525655729432562,IRO1SBHN0001,373,long_history,527 جلسه (بیشینهٔ محلی ۵۲۹)؛ asset 373,2024-08-24,2026-11-04,527,67,7,20,2,8,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+سخاش,4470657233334072,IRO1SKHS0001,309,long_history,527 جلسه (بیشینهٔ محلی ۵۲۹)؛ asset 309,2024-08-24,2026-11-04,527,63,7,23,5,9,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+سرود,11964419322927535,IRO1SROD0001,302,long_history,527 جلسه (بیشینهٔ محلی ۵۲۹)؛ asset 302,2024-08-24,2026-11-04,527,123,7,25,5,21,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+خودرو,65883838195688438,IRO1IKCO0001,167,coverage_gap,لنگرِ R32 (asset 167): 92 کندلِ محلی، مرجع 1508D/1330W/780M؛ رتبهٔ نقدشوندگی -,2026-06-13,2026-11-04,92,0,6,14,6,14,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+دالبر,60451823714332895,IRO1DALZ0001,251,coverage_gap,93 کندلِ محلی از 2026-06-13؛ نگاشتِ مرجع asset 251؛ پوششِ مرجع باید جدا سنجیده شود,2026-06-13,2026-11-04,93,0,6,42,25,14,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+دعبيد,49054891736433700,IRO1ABDI0001,293,incomplete_special,یک هویت با دو املاي در جدول‌ها (دعبيد، دعبید)؛ 72 رویداد؛ آزمونِ یکسان‌سازی,2024-09-22,2026-11-04,510,84,7,61,11,13,,pack-mapped,NOT_MEASURED,NOT_MEASURED
+مبين,27922860956133067,IRO1MOBN0001,500,incomplete_special,250 از 508 کندل حجمِ صفر/تهی (49%؛ رتبهٔ نقدشوندگی 553),2024-09-22,2026-11-04,508,250,7,15,2,9,,pack-mapped,NOT_MEASURED,NOT_MEASURED

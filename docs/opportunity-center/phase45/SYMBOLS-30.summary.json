@@ -1,0 +1,124 @@
+{
+ "generated_at": "2026-11-09",
+ "db": "market.db",
+ "db_sha256": "037d189c8a45c2588fb28eb681bb5f7adf566dde31377518c645112cc9f659a3",
+ "db_wal_sha256": "3bf7caf80a3b95784e5159280dde1899021c65f2af6ee89681ab21f52cfc9f96",
+ "db_shm_sha256": "a6be9c41d52139033c7e63911ab7ba0a9174e994fe515f50483156bbacfbecd1",
+ "pack": "ra365-live40-v1",
+ "pack_factors_sha256": "75be4441c4b5f068bb700e3dbdd9d618b054654b90ef4c4036540964f2d59988",
+ "pack_rows": 7145,
+ "pack_assets": 828,
+ "sessions": 529,
+ "date_range": [
+  "2024-08-24",
+  "2026-11-04"
+ ],
+ "price_history_symbols": 6503,
+ "instruments": 6589,
+ "history_symbols_without_instrument": 1414,
+ "equity_universe_ge120": 553,
+ "equity_universe_pack_mapped": 535,
+ "equity_unit_factor_1000": 0,
+ "all_unit_factor_1000": 1859,
+ "symbols_with_90_sessions": 31,
+ "symbols_with_90_sessions_since_2026_06": 29,
+ "duplicate_instrument_keys": 4,
+ "quotas": {
+  "high_liquidity": 6,
+  "mid_liquidity": 5,
+  "low_liquidity": 4,
+  "corporate_events": 5,
+  "halt_reopen": 3,
+  "long_history": 3,
+  "coverage_gap": 2,
+  "incomplete_special": 2
+ },
+ "selected_by_stratum": {
+  "high_liquidity": 6,
+  "mid_liquidity": 5,
+  "low_liquidity": 4,
+  "corporate_events": 5,
+  "halt_reopen": 3,
+  "long_history": 3,
+  "coverage_gap": 2,
+  "incomplete_special": 2
+ },
+ "selected": 30,
+ "gaps": [],
+ "r32_anchors": {
+  "453": {
+   "symbol": "فولاد",
+   "stratum": "high_liquidity",
+   "reference": {
+    "symbol": "فولاد",
+    "symbol_id": "453",
+    "D": 1532,
+    "W": 1376,
+    "M": 460
+   }
+  },
+  "462": {
+   "symbol": "وبملت",
+   "stratum": "high_liquidity",
+   "reference": {
+    "symbol": "وبملت",
+    "symbol_id": "462",
+    "D": 1620,
+    "W": 1274,
+    "M": 406
+   }
+  },
+  "484": {
+   "symbol": "شپنا",
+   "stratum": "high_liquidity",
+   "reference": {
+    "symbol": "شپنا",
+    "symbol_id": "484",
+    "D": 1608,
+    "W": 1256,
+    "M": 396
+   }
+  },
+  "149": {
+   "symbol": "فنوال",
+   "stratum": "corporate_events",
+   "reference": {
+    "symbol": "فنوال",
+    "symbol_id": "149",
+    "D": 1610,
+    "W": 1364,
+    "M": 680
+   }
+  },
+  "599": {
+   "symbol": "ولانا",
+   "stratum": "corporate_events",
+   "reference": {
+    "symbol": "ولانا",
+    "symbol_id": "599",
+    "D": 1480,
+    "W": 888,
+    "M": 234
+   }
+  },
+  "167": {
+   "symbol": "خودرو",
+   "stratum": "coverage_gap",
+   "reference": {
+    "symbol": "خودرو",
+    "symbol_id": "167",
+    "D": 1508,
+    "W": 1330,
+    "M": 780
+   }
+  }
+ },
+ "r32_counts_D": {
+  "149|D": 1610,
+  "167|D": 1508,
+  "453|D": 1532,
+  "462|D": 1620,
+  "484|D": 1608,
+  "599|D": 1480
+ }
+}
