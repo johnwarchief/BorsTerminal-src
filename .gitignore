@@ -251,3 +251,5 @@ backend-go/**/zz_tmp_*
 !models/kronos/README.md
 _audit/phase47/lab/
 _audit/phase47/bundle/
+_audit/phase47/install/
+_audit/phase47/

@@ -149,6 +149,96 @@ def test_daily_snapshot_guard():
     con_nopk.close()
 
 
+def _mw_tuple(**over):
+    """ردیفِ market_watch با ترتیبِ MW_COLS؛ هر ستونِ نگفته None."""
+    import test_tsetmc as T
+    base = {c: None for c in T.MW_COLS}
+    base["ins_code"] = "I"
+    base.update(over)
+    return tuple(base[c] for c in T.MW_COLS)
+
+
+def test_market_watch_guard():
+    section("۴) market_watch در برابرِ پاسخِ لاغر")
+    import test_tsetmc as T
+
+    ddl = ("CREATE TABLE market_watch (ins_code TEXT PRIMARY KEY, "
+           + ", ".join("%s REAL" % c for c in T.MW_COLS[1:]) + ")")
+    ck("excluded.d_even" in T._MW_INSERT,
+       "keep-if-zero فقط داخلِ همان نشست اعمال می‌شود")
+    ck("COALESCE(market_watch.q_tot_tran, 0) <= 0" in T._MW_INSERT,
+       "ردیفِ معامله‌شده با ردیفِ بی‌حجم بازنویسی نمی‌شود")
+
+    con = sqlite3.connect(":memory:")
+    con.execute(ddl)
+    rich = _mw_tuple(d_even=20261011, h_even=125959, p_closing=4180.0, p_last=4180.0,
+                     price_first=4100.0, price_min=4000.0, price_max=4220.0,
+                     price_yesterday=4100.0, q_tot_tran=5e6, q_tot_cap=2.1e13,
+                     z_tot_tran=1000.0, market_cap=1.7e14,
+                     market_cap_src="tse_board_calc", buy_q1_vol=120.0,
+                     sell_q1_vol=80.0, flow=1.0, fetched_at="t1")
+    con.execute(T._MW_INSERT, rich)
+    con.commit()
+    # پاسخِ لاغرِ همان نشست: pcl/pdv هست، بقیهٔ ارقام صفر — همان الگویِ اندازه‌گیری‌شده
+    # (۱۶ ردیفِ معامله‌شده با price_first تهی رویِ کپیِ آزمایشگاهی).
+    thin = _mw_tuple(d_even=20261011, h_even=130001, p_closing=4180.0, p_last=4180.0,
+                     price_first=0.0, price_min=0.0, price_max=0.0, price_yesterday=0.0,
+                     q_tot_tran=0.0, q_tot_cap=0.0, z_tot_tran=0.0, fetched_at="t2")
+    con.execute(T._MW_INSERT, thin)
+    con.commit()
+    got = con.execute("SELECT price_first, price_min, price_max, q_tot_tran, buy_q1_vol,"
+                      " market_cap, market_cap_src FROM market_watch").fetchone()
+    ck(got[0] == 4100.0 and got[1] == 4000.0 and got[2] == 4220.0,
+       "پاسخِ لاغر قیمت‌هایِ تابلو را صفر نمی‌کند", got)
+    ck(got[3] == 5e6, "حجمِ معامله‌شده پاک نمی‌شود", got)
+    ck(got[4] == 120.0, "عمقِ سفارش با ردیفِ بی‌حجم بازنویسی نمی‌شود", got)
+    ck(got[5] == 1.7e14 and got[6] == "tse_board_calc",
+       "ارزشِ بازار و منبعش هم‌زمان حفظ می‌شوند", got)
+
+    # کنترلِ منفی: همان SQL ولی بدونِ گاردِ این فاز ⇒ همان نقصی که اندازه‌گیری شد.
+    con2 = sqlite3.connect(":memory:")
+    con2.execute(ddl)
+    old_sql = T._upsert("market_watch", T.MW_COLS, T._STICKY_MARKET_WATCH)
+    con2.execute(old_sql, rich)
+    con2.execute(old_sql, thin)
+    con2.commit()
+    legacy = con2.execute("SELECT price_first, q_tot_tran FROM market_watch").fetchone()
+    ck(legacy == (0.0, 0.0),
+       "کنترلِ منفی: بدونِ گارد، تابلو صفر می‌شود (نقص اثبات شد)", legacy)
+
+    grow = _mw_tuple(d_even=20261011, h_even=131000, p_closing=4190.0, p_last=4230.0,
+                     price_first=4100.0, price_min=3990.0, price_max=4230.0,
+                     price_yesterday=4100.0, q_tot_tran=6e6, q_tot_cap=2.2e13,
+                     z_tot_tran=1200.0, market_cap=1.71e14,
+                     market_cap_src="tse_board_calc", buy_q1_vol=90.0,
+                     sell_q1_vol=70.0, flow=1.0, fetched_at="t3")
+    con.execute(T._MW_INSERT, grow)
+    con.commit()
+    got = con.execute("SELECT q_tot_tran, p_closing, price_min FROM market_watch").fetchone()
+    ck(got == (6e6, 4190.0, 3990.0), "رشدِ واقعیِ همان نشست می‌نشیند", got)
+
+    con.execute(T._MW_INSERT, grow)
+    con.commit()
+    twice = con.execute("SELECT q_tot_tran, p_closing, price_min, z_tot_tran"
+                        " FROM market_watch").fetchone()
+    ck(twice == (6e6, 4190.0, 3990.0, 1200.0) and
+       con.execute("SELECT COUNT(*) FROM market_watch").fetchone()[0] == 1,
+       "اجرایِ دوباره بی‌اثر است (idempotent)", twice)
+
+    # نشستِ تازه همیشه می‌نویسد: نمادِ متوقف نباید حجمِ دیروز را نگه دارد.
+    halted = _mw_tuple(d_even=20261012, h_even=90000, p_closing=4190.0, p_last=4190.0,
+                       price_first=0.0, price_min=0.0, price_max=0.0,
+                       q_tot_tran=0.0, q_tot_cap=0.0, z_tot_tran=0.0, fetched_at="t4")
+    con.execute(T._MW_INSERT, halted)
+    con.commit()
+    got = con.execute("SELECT d_even, q_tot_tran, price_min, price_max FROM market_watch"
+                      ).fetchone()
+    ck(got == (20261012, 0.0, 0.0, 0.0),
+       "نشستِ تازه بازنویسی می‌شود (تابلویِ کهنه نمی‌ماند)", got)
+    con.close()
+    con2.close()
+
+
 def test_no_live_fabrication():
     section("۳) بی‌ساختنِ عدد و بی‌هرسِ دادهٔ منتشرشده")
     ck(CC.candle("X", "2026-01-01", 10, 11, 9, 10.5, 0) is None,
@@ -166,6 +256,7 @@ def main():
     print("phase 4.7 ingestion guards")
     test_provenance()
     test_daily_snapshot_guard()
+    test_market_watch_guard()
     test_no_live_fabrication()
     print("\n%d passed / %d failed" % (len(PASSED), len(FAILED)))
     if FAILED:

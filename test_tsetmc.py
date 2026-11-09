@@ -148,10 +148,32 @@ _INST_COLS = ("ins_code", "l_val18", "l_val30", "sector_code", "sector_name",
 # ارقامِ روزانۀ (p_red_tran/buy_op = NAVِ صدور/استرداد) نه — عددِ کهنهٔ NAV
 # از بی‌عدد بدتر است.
 _STICKY_INSTRUMENTS = ("isin", "c_gr_val_cot")
-_STICKY_MARKET_WATCH = ("flow",)
+_STICKY_MARKET_WATCH = ("flow", "market_cap_src")
+# فاز ۴٫۷ §۵٫۴ (ادامه) — `market_watch` هم همان نقص را داشت: `_upsert` هر ستونِ
+# غیرِ sticky را با `excluded.c` می‌نوشت، پس پاسخِ لاغر (pcl/pdv هست،
+# pmn/pmx/pf/qtj نیست) آن ستون‌ها را NULL می‌کرد. شاهد روی کپیِ آزمایشگاهی:
+# ۱۶ ردیفِ معامله‌شده با `price_first` تهی که کندلِ همان نشست open معتبر دارد،
+# و ۱٬۳۷۷ ردیفِ تابلو با حجمِ صفر در حالی که `daily_prices` همان نشست
+# معامله‌شده است.
+#   • keep-if-zero فقط *داخلِ همان نشست* اعمال می‌شود (`session_col="d_even"`):
+#     ردیفِ تابلو کلیدش ins_code است و هر نشست بازنویسی می‌شود؛ نگه‌داشتنِ
+#     مقدارِ دیروز رویِ نشستِ تازه یعنی «تابلویِ کهنه» و نمادِ متوقف هم حجمِ
+#     دیروز را نشان می‌داد.
+#   • عمقِ سفارش (buy_q*/sell_q*) عمداً در این فهرست نیست: بعد از بستنِ بازار
+#     خالی می‌شود و صفرِ آن خبر است، نه غیبت.
+#   • `price_change` هم نیست: صفرش یک مقدارِ معتبر است (بی‌تغییر).
+_MW_KEEP_IF_ZERO = ("p_closing", "p_last", "price_min", "price_max", "price_first",
+                    "price_yesterday", "q_tot_tran", "q_tot_cap", "z_tot_tran",
+                    "market_cap", "allowed_min", "allowed_max")
+# ردیفِ معامله‌شدهٔ همان نشست با ردیفِ بی‌حجم بازنویسی نمی‌شود؛ نشستِ تازه همیشه
+# می‌نویسد (وگرنه نمادِ متوقف حجمِ دیروز را نگه می‌داشت).
+_MW_ROW_GUARD = ("market_watch.d_even IS NULL OR excluded.d_even IS NULL "
+                 "OR market_watch.d_even <> excluded.d_even "
+                 "OR COALESCE(market_watch.q_tot_tran, 0) <= 0 "
+                 "OR COALESCE(excluded.q_tot_tran, 0) > 0")
 
 
-def _upsert(table, cols, sticky):
+def _upsert(table, cols, sticky, keep_if_zero=(), session_col=None, row_guard=None):
     """INSERT با نامِ ستون + «نگه‌داشتنِ ستون‌هایِ شناسه وقتی مبدأ نگفته».
 
     `INSERT OR REPLACE` ردیف را می‌اندازد و دوباره می‌سازد، پس هر ستونِ
@@ -162,14 +184,31 @@ def _upsert(table, cols, sticky):
     """
     head = (f"INSERT INTO {table} (" + ", ".join(cols) + ") VALUES ("
             + ",".join("?" * len(cols)) + ")")
-    upd = ", ".join(
-        f"{c} = COALESCE(excluded.{c}, {table}.{c})" if c in sticky else
-        f"{c} = excluded.{c}" for c in cols)
-    return head + " ON CONFLICT(ins_code) DO UPDATE SET " + upd
+    parts = []
+    for c in cols:
+        if c in sticky:
+            parts.append(f"{c} = COALESCE(excluded.{c}, {table}.{c})")
+        elif c in keep_if_zero:
+            keep = ("CASE WHEN excluded.{c} IS NULL OR excluded.{c} = 0 "
+                    "THEN COALESCE(NULLIF({t}.{c}, 0), excluded.{c}) "
+                    "ELSE excluded.{c} END").format(c=c, t=table)
+            if session_col:
+                keep = ("CASE WHEN excluded.{s} IS NOT NULL AND {t}.{s} IS NOT NULL "
+                        "AND excluded.{s} <> {t}.{s} THEN excluded.{c} ELSE {keep} END"
+                        ).format(s=session_col, t=table, c=c, keep=keep)
+            parts.append(f"{c} = " + keep)
+        else:
+            parts.append(f"{c} = excluded.{c}")
+    sql = head + " ON CONFLICT(ins_code) DO UPDATE SET " + ", ".join(parts)
+    if row_guard:
+        sql += "\nWHERE " + row_guard
+    return sql
 
 
 _INST_INSERT = _upsert("instruments", _INST_COLS, _STICKY_INSTRUMENTS)
-_MW_INSERT = _upsert("market_watch", MW_COLS, _STICKY_MARKET_WATCH)
+_MW_INSERT = _upsert("market_watch", MW_COLS, _STICKY_MARKET_WATCH,
+                     keep_if_zero=_MW_KEEP_IF_ZERO, session_col="d_even",
+                     row_guard=_MW_ROW_GUARD)
 # دُمِ مشترکِ هر دو سازندۀ tuple (هم `_mw_row` و هم حلقۀ `main()`): اگر این
 # سه کلیدِ خام دو جا جدا نوشته شوند، افزودنِ ستونِ ششم یک‌جا فراموش می‌شود.
 def p1_tail(r, mcap, mcap_src):
