@@ -177,6 +177,11 @@ SUITES = [
     # dry_run بی‌اثر، اولویتِ src حفظِ ردیفِ منتشرشده. نوشتنِ عملیاتی قفل است.
     ('dev/test_history_gap_repair_v1.py',
      'RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board'),
+    # Phase 4.7 (§5): ردیفِ بدونِ src هرگز «published» گزارش نمی‌شود (legacy-unknown
+    # با رتبهُ صفر)، snapshotِ لاغرِ تابلو ردیفِ معامله‌شدهٔ daily_prices را پاک
+    # نمی‌کند (با کنترلِ منفی رویِ INSERT OR REPLACE)، و اجرایِ دوباره idempotent است.
+    ('dev/test_phase47_ingestion_v1.py',
+     'Phase4.7 ingestion: NULL src is legacy-unknown (never published), thin board snapshot never erases a traded daily_prices row, idempotent replay'),
     # Phase 4 (مرحلۀِ ۵/۷): موتورِ canonicalِ نوع‌محورِ تعدیل — فرمولِ هر نوع با مثالِ دستی،
     # مرز/نامعتبر/مفقود → incomplete/invalid (بی‌حدس، بی‌خنثیِ خاموش)، زنجیرۀِ deterministic با
     # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.

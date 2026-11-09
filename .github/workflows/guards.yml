@@ -102,6 +102,130 @@ jobs:
       - name: Race Detector (generation runtime)
         run: go test -race -count=1 ./internal/generation/... ./internal/snapshot/... ./internal/pointerfile/...
 
+  go-windows:
+    name: go backend on windows (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-latest]
+    defaults:
+      run:
+        working-directory: backend-go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          check-latest: true
+          cache-dependency-path: backend-go/go.sum
+
+      - name: Go Vet
+        run: go vet ./...
+
+      - name: Windows binary
+        shell: bash
+        run: |
+          set -e
+          mkdir -p ../dist-ci
+          go build -o ../dist-ci/BorsTerminal_Ultimate.exe ./cmd/borsd
+          ls -l ../dist-ci/BorsTerminal_Ultimate.exe
+
+      - name: Unit tests (native windows)
+        run: go test ./...
+
+  delivery-contract:
+    name: bundle contract / data packs / artifact hashes
+    runs-on: windows-latest
+    needs: [go-windows]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          check-latest: true
+          cache-dependency-path: backend-go/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend-v2/package-lock.json
+
+      - name: Build frontend-v2
+        working-directory: frontend-v2
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble bundle
+        shell: bash
+        run: |
+          set -e
+          mkdir -p dist-ci/frontend dist-ci/data/ra365_calendar
+          cp -r frontend-v2/dist/. dist-ci/frontend/
+          test -f dist-ci/frontend/index.html
+          cp -r data/ra365_calendar/ra365-r32d dist-ci/data/ra365_calendar/ra365-r32d
+          test -n "$(ls -A dist-ci/data/ra365_calendar/ra365-r32d)"
+          if [ -d data/ra365_corrections ]; then
+            cp -r data/ra365_corrections dist-ci/data/ra365_corrections
+            test -n "$(ls -A dist-ci/data/ra365_corrections)"
+          fi
+          ( cd backend-go && go build -o ../dist-ci/BorsTerminal_Ultimate.exe ./cmd/borsd )
+
+      - name: Bundle contract (zero python/uvicorn/fastapi)
+        shell: bash
+        run: |
+          set -e
+          ( cd backend-go && go run ./cmd/bundlecheck -path ../dist-ci -json )
+
+      - name: Artifact hashes
+        shell: bash
+        run: |
+          set -e
+          sha256sum dist-ci/BorsTerminal_Ultimate.exe > delivery-artifacts.sha256
+          find dist-ci/frontend dist-ci/data -type f -print0 | sort -z | xargs -0 sha256sum >> delivery-artifacts.sha256
+          echo "--- artifact manifest ---"
+          cat delivery-artifacts.sha256
+
+      - name: Upload artifact manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: delivery-artifacts
+          path: delivery-artifacts.sha256
+          if-no-files-found: error
+
+  data-integrity:
+    name: data integrity guards (ingestion / candles / backfill)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Provenance + thin-snapshot guards
+        run: python dev/test_phase47_ingestion_v1.py
+
+      - name: Candle contract
+        run: python dev/candle_contract_v1071.py
+
+      - name: History repair + gap fill on temp DB
+        run: |
+          python dev/test_round18_history_repair_v1.py
+          python dev/test_history_gap_repair_v1.py
+
   frontend-v2:
     name: frontend v2 (typecheck / vitest / build)
     runs-on: ubuntu-latest

@@ -2014,7 +2014,9 @@ func (s *Service) canonicalPriceHistory(ctx context.Context, symbol string) ([]m
 			lastF = lastV.(float64)
 		}
 		h, l := candlecontract.Widen(o, hRaw, lRaw, closeF, lastF)
-		srcText := "published"
+		// تهی/NULL یعنی «منشأ نامعلوم» (ردیف‌های پیش از ستونِ src)، نه «published».
+		// همان قراردادِ candle_contract.from_db_row: برچسبِ منبع حدس زده نمی‌شود.
+		srcText := "legacy-unknown"
 		if src.Valid && src.String != "" {
 			srcText = src.String
 		}

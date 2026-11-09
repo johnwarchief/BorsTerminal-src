@@ -178,11 +178,79 @@ def p1_tail(r, mcap, mcap_src):
             num(r.get("buyOP")))
 
 
-_DP_INSERT = ("INSERT OR REPLACE INTO daily_prices ("
-              "ins_code, d_even, p_closing, price_min, price_max, price_yesterday,"
-              " price_first, q_tot_tran, q_tot_cap, price_change, fetched_at,"
-              " market_cap, market_cap_src, z_tot_tran, p_last) VALUES ("
-              + ",".join("?" * 15) + ")")
+# فاز ۴٫۷ §۵٫۴ — «Snapshot ناقص نباید ردیفِ کامل را پاک کند».
+# `INSERT OR REPLACE` ردیف را می‌انداخت و از صفر می‌ساخت، پس هر پاسخِ لاغرِ
+# TSETMC (که `pcl/pdv` را دارد ولی `pmn/pmx/pf/qtj` را ندارد ⇒ ۰) نشستِ واقعیِ
+# همان `d_even` را صفر می‌کرد. شاهدِ اندازه‌گیری‌شده روی کپیِ آزمایشگاهی:
+# فولاد 2026-10-11 در `daily_prices` صفر شد (q_tot_tran=0، price_first=0) در
+# حالی که کندلِ همان روز ۸٬۳۸۰٬۴۲۴٬۲۷۵ سهم حجم دارد؛ ۹٬۴۳۶ کندلِ `board`
+# دیگر با ردیفِ تابلوِ خودشان نمی‌خوانند (tools/phase47/probe_ingestion.py).
+_DP_COLS = ("ins_code", "d_even", "p_closing", "price_min", "price_max",
+            "price_yesterday", "price_first", "q_tot_tran", "q_tot_cap",
+            "price_change", "fetched_at", "market_cap", "market_cap_src",
+            "z_tot_tran", "p_last")
+_DP_INSERT_LEGACY = ("INSERT OR REPLACE INTO daily_prices (" + ", ".join(_DP_COLS)
+                     + ") VALUES (" + ",".join("?" * len(_DP_COLS)) + ")")
+# ستون‌هایی که صفر در آن‌ها یعنی «مبدأ نگفت»، نه «مقدار صفر شد».
+_DP_KEEP_IF_ZERO = ("p_closing", "price_min", "price_max", "price_yesterday",
+                    "price_first", "q_tot_tran", "q_tot_cap", "price_change",
+                    "market_cap", "z_tot_tran", "p_last")
+_DP_PK_CACHE = {}
+
+
+def _dp_guarded_upsert():
+    """UPSERTِ محافظت‌شده: مقدارِ صفر/غایب، مقدارِ موجودِ غیرصفر را نمی‌بلعد.
+
+    دو محافظِ مستقل دارد:
+      ۱) هر ستونِ عددی با `CASE` نگه داشته می‌شود اگر ورودی NULL/۰ باشد و مقدارِ
+         فعلی غیرصفر باشد؛
+      ۲) `WHERE` رویِ خودِ به‌روزرسانی: ردیفِ «معامله‌شده» با ردیفِ «حجم صفر»
+         بازنویسی نمی‌شود (پاسخِ پیش از بازگشایی یا پاسخِ لاغرِ میان‌روز).
+    اجرایِ دوباره بی‌اثر است (idempotent): مقدارِ یکسان دوباره همان می‌شود.
+    """
+    sets = []
+    for c in _DP_COLS[2:]:
+        if c in _DP_KEEP_IF_ZERO:
+            sets.append(
+                "{c} = CASE WHEN excluded.{c} IS NULL OR excluded.{c} = 0 "
+                "THEN COALESCE(NULLIF(daily_prices.{c}, 0), excluded.{c}) "
+                "ELSE excluded.{c} END".format(c=c))
+        else:
+            sets.append("{c} = COALESCE(excluded.{c}, daily_prices.{c})".format(c=c))
+    return ("INSERT INTO daily_prices (" + ", ".join(_DP_COLS) + ") VALUES ("
+            + ",".join("?" * len(_DP_COLS)) + ")\nON CONFLICT(ins_code, d_even) DO UPDATE SET "
+            + ", ".join(sets)
+            + "\nWHERE daily_prices.q_tot_tran IS NULL OR daily_prices.q_tot_tran <= 0 "
+              "OR excluded.q_tot_tran > 0")
+
+
+def dp_insert_sql(conn):
+    """SQLِ نوشتنِ `daily_prices` برایِ همین اتصال.
+
+    ON CONFLICT فقط وقتی کار می‌کند که کلیدِ یکتایِ (ins_code, d_even) وجود داشته
+    باشد؛ بانکِ قدیمیِ بدونِ PK باید همان رفتارِ قبلی را بگیرد، نه خطا.
+    """
+    key = id(conn)
+    if key in _DP_PK_CACHE:
+        return _DP_PK_CACHE[key]
+    has_pk = False
+    try:
+        pk = [r[1] for r in conn.execute("PRAGMA table_info(daily_prices)") if r[5]]
+        if {"ins_code", "d_even"}.issubset(set(pk)):
+            has_pk = True
+        else:
+            for idx in conn.execute("PRAGMA index_list(daily_prices)"):
+                if not idx[2]:        # unique نیست
+                    continue
+                cols = [r[2] for r in conn.execute("PRAGMA index_info(%s)" % idx[1])]
+                if {"ins_code", "d_even"}.issubset(set(cols)):
+                    has_pk = True
+                    break
+    except sqlite3.Error:
+        has_pk = False
+    sql = _dp_guarded_upsert() if has_pk else _DP_INSERT_LEGACY
+    _DP_PK_CACHE[key] = sql
+    return sql
 
 
 def session_day_of(watch_rows, fallback=0):
@@ -2853,7 +2921,7 @@ def _save_market_snapshot(s, conn):
     c.executemany(_INST_INSERT, inst)
     c.executemany(_MW_INSERT, watch)
     ensure_daily_tran_column(conn)
-    c.executemany(_DP_INSERT, daily)
+    c.executemany(dp_insert_sql(conn), daily)
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)", [(k, v) for k, v in boards.items()])
     conn.commit()
@@ -3059,7 +3127,7 @@ def tick_live(conn=None):
         else:
             c.executemany(_MW_INSERT, wch)
             ensure_daily_tran_column(conn)
-            c.executemany(_DP_INSERT, dch)
+            c.executemany(dp_insert_sql(conn), dch)
         conn.commit()
         # امضاها **پس از** commit جا می‌افتند: اگر نوشتن شکست، آن ردیف در سیکلِ
         # بعدی دوباره «تغییر» حساب می‌شود و رویِ دیسک کهنه نمی‌ماند. `fields`
@@ -3309,7 +3377,7 @@ def main():
     c.executemany(_INST_INSERT, inst)
     c.executemany(_MW_INSERT, watch)
     ensure_daily_tran_column(conn)
-    c.executemany(_DP_INSERT, daily)
+    c.executemany(dp_insert_sql(conn), daily)
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)",
                   [(k, v) for k, v in boards.items()])

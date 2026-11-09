@@ -32,7 +32,13 @@ from __future__ import annotations
 SRC_PUBLISHED = "published"    # GetClosingPriceDailyListCSV / GetInstrmentsHistoryInDay
 SRC_BOARD = "board"            # GetMarketWatch → daily_prices (اسنپشاتِ نشستِ جاری)
 SRC_INDEX = "index-synthetic"  # کندلِ ساختگیِ شاخص کل (open از closeِ دیروز)
-RANK = {None: 0, "": 0, SRC_BOARD: 1, SRC_INDEX: 1, SRC_PUBLISHED: 2}
+# ردیف‌هایی که پیش از افزودنِ ستونِ `src` نوشته شده‌اند و هیچ شاهدی برایِ منبعشان
+# نیست. این برچسب **حدس نیست**: می‌گوید «منشأ نامعلوم است» و همان رتبهُ صفرِ NULL را
+# دارد، پس هیچ نوشتارِ منتشرشده‌ای را نمی‌بندد. پیش از این `from_db_row` این ردیف‌ها
+# را «published» اعلام می‌کرد؛ ادعایی بی‌شاهد (فاز ۴٫۷ §۵٫۱).
+SRC_LEGACY = "legacy-unknown"
+RANK = {None: 0, "": 0, SRC_LEGACY: 0, SRC_BOARD: 1, SRC_INDEX: 1,
+        SRC_PUBLISHED: 2}
 
 
 def rank(src):
@@ -175,10 +181,12 @@ def from_db_row(row):
     نوشته شده‌اند) درِ خواندن هم همان کندلی بدهند که درِ نوشتن باید ساخته می‌شد.
     """
     src = row[9] if len(row) > 9 else None
+    # تهی/None ⇒ «legacy-unknown»، نه «published». برچسبِ منبع باید از خودِ ردیف
+    # بیاید؛ نامعلوم‌بودن یک وضعیتِ معتبر است، نه چیزی که با حدس پر شود.
     return candle(row[0], row[1], row[2], row[3], row[4], row[5], row[6],
                   row[7] if len(row) > 7 else None,
                   row[8] if len(row) > 8 else None,
-                  src or SRC_PUBLISHED)
+                  src or SRC_LEGACY)
 
 
 DB_COLUMNS = ("symbol", "date", "open", "high", "low", "close", "volume",
