@@ -14,9 +14,9 @@
 | [ADR-OC-005](ADR-OC-005-atomic-offline-rollback.md) | نصب اتمیک، Rollback، Offline و Revocation | Accepted (Engineering) | Q17 |
 | [ADR-OC-006](ADR-OC-006-storage-boundaries.md) | توپولوژی ذخیره‌سازی و مرزهای Single-Writer | Accepted (Engineering) | Q13 |
 | [ADR-OC-007](ADR-OC-007-typed-ir-interpreter.md) | IR تایپ‌شده و Interpreter Go؛ بدون کد دلخواه | Accepted (Engineering) | OC-D-021 |
-| [ADR-OC-008](ADR-OC-008-fts-canonical-adapter.md) | FTS کانونیکال به‌صورت Adapter و Envelope؛ دروازهٔ پاریتی | Accepted (Engineering) | Q5 |
-| [ADR-OC-009](ADR-OC-009-validation-policy.md) | Validation Policy به‌عنوان دادهٔ امضاشده | Owner Sign-off Pending | Q1 |
-| [ADR-OC-010](ADR-OC-010-ranking-policy.md) | Ranking Policy به‌عنوان دادهٔ امضاشده؛ بدون Score مرکب | Owner Sign-off Pending | Q11 |
+| [ADR-OC-008](ADR-OC-008-fts-canonical-adapter.md) | FTS مستقل و کانونیکال؛ تطابق جزوه/چارت/Python/Go Gate اجباری | Accepted (Owner Decision); Conformance Gate OPEN | Q5 |
+| [ADR-OC-009](ADR-OC-009-validation-policy.md) | Validation Policy به‌عنوان دادهٔ امضاشده؛ Q1 Deferred | Owner Decision: Deferred; approval disabled | Q1 |
+| [ADR-OC-010](ADR-OC-010-ranking-policy.md) | Ranking Policy لغوی؛ بدون Score مرکب؛ ترتیب معیارها باز | Lexicographic Approved; Order Pending | Q11 |
 | [ADR-OC-011](ADR-OC-011-cloud-gpu-jobs.md) | GPU موقت اختیاری و مجوز خروج داده | Owner Sign-off Pending | Q15 |
 | [ADR-OC-012](ADR-OC-012-local-api-personal-data.md) | امنیت API محلی و مرز دادهٔ شخصی/سه کاربر | Accepted (Engineering) | A4/A12 |
 | [ADR-OC-013](ADR-OC-013-artifacts-vs-app-updater.md) | جداسازی Registry استراتژی از App Updater | Accepted (Engineering) | A12/A14 |
