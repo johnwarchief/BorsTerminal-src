@@ -924,18 +924,18 @@ func mergeOfficialFundEvents(events []canonEvent, official []canonEvent) []canon
 	return out
 }
 
-// factorsFromStoredEvents معادلِ _factors_from_events: بستهٔ تصحیح + کرانِ
-// موتور + زنجیرۀِ عامل‌ها، دقیقاً همان مسیری که چارت می‌زند.
-func (s *Service) factorsFromStoredEvents(ctx context.Context, symbol string, times []string, events []canonEvent) []float64 {
-	ins := s.resolveInsCode(ctx, symbol)
-	pack := LoadPack(s.dataDir)
-	kept, _, _ := pack.ApplyFactorEvents(ins, symbol, events)
-	_, _, chainEvents, _ := engineEvents(kept)
-	t10 := make([]string, len(times))
-	for i, t := range times {
-		t10[i] = date10(t)
+// canonicalFactors معادلِ مسیرِ چارت برایِ مسیرهایِ مشتق (MA/الگوها): همان
+// مجموعهٔ رویدادِ انبار، همان فیلترِ اثبات‌نشده، همان داوریِ منبع و همان
+// canonicalAdjustment. پیش‌تر MA/الگوها زنجیرهٔ ساده‌تری می‌زدند و رویدادِ رسمیِ
+// تازه در آن‌ها جا می‌افتاد (شستا ۲۰۲۶-۱۰-۲۵: ۰٫۷۴۷۱ در برابر ۰٫۷۰۳۶ِ چارت).
+func (s *Service) canonicalFactors(ctx context.Context, symbol string, times []string, closings map[string]float64) []float64 {
+	evs, _, _ := s.storedCanonicalEvents(ctx, symbol)
+	evs, _ = s.filterUnproven(ctx, symbol, evs, times)
+	src := s.priceHistorySource(ctx, symbol, evs)
+	if !adjKnownSources[src] {
+		evs = nil
 	}
-	factors, _ := chainFactors(t10, chainEvents)
+	_, _, factors, _, _ := s.canonicalAdjustment(ctx, symbol, times, evs, closings)
 	return factors
 }
 

@@ -83,20 +83,16 @@ func (s *Service) maBody(ctx context.Context, symbol string, days int) map[strin
 	adjusted := adjKnownSources[src] || strings.HasPrefix(src, "fund-portal") ||
 		strings.HasPrefix(src, "rahavard-reference-correction")
 	times := make([]string, len(maRows))
+	closings := make(map[string]float64, len(maRows))
 	for i, c := range maRows {
 		times[i] = stringValue(c["time"])
-	}
-	factors := make([]float64, len(maRows))
-	for i := range factors {
-		factors[i] = 1.0
-	}
-	if adjusted {
-		canonEvents := make([]canonEvent, len(evs))
-		for i, e := range evs {
-			canonEvents[i] = canonEvent{Date: e.Date, Ratio: e.Ratio}
+		if v, ok := c["closing"].(float64); ok {
+			closings[date10(times[i])] = v
+		} else if v, ok := c["close"].(float64); ok {
+			closings[date10(times[i])] = v
 		}
-		factors = s.factorsFromStoredEvents(ctx, symbol, times, canonEvents)
 	}
+	factors := s.canonicalFactors(ctx, symbol, times, closings)
 	type point struct {
 		day   string
 		close float64

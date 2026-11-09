@@ -107,16 +107,32 @@ def main() -> int:
             for w in windows:
                 ok = bad = 0
                 max_abs = 0.0
-                for (d, lv), (_d2, rv) in zip(ma_local[f"ma{w}"], ma_ref[f"ma{w}"]):
+                # تفکیک «فرمول» از «ورودی»: روزی که همهٔ w closeِ پنجره با مرجع
+                # یکی است، اختلافِ MA فقط می‌تواند از فرمول باشد؛ روزی که ورودی
+                # متفاوت است، اختلاف به داده نسبت داده می‌شود نه به محاسبه.
+                ok_same_in = bad_same_in = 0
+                for i, ((d, lv), (_d2, rv)) in enumerate(
+                        zip(ma_local[f"ma{w}"], ma_ref[f"ma{w}"])):
                     if lv is None or rv is None:
                         continue
                     diff = abs(float(lv) - float(rv))
                     max_abs = max(max_abs, diff)
+                    same_input = all(
+                        abs(float(a) - float(b)) <= max(args.tolerance_abs,
+                                                        abs(float(b)) * args.tolerance_rel)
+                        for _dd, a, b in pairs[max(0, i - w + 1):i + 1]
+                    ) and len(pairs[max(0, i - w + 1):i + 1]) == w
                     if diff <= max(args.tolerance_abs, abs(float(rv)) * args.tolerance_rel):
                         ok += 1
+                        if same_input:
+                            ok_same_in += 1
                     else:
                         bad += 1
-                st["windows"][str(w)] = {"ok": ok, "bad": bad, "max_abs": max_abs}
+                        if same_input:
+                            bad_same_in += 1
+                st["windows"][str(w)] = {"ok": ok, "bad": bad, "max_abs": max_abs,
+                                         "ok_same_input": ok_same_in,
+                                         "bad_same_input": bad_same_in}
             so["resolutions"][res] = st
         out["symbols"][sym] = so
         print(sym, {res: {w: (v["ok"], v["bad"], round(v["max_abs"], 4))

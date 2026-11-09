@@ -2464,6 +2464,26 @@ def _factors_from_events(times, events, symbol=None, ins_code=None):
     return factors
 
 
+def _canonical_factors(symbol, times, closings=None):
+    """ضرایبِ تعدیل از *همان* `_canonical_adjustment`ِ چارت، برایِ مسیرهایِ مشتق.
+
+    MA و الگوها پیش‌تر فقط `_stored_adjust_events` را می‌دیدند؛ رویدادِ رسمیِ تازه
+    که هنوز به `adjust_events` نرسیده بود از زنجیره جا می‌افتاد (شستا ۲۰۲۶-۱۰-۲۵:
+    ضریبِ ۰٫۷۴۷۱ در برابرِ ۰٫۷۰۳۶ِ چارت، روی ۴۵۷ روز). داوریِ منبع و فیلترِ
+    اثبات‌نشده هم همان دو گامِ چارت است، نه قاعدهٔ سوم.
+    """
+    t10 = [str(t)[:10] for t in (times or [])]
+    evs = _stored_adjust_events(symbol)
+    evs, _unproven = _filter_unproven_base_events(symbol, evs, times=t10)
+    src = ("local-cache" if evs
+           else _stored_adjust_source(symbol) or "local-db-unseen")
+    if src not in _ADJ_KNOWN_SOURCES:
+        evs = []
+    _applied, _rejected, factors, _chain, _cov = _canonical_adjustment(
+        symbol, t10, evs, closings=closings)
+    return factors
+
+
 def _d_even_to_date(d_even):
     """20260928 (int/str) → '2026-09-28'؛ بی‌اعتبار → None."""
     s = str(d_even or "").strip()
@@ -3532,9 +3552,8 @@ def get_ma_events(symbol: str, days: int = Query(730)):
                 else _stored_adjust_source(symbol) or "local-db-unseen")
         _cap = _adjust_capability(_evs, _src, symbol=symbol)
         _adjusted = bool(_cap.get("combined_available"))
-        _fct = (_factors_from_events([str(c["time"])[:10] for c in _ma_rows], _evs,
-                                     symbol=symbol)
-                if _adjusted else [1.0] * len(_ma_rows))
+        _fct = _canonical_factors(symbol, [str(c["time"])[:10] for c in _ma_rows],
+                                  closings=_candle_closings(_ma_rows))
         closes = [(c["time"], round(float(c["close"]) * f, 6))
                   for c, f in zip(_ma_rows, _fct) if c["close"] is not None]
         ma = _sma_series(closes, MA_WINDOWS)
@@ -3546,17 +3565,6 @@ def get_ma_events(symbol: str, days: int = Query(730)):
         return result
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-def _adjust_events_for(symbol, rows=None):
-    """رویدادهایِ تعدیلِ کاننیکالِ نماد — همان مجموعه‌ای که یک‌بار کشف شده است."""
-    evs = _stored_adjust_events(symbol)
-    if evs:
-        return evs
-    try:
-        j = get_chart_tsetmc(symbol)
-        return j.get("adjustEvents") or []
-    except Exception:
-        return []
 
 @router.get("/api/chart-db/{symbol}")
 def get_chart_db_visible(symbol: str):
@@ -3738,16 +3746,15 @@ def get_patterns(symbol: str):
                     "message": f"تاریخچهٔ موجود: {_fts_fa(_bars_effective)} روز؛ "
                                f"حداقل لازم: ۶۰"}
         # FIX v7.2: سطحها باید در فضای تعدیلشده باشند (chart با factor رسم میکند) — وگرنه Y-mismatch
-        evs = _adjust_events_for(symbol, rows)
         # مبنایِ قیمت پیش از ضربِ فاکتور انتخاب می‌شود (تنها نقطۀ انتخاب؛ §۱-ث شرطِ ۱)،
         # و سپس هر سه نگارۀ قیمتی همان کندل ضریب می‌گیرند تا `closing` (لنگر) و `last`
         # درِ پاسخ با `close` (منتخب) در یک فضایِ مقیاس باشند.
         price_basis.apply_basis(rows)
-        # قدمِ ۵: حلقۀِ n×mِ محلیِ سوم (اینجا) هم حذف شد — سطح‌ها از همان
-        # `_factors_from_events` می‌آیند که کندل‌ها و FTS می‌گیرند، پس «سطحِ
-        # تعدیل‌شده» و «شمعیِ تعدیل‌شده» یک ضریب دارند و دو محاسبه نه.
-        for r, f in zip(rows, _factors_from_events([r["date"] for r in rows], evs,
-                                                   symbol=symbol)):
+        # قدمِ ۵: ضریبِ همین مسیر هم از `_canonical_adjustment` می‌آید؛ پیش‌تر
+        # زنجیرۀِ ساده‌ترِ انبار را می‌دید و رویدادِ رسمیِ تازه از سطحِ الگو جا
+        # می‌افتاد (شستا ۲۰۲۶-۱۰-۲۵)، پس «سطح» و «شمع» دو ضریب می‌گرفتند.
+        for r, f in zip(rows, _canonical_factors(
+                symbol, [r["date"] for r in rows], closings=_candle_closings(rows))):
             for _k in ("high", "low", "close", "closing", "last", "high_raw", "low_raw"):
                 if r.get(_k) is not None:
                     r[_k] = r[_k] * f

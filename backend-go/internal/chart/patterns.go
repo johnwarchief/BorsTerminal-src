@@ -33,18 +33,20 @@ func (s *Service) patternsBody(ctx context.Context, symbol string) map[string]an
 			"insufficient_history": true, "raw_rows": rawRows, "bars_effective": barsEffective,
 			"message": "تاریخچهٔ موجود: " + ftsFa(barsEffective) + " روز؛ حداقل لازم: ۶۰"}
 	}
-	evs := s.storedAdjustEvents(ctx, symbol)
 	pricebasis.ApplyBasis(rows, false, basis)
 	// سطح‌ها در فضایِ تعدیل‌شده (چارت با factor رسم می‌کند) — وگرنه Y-mismatch.
 	times := make([]string, 0, len(rows))
+	closings := make(map[string]float64, len(rows))
 	for _, r := range rows {
-		times = append(times, stringValue(r["date"]))
+		day := stringValue(r["date"])
+		times = append(times, day)
+		if v, ok := r["closing"].(float64); ok {
+			closings[date10(day)] = v
+		} else if v, ok := r["close"].(float64); ok {
+			closings[date10(day)] = v
+		}
 	}
-	canonEvents := make([]canonEvent, len(evs))
-	for i, e := range evs {
-		canonEvents[i] = canonEvent{Date: e.Date, Ratio: e.Ratio}
-	}
-	factors := s.factorsFromStoredEvents(ctx, symbol, times, canonEvents)
+	factors := s.canonicalFactors(ctx, symbol, times, closings)
 	for i, r := range rows {
 		f := 1.0
 		if i < len(factors) {
