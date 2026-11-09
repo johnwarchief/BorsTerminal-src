@@ -149,6 +149,7 @@
 | `go vet ./...` | **PASS** | `GO_VET_RC=0` |
 | Race detector | **NOT_MEASURED** | `CGO_ENABLED=0` و `gcc` محلی موجود نیست |
 | مجموعهٔ کامل تست پایتون (`dev/run_all_tests.py`) | **FAIL (ازپیش‌موجود/محیطی)** | ۱۸۳ سوئیت؛ شکست‌ها مستقل از تغییرات: `chart API guard` به‌خاطر نبود `frontend/node_modules`، دو سوئیت Node به‌خاطر نبود `node`، و شکست‌های وابسته به DB کوچک/فیکسچر. مقایسهٔ Base: B1 در هر دو ۶/۶ PASS؛ B3 در هر دو ۴۹ PASS / ۱ FAIL با همان diff؛ B2 در هر دو ۲ FAIL یکسان. سوئیت Phase 4.9 در همین اجرا ثبت شده و مستقل ۷۶/۷۶ PASS است. Protected DB با اثرانگشت `04137b38…` قبل/بعد یکسان (`PROTECTED_DB_UNCHANGED`).
+| CI واقعی (guards) | **PASS برای کد (۹/۱۰ Job)** | فقط `python-guards` ازپیش‌موجود؛ جزئیات §۱۴ |
 | Frontend / Rust | N/A | هیچ فایل فرانت/راست تغییر نکرد |
 | Seed Build / Merge / Install / Upgrade | **BLOCKED / NOT_MEASURED** | Stage 5 وارد نشد |
 | API تاریخچه/MA/هفتگی/ماهانه/FTS | **PASS (محلی)** | ۳۰/۳۰ + ۳۰/۳۰ |
@@ -225,6 +226,10 @@ python dev/run_all_tests.py
 - بستهٔ Rebuild فعلی برای ۴۷ نماد آزمایشی است، نه همهٔ نمادهای پوشش‌داده‌شده؛ سیاست نسخه‌گذاری/امضا هم هنوز تصویب نشده است.
 - یک اجرای مستقیمِ تستِ `dev/test_adjustment_phasea.py` خارج از Gate Isolation، دو جدولِ **خالی** `adjust_events`/`adjust_verdict` به `market.db`ِ ریشه (seed تعهدشده) افزود. اثرِ منطقی صفر ردیف بود (اثر انگشتِ منطقی: فقط همان دو جدولِ صفر‌ردیفه)، فایل به HEAD بازگردانده شد و هیچ DB نصب/عملیاتی درگیر نشد. از این پس تست‌ها فقط با `BORS_DB` ایزوله اجرا می‌شوند.
 
-## ۱۴) CI
+## ۱۴) CI واقعی (GitHub Actions)
 
-CI پس از push روی همین شاخه بررسی و نتیجهٔ اجرای Actions در commit بعدیِ همین گزارش ثبت می‌شود؛ هیچ Merge/Tag/Release انجام نمی‌شود.
+- Run روی commit کدِ `c6351cfc522a37a658557ffcd280fe79c940975e`: **[guards / 42719494718](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42719494718)** — نتیجهٔ کلی: `failure` (فقط به‌خاطر Jobِ ازپیش‌موجودِ `python-guards`).
+- **۹ از ۱۰ Job: PASS** — `go backend` (Linux)، `go backend on windows` (windows-2022 و windows-latest)، `go race detector`، `desktop delivery` (bundle + Tauri + installer + seed merge)، `frontend v2`، `data integrity`، `js-syntax`، `repo-hygiene`.
+- `python-guards`: FAIL — فهرستِ FAILED **همان فهرستِ ازپیش‌موجودِ Phase 4.8** در run `42689986136` است (`chart API guard` به‌خاطر نبود `frontend/node_modules` در Job، و شکست‌های mstat/funnel/B1/B2/B3/board/sidebar…). `PROTECTED_DB_UNCHANGED` با اثرانگشت `04137b38…` قبل/بعد. سوئیتِ `Phase 4.9` و Round 32B/32C در فهرستِ FAILED **نیستند** ⇒ در CI سبز.
+- Run اولِ `09d1b041`: failure — Jobهای Go/Windows به‌خاطر SHAهای CRLF بستهٔ fixture رد شدند؛ با commit `c6351cfc` (نرمال‌سازی LF + SHAهای تازه) رفع و Run دوم برای همهٔ Jobهای کد/ویندوز/Delivery سبز شد.
+- HEAD کدِ تأییدشده (`c6351cfc…`) در زمان Run با ریموت یکسان بود؛ commit مستنداتِ پس از آن فقط docs است. `main` روی `9a919e82` بدون تغییر؛ شاخهٔ Phase 4.8 روی `9d348b64` حفظ شد. هیچ Merge/Tag/Release انجام نشد.
