@@ -180,6 +180,9 @@ frontend/_audit/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 _audit/ra-profile/
+# Phase 4.5: Rahavard capture exports, full mismatch CSVs and chart screenshots
+# are local-only (the reference OHLC is the owner's subscription; R32 pack README).
+_audit/phase45/
 # Reference Parity (کارِ #73): پاسخِ خامِ رهاورد/تپ‌سیت‌مک و گزارشِ ۹ تا ۳۱ مگابایتیِ هر
 # اجرا بازتولیدشدنی‌اند (`python tools/ra_parity.py --symbols "$(cat
 # _audit/parity_symbols.txt)" --timeframes 0,1,2 --basis last,closing`). ابزارِ تحلیل و
