@@ -16,6 +16,18 @@
 | نتیجهٔ جاب | **success** (۱m۴۹s؛ ۲۰۲۶-۱۱-۰۹ ۱۳:۳۹–۱۳:۴۱ UTC) |
 | Runner | `ubuntu-latest`، Go `1.27.3`، `CGO_ENABLED=1`، گامِ `gcc --version` سبز |
 
+## آخرین اجرا رویِ کدِ نهاییِ مأموریت
+
+| قلم | مقدار |
+| --- | --- |
+| Run | [42644891809](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42644891809) |
+| Head SHA | `6db018f25c692d84347e5079e13f9e59291b79e2` |
+| جابِ race | **success** (۱m۵۵s) |
+| go backend / frontend v2 / EOL / node --check | success / success / success / success |
+| offline guard suites | failure — همان خطا و همان exit رویِ base `da513ae9` (run [42602016590](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42602016590)) |
+
+## اجرایِ نخستِ جاب
+
 گام‌هایِ جاب، همه سبز:
 
 | گام | نتیجه |
