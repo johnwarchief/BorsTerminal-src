@@ -1,0 +1,35 @@
+{
+ "schema": 1,
+ "tolerances": {
+  "EXACT_EQ": 1e-9,
+  "FACTOR_EXACT": 0.001,
+  "FACTOR_MATERIAL": 0.01,
+  "OHLC_MATERIAL": 0.05,
+  "DEDUPE_RATIO_TOL": 0.01
+ },
+ "evidence_tiers": ["O1", "O2", "R1", "R2", "I1"],
+ "step_status_precedence": [
+  "CONFLICT_RATIO", "CONFLICT_DATE", "CONFLICT_DUPLICATE", "CONFLICT_CHAIN",
+  "BLOCKED_SOURCE", "INSUFFICIENT_EVIDENCE",
+  "PARTIAL_OFFICIAL", "PARTIAL_REFERENCE",
+  "RECONSTRUCTED_AUDITED",
+  "VERIFIED_MULTI_SOURCE", "VERIFIED_OFFICIAL", "VERIFIED_REFERENCE",
+  "INVALID_DROPPED"
+ ],
+ "symbol_status_precedence": [
+  "CONFLICT", "BLOCKED_SOURCE", "INSUFFICIENT_EVIDENCE",
+  "RECONSTRUCTED_VERIFIED", "VERIFIED_WITH_EVENTS",
+  "VERIFIED_NO_APPLICABLE_EVENT"
+ ],
+ "coverage": {
+  "official_absence_requires_ingest_proof": true,
+  "reference_no_event_requires_full_window": true,
+  "price_continuity_alone_is_not_evidence": true
+ },
+ "reconciliation_categories": [
+  "SOURCE_MISMATCH", "PRICE_BASIS_DIFFERENCE", "CORPORATE_ACTION_MISSING",
+  "EVENT_DATE_MISMATCH", "EVENT_RATIO_MISMATCH", "SYMBOL_IDENTITY_MISMATCH",
+  "MISSING_HISTORY", "CALENDAR_GAP", "SOURCE_REVISION", "PRECISION_OR_ROUNDING",
+  "INVALID_SOURCE_RECORD", "VERIFIED_NO_EVENT", "UNRESOLVED_SOURCE_GAP"
+ ]
+}

@@ -2437,6 +2437,18 @@
    "reason": "guards the Phase 4.9.1 stage manifest helper used by every verification stage",
    "retirement_date": null
   },
+  "dev/test_phase49_rules_guard.py": {
+   "script": "dev/test_phase49_rules_guard.py",
+   "label": "status rules: five frozen tolerances and 13 categories match the existing parity code (AST)",
+   "kind": "SUITES",
+   "category": "B",
+   "disposition": "KEEP",
+   "profile": "data",
+   "go_equivalent": null,
+   "ts_equivalent": null,
+   "reason": "guards the Phase 4.9.1 status-rules file: the five frozen tolerances are read from the existing Phase 4.9 AST and the 13 reconciliation categories cannot drift",
+   "retirement_date": null
+  },
   "dev/test_portable_v1.py": {
    "script": "dev/test_portable_v1.py",
    "label": "portable mode: explicit marker, isolated data/port, never spawns the installer",

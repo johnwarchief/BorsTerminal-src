@@ -923,6 +923,11 @@ SUITES = [
     # stage proves which bytes it consumed, but the gate never ran its test.
     ('dev/test_phase49_manifest.py',
                                      'stage manifest helper: input/output hashes deterministic'),
+    # Phase 4.9.1 (B4): the ledgers read their tolerances and vocabulary from
+    # dev/phase49_status_rules.json.  These tests pin that file to the real
+    # Phase 4.9 AST, so a drifted threshold or category cannot ship silently.
+    ('dev/test_phase49_rules_guard.py',
+                                     'status rules: five frozen tolerances and 13 categories match the existing parity code (AST)'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
