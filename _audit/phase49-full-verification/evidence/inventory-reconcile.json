@@ -1,0 +1,174 @@
+{
+ "checks": {
+  "history_with_plus_without_equals_total": true,
+  "instruments_rows_split": true,
+  "named_keys_split": true,
+  "no_evidence_adds_up": true,
+  "no_evidence_history_split": true,
+  "pack_keys_split": true,
+  "pack_symbols_inside_history": true,
+  "report_no_evidence_adds_up": true,
+  "union_equals_history_plus_instrument_only": true
+ },
+ "duplicate_instrument_keys": [
+  {
+   "candidates": 2,
+   "in_history": true,
+   "ins_codes": [
+    "17232252152159494",
+    "17403065366457237"
+   ],
+   "key": "آواپارس",
+   "rows": 2
+  },
+  {
+   "candidates": 2,
+   "in_history": false,
+   "ins_codes": [
+    "19335631397595205",
+    "46120997516114414"
+   ],
+   "key": "حیان072",
+   "rows": 2
+  },
+  {
+   "candidates": 2,
+   "in_history": true,
+   "ins_codes": [
+    "44092474955845186",
+    "66025809087145106"
+   ],
+   "key": "کیمازی",
+   "rows": 2
+  }
+ ],
+ "duplicate_instrument_names": 3,
+ "history_keys": 6103,
+ "history_null_or_empty_symbols": 0,
+ "history_outside_instruments": 1468,
+ "history_price_rows": 511139,
+ "history_symbols": 6103,
+ "history_symbols_with_pack_steps": 915,
+ "history_symbols_without_pack_steps": 5188,
+ "history_validity": {
+  "by_status": {
+   "reconstructed_verified": 880,
+   "unverified": 5188,
+   "verified": 35
+  },
+  "rows": 6103,
+  "unverified_equals_history_without_pack_steps": true,
+  "unverified_symbols": 5188,
+  "unverified_with_factor_steps": 0,
+  "unverified_with_pack_step": 0
+ },
+ "inputs": {
+  "db": "_audit/phase49-finalization/seed/market.db",
+  "legacy_pack": "data/ra365_corrections/ra365-r32b-v2",
+  "legacy_pack_actions": {
+   "replace_step": 6631,
+   "suppress_step": 139
+  },
+  "pack": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
+  "pack_actions": {
+   "replace_step": 8280
+  },
+  "report_evidence": "_audit/phase49-finalization/evidence/db-inventory.json"
+ },
+ "instruments": 5944,
+ "instruments_duplicate_name_rows": 3,
+ "instruments_named": 5941,
+ "instruments_rows_named": 5944,
+ "instruments_rows_with_history": 4637,
+ "instruments_rows_without_history": 1307,
+ "instruments_with_history": 4635,
+ "instruments_without_history": 1306,
+ "no_adjustment_evidence": {
+  "definition": "a symbol with no adjust_events row and no pack step, counted over the union of price_history symbols, instruments names, pack symbols and adjust_events symbols",
+  "history_plus_instruments_identity": 6333,
+  "history_symbols_with_evidence": 1076,
+  "history_symbols_without_evidence": 5027,
+  "instruments_without_history": 1306,
+  "pack": "current",
+  "union_symbols_without_evidence": 6333
+ },
+ "notes": [
+  "Two universes, named: 6103 history symbols split into 4635 with an instruments key and 1468 without; the 5941 named instruments split into 4635 with history and 1306 without. 5944 instruments rows minus 3 duplicate-name rows equals 5941 named keys; 0 shared keys spell the instruments name differently from the history symbol. Union = 7409.",
+  "The corrections pack is 951 raw symbols under 915 keys (36 alias spellings) and 8280 step rows; 915 of its keys are inside the history universe. History without a pack step = 5188 (85.0% of 6103).",
+  "history_validity: 6103 rows (reconstructed_verified=880, unverified=5188, verified=35), 5188 unverified with 0 of them carrying a pack step; the unverified set matches the history symbols without a pack step.",
+  "adjust_events: 12829 rows under 1087 raw symbols (1051 keys); 37 raw spellings are outside the history spelling set but 0 keys are outside the history key set. 890 of the pack keys already have product events; 161 symbols have product events and no pack step.",
+  "The report's 6328 is a union-universe count on the r32b pack, not a history count: 6328 = 5022 history symbols with neither source + 1306 instruments with no history; the r32b pack reproduces the recorded value. With the current pack the same definition gives 6333 = 5027 + 1306. History-only: 5027 without any evidence, 5188 without a pack step.",
+  "The pack version moves the no-evidence count by 5: the rebuild adds 96 keys (0 of them without a product event) and drops 8 keys (5 of them without a product event).",
+  "827/828 is a third population, not the pack: the r32b correction pack has 827 symbols while the live pack ra365-live40-v1 supplies 828 asset-map entries to B2's capture plan (1,097 keys in the capture union, 758 mapped). Neither number is the 951-symbol step pack and neither is a history count."
+ ],
+ "overlaps": {
+  "pack_and_product": 890,
+  "pack_without_product": 25,
+  "product_without_pack": 161
+ },
+ "pack_alias_spellings": 36,
+ "pack_raw_symbols": 951,
+ "pack_steps": 8280,
+ "pack_symbols": 915,
+ "pack_symbols_without_history": 0,
+ "product_events": {
+  "history_symbols_with_events": 1051,
+  "raw_symbols": 1087,
+  "raw_symbols_outside_history": 37,
+  "rows": 12829,
+  "symbols": 1051,
+  "symbols_outside_history": 0,
+  "table": "adjust_events"
+ },
+ "provenance": {
+  "db": "_audit/phase49-finalization/db/restored-work.db",
+  "path": "_audit/phase49-finalization/evidence/db-inventory.json",
+  "recorded_no_adjustment_evidence": 6328,
+  "recorded_symbols_in_instruments": 5941,
+  "recorded_symbols_with_history": 6103,
+  "recorded_symbols_with_pack_steps": 827,
+  "recorded_symbols_with_product_events": 1087,
+  "schema": "phase49-finalization-db-inventory-v1"
+ },
+ "report_no_evidence": {
+  "current_pack": {
+   "history_symbols_without_evidence": 5027,
+   "history_symbols_without_pack_steps": 5188,
+   "pack_delta": {
+    "added_keys": 96,
+    "added_without_product_event": 0,
+    "dropped_key_list": [
+     "جخود0508",
+     "جسپا0507",
+     "جملت0508",
+     "جهرم0508",
+     "نقران",
+     "نیکگستر",
+     "پادا",
+     "پرسپولیس"
+    ],
+    "dropped_keys": 8,
+    "dropped_without_product_event": 5,
+    "net_no_evidence_delta": 5
+   },
+   "pack_symbols": 915,
+   "union_symbols_without_evidence": 6333
+  },
+  "definition": "a symbol with no adjust_events row and no pack step, counted over the union of price_history symbols, instruments names, pack symbols and adjust_events symbols",
+  "history_plus_instruments_identity": 6328,
+  "history_symbols_without_evidence": 5022,
+  "instruments_without_history": 1306,
+  "legacy_pack_raw_symbols": 827,
+  "legacy_pack_steps": 6770,
+  "legacy_pack_symbols": 827,
+  "matches_recorded_report_value": true,
+  "recorded_report_value": 6328,
+  "report_value": 6328,
+  "reproduces_report_value": true,
+  "union_symbols_without_evidence": 6328
+ },
+ "schema": 1,
+ "shared_keys_with_different_spelling": 0,
+ "stage": "stage07_inventory_reconcile",
+ "union_symbols": 7409
+}

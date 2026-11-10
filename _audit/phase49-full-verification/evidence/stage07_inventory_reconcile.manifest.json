@@ -1,0 +1,26 @@
+{
+ "counts": {
+  "history_outside_instruments": 1468,
+  "history_symbols": 6103,
+  "history_symbols_without_pack_steps": 5188,
+  "instruments": 5944,
+  "instruments_named": 5941,
+  "instruments_without_history": 1306,
+  "pack_symbols": 915,
+  "report_no_evidence_current": 6333,
+  "report_no_evidence_r32b": 6328,
+  "union_symbols": 7409
+ },
+ "finished_at": "2026-11-10T23:16:12Z",
+ "inputs": {
+  "_audit/phase49-finalization/evidence/db-inventory.json": "f409159c9940d28a7ef808d5ae84d77f41aa49919228575428eab6e8fd26ada5",
+  "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+  "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "data/ra365_corrections/ra365-r32b-v2/factors.jsonl": "2194b4dfaaaf851f1256c8227963e089ee1503accc134a22057515fb346dc716"
+ },
+ "outputs": {
+  "_audit/phase49-full-verification/evidence/inventory-reconcile.json": "9e20687436d253b6c5066f448c6938e20935ef2f10e3d16b4af7a7a1c2b52914",
+  "_audit/phase49-full-verification/ledgers/INVENTORY-RECONCILIATION.csv": "0598286a433e65914bb01ce125d44f44b033bd4510a959d3df439c7579c3ceaa"
+ },
+ "stage": "stage07_inventory_reconcile"
+}
