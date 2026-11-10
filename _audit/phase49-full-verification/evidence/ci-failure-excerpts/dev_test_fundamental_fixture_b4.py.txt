@@ -1,0 +1,22 @@
+# source: _audit/phase49-full-verification/evidence/logs/dev_test_fundamental_fixture_b4.py.log
+# sha256: f79817dc6bda4b803bb60e42bce944addb0825270adfe5d45a76326f1c2c26a3
+  FAIL card oracle runs clean ? rc=1 ^^^^^
+  File "C:\Users\STU\Desktop\borsterminal\tools\parity\gen_fundamental_card_golden.py", line 234, in main
+    import api.chart as ch
+  File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+    from fastapi import APIRouter
+ModuleNotFoundError: No module named 'fastapi'
+  PASS card/card_down has content ? eps=[66.56, 57.25, 49.23] margin=11.0
+  PASS card/card_fund has content ? verdict='FTS ?????' score=None applicable=False
+  PASS card/card_holding has content ? axis4={'na': True, 'exempt': True, 'available': False}
+  PASS card/card_mcap_missing has content ? mcap_error='market_cap_missing_value' excluded=True steps=['?', '?', '?', '?', '?', '?']
+  PASS card/card_mixed has content ? mcap_error='symbol_not_on_board' gap_cause='market_cap'
+  PASS card/card_no_board_row has content ? mcap_error='market_cap_missing_value' asof=None
+  FAIL card/card_no_sales has content ? axis4={'na': True, 'gap_cause': 'annual_sales', 'available': False}
+  PASS card/card_not_found has content ? 404 shape kept
+  PASS card/card_thin has content ? states={'1_growth': None, '2_eps_trend': None, '3_gross_margin': None, '4_sales_to_mcap': False, '5_industry': True} gaps=['1a_monetary_growth', '1b_physical_volume', '2_eps_trend', '3_gross_margin', '4_sales_to_mcap']
+  PASS card/card_up has content ? verdict='WATCH' score=4 states={'1_growth': False, '2_eps_trend': True, '3_gross_margin': True, '4_sales_to_mcap': True, '5_industry': True}
+  PASS card/card_up_months6 has content ? months=6 body == card_up
+  PASS card/card_up_score5 has content ? verdict='STRONG' score=5 inflation=40.0
+  PASS dated/undated boundary is really enforced by the same GLOB ? up=10 mixed=5 mixed_dated=1
+fundamental fixture guard: 41 passed / 4 failed

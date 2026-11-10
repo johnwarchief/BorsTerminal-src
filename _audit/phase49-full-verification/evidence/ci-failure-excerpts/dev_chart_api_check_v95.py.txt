@@ -1,0 +1,22 @@
+# source: _audit/phase49-full-verification/evidence/logs/dev_chart_api_check_v95.py.log
+# sha256: 255881cad7b3234838c1003dfee5ebd04738ff01c61fa6defa2009913197a9ff
+----
+  FAIL klinecharts installed (MISSING)
+  PASS package.json declares klinecharts (^10.0.3)
+  FAIL installed major == declared major (v10)
+  FAIL ?? ?? ?? klinecharts ???? ???????? import ??????? (missing=['Chart', 'KLineData', 'dispose', 'init', 'registerIndicator', 'registerOverlay'])
+  FAIL klinecharts exports init()
+  PASS source imports init from klinecharts
+  FAIL klinecharts exports dispose()
+  PASS source imports dispose from klinecharts
+  FAIL klinecharts exports registerOverlay()
+  PASS source imports registerOverlay from klinecharts
+  FAIL klinecharts exports registerIndicator()
+  PASS source imports registerIndicator from klinecharts
+  PASS archive/legacy_static/vendor/klinecharts.min.js is gone
+  PASS no shipped source reads legacy_static (none)
+  PASS no candle.candle.* (v10 is candle.bar.*)
+  PASS no rvToggleLogScale (dead v9 helper)
+  PASS no crosshair mode 'strong_magnet' (not a v10 key)
+  FAIL negative control: sensor flags a genuinely-absent export
+10/18 passed

@@ -1,0 +1,21 @@
+# source: _audit/phase49-full-verification/evidence/logs/dev_confidence_engine_v973.py.log
+# sha256: 19c8c319a17ebb33dec17073e61d6a3e9d4fc45a517700d2def753eb697fe563
+CMD C:\Users\STU\Documents\Qoder\2026-10-19\0af806b0\.q3-tooling\py312\python.exe dev\confidence_engine_v973.py
+RC 1
+SECS 1.02
+----
+Traceback (most recent call last):
+  File "C:\Users\STU\Desktop\borsterminal\dev\confidence_engine_v973.py", line 183, in <module>
+    junk = CE.triple(conn, "ZZ_NOT_A_SYMBOL_ZZ", ctx=ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\STU\Desktop\borsterminal\confidence_engine.py", line 1111, in triple
+    res[k] = conf_fund(conn, symbol, ctx=ctx, cfg=c, fts=fts, fts_cfg=fts_cfg)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\STU\Desktop\borsterminal\confidence_engine.py", line 1029, in conf_fund
+    fts = fts_engine.scan_symbol(
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\STU\Desktop\borsterminal\fts_engine.py", line 2735, in scan_symbol
+    from api.fundamental import (axis1_state, ind1a_fs_growth,
+  File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+    from fastapi import APIRouter
+ModuleNotFoundError: No module named 'fastapi'

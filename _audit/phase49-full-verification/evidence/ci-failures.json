@@ -7,8 +7,9 @@
   "error": "ModuleNotFoundError: No module named 'fastapi' — raised inside fts_engine.scan_symbol (fts_engine.py:2735 `from api.fundamental import ...`) -> api/__init__.py:7 `from fastapi import APIRouter`",
   "root_cause": "The suite exercises the Python FTS engine, whose scan_symbol imports the FastAPI package lazily. This machine has no third-party packages and no network to install requirements.txt (pip: ReadTimeoutError against pypi.org / files.pythonhosted.org). Not a defect of the m141 rule itself; the CI failure of this suite has a different, unmeasured layer that this sandbox cannot reach.",
   "decision": "No code change. Judged C (legacy Python FTS engine surface; the Go product owns the live engine and has its own FTS vector tests), so the registry row stays UNCLASSIFIED for A4. Recorded here so the failure is not silently dropped.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_fts_m141_parity_v97.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_fts_m141_parity_v97.py.txt",
+  "log_sha256": "21983dd609094f55f4172351b980a5daedc48bec3c7d53667de48f9676c1eeae",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/confidence_engine_v973.py",
@@ -18,8 +19,9 @@
   "error": "ModuleNotFoundError: No module named 'fastapi' — confidence_engine.triple -> conf_fund -> fts_engine.scan_symbol -> api.fundamental -> api/__init__.py",
   "root_cause": "Same legacy import chain as fts_m141_parity_v97; FastAPI is not installed and cannot be installed here (no network).",
   "decision": "No code change. C (legacy Python engine) — deferred to A4; the row stays UNCLASSIFIED and is not skipped silently.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_confidence_engine_v973.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_confidence_engine_v973.py.txt",
+  "log_sha256": "19c8c319a17ebb33dec17073e61d6a3e9d4fc45a517700d2def753eb697fe563",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/soft_warnings_v974.py",
@@ -29,8 +31,9 @@
   "error": "ModuleNotFoundError: No module named 'fastapi' — soft_warnings imports confidence_engine, which reaches fts_engine.scan_symbol -> api.fundamental -> api/__init__.py",
   "root_cause": "Legacy import chain; FastAPI absent and not installable (no network).",
   "decision": "No code change. C (legacy Python engine) — deferred to A4.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_soft_warnings_v974.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_soft_warnings_v974.py.txt",
+  "log_sha256": "ac1079a0482dba7025b225a58bfc072ad9613f272700ee793649447b5577d02a",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/mstat_local_v975.py",
@@ -40,8 +43,9 @@
   "error": "ModuleNotFoundError: No module named 'requests' — dev/mstat_local_v975.py:35 `import test_tsetmc as TS` -> test_tsetmc.py:17 `import requests`",
   "root_cause": "test_tsetmc imports requests at module import time (it is a live TSETMC fetcher), so every suite that reuses its CSV helpers needs requests. requests is not installed and cannot be installed (no network).",
   "decision": "No code change. C (legacy Python mstat engine surface; Go internal/mstat owns the live panels and tests them against Python goldens) — deferred to A4.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_mstat_local_v975.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_mstat_local_v975.py.txt",
+  "log_sha256": "2c23d55bcb5e21fed7edb63a93020496fae7eff8a7722755cb3053334f330cc5",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_board_fixture_v1120.py",
@@ -51,8 +55,9 @@
   "error": "FAIL goldens equal a fresh oracle run (parsed JSON) — ModuleNotFoundError(\"No module named 'fastapi'\"); the other five checks pass (deterministic build, logical dump equals the committed fixture, sql_text.go byte-exact, 30 market_watch rows, one instruments row absent from market_watch)",
   "root_cause": "The oracle that regenerates the B1 goldens is a Python dump that imports api.market (FastAPI). FastAPI is absent and cannot be installed (no network).",
   "decision": "A in nature (guards the Go board fixture/golden set), but NOT written to the registry in A3: the oracle needs a dependency this sandbox cannot install, and a KEEP/production row would make --profile production red without a product defect. Deferred to A4/A5 with this blocker; the five non-oracle checks pass locally.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_board_fixture_v1120.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_board_fixture_v1120.py.txt",
+  "log_sha256": "39cfbae456ad7541501af3a55fa3bb8c41149a7c4858d74da70f1bd8c7d41cb7",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_mstat_fixture_v1121.py",
@@ -62,8 +67,9 @@
   "error": "FAIL goldens equal a fresh oracle run (parsed JSON) — ModuleNotFoundError(\"No module named 'fastapi'\"); 27 golden/structure checks pass, 1 fails",
   "root_cause": "The mstat oracle dump imports api.market (FastAPI); FastAPI is absent and not installable here.",
   "decision": "A in nature (Go mstat fixture/goldens), not classified in A3 for the same dependency blocker as B1; every non-oracle check passes.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_mstat_fixture_v1121.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_mstat_fixture_v1121.py.txt",
+  "log_sha256": "5a39f4c5ffa6f53f051aad93cecb822ea20c821b1c763434ef1e0fa52b1d9535",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_chart_fixture_b3.py",
@@ -73,8 +79,9 @@
   "error": "3 FAIL: (a) goldens equal a fresh oracle run — ModuleNotFoundError fastapi; (b) FTS engine vectors equal a fresh oracle run — rc=1, fastapi; (c) CDN seam negative control — fastapi. All other checks pass.",
   "root_cause": "Every failing section of B3 runs a Python oracle that imports api.chart (FastAPI). FastAPI is absent and cannot be installed (no network). The committed v2 correction pack stays enabled for this suite (CORRECTIONS_ENABLED), which is unrelated to these failures.",
   "decision": "A in nature (Go chart fixture/goldens), not classified in A3 because the oracle is dependency-blocked; deferred with blocker.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_chart_fixture_b3.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_chart_fixture_b3.py.txt",
+  "log_sha256": "61c0115ed9db2146bc461e382b4290015adfe3e5d74ecf4f098d29f0f0b7dc12",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_fundamental_fixture_b4.py",
@@ -84,8 +91,9 @@
   "error": "Two independent failures: (1) 'committed fixture equals a fresh build' — fresh={'market.db': '14dda855c5c1a57c', 'user.db': 'e2fe8dccad41994c'} committed={'market.db': '7cee7d1cf4fc132e', 'user.db': '18f3ac1bfb6c0d6b'}; (2) 'fundamental goldens equal a fresh oracle run', 'card oracle runs clean' and 'card/card_no_sales has content' — ModuleNotFoundError fastapi.",
   "root_cause": "(1) REAL, reproduced: tools/parity/make_fundamental_fixture.py is deterministic (two fresh builds are byte-identical), and every logical row of the fresh build equals the committed fixture — 22 market.db tables and 3 user.db tables compared row-by-row, zero differences. The only byte difference is offsets 98-99 of the SQLite header, i.e. SQLITE_VERSION_NUMBER (fresh written by sqlite 3.49.1); the guard compares raw sha256[:16], so it fails on any machine whose SQLite library differs from the one that committed the file, CI included. (2) The oracle/card sections import api.fundamental (FastAPI), absent and not installable here.",
   "decision": "Root cause recorded, no code change: the byte-hash comparison is a defect of the guard, but A3 is limited to the suite_registry_guard.py change and may not edit this guard. Proposed fix for the owner/reviewer: compare a logical dump (as B1 already does) instead of raw file bytes, keeping the two-build determinism check byte-level. The suite stays UNCLASSIFIED for A4 so the production lane is not red on a non-product defect.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_fundamental_fixture_b4.py.log; byte-level proof: 2 differing bytes at offsets 98,99 = SQLITE_VERSION_NUMBER, sqlite3.sqlite_version 3.49.1 locally",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_fixture_b4.py.txt",
+  "log_sha256": "f79817dc6bda4b803bb60e42bce944addb0825270adfe5d45a76326f1c2c26a3",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_fundamental_vectors_b4.py",
@@ -95,8 +103,9 @@
   "error": "FAIL both oracle scripts run — tools/parity/gen_fundamental_vectors.py rc=1 ^^^ ModuleNotFoundError: No module named 'fastapi'",
   "root_cause": "The vector generator imports api.fundamental (FastAPI); FastAPI is absent and not installable here.",
   "decision": "A in nature (freshness of the Go fundamental vectors), not classified in A3 because of the dependency blocker; deferred.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_fundamental_vectors_b4.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_vectors_b4.py.txt",
+  "log_sha256": "93b23907e201d2f984600e4a54c22b810e1e77d5a1bac10cd6d0c18bf3644632",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/chart_api_check_v95.py",
@@ -106,8 +115,9 @@
   "error": "FAIL klinecharts installed (MISSING) + 7 dependent FAILs (major v10, no unknown import names, init/dispose/registerOverlay/registerIndicator exports, negative control) because frontend/node_modules is absent",
   "root_cause": "The guard reads the real frontend/node_modules tree (klinecharts v10). This sandbox has no node/npm and no network, so the tree cannot be installed. CI installs it with `npm ci --ignore-scripts` before the guards (guards.yml step 'Install frontend deps for API guards').",
   "decision": "Environmental with proof; no code change. C (legacy v1 frontend chart bundle; the shipped UI is frontend-v2) — deferred to A4.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_chart_api_check_v95.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_chart_api_check_v95.py.txt",
+  "log_sha256": "255881cad7b3234838c1003dfee5ebd04738ff01c61fa6defa2009913197a9ff",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/qa_routes_guard.py",
@@ -117,8 +127,9 @@
   "error": "FileNotFoundError: [WinError 2] The system cannot find the file specified — subprocess.run(node ...) at dev/qa_routes_guard.py:82 after Q1/Q2-a passed",
   "root_cause": "The guard shells out to node to read routes.tsx. node is not installed on this machine and cannot be installed (no network).",
   "decision": "Environmental with proof; no code change. C (QA tooling for the legacy frontend routes) — deferred to A4.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_qa_routes_guard.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_qa_routes_guard.py.txt",
+  "log_sha256": "8d9c122997ce279abaf57d08798ce6be7b29f53267d4093e50f67df90b645324",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/guard_counts_v1110.py",
@@ -128,8 +139,9 @@
   "error": "21 passed / 1 failed — 'FAIL 5 live output of dev/watch_export_v1106.py is countable and green': output is ModuleNotFoundError: No module named 'fastapi' (watch_export imports api)",
   "root_cause": "The guard's own live-output probe spawns dev/watch_export_v1106.py, which imports api/* (FastAPI). FastAPI is absent and not installable here.",
   "decision": "Environmental with proof; the harness logic itself passes 21/21. Deferred to A4 (the probe targets a legacy API export path).",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_guard_counts_v1110.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_guard_counts_v1110.py.txt",
+  "log_sha256": "16862066c75fce2c0e26650941e9a1909858b217c472440df5c8dd8d7dd0e484",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_db_isolation_v1.py",
@@ -139,8 +151,9 @@
   "error": "FAIL BORS_NO_FETCH_LOOPS=1 closes the fetch gate — [notifier] unavailable: No module named 'httpx'; FAIL unset BORS_NO_FETCH_LOOPS leaves the gate open — same missing module",
   "root_cause": "The fetch-gate probe loads the notifier, which needs httpx; httpx is in requirements.txt but is not installed here and cannot be installed (no network). The DB-isolation checks themselves (temp copy, fingerprint) pass.",
   "decision": "A in nature (test runs must never write the operational market.db), not classified in A3 because of the dependency blocker; deferred with this proof.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_db_isolation_v1.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_db_isolation_v1.py.txt",
+  "log_sha256": "1cdca71fe5dc0a28e5af162c6ab2840de42feec693c6f162ca858872972664cb",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_adjustment_engine_v1.py",
@@ -150,8 +163,9 @@
   "error": "[SKIP by the runner] REQUIRES _audit/ra365_ref_bars.json (gitignored, absent on a fresh clone). A direct run fails loudly: '✗ ج۰ شاهدِ مرجع موجود نیست (نمونۀِ واقعی رد شد — نباید بی\\u200cشمارنده سبز شود): got=False want=True'",
   "root_cause": "The reference fixture is deliberately not in Git (gitignored) and is not on this machine; the runner turns the absence into a named SKIP, and the suite itself refuses to report green without its reference evidence.",
   "decision": "Not a failure in the gate (named SKIP, no silent green). B (oracle adjustment) in nature; stays UNCLASSIFIED in A3 because it cannot execute without the reference pack; A4/owner can place it in the data lane.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_adjustment_engine_v1.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_adjustment_engine_v1.py.txt",
+  "log_sha256": "7e547281d011ce4d47bd2698260a1d7e3b1a251e290ddde16ebe7a83f3008026",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/db_housekeeping.py --selftest",
@@ -161,8 +175,9 @@
   "error": "[SKIP by the runner] REQUIRES market.db.lzma (gitignored, absent). Direct run: '[FAIL] market.db.lzma not found: ...\\market.db.lzma'.",
   "root_cause": "The suite needs the compressed release baseline, which is gitignored and not present on this machine.",
   "decision": "Not a failure in the gate (named SKIP). B (data housekeeping); stays UNCLASSIFIED in A3 because it cannot execute without the baseline.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_db_housekeeping.py_selftest.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_db_housekeeping.py_--selftest.txt",
+  "log_sha256": "41d0eebe43758b0764a4dd110af69b98b1c7551ed4fa35b95560eaf0a8f1bd09",
+  "commit": "116d4b20"
  },
  {
   "suite": "dev/test_rule_map_citations.py",
@@ -172,7 +187,8 @@
   "error": "10/11 passed - FAIL 'NAME:LINE references land on the function line': _fts_analyze_candles:5603 (real def line 5610), _fts_jet_setup:4581 (4588), _fts_analyze_symbol:6011 (6018) in api/chart.py",
   "root_cause": "REAL, reproduced: docs/FTS-RULE-ALGORITHM-MAP.md carries stale NAME:LINE citations - api/chart.py grew by 7 lines above those defs (likely the correction-pack work) and the three citations were not refreshed. The guard is correct; the document is stale.",
   "decision": "Root-caused, not fixed in A3: the citation table documents the legacy api/chart.py engine map (C), the fix is a docs edit (5603->5610, 4581->4588, 6011->6018) outside this task's file scope, and it guards no product/data contract. Deferred to A4 together with the doc.",
-  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_rule_map_citations.py.log",
-  "commit": null
+  "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_rule_map_citations.py.txt",
+  "log_sha256": "2c4189063c40d25ca536e95578535dbda47a31a661c4d3cf0071493419fce671",
+  "commit": "f108200d"
  }
 ]

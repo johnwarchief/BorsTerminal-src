@@ -1,0 +1,22 @@
+# source: _audit/phase49-full-verification/evidence/logs/dev_test_mstat_fixture_v1121.py.log
+# sha256: 5a39f4c5ffa6f53f051aad93cecb822ea20c821b1c763434ef1e0fa52b1d9535
+  PASS summary has the ten category rows
+  PASS summary eq_all row has symbols > 0
+  PASS phase clock is the pinned instant
+  PASS market_snapshot previous session is a real object
+  PASS mainwatch tape flags came from api/market
+  INFO tape flag coverage: f_noqteh@m1, f_susp@m1
+  PASS mainwatch TRUE tape flags are exactly the expected pairs
+  PASS timeline has every point
+  PASS s1 holds exactly 21 golden(s)
+  PASS s2 holds exactly 2 golden(s)
+  PASS s3 holds exactly 1 golden(s)
+  PASS s4 holds exactly 1 golden(s)
+  PASS s5 holds exactly 1 golden(s)
+  PASS golden tree holds only s1..s5 (files and dirs)
+  PASS s2 timeline is marked stale
+  PASS s2 timeline day is the previous session
+  PASS s3 phase is unknown from the calendar
+  PASS s4 phase is holiday from the official state
+  PASS terms_gen.go equals a fresh extraction from mstat_engine
+mstat_fixture_v1121: 1 failed

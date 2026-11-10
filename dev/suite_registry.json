@@ -406,7 +406,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "shipped-data integrity: the release DB age is measured (stale=warn, older than baseline=reject) before packaging",
+   "reason": "shipped-data integrity (A/production): the release DB age is measured before packaging (stale=warn, older than baseline=reject). Taxonomy boundary: this guards the shipped-data freshness contract of the release; dev/patch_check_v10.py guards patch tooling, not shipped data. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/db_backfill_derived.py --selftest": {
@@ -610,7 +610,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "FTS verdict contract: indicator-3 no-data is 'not measured', never 'rejected', on both cache paths",
+   "reason": "FTS verdict contract: indicator-3 no-data is 'not measured', never 'rejected', on both cache paths. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/fts_indicator_contract_v1091.py": {
@@ -1078,7 +1078,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product map contract: group aliases resolve, top50 uses the engine stamp, the label never lies about the scope",
+   "reason": "product map contract: group aliases resolve, top50 uses the engine stamp, the label never lies about the scope. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/market_universe_v1.py": {
@@ -1090,7 +1090,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product universe contract: executed vs quoted trading status, duplicate merge and staleness from the board body",
+   "reason": "product universe contract: executed vs quoted trading status, duplicate merge and staleness from the board body. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/mstat_breadth_basis_v1121.py": {
@@ -1138,7 +1138,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product panel contract: missing industry queue depth stays null, an available depth is summed (never a fake zero)",
+   "reason": "product panel contract: missing industry queue depth stays null, an available depth is summed (never a fake zero). No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/mstat_local_v975.py": {
@@ -1198,7 +1198,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product panel contract: client value provenance is native/mixed/reconstructed, never silently relabelled",
+   "reason": "product panel contract: client value provenance is native/mixed/reconstructed, never silently relabelled. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/notifications_sources_cache_v1.py": {
@@ -1270,7 +1270,7 @@
    "profile": "data",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "release tooling: the modular delta-patch/update system stays selectable and applicable",
+   "reason": "release tooling (B/data): the modular delta-patch/update system stays selectable and applicable. Taxonomy boundary: this guards patch tooling, not shipped data; dev/data_age_release_guard.py owns the shipped-data freshness contract.",
    "retirement_date": null
   },
   "dev/per_capita_sell_v1107.py": {
@@ -1522,7 +1522,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product identity contract: one canonical symbol key with an ISIN gate; no production reader builds a second key (AST)",
+   "reason": "product identity contract: one canonical symbol key with an ISIN gate; no production reader builds a second key (AST). No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/tape_filters_v1034.py": {
@@ -1678,7 +1678,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "candle contract: a zero-volume day never becomes a candle and FIRST/LAST/CLOSE are never substituted",
+   "reason": "candle contract: a zero-volume day never becomes a candle and FIRST/LAST/CLOSE are never substituted. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_chart_fixture_b3.py": {
@@ -2242,7 +2242,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "seed/DB integrity: an empty or partial gate DB is refused before it can stand in for the operational market.db",
+   "reason": "seed/DB integrity: an empty or partial gate DB is refused before it can stand in for the operational market.db. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_history_gap_repair_v1.py": {
@@ -2254,7 +2254,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "seed/history integrity: repair writes only missing dates, is idempotent, dry_run writes nothing, published rows win",
+   "reason": "seed/history integrity: repair writes only missing dates, is idempotent, dry_run writes nothing, published rows win. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_history_repair_writer_v1.py": {
@@ -2326,7 +2326,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product state contract: session phase comes from the official market state; no verdict is allowed without a phase",
+   "reason": "product state contract: session phase comes from the official market state; no verdict is allowed without a phase. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_market_state_stages_v1.py": {
@@ -2338,7 +2338,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product state contract: staged verdict, one-sided partial liquidity and no lookahead in the market state",
+   "reason": "product state contract: staged verdict, one-sided partial liquidity and no lookahead in the market state. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_mstat_fixture_v1121.py": {
@@ -2362,7 +2362,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "product data contract: notifications come only from CODAL, every item carries a tracing_no and url, unclassified is never 'low'",
+   "reason": "product data contract: notifications come only from CODAL, every item carries a tracing_no and url, unclassified is never 'low'. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_official_ledger_dedupe_v1.py": {
@@ -2422,7 +2422,7 @@
    "profile": "production",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "Python<->Go parity fixture for literal H/L and raw pack corrections; the Go engine must match this oracle",
+   "reason": "Python<->Go parity fixture for literal H/L and raw pack corrections; the Go engine must match this oracle. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6).",
    "retirement_date": null
   },
   "dev/test_portable_v1.py": {

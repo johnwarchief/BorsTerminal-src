@@ -72,10 +72,23 @@ def main():
              base_entry(disposition="MIGRATE", profile="legacy",
                         ts_equivalent="dev/run_all_tests.py:TestReal"),
              False)
-    run_case("equivalence must stay inside the repo",
-             base_entry(disposition="MIGRATE", profile="legacy",
-                        go_equivalent="../outside_test.go:TestReal"),
-             False)
+    # A genuine .go test file outside the repo: containment must reject it even
+    # though the file exists and declares the test.  The old case pointed at
+    # ../outside_test.go, which never existed, so only the isfile check ran and
+    # containment was never exercised.
+    outside = tempfile.mkdtemp(dir=os.path.dirname(G.ROOT))
+    try:
+        p = os.path.join(outside, "outside_test.go")
+        with open(p, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("package x\nfunc TestReal(t *testing.T) {}\n")
+        rel = os.path.relpath(p, G.ROOT).replace("\\", "/")
+        assert rel.startswith("../"), rel
+        run_case("equivalence must stay inside the repo",
+                 base_entry(disposition="MIGRATE", profile="legacy",
+                            go_equivalent=rel + ":TestReal"),
+                 False)
+    finally:
+        shutil.rmtree(outside, ignore_errors=True)
     run_case("equivalence must name an existing test function",
              base_entry(disposition="MIGRATE", profile="legacy",
                         go_equivalent="backend-go/internal/pricebasis/pricebasis_test.go:TestNotThere"),
@@ -101,6 +114,11 @@ def main():
         with open(p, "w", encoding="utf-8", newline="\n") as fh:
             fh.write("package x\n")
         run_case("known file but absent TestName",
+                 base_entry(disposition="MIGRATE", profile="legacy",
+                            go_equivalent=rel + ":TestReal"), False)
+        with open(p, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("package x\n// func TestReal(t *testing.T) {} lives elsewhere\n")
+        run_case("TestName only in a comment",
                  base_entry(disposition="MIGRATE", profile="legacy",
                             go_equivalent=rel + ":TestReal"), False)
     finally:

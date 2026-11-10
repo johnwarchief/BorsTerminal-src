@@ -43,13 +43,32 @@ GO_SUFFIXES = (".go",)
 TS_SUFFIXES = (".ts", ".tsx")
 
 
+def _declares_test(text, test, suffixes):
+    """The named test must be a real declaration, not a comment or a call.
+
+    A bare name search accepted a name mentioned in a comment, an import or an
+    unrelated call site.  The equivalence is the migration evidence, so it has
+    to point at an executable test:
+
+    - Go: `func <TestName>(` at the start of a line (leading whitespace allowed).
+    - TS/TSX: `<TestName>` as the quoted title of `it(...)`, `test(...)` or
+      `describe(...)`.
+    """
+    name = re.escape(test)
+    if suffixes == GO_SUFFIXES:
+        pattern = r"^[ \t]*func[ \t]+%s[ \t]*\(" % name
+    else:
+        pattern = r"""^[ \t]*(?:it|test|describe)[ \t]*\([ \t]*(["'`])%s\1""" % name
+    return re.search(pattern, text, re.MULTILINE) is not None
+
+
 def _equiv_exists(value, suffixes=GO_SUFFIXES):
-    """A real repo-contained test file with a `:TestName` symbol.
+    """A real repo-contained test file that declares the `:TestName` test.
 
     Accepting any existing file made the check vacuous: a `.py` path, a path
     without a symbol, or a path outside the repository all passed.  The
     equivalence is the migration evidence, so it must name a file of the right
-    language, inside the repo, that actually contains the named test.
+    language, inside the repo, that actually declares the named test.
     """
     if not value:
         return False
@@ -69,7 +88,7 @@ def _equiv_exists(value, suffixes=GO_SUFFIXES):
     if not os.path.isfile(full):
         return False
     text = open(full, encoding="utf-8", errors="replace").read()
-    return re.search(r"\b%s\b" % re.escape(test), text) is not None
+    return _declares_test(text, test, suffixes)
 
 
 def validate(registry, suites):

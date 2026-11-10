@@ -1,0 +1,22 @@
+# source: _audit/phase49-full-verification/evidence/logs/dev_test_chart_fixture_b3.py.log
+# sha256: 61c0115ed9db2146bc461e382b4290015adfe3e5d74ecf4f098d29f0f0b7dc12
+  PASS s5/chartdb_uptrend has content
+  PASS s5/fts_downtrend has content
+  PASS s5/fts_uptrend has content
+  PASS s6/fts_basket_high has content
+  PASS golden tree holds only s1..s6 (files and dirs)
+  FAIL FTS engine vectors equal a fresh oracle run ? rc=1 n main
+    import api.chart as ch
+  File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+    from fastapi import APIRouter
+ModuleNotFoundError: No module named 'fastapi'
+  PASS every FTS vector hits its named branch (14 branches)
+  PASS status vectors cover all eight precedence codes
+  PASS scaled oracle section exists with the six edge rows
+  FAIL CDN seam negative control ? Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+  File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+    from fastapi import APIRouter
+ModuleNotFoundError: No module named 'fastapi'
+  PASS without BORS_CALENDAR_PATH the APP_DIR path is used
+chart fixture guard: 44 passed, 3 failed
