@@ -1,0 +1,328 @@
+{
+ "anomaly_events": 58222,
+ "by_category": {
+  "CALENDAR_GAP": 5104,
+  "CORPORATE_ACTION_MISSING": 0,
+  "EVENT_DATE_MISMATCH": 0,
+  "EVENT_RATIO_MISMATCH": 0,
+  "INVALID_SOURCE_RECORD": 447,
+  "MISSING_HISTORY": 0,
+  "PRECISION_OR_ROUNDING": 0,
+  "PRICE_BASIS_DIFFERENCE": 52671,
+  "SOURCE_MISMATCH": 0,
+  "SOURCE_REVISION": 0,
+  "SYMBOL_IDENTITY_MISMATCH": 0,
+  "UNRESOLVED_SOURCE_GAP": 0,
+  "VERIFIED_NO_EVENT": 0
+ },
+ "by_kind": {
+  "DUPLICATE_DATE": 0,
+  "INVALID_OHLC": 306,
+  "OPEN_EQ_PREV_CLOSE": 55224,
+  "ZERO_FIELDS": 0,
+  "ZERO_VOLUME": 2692
+ },
+ "by_root_cause": {
+  "flat_bar_at_prior_close": 29791,
+  "market_no_session": 194,
+  "no_trade_carried_close": 2357,
+  "no_trade_first_bar": 4,
+  "no_trade_price_change": 135,
+  "no_trade_price_range": 2,
+  "open_at_prior_close": 22880,
+  "open_at_prior_close_no_trade": 2553,
+  "source_open_zero": 12,
+  "source_shadow_and_open_zero": 294
+ },
+ "checks": {
+  "categories_declared": 13,
+  "categories_used": 3,
+  "sql_crosscheck": {
+   "all_match": true,
+   "duplicate_dates": 0,
+   "invalid_ohlc": 306,
+   "zero_fields": 0,
+   "zero_volume": 2692
+  },
+  "uncategorized_events": 0,
+  "unexplained_events": 0
+ },
+ "dates": 4056,
+ "duplicate_dates": {
+  "constraint": "PRIMARY KEY (symbol, date)",
+  "events": 0,
+  "sql_check": 0
+ },
+ "first_date": "2010-01-02",
+ "inputs": {
+  "dates": 4056,
+  "db": "_audit/phase49-finalization/seed/market.db",
+  "first_date": "2010-01-02",
+  "last_date": "2026-11-09",
+  "rows": 511139,
+  "rules": "dev/phase49_status_rules.json",
+  "symbols": 6103
+ },
+ "invalid_ohlc": {
+  "by_reason": {
+   "close_outside_shadow": 294,
+   "high_nonpositive": 294,
+   "low_nonpositive": 294,
+   "open_nonpositive": 306,
+   "open_outside_shadow": 12
+  },
+  "by_root_cause": {
+   "source_open_zero": 12,
+   "source_shadow_and_open_zero": 294
+  },
+  "by_src": {
+   "legacy-unknown": 306
+  },
+  "events": 306,
+  "rows": 306,
+  "unresolved_witness": "10 of 306 invalid rows have an instruments row and 0 of those have a daily_prices row on the same day; the rest have no independent witness in this Seed",
+  "witness": {
+   "daily_prices_matched": 0,
+   "instruments_matched": 10,
+   "rows": 306
+  }
+ },
+ "kind_x_category": {
+  "INVALID_OHLC": {
+   "INVALID_SOURCE_RECORD": 306
+  },
+  "OPEN_EQ_PREV_CLOSE": {
+   "CALENDAR_GAP": 2553,
+   "PRICE_BASIS_DIFFERENCE": 52671
+  },
+  "ZERO_VOLUME": {
+   "CALENDAR_GAP": 2551,
+   "INVALID_SOURCE_RECORD": 141
+  }
+ },
+ "kind_x_root_cause": {
+  "INVALID_OHLC": {
+   "source_open_zero": 12,
+   "source_shadow_and_open_zero": 294
+  },
+  "OPEN_EQ_PREV_CLOSE": {
+   "flat_bar_at_prior_close": 29791,
+   "open_at_prior_close": 22880,
+   "open_at_prior_close_no_trade": 2553
+  },
+  "ZERO_VOLUME": {
+   "market_no_session": 194,
+   "no_trade_carried_close": 2357,
+   "no_trade_first_bar": 4,
+   "no_trade_price_change": 135,
+   "no_trade_price_range": 2
+  }
+ },
+ "last_date": "2026-11-09",
+ "method": [
+  "Anomaly detection is row-level and rule-based; the category is chosen from the measured root cause, not from the anomaly kind.",
+  "Every event carries the raw values that triggered it in the evidence column of the CSV; the tracked counts hold aggregates only, no raw rows.",
+  "A branch set that explains nothing is UNEXPLAINED / UNRESOLVED_SOURCE_GAP and fails the build; the measured count is zero in this Seed."
+ ],
+ "notes": [
+  "3 of the 13 categories are used (CALENDAR_GAP, INVALID_SOURCE_RECORD, PRICE_BASIS_DIFFERENCE). The ten zero categories are zero for a stated reason, not by omission: SOURCE_MISMATCH and SOURCE_REVISION need two sources for one row, and price_history keeps exactly one row per (symbol, date) with a writer tag, not a source pair; CORPORATE_ACTION_MISSING, EVENT_DATE_MISMATCH and EVENT_RATIO_MISMATCH are event-chain findings owned by B5/B6 and cannot be read from a bare candle; SYMBOL_IDENTITY_MISMATCH is B7's identity join; MISSING_HISTORY is the absence of rows, which is B7's gap count, not a row event; PRECISION_OR_ROUNDING needs a rounding divergence, and every compared price here is bit-equal or clearly different, so no row required it; VERIFIED_NO_EVENT is a verification claim, which this stage does not make; UNRESOLVED_SOURCE_GAP is zero because every event got a cause from the row or the session evidence.",
+  "All 306 invalid OHLC rows carry legacy-unknown (306 rows); 10 of them resolve to an instruments row and 0 of those have a daily_prices row on the same day, so the root cause is the row's own field set and not a repair candidate.",
+  "Zero volume: 2692 rows, all legacy-unknown (2692). 194 of them sit on the 7 dates where no row of the DB traded at all (a date-level session evidence, not a per-symbol guess); the rest are flat bars whose close was carried (2357) or changed with no volume (135), plus 4 first bars and 2 non-flat bars.",
+  "The brief's sketch seeded the first bar of a symbol with its own close and passed a single prev_close per symbol to every row; both would manufacture false OPEN_EQ_PREV_CLOSE rows. This stage uses the preceding bar of the same symbol and measures 55224 equalities over 505036 comparable rows.",
+  "The 6,328 'reported no evidence' symbols are B9's inventory reconciliation and are not touched here."
+ ],
+ "open_eq_prev_close": {
+  "by_root_cause": {
+   "flat_bar_at_prior_close": 29791,
+   "open_at_prior_close": 22880,
+   "open_at_prior_close_no_trade": 2553
+  },
+  "by_src": {
+   "board": {
+    "comparisons": 68335,
+    "open_eq_prev_close": 7400,
+    "rate": 0.1083
+   },
+   "legacy-unknown": {
+    "comparisons": 364505,
+    "open_eq_prev_close": 43233,
+    "rate": 0.1186
+   },
+   "published": {
+    "comparisons": 3,
+    "open_eq_prev_close": 2,
+    "rate": 0.6667
+   },
+   "rahavard365": {
+    "comparisons": 72193,
+    "open_eq_prev_close": 4589,
+    "rate": 0.0636
+   }
+  },
+  "by_year": {
+   "2010": {
+    "comparisons": 3302,
+    "open_eq_prev_close": 223,
+    "rate": 0.0675
+   },
+   "2011": {
+    "comparisons": 3563,
+    "open_eq_prev_close": 262,
+    "rate": 0.0735
+   },
+   "2012": {
+    "comparisons": 3432,
+    "open_eq_prev_close": 249,
+    "rate": 0.0726
+   },
+   "2013": {
+    "comparisons": 4221,
+    "open_eq_prev_close": 179,
+    "rate": 0.0424
+   },
+   "2014": {
+    "comparisons": 3868,
+    "open_eq_prev_close": 212,
+    "rate": 0.0548
+   },
+   "2015": {
+    "comparisons": 4476,
+    "open_eq_prev_close": 334,
+    "rate": 0.0746
+   },
+   "2016": {
+    "comparisons": 4828,
+    "open_eq_prev_close": 355,
+    "rate": 0.0735
+   },
+   "2017": {
+    "comparisons": 4764,
+    "open_eq_prev_close": 307,
+    "rate": 0.0644
+   },
+   "2018": {
+    "comparisons": 5123,
+    "open_eq_prev_close": 318,
+    "rate": 0.0621
+   },
+   "2019": {
+    "comparisons": 5295,
+    "open_eq_prev_close": 254,
+    "rate": 0.048
+   },
+   "2020": {
+    "comparisons": 5439,
+    "open_eq_prev_close": 174,
+    "rate": 0.032
+   },
+   "2021": {
+    "comparisons": 5715,
+    "open_eq_prev_close": 332,
+    "rate": 0.0581
+   },
+   "2022": {
+    "comparisons": 6445,
+    "open_eq_prev_close": 465,
+    "rate": 0.0721
+   },
+   "2023": {
+    "comparisons": 6542,
+    "open_eq_prev_close": 506,
+    "rate": 0.0773
+   },
+   "2024": {
+    "comparisons": 60294,
+    "open_eq_prev_close": 5491,
+    "rate": 0.0911
+   },
+   "2025": {
+    "comparisons": 163293,
+    "open_eq_prev_close": 18383,
+    "rate": 0.1126
+   },
+   "2026": {
+    "comparisons": 214436,
+    "open_eq_prev_close": 27180,
+    "rate": 0.1268
+   }
+  },
+  "comparisons": 505036,
+  "events": 55224,
+  "method": "previous close is the preceding bar of the same symbol in date order; the first bar of a symbol is never compared with itself",
+  "rows": 55224,
+  "verification": "unverified_no_intraday_witness"
+ },
+ "rows_scanned": 511139,
+ "rows_with_anomaly": 55669,
+ "rows_with_anomaly_by_kind": {
+  "INVALID_OHLC": 306,
+  "OPEN_EQ_PREV_CLOSE": 55224,
+  "ZERO_VOLUME": 2692
+ },
+ "schema": 1,
+ "stage": "stage06_anomaly_ledger",
+ "symbols": 6103,
+ "symbols_by_kind": {
+  "INVALID_OHLC": 44,
+  "OPEN_EQ_PREV_CLOSE": 3548,
+  "ZERO_VOLUME": 97
+ },
+ "zero_fields": {
+  "check": "open=high=low=close=0",
+  "events": 0
+ },
+ "zero_volume": {
+  "by_root_cause": {
+   "market_no_session": 194,
+   "no_trade_carried_close": 2357,
+   "no_trade_first_bar": 4,
+   "no_trade_price_change": 135,
+   "no_trade_price_range": 2
+  },
+  "by_src": {
+   "legacy-unknown": 2692
+  },
+  "events": 2692,
+  "instrument_state": {
+   "first_date": "2026-10-05",
+   "halt_attribution": "not possible: zero overlap between the state snapshots and zero-volume rows",
+   "last_date": "2026-10-11",
+   "overlap_with_zero_volume_rows": 0,
+   "snapshot_days": 5
+  },
+  "last_zero_volume_date": "2026-09-30",
+  "method": "date-level session evidence (no row traded all day) then bar shape: flat/carried, flat/changed, non-flat",
+  "no_session_dates": [
+   {
+    "date": "2025-06-16",
+    "rows": 27
+   },
+   {
+    "date": "2025-06-18",
+    "rows": 27
+   },
+   {
+    "date": "2026-02-28",
+    "rows": 28
+   },
+   {
+    "date": "2026-03-02",
+    "rows": 28
+   },
+   {
+    "date": "2026-03-03",
+    "rows": 28
+   },
+   {
+    "date": "2026-03-04",
+    "rows": 28
+   },
+   {
+    "date": "2026-03-07",
+    "rows": 28
+   }
+  ],
+  "no_session_rows": 194,
+  "rows": 2692
+ }
+}
