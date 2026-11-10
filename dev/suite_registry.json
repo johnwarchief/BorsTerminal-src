@@ -2869,6 +2869,18 @@
    "reason": "",
    "retirement_date": null
   },
+  "dev/test_runner_profiles.py": {
+   "script": "dev/test_runner_profiles.py",
+   "label": "runner lanes: --list/--profile/--only select from the registry, not by category",
+   "kind": "SUITES",
+   "category": "UNCLASSIFIED",
+   "disposition": "UNCLASSIFIED",
+   "profile": "legacy",
+   "go_equivalent": null,
+   "ts_equivalent": null,
+   "reason": "",
+   "retirement_date": null
+  },
   "dev/test_screener_funnel_gate_v1.py": {
    "script": "dev/test_screener_funnel_gate_v1.py",
    "label": "screener candidate = tape∧technicalfundamental pass; no bypass door",
@@ -2908,6 +2920,18 @@
   "dev/test_structure3_engine.py": {
    "script": "dev/test_structure3_engine.py",
    "label": "engine 3 contract: explicit input states, thresholds only from the engine itself, prefix-stability (no future data), ATR-vs-floor split, and zero writes to the FTS vote",
+   "kind": "SUITES",
+   "category": "UNCLASSIFIED",
+   "disposition": "UNCLASSIFIED",
+   "profile": "legacy",
+   "go_equivalent": null,
+   "ts_equivalent": null,
+   "reason": "",
+   "retirement_date": null
+  },
+  "dev/test_suite_registry_guard.py": {
+   "script": "dev/test_suite_registry_guard.py",
+   "label": "suite registry guard unit tests: category/profile/disposition/lane agreement",
    "kind": "SUITES",
    "category": "UNCLASSIFIED",
    "disposition": "UNCLASSIFIED",

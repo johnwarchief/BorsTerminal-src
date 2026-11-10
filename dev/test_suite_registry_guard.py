@@ -27,8 +27,27 @@ def run_case(name, entry, want_ok):
     print("ok  ", name)
 
 
+def check_derived_rebinding():
+    """run_all_tests.py re-binds SUITES after lane filtering; the parser must
+    read only the literal lists and never crash on the derived assignment."""
+    src = ("SUITES = [('a.py', 'x')]\n"
+           "JS_SUITES = []\n"
+           "SUITES = [(s, l) for s, l in SUITES if s]\n")
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False,
+                                     encoding="utf-8") as fh:
+        fh.write(src)
+        tmp = fh.name
+    try:
+        got = G.parse_suites(tmp)
+    finally:
+        os.unlink(tmp)
+    assert list(got) == ["a.py"], got
+    print("ok  ", "derived SUITES re-binding is ignored")
+
+
 def main():
     assert len(G.parse_suites()) >= 250, "runner must expose >=250 suites"
+    check_derived_rebinding()
     run_case("valid keep", base_entry(), True)
     run_case("missing label", base_entry(label=""), False)
     run_case("bad category", base_entry(category="Z"), False)

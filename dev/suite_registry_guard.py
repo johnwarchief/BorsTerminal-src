@@ -26,6 +26,11 @@ def parse_suites(path=RUNNER):
         target = node.targets[0]
         if not isinstance(target, ast.Name) or target.id not in ("SUITES", "JS_SUITES"):
             continue
+        if not isinstance(node.value, (ast.List, ast.Tuple)):
+            # run_all_tests.py re-binds the names after lane filtering
+            # (`SUITES = [(s, l) for s, l in SUITES if _selected(s)]`); only the
+            # literal definitions are the source of truth for the registry.
+            continue
         for elt in node.value.elts:
             script, label = ast.literal_eval(elt)
             if script in out:
