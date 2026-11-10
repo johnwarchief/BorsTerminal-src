@@ -976,6 +976,10 @@ if (_ONLY or _PROFILE != "all") and not SUITES and not JS_SUITES:
 
 # پیش از اجرای سوئیتِ Node، fixture ساخته میشود — تا clone تازه (یا CI) بدون
 # فایلِ generated هم سبز بماند و «تست به‌خاطر نبودِ داده شکست» رخ ندهد.
+# The generated payload feeds only `dev/test_fts_v10_ui.js` and comes from
+# `api.fundamental` (FastAPI). Building it when no Node suite is selected made a
+# data-only lane depend on FastAPI for nothing (e.g. `--only <python suite>` or
+# `--profile data`, which has no JS suite).  JS_SUITES is therefore the trigger.
 FIXTURE_GEN = 'dev/make_fts_ui_fixture.py'
 
 #: دادهٔ مرجعِ این سوئیت‌ها عمداً در Git نیست (gitignored) و در clone تازه هم
@@ -1062,12 +1066,12 @@ for script, label in SUITES:
                      if k != 'BORS_CORRECTIONS_DISABLE'}
     run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label,
         env_override=suite_env)
-if os.path.exists(FIXTURE_GEN) and _PROFILE in ("all", "data", "legacy"):
+if os.path.exists(FIXTURE_GEN) and JS_SUITES:
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
 for script, label in JS_SUITES:
     run(['node', script.replace('/', os.sep)], label)
 
-total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) and _PROFILE in ("all", "data", "legacy") else 0)
+total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) and JS_SUITES else 0)
 print('\n%d suite counted, %d silent (exit-code only), %d skipped (fixture missing)' % (
     total_suites - len(uncounted) - len(skipped), len(uncounted), len(skipped)))
 if uncounted:

@@ -39,15 +39,35 @@ def parse_suites(path=RUNNER):
     return out
 
 
-def _equiv_exists(value):
+GO_SUFFIXES = (".go",)
+TS_SUFFIXES = (".ts", ".tsx")
+
+
+def _equiv_exists(value, suffixes=GO_SUFFIXES):
+    """A real repo-contained test file with a `:TestName` symbol.
+
+    Accepting any existing file made the check vacuous: a `.py` path, a path
+    without a symbol, or a path outside the repository all passed.  The
+    equivalence is the migration evidence, so it must name a file of the right
+    language, inside the repo, that actually contains the named test.
+    """
     if not value:
         return False
-    path, _, test = value.partition(":")
-    full = os.path.join(ROOT, path)
+    path, sep, test = value.partition(":")
+    if not sep or not test:
+        return False
+    path = path.replace("\\", "/")
+    if not path.endswith(suffixes):
+        return False
+    root = os.path.abspath(ROOT)
+    full = os.path.abspath(os.path.join(root, path))
+    try:
+        if os.path.commonpath([full, root]) != root:
+            return False
+    except ValueError:
+        return False
     if not os.path.isfile(full):
         return False
-    if not test:
-        return True
     text = open(full, encoding="utf-8", errors="replace").read()
     return re.search(r"\b%s\b" % re.escape(test), text) is not None
 
@@ -90,11 +110,14 @@ def validate(registry, suites):
         if disp == "MIGRATE":
             if prof != "legacy":
                 errors.append("%s: MIGRATE must be legacy until retired" % script)
-            eq = e.get("go_equivalent") or e.get("ts_equivalent")
-            if not eq:
+            go_eq = e.get("go_equivalent")
+            ts_eq = e.get("ts_equivalent")
+            if not go_eq and not ts_eq:
                 errors.append("%s: MIGRATE needs go_equivalent or ts_equivalent" % script)
-            elif not _equiv_exists(eq):
-                errors.append("%s: equivalence missing: %s" % (script, eq))
+            if go_eq and not _equiv_exists(go_eq, GO_SUFFIXES):
+                errors.append("%s: equivalence missing: %s" % (script, go_eq))
+            if ts_eq and not _equiv_exists(ts_eq, TS_SUFFIXES):
+                errors.append("%s: equivalence missing: %s" % (script, ts_eq))
         if disp in ("DEPRECATE", "REMOVE"):
             if not e.get("reason"):
                 errors.append("%s: %s needs a reason" % (script, disp))
