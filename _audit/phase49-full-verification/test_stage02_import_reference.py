@@ -34,6 +34,7 @@ ALEF = "\u0627\u0644\u0641"
 BE = "\u0628"
 JIM = "\u062c"
 DAL = "\u062f"
+SIN = "\u0633"
 KAF_AR = "\u0643\u062a\u0648"   # Arabic kaf
 KAF_FA = "\u06a9\u062a\u0648"   # Persian kaf
 
@@ -65,6 +66,7 @@ def brief_case():
     assert idx[ALEF]["factor_days"] == 2, idx[ALEF]
     assert idx[ALEF]["factor_exact"] == 0, idx[ALEF]
     assert idx[ALEF]["factor_within_0.1pct"] == 0, idx[ALEF]
+    assert idx[ALEF]["factor_undefined_ratio"] == 0, idx[ALEF]
     print("  brief case OK")
 
 
@@ -76,6 +78,7 @@ def threshold_case():
         BE: [raw, 1001001],            # +0.1001% -> step up
         JIM: [raw, 998999],            # -0.1001% -> step down
         DAL: [raw, raw, 2 * raw, 2 * raw],  # exact, step, exact
+        SIN: [0, 100],                 # previous level zero -> undefined ratio
     }
     rows = []
     for sym, values in cases.items():
@@ -104,10 +107,17 @@ def threshold_case():
     mixed = idx[DAL]
     assert mixed["factor_exact"] == 2, mixed
     assert mixed["factor_within_0.1pct"] == 0, mixed
+    assert mixed["factor_undefined_ratio"] == 0, mixed
     assert len(mixed["factor_changes"]) == 1, mixed
     assert abs(mixed["factor_changes"][0]["factor"] - 2.0) < 1e-12, mixed
     assert (mixed["factor_exact"] + mixed["factor_within_0.1pct"]
+            + mixed["factor_undefined_ratio"]
             + len(mixed["factor_changes"]) == mixed["factor_days"] - 1), mixed
+
+    undef = idx[SIN]
+    assert undef["factor_days"] == 2, undef
+    assert undef["factor_undefined_ratio"] == 1, undef
+    assert undef["factor_changes"] == [], undef
     print("  threshold case OK")
 
 
@@ -211,6 +221,7 @@ def real_case():
             assert rec["raw_symbols"], rec
             assert rec["type0"]["n"] > 0 and rec["type7"]["n"] > 0, rec
             assert (rec["factor_exact"] + rec["factor_within_0.1pct"]
+                    + rec["factor_undefined_ratio"]
                     + len(rec["factor_changes"]) == rec["factor_days"] - 1), rec
         assert sum(len(r["factor_changes"]) for r in idx.values()) > 0, idx
         print("  real fixture OK (7 symbols, %d changes)"

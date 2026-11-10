@@ -6,6 +6,7 @@
   "factor_days": 83393,
   "factor_exact": 55675,
   "factor_threshold": 0.001,
+  "factor_undefined_ratio": 0,
   "factor_within_0.1pct": 27183,
   "multi_spelling_symbols": 0,
   "rows": 215182,
@@ -14,14 +15,14 @@
   "type7_series": 30,
   "zero_raw_days": 0
  },
- "finished_at": "2026-11-10T19:50:15Z",
+ "finished_at": "2026-11-10T19:53:06Z",
  "inputs": {
   "_audit/phase49-finalization/rahavard/capture-30.json": "b893630b2dfdab7ad55ef4a6a91475690b99226267429ad148d3cc8cc2ae6cd8",
-  "_audit/phase49-full-verification/captures/normalized-30/bars.ndjson.gz": "37673f577a200ef54bb6074ec0085812f579b0277ac7fd17933c2df0baebe631",
+  "_audit/phase49-full-verification/captures/normalized-30/bars.ndjson.gz": "a7b5f358b14ebf4a6eee91e2d621e85a37982c083020f40a142657b171a61a98",
   "tools/phase45/rahavard/import_capture.py": "dd1be8e2d9b3bf9cebed751e0171d867861d65ed4e7cb6cf5bf382677ee6372a"
  },
  "outputs": {
-  "_audit/phase49-full-verification/captures/reference-index-30.json": "66516c55f16f12fb13c45d8ac679d6b038e3a12b5047a1831e70d2e8bbdbfba8"
+  "_audit/phase49-full-verification/captures/reference-index-30.json": "4b87dcd341aab76912fbc381f7dc67725b0a354793b380cf8b8bd241d70c09f7"
  },
  "stage": "stage02_import_reference"
 }

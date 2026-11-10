@@ -23,9 +23,11 @@ For every daily date present in both ``type0`` (raw) and ``type7`` (adjusted),
 here on purpose.
 
 Every comparable transition is counted: ``factor_exact`` (ratio exactly 1.0),
-``factor_within_0.1pct`` (0 < |ratio-1| <= 1e-3) and ``factor_changes`` (above
-the threshold). A change entry keeps the raw ratio as ``ratio_change`` next to
-the new ``factor``, so a later audit can re-derive the previous level.
+``factor_within_0.1pct`` (0 < |ratio-1| <= 1e-3), ``factor_undefined_ratio``
+(the previous level was zero, so the ratio does not exist) and
+``factor_changes`` (above the threshold). A change entry keeps the raw ratio as
+``ratio_change`` next to the new ``factor``, so a later audit can re-derive the
+previous level. The four buckets add up to ``max(factor_days - 1, 0)``.
 
 CLI:
     python _audit/phase49-full-verification/stage02_import_reference.py \\
@@ -143,7 +145,7 @@ def build_index(rows):
         common = sorted(set(rr) & set(aa))
 
         previous = None
-        exact = within = changes = zero = 0
+        exact = within = changes = zero = undefined = 0
         factor_days = 0
         events = []
         for day in common:
@@ -155,15 +157,22 @@ def build_index(rows):
                 continue
             factor_days += 1
             if previous is not None:
-                ratio = factor / previous
-                if ratio == 1.0:
-                    exact += 1
-                elif abs(ratio - 1.0) > FACTOR_EXACT:
-                    events.append({"date": day, "factor": factor,
-                                   "ratio_change": ratio})
-                    changes += 1
+                if previous == 0:
+                    # A zero adjusted level makes the step ratio undefined;
+                    # count it for the audit instead of dividing by zero.
+                    undefined += 1
                 else:
-                    within += 1
+                    ratio = factor / previous
+                    if not math.isfinite(ratio):
+                        undefined += 1
+                    elif ratio == 1.0:
+                        exact += 1
+                    elif abs(ratio - 1.0) > FACTOR_EXACT:
+                        events.append({"date": day, "factor": factor,
+                                       "ratio_change": ratio})
+                        changes += 1
+                    else:
+                        within += 1
             previous = factor
         zero_raw[key] = zero
 
@@ -181,6 +190,7 @@ def build_index(rows):
             "factor_days": factor_days,
             "factor_exact": exact,
             "factor_within_0.1pct": within,
+            "factor_undefined_ratio": undefined,
             "factor_changes": events,
             "date_conflicts": conflicts.get(key, 0),
             "zero_raw_days": zero,
@@ -200,6 +210,8 @@ def _counts(index, rows):
         "factor_exact": sum(r["factor_exact"] for r in index.values()),
         "factor_within_0.1pct": sum(r["factor_within_0.1pct"]
                                     for r in index.values()),
+        "factor_undefined_ratio": sum(r["factor_undefined_ratio"]
+                                      for r in index.values()),
         "factor_changes": sum(len(r["factor_changes"])
                               for r in index.values()),
         "multi_spelling_symbols": sum(1 for r in index.values()
