@@ -1,0 +1,529 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator("SMC Order Block Scorer", shorttitle="SMC OB Scorer", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500, max_bars_back=1000)
+
+// ============================================================
+//  SMC Order Block Scorer [Volume Confluence]
+//
+//  Swing structure (BOS / CHoCH) + Order Blocks, with volume-profile
+//  confluence scoring (POC / Value Area / HVN) and mitigation.
+//    - CHoCH / BOS only from major swing pivots
+//    - OB = last opposite candle before the swing break
+//    - Each OB is scored 0-100 and graded A+ / A / B / C
+//  Score is a rule-based confluence rank, NOT a backtested probability.
+// ============================================================
+
+// ---------------- Inputs ----------------
+grpSwing   = "Swing Structure (drives CHoCH / BOS / OB)"
+swingLen      = input.int(50, "Swing Lookback (pivot strength)", minval=2, group=grpSwing)
+showStructure = input.bool(true, "Show market structure (master toggle)", group=grpSwing)
+showBOS       = input.bool(true, "Show BOS labels", group=grpSwing)
+showCHoCH     = input.bool(true, "Show CHoCH labels", group=grpSwing)
+showLines     = input.bool(true, "Draw structure break lines", group=grpSwing)
+bullColor     = input.color(color.new(color.teal, 0), "Bullish color", group=grpSwing)
+bearColor     = input.color(color.new(color.red, 0), "Bearish color", group=grpSwing)
+
+grpInt     = "Internal Structure (optional, cosmetic only)"
+showInt    = input.bool(false, "Show internal structure (minor pivots)", group=grpInt)
+intLen     = input.int(5, "Internal Lookback (pivot strength)", minval=1, group=grpInt)
+intColor   = input.color(color.new(color.gray, 55), "Internal label color", group=grpInt)
+
+grpOB      = "Order Blocks"
+showOB     = input.bool(true, "Show Order Blocks", group=grpOB)
+obMax      = input.int(10, "Max active OBs per side", minval=1, maxval=50, group=grpOB)
+obLookback = input.int(50, "OB search lookback (bars)", minval=5, maxval=200, group=grpOB)
+mitigateBy = input.string("Touch", "Mitigation trigger", options=["Touch", "50%", "Wick", "Close"], group=grpOB, tooltip="Touch = price revisits the zone (any wick inside)\n50% = price reaches the middle of the zone\nWick = wick trades through the far side\nClose = candle closes beyond the far side")
+showMitigated = input.bool(false, "Keep mitigated OBs (faded)", group=grpOB)
+hideOverlap   = input.bool(true, "Skip OBs overlapping a same-side OB", group=grpOB)
+obShowMid  = input.bool(true, "Show OB 50% equilibrium line", group=grpOB)
+minScore   = input.float(0, "Hide OBs below score", minval=0, maxval=100, group=grpOB)
+showLabels = input.bool(true, "Show OB labels", group=grpOB)
+labelSizeIn = input.string("small", "Label size", options=["tiny", "small", "normal"], group=grpOB)
+
+grpVP      = "Volume Profile / Zones"
+showProfile  = input.bool(true, "Show volume profile", group=grpVP)
+showHvnZones = input.bool(true, "Shade HVN zones across chart", group=grpVP)
+profLookback = input.int(150, "Profile lookback (bars)", minval=30, maxval=500, group=grpVP)
+profRows     = input.int(30, "Profile rows", minval=10, maxval=80, group=grpVP)
+vaPct        = input.float(70, "Value area %", minval=50, maxval=95, group=grpVP) / 100.0
+hvnMult      = input.float(1.3, "HVN threshold (x avg row volume)", minval=1.0, step=0.1, group=grpVP)
+profWidth    = input.int(25, "Profile width (bars)", minval=5, maxval=100, group=grpVP)
+profOffset   = input.int(6, "Profile offset from last bar", minval=1, maxval=100, group=grpVP)
+
+grpVol     = "Volume Confirmation"
+volLen     = input.int(20, "Volume average length", minval=1, group=grpVol)
+volMult    = input.float(1.5, "Spike threshold (x average)", minval=0.1, step=0.1, group=grpVol)
+
+grpW       = "Scoring weights"
+wPOC       = input.float(25, "OB contains POC", minval=0, group=grpW)
+wVA        = input.float(15, "OB overlaps Value Area", minval=0, group=grpW)
+wHVN       = input.float(20, "OB overlaps HVN (extra credit)", minval=0, group=grpW)
+
+grpSty     = "Profile colors"
+pocCol     = input.color(#ff3d71, "POC", group=grpSty, inline="p1")
+vaCol      = input.color(#4c8dff, "Value area", group=grpSty, inline="p1")
+hvnCol     = input.color(#ffb300, "HVN", group=grpSty, inline="p2")
+nvCol      = input.color(#7b8494, "Other rows", group=grpSty, inline="p2")
+
+grpInfo    = "Info Table"
+showTable  = input.bool(true, "Show status table", group=grpInfo)
+tablePos   = input.string("Top Right", "Table position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=grpInfo)
+
+var string txtSz = labelSizeIn == "tiny" ? size.tiny : labelSizeIn == "normal" ? size.normal : size.small
+var string posMap = tablePos == "Top Right" ? position.top_right : tablePos == "Top Left" ? position.top_left : tablePos == "Bottom Right" ? position.bottom_right : position.bottom_left
+
+// ---------------- Types ----------------
+type Profile
+    array<float> vols
+    array<bool>  hvn
+    float lo
+    float step
+    int   pocIdx
+    int   vahIdx
+    int   valIdx
+    float total
+
+type OB
+    box    bx
+    line   ml
+    label  lb
+    bool   bull
+    float  top
+    float  bot
+    float  score
+    string txt
+
+// ---------------- State ----------------
+float atrVal = ta.atr(14)
+float volAvg = ta.sma(volume, volLen)
+bool  volSpike = volume > volAvg * volMult
+
+var array<OB>    obs        = array.new<OB>()
+var array<box>   profBoxes  = array.new<box>()
+var array<line>  profLines  = array.new<line>()
+var array<label> profLabels = array.new<label>()
+
+// ============================================================
+//  FUNCTIONS
+// ============================================================
+f_buildProfile(int lookback, int rows, float vaFrac, float hvnMul) =>
+    int n = math.min(lookback, bar_index + 1)
+    float hiP = high
+    float loP = low
+    for i = 0 to n - 1
+        hiP := math.max(hiP, high[i])
+        loP := math.min(loP, low[i])
+    float stp = math.max((hiP - loP) / rows, syminfo.mintick)
+    array<float> vols = array.new<float>(rows, 0.0)
+    for i = 0 to n - 1
+        float bl  = low[i]
+        float bh  = high[i]
+        float v   = nz(volume[i])
+        float rng = math.max(bh - bl, syminfo.mintick)
+        int i0 = math.max(0, math.min(rows - 1, int(math.floor((bl - loP) / stp))))
+        int i1 = math.max(0, math.min(rows - 1, int(math.floor((bh - loP) / stp))))
+        for r = i0 to i1
+            float rl = loP + r * stp
+            float rh = rl + stp
+            float sh = i0 == i1 ? 1.0 : math.max(0.0, math.min(bh, rh) - math.max(bl, rl)) / rng
+            vols.set(r, vols.get(r) + v * sh)
+
+    float total = vols.sum()
+    int poc = vols.indexof(vols.max())
+
+    int up = poc
+    int dn = poc
+    float acc = vols.get(poc)
+    while acc < total * vaFrac and (up < rows - 1 or dn > 0)
+        float vu = up < rows - 1 ? vols.get(up + 1) : -1.0
+        float vd = dn > 0 ? vols.get(dn - 1) : -1.0
+        if vu >= vd
+            up += 1
+            acc += vu
+        else
+            dn -= 1
+            acc += vd
+
+    array<bool> hvn = array.new<bool>(rows, false)
+    float avg = total / rows
+    for r = 0 to rows - 1
+        float v  = vols.get(r)
+        float pv = r > 0 ? vols.get(r - 1) : 0.0
+        float nx = r < rows - 1 ? vols.get(r + 1) : 0.0
+        if total > 0 and v >= avg * hvnMul and v >= pv and v >= nx
+            hvn.set(r, true)
+
+    Profile.new(vols, hvn, loP, stp, poc, up, dn, total)
+
+f_confluence(Profile p, float zTop, float zBot) =>
+    bool hasPoc = false
+    bool hasHvn = false
+    float share = 0.0
+    float tot = p.total
+    if tot > 0
+        for r = 0 to p.vols.size() - 1
+            float rl = p.lo + r * p.step
+            float rh = rl + p.step
+            if rl < zTop and rh > zBot
+                share += p.vols.get(r) * (math.min(zTop, rh) - math.max(zBot, rl)) / p.step
+                if r == p.pocIdx
+                    hasPoc := true
+                if p.hvn.get(r)
+                    hasHvn := true
+    float vaLo = p.lo + p.valIdx * p.step
+    float vaHi = p.lo + (p.vahIdx + 1) * p.step
+    bool inVa = tot > 0 and zBot < vaHi and zTop > vaLo
+    float shr = tot > 0 ? share / tot : 0.0
+    [hasPoc, inVa, hasHvn, shr]
+
+f_overlap(bool bull, float t, float b) =>
+    bool res = false
+    if obs.size() > 0
+        for i = 0 to obs.size() - 1
+            OB o = obs.get(i)
+            if o.bull == bull and t > o.bot and b < o.top
+                res := true
+    res
+
+f_kill(OB o) =>
+    box.delete(o.bx)
+    line.delete(o.ml)
+    label.delete(o.lb)
+    true
+
+// Last opposite candle before the break
+f_findOB(bool bull) =>
+    float obH = na
+    float obL = na
+    int   obB = na
+    for i = 1 to obLookback
+        bool opp = bull ? close[i] < open[i] : close[i] > open[i]
+        if opp
+            obH := high[i]
+            obL := low[i]
+            obB := bar_index - i
+            break
+    [obH, obL, obB]
+
+f_createOB(bool bull, float zTop, float zBot, int zBar, bool isChoch, bool spike) =>
+    float atrv = nz(atrVal, syminfo.mintick)
+    bool made = false
+    bool ovl = hideOverlap and f_overlap(bull, zTop, zBot)
+    if not ovl
+        Profile p = f_buildProfile(profLookback, profRows, vaPct, hvnMult)
+        [hasPoc, inVa, hasHvn, share] = f_confluence(p, zTop, zBot)
+
+        int off = bar_index - zBar
+        float vRatio  = nz(volume[off]) / math.max(nz(volAvg[off]), 1e-10)
+        float ptsVol  = math.min(vRatio / 2.0, 1.0) * 5.0 + (spike ? 5.0 : 0.0)
+        float dispAtr = bull ? (close - zBot) / atrv : (zTop - close) / atrv
+        float ptsDisp = math.min(math.max(dispAtr / 4.0, 0.0), 1.0) * 10.0
+        float ptsStr  = isChoch ? 6.0 : 10.0
+        float ptsShr  = math.min(share / 0.15, 1.0) * 10.0
+        float raw     = ptsStr + ptsVol + ptsDisp + ptsShr + (hasPoc ? wPOC : 0.0) + (inVa ? wVA : 0.0) + (hasHvn ? wHVN : 0.0)
+        float maxRaw  = 40.0 + wPOC + wVA + wHVN
+        float score   = math.min(100.0, raw / maxRaw * 100.0)
+
+        if score >= minScore
+            color base = bull ? bullColor : bearColor
+            int bgT = score >= 75 ? 66 : score >= 60 ? 76 : score >= 45 ? 85 : 92
+            int brT = score >= 75 ? 10 : score >= 60 ? 30 : score >= 45 ? 50 : 70
+            string grade = score >= 75 ? "A+" : score >= 60 ? "A" : score >= 45 ? "B" : "C"
+            array<string> tg = array.new<string>()
+            if hasPoc
+                tg.push("POC")
+            if inVa
+                tg.push("VA")
+            if hasHvn
+                tg.push("HVN")
+            string tags = tg.join(" · ")
+            string txt = (bull ? "▲ " : "▼ ") + grade + " " + str.tostring(math.round(score)) + "%" + (tags == "" ? "" : "\n" + tags)
+            float midY = (zTop + zBot) / 2
+
+            box bx = box.new(zBar, zTop, bar_index + 20, zBot, border_color=color.new(base, brT), border_width=1, bgcolor=color.new(base, bgT))
+            line ml = obShowMid ? line.new(zBar, midY, bar_index + 20, midY, color=color.new(base, 30), style=line.style_dotted) : na
+            label lb = showLabels ? label.new(bar_index + 20, midY, txt, style=label.style_label_left, color=color.new(base, 35), textcolor=color.white, size=txtSz) : na
+
+            obs.push(OB.new(bx, ml, lb, bull, zTop, zBot, score, txt))
+
+            // keep at most obMax per side
+            int cnt = 0
+            for q in obs
+                if q.bull == bull
+                    cnt += 1
+            while cnt > obMax
+                for i = 0 to obs.size() - 1
+                    OB old = obs.get(i)
+                    if old.bull == bull
+                        f_kill(old)
+                        obs.remove(i)
+                        cnt -= 1
+                        break
+            made := true
+    made
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+// ============================================================
+//  INTERNAL STRUCTURE (optional, cosmetic)
+// ============================================================
+float inPH = ta.pivothigh(high, intLen, intLen)
+float inPL = ta.pivotlow(low, intLen, intLen)
+var float inTopY = na
+var bool  inTopCrossed = true
+var float inBotY = na
+var bool  inBotCrossed = true
+var int   inTrend = 0
+
+if not na(inPH)
+    inTopY := inPH
+    inTopCrossed := false
+if not na(inPL)
+    inBotY := inPL
+    inBotCrossed := false
+
+bool inBullBreak = not na(inTopY) and not inTopCrossed and close > inTopY
+bool inBearBreak = not na(inBotY) and not inBotCrossed and close < inBotY
+
+if showInt and inBullBreak
+    label.new(bar_index, low, inTrend == -1 ? "choch" : "bos", style=label.style_label_up, color=intColor, textcolor=color.white, size=size.tiny)
+if showInt and inBearBreak
+    label.new(bar_index, high, inTrend == 1 ? "choch" : "bos", style=label.style_label_down, color=intColor, textcolor=color.white, size=size.tiny)
+if inBullBreak
+    inTopCrossed := true
+    inTrend := 1
+if inBearBreak
+    inBotCrossed := true
+    inTrend := -1
+
+// ============================================================
+//  MITIGATION (before new OBs, so a fresh OB isn't tested on its own bar)
+// ============================================================
+bool mitigatedNow = false
+if obs.size() > 0
+    for i = obs.size() - 1 to 0
+        OB o = obs.get(i)
+        float mid = (o.top + o.bot) / 2
+        bool hit = false
+        if o.bull
+            if mitigateBy == "Touch"
+                hit := low <= o.top
+            else if mitigateBy == "50%"
+                hit := low <= mid
+            else if mitigateBy == "Wick"
+                hit := low <= o.bot
+            else
+                hit := close <= o.bot
+        else
+            if mitigateBy == "Touch"
+                hit := high >= o.bot
+            else if mitigateBy == "50%"
+                hit := high >= mid
+            else if mitigateBy == "Wick"
+                hit := high >= o.top
+            else
+                hit := close >= o.top
+        if hit
+            if showMitigated
+                box.set_right(o.bx, bar_index)
+                box.set_bgcolor(o.bx, color.new(color.gray, 92))
+                box.set_border_color(o.bx, color.new(color.gray, 70))
+                box.set_border_style(o.bx, line.style_dotted)
+                line.delete(o.ml)
+                label.delete(o.lb)
+            else
+                f_kill(o)
+            obs.remove(i)
+            mitigatedNow := true
+        else if barstate.islast
+            box.set_right(o.bx, bar_index + 20)
+            line.set_x2(o.ml, bar_index + 20)
+            label.set_x(o.lb, bar_index + 20)
+
+// ============================================================
+//  SWING STRUCTURE (drives CHoCH / BOS / OB)
+// ============================================================
+float swPH = ta.pivothigh(high, swingLen, swingLen)
+float swPL = ta.pivotlow(low, swingLen, swingLen)
+
+var float swTopY = na
+var int   swTopX = na
+var bool  swTopCrossed = true
+var float swBotY = na
+var int   swBotX = na
+var bool  swBotCrossed = true
+var int   swTrend = 0
+
+if not na(swPH)
+    swTopY := swPH
+    swTopX := bar_index - swingLen
+    swTopCrossed := false
+if not na(swPL)
+    swBotY := swPL
+    swBotX := bar_index - swingLen
+    swBotCrossed := false
+
+bool swBullBreak = not na(swTopY) and not swTopCrossed and close > swTopY
+bool swBearBreak = not na(swBotY) and not swBotCrossed and close < swBotY
+
+bool isCHoCHBull = swBullBreak and swTrend == -1
+bool isBOSBull   = swBullBreak and swTrend != -1
+bool isCHoCHBear = swBearBreak and swTrend == 1
+bool isBOSBear   = swBearBreak and swTrend != 1
+
+// ---- structure drawing (toggle) ----
+if showStructure
+    if isCHoCHBull and showCHoCH
+        label.new(bar_index, low, volSpike ? "CHoCH  Vol" : "CHoCH", style=label.style_label_up, color=bullColor, textcolor=color.white, size=size.small)
+        if showLines
+            line.new(swTopX, swTopY, bar_index, swTopY, color=bullColor, style=line.style_dashed)
+    if isBOSBull and showBOS
+        label.new(bar_index, low, "BOS", style=label.style_label_up, color=color.new(bullColor, 40), textcolor=color.white, size=size.small)
+        if showLines
+            line.new(swTopX, swTopY, bar_index, swTopY, color=color.new(bullColor, 40), style=line.style_dotted)
+    if isCHoCHBear and showCHoCH
+        label.new(bar_index, high, volSpike ? "CHoCH  Vol" : "CHoCH", style=label.style_label_down, color=bearColor, textcolor=color.white, size=size.small)
+        if showLines
+            line.new(swBotX, swBotY, bar_index, swBotY, color=bearColor, style=line.style_dashed)
+    if isBOSBear and showBOS
+        label.new(bar_index, high, "BOS", style=label.style_label_down, color=color.new(bearColor, 40), textcolor=color.white, size=size.small)
+        if showLines
+            line.new(swBotX, swBotY, bar_index, swBotY, color=color.new(bearColor, 40), style=line.style_dotted)
+
+// ---- order blocks on swing breaks ----
+bool madeBull = false
+bool madeBear = false
+
+if showOB and swBullBreak
+    [oh, ol, ob] = f_findOB(true)
+    if not na(oh)
+        madeBull := f_createOB(true, oh, ol, ob, isCHoCHBull, volSpike)
+
+if showOB and swBearBreak
+    [oh, ol, ob] = f_findOB(false)
+    if not na(oh)
+        madeBear := f_createOB(false, oh, ol, ob, isCHoCHBear, volSpike)
+
+// consume breaks / update trend
+if swBullBreak
+    swTopCrossed := true
+    swTrend := 1
+if swBearBreak
+    swBotCrossed := true
+    swTrend := -1
+
+// ============================================================
+//  LAST BAR: ranking, table, volume profile
+// ============================================================
+var table tbl = table.new(posMap, 4, 6, bgcolor=color.new(#0f1420, 12), frame_color=color.new(color.gray, 60), frame_width=1, border_color=color.new(color.gray, 75), border_width=1)
+
+if barstate.islast
+    array<int> idx = array.new<int>()
+    int nBull = 0
+    int nBear = 0
+    if obs.size() > 0
+        array<float> sc = array.new<float>()
+        for q in obs
+            sc.push(q.score)
+            if q.bull
+                nBull += 1
+            else
+                nBear += 1
+        idx := sc.sort_indices(order.descending)
+        int bestI = idx.get(0)
+        for i = 0 to obs.size() - 1
+            OB o = obs.get(i)
+            bool isBest = i == bestI
+            box.set_border_width(o.bx, isBest ? 2 : 1)
+            if showLabels
+                label.set_text(o.lb, (isBest ? "★ " : "") + o.txt)
+
+    if showTable
+        string trendTxt = swTrend == 1 ? "Bullish" : swTrend == -1 ? "Bearish" : "Undefined"
+        color  trendCol = swTrend == 1 ? bullColor : swTrend == -1 ? bearColor : color.gray
+        table.cell(tbl, 0, 0, "Swing trend: " + trendTxt, text_color=trendCol, text_size=size.small, bgcolor=color.new(#1d2740, 0))
+        table.merge_cells(tbl, 0, 0, 3, 0)
+        string[] hd = array.from("Zone", "Score", "Grade", "Volume")
+        for c = 0 to 3
+            table.cell(tbl, c, 1, hd.get(c), text_color=color.new(color.white, 35), text_size=size.tiny)
+        for k = 0 to 2
+            if k < idx.size()
+                OB o = obs.get(idx.get(k))
+                color dc = o.bull ? bullColor : bearColor
+                string g = o.score >= 75 ? "A+" : o.score >= 60 ? "A" : o.score >= 45 ? "B" : "C"
+                string zone = (o.bull ? "▲ " : "▼ ") + str.tostring(o.bot, format.mintick) + "–" + str.tostring(o.top, format.mintick)
+                int nl = str.pos(o.txt, "\n")
+                string tg = nl >= 0 ? str.substring(o.txt, nl + 1) : "–"
+                table.cell(tbl, 0, k + 2, zone, text_color=dc, text_size=size.tiny)
+                table.cell(tbl, 1, k + 2, str.tostring(math.round(o.score)) + "%", text_color=color.white, text_size=size.tiny)
+                table.cell(tbl, 2, k + 2, g, text_color=color.white, text_size=size.tiny)
+                table.cell(tbl, 3, k + 2, tg, text_color=hvnCol, text_size=size.tiny)
+            else
+                for c = 0 to 3
+                    table.cell(tbl, c, k + 2, "", text_size=size.tiny)
+        table.cell(tbl, 0, 5, "Active OB   ▲ " + str.tostring(nBull) + "   ▼ " + str.tostring(nBear), text_color=color.new(color.white, 25), text_size=size.tiny)
+        table.merge_cells(tbl, 0, 5, 3, 5)
+
+    // ---- volume profile + zones ----
+    while profBoxes.size() > 0
+        box.delete(profBoxes.pop())
+    while profLines.size() > 0
+        line.delete(profLines.pop())
+    while profLabels.size() > 0
+        label.delete(profLabels.pop())
+
+    if showProfile
+        Profile p = f_buildProfile(profLookback, profRows, vaPct, hvnMult)
+        float mxV = p.vols.max()
+        if mxV > 0
+            int x0 = bar_index + profOffset
+            int xStart = bar_index - math.min(profLookback - 1, bar_index)
+
+            for r = 0 to profRows - 1
+                float v  = p.vols.get(r)
+                float rl = p.lo + r * p.step
+                float rh = rl + p.step
+                bool isHvn = p.hvn.get(r)
+                bool inVa  = r >= p.valIdx and r <= p.vahIdx
+                color c = r == p.pocIdx ? pocCol : isHvn ? hvnCol : inVa ? vaCol : nvCol
+                int tr  = r == p.pocIdx ? 8 : isHvn ? 25 : inVa ? 58 : 78
+                int w   = math.max(1, int(math.round(v / mxV * profWidth)))
+                profBoxes.push(box.new(x0, rh, x0 + w, rl, border_color=color.new(c, 100), bgcolor=color.new(c, tr)))
+                if showHvnZones and isHvn
+                    profBoxes.push(box.new(xStart, rh, x0, rl, border_color=color.new(hvnCol, 100), bgcolor=color.new(hvnCol, 91)))
+
+            float pocP = p.lo + (p.pocIdx + 0.5) * p.step
+            float vahP = p.lo + (p.vahIdx + 1) * p.step
+            float valP = p.lo + p.valIdx * p.step
+            int xEnd = x0 + profWidth
+
+            profLines.push(line.new(xStart, pocP, xEnd, pocP, color=pocCol, width=1, style=line.style_solid))
+            profLines.push(line.new(xStart, vahP, xEnd, vahP, color=color.new(vaCol, 25), width=1, style=line.style_dashed))
+            profLines.push(line.new(xStart, valP, xEnd, valP, color=color.new(vaCol, 25), width=1, style=line.style_dashed))
+
+            profLabels.push(label.new(xEnd + 1, pocP, "POC", style=label.style_label_left, color=color.new(pocCol, 100), textcolor=pocCol, size=size.tiny))
+            profLabels.push(label.new(xEnd + 1, vahP, "VAH", style=label.style_label_left, color=color.new(vaCol, 100), textcolor=vaCol, size=size.tiny))
+            profLabels.push(label.new(xEnd + 1, valP, "VAL", style=label.style_label_left, color=color.new(vaCol, 100), textcolor=vaCol, size=size.tiny))
+
+// ---------------- Alerts ----------------
+alertcondition(isCHoCHBull, title="Bullish CHoCH (Swing)", message="Bullish CHoCH on {{ticker}} {{interval}}")
+alertcondition(isCHoCHBear, title="Bearish CHoCH (Swing)", message="Bearish CHoCH on {{ticker}} {{interval}}")
+alertcondition(isCHoCHBull and volSpike, title="Bullish CHoCH + Volume Spike", message="Bullish CHoCH confirmed with volume spike on {{ticker}} {{interval}}")
+alertcondition(isCHoCHBear and volSpike, title="Bearish CHoCH + Volume Spike", message="Bearish CHoCH confirmed with volume spike on {{ticker}} {{interval}}")
+alertcondition(isBOSBull, title="Bullish BOS (Swing)", message="Bullish BOS on {{ticker}} {{interval}}")
+alertcondition(isBOSBear, title="Bearish BOS (Swing)", message="Bearish BOS on {{ticker}} {{interval}}")
+alertcondition(madeBull, title="New Bullish Order Block", message="New bullish OB on {{ticker}} {{interval}}")
+alertcondition(madeBear, title="New Bearish Order Block", message="New bearish OB on {{ticker}} {{interval}}")
+alertcondition(mitigatedNow, title="Order Block Mitigated", message="Order block mitigated on {{ticker}} {{interval}}")
+
+
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

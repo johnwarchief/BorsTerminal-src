@@ -1,0 +1,11 @@
+Indicator Divergence for Multiple Indicators v4 for Trading View
+
+This is a comprehensive multi-indicator divergence detection system for Trading View (Pine Script v4). It automatically scans 11 different indicators for both Regular and Hidden divergences, while simultaneously applying an ADX trend filter and displaying 3 EMAs for confluence. It's designed to find high-probability reversal and continuation setups across any market.
+
+What it draws:
+📉 Divergence Lines — Yellow (Positive Regular), Navy (Negative Regular), Lime (Positive Hidden), Red (Negative Hidden)
+🏷 Divergence Labels — Text labels showing which indicators detected the divergence
+📊 3 EMA Lines — Red (EMA 1/9), Blue (EMA 2/21), Green (EMA 3/50)
+🕯 Trend-Colored Candles — Green (uptrend), Red (downtrend), Blue (flat/range)
+📍 Pivot Markers — Optional H/L labels at pivot points
+🔔 Alert Conditions — 6 alert types for all divergence combinations

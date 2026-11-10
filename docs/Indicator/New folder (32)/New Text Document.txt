@@ -1,0 +1,3 @@
+Indicator Quiet Range Tracker for Trading View 
+
+💡 This script watches for stretches where price has gone quiet. It measures a box of recent highs and lows, compares the height of that box with the Average True Range, and starts watching a range only when the box is unusually tight. Once a range is found, its edges are frozen and two exit levels are drawn outside it, each one placed a set distance away from the box using the market's normal volatility. The range stays open, however many bars it takes, until a bar actually closes beyond one of the exit levels. That close is the real exit, and an optional trade plan with a stop and three targets can be built from it.

@@ -1,0 +1,888 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator("RSI Divergence: Out-of-Sample Optimizer [LuxAlgo]", "LuxAlgo - RSI Divergence: Out-of-Sample Optimizer", overlay=false)
+//---------------------------------------------------------------------------------------------------------------------}
+// Constants & Inputs
+//---------------------------------------------------------------------------------------------------------------------{
+var color DATA        = #DBDBDB
+var color HEADERS     = #808080
+var color BACKGROUND  = #161616
+var color BORDERS     = #2E2E2E
+
+string G_OPT = "Optimization & Backtest Ranges"
+int is_start    = input.time(timestamp("2024-01-03"), "In-Sample Start", group=G_OPT)
+int is_end      = input.time(timestamp("2024-12-31"), "In-Sample End", group=G_OPT)
+int oos_start   = input.time(timestamp("2025-01-01"), "Out-of-Sample Start", group=G_OPT)
+int oos_end     = input.time(timestamp("2025-12-31"), "Out-of-Sample End", group=G_OPT)
+
+int min_len     = input.int(2, "Min RSI Period", minval=2, group=G_OPT)
+int max_len     = input.int(50, "Max RSI Period", minval=2, group=G_OPT)
+int step_len    = input.int(1, "Step Size", minval=1, group=G_OPT)
+string opt_metric  = input.string("Net Profit", "Optimization Metric", options=["Net Profit", "Win Rate", "Profit Factor", "Drawdown", "Return / Drawdown", "Average Trade", "Gross Profit", "Total Trades", "Sharpe Ratio", "Z-Score (Dependency)"], group=G_OPT)
+bool use_auto_oos = input.bool(true, "Auto-Select Best Period for OOS", group=G_OPT, tooltip="If unchecked, the script will use the Manual OOS Period instead of the best optimized one.")
+int manual_oos    = input.int(14, "Manual OOS Period", minval=2, group=G_OPT, tooltip="Used during the OOS period if Auto-Select is disabled. Will snap to the closest simulated period if it falls outside the min/max/step ranges.")
+
+string G_DIV = "Divergence Settings"
+int pivot_left  = input.int(5, "Pivot Left Bars", minval=1, group=G_DIV)
+int pivot_right = input.int(2, "Pivot Right Bars", minval=1, group=G_DIV)
+int max_div_bars= input.int(60, "Max Divergence Bars", minval=10, group=G_DIV)
+
+string G_TRD = "Trade Rules"
+float sl_mult     = input.float(1.5, "Stop Loss ATR Multiplier", step=0.1, group=G_TRD)
+float tp_mult     = input.float(2.0, "Take Profit ATR Multiplier", step=0.1, group=G_TRD)
+bool opp_exit    = input.bool(true, "Exit on Opposite Signal", group=G_TRD)
+
+string G_VIS = "Visuals"
+int default_len = input.int(14, "Default Visual RSI Period", group=G_VIS, tooltip="Used before the Out-of-Sample period starts. Switches to the chosen OOS period during Out-of-Sample.")
+bool show_exits = input.bool(true, "Show Trade Exits on Chart", group=G_VIS, tooltip="Plots the Stop Loss and Take Profit levels when a trade is active.")
+bool show_bg = input.bool(true, "Show Period Backgrounds", group=G_VIS, tooltip="Creates a gradient background on the chart for the In-Sample and Out-of-Sample periods.")
+color is_bg_col = input.color(color.new(#5b9cf6, 80), "IS Gradient", group=G_VIS, inline="bg")
+color oos_bg_col = input.color(color.new(#f6b25b, 80), "OOS Gradient", group=G_VIS, inline="bg")
+
+string G_DASH = "Dashboard"
+string dash_pos_in = input.string("Bottom Right", "Dashboard Position", options=["Top Right", "Top Center", "Top Left", "Middle Right", "Middle Center", "Middle Left", "Bottom Right", "Bottom Center", "Bottom Left"], group=G_DASH)
+string dash_size_in = input.string("Tiny", "Dashboard Size", options=["Micro", "Tiny", "Small", "Normal", "Large", "Huge"], group=G_DASH)
+string extra_metric_1 = input.string("None", "Extra Dashboard Metric 1", options=["None", "Net Profit", "Win Rate", "Profit Factor", "Drawdown", "Return / Drawdown", "Average Trade", "Gross Profit", "Total Trades", "Sharpe Ratio", "Z-Score (Dependency)"], group=G_DASH)
+string extra_metric_2 = input.string("None", "Extra Dashboard Metric 2", options=["None", "Net Profit", "Win Rate", "Profit Factor", "Drawdown", "Return / Drawdown", "Average Trade", "Gross Profit", "Total Trades", "Sharpe Ratio", "Z-Score (Dependency)"], group=G_DASH)
+
+string parsed_pos = switch dash_pos_in
+    "Top Right" => position.top_right
+    "Top Center" => position.top_center
+    "Top Left" => position.top_left
+    "Middle Right" => position.middle_right
+    "Middle Center" => position.middle_center
+    "Middle Left" => position.middle_left
+    "Bottom Right" => position.bottom_right
+    "Bottom Center" => position.bottom_center
+    "Bottom Left" => position.bottom_left
+    => position.bottom_right
+
+int parsed_size = switch dash_size_in
+    "Micro" => 6
+    "Tiny" => 8
+    "Small" => 10
+    "Normal" => 14
+    "Large" => 20
+    "Huge" => 36
+    => 10
+
+
+//---------------------------------------------------------------------------------------------------------------------}
+// Types
+//---------------------------------------------------------------------------------------------------------------------{
+type Pivot
+    int bar_index = na
+    float price = na
+    float rsi = na
+
+type SimState
+    int length
+    float prev_up = na
+    float prev_down = na
+    float rsi = na
+    
+    array<float> rsi_hist
+    array<float> low_hist
+    array<float> high_hist
+    array<int> bar_hist
+    
+    Pivot last_ph
+    Pivot last_pl
+    
+    bool div_bull = false
+    bool div_bear = false
+    Pivot current_bull_start
+    Pivot current_bear_start
+    
+    int pos = 0
+    float entry_price = na
+    float sl = na
+    float tp = na
+    int entry_period = 0 // 1 = IS, 2 = OOS, 3 = FWD
+    
+    float is_profit = 0.0
+    float is_gross_profit = 0.0
+    float is_gross_loss = 0.0
+    int is_trades = 0
+    int is_wins = 0
+    float is_peak = 1.0
+    float is_dd = 0.0
+    float is_profit_sq = 0.0
+    int is_runs = 0
+    int last_is_trade_sign = 0
+    
+    float oos_profit = 0.0
+    float oos_gross_profit = 0.0
+    float oos_gross_loss = 0.0
+    int oos_trades = 0
+    int oos_wins = 0
+    float oos_peak = 1.0
+    float oos_dd = 0.0
+    float oos_profit_sq = 0.0
+    int oos_runs = 0
+    int last_oos_trade_sign = 0
+    
+    float fwd_profit = 0.0
+    float fwd_gross_profit = 0.0
+    float fwd_gross_loss = 0.0
+    int fwd_trades = 0
+    int fwd_wins = 0
+    float fwd_peak = 1.0
+    float fwd_dd = 0.0
+    float fwd_profit_sq = 0.0
+    int fwd_runs = 0
+    int last_fwd_trade_sign = 0
+    
+    array<float> is_equity
+    array<float> oos_equity
+    array<float> fwd_equity
+
+//---------------------------------------------------------------------------------------------------------------------}
+// Methods
+//---------------------------------------------------------------------------------------------------------------------{
+method check_pivots(SimState sim, int left, int right, int max_bars) =>
+    sim.div_bull := false
+    sim.div_bear := false
+    
+    if sim.rsi_hist.size() >= left + right + 1
+        // Pivot Low
+        float rsi_cand_low = sim.rsi_hist.get(right)
+        bool is_pl = true
+        for i = 0 to left + right
+            if i != right and sim.rsi_hist.get(i) <= rsi_cand_low
+                is_pl := false
+                break
+                
+        if is_pl
+            float price_cand_low = sim.low_hist.get(right)
+            int p_bar = sim.bar_hist.get(right)
+            
+            if not na(sim.last_pl.price)
+                if rsi_cand_low > sim.last_pl.rsi and price_cand_low < sim.last_pl.price and (p_bar - sim.last_pl.bar_index) <= max_bars
+                    sim.div_bull := true
+                    sim.current_bull_start := sim.last_pl
+            
+            sim.last_pl := Pivot.new(p_bar, price_cand_low, rsi_cand_low)
+
+        // Pivot High
+        float rsi_cand_high = sim.rsi_hist.get(right)
+        bool is_ph = true
+        for i = 0 to left + right
+            if i != right and sim.rsi_hist.get(i) >= rsi_cand_high
+                is_ph := false
+                break
+                
+        if is_ph
+            float price_cand_high = sim.high_hist.get(right)
+            int p_bar = sim.bar_hist.get(right)
+            
+            if not na(sim.last_ph.price)
+                if rsi_cand_high < sim.last_ph.rsi and price_cand_high > sim.last_ph.price and (p_bar - sim.last_ph.bar_index) <= max_bars
+                    sim.div_bear := true
+                    sim.current_bear_start := sim.last_ph
+            
+            sim.last_ph := Pivot.new(p_bar, price_cand_high, rsi_cand_high)
+
+method record_trade(SimState sim, float profit) =>
+    int trade_sign = profit > 0 ? 1 : -1
+    if sim.entry_period == 1
+        if sim.is_trades > 0 and sim.last_is_trade_sign != 0 and sim.last_is_trade_sign != trade_sign
+            sim.is_runs += 1
+        if sim.is_trades == 0
+            sim.is_runs := 1
+        sim.last_is_trade_sign := trade_sign
+        sim.is_profit_sq += profit * profit
+        
+        sim.is_trades += 1
+        if profit > 0
+            sim.is_wins += 1
+            sim.is_gross_profit += profit
+        else
+            sim.is_gross_loss += math.abs(profit)
+            
+        sim.is_profit += profit
+        float current_eq = 1.0 + sim.is_profit
+        if current_eq > sim.is_peak
+            sim.is_peak := current_eq
+        float dd = (sim.is_peak - current_eq) / math.max(sim.is_peak, 0.000001)
+        if dd > sim.is_dd
+            sim.is_dd := dd
+        sim.is_equity.push(current_eq)
+    else if sim.entry_period == 2
+        if sim.oos_trades > 0 and sim.last_oos_trade_sign != 0 and sim.last_oos_trade_sign != trade_sign
+            sim.oos_runs += 1
+        if sim.oos_trades == 0
+            sim.oos_runs := 1
+        sim.last_oos_trade_sign := trade_sign
+        sim.oos_profit_sq += profit * profit
+        
+        sim.oos_trades += 1
+        if profit > 0
+            sim.oos_wins += 1
+            sim.oos_gross_profit += profit
+        else
+            sim.oos_gross_loss += math.abs(profit)
+            
+        sim.oos_profit += profit
+        float current_eq = 1.0 + sim.oos_profit
+        if current_eq > sim.oos_peak
+            sim.oos_peak := current_eq
+        float dd = (sim.oos_peak - current_eq) / math.max(sim.oos_peak, 0.000001)
+        if dd > sim.oos_dd
+            sim.oos_dd := dd
+        sim.oos_equity.push(current_eq)
+    else if sim.entry_period == 3
+        if sim.fwd_trades > 0 and sim.last_fwd_trade_sign != 0 and sim.last_fwd_trade_sign != trade_sign
+            sim.fwd_runs += 1
+        if sim.fwd_trades == 0
+            sim.fwd_runs := 1
+        sim.last_fwd_trade_sign := trade_sign
+        sim.fwd_profit_sq += profit * profit
+        
+        sim.fwd_trades += 1
+        if profit > 0
+            sim.fwd_wins += 1
+            sim.fwd_gross_profit += profit
+        else
+            sim.fwd_gross_loss += math.abs(profit)
+            
+        sim.fwd_profit += profit
+        float current_eq = 1.0 + sim.fwd_profit
+        if current_eq > sim.fwd_peak
+            sim.fwd_peak := current_eq
+        float dd = (sim.fwd_peak - current_eq) / math.max(sim.fwd_peak, 0.000001)
+        if dd > sim.fwd_dd
+            sim.fwd_dd := dd
+        sim.fwd_equity.push(current_eq)
+
+method update_trades(SimState sim, float c_low, float c_high, float c_close, float atr_val, bool in_is, bool in_oos, bool in_fwd, bool exit_opp, float sl_m, float tp_m) =>
+    bool exited = false
+    if sim.pos == 1
+        if c_low <= sim.sl
+            float profit = (sim.sl - sim.entry_price) / sim.entry_price
+            sim.record_trade(profit)
+            sim.pos := 0
+            exited := true
+        else if c_high >= sim.tp
+            float profit = (sim.tp - sim.entry_price) / sim.entry_price
+            sim.record_trade(profit)
+            sim.pos := 0
+            exited := true
+        else if exit_opp and sim.div_bear
+            float profit = (c_close - sim.entry_price) / sim.entry_price
+            sim.record_trade(profit)
+            sim.pos := 0
+            exited := true
+            
+    else if sim.pos == -1
+        if c_high >= sim.sl
+            float profit = (sim.entry_price - sim.sl) / sim.entry_price
+            sim.record_trade(profit)
+            sim.pos := 0
+            exited := true
+        else if c_low <= sim.tp
+            float profit = (sim.entry_price - sim.tp) / sim.entry_price
+            sim.record_trade(profit)
+            sim.pos := 0
+            exited := true
+        else if exit_opp and sim.div_bull
+            float profit = (sim.entry_price - c_close) / sim.entry_price
+            sim.record_trade(profit)
+            sim.pos := 0
+            exited := true
+            
+    if sim.pos == 0 and not exited
+        if in_is or in_oos or in_fwd
+            if sim.div_bull and not na(atr_val)
+                sim.pos := 1
+                sim.entry_price := c_close
+                sim.sl := c_close - atr_val * sl_m
+                sim.tp := c_close + atr_val * tp_m
+                sim.entry_period := in_is ? 1 : (in_oos ? 2 : 3)
+            else if sim.div_bear and not na(atr_val)
+                sim.pos := -1
+                sim.entry_price := c_close
+                sim.sl := c_close + atr_val * sl_m
+                sim.tp := c_close - atr_val * tp_m
+                sim.entry_period := in_is ? 1 : (in_oos ? 2 : 3)
+
+get_high_low(int start_b, int end_b) =>
+    float max_p = -999999.0
+    float min_p = 999999.0
+    int len = math.max(0, bar_index - start_b)
+    for i = math.max(0, bar_index - end_b) to len
+        if high[i] > max_p
+            max_p := high[i]
+        if low[i] < min_p
+            min_p := low[i]
+    [max_p, min_p]
+
+method to_sparkline(array<float> arr) =>
+    if arr.size() <= 1
+        "N/A"
+    else
+        float min_v = arr.min()
+        float max_v = arr.max()
+        float range_v = max_v - min_v
+        array<string> chars = array.from(" ", "▂", "▃", "▄", "▅", "▆", "▇", "█")
+        string res = ""
+        float step = math.max(1, arr.size() / 15.0)
+        for i = 0 to 14
+            int idx = math.round(i * step)
+            if idx >= arr.size()
+                idx := arr.size() - 1
+            float val = arr.get(idx)
+            int char_idx = range_v == 0 ? 0 : math.round(((val - min_v) / range_v) * 7)
+            res += chars.get(math.max(0, math.min(7, char_idx)))
+        res
+
+method cell(table tb, int col, int row, string txt, color txt_color=#DBDBDB, string align=text.align_center) =>
+    table.cell(tb, col, row, txt, text_color=txt_color, text_size=parsed_size, text_halign=align, bgcolor=na)
+
+method divider(table tb, int row, int last_col) =>    
+    string rowDivider = '━━━━━━━━━━━━━━━━━━━━━━━━━━'
+    table.merge_cells(tb, 0, row, last_col, row)
+    table.cell(tb, 0, row, rowDivider, text_color=BORDERS, text_size=parsed_size, text_halign=text.align_center, height=1)
+
+method get_metric_val(SimState sim, string metric, int period) =>
+    float profit = period == 1 ? sim.is_profit : period == 2 ? sim.oos_profit : sim.fwd_profit
+    float profit_sq = period == 1 ? sim.is_profit_sq : period == 2 ? sim.oos_profit_sq : sim.fwd_profit_sq
+    int trades = period == 1 ? sim.is_trades : period == 2 ? sim.oos_trades : sim.fwd_trades
+    int wins = period == 1 ? sim.is_wins : period == 2 ? sim.oos_wins : sim.fwd_wins
+    float gross_profit = period == 1 ? sim.is_gross_profit : period == 2 ? sim.oos_gross_profit : sim.fwd_gross_profit
+    float gross_loss = period == 1 ? sim.is_gross_loss : period == 2 ? sim.oos_gross_loss : sim.fwd_gross_loss
+    float dd = period == 1 ? sim.is_dd : period == 2 ? sim.oos_dd : sim.fwd_dd
+    int runs = period == 1 ? sim.is_runs : period == 2 ? sim.oos_runs : sim.fwd_runs
+
+    float val = 0.0
+    if metric == "Net Profit"
+        val := trades > 0 ? profit : -999.0
+    else if metric == "Win Rate"
+        val := trades > 0 ? (wins * 100.0) / trades : -999.0
+    else if metric == "Profit Factor"
+        val := trades == 0 ? -999.0 : (gross_loss == 0 ? (gross_profit > 0 ? 999.0 : 0.0) : gross_profit / gross_loss)
+    else if metric == "Drawdown"
+        val := trades > 0 ? dd : -999.0
+    else if metric == "Return / Drawdown"
+        val := trades > 0 ? (dd > 0 ? profit / dd : (profit > 0 ? 999.0 : 0.0)) : -999.0
+    else if metric == "Average Trade"
+        val := trades > 0 ? profit / trades : -999.0
+    else if metric == "Gross Profit"
+        val := trades > 0 ? gross_profit : -999.0
+    else if metric == "Total Trades"
+        val := trades > 0 ? trades : -999.0
+    else if metric == "Sharpe Ratio"
+        float var_p = trades > 0 ? (profit_sq - (profit * profit) / trades) / trades : 0.0
+        float sd_p = math.sqrt(math.max(0.0, var_p))
+        val := trades > 0 ? (sd_p == 0 ? 0.0 : (profit / trades) / sd_p) : -999.0
+    else if metric == "Z-Score (Dependency)"
+        float W = wins
+        float L = trades - wins
+        float N = trades
+        float R = runs
+        if N > 1
+            float E = 1.0 + (2.0 * W * L) / N
+            float var_runs = (2.0 * W * L * (2.0 * W * L - N)) / (N * N * (N - 1.0))
+            float sd_runs = math.sqrt(math.max(0.0, var_runs))
+            val := sd_runs == 0 ? 0.0 : (R - E) / sd_runs
+        else
+            val := -999.0
+    val
+
+method format_metric_str(SimState sim, string metric, int period) =>
+    float val = sim.get_metric_val(metric, period)
+    if val == -999.0
+        "Not Enough Data"
+    else if metric == "Net Profit" or metric == "Average Trade" or metric == "Gross Profit" or metric == "Drawdown"
+        str.tostring(val * 100, format.mintick) + "%"
+    else if metric == "Win Rate"
+        str.tostring(val, "#.##") + "%"
+    else if metric == "Total Trades"
+        str.tostring(val, "#")
+    else
+        str.tostring(val, "#.##")
+
+method get_metric_col(SimState sim, string metric, int period) =>
+    float val = sim.get_metric_val(metric, period)
+    if val == -999.0
+        DATA
+    else if metric == "Net Profit" or metric == "Return / Drawdown" or metric == "Average Trade" or metric == "Gross Profit" or metric == "Sharpe Ratio" or metric == "Z-Score (Dependency)"
+        val > 0 ? color.new(#089981, 0) : val < 0 ? color.new(#f23645, 0) : DATA
+    else if metric == "Drawdown"
+        val > 0 ? color.new(#f23645, 0) : DATA
+    else
+        DATA
+
+//---------------------------------------------------------------------------------------------------------------------}
+// Core Logic
+//---------------------------------------------------------------------------------------------------------------------{
+var array<SimState> sim_states = array.new<SimState>()
+if barstate.isfirst
+    for len = min_len to max_len by step_len
+        sim_states.push(SimState.new(
+             length = len,
+             rsi_hist = array.new<float>(),
+             low_hist = array.new<float>(),
+             high_hist = array.new<float>(),
+             bar_hist = array.new<int>(),
+             last_ph = Pivot.new(),
+             last_pl = Pivot.new(),
+             current_bull_start = Pivot.new(),
+             current_bear_start = Pivot.new(),
+             is_equity = array.new<float>(1, 1.0),
+             oos_equity = array.new<float>(1, 1.0),
+             fwd_equity = array.new<float>(1, 1.0)
+             ))
+
+float change_val = close - nz(close[1], close)
+float up_val = math.max(0, change_val)
+float down_val = math.max(0, -change_val)
+
+bool in_is = time >= is_start and time <= is_end
+bool in_oos = time >= oos_start and time <= oos_end
+bool in_fwd = time > oos_end
+float atr_val = ta.atr(14)
+
+for sim in sim_states
+    float alpha = 1.0 / sim.length
+    sim.prev_up := na(sim.prev_up) ? up_val : alpha * up_val + (1 - alpha) * sim.prev_up
+    sim.prev_down := na(sim.prev_down) ? down_val : alpha * down_val + (1 - alpha) * sim.prev_down
+    
+    if sim.prev_down == 0
+        if sim.prev_up == 0
+            sim.rsi := nz(sim.rsi, 50)
+        else
+            sim.rsi := 100
+    else
+        float rs = sim.prev_up / sim.prev_down
+        sim.rsi := 100 - (100 / (1 + rs))
+    
+    sim.rsi_hist.unshift(sim.rsi)
+    sim.low_hist.unshift(low)
+    sim.high_hist.unshift(high)
+    sim.bar_hist.unshift(bar_index)
+    
+    if sim.rsi_hist.size() > pivot_left + pivot_right + 2
+        sim.rsi_hist.pop()
+        sim.low_hist.pop()
+        sim.high_hist.pop()
+        sim.bar_hist.pop()
+        
+    sim.check_pivots(pivot_left, pivot_right, max_div_bars)
+    sim.update_trades(low, high, close, atr_val, in_is, in_oos, in_fwd, opp_exit, sl_mult, tp_mult)
+
+// Walk-forward transition
+int current_best_is = na
+float best_val = -999999.0
+float best_np_tie = -999999.0
+int best_tr_tie = -1
+
+for sim in sim_states
+    float val = 0.0
+    if opt_metric == "Net Profit"
+        val := sim.is_profit
+    else if opt_metric == "Win Rate"
+        val := sim.is_trades > 0 ? (sim.is_wins * 100.0) / sim.is_trades : -1.0
+    else if opt_metric == "Profit Factor"
+        val := sim.is_trades == 0 ? -1.0 : (sim.is_gross_loss == 0 ? (sim.is_gross_profit > 0 ? 999.0 : 0.0) : sim.is_gross_profit / sim.is_gross_loss)
+    else if opt_metric == "Drawdown"
+        val := sim.is_trades > 0 ? -sim.is_dd : -999.0
+    else if opt_metric == "Return / Drawdown"
+        val := sim.is_trades > 0 ? (sim.is_dd > 0 ? sim.is_profit / sim.is_dd : (sim.is_profit > 0 ? 999.0 : 0.0)) : -999.0
+    else if opt_metric == "Average Trade"
+        val := sim.is_trades > 0 ? sim.is_profit / sim.is_trades : -999.0
+    else if opt_metric == "Gross Profit"
+        val := sim.is_trades > 0 ? sim.is_gross_profit : -999.0
+    else if opt_metric == "Total Trades"
+        val := sim.is_trades > 0 ? sim.is_trades : -1.0
+    else if opt_metric == "Sharpe Ratio"
+        float var_p = sim.is_trades > 0 ? (sim.is_profit_sq - (sim.is_profit * sim.is_profit) / sim.is_trades) / sim.is_trades : 0.0
+        float sd_p = math.sqrt(math.max(0.0, var_p))
+        val := sim.is_trades > 0 ? (sd_p == 0 ? 0.0 : (sim.is_profit / sim.is_trades) / sd_p) : -999.0
+    else if opt_metric == "Z-Score (Dependency)"
+        float W = sim.is_wins
+        float L = sim.is_trades - sim.is_wins
+        float N = sim.is_trades
+        float R = sim.is_runs
+        if N > 1
+            float E = 1.0 + (2.0 * W * L) / N
+            float var_runs = (2.0 * W * L * (2.0 * W * L - N)) / (N * N * (N - 1.0))
+            float sd_runs = math.sqrt(math.max(0.0, var_runs))
+            val := sd_runs == 0 ? 0.0 : (R - E) / sd_runs
+        else
+            val := 0.0
+        
+    bool update_best = false
+    if na(current_best_is)
+        update_best := true
+    else if val > best_val
+        update_best := true
+    else if val == best_val
+        if sim.is_profit > best_np_tie
+            update_best := true
+        else if sim.is_profit == best_np_tie and sim.is_trades > best_tr_tie
+            update_best := true
+            
+    if update_best
+        best_val := val
+        current_best_is := sim.length
+        best_np_tie := sim.is_profit
+        best_tr_tie := sim.is_trades
+
+var int best_is_length = na
+if time <= is_end
+    best_is_length := current_best_is
+else if na(best_is_length)
+    best_is_length := current_best_is
+
+int chosen_oos_length = na
+if use_auto_oos
+    chosen_oos_length := best_is_length
+else
+    int closest_len = na
+    int min_diff = 999999
+    for sim in sim_states
+        int diff = math.abs(sim.length - manual_oos)
+        if diff < min_diff
+            min_diff := diff
+            closest_len := sim.length
+    chosen_oos_length := closest_len
+
+//---------------------------------------------------------------------------------------------------------------------}
+// Visuals & Signals
+//---------------------------------------------------------------------------------------------------------------------{
+int visual_length = time >= oos_start ? chosen_oos_length : default_len
+
+float plot_rsi = na
+bool plot_bull = false
+bool plot_bear = false
+int bull_start_bar = na
+int bear_start_bar = na
+float bull_start_price = na
+float bear_start_price = na
+float bull_end_price = na
+float bear_end_price = na
+float bull_start_rsi = na
+float bear_start_rsi = na
+float bull_end_rsi = na
+float bear_end_rsi = na
+
+float plot_sl = na
+float plot_tp = na
+
+for sim in sim_states
+    if sim.length == visual_length
+        plot_rsi := sim.rsi
+        plot_bull := sim.div_bull
+        plot_bear := sim.div_bear
+        
+        if sim.pos != 0
+            plot_sl := sim.sl
+            plot_tp := sim.tp
+            
+        if plot_bull
+            bull_start_bar := sim.current_bull_start.bar_index
+            bull_start_price := sim.current_bull_start.price
+            bull_end_price := sim.low_hist.get(pivot_right)
+            bull_start_rsi := sim.current_bull_start.rsi
+            bull_end_rsi := sim.rsi_hist.get(pivot_right)
+        if plot_bear
+            bear_start_bar := sim.current_bear_start.bar_index
+            bear_start_price := sim.current_bear_start.price
+            bear_end_price := sim.high_hist.get(pivot_right)
+            bear_start_rsi := sim.current_bear_start.rsi
+            bear_end_rsi := sim.rsi_hist.get(pivot_right)
+
+if plot_bull
+    [max_p, min_p] = get_high_low(bull_start_bar, bar_index - pivot_right)
+    box.new(left=bull_start_bar, top=max_p, right=bar_index - pivot_right, bottom=min_p, border_color=color.new(#089981, 30), border_style=line.style_dashed, bgcolor=color.new(#089981, 90), force_overlay=true)
+    line.new(bull_start_bar, bull_start_rsi, bar_index - pivot_right, bull_end_rsi, color=color.new(#089981, 0), width=2, force_overlay=false)
+    label.new(x=bar_index - pivot_right, y=min_p, text="BULL", color=color.new(#089981, 0), style=label.style_label_up, textcolor=color.white, force_overlay=true, size=size.tiny)
+
+if plot_bear
+    [max_p, min_p] = get_high_low(bear_start_bar, bar_index - pivot_right)
+    box.new(left=bear_start_bar, top=max_p, right=bar_index - pivot_right, bottom=min_p, border_color=color.new(#f23645, 30), border_style=line.style_dashed, bgcolor=color.new(#f23645, 90), force_overlay=true)
+    line.new(bear_start_bar, bear_start_rsi, bar_index - pivot_right, bear_end_rsi, color=color.new(#f23645, 0), width=2, force_overlay=false)
+    label.new(x=bar_index - pivot_right, y=max_p, text="BEAR", color=color.new(#f23645, 0), style=label.style_label_down, textcolor=color.white, force_overlay=true, size=size.tiny)
+
+// Plots
+color rsi_col = plot_rsi > 50 ? color.new(#089981, 0) : color.new(#f23645, 0)
+p_rsi = plot(plot_rsi, "RSI", color=rsi_col, linewidth=2)
+
+p_100 = plot(100, display = display.none)
+p_ob = plot(70, "OB Level", display = display.none)
+p_center = plot(50, "Center", color=color.new(#808080, 50), style=plot.style_line, display=display.none)
+p_os = plot(30, "OS Level", display = display.none)
+p_0 = plot(0, display = display.none)
+
+hline(70, "OB", color=color.new(#808080, 50), linestyle=hline.style_dashed)
+hline(30, "OS", color=color.new(#808080, 50), linestyle=hline.style_dashed)
+
+fill(p_100, p_ob, top_value = 100, bottom_value = 70, top_color = color.new(#f23645, 80), bottom_color = color.new(#f23645, 100), title="OB Gradient")
+fill(p_os, p_0, top_value = 30, bottom_value = 0, top_color = color.new(#089981, 100), bottom_color = color.new(#089981, 80), title="OS Gradient")
+
+float top_val = math.max(50, plot_rsi)
+float bot_val = math.min(50, plot_rsi)
+color top_col = plot_rsi > 50 ? color.new(#089981, 50) : color.new(#f23645, 100)
+color bot_col = plot_rsi > 50 ? color.new(#089981, 100) : color.new(#f23645, 50)
+fill(p_rsi, p_center, top_value = top_val, bottom_value = bot_val, top_color = top_col, bottom_color = bot_col)
+
+plot(show_exits ? plot_sl : na, "Stop Loss", color=color.new(#f23645, 0), style=plot.style_linebr, linewidth=2, force_overlay=true)
+plot(show_exits ? plot_tp : na, "Take Profit", color=color.new(#089981, 0), style=plot.style_linebr, linewidth=2, force_overlay=true)
+
+color bg_col_render = na
+if show_bg
+    if in_is
+        bg_col_render := color.from_gradient(time, is_start, is_end, is_bg_col, color.new(is_bg_col, 100))
+    else if in_oos
+        bg_col_render := color.from_gradient(time, oos_start, oos_end, oos_bg_col, color.new(oos_bg_col, 100))
+        
+bgcolor(bg_col_render, title="Period Background", force_overlay=true)
+
+//---------------------------------------------------------------------------------------------------------------------}
+// Dashboard
+//---------------------------------------------------------------------------------------------------------------------{
+if barstate.islast
+    int num_items = sim_states.size()
+    int cols = 10
+    int hm_rows = math.max(1, int(math.ceil(num_items / 10.0)))
+    int total_rows = hm_rows + 20 // Heatmap rows + dashboard rows
+    
+    var table tb = table.new(parsed_pos, cols, total_rows, bgcolor=BACKGROUND, border_width=1, border_color=BACKGROUND, frame_color=BORDERS, frame_width=1, force_overlay=true)
+    
+    // --- Sensitivity Table (Heatmap) ---
+    table.merge_cells(tb, 0, 0, cols - 1, 0)
+    table.cell(tb, 0, 0, "Input Performance (hover for data)", text_color=DATA, text_size=parsed_size, bgcolor=BACKGROUND, text_halign=text.align_center)
+    
+    float min_val = 999999.0
+    float max_val = -999999.0
+    array<float> hm_vals = array.new<float>()
+    
+    for sim in sim_states
+        float val = 0.0
+        if opt_metric == "Net Profit"
+            val := sim.is_profit
+        else if opt_metric == "Win Rate"
+            val := sim.is_trades > 0 ? (sim.is_wins * 100.0) / sim.is_trades : -1.0
+        else if opt_metric == "Profit Factor"
+            val := sim.is_trades == 0 ? -1.0 : (sim.is_gross_loss == 0 ? (sim.is_gross_profit > 0 ? 999.0 : 0.0) : sim.is_gross_profit / sim.is_gross_loss)
+        else if opt_metric == "Drawdown"
+            val := sim.is_trades > 0 ? -sim.is_dd : -999.0
+        else if opt_metric == "Return / Drawdown"
+            val := sim.is_trades > 0 ? (sim.is_dd > 0 ? sim.is_profit / sim.is_dd : (sim.is_profit > 0 ? 999.0 : 0.0)) : -999.0
+        else if opt_metric == "Average Trade"
+            val := sim.is_trades > 0 ? sim.is_profit / sim.is_trades : -999.0
+        else if opt_metric == "Gross Profit"
+            val := sim.is_trades > 0 ? sim.is_gross_profit : -999.0
+        else if opt_metric == "Total Trades"
+            val := sim.is_trades > 0 ? sim.is_trades : -1.0
+        else if opt_metric == "Sharpe Ratio"
+            float var_p = sim.is_trades > 0 ? (sim.is_profit_sq - (sim.is_profit * sim.is_profit) / sim.is_trades) / sim.is_trades : 0.0
+            float sd_p = math.sqrt(math.max(0.0, var_p))
+            val := sim.is_trades > 0 ? (sd_p == 0 ? 0.0 : (sim.is_profit / sim.is_trades) / sd_p) : -999.0
+        else if opt_metric == "Z-Score (Dependency)"
+            float W = sim.is_wins
+            float L = sim.is_trades - sim.is_wins
+            float N = sim.is_trades
+            float R = sim.is_runs
+            if N > 1
+                float E = 1.0 + (2.0 * W * L) / N
+                float var_runs = (2.0 * W * L * (2.0 * W * L - N)) / (N * N * (N - 1.0))
+                float sd_runs = math.sqrt(math.max(0.0, var_runs))
+                val := sd_runs == 0 ? 0.0 : (R - E) / sd_runs
+            else
+                val := 0.0
+            
+        hm_vals.push(val)
+        if val != -1.0 and val != -999.0 and val != 999.0
+            if val < min_val
+                min_val := val
+            if val > max_val
+                max_val := val
+                
+    float mid_val = (max_val + min_val) / 2.0
+    if opt_metric == "Net Profit" or opt_metric == "Average Trade" or opt_metric == "Gross Profit"
+        mid_val := 0.0
+    else if opt_metric == "Win Rate"
+        mid_val := 50.0
+    else if opt_metric == "Profit Factor"
+        mid_val := 1.0
+        
+    for i = 0 to num_items - 1
+        SimState sim = sim_states.get(i)
+        float val = hm_vals.get(i)
+        color bg_col = BACKGROUND
+        
+        if val != -1.0 and val != -999.0 and val != 999.0
+            if max_val > min_val
+                if val >= mid_val
+                    bg_col := color.from_gradient(val, mid_val, math.max(max_val, mid_val + 0.0001), color.new(#2E2E2E, 0), color.new(#089981, 0))
+                else
+                    bg_col := color.from_gradient(val, math.min(min_val, mid_val - 0.0001), mid_val, color.new(#f23645, 0), color.new(#2E2E2E, 0))
+            else
+                bg_col := color.new(#2E2E2E, 0)
+        else if val == 999.0
+            bg_col := color.new(#089981, 0)
+            
+        string tt = "Period: " + str.tostring(sim.length) + "\n" + opt_metric + ": "
+        if opt_metric == "Net Profit" or opt_metric == "Drawdown" or opt_metric == "Average Trade" or opt_metric == "Gross Profit"
+            tt += str.tostring(val * 100, format.mintick) + "%"
+        else if opt_metric == "Win Rate"
+            tt += str.tostring(val, "#.##") + "%"
+        else if opt_metric == "Total Trades"
+            tt += str.tostring(val, "#")
+        else
+            tt += str.tostring(val, "#.##")
+            
+        if val == -1.0 or val == -999.0
+            tt += " (No Trades)"
+            
+        int hm_r = int(math.floor(i / cols)) + 1
+        int hm_c = i % cols
+        table.cell(tb, hm_c, hm_r, str.tostring(sim.length), text_color=DATA, text_size=parsed_size, bgcolor=bg_col, tooltip=tt)
+        
+    // --- Performance Dashboard ---
+    int d_r = hm_rows + 1 // Start row for Dashboard
+    
+    table.merge_cells(tb, 0, d_r, cols - 1, d_r)
+    table.cell(tb, 0, d_r, "RSI Divergence: Out-of-Sample Optimizer [LuxAlgo]", text_color=DATA, text_size=parsed_size, bgcolor=BACKGROUND, text_halign=text.align_center)
+    
+    d_r += 1
+    tb.divider(d_r, cols - 1)
+    
+    d_r += 1
+    table.merge_cells(tb, 0, d_r, 3, d_r)
+    table.merge_cells(tb, 4, d_r, 5, d_r)
+    table.merge_cells(tb, 6, d_r, 7, d_r)
+    table.merge_cells(tb, 8, d_r, 9, d_r)
+    
+    tb.cell(0, d_r, "Metric", HEADERS, text.align_left)
+    tb.cell(4, d_r, "In-Sample", HEADERS, text.align_right)
+    tb.cell(6, d_r, "Out-of-Sample", HEADERS, text.align_right)
+    tb.cell(8, d_r, "Forward", HEADERS, text.align_right)
+    
+    d_r += 1
+    tb.divider(d_r, cols - 1)
+    
+    SimState bs_is = na
+    SimState bs_oos = na
+    for sim in sim_states
+        if sim.length == best_is_length
+            bs_is := sim
+        if sim.length == chosen_oos_length
+            bs_oos := sim
+            
+    if not na(bs_is) and not na(bs_oos)
+        float is_pf = bs_is.is_gross_loss == 0 ? (bs_is.is_gross_profit > 0 ? 999 : 0) : bs_is.is_gross_profit / bs_is.is_gross_loss
+        float oos_pf = bs_oos.oos_gross_loss == 0 ? (bs_oos.oos_gross_profit > 0 ? 999 : 0) : bs_oos.oos_gross_profit / bs_oos.oos_gross_loss
+        
+        float fwd_prof = bs_oos.fwd_profit
+        int fwd_trades = bs_oos.fwd_trades
+        float fwd_g_prof = bs_oos.fwd_gross_profit
+        float fwd_g_loss = bs_oos.fwd_gross_loss
+        float fwd_pf = fwd_g_loss == 0 ? (fwd_g_prof > 0 ? 999 : 0) : fwd_g_prof / fwd_g_loss
+        int fwd_wins = bs_oos.fwd_wins
+        float fwd_wr = fwd_trades > 0 ? (fwd_wins * 100.0) / fwd_trades : 0.0
+        float fwd_dd = bs_oos.fwd_dd
+        
+        int r_idx = d_r + 1
+        
+        // RSI Period Used
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "RSI Period Used", HEADERS, text.align_left)
+        tb.cell(4, r_idx, str.tostring(bs_is.length), DATA, text.align_right)
+        tb.cell(6, r_idx, str.tostring(bs_oos.length), DATA, text.align_right)
+        tb.cell(8, r_idx, str.tostring(bs_oos.length) + " (Copied from OOS)", DATA, text.align_right)
+        
+        r_idx += 1
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "Net Profit", HEADERS, text.align_left)
+        tb.cell(4, r_idx, bs_is.is_trades > 0 ? str.tostring(bs_is.is_profit * 100, format.mintick) + "%" : "Not Enough Data", bs_is.is_trades > 0 ? (bs_is.is_profit > 0 ? #089981 : #f23645) : DATA, text.align_right)
+        tb.cell(6, r_idx, bs_oos.oos_trades > 0 ? str.tostring(bs_oos.oos_profit * 100, format.mintick) + "%" : "Not Enough Data", bs_oos.oos_trades > 0 ? (bs_oos.oos_profit > 0 ? #089981 : #f23645) : DATA, text.align_right)
+        tb.cell(8, r_idx, fwd_trades > 0 ? str.tostring(fwd_prof * 100, format.mintick) + "%" : "Not Enough Data", fwd_trades > 0 ? (fwd_prof > 0 ? #089981 : #f23645) : DATA, text.align_right)
+        
+        r_idx += 1
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "Win Rate", HEADERS, text.align_left)
+        tb.cell(4, r_idx, bs_is.is_trades > 0 ? str.tostring((bs_is.is_wins * 100.0) / bs_is.is_trades, "#.##") + "%" : "Not Enough Data", DATA, text.align_right)
+        tb.cell(6, r_idx, bs_oos.oos_trades > 0 ? str.tostring((bs_oos.oos_wins * 100.0) / bs_oos.oos_trades, "#.##") + "%" : "Not Enough Data", DATA, text.align_right)
+        tb.cell(8, r_idx, fwd_trades > 0 ? str.tostring(fwd_wr, "#.##") + "%" : "Not Enough Data", DATA, text.align_right)
+        
+        r_idx += 1
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "Profit Factor", HEADERS, text.align_left)
+        tb.cell(4, r_idx, bs_is.is_trades > 0 ? str.tostring(is_pf, "#.##") : "Not Enough Data", DATA, text.align_right)
+        tb.cell(6, r_idx, bs_oos.oos_trades > 0 ? str.tostring(oos_pf, "#.##") : "Not Enough Data", DATA, text.align_right)
+        tb.cell(8, r_idx, fwd_trades > 0 ? str.tostring(fwd_pf, "#.##") : "Not Enough Data", DATA, text.align_right)
+        
+        r_idx += 1
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "Max Drawdown", HEADERS, text.align_left)
+        tb.cell(4, r_idx, bs_is.is_trades > 0 ? str.tostring(bs_is.is_dd * 100, format.mintick) + "%" : "Not Enough Data", bs_is.is_trades > 0 ? #f23645 : DATA, text.align_right)
+        tb.cell(6, r_idx, bs_oos.oos_trades > 0 ? str.tostring(bs_oos.oos_dd * 100, format.mintick) + "%" : "Not Enough Data", bs_oos.oos_trades > 0 ? #f23645 : DATA, text.align_right)
+        tb.cell(8, r_idx, fwd_trades > 0 ? str.tostring(fwd_dd * 100, format.mintick) + "%" : "Not Enough Data", fwd_trades > 0 ? #f23645 : DATA, text.align_right)
+        
+        r_idx += 1
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "Total Trades", HEADERS, text.align_left)
+        tb.cell(4, r_idx, str.tostring(bs_is.is_trades), DATA, text.align_right)
+        tb.cell(6, r_idx, str.tostring(bs_oos.oos_trades), DATA, text.align_right)
+        tb.cell(8, r_idx, str.tostring(fwd_trades), DATA, text.align_right)
+        
+        if extra_metric_1 != "None"
+            r_idx += 1
+            table.merge_cells(tb, 0, r_idx, 3, r_idx)
+            table.merge_cells(tb, 4, r_idx, 5, r_idx)
+            table.merge_cells(tb, 6, r_idx, 7, r_idx)
+            table.merge_cells(tb, 8, r_idx, 9, r_idx)
+            tb.cell(0, r_idx, extra_metric_1, HEADERS, text.align_left)
+            tb.cell(4, r_idx, bs_is.format_metric_str(extra_metric_1, 1), bs_is.get_metric_col(extra_metric_1, 1), text.align_right)
+            tb.cell(6, r_idx, bs_oos.format_metric_str(extra_metric_1, 2), bs_oos.get_metric_col(extra_metric_1, 2), text.align_right)
+            tb.cell(8, r_idx, bs_oos.format_metric_str(extra_metric_1, 3), bs_oos.get_metric_col(extra_metric_1, 3), text.align_right)
+            
+        if extra_metric_2 != "None"
+            r_idx += 1
+            table.merge_cells(tb, 0, r_idx, 3, r_idx)
+            table.merge_cells(tb, 4, r_idx, 5, r_idx)
+            table.merge_cells(tb, 6, r_idx, 7, r_idx)
+            table.merge_cells(tb, 8, r_idx, 9, r_idx)
+            tb.cell(0, r_idx, extra_metric_2, HEADERS, text.align_left)
+            tb.cell(4, r_idx, bs_is.format_metric_str(extra_metric_2, 1), bs_is.get_metric_col(extra_metric_2, 1), text.align_right)
+            tb.cell(6, r_idx, bs_oos.format_metric_str(extra_metric_2, 2), bs_oos.get_metric_col(extra_metric_2, 2), text.align_right)
+            tb.cell(8, r_idx, bs_oos.format_metric_str(extra_metric_2, 3), bs_oos.get_metric_col(extra_metric_2, 3), text.align_right)
+        
+        r_idx += 1
+        tb.divider(r_idx, cols - 1)
+        
+        r_idx += 1
+        table.merge_cells(tb, 0, r_idx, 3, r_idx)
+        table.merge_cells(tb, 4, r_idx, 5, r_idx)
+        table.merge_cells(tb, 6, r_idx, 7, r_idx)
+        table.merge_cells(tb, 8, r_idx, 9, r_idx)
+        tb.cell(0, r_idx, "Equity Curve", HEADERS, text.align_left)
+        tb.cell(4, r_idx, bs_is.is_equity.to_sparkline(), #089981, text.align_right)
+        tb.cell(6, r_idx, bs_oos.oos_equity.to_sparkline(), #5b9cf6, text.align_right)
+        tb.cell(8, r_idx, bs_oos.fwd_equity.to_sparkline(), #f6b25b, text.align_right)
+
+//---------------------------------------------------------------------------------------------------------------------}
+

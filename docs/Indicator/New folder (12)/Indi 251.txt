@@ -1,0 +1,337 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator(
+     title     = "Supertrend Pullback Signals",
+     shorttitle= "ST Pullback",
+     overlay   = true,
+     max_labels_count = 200,
+     max_lines_count  = 100
+     )
+
+// ============================================================================
+// ─── INPUTS ─────────────────────────────────────────────────────────────────
+// ============================================================================
+
+// ── Supertrend Settings ──────────────────────────────────────────────────────
+grp_st = "⚙️  Supertrend Settings"
+i_atr_len   = input.int   (10,    "ATR Length",          minval=1,   group=grp_st)
+i_factor    = input.float (3.0,   "Supertrend Factor",   minval=0.1, step=0.1, group=grp_st)
+
+// ── Pullback Quality Filter (PQF) ────────────────────────────────────────────
+grp_pqf = "🎯  Pullback Quality Filter (PQF)"
+i_pqf_min   = input.float (0.3,  "Min Pullback (× ATR)", minval=0.1, step=0.05,
+             tooltip="Minimum retracement depth in ATR units. Signals shallower than this are skipped (too weak).",
+             group=grp_pqf)
+i_pqf_max   = input.float (2.2,  "Max Pullback (× ATR)", minval=0.1, step=0.05,
+             tooltip="Maximum retracement depth in ATR units. Signals deeper than this are skipped (possible reversal).",
+             group=grp_pqf)
+
+// ── Dynamic Value Zone (DVZ) ─────────────────────────────────────────────────
+grp_dvz = "📐  Dynamic Value Zone (DVZ)"
+i_dvz_width = input.float (0.5,  "Zone Half-Width (× ATR)", minval=0.1, step=0.05,
+             tooltip="Controls the width of the entry zone band around the Supertrend line.",
+             group=grp_dvz)
+i_dvz_show  = input.bool  (true, "Show Value Zone",  group=grp_dvz)
+
+// ── Signal Appearance ────────────────────────────────────────────────────────
+grp_vis = "🎨  Visual Appearance"
+i_show_st       = input.bool(true,  "Show Supertrend Line",    group=grp_vis)
+i_show_signals  = input.bool(true,  "Show Entry Signals",      group=grp_vis)
+i_bull_col      = input.color(color.new(#00E5FF, 0),  "Bullish Color", group=grp_vis)
+i_bear_col      = input.color(color.new(#FF4B6E, 0),  "Bearish Color", group=grp_vis)
+
+// ── Alerts ───────────────────────────────────────────────────────────────────
+grp_alr = "🔔  Alerts"
+i_alr_bull = input.bool(true, "Alert: Bullish Pullback Signal", group=grp_alr)
+i_alr_bear = input.bool(true, "Alert: Bearish Pullback Signal", group=grp_alr)
+
+// ============================================================================
+// ─── COLORS & STYLE CONSTANTS ───────────────────────────────────────────────
+// ============================================================================
+C_BULL       = i_bull_col
+C_BEAR       = i_bear_col
+C_BULL_ZONE  = color.new(i_bull_col, 88)
+C_BEAR_ZONE  = color.new(i_bear_col, 88)
+C_BULL_LINE  = color.new(i_bull_col, 30)
+C_BEAR_LINE  = color.new(i_bear_col, 30)
+C_NEUTRAL    = color.new(#787B86,   50)
+C_TRANSPARENT= color.new(#000000, 100)
+
+// ============================================================================
+// ─── SUPERTREND CALCULATION ──────────────────────────────────────────────────
+// ============================================================================
+// Uses Pine Script v6 built-in ta.supertrend for non-repainting accuracy.
+
+[st_line, st_dir] = ta.supertrend(i_factor, i_atr_len)
+
+// Trend direction: +1 = bullish (price above ST), -1 = bearish (price below ST)
+is_bull = st_dir < 0
+is_bear = st_dir > 0
+
+// Detect trend flips
+bull_flip = is_bull and not is_bull[1]
+bear_flip = is_bear and not is_bear[1]
+
+// ============================================================================
+// ─── ATR FOR PULLBACK DEPTH MEASUREMENT ─────────────────────────────────────
+// ============================================================================
+atr_val = ta.atr(i_atr_len)
+
+// ============================================================================
+// ─── DYNAMIC VALUE ZONE (DVZ) ────────────────────────────────────────────────
+// The DVZ is a band around the Supertrend line. Price entering this zone
+// during a pullback signals a potential high-probability continuation entry.
+// ============================================================================
+dvz_upper = st_line + i_dvz_width * atr_val
+dvz_lower = st_line - i_dvz_width * atr_val
+
+// ============================================================================
+// ─── TREND LEG TRACKING ──────────────────────────────────────────────────────
+// Tracks bars elapsed and swing extreme since the last trend flip.
+// Used to detect pullback depth and enforce the one-signal-per-leg rule.
+// ============================================================================
+var float  leg_extreme      = na   // highest high (bull) or lowest low (bear) since flip
+var int    bars_since_flip  = 0
+var bool   signal_fired     = false // true once a signal is fired in this leg
+
+// Reset on trend flip
+if bull_flip
+    leg_extreme     := high
+    bars_since_flip := 0
+    signal_fired    := false
+
+if bear_flip
+    leg_extreme     := low
+    bars_since_flip := 0
+    signal_fired    := false
+
+// Update leg extreme continuously
+if is_bull
+    leg_extreme := math.max(nz(leg_extreme, high), high)
+if is_bear
+    leg_extreme := math.min(nz(leg_extreme, low),  low)
+
+bars_since_flip := bars_since_flip + 1
+
+// ============================================================================
+// ─── PULLBACK DEPTH MEASUREMENT ──────────────────────────────────────────────
+// Pullback depth = how far price has retraced from the leg extreme toward
+// the Supertrend line, expressed in ATR multiples.
+// ============================================================================
+float pullback_depth = na
+
+if is_bull and not na(leg_extreme)
+    // In a bull trend: pullback = distance from swing high down to current close
+    pullback_depth := (leg_extreme - close) / atr_val
+
+if is_bear and not na(leg_extreme)
+    // In a bear trend: pullback = distance from swing low up to current close
+    pullback_depth := (close - leg_extreme) / atr_val
+
+// ============================================================================
+// ─── PULLBACK QUALITY FILTER (PQF) ──────────────────────────────────────────
+// Validates that the pullback depth falls within the optimal ATR window.
+// Eliminates: shallow (low conviction) and overly deep (reversal risk) setups.
+// ============================================================================
+pqf_valid = not na(pullback_depth) and
+             pullback_depth >= i_pqf_min and
+             pullback_depth <= i_pqf_max
+
+// ============================================================================
+// ─── PRICE IN DYNAMIC VALUE ZONE CHECK ──────────────────────────────────────
+// Price must touch or enter the DVZ to confirm the pullback reached value.
+// ============================================================================
+in_bull_dvz = is_bull and low  <= dvz_upper and close >= st_line
+in_bear_dvz = is_bear and high >= dvz_lower and close <= st_line
+
+// ============================================================================
+// ─── MOMENTUM CONFIRMATION CANDLE ───────────────────────────────────────────
+// Requires a closing candle in the direction of the trend AFTER the pullback,
+// confirming buyers/sellers are stepping back in.
+// Bull: close > open (bullish body) and close > previous close
+// Bear: close < open (bearish body) and close < previous close
+// ============================================================================
+bull_confirm = close > open and close > close[1]
+bear_confirm = close < open and close < close[1]
+
+// ============================================================================
+// ─── SIGNAL GENERATION ───────────────────────────────────────────────────────
+// All conditions must align simultaneously:
+//   1. Trend established for at least 2 bars (avoid flip-bar noise)
+//   2. Pullback reached the Dynamic Value Zone
+//   3. PQF confirms optimal retracement depth
+//   4. Momentum confirmation candle fires
+//   5. No signal has been fired yet in this trend leg (one per leg)
+//   6. At least 2 bars since the trend flip (avoid immediate flip signals)
+// ============================================================================
+bull_signal = is_bull          and
+              bars_since_flip > 2 and
+              in_bull_dvz        and
+              pqf_valid          and
+              bull_confirm       and
+              not signal_fired
+
+bear_signal = is_bear          and
+              bars_since_flip > 2 and
+              in_bear_dvz        and
+              pqf_valid          and
+              bear_confirm       and
+              not signal_fired
+
+// Mark signal as fired for this trend leg to enforce one-per-leg rule
+if bull_signal or bear_signal
+    signal_fired := true
+
+// ============================================================================
+// ─── SUPERTREND LINE PLOT ────────────────────────────────────────────────────
+// ============================================================================
+st_color = is_bull ? C_BULL_LINE : C_BEAR_LINE
+
+plot(
+     i_show_st ? st_line : na,
+     title     = "Supertrend",
+     color     = st_color,
+     linewidth = 2,
+     style     = plot.style_line
+     )
+
+// ============================================================================
+// ─── DYNAMIC VALUE ZONE (DVZ) FILL ──────────────────────────────────────────
+// ============================================================================
+dvz_up_plot   = plot(i_dvz_show ? dvz_upper : na, title="DVZ Upper", color=C_TRANSPARENT, display=display.none)
+dvz_low_plot  = plot(i_dvz_show ? dvz_lower : na, title="DVZ Lower", color=C_TRANSPARENT, display=display.none)
+
+// Fill the zone with trend-colored band
+fill(
+     dvz_up_plot, dvz_low_plot,
+     color = is_bull ? C_BULL_ZONE : C_BEAR_ZONE,
+     title = "Dynamic Value Zone"
+     )
+
+// ============================================================================
+// ─── SIGNAL LABELS ───────────────────────────────────────────────────────────
+// Premium filled rectangular label boxes with directional pointer tails,
+// matching institutional signal label style (filled box + text + tail).
+//
+// Bull signal : green filled box below the bar, tail pointing UP  → label_up
+// Bear signal : red   filled box above the bar, tail pointing DOWN → label_down
+//
+// Label text format:
+//   Line 1 → direction word  "BULLISH" / "BEARISH"
+//   Line 2 → PQF depth score "PQF: 1.2×" (adds context without cluttering)
+// ============================================================================
+
+// ── Bullish Signal Label ─────────────────────────────────────────────────────
+if i_show_signals and bull_signal
+    label.new(
+         x         = bar_index,
+         y         = low - atr_val * 0.55,
+         // Two-line label: signal name + PQF quality score
+         text      = "BULLISH\nPQF: " + str.tostring(math.round(nz(pullback_depth, 0), 1)) + "×",
+         // label_up = box sits BELOW the y point with a tail pointing upward
+         style     = label.style_label_up,
+         color     = color.new(#26A69A, 0),   // rich teal-green — institutional bull color
+         textcolor = color.white,
+         size      = size.normal
+         )
+
+// ── Bearish Signal Label ─────────────────────────────────────────────────────
+if i_show_signals and bear_signal
+    label.new(
+         x         = bar_index,
+         y         = high + atr_val * 0.55,
+         // Two-line label: signal name + PQF quality score
+         text      = "BEARISH\nPQF: " + str.tostring(math.round(nz(pullback_depth, 0), 1)) + "×",
+         // label_down = box sits ABOVE the y point with a tail pointing downward
+         style     = label.style_label_down,
+         color     = color.new(#EF5350, 0),   // clean red — institutional bear color
+         textcolor = color.white,
+         size      = size.normal
+         )
+
+// ============================================================================
+// ─── BAR COLORING ────────────────────────────────────────────────────────────
+// Subtle bar coloring to reinforce trend direction without overwhelming chart
+// ============================================================================
+barcolor(
+     is_bull ? color.new(C_BULL, 80) :
+     is_bear ? color.new(C_BEAR, 80) : na,
+     title = "Trend Bar Color"
+     )
+
+// ============================================================================
+// ─── TREND FLIP MARKERS ──────────────────────────────────────────────────────
+// Small dots on the Supertrend line to mark trend direction changes
+// ============================================================================
+plotshape(
+     bull_flip ? st_line : na,
+     title    = "Bull Flip Dot",
+     style    = shape.circle,
+     location = location.absolute,
+     color    = C_BULL,
+     size     = size.tiny
+     )
+
+plotshape(
+     bear_flip ? st_line : na,
+     title    = "Bear Flip Dot",
+     style    = shape.circle,
+     location = location.absolute,
+     color    = C_BEAR,
+     size     = size.tiny
+     )
+
+// ============================================================================
+// ─── ALERTS ──────────────────────────────────────────────────────────────────
+// ============================================================================
+
+// Bullish pullback continuation signal
+if i_alr_bull and bull_signal
+    alert(
+         "🟢 BULLISH Pullback Signal | " + syminfo.tickerid +
+         " | TF: " + timeframe.period +
+         " | PQF Depth: " + str.tostring(math.round(pullback_depth, 2)) + "× ATR" +
+         " | ST Level: " + str.tostring(math.round(st_line, 2)) +
+         " | [algo_aakash]",
+         alert.freq_once_per_bar_close
+         )
+
+// Bearish pullback continuation signal
+if i_alr_bear and bear_signal
+    alert(
+         "🔴 BEARISH Pullback Signal | " + syminfo.tickerid +
+         " | TF: " + timeframe.period +
+         " | PQF Depth: " + str.tostring(math.round(pullback_depth, 2)) + "× ATR" +
+         " | ST Level: " + str.tostring(math.round(st_line, 2)) +
+         " | [algo_aakash]",
+         alert.freq_once_per_bar_close
+         )
+
+// Trend flip alerts (bonus utility)
+alert(
+     bull_flip ?
+     "🔄 TREND FLIP → BULLISH | " + syminfo.tickerid + " | TF: " + timeframe.period + " | [algo_aakash]" :
+     bear_flip ?
+     "🔄 TREND FLIP → BEARISH | " + syminfo.tickerid + " | TF: " + timeframe.period + " | [algo_aakash]" :
+     na,
+     alert.freq_once_per_bar_close
+     )
+
+// ============================================================================
+// ─── ALERT CONDITIONS (for TradingView Alert Dialog compatibility) ───────────
+// ============================================================================
+alertcondition(bull_signal, "Bullish Pullback Signal [algo_aakash]",
+     "🟢 Bullish Pullback Signal on {{ticker}} ({{interval}}) | ST: {{plot_0}} | [algo_aakash]")
+
+alertcondition(bear_signal, "Bearish Pullback Signal [algo_aakash]",
+     "🔴 Bearish Pullback Signal on {{ticker}} ({{interval}}) | ST: {{plot_0}} | [algo_aakash]")
+
+alertcondition(bull_flip, "Trend Flipped Bullish [algo_aakash]",
+     "🔄 Trend Flipped BULLISH on {{ticker}} ({{interval}}) | [algo_aakash]")
+
+alertcondition(bear_flip, "Trend Flipped Bearish [algo_aakash]",
+     "🔄 Trend Flipped BEARISH on {{ticker}} ({{interval}}) | [algo_aakash]")
+
+

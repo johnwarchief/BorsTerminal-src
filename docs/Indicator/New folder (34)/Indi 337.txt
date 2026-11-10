@@ -1,0 +1,512 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator("Advanced Fibonacci Golden Zone [HexaTrades]", "HexaTrades Advanced Fibonacci Golden Zone", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. INPUTS
+// ─────────────────────────────────────────────────────────────────────────────
+gSwing   = "Swing Detection"
+pivotLen     = input.int(15,   "Pivot Strength (left bars)", minval = 2, group = gSwing, tooltip = "Bars of strength required on the LEFT of a swing. Higher = only more significant peaks/troughs qualify. This does NOT add drawing lag — only Confirmation Bars does.")
+confirmBars  = input.int(5,   "Confirmation Bars (right)",  minval = 1, group = gSwing, tooltip = "Bars after the peak before the swing confirms and the zone draws. SMALLER = the zone appears earlier; LARGER = fewer but more reliable swings. Guidance: crypto intraday 3–5, swing trading 8–12.")
+
+gGolden  = "Golden Zone"
+showGolden   = input.bool(true,  "Show Golden Zone",        group = gGolden)
+goldenLower  = input.float(0.5,   "Golden Zone Lower Ratio", minval = 0.0, maxval = 1.0, step = 0.001, group = gGolden)
+goldenUpper  = input.float(0.618, "Golden Zone Upper Ratio", minval = 0.0, maxval = 1.0, step = 0.001, group = gGolden)
+bullZoneCol  = input.color(color.new(color.green, 80), "Bullish Zone Fill", inline = "zc", group = gGolden)
+bearZoneCol  = input.color(color.new(color.red,   80), "Bearish",           inline = "zc", group = gGolden)
+skipLateZones = input.bool(true, "Skip late zones", group = gGolden, tooltip = "Scans EVERY bar from the pivot through its confirmation bar (wick or close, per Zone Touch Source). If price already reached the zone's near edge during that window, the zone is late and is SKIPPED — and the previously active setup is retired as Superseded. STRICT rule: exactly touching the edge counts as late (the reaction has already started).")
+showHist     = input.bool(true,  "Show Historical Zones", group = gGolden, tooltip = "Keep older Golden Zones on the chart as faded, frozen historical zones instead of removing them.")
+oneZonePerLeg = input.bool(false, "One zone per leg (replace on extension)", group = gGolden, tooltip = "When the SAME leg stretches to a new extreme (e.g. another higher high), the provisional zone is REPLACED in place — one leg produces one zone. Turn ON for a cleaner chart; OFF archives every superseded draft as its own historical zone.")
+
+gSignal  = "Signals / Crypto Tuning"
+touchSrc  = input.string("Wick", "Zone Touch Source", options = ["Wick", "Close"], group = gSignal, tooltip = "Wick: a spike into the zone counts as a touch/rejection trigger (and late-zone scan uses highs/lows). Close: only closing prices count — ignores stop-hunt wicks (recommended for crypto).")
+invBufAtr = input.float(0.3, "Invalidation Buffer (× ATR)", minval = 0.0, step = 0.1, group = gSignal, tooltip = "Extra room beyond the protective swing before the setup is declared invalid. The buffer is measured ONCE, when the setup forms (ATR(14) at creation), and stays FIXED for the setup's whole lifetime — a later ATR contraction can never move the invalidation price. 0 = strict.")
+
+gLevels  = "Fibonacci Levels"
+showFib      = input.bool(false, "Show Fib Levels", group = gLevels, tooltip = "Draws the retracement set 0 · 0.236 · 0.382 · 0.5 · 0.618 · 0.786 · 1.0 plus the 1.272× and 1.618× impulse PROJECTIONS (labelled separately — they are continuation targets, not retracement ratios).")
+fibCol       = input.color(color.new(color.gray, 0), "Fib Line Color", group = gLevels)
+
+gZigZag  = "ZigZag / Structure"
+showZigZag   = input.bool(true,  "Show ZigZag", group = gZigZag, tooltip = "Connects the confirmed swing pivots (the SAME swings the Golden Zone is built from) with an alternating high→low→high ZigZag, so the impulse legs are visible. Completed legs remain fixed; the latest endpoint extends if the swing pushes further before reversing.")
+zzCol        = input.color(color.new(color.blue, 0), "ZigZag Color", group = gZigZag)
+zzDevAtr     = input.float(1.5,   "Min Leg Size (× ATR)", minval = 0.0, step = 0.1, group = gZigZag, tooltip = "Ignore a reversal whose leg is smaller than this many ATRs, measured with the ATR at the candidate pivot bar. While that ATR is still warming up the filter REJECTS reversals rather than passing them unfiltered. Set 0 to fully disable the filter.")
+showStruct   = input.bool(true,  "Show Structure Labels (HH/HL/LH/LL)", group = gZigZag)
+
+gVisual  = "Visual"
+extendBars   = input.int(15,     "Right Extension (bars)", minval = 0, maxval = 500, group = gVisual, tooltip = "How far levels/zones extend past the last bar. 0 = no extension. Capped at 500 — Pine cannot draw objects more than 500 bars into the future.")
+bullCol      = input.color(color.new(color.teal, 0),   "Bullish Accent", inline = "ac", group = gVisual)
+bearCol      = input.color(color.new(color.red, 0),    "Bearish",        inline = "ac", group = gVisual)
+labelSizeIn  = input.string("Small", "Label Size", options = ["Tiny", "Small", "Normal", "Large"], group = gVisual)
+
+// Fixed style constants (kept out of the settings dialog for simplicity).
+zzWidth     = 2
+lineWidth   = 1
+tgtCol      = color.new(color.green, 0)
+dashTextCol = color.white
+dashBgCol   = color.new(color.black, 10)
+
+touchWick = touchSrc == "Wick"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+f_size(s) =>
+    switch s
+        "Tiny"   => size.tiny
+        "Small"  => size.small
+        "Normal" => size.normal
+        "Large"  => size.large
+        => size.small
+lblSize = f_size(labelSizeIn)
+
+// Dashboard handle + a global helper to fill a key/value row (declared globally
+// because Pine v6 does not allow function declarations inside local blocks).
+var table dash = na
+f_row(int r, string k, string v, color vc) =>
+    table.cell(dash, 0, r, k, text_color = dashTextCol, text_size = lblSize, text_halign = text.align_left,  bgcolor = dashBgCol)
+    table.cell(dash, 1, r, v, text_color = vc,          text_size = lblSize, text_halign = text.align_right, bgcolor = dashBgCol)
+
+// Retracement ratios (0 … 1.0 only) and continuation projections — two
+// SEPARATE concepts with separate price functions (no mixed coordinate
+// system, no discontinuity at 1.0).
+var retraceRatios = array.from(0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0)
+var projMults     = array.from(1.272, 1.618)
+
+// Retracement price: 0.0 anchored at the impulse END, 1.0 at the START, so
+// 0.5–0.618 sits deep in the pullback (bullish → below price as support,
+// bearish → above price as resistance).
+f_retracement_price(bull, hi, lo, r) =>
+    rng = hi - lo
+    bull ? hi - r * rng : lo + r * rng
+
+// Projection price: continuation target beyond the impulse END, as a multiple
+// of the impulse range (1.272× → 0.272 × range beyond the extreme).
+f_projection_price(bull, hi, lo, m) =>
+    rng = hi - lo
+    bull ? hi + (m - 1.0) * rng : lo - (m - 1.0) * rng
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. SWING DETECTION (confirmed pivots, processed on CLOSED bars only)
+// ─────────────────────────────────────────────────────────────────────────────
+// A pivot value is non-na only on its confirmation bar (`confirmBars` after the
+// actual turning point) and is consumed only when that bar CLOSES.
+phLocal = ta.pivothigh(pivotLen, confirmBars)
+plLocal = ta.pivotlow(pivotLen, confirmBars)
+newPH = barstate.isconfirmed and not na(phLocal) ? phLocal : na
+newPL = barstate.isconfirmed and not na(plLocal) ? plLocal : na
+
+// ── ZigZag state ──
+atrZZ = ta.atr(14)
+var float zzP0 = na     // previous confirmed ZigZag point (price) — the leg's far end
+var int   zzX0 = na
+var float zzP1 = na     // latest confirmed ZigZag point (price)
+var int   zzX1 = na
+var int   zzD1 = 0      // +1 = latest point is a high, -1 = a low, 0 = none yet
+var line  zzSeg = na    // the latest segment (zzP0 → zzP1), extended on continuation
+var label zzLbl = na    // label on the latest point; moved/relabeled while it forms
+var float zzHigh     = na   // latest ZigZag high  + the one before it
+var float zzPrevHigh = na
+var float zzLow      = na   // latest ZigZag low   + the one before it
+var float zzPrevLow  = na
+var string bias = "Neutral"
+zzLegEvent = false      // true on the bar the latest leg changes (flip or extend)
+
+// Leg-size filter (repair #7):
+//  • zzDevAtr = 0 → filter FULLY disabled (threshold 0 from bar 1).
+//  • zzDevAtr > 0 → threshold = zzDevAtr × ATR at the CANDIDATE PIVOT bar
+//    (atrZZ[confirmBars]), matching the swing being measured. If that ATR is
+//    still na (warm-up), the >= comparison below evaluates na → the reversal
+//    is REJECTED — the filter is never silently bypassed.
+pivotAtr = atrZZ[confirmBars]
+zzMinLeg = zzDevAtr == 0.0 ? 0.0 : zzDevAtr * pivotAtr
+
+// ── Simultaneous pivot high + low on one candle (repair #6) ──
+// A large outside candle can confirm BOTH a pivot high and a pivot low on the
+// same bar. Processing both would allow two state transitions per candle or a
+// zero-duration vertical leg. Only ONE pivot is processed per bar: the
+// candidate farther from the current endpoint wins; on a tie, or when no
+// endpoint exists yet, the ambiguous pair is discarded entirely.
+// (Same-bar-index anchors are impossible after this: any two pivots sharing a
+// bar arrive on the same confirmation bar and are resolved here, and older
+// endpoints always sit on strictly earlier bars.)
+float usePH = newPH
+float usePL = newPL
+if not na(newPH) and not na(newPL)
+    if na(zzP1)
+        usePH := na
+        usePL := na
+    else
+        dH = math.abs(newPH - zzP1)
+        dL = math.abs(newPL - zzP1)
+        if dH > dL
+            usePL := na
+        else if dL > dH
+            usePH := na
+        else
+            usePH := na
+            usePL := na
+
+// Confirmed-pivot bar indices (the ZigZag reads the pivot PRICE from usePH/usePL
+// and the bar index from these — the true pivot bar, confirmBars back).
+var int lastPHx = na
+var int lastPLx = na
+if not na(usePH)
+    lastPHx := bar_index - confirmBars
+if not na(usePL)
+    lastPLx := bar_index - confirmBars
+
+// ── ZigZag = market structure: each turning point is an HH/HL/LH/LL ──
+// A same-direction more-extreme pivot EXTENDS the current point (its label
+// re-evaluates); an opposite pivot FLIPS to a new leg — only if it clears the
+// leg-size filter above.
+if not na(usePH)
+    if zzD1 == 1
+        if usePH > zzP1                                       // higher high → extend up-leg
+            zzP1 := usePH
+            zzX1 := lastPHx
+            zzHigh := usePH
+            zzLegEvent := true
+            if showZigZag and not na(zzSeg)
+                line.set_xy2(zzSeg, zzX1, zzP1)
+            if not na(zzLbl)
+                label.set_xy(zzLbl, zzX1, zzP1)
+                label.set_text(zzLbl, na(zzPrevHigh) or zzHigh > zzPrevHigh ? "HH" : "LH")
+    else if na(zzP1)                                          // very first point
+        zzP1 := usePH
+        zzX1 := lastPHx
+        zzD1 := 1
+        zzHigh := usePH
+    else if math.abs(usePH - zzP1) >= zzMinLeg                // flip low→high (big enough)
+        zzP0 := zzP1
+        zzX0 := zzX1
+        zzP1 := usePH
+        zzX1 := lastPHx
+        zzD1 := 1
+        zzPrevHigh := zzHigh
+        zzHigh := usePH
+        zzLegEvent := true
+        if showZigZag
+            zzSeg := line.new(zzX0, zzP0, zzX1, zzP1, color = zzCol, width = zzWidth)
+        if showStruct
+            zzLbl := label.new(zzX1, zzP1, na(zzPrevHigh) or zzHigh > zzPrevHigh ? "HH" : "LH", style = label.style_label_down, color = color.new(bearCol, 70), textcolor = dashTextCol, size = lblSize)
+
+if not na(usePL)
+    if zzD1 == -1
+        if usePL < zzP1                                       // lower low → extend down-leg
+            zzP1 := usePL
+            zzX1 := lastPLx
+            zzLow := usePL
+            zzLegEvent := true
+            if showZigZag and not na(zzSeg)
+                line.set_xy2(zzSeg, zzX1, zzP1)
+            if not na(zzLbl)
+                label.set_xy(zzLbl, zzX1, zzP1)
+                label.set_text(zzLbl, na(zzPrevLow) or zzLow < zzPrevLow ? "LL" : "HL")
+    else if na(zzP1)
+        zzP1 := usePL
+        zzX1 := lastPLx
+        zzD1 := -1
+        zzLow := usePL
+    else if math.abs(usePL - zzP1) >= zzMinLeg                // flip high→low (big enough)
+        zzP0 := zzP1
+        zzX0 := zzX1
+        zzP1 := usePL
+        zzX1 := lastPLx
+        zzD1 := -1
+        zzPrevLow := zzLow
+        zzLow := usePL
+        zzLegEvent := true
+        if showZigZag
+            zzSeg := line.new(zzX0, zzP0, zzX1, zzP1, color = zzCol, width = zzWidth)
+        if showStruct
+            zzLbl := label.new(zzX1, zzP1, na(zzPrevLow) or zzLow < zzPrevLow ? "LL" : "HL", style = label.style_label_up, color = color.new(bullCol, 70), textcolor = dashTextCol, size = lblSize)
+
+// Latest ZigZag leg (zzP0 → zzP1) → the Fib impulse the Golden Zone retraces.
+validLeg = zzD1 != 0 and not na(zzP0) and not na(zzP1) and zzP0 != zzP1
+legBull  = zzD1 == 1                              // up-leg ⇒ bullish retracement zone
+legHigh  = validLeg ? math.max(zzP0, zzP1) : na
+legLow   = validLeg ? math.min(zzP0, zzP1) : na
+legHx    = zzD1 == 1 ? zzX1 : zzX0               // bar index of the leg's high / low
+legLx    = zzD1 == 1 ? zzX0 : zzX1
+
+// Bias from the ZigZag structure: HH+HL ⇒ bullish, LH+LL ⇒ bearish, else neutral.
+if not na(zzHigh) and not na(zzPrevHigh) and not na(zzLow) and not na(zzPrevLow)
+    bias := (zzHigh > zzPrevHigh and zzLow > zzPrevLow) ? "Bullish" : (zzHigh < zzPrevHigh and zzLow < zzPrevLow) ? "Bearish" : "Neutral"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. CANDIDATE EVALUATION (direction, freshness, poison guard)
+// ─────────────────────────────────────────────────────────────────────────────
+// Direction: the latest ZigZag leg decides (up-leg ⇒ bullish retracement zone).
+dirBull = legBull
+
+// A candidate is structurally valid only with a real leg of positive range.
+validSetup = validLeg and (legHigh > legLow)
+
+// Active-setup state, held in series vars so signals can read them every bar.
+var bool  aBull   = false   // active direction (meaningful only when aSet)
+var bool  aSet    = false   // an active setup exists (cleared when superseded)
+var bool  aAlive  = false   // false once invalidated or superseded → silent
+var bool  aEntered  = false // once-per-setup latches (see alert engine)
+var bool  aRejected = false
+var bool  aBroke    = false
+var bool  aHit1272  = false
+var bool  aHit1618  = false
+var float aHigh   = na
+var float aLow    = na
+var int   aHx     = na
+var int   aLx     = na
+var int   aBornBar = na     // signals become eligible AFTER this bar
+var float aInvBuf  = na     // invalidation ATR buffer, FROZEN at creation (repair #5)
+var string zoneStatus = "Waiting"
+
+// Poison guard (repair #1): when a setup is invalidated, its leg identity
+// (direction + start-pivot bar) is recorded. A later extension of that SAME
+// leg cannot spawn a fresh setup — the structure is already broken. A new leg
+// (different start pivot) evaluates normally.
+var bool legPoisoned  = false
+var bool poisonBull   = false
+var int  poisonAnchor = na
+
+// ── True late-zone detection (repair #2) ──
+// Scan EVERY bar from the actual pivot through its confirmation bar
+// (confirmBars + 1 bars). Computed unconditionally on every bar so history
+// stays consistent. Wick mode uses highs/lows; Close mode uses closes.
+winLen        = confirmBars + 1
+lowLowWin     = ta.lowest(low,   winLen)
+highHighWin   = ta.highest(high, winLen)
+lowCloseWin   = ta.lowest(close,  winLen)
+highCloseWin  = ta.highest(close, winLen)
+
+// Near edge = the smaller golden ratio — the first level a retrace meets.
+nearRatio = math.min(goldenLower, goldenUpper)
+cRng  = nz(legHigh) - nz(legLow)
+cNear = dirBull ? nz(legHigh) - nearRatio * cRng : nz(legLow) + nearRatio * cRng
+// STRICT FRESHNESS (documented choice): equality counts as late. If price
+// already TOUCHED the near edge anywhere in the pivot→confirmation window,
+// the reaction has started and the candidate is late.
+bullLate  = touchWick ? lowLowWin   <= cNear : lowCloseWin  <= cNear
+bearLate  = touchWick ? highHighWin >= cNear : highCloseWin >= cNear
+lateZone  = dirBull ? bullLate : bearLate
+zoneFresh = not skipLateZones or not lateZone
+
+// ── Candidate → outcome (repair #1) ──
+candidateEvent = zzLegEvent and validSetup
+poisonedCand   = legPoisoned and dirBull == poisonBull and (dirBull ? legLx : legHx) == poisonAnchor
+newSetup       = candidateEvent and zoneFresh and not poisonedCand
+skippedSetup   = candidateEvent and (not zoneFresh or poisonedCand)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. DRAWING OBJECTS (single active set; history is frozen/orphaned)
+// ─────────────────────────────────────────────────────────────────────────────
+var line[]  fLines  = array.new<line>()
+var label[] fLabels = array.new<label>()
+var box     gBox    = na
+
+if candidateEvent
+    // Any candidate — accepted OR skipped — supersedes the previous setup's
+    // transient drawings. `for ... in` no-ops on empty arrays.
+    for ln in fLines
+        line.delete(ln)
+    for lb in fLabels
+        label.delete(lb)
+
+    // Same leg, new extreme? Then the old box is a provisional draft of THIS
+    // zone — replace it instead of archiving it (repair #9, default ON).
+    // (Bull leg: the anchor is the leg's start LOW; bear leg: its start HIGH.)
+    // NOTE: aBull/aLx/aHx still hold the PREVIOUS setup here (reassigned below).
+    sameLeg = oneZonePerLeg and aSet and dirBull == aBull and (dirBull ? legLx == aLx : legHx == aHx)
+
+    if not showHist or sameLeg
+        if not na(gBox)
+            box.delete(gBox)        // replace: remove the previous zone/draft
+    else if not na(gBox)
+        box.set_right(gBox, bar_index)                              // freeze …
+        box.set_bgcolor(gBox, color.new(aBull ? bullZoneCol : bearZoneCol, 87))
+        box.set_border_color(gBox, color.new(aBull ? color.green : color.red, 65))
+        box.set_text_color(gBox, color.new(dashTextCol, 55))        // … and soften
+    array.clear(fLines)
+    array.clear(fLabels)
+    gBox := na
+
+    if newSetup
+        aBull  := dirBull
+        aSet   := true
+        aAlive := true
+        aEntered  := false           // all alert latches re-arm
+        aRejected := false
+        aBroke    := false
+        aHit1272  := false
+        aHit1618  := false
+        aHigh  := legHigh
+        aLow   := legLow
+        aHx    := legHx
+        aLx    := legLx
+        aBornBar := bar_index        // signals eligible from the NEXT bar
+        // Repair #5: freeze the invalidation buffer NOW. The protective price
+        // (aLow − aInvBuf for bulls, aHigh + aInvBuf for bears) stays fixed
+        // for this setup's whole lifetime — later ATR changes cannot move it.
+        // nz(): during ATR warm-up the buffer degrades to 0 (strict), which is
+        // the SAFE direction (never widens the stop zone unexpectedly).
+        aInvBuf := invBufAtr * nz(atrZZ)
+        zoneStatus := "Waiting"
+
+        // Drawings may not sit more than 10,000 bars in the past — clamp the
+        // left anchor so an extreme leg can never crash the script at runtime.
+        leftX  = math.max(math.min(aHx, aLx), bar_index - 9500)
+        rightX = bar_index + extendBars
+        accent = aBull ? bullCol : bearCol
+
+        // --- Fib retracement levels (0 … 1.0) ---
+        if showFib
+            for i = 0 to array.size(retraceRatios) - 1
+                r  = array.get(retraceRatios, i)
+                p  = f_retracement_price(aBull, aHigh, aLow, r)
+                array.push(fLines, line.new(leftX, p, rightX, p, color = color.new(fibCol, 0), width = lineWidth, extend = extend.none))
+                array.push(fLabels, label.new(rightX, p, str.format("{0,number,#.###}  ({1})", r, str.tostring(p, format.mintick)), style = label.style_label_left, color = color.new(accent, 80), textcolor = dashTextCol, size = lblSize))
+            // --- Continuation projections (separately labelled, repair #8) ---
+            for i = 0 to array.size(projMults) - 1
+                m  = array.get(projMults, i)
+                p  = f_projection_price(aBull, aHigh, aLow, m)
+                array.push(fLines, line.new(leftX, p, rightX, p, color = color.new(fibCol, 0), width = lineWidth, extend = extend.none))
+                array.push(fLabels, label.new(rightX, p, str.format("{0,number,#.###}× Projection  ({1})", m, str.tostring(p, format.mintick)), style = label.style_label_left, color = color.new(accent, 80), textcolor = dashTextCol, size = lblSize))
+
+        // --- Golden Zone fill (title lives inside the box — no extra label) ---
+        if showGolden
+            gz1 = f_retracement_price(aBull, aHigh, aLow, goldenLower)
+            gz2 = f_retracement_price(aBull, aHigh, aLow, goldenUpper)
+            gTop = math.max(gz1, gz2)
+            gBot = math.min(gz1, gz2)
+            zoneFill   = aBull ? bullZoneCol : bearZoneCol
+            zoneAccent = color.new(aBull ? color.green : color.red, 40)
+            gBox := box.new(leftX, gTop, rightX, gBot, border_color = zoneAccent, bgcolor = zoneFill, text = aBull ? "GOLDEN ZONE ▲" : "GOLDEN ZONE ▼", text_color = color.new(dashTextCol, 25), text_size = lblSize, text_halign = text.align_left, text_valign = text.align_center)
+    else
+        // skippedSetup (repair #1): the candidate was late or its leg is
+        // poisoned. The PREVIOUS setup is retired immediately — silently.
+        // No "Invalidated" alert (price never broke it); no further touch /
+        // rejection / breakout / target alerts can come from it.
+        if aSet and aAlive
+            zoneStatus := "Superseded"
+        aAlive := false
+        aSet   := false
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. EXTEND ACTIVE SET TO THE RIGHT EDGE (only the active set is referenced)
+// ─────────────────────────────────────────────────────────────────────────────
+if barstate.islast and aSet
+    rX = bar_index + extendBars
+    for ln in fLines
+        line.set_x2(ln, rX)
+    for lb in fLabels
+        label.set_x(lb, rX)
+    if not na(gBox)
+        box.set_right(gBox, rX)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. ZONE PRICES + RAW EVENT DETECTION
+// ─────────────────────────────────────────────────────────────────────────────
+rngA   = aHigh - aLow
+gA     = f_retracement_price(aBull, aHigh, aLow, goldenLower)
+gB     = f_retracement_price(aBull, aHigh, aLow, goldenUpper)
+gLowP  = math.min(gA, gB)
+gHighP = math.max(gA, gB)
+
+// A setup only produces signals while ALIVE: not invalidated, not superseded.
+activeValid = aSet and aAlive and not na(aHigh) and not na(aLow) and rngA > 0
+
+// Raw conditions (drive the visual status; the alert engine below arbitrates).
+touchedZone = activeValid and (touchWick ? (low <= gHighP and high >= gLowP) : (close <= gHighP and close >= gLowP))
+prevInside  = close[1] <= gHighP and close[1] >= gLowP
+bullRejectRaw = activeValid and aBull     and (touchWick ? low  <= gHighP : prevInside) and close > gHighP and close > open
+bearRejectRaw = activeValid and not aBull and (touchWick ? high >= gLowP  : prevInside) and close < gLowP  and close < open
+breakoutRaw   = activeValid and (aBull ? close > gHighP and close[1] <= gHighP : close < gLowP and close[1] >= gLowP)
+// Invalidation boundary is FIXED: swing ± the buffer frozen at creation.
+invalidatedRaw = activeValid and (aBull ? close < aLow - aInvBuf : close > aHigh + aInvBuf)
+// Continuation projections.
+extP1272 = f_projection_price(aBull, aHigh, aLow, 1.272)
+extP1618 = f_projection_price(aBull, aHigh, aLow, 1.618)
+reach1272Raw = activeValid and (aBull ? high >= extP1272 : low <= extP1272)
+reach1618Raw = activeValid and (aBull ? high >= extP1618 : low <= extP1618)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. DETERMINISTIC ALERT ENGINE (repairs #3 + #4)
+// ─────────────────────────────────────────────────────────────────────────────
+// • At most ONE alert per candle, priority: Invalidation > 1.618 > 1.272 >
+//   Rejection > Breakout > Entry.
+// • Every event fires at most once per setup (latches consult RAW conditions,
+//   so implied events complete too: a rejection on the first-touch candle
+//   also completes the entry latch; reaching 1.618 directly completes 1.272).
+// • No zone-interaction alert on the candle that CREATES a setup — signals
+//   are eligible from the following confirmed candle (aBornBar).
+// • barstate.isconfirmed is baked into every final alert boolean — alerts can
+//   only become true on a confirmed candle, regardless of the user's alert
+//   frequency setting.
+sigEligible = activeValid and not na(aBornBar) and bar_index > aBornBar
+sigOK       = barstate.isconfirmed and sigEligible
+
+evInvalid = sigOK and invalidatedRaw
+ev1618    = sigOK and not evInvalid and reach1618Raw and not aHit1618
+ev1272    = sigOK and not evInvalid and not ev1618 and reach1272Raw and not aHit1272
+evBullRej = sigOK and not evInvalid and not ev1618 and not ev1272 and bullRejectRaw and not aRejected
+evBearRej = sigOK and not evInvalid and not ev1618 and not ev1272 and bearRejectRaw and not aRejected
+evBreak   = sigOK and not evInvalid and not ev1618 and not ev1272 and not evBullRej and not evBearRej and breakoutRaw and not aBroke
+evEntry   = sigOK and not evInvalid and not ev1618 and not ev1272 and not evBullRej and not evBearRej and not evBreak and touchedZone and not aEntered
+
+// Commit latches AFTER the events were selected (this bar's alerts see the
+// pre-commit latch state; from the next bar the latches suppress repeats).
+if sigOK
+    if touchedZone
+        aEntered := true
+    if bullRejectRaw or bearRejectRaw
+        aRejected := true
+    if breakoutRaw
+        aBroke := true
+    if reach1272Raw
+        aHit1272 := true
+    if reach1618Raw
+        aHit1272 := true             // 1.618 direct → 1.272 completes too
+        aHit1618 := true
+    if invalidatedRaw
+        aAlive := false              // permanent: the setup is dead
+        legPoisoned  := true         // …and its leg cannot spawn a new setup
+        poisonBull   := aBull
+        poisonAnchor := aBull ? aLx : aHx
+        if not na(gBox)              // gray the dead zone out immediately
+            box.set_bgcolor(gBox, color.new(color.gray, 88))
+            box.set_border_color(gBox, color.new(color.gray, 60))
+            box.set_text(gBox, "GOLDEN ZONE ✕")
+            box.set_text_color(gBox, color.new(dashTextCol, 60))
+
+// Persistent zone status string (visual readout; may update intrabar, alerts
+// never do).
+if activeValid
+    if invalidatedRaw
+        zoneStatus := "Invalidated"
+    else if bullRejectRaw or bearRejectRaw
+        zoneStatus := "Rejected"
+    else if breakoutRaw
+        zoneStatus := "Broke Out"
+    else if touchedZone
+        zoneStatus := "Inside Zone"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. ALERTS (one per candle max, once per setup, bar-close confirmed in code)
+// ─────────────────────────────────────────────────────────────────────────────
+alertcondition(evEntry,   "Price Enters Golden Zone",  "Price entered the Golden Zone")
+alertcondition(evBullRej, "Bullish Rejection",         "Bullish rejection from the Golden Zone")
+alertcondition(evBearRej, "Bearish Rejection",         "Bearish rejection from the Golden Zone")
+alertcondition(evBreak,   "Zone Breakout",             "Price broke straight through the Golden Zone")
+alertcondition(evInvalid, "Golden Zone Invalidated",   "Golden Zone setup invalidated")
+alertcondition(ev1272,    "1.272× Projection Reached", "Price reached the 1.272× impulse projection")
+alertcondition(ev1618,    "1.618× Projection Reached", "Price reached the 1.618× impulse projection")
+
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

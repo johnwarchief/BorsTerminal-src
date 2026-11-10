@@ -1,0 +1,571 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator("Machine Learning Smart Money Concepts", overlay=true, max_labels_count = 500, max_boxes_count=500, max_lines_count=500, max_bars_back=5000)
+
+//UI 
+grp_algo   = "🧠 Quant Engine"
+lookahead  = input.int(20,   "Look-Ahead Window (Bars)",     minval=5,   maxval=100,  step=5,   group=grp_algo)
+windowLen  = input.int(1500, "Historical Memory Window",     minval=500, maxval=3000, step=100, group=grp_algo)
+kNeighbors = input.int(5,    "K-Nearest Neighbors (K)",      minval=1,   maxval=10,             group=grp_algo)
+minScore   = input.int(60,   "Min Significance Score (%)",   minval=0,   maxval=100,  step=5,   group=grp_algo)
+atrLen     = input.int(14,   "ATR Period",                   minval=5,                          group=grp_algo)
+swingLen   = input.int(5,    "Pivot Length",                 minval=2,   maxval=20,             group=grp_algo)
+
+grp_ui     = "🎨 Visual Style"
+themeMode  = input.string("Obsidian", "Theme", options=["Obsidian", "Monochrome Alpha"], group=grp_ui)
+hiProbClr  = input.color(color.rgb(160, 130, 255), "High Probability (>80%)",   group=grp_ui)
+medProbClr = input.color(color.rgb(200, 180, 255),  "Medium Probability (≥60%)", group=grp_ui)
+bgTableClr = input.color(color.rgb(8, 8, 14),    "Panel Background",          group=grp_ui)
+txtTable   = input.color(color.rgb(190, 185, 210), "Panel Text",               group=grp_ui)
+
+grp_lines       = "📐 Structure"
+showSwingLines  = input.bool(true,  "CHoCH Connector Lines",   group=grp_lines)
+showBrokenLevel = input.bool(true,  "Broken Level Marker",     group=grp_lines)
+extendLines     = input.bool(false, "Extend Active Level",     group=grp_lines)
+showWickTrace   = input.bool(true,  "Neon Wick Trace",         group=grp_lines)
+showFill        = input.bool(true,  "CHoCH Region Fill",       group=grp_lines)
+fillTransp      = input.int(93,     "Fill Transparency",        minval=70, maxval=98, step=2, group=grp_lines)
+
+grp_tp          = "🎯 Target Levels"
+showPriceTarget = input.bool(true,  "Show KNN Price Targets",  group=grp_tp)
+targetExtBars   = input.int(10,     "Target Extension (Bars)", minval=2, maxval=300,   group=grp_tp)
+targetScalar    = input.float(0.5,  "Conservative Scalar",     minval=0.1, maxval=1.0, step=0.05, group=grp_tp)
+tp1Clr          = input.color(color.rgb(120, 200, 160), "TP1 Color (Conservative)", group=grp_tp)
+tp2Clr          = input.color(color.rgb(180, 160, 255), "TP2 Color (Median)",       group=grp_tp)
+tp3Clr          = input.color(color.rgb(220, 130, 180), "TP3 Color (Aggressive)",   group=grp_tp)
+showTpLabels    = input.bool(true,  "Show TP Labels In Box",   group=grp_tp)
+manualBoxExt    = input.bool(false, "Manual Box Extension Override", group=grp_tp)
+manualExtBars   = input.int(100,    "Manual Extension (Bars)", minval=2, maxval=500, group=grp_tp)
+
+grp_alerts        = "🔔 Probability Alerts"
+enableBullAlert   = input.bool(false, "Enable Bullish CHoCH Alert",          group=grp_alerts)
+bullAlertThresh   = input.float(80,   "Bullish Probability Threshold (%)",   minval=50, maxval=100, step=1, group=grp_alerts)
+enableBearAlert   = input.bool(false, "Enable Bearish CHoCH Alert",          group=grp_alerts)
+bearAlertThresh   = input.float(80,   "Bearish Probability Threshold (%)",   minval=50, maxval=100, step=1, group=grp_alerts)
+
+//Choch types 
+type ChochFeature
+    int   barIndex
+    float volumeDelta
+    float displacementZ
+    float priceVelocity
+    bool  isBullish
+    float outcomeValue
+    float favorableRun
+
+type TargetRecord
+    float price
+    bool  isBull
+    int   tier  // 1=mean 2=median 3=aggressive
+
+var ChochFeature[] database       = array.new<ChochFeature>()
+var TargetRecord[] outstandingTgts = array.new<TargetRecord>()
+
+// Identifying market structure
+swingHigh = ta.pivothigh(high, swingLen, swingLen)
+swingLow  = ta.pivotlow(low,  swingLen, swingLen)
+
+var float lastSwingHigh = na
+var float lastSwingLow  = na
+var int   lastHighIndex = na
+var int   lastLowIndex  = na
+
+if not na(swingHigh)
+    lastSwingHigh := swingHigh
+    lastHighIndex := bar_index - swingLen
+
+if not na(swingLow)
+    lastSwingLow := swingLow
+    lastLowIndex := bar_index - swingLen
+
+float currentVolumeDelta = 0.0
+if volume > 0
+    float candleRange   = math.max(high - low, 1e-6)
+    float buyingVolume  = volume * ((close - low)  / candleRange)
+    float sellingVolume = volume * ((high - close) / candleRange)
+    currentVolumeDelta := (buyingVolume - sellingVolume) / volume
+
+float currentAtr = ta.atr(atrLen)
+
+var int marketTrend = 0
+bool isBullishChoch = false
+bool isBearishChoch = false
+
+if not na(lastSwingHigh) and marketTrend <= 0 and close > lastSwingHigh
+    isBullishChoch := true
+    marketTrend    := 1
+
+if not na(lastSwingLow) and marketTrend >= 0 and close < lastSwingLow
+    isBearishChoch := true
+    marketTrend    := -1
+
+float volDeltaFeature = 0.0
+float displaceFeature = 0.0
+float velocityFeature = 0.0
+
+if isBullishChoch or isBearishChoch
+    int calculationStartBar = isBullishChoch ? lastHighIndex : lastLowIndex
+    int duration            = math.min(math.max(1, bar_index - calculationStartBar), 4990)
+    int safeLookback        = math.min(duration, 50)
+
+    float runningVolDelta = 0.0
+    for i = 0 to safeLookback - 1
+        runningVolDelta += currentVolumeDelta[i]
+    volDeltaFeature := runningVolDelta / math.max(1, safeLookback)
+
+    float totalMove = math.abs(close - open[duration])
+    displaceFeature := currentAtr > 0 ? totalMove / currentAtr : 1.0
+    velocityFeature := totalMove / duration
+
+// KNN 
+float outputSignificanceScore = 0.0
+int   totalMatchesFound       = 0
+int   successfulOutcomes      = 0
+float bullishProb             = 50.0
+float bearishProb             = 50.0
+
+// 3 tps to form a box 
+float tp1Price = 0.0   // mean  (conservative)
+float tp2Price = 0.0   // median
+float tp3Price = 0.0   // 75th-pct aggressive
+
+if isBullishChoch or isBearishChoch
+    int dbSize = array.size(database)
+
+    if dbSize > 0
+        float[] matchedDistances = array.new<float>(0)
+        int[]   matchedIndices   = array.new<int>(0)
+
+        for i = 0 to dbSize - 1
+            ChochFeature record = array.get(database, i)
+            if bar_index - record.barIndex <= windowLen and record.isBullish == isBullishChoch
+                float dVol      = math.pow(volDeltaFeature - record.volumeDelta,   2)
+                float dDisplace = math.pow(displaceFeature - record.displacementZ, 2)
+                float dVelocity = math.pow(velocityFeature - record.priceVelocity, 2)
+                float distance  = math.sqrt(dVol + dDisplace + dVelocity)
+                array.push(matchedDistances, distance)
+                array.push(matchedIndices, i)
+
+        if array.size(matchedDistances) > 0
+            // Partial min-k selection: pick the K nearest indices without full sort
+            int nMatches = array.size(matchedDistances)
+            int limitK   = math.min(kNeighbors, nMatches)
+            
+            bool[] used = array.new<bool>(nMatches, false)
+            int[] sortedIndices = array.new<int>(0)
+            
+            for _k = 0 to limitK - 1
+                float minDist = 1e38
+                int   minIdx  = 0
+                for _s = 0 to nMatches - 1
+                    if not array.get(used, _s)
+                        float d = array.get(matchedDistances, _s)
+                        if d < minDist
+                            minDist := d
+                            minIdx  := _s
+                array.set(used, minIdx, true)
+                array.push(sortedIndices, minIdx)
+                
+            float[] neighborRuns = array.new<float>(0)
+
+            for k = 0 to limitK - 1
+                int idxInMatched          = array.get(sortedIndices, k)
+                int targetDbIdx           = array.get(matchedIndices, idxInMatched)
+                ChochFeature targetRecord = array.get(database, targetDbIdx)
+                totalMatchesFound += 1
+                if targetRecord.outcomeValue > 0.0
+                    successfulOutcomes += 1
+                array.push(neighborRuns, targetRecord.favorableRun)
+
+            float totalK = limitK * 1.0
+            if isBullishChoch
+                bullishProb := (float(successfulOutcomes) / totalK) * 100.0
+                bearishProb := 100.0 - bullishProb
+            else
+                bearishProb := (float(successfulOutcomes) / totalK) * 100.0
+                bullishProb := 100.0 - bearishProb
+
+            // Sort runs for statistics
+            array.sort(neighborRuns)
+            int   nRuns  = array.size(neighborRuns)
+
+            // TP2 = median (FIXED: cast array index query to int)
+            float medRun = nRuns > 0 ? array.get(neighborRuns, int(nRuns / 2)) : 0.0
+
+            // TP1 = mean * scalar (conservative)
+            float sumRuns = 0.0
+            for r = 0 to nRuns - 1
+                sumRuns += array.get(neighborRuns, r)
+            float meanRun = nRuns > 0 ? sumRuns / nRuns : 0.0
+
+            // TP3 = 75th percentile (aggressive)
+            int   p75idx  = nRuns > 1 ? int(math.round(nRuns * 0.75)) - 1 : 0
+            p75idx        := math.min(p75idx, nRuns - 1)
+            float aggrRun = nRuns > 0 ? array.get(neighborRuns, p75idx) : 0.0
+
+            // Apply direction
+            float dir = isBullishChoch ? 1.0 : -1.0
+            tp1Price := close + dir * (meanRun * targetScalar)
+            tp2Price := close + dir * medRun
+            tp3Price := close + dir * aggrRun
+
+        outputSignificanceScore := totalMatchesFound > 0 ? (float(successfulOutcomes) / float(totalMatchesFound)) * 100.0 : 50.0
+    else
+        outputSignificanceScore := 50.0
+
+// Training on hx 
+if isBullishChoch[lookahead] or isBearishChoch[lookahead]
+    bool  wasBullish      = isBullishChoch[lookahead]
+    float initialRefPrice = close[lookahead]
+    float maxFavorableRun = 0.0
+    float maxAdverseRun   = 0.0
+
+    for lookIdx = 1 to lookahead
+        float highOffset = high[lookahead - lookIdx]
+        float lowOffset  = low[lookahead - lookIdx]
+        if wasBullish
+            maxFavorableRun := math.max(maxFavorableRun, highOffset - initialRefPrice)
+            maxAdverseRun   := math.max(maxAdverseRun,  initialRefPrice - lowOffset)
+        else
+            maxFavorableRun := math.max(maxFavorableRun, initialRefPrice - lowOffset)
+            maxAdverseRun   := math.max(maxAdverseRun,  highOffset - initialRefPrice)
+
+    ChochFeature historicalEvent = ChochFeature.new(
+       barIndex      = bar_index[lookahead],
+       volumeDelta   = volDeltaFeature[lookahead],
+       displacementZ = displaceFeature[lookahead],
+       priceVelocity = velocityFeature[lookahead],
+       isBullish     = wasBullish,
+       outcomeValue  = maxFavorableRun > maxAdverseRun ? 1.0 : -1.0,
+       favorableRun  = maxFavorableRun
+     )
+    array.push(database, historicalEvent)
+    if array.size(database) > 2000
+        array.remove(database, 0)
+
+//Tracking targets 
+if array.size(outstandingTgts) > 0
+    int i = array.size(outstandingTgts) - 1
+    while i >= 0
+        TargetRecord rec = array.get(outstandingTgts, i)
+        bool hit = rec.isBull ? high >= rec.price : low <= rec.price
+        if hit
+            array.remove(outstandingTgts, i)
+        i -= 1
+
+//Colours 
+// Premium palette — cool blue-white for bull, warm rose for bear
+bullLineClr = color.new(color.rgb(140, 200, 255), 25)
+bearLineClr = color.new(color.rgb(255, 140, 160), 25)
+levelClr    = color.new(color.rgb(160, 155, 185), 65)
+
+
+neonBullG1 = color.new(color.rgb(180, 220, 255),  90)
+neonBullG2 = color.new(color.rgb(180, 220, 255),  78)
+neonBullG3 = color.new(color.rgb(210, 235, 255),  55)
+neonBullG4 = color.new(color.rgb(240, 248, 255),   0)
+
+
+neonBearG1 = color.new(color.rgb(255, 160, 180),  90)
+neonBearG2 = color.new(color.rgb(255, 160, 180),  78)
+neonBearG3 = color.new(color.rgb(255, 195, 205),  55)
+neonBearG4 = color.new(color.rgb(255, 230, 235),   0)
+
+fillBullClr = color.new(color.rgb(140, 200, 255), fillTransp)
+fillBearClr = color.new(color.rgb(255, 140, 160), fillTransp)
+
+// Identfying swing levels here, to identfy change of structure later on
+var line activeHighLevel = na
+var line activeLowLevel  = na
+
+if not na(swingHigh) and showBrokenLevel
+    if not na(activeHighLevel)
+        line.delete(activeHighLevel)
+    int extRight = extendLines ? bar_index + lookahead * 2 : bar_index + lookahead
+    activeHighLevel := line.new(lastHighIndex, lastSwingHigh, extRight, lastSwingHigh, color=levelClr, width=1, style=line.style_dashed)
+
+if not na(swingLow) and showBrokenLevel
+    if not na(activeLowLevel)
+        line.delete(activeLowLevel)
+    int extRight = extendLines ? bar_index + lookahead * 2 : bar_index + lookahead
+    activeLowLevel := line.new(lastLowIndex, lastSwingLow, extRight, lastSwingLow, color=levelClr, width=1, style=line.style_dashed)
+
+// plotting the change of structure 
+if isBullishChoch
+    if not na(activeHighLevel)
+        line.set_x2(activeHighLevel, bar_index)
+        // FIXED: Removed line.delete() so the broken level marker stays on the chart
+        activeHighLevel := na
+
+    if showSwingLines and not na(lastHighIndex) and not na(lastSwingHigh)
+        line.new(lastHighIndex, lastSwingHigh, bar_index, close, color=bullLineClr, width=2, style=line.style_solid)
+
+    if showWickTrace and not na(lastHighIndex)
+        int traceLen = math.min(bar_index - lastHighIndex, 300)
+        if traceLen > 1
+            float baseline = lastSwingHigh
+            for i = traceLen - 1 to 1
+                int   x1 = bar_index - i
+                int   x2 = bar_index - i + 1
+                float y1 = low[i]
+                float y2 = low[i - 1]
+                line.new(x1, y1, x2, y2, color=neonBullG1, width=7)
+                line.new(x1, y1, x2, y2, color=neonBullG2, width=4)
+                line.new(x1, y1, x2, y2, color=neonBullG3, width=2)
+                line.new(x1, y1, x2, y2, color=neonBullG4, width=1)
+                if showFill
+                    line wickSeg = line.new(x1, y1, x2, y2, color=color.new(color.green, 100), width=1)
+                    line baseSeg = line.new(x1, baseline, x2, baseline, color=color.new(color.green, 100), width=1)
+                    linefill.new(wickSeg, baseSeg, fillBullClr)
+
+    //Target zones 
+    if showPriceTarget and tp1Price > 0 and tp3Price > 0
+        float boxTop    = tp3Price
+        float boxBottom = tp1Price
+        int   boxExtBars = manualBoxExt ? manualExtBars : targetExtBars
+        int   rightBar  = bar_index + boxExtBars
+        
+        // Using box to map out zones 
+        box.new(bar_index, boxTop, rightBar, boxBottom,
+           bgcolor      = color.new(color.rgb(140, 200, 255), 93),
+           border_color = color.new(color.rgb(140, 200, 255), 30),
+           border_width = 1)
+     
+        if tp2Price > 0
+            line.new(bar_index, tp2Price, rightBar, tp2Price,
+               color = color.new(color.rgb(180, 225, 255), 55),
+               width = 1,
+               style = line.style_dotted)
+
+        if showTpLabels
+            int labelX = bar_index + int(boxExtBars / 2)
+            label.new(labelX, boxBottom, "TP1", color=color.new(color.black, 100), style=label.style_none, textcolor=tp1Clr, size=size.tiny)
+            if tp2Price > 0
+                label.new(labelX, tp2Price, "TP2", color=color.new(color.black, 100), style=label.style_none, textcolor=tp2Clr, size=size.tiny)
+            label.new(labelX, boxTop, "TP3", color=color.new(color.black, 100), style=label.style_none, textcolor=tp3Clr, size=size.tiny)
+
+       
+        array.push(outstandingTgts, TargetRecord.new(price=tp1Price, isBull=true, tier=1))
+        if tp2Price > 0 and tp2Price != tp1Price
+            array.push(outstandingTgts, TargetRecord.new(price=tp2Price, isBull=true, tier=2))
+        if tp3Price > 0 and tp3Price != tp2Price
+            array.push(outstandingTgts, TargetRecord.new(price=tp3Price, isBull=true, tier=3))
+
+    if showBrokenLevel
+        line.new(bar_index, lastSwingHigh, bar_index, close, color=color.new(hiProbClr, 40), width=1, style=line.style_dotted)
+
+//Bearish changes in condition 
+
+if isBearishChoch
+    if not na(activeLowLevel)
+        line.set_x2(activeLowLevel, bar_index)
+        // FIXED: Removed line.delete() so the broken level marker stays on the chart
+        activeLowLevel := na
+
+    if showSwingLines and not na(lastLowIndex) and not na(lastSwingLow)
+        line.new(lastLowIndex, lastSwingLow, bar_index, close, color=bearLineClr, width=2, style=line.style_solid)
+
+    if showWickTrace and not na(lastLowIndex)
+        int traceLen = math.min(bar_index - lastLowIndex, 300)
+        if traceLen > 1
+            float baseline = lastSwingLow
+            for i = traceLen - 1 to 1
+                int   x1 = bar_index - i
+                int   x2 = bar_index - i + 1
+                float y1 = high[i]
+                float y2 = high[i - 1]
+                line.new(x1, y1, x2, y2, color=neonBearG1, width=7)
+                line.new(x1, y1, x2, y2, color=neonBearG2, width=4)
+                line.new(x1, y1, x2, y2, color=neonBearG3, width=2)
+                line.new(x1, y1, x2, y2, color=neonBearG4, width=1)
+                if showFill
+                    line wickSeg = line.new(x1, y1, x2, y2, color=color.new(color.red, 100), width=1)
+                    line baseSeg = line.new(x1, baseline, x2, baseline, color=color.new(color.red, 100), width=1)
+                    linefill.new(wickSeg, baseSeg, fillBearClr)
+
+
+    if showPriceTarget and tp1Price > 0 and tp3Price > 0
+        float boxTop    = tp1Price  // TP1 is the highest price in a short
+        float boxBottom = tp3Price  // TP3 is the lowest price in a short
+        int   boxExtBars = manualBoxExt ? manualExtBars : targetExtBars
+        int   rightBar  = bar_index + boxExtBars
+        
+  
+        box.new(bar_index, boxTop, rightBar, boxBottom,
+           bgcolor      = color.new(color.rgb(255, 140, 160), 93),
+           border_color = color.new(color.rgb(255, 140, 160), 30),
+           border_width = 1)
+    
+        if tp2Price > 0
+            line.new(bar_index, tp2Price, rightBar, tp2Price,
+               color = color.new(color.rgb(255, 185, 200), 55),
+               width = 1,
+               style = line.style_dotted)
+
+        if showTpLabels
+            int labelXBear = bar_index + int(boxExtBars / 2)
+            label.new(labelXBear, boxTop, "TP1", color=color.new(color.black, 100), style=label.style_none, textcolor=tp1Clr, size=size.tiny)
+            if tp2Price > 0
+                label.new(labelXBear, tp2Price, "TP2", color=color.new(color.black, 100), style=label.style_none, textcolor=tp2Clr, size=size.tiny)
+            label.new(labelXBear, boxBottom, "TP3", color=color.new(color.black, 100), style=label.style_none, textcolor=tp3Clr, size=size.tiny)
+
+        // Tracking tps 
+        array.push(outstandingTgts, TargetRecord.new(price=tp1Price, isBull=false, tier=1))
+        if tp2Price > 0 and tp2Price != tp1Price
+            array.push(outstandingTgts, TargetRecord.new(price=tp2Price, isBull=false, tier=2))
+        if tp3Price > 0 and tp3Price != tp2Price
+            array.push(outstandingTgts, TargetRecord.new(price=tp3Price, isBull=false, tier=3))
+
+    if showBrokenLevel
+        line.new(bar_index, lastSwingLow, bar_index, close, color=color.new(medProbClr, 40), width=1, style=line.style_dotted)
+
+// Signals for UI 
+
+bool chochFired = isBullishChoch or isBearishChoch
+bool validSetup = chochFired and outputSignificanceScore >= minScore
+
+if chochFired
+    bool   hasScore    = outputSignificanceScore >= minScore
+    bool   hasKnnData  = totalMatchesFound > 0
+    color  layoutColor = hasScore ? (outputSignificanceScore >= 80 ? hiProbClr : medProbClr) : color.new(color.rgb(140, 135, 165), 0)
+    float  dirProb     = isBullishChoch ? bullishProb : bearishProb
+    string confStar    = dirProb >= 85.0 ? " ★" : ""
+    string dirArrow    = isBullishChoch ? "▲" : "▼"
+
+
+    string scoreTxt = hasKnnData ? dirArrow + " " + str.tostring(math.round(dirProb), "#") + "%" + confStar : dirArrow + " CHoCH"
+    float  badgeY   = isBullishChoch ? low  - currentAtr * 1 : high + currentAtr * 1
+
+    label.new(
+       x         = bar_index,
+       y         = badgeY,
+       text      = scoreTxt,
+       color     = color.new(color.black, 100),
+       style     = label.style_none,
+       textcolor = color.new(layoutColor, 0),
+       size      = size.normal
+     )
+
+    string chochTag  = isBullishChoch ? "+CHoCH" : "-CHoCH"
+    string scoreLine = hasKnnData ? str.tostring(outputSignificanceScore, "#.0") + "%" : "—"
+    string tagText   = chochTag
+
+    label.new(
+       x         = bar_index,
+       y         = isBullishChoch ? low - currentAtr * 0.5 : high + currentAtr * 0.5,
+       text      = tagText,
+       color     = color.new(color.black, 100),
+       style     = label.style_none,
+       textcolor = color.new(layoutColor, 15),
+       size      = size.normal
+     )
+
+var table sidePanel = table.new(position.middle_right, 2, 11,
+   bgcolor      = color.new(bgTableClr, 12),
+   border_color = color.new(color.white, 100),
+   border_width = 0,
+   frame_color  = color.new(color.white, 100),
+   frame_width  = 0)
+
+if barstate.islast
+    float sumBullTgts = 0.0
+    int   cntBullTgts = 0
+    float sumBearTgts = 0.0
+    int   cntBearTgts = 0
+
+    for j = 0 to array.size(outstandingTgts) - 1
+        TargetRecord r = array.get(outstandingTgts, j)
+        if r.isBull
+            sumBullTgts += r.price
+            cntBullTgts += 1
+        else
+            sumBearTgts += r.price
+            cntBearTgts += 1
+
+    float meanHighTarget = cntBullTgts > 0 ? sumBullTgts / cntBullTgts : na
+    float meanLowTarget  = cntBearTgts > 0 ? sumBearTgts / cntBearTgts : na
+
+    color accentClr = marketTrend > 0 ? color.rgb(80, 255, 120) : marketTrend < 0 ? color.rgb(255, 80, 100) : color.gray
+
+// Stats table 
+    table.cell(sidePanel, 0, 0, "ML SMC",    bgcolor=color.new(color.rgb(30, 22, 55), 0), text_color=color.new(color.rgb(200, 190, 230), 0), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 0, "PREMIUM",   bgcolor=color.new(color.rgb(30, 22, 55), 0), text_color=color.new(color.rgb(160, 130, 255), 0), text_size=size.small, text_halign=text.align_right)
+
+
+    string biasText  = marketTrend > 0 ? "▲ BULLISH" : marketTrend < 0 ? "▼ BEARISH" : "— NEUTRAL"
+    table.cell(sidePanel, 0, 1, "Bias",      text_color=color.new(txtTable, 20), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 1, biasText,    text_color=accentClr,               text_size=size.small, text_halign=text.align_right)
+
+
+    string scoreDisp = outputSignificanceScore >= minScore ? str.tostring(outputSignificanceScore, "#.0") + "%" : "—"
+    color  scoreClr  = outputSignificanceScore >= 80 ? color.rgb(160, 130, 255) : outputSignificanceScore >= 60 ? color.rgb(200, 180, 255) : color.rgb(120, 115, 145)
+    table.cell(sidePanel, 0, 2, "Score",     text_color=color.new(txtTable, 20), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 2, scoreDisp,   text_color=scoreClr,                text_size=size.small, text_halign=text.align_right)
+
+
+    table.cell(sidePanel, 0, 3, "─── TARGETS ───", text_color=color.new(txtTable, 55), text_size=size.tiny, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 3, "open",           text_color=color.new(txtTable, 55), text_size=size.tiny, text_halign=text.align_right)
+
+
+    string highTgtStr = not na(meanHighTarget) ? str.tostring(meanHighTarget, "#.00") : "—"
+    table.cell(sidePanel, 0, 4, "Mean High Tgt", text_color=color.new(color.rgb(140, 200, 255), 0), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 4, highTgtStr,       text_color=color.new(color.rgb(140, 200, 255), 0), text_size=size.small, text_halign=text.align_right)
+
+
+    string lowTgtStr = not na(meanLowTarget) ? str.tostring(meanLowTarget, "#.00") : "—"
+    table.cell(sidePanel, 0, 5, "Mean Low Tgt",  text_color=color.new(color.rgb(255, 140, 160), 0), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 5, lowTgtStr,        text_color=color.new(color.rgb(255, 140, 160), 0), text_size=size.small, text_halign=text.align_right)
+
+
+    table.cell(sidePanel, 0, 6, "─── ENGINE ───", text_color=color.new(txtTable, 55), text_size=size.tiny, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 6, "",              text_color=color.new(txtTable, 55), text_size=size.tiny, text_halign=text.align_right)
+
+  
+    table.cell(sidePanel, 0, 7, "DB Records",  text_color=color.new(txtTable, 20), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 7, str.tostring(array.size(database)), text_color=color.new(color.rgb(160, 130, 255), 0), text_size=size.small, text_halign=text.align_right)
+
+  
+    table.cell(sidePanel, 0, 8, "Vol Δ",       text_color=color.new(txtTable, 20), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 8, str.tostring(currentVolumeDelta, "#.00"), text_color=currentVolumeDelta >= 0 ? color.rgb(140, 200, 255) : color.rgb(255, 140, 160), text_size=size.small, text_halign=text.align_right)
+
+
+    string levelStr = not na(lastSwingHigh) and not na(lastSwingLow) ? str.tostring(lastSwingHigh, "#.00") + " / " + str.tostring(lastSwingLow, "#.00") : "Loading…"
+    table.cell(sidePanel, 0, 9, "H / L",      text_color=color.new(txtTable, 20), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 9, levelStr,      text_color=color.new(txtTable, 10), text_size=size.tiny,  text_halign=text.align_right)
+
+    table.cell(sidePanel, 0, 10, "K / Window", text_color=color.new(txtTable, 20), text_size=size.small, text_halign=text.align_left)
+    table.cell(sidePanel, 1, 10, str.tostring(kNeighbors) + " / " + str.tostring(windowLen), text_color=color.new(txtTable, 20), text_size=size.tiny, text_halign=text.align_right)
+
+
+grp_ribbon = "✨ Dynamic Target Ribbon"
+showRibbon = input.bool(false, "Show Target Ribbon", group=grp_ribbon)
+ribbonLen  = input.int(50, "Ribbon Smoothing Length", minval=5, maxval=200, step=10, group=grp_ribbon)
+
+var float activeBullTarget = na
+var float activeBearTarget = na
+
+if barstate.isfirst
+    activeBullTarget := close + ta.atr(14)
+    activeBearTarget := close - ta.atr(14)
+
+if chochFired
+    if isBullishChoch and tp3Price > 0
+        activeBullTarget := tp3Price
+    if isBearishChoch and tp3Price > 0
+        activeBearTarget := tp3Price
+
+smoothBull = ta.sma(activeBullTarget, ribbonLen)
+smoothBear = ta.sma(activeBearTarget, ribbonLen)
+
+plot(showRibbon ? smoothBull : na, "Bull Ribbon", color=color.new(color.rgb(140, 200, 255), 35), linewidth=1)
+plot(showRibbon ? smoothBear : na, "Bear Ribbon", color=color.new(color.rgb(255, 140, 160), 35), linewidth=1)
+
+p_bull = plot(showRibbon ? smoothBull : na, display=display.none)
+p_bear = plot(showRibbon ? smoothBear : na, display=display.none)
+fill(p_bull, p_bear, color=color.new(color.rgb(160, 130, 255), 97), title="Ribbon Cloud")
+
+alertcondition(isBullishChoch, "Buy Signal",  message="Buy Signal detected by GainzAlgo")
+alertcondition(isBearishChoch, "Sell Signal", message="Sell Signal detected by GainzAlgo")
+

@@ -1,0 +1,934 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+// CTZ Swing Exhaustion Levels — swing engine based on Swing Clock [GBB]
+// Adds: crypto swing presets (bigger k), kernel regression trend (rational quadratic + gaussian),
+// swing + trend confluence signals, trend row in the panel, candle tint by kernel trend.
+indicator("CTZ Swing Exhaustion Levels", "CTZ Swing Exhaustion", overlay = true, max_lines_count = 500, max_boxes_count = 100, max_labels_count = 250)
+
+// ---------------------------------------------------------------- inputs
+grpE = "Swing"
+mktSel    = input.string("Auto", "Market", options = ["Auto", "Crypto", "Other markets"], group = grpE,
+     tooltip = "Auto uses the crypto presets on crypto charts. Crypto swings run further and wick harder, so a bigger pullback is needed before a swing counts as over.")
+presetSel = input.string("Standard", "Swing size", options = ["Micro", "Standard", "Major", "Custom"], group = grpE,
+     tooltip = "A swing ends when price comes back k ATR(14) from its extreme.\nCrypto: Micro k = 2.0, Standard k = 3.5, Major k = 5.5.\nOther markets: Micro k = 1.5, Standard k = 2.5, Major k = 4.0.")
+warmIn    = input.int(20, "Swings needed before odds show", minval = 10, maxval = 60, group = grpE,
+     tooltip = "Per direction. Bigger crypto swings mean fewer swings in the chart's history, so this is lower than the original 30. Higher = steadier odds, longer warm-up.")
+kCustom   = input.float(2.5, "Custom k (ATR multiples)", minval = 0.5, step = 0.1, group = grpE)
+nCustom   = input.int(14, "Custom ATR length", minval = 2, group = grpE)
+srcSel    = input.string("Wicks", "Pivot source", options = ["Wicks", "Closes"], group = grpE,
+     tooltip = "Closes: extremes and retraces use the close only. The ATR always uses the true range.")
+
+grpD = "Display"
+showLv    = input.bool(true, "Extension levels", group = grpD, inline = "lv",
+     tooltip = "Three levels beyond the swing's extreme: of past swings on this chart that got as far as this one and kept going, 50%, 75% and 90% ended before them. Each label shows the chance that price tags the level from here, which also counts the chance that the swing is already over (Top in). The lines move only when the swing makes a new extreme; the odds update every bar. Red over an up swing, green under a down swing.")
+lvLen     = input.int(30, "bars", minval = 5, maxval = 200, group = grpD, inline = "lv")
+showWin   = input.bool(true, "Time window", group = grpD,
+     tooltip = "Faint band over the bars in which half of such swings ended, set at the swing's birth. Dashed once the swing is past it.")
+cardSel   = input.string("Bottom right", "Odds panel", options = ["Bottom right", "Top right", "Bottom left", "Top left", "Off"], group = grpD,
+     tooltip = "Swing size and age, the time window, and the odds as bars, all from this chart's own history.")
+showTags  = input.bool(true, "Structure labels", group = grpD,
+     tooltip = "At each confirmed pivot: HH / LH / HL / LL and the swing size in ATR. Hover for the length in bars.")
+
+grpS = "Style"
+themeSel = input.string("Neon", "Theme", options = ["Neon", "Classic", "Custom"], group = grpS,
+     tooltip = "Neon and Classic set the colours; Custom uses the three below.")
+upIn  = input.color(#00e5b4, "Up", group = grpS, inline = "cu")
+dnIn  = input.color(#ff4d6d, "Down", group = grpS, inline = "cu")
+accIn = input.color(#ffb21e, "Clock", group = grpS, inline = "cu")
+showZig = input.bool(true, "Zigzag", group = grpS, inline = "zig")
+zigT    = input.int(10, "transparency", minval = 0, maxval = 90, group = grpS, inline = "zig")
+glowOn  = input.bool(true, "Glow", group = grpS, inline = "zig")
+tintSel = input.string("Swing", "Candle tint", options = ["Swing", "Kernel trend", "Off"], group = grpS,
+     tooltip = "Swing: bars take the live swing's colour, faint at its birth and full strength as it reaches its 50% level. Kernel trend: bars take the kernel trend colour.")
+showLive = input.bool(true, "Live swing tag", group = grpS)
+color upCol  = themeSel == "Neon" ? #00e5b4 : themeSel == "Classic" ? #26a69a : upIn
+color dnCol  = themeSel == "Neon" ? #ff4d6d : themeSel == "Classic" ? #ef5350 : dnIn
+color accCol = themeSel == "Neon" ? #ffb21e : themeSel == "Classic" ? #f5b041 : accIn
+
+grpK = "Kernel trend"
+showKr   = input.bool(true, "Show kernel lines", group = grpK, inline = "kr")
+krFillOn = input.bool(true, "Fill", group = grpK, inline = "kr")
+krSrc    = input.source(close, "Source", group = grpK)
+krH      = input.int(8, "Lookback window", minval = 3, group = grpK, tooltip = "Recommended 3-50. Higher = slower, smoother trend.")
+krR      = input.float(8.0, "Relative weighting", minval = 0.25, step = 0.25, group = grpK, tooltip = "Recommended 0.25-25. Lower = more weight on longer-term moves.")
+krX      = input.int(25, "Regression level", minval = 2, maxval = 200, group = grpK, tooltip = "Bars used in the estimate. Recommended 2-25.")
+krLag    = input.int(2, "Signal lag", minval = 1, maxval = 10, group = grpK)
+showSig  = input.bool(true, "Confluence signals (swing + trend)", group = grpK,
+     tooltip = "KR ▲: a down swing is in its turn zone (or bottom likely in) and the kernel trend turns up. ✓ ▲: a swing low is confirmed while the kernel trend is up. Mirrored for tops.")
+alKr     = input.bool(true, "Alert on confluence signals", group = grpK)
+alKrTr   = input.bool(false, "Alert on every kernel trend change", group = grpK)
+
+grpA = "Alerts (on bar close; create one alert with 'Any alert() function call')"
+alLevel   = input.bool(true, "Swing tagged a level", group = grpA)
+alOdds    = input.bool(false, "Turn / Conf odds cross", group = grpA, inline = "odds")
+alThr     = input.float(65.0, "%", minval = 1, maxval = 99, group = grpA, inline = "odds")
+alLikely  = input.bool(true, "Top / bottom likely in", group = grpA)
+alConf    = input.bool(true, "Swing confirmed", group = grpA)
+alOverdue = input.bool(false, "Overdue", group = grpA)
+
+grpP = "Parity check"
+startTime = input.time(timestamp("01 Jan 2000 00:00 +0000"), "Start at", group = grpP,
+     tooltip = "Everything (engine, tables) starts on the first bar at or after this time. For parity exports: set it inside the exported range. Otherwise leave the default, which is the chart's first bar.")
+
+// ---------------------------------------------------------------- constants
+bool  IS_CRYPTO = mktSel == "Crypto" or (mktSel == "Auto" and syminfo.type == "crypto")
+float K      = presetSel == "Custom" ? kCustom : IS_CRYPTO ? (presetSel == "Micro" ? 2.0 : presetSel == "Major" ? 5.5 : 3.5) : (presetSel == "Micro" ? 1.5 : presetSel == "Major" ? 4.0 : 2.5)
+int   NATR   = presetSel == "Custom" ? nCustom : 14
+bool  CLOSES = srcSel == "Closes"
+int   DISCARD  = 2                 // v0.2 2.3: the first two confirmed swings are not kept
+float ALPHA    = 0.5               // coverage 50%
+float M_HAZ    = 80.0              // bars; tuned in the study with the twin as the prior, not re-tuned for this build
+float M_BAND   = 25.0
+int   N_POOL   = 10
+int   WARM     = warmIn            // kept swings per direction before forecasts count as ready (original: 30)
+int   N_MAX    = 500
+int   FULL_STEPS = 30
+int   WARM_STEPS = 12
+float DELTA    = 0.5
+int   TF_SEC   = timeframe.in_seconds()
+int   HZN      = TF_SEC <= 60 ? 5 : TF_SEC <= 900 ? 3 : 2     // Turn horizon N (v0.3.1 R2): 1m 5, 5m/15m 3, 30m/1h 2
+int   N_LOW    = 25                // band sample below this: "low sample"
+
+// ---------------------------------------------------------------- comparisons
+// Pine treats floats closer than about 1e-10 as equal in comparisons (measured on the stage-2 ES 1m export,
+// 2026-10-30). The Python reference compares exactly, so every float comparison here goes through these helpers:
+// the difference is scaled far above the tolerance and compared with zero, which is exact for the values used.
+float CMP = 1e20
+gtE(float a, float b) => (a - b) * CMP > 0
+geE(float a, float b) => (a - b) * CMP >= 0
+ltE(float a, float b) => (b - a) * CMP > 0
+leE(float a, float b) => (b - a) * CMP >= 0
+eqE(float a, float b) => (a - b) * CMP == 0
+maxE(float a, float b) => ltE(a, b) ? b : a
+minE(float a, float b) => gtE(a, b) ? b : a
+absE(float a) => ltE(a, 0.0) ? -a : a
+
+// ---------------------------------------------------------------- engine (spec v0.2 2.1-2.4)
+type Engine
+    float k
+    int   n
+    bool  closes  = false
+    int   nTr     = 0
+    float trSum   = 0.0
+    float rma     = na        // RMA(TR, n) before the floor
+    float atr     = na        // after the floor
+    float cPrev   = na
+    bool  started = false
+    int   sid     = 0
+    float dir     = 1.0
+    int   b0      = na
+    float p0      = na
+    float atr0    = na
+    float pe      = na
+    int   be      = na
+    float atre    = na
+    float deep    = na
+    int   birth   = na
+    bool  conf    = false     // a swing was confirmed on this bar
+    int   cB0     = na        // the confirmed swing: pivots, direction, A, D
+    int   cB1     = na
+    float cP0     = na
+    float cP1     = na
+    float cDir    = na
+    float cA      = na
+    int   cD      = na
+
+// One confirmed bar. t = bars since the start; floorV = the ATR floor on this bar (2 mintick).
+method step(Engine e, int t, float h, float l, float c, float floorV) =>
+    // 2.4: TR on the true range in both modes (A14); RMA seeded with the SMA of the first n TRs; floor after the RMA
+    float tr = na(e.cPrev) ? h - l : maxE(maxE(h - l, absE(h - e.cPrev)), absE(l - e.cPrev))
+    e.nTr := e.nTr + 1
+    if e.nTr < e.n
+        e.trSum := e.trSum + tr
+    else if e.nTr == e.n
+        e.rma := (e.trSum + tr) / e.n
+    else
+        e.rma := (e.rma * (e.n - 1) + tr) / e.n
+    e.atr := e.nTr >= e.n ? maxE(e.rma, floorV) : na
+    e.cPrev := c
+    float hh = e.closes ? c : h
+    float ll = e.closes ? c : l
+    e.conf := false
+    if not e.started
+        // 2.3: provisional up swing on the first bar with a defined ATR
+        if not na(e.atr)
+            e.started := true
+            e.dir   := 1.0
+            e.b0    := t
+            e.p0    := ll
+            e.atr0  := e.atr
+            e.pe    := hh
+            e.be    := t
+            e.atre  := e.atr
+            e.deep  := c
+            e.birth := t
+    else
+        // 2.2, written as an up swing on mirrored prices
+        float d     = e.dir
+        float hi    = d > 0 ? hh : -ll
+        float lo    = d > 0 ? ll : -hh
+        float cl    = d > 0 ? c : -c
+        float peU   = e.pe * d
+        float deepU = e.deep * d
+        if gtE(hi, peU)                   // step 1, extension
+            peU    := hi
+            e.be   := t
+            e.atre := e.atr
+            deepU  := cl
+        else                              // step 2
+            deepU := minE(deepU, lo)
+        e.pe   := peU * d
+        e.deep := deepU * d
+        if geE(peU - deepU, e.k * e.atre) // step 3, at most one confirmation per bar
+            e.conf  := true
+            e.cB0   := e.b0
+            e.cB1   := e.be
+            e.cP0   := e.p0
+            e.cP1   := e.pe
+            e.cDir  := d
+            e.cA    := d * (e.pe - e.p0) / e.atr0
+            e.cD    := e.be - e.b0
+            e.sid   := e.sid + 1
+            e.dir   := -d
+            e.p0    := e.pe
+            e.b0    := e.be
+            e.atr0  := e.atre
+            e.pe    := e.deep
+            e.be    := t
+            e.atre  := e.atr
+            e.deep  := c
+            e.birth := t
+    e
+
+// 2.1 state quantities of the live swing on the bar of close c
+method rhoC(Engine e, float c) =>
+    e.dir * (e.pe - c) / (e.k * e.atre)
+method extent(Engine e) =>
+    e.dir * (e.pe - e.p0) / e.atr0
+
+// ---------------------------------------------------------------- tables and records (v0.2 2.6, 4.1; v0.3 B2; v0.3.2 S1)
+// Flat cell index dir*80 + rho*16 + g*4 + r (spec 9); dir index 0 = up, 1 = down. Returns [cell, clipped rho_c, rho bin].
+cellOf(float d, float rhoC, int g, float r) =>
+    float rc = minE(maxE(rhoC, 0.0), 1.0)
+    int ri = math.min(int(rc / 0.2), 4)
+    int gi = g <= 0 ? 0 : g <= 2 ? 1 : g <= 5 ? 2 : 3
+    int xi = ltE(r, 1.5) ? 0 : ltE(r, 2.5) ? 1 : ltE(r, 4.0) ? 2 : 3
+    int di = d > 0 ? 0 : 1
+    [di * 80 + ri * 16 + gi * 4 + xi, rc, ri]
+
+type Book
+    array<float> hz          // 160 cells x 5: n, sum Y_in, sum Y_N, sum Y_C, sum (Y_in - rho_c)
+    array<float> srt0        // sorted A of kept swings, up / down
+    array<float> srt1
+    array<float> ringA0      // ring buffers of A and D, N_MAX per direction
+    array<float> ringA1
+    array<int>   ringD0
+    array<int>   ringD1
+    array<int>   liveT       // the live swing's bars so far: bar, cell, clipped rho_c
+    array<int>   liveC
+    array<float> liveR
+    int pos0  = 0
+    int pos1  = 0
+    int kept0 = 0
+    int kept1 = 0
+
+newBook() =>
+    Book.new(array.new<float>(800, 0.0), array.new<float>(), array.new<float>(), array.new<float>(), array.new<float>(),
+         array.new<int>(), array.new<int>(), array.new<int>(), array.new<int>(), array.new<float>())
+
+addAt(array<float> a, int i, float v) =>
+    array.set(a, i, array.get(a, i) + v)
+
+// number of stored values <= x, and < x (sorted array)
+countLE(array<float> s, float x) =>
+    int lo = 0
+    int hi = array.size(s)
+    while lo < hi
+        int mid = int((lo + hi) / 2)
+        if leE(array.get(s, mid), x)
+            lo := mid + 1
+        else
+            hi := mid
+    lo
+countLT(array<float> s, float x) =>
+    int lo = 0
+    int hi = array.size(s)
+    while lo < hi
+        int mid = int((lo + hi) / 2)
+        if ltE(array.get(s, mid), x)
+            lo := mid + 1
+        else
+            hi := mid
+    lo
+countX(array<float> s, float x, bool left) =>
+    int n = 0
+    if left
+        n := countLT(s, x)
+    else
+        n := countLE(s, x)
+    n
+
+method insertRec(Book bk, int di, float A, int D) =>
+    array<float> srt = di == 0 ? bk.srt0 : bk.srt1
+    array<float> ra  = di == 0 ? bk.ringA0 : bk.ringA1
+    array<int>   rd  = di == 0 ? bk.ringD0 : bk.ringD1
+    int pos = di == 0 ? bk.pos0 : bk.pos1
+    if array.size(ra) == N_MAX
+        float old = array.get(ra, pos)
+        array.remove(srt, countLT(srt, old))
+        array.set(ra, pos, A)
+        array.set(rd, pos, D)
+    else
+        array.push(ra, A)
+        array.push(rd, D)
+    if di == 0
+        bk.pos0 := (pos + 1) % N_MAX
+    else
+        bk.pos1 := (pos + 1) % N_MAX
+    array.insert(srt, countLE(srt, A), A)
+
+// Coarser tables the cells shrink toward (they replace the twin as the prior):
+var array<float> margR = array.new<float>(40, 0.0)     // rho_c margin [dir, rho bin]: n, sum Y_N, sum Y_C, sum (Y_in - rho_c)
+var array<float> baseR = array.new<float>(6, 0.0)      // direction base rate [dir]: n, sum Y_N, sum Y_C
+
+// After e.step() on bar t: a swing confirmed on t enters the tables and records (spec 5: before the forecast of t),
+// then bar t joins the live swing's list. Each labelled bar adds 1 to its cell's n and Y to its sums (S1).
+method absorb(Book bk, Engine e, int t, float c) =>
+    if e.started
+        if e.conf
+            int n = array.size(bk.liveT)
+            if e.sid - 1 >= DISCARD and n > 0
+                int di = e.cDir > 0 ? 0 : 1
+                if di == 0
+                    bk.kept0 := bk.kept0 + 1
+                else
+                    bk.kept1 := bk.kept1 + 1
+                for i = 0 to n - 1
+                    int tt   = array.get(bk.liveT, i)
+                    int cc   = array.get(bk.liveC, i)
+                    float rv = array.get(bk.liveR, i)
+                    float yin = e.cB1 <= tt ? 1.0 : 0.0
+                    float yn  = e.cB1 <= tt + HZN ? 1.0 : 0.0
+                    float yc  = t <= tt + HZN ? 1.0 : 0.0
+                    addAt(bk.hz, cc * 5, 1.0)
+                    addAt(bk.hz, cc * 5 + 1, yin)
+                    addAt(bk.hz, cc * 5 + 2, yn)
+                    addAt(bk.hz, cc * 5 + 3, yc)
+                    addAt(bk.hz, cc * 5 + 4, yin - rv)
+                    int rb = math.min(int(rv / 0.2), 4)
+                    int mi = (di * 5 + rb) * 4
+                    addAt(margR, mi, 1.0)
+                    addAt(margR, mi + 1, yn)
+                    addAt(margR, mi + 2, yc)
+                    addAt(margR, mi + 3, yin - rv)
+                    addAt(baseR, di * 3, 1.0)
+                    addAt(baseR, di * 3 + 1, yn)
+                    addAt(baseR, di * 3 + 2, yc)
+                bk.insertRec(di, e.cA, e.cD)
+            array.clear(bk.liveT)
+            array.clear(bk.liveC)
+            array.clear(bk.liveR)
+        [cell, rc, ri] = cellOf(e.dir, e.rhoC(c), t - e.be, e.extent() / e.k)
+        array.push(bk.liveT, t)
+        array.push(bk.liveC, cell)
+        array.push(bk.liveR, rc)
+    bk
+
+// ---------------------------------------------------------------- band (v0.2 4.2; v0.3 B3; v0.3.1 R4, R9; v0.3.2 S3)
+// {A > a} subset of the records: [pooled with the other direction, count base, n]
+subset(Book bk, int di, float a) =>
+    array<float> own = di == 0 ? bk.srt0 : bk.srt1
+    array<float> oth = di == 0 ? bk.srt1 : bk.srt0
+    int le    = countLE(own, a)
+    int nOwn  = array.size(own) - le
+    bool pooled = nOwn < N_POOL
+    int base  = le
+    int n     = nOwn
+    if pooled
+        int le2 = countLE(oth, a)
+        base := le + le2
+        n    := nOwn + array.size(oth) - le2
+    [pooled, base, n]
+
+// excess CDF G(x) (left: the left limit G(x-)): the empirical CDF of this chart's records blended toward Exp(mu)
+gExcess(float x, float a, float mu, int di, Book bk, bool pr, int br, int nr, bool left) =>
+    float g0 = 1.0 - math.exp(-x / mu)
+    float g = g0
+    if nr > 0
+        float ax = a + x
+        int cnt = countX(di == 0 ? bk.srt0 : bk.srt1, ax, left) - br
+        if pr
+            cnt := cnt + countX(di == 0 ? bk.srt1 : bk.srt0, ax, left)
+        float w = nr / (nr + M_BAND)
+        g := w * (float(cnt) / nr) + (1.0 - w) * g0
+    g
+
+gMix(float x, float p, float a, float mu, int di, Book bk, bool pr, int br, int nr) =>
+    p + (1.0 - p) * gExcess(x, a, mu, di, bk, pr, br, nr, false)
+
+// chance of a tag from here: the swing keeps going (1 - P_in) and its final extent reaches the level,
+// P(A >= lv) = (1 - P_in) * (1 - G((lv - a)-)); 1 when the level is at or inside the extreme already
+tagOdds(float lv, float a, float p, float mu, int di, Book bk, bool pr, int br, int nr) =>
+    float out = na
+    if not na(lv)
+        out := leE(lv, a) ? 1.0 : (1.0 - p) * (1.0 - gExcess(lv - a, a, mu, di, bk, pr, br, nr, true))
+    out
+
+// R4 with step 0 (S3): x = 0 exactly when u <= P_in; otherwise bisection, warm-started from the previous bar's x (pine_mode)
+solveX(float u, float p, float a, float mu, int di, Book bk, bool pr, int br, int nr, bool warm, float xPrev) =>
+    float x = 0.0
+    if gtE(u, p)
+        float lo = 0.0
+        float hi = 1.0
+        int steps = FULL_STEPS
+        if warm
+            float d = DELTA
+            bool found = false
+            while not found
+                lo := maxE(0.0, xPrev - d)
+                hi := xPrev + d
+                if leE(gMix(lo, p, a, mu, di, bk, pr, br, nr), u) and leE(u, gMix(hi, p, a, mu, di, bk, pr, br, nr))
+                    found := true
+                else
+                    d := d * 2.0
+            steps := WARM_STEPS
+        else
+            while ltE(gMix(hi, p, a, mu, di, bk, pr, br, nr), u)
+                hi := hi * 2.0
+        for i = 1 to steps
+            float mid = 0.5 * (lo + hi)
+            if geE(gMix(mid, p, a, mu, di, bk, pr, br, nr), u)
+                hi := mid
+            else
+                lo := mid
+        x := 0.5 * (lo + hi)
+    x
+
+// ---------------------------------------------------------------- window (v0.2 4.3; v0.3 A9), at each swing's birth
+// D of the records with A > a and D > d: own direction, the other direction added while fewer than N_POOL
+windowVals(Book bk, int di, float a, int d) =>
+    array<float> v = array.new<float>()
+    for side = 0 to 1
+        int dd = side == 0 ? di : 1 - di
+        if side == 1 and array.size(v) >= N_POOL
+            break
+        array<float> ra = dd == 0 ? bk.ringA0 : bk.ringA1
+        array<int>   rd = dd == 0 ? bk.ringD0 : bk.ringD1
+        int n = array.size(ra)
+        if n > 0
+            for i = 0 to n - 1
+                if gtE(array.get(ra, i), a) and array.get(rd, i) > d
+                    array.push(v, float(array.get(rd, i)))
+    array.sort(v, order.ascending)
+    v
+
+// Quantile at level u of the mixture: the terminal is the extreme so far (d_ext) with probability p, otherwise
+// drawn from the sorted values s; na when s is empty
+windowQ(float u, float p, float dExt, array<float> s) =>
+    float out = na
+    if leE(u, p)
+        out := dExt
+    else
+        int n = array.size(s)
+        if n > 0
+            float v = (u - p) / (1.0 - p)
+            int i = 0
+            while i < n and na(out)
+                float xq = array.get(s, i)
+                if geE(float(countLE(s, xq)) / n, v - 1e-12)
+                    out := xq
+                i := i + 1
+    out
+
+// ---------------------------------------------------------------- state (confirmed bars only)
+var Engine real = Engine.new(k = K, n = NATR, closes = CLOSES)
+var Book bkR = newBook()
+var int   startBar = na
+var line  liveLeg = na
+var line  liveGlow = na
+// forecast outputs of the last confirmed bar
+var float fCell = na
+var float fPin = na
+var float fPn = na
+var float fPc = na
+var float fLo = na
+var float fHi = na
+var float fDlo = na
+var float fDhi = na
+var float fMass = na
+var float fNband = na
+var float fReady = na
+var int   lastSid = -1
+var float lastA = na
+var array<float> xp = array.new<float>(3, 0.0)   // warm-start chains: lo, hi, 1 - alpha
+// window of the live swing, set at its birth
+var float wLo = na
+var float wHi = na
+// display band at the live swing's birth, for the confirmation alert
+var float bDlo = na
+var float bDhi = na
+// display state of the last confirmed bar
+var float prevPn = na
+var float prevPc = na
+var bool  stInZone = false
+var bool  stLikely = false
+var bool  stOverdue = false
+var float zA = na                 // display band in price
+var float zB = na
+// drawing and alerts only: extension levels in ATR from p0, set on each new extreme, the previous bar's levels,
+// and the drawings kept in rings
+var float fL50 = na
+var float fL75 = na
+var float fL90 = na
+var float fT50 = na              // chance of a tag from here, per level
+var float fT75 = na
+var float fT90 = na
+var array<float> lvPrev = array.new<float>(3, na)
+var array<line>  legs   = array.new<line>()
+var array<label> tags   = array.new<label>()
+var array<line>  glows  = array.new<line>()
+var float lastHiP = na
+var float lastLoP = na
+var color tintCol = na
+
+if barstate.isconfirmed and na(startBar) and time >= startTime
+    startBar := bar_index
+
+if barstate.isconfirmed and not na(startBar)
+    int t = bar_index - startBar
+    real.step(t, high, low, close, 2.0 * syminfo.mintick)
+    bkR.absorb(real, t, close)
+
+    // ------------------------------------------------------------ the swing confirmed on t: alert and structure label
+    // Before the forecast of t, which overwrites the window and the birth band at the new swing's birth.
+    if real.conf
+        float A = real.cA
+        bool zoneHitBirth = not na(bDlo) and leE(bDlo, A) and leE(A, bDhi)
+        bool winOk = not na(wLo) and not na(wHi)
+        bool winHit = winOk ? leE(wLo, real.cD) and leE(real.cD, wHi) : false
+        if alConf and real.sid - 1 >= DISCARD
+            alert((real.cDir > 0 ? "Swing Exhaustion: up swing confirmed, " : "Swing Exhaustion: down swing confirmed, ") + str.tostring(A, "0.00") + " ATR. Zone at birth " + (zoneHitBirth ? "hit" : "missed") + ", window " + (winOk ? (winHit ? "hit" : "missed") : "n/a") + ".", alert.freq_once_per_bar_close)
+        bool isHi = real.cDir > 0
+        string sTag = isHi ? (na(lastHiP) or gtE(real.cP1, lastHiP) ? "HH" : "LH") : (na(lastLoP) or ltE(real.cP1, lastLoP) ? "LL" : "HL")
+        if isHi
+            lastHiP := real.cP1
+        else
+            lastLoP := real.cP1
+        if showTags and real.sid - 1 >= DISCARD
+            color tagC = sTag == "HH" or sTag == "HL" ? upCol : dnCol
+            array.push(tags, label.new(startBar + real.cB1, real.cP1, sTag + " · " + str.tostring(A, "0.0") + "×",
+                 style = isHi ? label.style_label_down : label.style_label_up, color = color.new(tagC, 10), textcolor = color.black, size = size.tiny,
+                 tooltip = (isHi ? "Up" : "Down") + " swing: " + str.tostring(A, "0.00") + " ATR in " + str.tostring(real.cD) + " bars"))
+            if array.size(tags) > 120
+                label.delete(array.shift(tags))
+
+    // ------------------------------------------------------------ forecast of bar t (v0.3 B2: residual form; S1: m in bars)
+    // Shrinkage chain: cell -> rho_c margin (direction, rho bin) -> direction base rate (-> 0.5 before any data).
+    // Top in: rho_c plus a residual, the cell's residual shrunk toward the margin's, which is shrunk toward 0.
+    if real.started
+        float d = real.dir
+        int di = d > 0 ? 0 : 1
+        [c, rc, ri] = cellOf(d, real.rhoC(close), t - real.be, real.extent() / K)
+        float nb  = array.get(baseR, di * 3)
+        float pbN = nb > 0 ? array.get(baseR, di * 3 + 1) / nb : 0.5
+        float pbC = nb > 0 ? array.get(baseR, di * 3 + 2) / nb : 0.5
+        int mi = (di * 5 + ri) * 4
+        float nm   = array.get(margR, mi)
+        float pmN  = (array.get(margR, mi + 1) + M_HAZ * pbN) / (nm + M_HAZ)
+        float pmC  = (array.get(margR, mi + 2) + M_HAZ * pbC) / (nm + M_HAZ)
+        float resM = array.get(margR, mi + 3) / (nm + M_HAZ)
+        float n0 = array.get(bkR.hz, c * 5)
+        float pIn = minE(maxE(rc + (array.get(bkR.hz, c * 5 + 4) + M_HAZ * resM) / (n0 + M_HAZ), 0.0), 1.0)
+        fCell := c
+        fPin  := pIn
+        fPn   := (array.get(bkR.hz, c * 5 + 2) + M_HAZ * pmN) / (n0 + M_HAZ)
+        fPc   := (array.get(bkR.hz, c * 5 + 3) + M_HAZ * pmC) / (n0 + M_HAZ)
+        bool ready = bkR.kept0 >= WARM and bkR.kept1 >= WARM
+        fReady := ready ? 1.0 : 0.0
+        bool birth = real.sid != lastSid
+        // bands
+        float a  = real.extent()
+        float mu = K * real.atre / real.atr0
+        [pr, br, nr] = subset(bkR, di, a)
+        fNband := nr
+        bool warm = not birth and eqE(a, lastA)
+        float aPrev = lastA
+        lastA := a
+        array.set(xp, 0, solveX(ALPHA / 2, pIn, a, mu, di, bkR, pr, br, nr, warm, array.get(xp, 0)))
+        array.set(xp, 1, solveX(1 - ALPHA / 2, pIn, a, mu, di, bkR, pr, br, nr, warm, array.get(xp, 1)))
+        array.set(xp, 2, solveX(1 - ALPHA, pIn, a, mu, di, bkR, pr, br, nr, warm, array.get(xp, 2)))
+        fLo := a + array.get(xp, 0)
+        fHi := a + array.get(xp, 1)
+        // display band and its stated mass F(hi) - F(lo-) (v0.3 B3, v0.3.1 R9)
+        if ltE(pIn, ALPHA / 2)
+            fDlo  := fLo
+            fDhi  := fHi
+            fMass := (1.0 - pIn) * (gExcess(array.get(xp, 1), a, mu, di, bkR, pr, br, nr, false) - gExcess(array.get(xp, 0), a, mu, di, bkR, pr, br, nr, true))
+        else if ltE(pIn, 1 - ALPHA)
+            fDlo  := a
+            fDhi  := a + array.get(xp, 2)
+            fMass := pIn + (1.0 - pIn) * gExcess(array.get(xp, 2), a, mu, di, bkR, pr, br, nr, false)
+        else
+            fDlo  := a
+            fDhi  := a
+            fMass := pIn
+        // extension levels: quantiles of A given A > a, i.e. the band's excess distribution with P_in set to 0 (full solve).
+        // Set at birth and on each new extreme, then held, so they step with the swing instead of drifting every bar.
+        if birth or not eqE(a, aPrev)
+            fL50 := a + solveX(0.50, 0.0, a, mu, di, bkR, pr, br, nr, false, 0.0)
+            fL75 := a + solveX(0.75, 0.0, a, mu, di, bkR, pr, br, nr, false, 0.0)
+            fL90 := a + solveX(0.90, 0.0, a, mu, di, bkR, pr, br, nr, false, 0.0)
+        // chance of a tag from here, every bar (P_in moves even when the levels do not)
+        fT50 := tagOdds(fL50, a, pIn, mu, di, bkR, pr, br, nr)
+        fT75 := tagOdds(fL75, a, pIn, mu, di, bkR, pr, br, nr)
+        fT90 := tagOdds(fL90, a, pIn, mu, di, bkR, pr, br, nr)
+        // birth checkpoint: the first bar of the live swing
+        if birth
+            lastSid := real.sid
+            float dExt = real.be - real.b0
+            int age = t - real.b0
+            array<float> vR = windowVals(bkR, di, a, age)
+            wLo    := windowQ(ALPHA / 2, pIn, dExt, vR)
+            wHi    := windowQ(1 - ALPHA / 2, pIn, dExt, vR)
+            bDlo   := fDlo
+            bDhi   := fDhi
+        // display state and alerts (v0.2 6; v0.3 A25: likely in when P_in >= 1 - alpha, where the display band collapses)
+        float zA1 = real.p0 + d * fDlo * real.atr0
+        float zB1 = real.p0 + d * fDhi * real.atr0
+        bool inZone  = leE(math.min(zA1, zB1), close) and leE(close, math.max(zA1, zB1))
+        bool likely  = geE(fPin, 1 - ALPHA)
+        bool overdue = not na(wHi) and t > real.b0 + wHi
+        float thr = alThr / 100
+        if ready
+            // passed: the new extent beyond the previous bar's level, where that level was still ahead of the extreme
+            if alLevel and not birth
+                for i = 0 to 2
+                    float lp = array.get(lvPrev, i)
+                    if not na(lp) and gtE(lp, aPrev) and gtE(a, lp)
+                        alert("Swing Exhaustion: " + (d > 0 ? "up" : "down") + " swing tagged the " + str.tostring(real.p0 + d * lp * real.atr0, format.mintick) + " level (" + (i == 0 ? "inner" : i == 1 ? "middle" : "outer") + ", " + str.tostring(a, "0.0") + " ATR).", alert.freq_once_per_bar_close)
+            if alLikely and likely and not stLikely
+                alert("Swing Exhaustion: " + (d > 0 ? "top" : "bottom") + " likely in (" + str.tostring(fPin * 100, "0") + "%).", alert.freq_once_per_bar_close)
+            if alOverdue and overdue and not stOverdue
+                alert("Swing Exhaustion: swing overdue (past the window's end).", alert.freq_once_per_bar_close)
+            if alOdds and not birth and geE(fPn, thr) and ltE(prevPn, thr)
+                alert("Swing Exhaustion: Turn <= " + str.tostring(HZN) + " bars at " + str.tostring(fPn * 100, "0") + "%.", alert.freq_once_per_bar_close)
+            if alOdds and not birth and geE(fPc, thr) and ltE(prevPc, thr)
+                alert("Swing Exhaustion: Conf <= " + str.tostring(HZN) + " bars at " + str.tostring(fPc * 100, "0") + "%.", alert.freq_once_per_bar_close)
+        stInZone  := inZone
+        stLikely  := likely
+        stOverdue := overdue
+        zA := zA1
+        zB := zB1
+        prevPn := fPn
+        prevPc := fPc
+        array.set(lvPrev, 0, fL50)
+        array.set(lvPrev, 1, fL75)
+        array.set(lvPrev, 2, fL90)
+        float prog = not na(fL50) and gtE(fL50, 0.0) ? math.max(math.min(a / fL50, 1.0), 0.0) : 0.5
+        tintCol := color.new(d > 0 ? upCol : dnCol, 65 - 55 * prog)
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+    // ------------------------------------------------------------ zigzag: confirmed legs solid, the live leg dashed
+    // kept in a ring below the drawing limit, so TradingView never deletes the live leg as the oldest line
+    // glow: a wide faint line under each leg; both rings stay below the 500-line limit with the levels
+    if real.conf
+        color cc = real.dir > 0 ? dnCol : upCol
+        array.push(legs, line.new(real.cB0 + startBar, real.cP0, real.cB1 + startBar, real.cP1, color = showZig ? color.new(cc, zigT) : color.new(color.gray, 100), width = 2))
+        if glowOn and showZig
+            array.push(glows, line.new(real.cB0 + startBar, real.cP0, real.cB1 + startBar, real.cP1, color = color.new(cc, 84), width = 6))
+        if array.size(legs) > 220
+            line.delete(array.shift(legs))
+        if array.size(glows) > 220
+            line.delete(array.shift(glows))
+    if real.started
+        color lc = real.dir > 0 ? upCol : dnCol
+        color legCol = showZig ? color.new(lc, zigT) : color.new(color.gray, 100)
+        if na(liveLeg)
+            liveLeg  := line.new(real.b0 + startBar, real.p0, real.be + startBar, real.pe, color = legCol, width = 2, style = line.style_dashed)
+            liveGlow := line.new(real.b0 + startBar, real.p0, real.be + startBar, real.pe, color = color.new(lc, 100), width = 6)
+        line.set_xy1(liveLeg, real.b0 + startBar, real.p0)
+        line.set_xy2(liveLeg, real.be + startBar, real.pe)
+        line.set_color(liveLeg, legCol)
+        line.set_xy1(liveGlow, real.b0 + startBar, real.p0)
+        line.set_xy2(liveGlow, real.be + startBar, real.pe)
+        line.set_color(liveGlow, glowOn and showZig ? color.new(lc, 84) : color.new(lc, 100))
+
+// ---------------------------------------------------------------- kernel trend (Nadaraya-Watson: rational quadratic + gaussian)
+// Same maths as jdehorty/KernelFunctions, written inline so no library import is needed. Past bars only: no repaint on closed bars.
+krRQ(float s, int lb, float rw, int st) =>
+    float cw = 0.0
+    float sw = 0.0
+    for i = 0 to st + 1
+        float w = math.pow(1.0 + (i * i) / (math.pow(lb, 2) * 2.0 * rw), -rw)
+        cw += s[i] * w
+        sw += w
+    cw / sw
+krGauss(float s, int lb, int st) =>
+    float cw = 0.0
+    float sw = 0.0
+    for i = 0 to st + 1
+        float w = math.exp(-(i * i) / (2.0 * math.pow(lb, 2)))
+        cw += s[i] * w
+        sw += w
+    cw / sw
+
+float krEst    = krRQ(krSrc, krH, krR, krX)
+float krSig    = krGauss(krSrc, math.max(1, krH - krLag), krX)
+bool  krBull   = krEst > krEst[1]
+bool  krUpTurn = krBull and not krBull[1]
+bool  krDnTurn = not krBull and krBull[1]
+color krCol    = krBull ? upCol : dnCol
+
+pK1 = plot(showKr ? krEst : na, "Kernel estimate", color = krCol, linewidth = 2)
+pK2 = plot(showKr ? krSig : na, "Kernel signal", color = color.new(color.silver, 40), linewidth = 1)
+fill(pK1, pK2, color = showKr and krFillOn ? color.new(krCol, 80) : na, title = "Kernel fill")
+
+// confluence (closed bars only): the swing clock's turn odds + the kernel trend
+bool oddsReady = nz(fReady) == 1
+bool turnArea  = stLikely or stInZone or geE(nz(fPin), 0.5)
+bool sigBull   = barstate.isconfirmed and real.started and oddsReady and real.dir < 0 and krUpTurn and turnArea
+bool sigBear   = barstate.isconfirmed and real.started and oddsReady and real.dir > 0 and krDnTurn and turnArea
+bool sigBullC  = barstate.isconfirmed and real.conf and real.cDir < 0 and real.sid - 1 >= DISCARD and krBull
+bool sigBearC  = barstate.isconfirmed and real.conf and real.cDir > 0 and real.sid - 1 >= DISCARD and not krBull
+
+plotshape(showSig and sigBull,  "Bull confluence (turn zone + trend up)",   shape.triangleup,   location.belowbar, upCol, size = size.small, text = "KR")
+plotshape(showSig and sigBear,  "Bear confluence (turn zone + trend down)", shape.triangledown, location.abovebar, dnCol, size = size.small, text = "KR")
+plotshape(showSig and sigBullC, "Swing low confirmed with trend",  shape.labelup,   location.belowbar, color.new(upCol, 20), size = size.tiny, text = "✓", textcolor = color.black)
+plotshape(showSig and sigBearC, "Swing high confirmed with trend", shape.labeldown, location.abovebar, color.new(dnCol, 20), size = size.tiny, text = "✓", textcolor = color.black)
+
+if alKr and sigBull
+    alert("CTZ Swing Exhaustion: BULL confluence — down swing in its turn zone and the kernel trend turned up at " + str.tostring(close, format.mintick), alert.freq_once_per_bar_close)
+if alKr and sigBear
+    alert("CTZ Swing Exhaustion: BEAR confluence — up swing in its turn zone and the kernel trend turned down at " + str.tostring(close, format.mintick), alert.freq_once_per_bar_close)
+if alKr and sigBullC
+    alert("CTZ Swing Exhaustion: swing LOW confirmed with the kernel trend up", alert.freq_once_per_bar_close)
+if alKr and sigBearC
+    alert("CTZ Swing Exhaustion: swing HIGH confirmed with the kernel trend down", alert.freq_once_per_bar_close)
+if alKrTr and barstate.isconfirmed and (krUpTurn or krDnTurn)
+    alert("CTZ Swing Exhaustion: kernel trend turned " + (krUpTurn ? "UP" : "DOWN") + " at " + str.tostring(close, format.mintick), alert.freq_once_per_bar_close)
+
+// ---------------------------------------------------------------- display (last bar)
+pct(float v) =>
+    na(v) ? "–" : str.tostring(v * 100, "0") + "%"
+px(float v) =>
+    str.tostring(v, format.mintick)
+// meter: 10 cells on a gradient from faint to full colour
+meterRow(table tb, int r, string k, float p, string v, string sub, color c) =>
+    color fg = chart.fg_color
+    table.cell(tb, 0, r, k, text_color = color.new(fg, 25), text_size = size.small, text_halign = text.align_left)
+    int n = na(p) ? 0 : int(math.round(math.max(math.min(p, 1.0), 0.0) * 10))
+    for i = 1 to 10
+        color on = color.from_gradient(i, 1, 10, color.new(c, 70), color.new(c, 0))
+        table.cell(tb, i, r, "", width = 0.6, bgcolor = i <= n ? on : color.new(fg, 92))
+    table.cell(tb, 11, r, v, text_color = n > 0 ? c : fg, text_size = size.small, text_halign = text.align_right, text_font_family = font.family_monospace)
+    table.cell(tb, 12, r, sub, text_color = color.new(fg, 55), text_size = size.tiny, text_halign = text.align_left)
+    r + 1
+
+
+var array<line>  lvLines = array.new<line>()
+var array<label> lvLbls  = array.new<label>()
+var array<box>   zones   = array.new<box>()
+var box   winBox  = na
+var box   clkDone = na
+var box   clkLeft = na
+var label clkLbl  = na
+var label liveTag = na
+string panelAt = cardSel == "Top right" ? position.top_right : cardSel == "Bottom left" ? position.bottom_left : cardSel == "Top left" ? position.top_left : position.bottom_right
+var table panel = table.new(panelAt, 13, 10, bgcolor = color.new(chart.bg_color, 0), frame_color = color.new(chart.fg_color, 85), frame_width = 1, border_color = color.new(chart.bg_color, 0), border_width = 2)
+
+if barstate.islast and real.started and not na(fDlo)
+    float d = real.dir
+    int tNow = bar_index - startBar
+    bool warmUp = fReady < 1
+    bool lowN = fNband < N_LOW
+    color sc = d > 0 ? upCol : dnCol                                   // the swing
+    color zc = warmUp or lowN ? color.gray : d > 0 ? dnCol : upCol     // where it turns
+    bool hasWin = not na(wLo) and not na(wHi)
+    int ws = hasWin ? real.b0 + int(wLo) : na
+    int we = hasWin ? real.b0 + int(wHi) : na
+    string wTxt = "no window yet"
+    string wVal = "–"
+    string wSub = ""
+    float wFrac = na
+    if hasWin
+        wTxt := tNow < ws ? "opens in " + str.tostring(ws - tNow) + " bars" : tNow <= we ? str.tostring(we - tNow) + " bars left" : "overdue " + str.tostring(tNow - we) + " bars"
+        wVal := tNow < ws ? "in " + str.tostring(ws - tNow) : tNow <= we ? str.tostring(we - tNow) : "+" + str.tostring(tNow - we)
+        wSub := tNow < ws ? "bars" : tNow <= we ? "bars left" : "overdue"
+        wFrac := we > ws ? math.max(math.min(float(tNow - ws) / float(we - ws), 1.0), 0.0) : tNow >= ws ? 1.0 : 0.0
+    // target zones: filled bands from the extreme to 50%, 50-75%, 75-90%, fading outward, edged by the level lines
+    array<float> lv = array.from(fL50, fL75, fL90)
+    array<string> nm = array.from("50%", "75%", "90%")
+    array<float> tg = array.from(fT50, fT75, fT90)
+    int x0 = startBar + real.be
+    int x1 = bar_index + lvLen
+    string carry = ""
+    float yFar = real.pe
+    float yPrev = real.pe
+    for i = 0 to 2
+        if array.size(lvLines) <= i
+            array.push(lvLines, line.new(x0, real.pe, x1, real.pe))
+            array.push(lvLbls, label.new(x1, real.pe, "", style = label.style_label_left, size = size.small, text_font_family = font.family_monospace))
+            array.push(zones, box.new(x0, real.pe, x1, real.pe, border_width = 1))
+        line ln = array.get(lvLines, i)
+        label lb = array.get(lvLbls, i)
+        box zb = array.get(zones, i)
+        float xa = array.get(lv, i)
+        bool ok = showLv and not warmUp and not na(xa)
+        float y = ok ? real.p0 + d * xa * real.atr0 : real.pe
+        bool merge = ok and i < 2 and not na(array.get(lv, i + 1)) and eqE(xa, array.get(lv, i + 1))
+        string share = carry + array.get(nm, i)
+        carry := merge ? share + " · " : ""
+        if ok
+            yFar := y
+        line.set_xy1(ln, x0, y)
+        line.set_xy2(ln, x1, y)
+        line.set_style(ln, i == 0 ? line.style_solid : i == 1 ? line.style_dashed : line.style_dotted)
+        line.set_width(ln, i == 0 ? 2 : 1)
+        line.set_color(ln, ok ? color.new(zc, i == 0 ? 0 : i == 1 ? 25 : 45) : color.new(zc, 100))
+        box.set_lefttop(zb, x0, math.max(yPrev, y))
+        box.set_rightbottom(zb, x1, math.min(yPrev, y))
+        box.set_bgcolor(zb, ok ? color.new(zc, i == 0 ? 76 : i == 1 ? 86 : 93) : color.new(zc, 100))
+        box.set_border_color(zb, color.new(zc, 100))
+        bool show = ok and not merge
+        label.set_xy(lb, x1, y)
+        label.set_text(lb, show ? px(y) + "  ·  " + pct(array.get(tg, i)) : "")
+        label.set_color(lb, show ? color.new(zc, i == 0 ? 0 : i == 1 ? 40 : 62) : color.new(zc, 100))
+        label.set_textcolor(lb, show ? (i == 0 ? color.black : color.white) : color.new(zc, 100))
+        label.set_tooltip(lb, pct(array.get(tg, i)) + " chance price reaches " + px(y) + " from here. Of past swings that got this far and kept going, " + share + " ended before this level.")
+        if ok
+            yPrev := y
+    // time window with a clock strip on top: filled up to the live bar, the rest outlined
+    if showWin and hasWin and not warmUp
+        int wl = startBar + ws
+        int wr = math.min(math.max(startBar + we, wl + 1), bar_index + 499)
+        float padW = 0.25 * real.atr0
+        float wt = math.max(real.pe, yFar) + padW
+        float wb = math.min(real.pe, yFar) - padW
+        float sH = 0.22 * real.atr0
+        int wn = math.min(math.max(bar_index, wl), wr)
+        color ac = stOverdue ? dnCol : accCol
+        if na(winBox)
+            winBox  := box.new(wl, wt, wr, wb, border_width = 1)
+            clkLeft := box.new(wl, wt + sH, wr, wt, border_width = 1)
+            clkDone := box.new(wl, wt + sH, wl, wt, border_width = 1)
+            clkLbl  := label.new(wr, wt + sH / 2, "", style = label.style_label_left, color = color.new(color.black, 100), size = size.small, text_font_family = font.family_monospace)
+        box.set_lefttop(winBox, wl, wt)
+        box.set_rightbottom(winBox, wr, wb)
+        box.set_bgcolor(winBox, color.new(ac, 94))
+        box.set_border_color(winBox, color.new(ac, 60))
+        box.set_border_style(winBox, stOverdue ? line.style_dashed : line.style_dotted)
+        box.set_lefttop(clkLeft, wl, wt + sH)
+        box.set_rightbottom(clkLeft, wr, wt)
+        box.set_bgcolor(clkLeft, color.new(ac, 88))
+        box.set_border_color(clkLeft, color.new(ac, 40))
+        box.set_lefttop(clkDone, wl, wt + sH)
+        box.set_rightbottom(clkDone, wn, wt)
+        box.set_bgcolor(clkDone, wn > wl ? color.new(ac, 10) : color.new(ac, 100))
+        box.set_border_color(clkDone, wn > wl ? color.new(ac, 10) : color.new(ac, 100))
+        label.set_xy(clkLbl, wr, wt + sH / 2)
+        label.set_text(clkLbl, "◷ " + wTxt)
+        label.set_textcolor(clkLbl, ac)
+    else if not na(winBox)
+        box.set_bgcolor(winBox, color.new(zc, 100))
+        box.set_border_color(winBox, color.new(zc, 100))
+        box.set_bgcolor(clkLeft, color.new(zc, 100))
+        box.set_border_color(clkLeft, color.new(zc, 100))
+        box.set_bgcolor(clkDone, color.new(zc, 100))
+        box.set_border_color(clkDone, color.new(zc, 100))
+        label.set_text(clkLbl, "")
+    // live swing tag beside the last bar
+    if showLive
+        string lt = (d > 0 ? "▲ " : "▼ ") + str.tostring(real.extent(), "0.0") + "×  ·  " + str.tostring(tNow - real.b0) + " bars" + (warmUp ? "" : "\n" + (d > 0 ? "Top in " : "Bottom in ") + pct(fPin))
+        if na(liveTag)
+            liveTag := label.new(bar_index + 3, close, "", style = label.style_label_left, size = size.small, text_font_family = font.family_monospace)
+        label.set_xy(liveTag, bar_index + 3, close)
+        label.set_text(liveTag, lt)
+        label.set_color(liveTag, color.new(sc, 5))
+        label.set_textcolor(liveTag, color.black)
+    else if not na(liveTag)
+        label.delete(liveTag)
+        liveTag := na
+    // odds panel (v0.2 6; no edge marker, v0.3 A5): a corner table, so it never covers price
+    if cardSel != "Off"
+        table.clear(panel, 0, 0, 12, 9)
+        color fg = chart.fg_color
+        string hz = str.tostring(HZN)
+        string krTxt = (krBull ? "▲ KERNEL TREND UP" : "▼ KERNEL TREND DOWN") + "  ·  " + ((d > 0) == krBull ? "swing WITH trend" : "swing AGAINST trend")
+        table.cell(panel, 0, 0, "◷  SWING EXHAUSTION", text_color = color.new(fg, 40), text_size = size.tiny, text_halign = text.align_left)
+        table.merge_cells(panel, 0, 0, 6, 0)
+        table.cell(panel, 7, 0, d > 0 ? "▲  UP SWING" : "▼  DOWN SWING", text_color = color.black, bgcolor = sc, text_size = size.small)
+        table.merge_cells(panel, 7, 0, 12, 0)
+        table.cell(panel, 0, 1, str.tostring(real.extent(), "0.0") + " ATR", text_color = sc, text_size = size.large, text_halign = text.align_left, text_font_family = font.family_monospace)
+        table.merge_cells(panel, 0, 1, 6, 1)
+        table.cell(panel, 7, 1, str.tostring(tNow - real.b0) + " bars\nk " + str.tostring(K, "0.0"), text_color = fg, text_size = size.small, text_halign = text.align_right, text_font_family = font.family_monospace)
+        table.merge_cells(panel, 7, 1, 12, 1)
+        if warmUp
+            table.cell(panel, 0, 2, "Warming up: " + str.tostring(math.min(bkR.kept0, bkR.kept1)) + " of " + str.tostring(WARM) + " swings per direction", text_color = fg, text_size = size.small, text_halign = text.align_left)
+            table.merge_cells(panel, 0, 2, 12, 2)
+            table.cell(panel, 0, 3, krTxt, text_color = krCol, bgcolor = color.new(krCol, 85), text_size = size.small, text_halign = text.align_left, text_font_family = font.family_monospace)
+            table.merge_cells(panel, 0, 3, 12, 3)
+        else
+            int r = 2
+            r := meterRow(panel, r, "Window", wFrac, wVal, wSub, stOverdue ? dnCol : accCol)
+            r := meterRow(panel, r, d > 0 ? "Top in" : "Bottom in", fPin, pct(fPin), "", zc)
+            r := meterRow(panel, r, "Turn ≤" + hz, fPn, pct(fPn), "", zc)
+            r := meterRow(panel, r, "Conf ≤" + hz, fPc, pct(fPc), "", zc)
+            string st = stLikely ? (d > 0 ? "TOP LIKELY IN" : "BOTTOM LIKELY IN") : stOverdue ? "OVERDUE · PAST ITS WINDOW" : stInZone ? "IN TURN ZONE" : "EXTENDING"
+            if not stLikely and not stOverdue and showLv and not na(fL50)
+                st := st + " · " + pct(fT50) + " TO " + px(real.p0 + d * fL50 * real.atr0)
+            color stBg = stLikely ? zc : stOverdue ? accCol : color.new(sc, 85)
+            color stFg = stLikely or stOverdue ? color.black : sc
+            table.cell(panel, 0, r, st, text_color = stFg, bgcolor = stBg, text_size = size.small, text_halign = text.align_left, text_font_family = font.family_monospace)
+            table.merge_cells(panel, 0, r, 12, r)
+            r += 1
+            if lowN
+                table.cell(panel, 0, r, "Low sample: " + str.tostring(fNband, "0") + " past swings this size", text_color = color.new(fg, 40), text_size = size.tiny, text_halign = text.align_left)
+                table.merge_cells(panel, 0, r, 12, r)
+                r += 1
+            table.cell(panel, 0, r, krTxt, text_color = krCol, bgcolor = color.new(krCol, 85), text_size = size.small, text_halign = text.align_left, text_font_family = font.family_monospace)
+            table.merge_cells(panel, 0, r, 12, r)
+
+barcolor(tintSel == "Swing" ? tintCol : tintSel == "Kernel trend" ? color.new(krCol, 15) : na, title = "Candle tint")
+
+// ---------------------------------------------------------------- parity plots (data window)
+plot(na(startBar) ? na : bar_index - startBar, "SC bar", display = display.data_window)
+plot(real.sid,   "SC r swing",  display = display.data_window)
+plot(real.started ? real.dir : na, "SC r dir", display = display.data_window)
+plot(real.b0,    "SC r b0",     display = display.data_window)
+plot(real.p0,    "SC r p0",     display = display.data_window)
+plot(real.atr0,  "SC r atr0",   display = display.data_window)
+plot(real.pe,    "SC r pe",     display = display.data_window)
+plot(real.be,    "SC r be",     display = display.data_window)
+plot(real.atre,  "SC r atre",   display = display.data_window)
+plot(real.deep,  "SC r deep",   display = display.data_window)
+plot(real.birth, "SC r birth",  display = display.data_window)
+plot(real.atr,   "SC r atr",    display = display.data_window)
+plot(real.rma,   "SC r rma",    display = display.data_window)
+plot(fCell,      "SC f cell",     display = display.data_window)
+plot(fPin,       "SC f p_in",     display = display.data_window)
+plot(fPn,        "SC f p_n",      display = display.data_window)
+plot(fPc,        "SC f p_c",      display = display.data_window)
+plot(fLo,        "SC f lo",       display = display.data_window)
+plot(fHi,        "SC f hi",       display = display.data_window)
+plot(fDlo,       "SC f dlo",      display = display.data_window)
+plot(fDhi,       "SC f dhi",      display = display.data_window)
+plot(fMass,      "SC f mass",     display = display.data_window)
+plot(fNband,     "SC f n_band",   display = display.data_window)
+plot(fReady,     "SC f ready",    display = display.data_window)
+plot(wLo,        "SC w d_lo",     display = display.data_window)
+plot(wHi,        "SC w d_hi",     display = display.data_window)
+plot(fT50,       "SC f tag_inner",  display = display.data_window)
+plot(fT75,       "SC f tag_middle", display = display.data_window)
+plot(fT90,       "SC f tag_outer",  display = display.data_window)
+
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

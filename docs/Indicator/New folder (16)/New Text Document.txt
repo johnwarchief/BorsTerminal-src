@@ -1,0 +1,20 @@
+Indicator Pullback Sniper Method for Trading View
+
+Pullback Sniper Method] is a free open-source pullback, breakout, and trade-visualization indicator designed to help traders analyze structured trend-continuation setups directly on the price chart.
+
+This script combines:
+
+1  EMA-based trend context
+2  breakout detection
+3 pullback confirmation logic
+4 Fast / Balanced / Strict confirmation modes
+5 optional McGinley and RSI filters
+6 ATR-based TP/SL projection boxes
+7 TP1 / TP2 / TP3 tracking
+8 SL tracking
+9 result labels
+10 signal quality tooltip information
+11 statistics table
+12 premium-style dashboard
+13 multiple visual themes
+14 alert conditions

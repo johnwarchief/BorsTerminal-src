@@ -1,0 +1,499 @@
+//@version=6
+// Machine Learning Fibonacci Extensions [FEELS]
+// Version 1.0 — 2026-11-06
+//
+// Draws trend-based Fibonacci extensions on the setup in play (leg A→B, pullback to C) and marks
+// the extension that the next legs of similar past setups on this same chart reached.
+//
+// Swings come from a zigzag: a swing ends when price moves against it by a set number of ATRs.
+// Every finished setup (leg A→B, pullback B→C no deeper than the leg, then a leg C→D that went
+// past B) is remembered with three features (the leg's size in ATR, its length in bars, the depth
+// of the pullback) and one answer: how far C→D went, in units of A→B, measured from C.
+//
+// For the setup in play the script finds the most similar remembered setups in the same direction
+// (k nearest neighbours on the three features). Each of them puts one dot on the highest extension its
+// next leg really reached, and each line is drawn as strong as its dots. The level with the most is the
+// ML target. Levels are on a log scale by default. Levels the move from C has
+// already reached get a check mark. The similar setups themselves are framed on the chart.
+//
+// The setup in play: the last three swing points, if the pullback stayed inside the leg (price is
+// now running from C). Otherwise the last leg with the pullback still forming, so C is the furthest
+// price has come back so far and moves with it until the pullback is confirmed.
+//
+// Nothing here is a forecast. It shows how far similar setups on this chart ran in the past, and it
+// learns only from setups whose next leg went past B.
+// Swings and the learning set are decided on closed bars.
+
+indicator("Machine Learning Fibonacci Extensions [FEELS]", "ML Fib Extensions [FEELS]", overlay = true,
+     max_lines_count = 200, max_labels_count = 250, max_boxes_count = 40, max_bars_back = 5000,
+     behind_chart = false)
+// behind_chart = false draws everything in front of the candles, so the captions stay readable.
+
+// ─────────────────────────────────────────────────────────────── inputs ────
+grpS = "Swings"
+kAtr   = input.float(4.0, "A swing ends after a move against it of, × ATR", minval = 1.0, maxval = 20.0, step = 0.5, group = grpS,
+     tooltip = "Higher = fewer, bigger legs. Lower = more, smaller legs, and more setups to learn from.")
+atrLen = input.int(14, "ATR length", minval = 1, maxval = 200, group = grpS)
+
+grpM = "Model"
+knn     = input.int(9, "Similar setups it learns from", minval = 3, maxval = 30, group = grpM,
+     tooltip = "How many of the most similar past setups decide the target.")
+minHist = input.int(15, "Setups it needs before it draws a target", minval = 5, maxval = 200, group = grpM,
+     tooltip = "Until the chart has this many finished setups to learn from, only the extensions are drawn. With same direction on, it also needs as many setups in that direction as it learns from.")
+maxHist = input.int(150, "Setups it remembers", minval = 20, maxval = 2000, group = grpM,
+     tooltip = "The oldest are forgotten first. Fewer = the similar setups it finds are more recent, so more of them are on screen.")
+wSize   = input.float(1.0, "Weight of leg size", minval = 0.0, maxval = 5.0, step = 0.1, group = grpM)
+wLen    = input.float(1.0, "Weight of leg length", minval = 0.0, maxval = 5.0, step = 0.1, group = grpM)
+wDepth  = input.float(1.0, "Weight of pullback depth", minval = 0.0, maxval = 5.0, step = 0.1, group = grpM)
+sameDir = input.bool(true, "Learn only from setups in the same direction", group = grpM,
+     tooltip = "On (default): a rising setup is compared only with past rising ones, a falling one with falling ones. Off: with all.")
+
+grpL = "Look"
+extStr   = input.string("0.236, 0.382, 0.5, 0.618, 1, 1.272, 1.618, 2, 2.618", "Extension levels", group = grpL,
+     tooltip = "Measured from C in units of the leg A→B, like the trend-based fib extension tool. A past move counts once, at the highest level it really reached.")
+showAll  = input.bool(false, "Show levels above the highest one reached", group = grpL,
+     tooltip = "Off (default): the grid stops at the highest level a similar setup reached, so far levels don't squeeze the candles.")
+logS     = input.bool(true, "Levels on log scale", group = grpL,
+     tooltip = "On (default): levels are measured in percent, like 'Fib levels based on log scale' in TradingView's own tool. A level k sits at C × (B / A)^k, so after a big drop the levels stay above zero. Off: plain price distances. The learning uses the same scale.")
+showPr   = input.bool(true, "Prices next to the levels", group = grpL)
+showTgP  = input.bool(false, "Price on the ML target too", group = grpL,
+     tooltip = "Off (default): the target's label stays short so it fits on screen, and its price is in the label's tooltip.")
+showHit  = input.bool(true, "Check mark on levels already reached", group = grpL)
+showABC  = input.bool(true, "A, B, C on the setups", group = grpL,
+     tooltip = "On the setup in play and on the similar past setups. A past setup also gets TARGET at the point where its run from C stopped.")
+showSrc  = input.bool(true, "Show the similar setups on the chart", group = grpL,
+     tooltip = "Frames each past setup the target was learned from, with the highest level its next leg reached. Zoom out to see the older ones.")
+showLeg  = input.bool(true, "Legend", group = grpL)
+legPos   = input.string("Bottom right", "Legend position", options = ["Bottom right", "Bottom left", "Top right", "Top left"], group = grpL)
+tgtTx    = input.string("ML TARGET", "Target word", group = grpL)
+srcTx    = input.string("SIMILAR PAST MOVE", "Past setup word", group = grpL)
+colMod   = input.color(#2B7BB9, "Model", inline = "c", group = grpL)
+colGrid  = input.color(#8B94A1, "Grid", inline = "c", group = grpL)
+gridFade = input.int(40, "Grid fade, %", minval = 0, maxval = 100, group = grpL)
+padR     = input.int(30, "Reaches past the last bar, bars", minval = 14, maxval = 200, group = grpL)
+txtSize  = input.string("Small", "Text size", options = ["Tiny", "Small", "Normal"], group = grpL)
+
+// ─────────────────────────────────────────────────────────────── helpers ───
+txtSz(s) =>
+    s == "Tiny" ? size.tiny : s == "Normal" ? size.normal : size.small
+
+fmtP(p) =>
+    str.tostring(p, format.mintick)
+
+// ─────────────────────────────────────────────────────────────── level list ──
+var array<float> exts = array.new<float>()
+if barstate.isfirst
+    for part in str.split(extStr, ",")
+        v = str.tonumber(str.trim(part))
+        if not na(v)
+            array.push(exts, v)
+    array.sort(exts, order.ascending)
+nV = array.size(exts)
+
+// ─────────────────────────────────────────────────────────────── zigzag ────
+atrV = ta.atr(atrLen)
+done = barstate.isconfirmed
+
+var int   zDir  = 0
+var float zExt  = na
+var int   zExtB = na
+var float cExt  = na    // furthest price came back since the running extreme
+var int   cExtB = na
+var array<int>   pB = array.new<int>()
+var array<float> pP = array.new<float>()
+var array<float> pA = array.new<float>()
+var array<int>   pT = array.new<int>()
+
+// learning set: leg size in ATR, leg length in bars, pullback depth, how far the next leg ran,
+// direction, and the four swing points for drawing
+var array<float> tS   = array.new<float>()
+var array<float> tL   = array.new<float>()
+var array<float> tD   = array.new<float>()
+var array<float> tE   = array.new<float>()
+var array<int>   tDir = array.new<int>()
+var array<int>   tT0  = array.new<int>()
+var array<int>   tT1  = array.new<int>()
+var array<int>   tT2  = array.new<int>()
+var array<int>   tT3  = array.new<int>()
+var array<float> tP0  = array.new<float>()
+var array<float> tP1  = array.new<float>()
+var array<float> tP2  = array.new<float>()
+var array<float> tP3  = array.new<float>()
+
+newPiv = false
+if done and not na(atrV)
+    if zDir == 0
+        zDir  := 1
+        zExt  := high
+        zExtB := bar_index
+        array.push(pB, bar_index)
+        array.push(pP, low)
+        array.push(pA, atrV)
+        array.push(pT, time)
+    else if zDir == 1
+        if high > zExt
+            zExt  := high
+            zExtB := bar_index
+        if zExt - low >= kAtr * atrV
+            array.push(pB, zExtB)
+            array.push(pP, zExt)
+            array.push(pA, atrV[bar_index - zExtB])
+            array.push(pT, time[bar_index - zExtB])
+            zDir   := -1
+            zExt   := low
+            zExtB  := bar_index
+            newPiv := true
+    else
+        if low < zExt
+            zExt  := low
+            zExtB := bar_index
+        if high - zExt >= kAtr * atrV
+            array.push(pB, zExtB)
+            array.push(pP, zExt)
+            array.push(pA, atrV[bar_index - zExtB])
+            array.push(pT, time[bar_index - zExtB])
+            zDir   := 1
+            zExt   := high
+            zExtB  := bar_index
+            newPiv := true
+    // the pullback from the running extreme, counted from the bar after it
+    if zExtB == bar_index
+        cExt  := na
+        cExtB := na
+    else if zDir == 1 and (na(cExt) or low < cExt)
+        cExt  := low
+        cExtB := bar_index
+    else if zDir == -1 and (na(cExt) or high > cExt)
+        cExt  := high
+        cExtB := bar_index
+
+// a newly confirmed swing point D settles the setup A, B, C before it: did the pullback stay inside
+// the leg, and did C→D go past B? Then remember how far C→D ran, in units of A→B.
+if newPiv and array.size(pP) >= 4
+    n  = array.size(pP)
+    p0 = array.get(pP, n - 4)
+    p1 = array.get(pP, n - 3)
+    p2 = array.get(pP, n - 2)
+    p3 = array.get(pP, n - 1)
+    useL = logS and p0 > 0 and p1 > 0 and p2 > 0 and p3 > 0
+    legA = math.abs(p1 - p0)
+    legG = useL ? math.abs(math.log(p1) - math.log(p0)) : legA
+    went = (p1 > p0 and p3 > p1) or (p1 < p0 and p3 < p1)
+    if went and math.abs(p2 - p1) <= legA
+        array.push(tS, legA / array.get(pA, n - 3))
+        array.push(tL, float(array.get(pB, n - 3) - array.get(pB, n - 4)))
+        array.push(tD, (useL ? math.abs(math.log(p2) - math.log(p1)) : math.abs(p2 - p1)) / legG)
+        array.push(tE, (useL ? math.abs(math.log(p3) - math.log(p2)) : math.abs(p3 - p2)) / legG)
+        array.push(tDir, p1 > p0 ? 1 : -1)
+        array.push(tT0, array.get(pT, n - 4))
+        array.push(tT1, array.get(pT, n - 3))
+        array.push(tT2, array.get(pT, n - 2))
+        array.push(tT3, array.get(pT, n - 1))
+        array.push(tP0, p0)
+        array.push(tP1, p1)
+        array.push(tP2, p2)
+        array.push(tP3, p3)
+        if array.size(tS) > maxHist
+            array.shift(tS)
+            array.shift(tL)
+            array.shift(tD)
+            array.shift(tE)
+            array.shift(tDir)
+            array.shift(tT0)
+            array.shift(tT1)
+            array.shift(tT2)
+            array.shift(tT3)
+            array.shift(tP0)
+            array.shift(tP1)
+            array.shift(tP2)
+            array.shift(tP3)
+
+if array.size(pP) > 12
+    array.shift(pB)
+    array.shift(pP)
+    array.shift(pA)
+    array.shift(pT)
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+// ─────────────────────────────────────────────────────────────── setup in play ──
+int   aB = na
+float aP = na
+int   bB = na
+float bP = na
+int   cB = na
+float cP = na
+float bAtr = na
+nP = array.size(pP)
+if nP >= 3 and not na(zExt)
+    q0 = array.get(pP, nP - 3)
+    q1 = array.get(pP, nP - 2)
+    q2 = array.get(pP, nP - 1)
+    if math.abs(q2 - q1) <= math.abs(q1 - q0)
+        // pullback confirmed inside the leg, price is running from C
+        aB := array.get(pB, nP - 3)
+        aP := q0
+        bB := array.get(pB, nP - 2)
+        bP := q1
+        cB := array.get(pB, nP - 1)
+        cP := q2
+        bAtr := array.get(pA, nP - 2)
+    else if math.abs(zExt - q2) <= math.abs(q2 - q1)
+        // the last leg, its pullback still forming
+        aB := array.get(pB, nP - 2)
+        aP := q1
+        bB := array.get(pB, nP - 1)
+        bP := q2
+        cB := zExtB
+        cP := zExt
+        bAtr := array.get(pA, nP - 1)
+    else
+        // the running move is already bigger than the leg before it, so it is the leg
+        aB := array.get(pB, nP - 1)
+        aP := q2
+        bB := zExtB
+        bP := zExt
+        cB := na(cExt) ? zExtB : cExtB
+        cP := na(cExt) ? zExt : cExt
+        bAtr := atrV[bar_index - zExtB]
+setupOk = not na(aB) and bP != aP and not na(bAtr)
+legS = setupOk ? bP - aP : na
+dirC = setupOk ? (legS > 0 ? 1 : -1) : 0
+logC = setupOk and logS and aP > 0 and bP > 0 and cP > 0
+// price of extension level f of the setup in play, and the reverse: which level a price is at
+lvlP(float f) => logC ? cP * math.pow(bP / aP, f) : cP + f * legS
+lvlF(float p) => logC ? (p > 0 ? math.log(p / cP) / math.log(bP / aP) : 99.0) : (p - cP) / legS
+
+// ─────────────────────────────────────────────────────────────── nearest neighbours ──
+var array<float> nnE = array.new<float>()
+var array<int>   nnI = array.new<int>()
+var float eMed = na
+var string lastKey = ""
+var float curF1 = na
+var float curF2 = na
+var float curF3 = na
+var int   elig  = 0
+
+key = setupOk ? str.tostring(aB) + "|" + str.tostring(bB) + "|" + str.tostring(cB) + "|" + str.tostring(cP) + "|" + str.tostring(array.size(tS)) : ""
+if setupOk and key != lastKey and (done or barstate.islast)
+    lastKey := key
+    array.clear(nnE)
+    array.clear(nnI)
+    eMed := na
+    curF1 := math.abs(legS) / bAtr
+    curF2 := bB - aB
+    curF3 := logC ? math.abs(math.log(cP / bP)) / math.abs(math.log(bP / aP)) : math.abs(cP - bP) / math.abs(legS)
+    cnt = array.size(tS)
+    elig := 0
+    if cnt > 0
+        for i = 0 to cnt - 1
+            if not sameDir or array.get(tDir, i) == dirC
+                elig += 1
+    if cnt >= minHist and elig >= knn
+        s1 = array.stdev(tS)
+        s2 = array.stdev(tL)
+        s3 = array.stdev(tD)
+        s1 := s1 > 0 ? s1 : 1.0
+        s2 := s2 > 0 ? s2 : 1.0
+        s3 := s3 > 0 ? s3 : 1.0
+        dist = array.new<float>()
+        idx  = array.new<int>()
+        for i = 0 to cnt - 1
+            if not sameDir or array.get(tDir, i) == dirC
+                a1 = (array.get(tS, i) - curF1) / s1
+                a2 = (array.get(tL, i) - curF2) / s2
+                a3 = (array.get(tD, i) - curF3) / s3
+                array.push(dist, wSize * a1 * a1 + wLen * a2 * a2 + wDepth * a3 * a3)
+                array.push(idx, i)
+        ord = array.sort_indices(dist, order.ascending)
+        for j = 0 to knn - 1
+            k = array.get(idx, array.get(ord, j))
+            array.push(nnE, array.get(tE, k))
+            array.push(nnI, k)
+        eMed := array.median(nnE)
+
+// votes: each similar setup puts one dot on the highest extension its next leg really reached
+reachedI(v) =>
+    bi = -1
+    for i = 0 to nV - 1
+        if v >= array.get(exts, i)
+            bi := i
+    bi
+
+var array<int> votes = array.new<int>()
+var int bestI = -1
+haveModel = array.size(nnE) > 0 and nV > 0
+if haveModel
+    array.clear(votes)
+    for e in exts
+        array.push(votes, 0)
+    for ej in nnE
+        bi = reachedI(ej)
+        if bi >= 0
+            array.set(votes, bi, array.get(votes, bi) + 1)
+    // the target: the level with the most dots; on a tie, the one the median setup reached, else the one closest to the median
+    vMax = array.max(votes)
+    rMed = reachedI(eMed)
+    bestI := -1
+    if vMax > 0
+        if rMed >= 0 and array.get(votes, rMed) == vMax
+            bestI := rMed
+        else
+            for i = 0 to nV - 1
+                if array.get(votes, i) == vMax and (bestI < 0 or math.abs(array.get(exts, i) - eMed) < math.abs(array.get(exts, bestI) - eMed))
+                    bestI := i
+else
+    bestI := -1
+tgtF = bestI >= 0 ? array.get(exts, bestI) : na
+tgt  = setupOk and not na(tgtF) ? lvlP(tgtF) : na
+
+// ─────────────────────────────────────────────────────────────── drawing (last bar only) ──
+var array<line>  dLines  = array.new<line>()
+var array<label> dLabels = array.new<label>()
+var array<box>   dBoxes  = array.new<box>()
+
+if barstate.islast
+    for ln in dLines
+        line.delete(ln)
+    array.clear(dLines)
+    for lb in dLabels
+        label.delete(lb)
+    array.clear(dLabels)
+    for bx in dBoxes
+        box.delete(bx)
+    array.clear(dBoxes)
+    if setupOk
+        xR = bar_index + padR
+        xE = xR - 6
+        gCol = color.new(colGrid, gridFade)
+        // furthest the move from C has gone, for the check marks
+        far = cP
+        for i = 0 to math.min(bar_index - cB, 4999)
+            far := dirC > 0 ? math.max(far, high[i]) : math.min(far, low[i])
+        ranF = lvlF(far)
+        // the setup in play: A→B solid grey, B→C dashed
+        array.push(dLines, line.new(aB, aP, bB, bP, color = colGrid, width = 1))
+        array.push(dLines, line.new(bB, bP, cB, cP, color = colGrid, style = line.style_dashed, width = 1))
+        if showABC
+            upA = dirC > 0
+            array.push(dLabels, label.new(aB, aP, "A", style = upA ? label.style_label_up : label.style_label_down, color = color.new(colGrid, 100), textcolor = colGrid, size = txtSz(txtSize)))
+            array.push(dLabels, label.new(bB, bP, "B", style = upA ? label.style_label_down : label.style_label_up, color = color.new(colGrid, 100), textcolor = colGrid, size = txtSz(txtSize)))
+            array.push(dLabels, label.new(cB, cP, "C", style = upA ? label.style_label_up : label.style_label_down, color = color.new(colGrid, 100), textcolor = colGrid, size = txtSz(txtSize)))
+        // the base line at C; it and the levels start at A, so the grid reads as a fib on the whole setup
+        array.push(dLines, line.new(aB, cP, xE, cP, color = color.new(colGrid, math.min(gridFade + 25, 100)), width = 1))
+        array.push(dLabels, label.new(xE, cP, "0" + (showPr ? "  " + fmtP(cP) : ""), style = label.style_label_left, color = color.new(color.white, 100),
+             textcolor = color.new(colGrid, 30), size = txtSz(txtSize)))
+        // highest level to draw: the highest with votes, or all
+        topI = nV - 1
+        if not showAll and haveModel and array.size(votes) == nV
+            topI := 0
+            for i = 0 to nV - 1
+                if array.get(votes, i) > 0
+                    topI := i
+        tip = haveModel ? str.tostring(knn) + " past setups of this chart most like this one (leg " + str.tostring(curF1, "0.0") + " ATR over " + str.tostring(curF2, "0") + " bars, pullback " + str.tostring(curF3, "0.00") + "). Their next legs ran between " + str.tostring(array.min(nnE), "0.00") + " and " + str.tostring(array.max(nnE), "0.00") + " of the leg, measured from C; the median " + str.tostring(eMed, "0.00") + "." : ""
+        for i = 0 to topI
+            f = array.get(exts, i)
+            y = lvlP(f)
+            v = haveModel and array.size(votes) == nV ? array.get(votes, i) : 0
+            hit = showHit and ranF >= f
+            isBest = i == bestI
+            lc = v > 0 ? color.new(colMod, math.max(0, 60 - 15 * v)) : gCol
+            array.push(dLines, line.new(aB, y, xE, y, color = lc, width = v > 0 ? math.min(1 + v, 6) : 1))
+            array.push(dLabels, label.new(xE, y, str.tostring(f) + (v > 0 ? "  " + str.repeat("●", v) : "") + (isBest ? "  " + tgtTx : "") + (hit ? "  ✓" : "") + (showPr and (not isBest or showTgP) ? "  " + fmtP(y) : ""),
+                 style = label.style_label_left, color = isBest ? colMod : color.new(color.white, 100),
+                 textcolor = isBest ? color.white : v > 0 ? colMod : colGrid, size = txtSz(txtSize), tooltip = isBest ? fmtP(y) + ". " + tip : hit ? "already reached by the move from C" : ""))
+        if haveModel
+            // the similar setups themselves, framed, with a caption
+            if showSrc
+                startT = array.new<int>()
+                for k in nnI
+                    array.push(startT, array.get(tT0, k))
+                byTime  = array.sort_indices(startT, order.ascending)
+                prevEnd = 0
+                tInPlay = time[bar_index - aB]
+                prevUp  = false
+                for jt in byTime
+                    k   = array.get(nnI, jt)
+                    p0k = array.get(tP0, k)
+                    p1k = array.get(tP1, k)
+                    p2k = array.get(tP2, k)
+                    p3k = array.get(tP3, k)
+                    ek  = array.get(tE, k)
+                    top = math.max(math.max(p0k, p1k), math.max(p2k, p3k))
+                    bot = math.min(math.min(p0k, p1k), math.min(p2k, p3k))
+                    rK    = reachedI(ek)
+                    runTx = rK >= 0 ? str.tostring(array.get(exts, rK)) : "under " + str.tostring(array.get(exts, 0))
+                    t0 = array.get(tT0, k)
+                    t3 = array.get(tT3, k)
+                    // its run overlaps the setup in play (usually that run IS the leg A→B), so two sets of A, B, C would pile up: its dot counts, it just isn't framed
+                    if t3 > tInPlay
+                        continue
+                    array.push(dBoxes, box.new(t0, top, t3, bot, xloc = xloc.bar_time,
+                         border_color = color.new(colMod, 30), bgcolor = color.new(colMod, 88)))
+                    array.push(dLines, line.new(t0, p0k, array.get(tT1, k), p1k, xloc = xloc.bar_time, color = color.new(colMod, 40), width = 1))
+                    array.push(dLines, line.new(array.get(tT1, k), p1k, array.get(tT2, k), p2k, xloc = xloc.bar_time, color = color.new(colMod, 40), style = line.style_dotted, width = 1))
+                    array.push(dLines, line.new(array.get(tT2, k), p2k, t3, p3k, xloc = xloc.bar_time, color = colMod, width = 2))
+                    array.push(dLabels, label.new(t3, p3k, "●", xloc = xloc.bar_time, style = label.style_none, textcolor = colMod, size = txtSz(txtSize)))
+                    capUp = not (t0 <= prevEnd and prevUp)
+                    if showABC
+                        upK = p1k > p0k
+                        tk1 = array.get(tT1, k)
+                        tk2 = array.get(tT2, k)
+                        clear = color.new(colMod, 100)
+                        // the caption starts at A's corner when it sits on A's side, so A then moves to the left of the corner
+                        capOnA = upK != capUp
+                        array.push(dLabels, label.new(t0, p0k, "A", xloc = xloc.bar_time, style = capOnA ? label.style_label_right : upK ? label.style_label_up : label.style_label_down, color = clear, textcolor = colMod, size = txtSz(txtSize)))
+                        // the caption sits on B's side when it is not on A's, so a B close to that edge of the box goes inside, under the caption
+                        bInside = not capOnA and math.abs(math.log(math.abs(p1k) + 1e-10) - math.log(math.abs(p3k) + 1e-10)) < 0.15 * math.abs(math.log(math.abs(top) + 1e-10) - math.log(math.abs(bot) + 1e-10))
+                        bBelow  = upK == bInside
+                        array.push(dLabels, label.new(tk1, p1k, "B", xloc = xloc.bar_time, style = bBelow ? label.style_label_up : label.style_label_down, color = clear, textcolor = colMod, size = txtSz(txtSize)))
+                        array.push(dLabels, label.new(tk2, p2k, "C", xloc = xloc.bar_time, style = upK ? label.style_label_up : label.style_label_down, color = clear, textcolor = colMod, size = txtSz(txtSize)))
+                        // to the right of the end point: price usually leaves that spot, and the caption can reach past a short box above it
+                        array.push(dLabels, label.new(t3, p3k, "TARGET " + runTx, xloc = xloc.bar_time, style = label.style_label_left, color = clear, textcolor = colMod, size = txtSz(txtSize)))
+                    // a caption is wider than a short box, so the next box counts as close until one box-length later
+                    prevEnd := t3 + (t3 - t0)
+                    prevUp  := capUp
+                    array.push(dLabels, label.new(t0, capUp ? top : bot, srcTx + " · reached " + runTx,
+                         xloc = xloc.bar_time, style = capUp ? label.style_label_lower_left : label.style_label_upper_left, color = colMod, textcolor = color.white, size = txtSz(txtSize),
+                         tooltip = "#" + str.tostring(jt + 1) + " most similar past setup (leg " + str.tostring(array.get(tS, k), "0.0") + " ATR over " + str.tostring(array.get(tL, k), "0") + " bars, pullback " + str.tostring(array.get(tD, k), "0.00") + "). Its next leg ran " + str.tostring(ek, "0.00") + " of the leg from C; highest level reached " + runTx + "."))
+        else
+            nT = array.size(tS)
+            lTx = nT < minHist ? str.tostring(nT) + " of " + str.tostring(minHist) + " setups" : str.tostring(elig) + " of " + str.tostring(knn) + " setups in this direction"
+            array.push(dLabels, label.new(cB + 2, cP + 0.5 * legS, "ML is learning · " + lTx,
+                 style = label.style_label_left, color = color.new(colMod, 40), textcolor = color.white, size = txtSz(txtSize)))
+
+// ─────────────────────────────────────────────────────────────── legend ────
+lPos = legPos == "Bottom left" ? position.bottom_left : legPos == "Top right" ? position.top_right :
+     legPos == "Top left" ? position.top_left : position.bottom_right
+var table legend = table.new(lPos, 2, 5, bgcolor = color.new(color.white, 15), border_color = color.new(colGrid, 85), border_width = 1)
+if barstate.islast and showLeg
+    ink = #3C4450
+    table.cell(legend, 0, 0, "ML FIB EXTENSIONS", text_color = colMod, text_size = txtSz(txtSize), text_halign = text.align_left)
+    table.merge_cells(legend, 0, 0, 1, 0)
+    table.cell(legend, 0, 1, "●", text_color = colMod, text_size = txtSz(txtSize))
+    table.cell(legend, 1, 1, "one similar past move that stopped at this level", text_color = ink, text_size = txtSz(txtSize), text_halign = text.align_left)
+    table.cell(legend, 0, 2, tgtTx, text_color = color.white, bgcolor = colMod, text_size = txtSz(txtSize))
+    table.cell(legend, 1, 2, "where most of them stopped", text_color = ink, text_size = txtSz(txtSize), text_halign = text.align_left)
+    table.cell(legend, 0, 3, showHit ? "✓" : "", text_color = colMod, text_size = txtSz(txtSize))
+    table.cell(legend, 1, 3, showHit ? "already reached by this move" : "", text_color = ink, text_size = txtSz(txtSize), text_halign = text.align_left)
+    table.cell(legend, 0, 4, showSrc ? "▢" : "", text_color = colMod, text_size = txtSz(txtSize))
+    table.cell(legend, 1, 4, showSrc ? "those past moves on the chart" : "", text_color = ink, text_size = txtSz(txtSize), text_halign = text.align_left)
+
+// ─────────────────────────────────────────────────────────────── alerts ────
+touchVoted = false
+if setupOk and haveModel and array.size(votes) == nV
+    for i = 0 to nV - 1
+        yv = lvlP(array.get(exts, i))
+        if array.get(votes, i) > 0 and low <= yv and high >= yv
+            touchVoted := true
+atVoted  = done and not na(cB) and bar_index > cB and touchVoted
+atTarget = done and not na(tgt) and bar_index > cB and low <= tgt and high >= tgt
+alertcondition(atVoted and not atVoted[1], "Price reached a level similar moves reached", "Price reached an extension that similar past moves reached")
+alertcondition(atTarget and not atTarget[1], "Price reached the ML target", "Price reached the ML target")
+alertcondition(done and newPiv, "New swing point", "A swing point was confirmed, the setup in play changed")
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+
