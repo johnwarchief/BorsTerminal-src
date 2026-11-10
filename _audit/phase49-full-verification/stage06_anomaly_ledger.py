@@ -88,9 +88,12 @@ Root cause method (evidence first, no guess promoted to fact)
 
 An event whose branch set does not explain the row is emitted with root cause
 ``UNEXPLAINED`` and category ``UNRESOLVED_SOURCE_GAP``; the build fails when
-that count is not zero, so "all anomalies categorized" is machine-checked
-rather than asserted in prose. ``UNRESOLVED_SOURCE_GAP`` itself is a measured
-category (no witness exists), not an unexplained branch.
+the UNEXPLAINED count is not zero, so "all anomalies categorized" is
+machine-checked rather than asserted in prose. ``UNRESOLVED_SOURCE_GAP``
+itself is a measured category (no witness exists): the Seed holds 50,489 such
+events (47,993 OPEN_EQ_PREV_CLOSE + 2,496 ZERO_VOLUME), and they are expected
+to remain unresolved until their witness sources arrive, not treated as a
+build failure.
 
 CLI:
     python _audit/phase49-full-verification/stage06_anomaly_ledger.py \\
@@ -656,6 +659,125 @@ def _load_witnesses(con):
     return daily, halts
 
 
+def _witness_coverage(con):
+    """Measured coverage of the two independent witness sources.
+
+    The residual populations must state which rows have no witness and how
+    much of the window each source actually covers. These are table-level
+    aggregates, not raw rows.
+    """
+    daily = con.execute(
+        "SELECT COUNT(*), COUNT(DISTINCT d_even), MIN(d_even), MAX(d_even), "
+        "SUM(CASE WHEN price_first>0 THEN 1 ELSE 0 END) FROM daily_prices"
+    ).fetchone()
+    state = con.execute(
+        "SELECT COUNT(*), COUNT(DISTINCT d_even), MIN(d_even), MAX(d_even) "
+        "FROM instrument_state").fetchone()
+    duplicate_names = [str(row[0]) for row in con.execute(
+        "SELECT l_val18 FROM instruments WHERE l_val18 IS NOT NULL "
+        "AND TRIM(l_val18)<>'' GROUP BY l_val18 "
+        "HAVING COUNT(DISTINCT ins_code)>1 ORDER BY l_val18")]
+    mapped = {str(row[0]) for row in con.execute(
+        "SELECT DISTINCT l_val18 FROM instruments WHERE l_val18 IS NOT NULL "
+        "AND TRIM(l_val18)<>''")}
+    return {
+        "daily": {
+            "rows": int(daily[0] or 0),
+            "sessions": int(daily[1] or 0),
+            "first_date": _iso_even(daily[2]),
+            "last_date": _iso_even(daily[3]),
+            "positive_price_first": int(daily[4] or 0),
+        },
+        "instrument_state": {
+            "rows": int(state[0] or 0),
+            "snapshot_days": int(state[1] or 0),
+            "first_date": _iso_even(state[2]),
+            "last_date": _iso_even(state[3]),
+        },
+        "mapped_symbols": mapped,
+        "duplicate_names": duplicate_names,
+    }
+
+
+def _residual_detail(events, daily, coverage, halt_dates):
+    """Bind an UNRESOLVED_SOURCE_GAP population to what is missing.
+
+    Every count is measured against the witness tables: before/inside/after
+    the ``daily_prices`` window, the state of a joined daily row (no ins_code,
+    no daily row, null/zero ``price_first``, positive ``price_first``), the
+    halt snapshots and the ``instrument_state`` window. No raw rows leave the
+    ledger; the output is aggregates only.
+    """
+    first = coverage["daily"]["first_date"]
+    last = coverage["daily"]["last_date"]
+    state_first = coverage["instrument_state"]["first_date"]
+    state_last = coverage["instrument_state"]["last_date"]
+    mapped = coverage["mapped_symbols"]
+    counts = {
+        "before": 0,
+        "inside": 0,
+        "after": 0,
+        "uncovered": 0,
+        "positive": 0,
+        "halts": 0,
+        "state_window": 0,
+    }
+    inside_state = collections.Counter()
+    outside_state = collections.Counter()
+    for event in events:
+        key = (event["symbol"], event["date"])
+        if key in halt_dates:
+            counts["halts"] += 1
+        if state_first and state_last and state_first <= event["date"] <= state_last:
+            counts["state_window"] += 1
+        if event["symbol"] not in mapped:
+            state = "no_ins_code"
+        else:
+            row = daily.get(key)
+            if row is None:
+                state = "no_daily_row"
+            elif _positive(row.get("price_first")) is None:
+                state = "price_first_null_or_zero"
+            else:
+                state = "price_first_positive"
+                counts["positive"] += 1
+        if not first or not last:
+            counts["uncovered"] += 1
+            outside_state[state] += 1
+        elif event["date"] < first:
+            counts["before"] += 1
+            outside_state[state] += 1
+        elif event["date"] > last:
+            counts["after"] += 1
+            outside_state[state] += 1
+        else:
+            counts["inside"] += 1
+            inside_state[state] += 1
+    dates = sorted(event["date"] for event in events)
+    return {
+        "missing_witness": {
+            "event_window": {
+                "first_date": dates[0] if dates else "",
+                "last_date": dates[-1] if dates else "",
+            },
+            "daily_prices_window": coverage["daily"],
+            "instrument_state_window": coverage["instrument_state"],
+            "rows_total": len(events),
+            "rows_before_daily_prices_window": counts["before"],
+            "rows_inside_daily_prices_window": counts["inside"],
+            "rows_after_daily_prices_window": counts["after"],
+            "rows_uncovered_by_daily_prices": counts["uncovered"],
+            "rows_inside_by_state": dict(sorted(inside_state.items())),
+            "rows_outside_by_state": dict(sorted(outside_state.items())),
+            "rows_without_positive_price_first": (len(events)
+                                                  - counts["positive"]),
+            "rows_with_positive_price_first": counts["positive"],
+            "rows_inside_instrument_state_window": counts["state_window"],
+            "rows_with_halt_snapshot": counts["halts"],
+        },
+    }
+
+
 def _invalid_witness(con, events):
     """How many invalid rows have an instruments and a daily_prices witness."""
     if not events:
@@ -724,6 +846,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             if not traded:
                 session_rows.append((date, int(total)))
         daily_witness, halt_dates = _load_witnesses(con)
+        coverage = _witness_coverage(con)
         last_diff = con.execute(
             "SELECT COUNT(*) FROM price_history WHERE last>0 AND close>0 "
             "AND ABS(last-close)>?", (exact,)).fetchone()[0]
@@ -857,6 +980,123 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
                      if e["category"] == "CALENDAR_GAP"]
     zero_halt = [e for e in zero_volume if "halt:" in e["witness"]]
 
+    open_residual = _residual_detail(open_unresolved, daily_witness, coverage,
+                                     halt_dates)
+    zero_residual = _residual_detail(zero_unresolved, daily_witness, coverage,
+                                     halt_dates)
+    open_residual["by_root_cause"] = dict(sorted(collections.Counter(
+        e["root_cause"] for e in open_unresolved).items()))
+    zero_residual["by_root_cause"] = dict(sorted(collections.Counter(
+        e["root_cause"] for e in zero_unresolved).items()))
+    open_residual.update(_witness_summary(open_unresolved))
+    zero_residual.update(_witness_summary(zero_unresolved))
+
+    daily_cov = coverage["daily"]
+    state_cov = coverage["instrument_state"]
+    present_coverage = (
+        "daily_prices %s..%s (%d sessions, %d rows, %d with positive "
+        "price_first); instrument_state %s..%s (%d snapshot days, %d rows)"
+        % (daily_cov["first_date"], daily_cov["last_date"],
+           daily_cov["sessions"], daily_cov["rows"],
+           daily_cov["positive_price_first"], state_cov["first_date"],
+           state_cov["last_date"], state_cov["snapshot_days"],
+           state_cov["rows"]))
+    open_missing = open_residual["missing_witness"]
+    zero_missing = zero_residual["missing_witness"]
+    open_residual["required_source"] = {
+        "primary": ("daily_prices.price_first (first-trade print) for every "
+                    "symbol/session in %s..%s"
+                    % (open_missing["event_window"]["first_date"],
+                       open_missing["event_window"]["last_date"])),
+        "alternatives": [
+            "halt/suspension snapshot on the exact symbol/date "
+            "(instrument_state.c_etaval_title)",
+            "full-history exchange calendar; a whole-market no-session date "
+            "only re-files CALENDAR_GAP rows and cannot verify a per-symbol "
+            "open-at-prior-close equality",
+        ],
+        "present_coverage": present_coverage,
+        "missing": (
+            "%d rows predate the daily_prices window, %d follow it, %d inside "
+            "it have no positive price_first, %d are uncovered by daily_prices, "
+            "and %d carry a halt snapshot; the remaining %d positive "
+            "price_first row(s) differ from open."
+            % (open_missing["rows_before_daily_prices_window"],
+               open_missing["rows_after_daily_prices_window"],
+               (open_missing["rows_inside_daily_prices_window"]
+                - open_missing["rows_with_positive_price_first"]),
+               open_missing["rows_uncovered_by_daily_prices"],
+               open_missing["rows_with_halt_snapshot"],
+               open_missing["rows_with_positive_price_first"])),
+    }
+    zero_residual["required_source"] = {
+        "primary": ("per-symbol halt/suspension snapshots covering %s..%s, or "
+                    "a full-history exchange calendar that marks the symbol's "
+                    "no-session days"
+                    % (zero_missing["event_window"]["first_date"],
+                       zero_missing["event_window"]["last_date"])),
+        "alternatives": [
+            "full-history daily trade tape (daily_prices.price_first) to "
+            "distinguish a traded first print from a no-trade row",
+        ],
+        "present_coverage": present_coverage,
+        "missing": (
+            "%d rows predate the daily_prices window, %d follow it, %d inside "
+            "it have no positive price_first, %d are uncovered by daily_prices, "
+            "and %d carry a halt snapshot; instrument_state starts %s, after "
+            "the last zero-volume row (%s)."
+            % (zero_missing["rows_before_daily_prices_window"],
+               zero_missing["rows_after_daily_prices_window"],
+               (zero_missing["rows_inside_daily_prices_window"]
+                - zero_missing["rows_with_positive_price_first"]),
+               zero_missing["rows_uncovered_by_daily_prices"],
+               zero_missing["rows_with_halt_snapshot"],
+               state_cov["first_date"], zero_last)),
+    }
+    open_residual["attempted"] = [
+        "basis witness: price_basis.last_of vs closing_of on price_history "
+        "and daily_prices p_last/p_closing",
+        "first-trade witness: positive daily_prices.price_first compared "
+        "with open",
+        "halt witness: instrument_state.c_etaval_title (HALT_WORDS) on the "
+        "exact symbol/date",
+        "session witness: whole-DB dates with zero traded rows",
+    ]
+    zero_residual["attempted"] = [
+        "session witness: whole-DB dates with zero traded rows",
+        "halt witness: instrument_state.c_etaval_title (HALT_WORDS) on the "
+        "exact symbol/date",
+        "bar shape: flat carried close, flat price change, first bar, "
+        "non-flat range",
+        "first-trade witness: positive daily_prices.price_first",
+    ]
+    open_residual["verdict"] = "UNRESOLVED_SOURCE_GAP"
+    zero_residual["verdict"] = "UNRESOLVED_SOURCE_GAP"
+
+    residual_events = open_unresolved + zero_unresolved
+    residual_summary = _witness_summary(residual_events)
+    residual_summary["by_kind"] = {
+        "OPEN_EQ_PREV_CLOSE": len(open_unresolved),
+        "ZERO_VOLUME": len(zero_unresolved),
+    }
+    residual_summary["by_root_cause"] = dict(sorted(collections.Counter(
+        e["root_cause"] for e in residual_events).items()))
+    residual_summary.update({
+        "verdict": "UNRESOLVED_SOURCE_GAP",
+        "build_gate": ("only UNEXPLAINED fails the build; "
+                       "UNRESOLVED_SOURCE_GAP is a measured residual"),
+        "detail": ("open_eq_prev_close.residual_unverified and "
+                   "zero_volume.residual_unverified bind each kind to its "
+                   "required source and missing witness rows"),
+    })
+    identity_caveat = (
+        "PRICE_BASIS_DIFFERENCE=%d is a join-policy count under the documented "
+        "ISIN/ins_code precedence, not an absolute identity claim: %d l_val18 "
+        "names resolve to two ins_codes each, and the filed كيمازي 2026-10-10 "
+        "event would be VERIFIED_NO_EVENT under the sibling code's daily row "
+        "(price_first=open); the join policy is unchanged."
+        % (len(open_basis), len(coverage["duplicate_names"])))
+
     payload = {
         "schema": 1,
         "stage": "stage06_anomaly_ledger",
@@ -876,6 +1116,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
         "by_category": by_category,
         "by_root_cause": dict(sorted(by_root.items())),
         "by_witness": dict(sorted(by_witness.items())),
+        "residual_unverified": residual_summary,
         "kind_x_category": _cross(events, "kind", "category"),
         "kind_x_root_cause": _cross(events, "kind", "root_cause"),
         "kind_x_witness": _cross(events, "kind", "witness"),
@@ -926,6 +1167,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
                 "also_first_trade_equal": len(dual),
                 "whole_db_pool_last_vs_close": int(last_diff),
                 "whole_db_pool_p_last_vs_p_closing": int(p_diff),
+                "identity_caveat": identity_caveat,
             },
             "first_trade_witness": {
                 "source": ("daily_prices.price_first, positive values only, "
@@ -946,7 +1188,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
                          "decides only when the first-trade witness is absent, "
                          "and every tagged row here already has that witness"),
             },
-            "residual_unverified": _witness_summary(open_unresolved),
+            "residual_unverified": open_residual,
             "method": ("previous close is the preceding bar of the same "
                        "symbol in date order; the first bar of a symbol is "
                        "never compared with itself; the category is decided "
@@ -974,7 +1216,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
                 "note": ("no per-symbol no-trade row has a halt snapshot on "
                          "its exact date in this Seed"),
             },
-            "residual_unverified": _witness_summary(zero_unresolved),
+            "residual_unverified": zero_residual,
             "last_zero_volume_date": zero_last,
             "instrument_state": {
                 "first_date": _iso_even(state[0]) if state else "",
@@ -1020,11 +1262,15 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             "Every event carries the raw values that triggered it and the "
             "witness tags in the CSV; the tracked counts hold aggregates "
             "only, no raw rows.",
-            "A branch set that explains nothing is UNEXPLAINED / "
-            "UNRESOLVED_SOURCE_GAP and fails the build; the measured "
-            "UNEXPLAINED count is zero in this Seed. UNRESOLVED_SOURCE_GAP "
-            "itself is a measured category: no witness exists for those "
-            "rows.",
+            "A branch set that explains nothing is emitted with root cause "
+            "UNEXPLAINED (category UNRESOLVED_SOURCE_GAP); the build fails "
+            "only when the UNEXPLAINED count is non-zero, and that count is "
+            "zero in this Seed. The category UNRESOLVED_SOURCE_GAP itself is "
+            "a measured residual with %d events (%d OPEN_EQ_PREV_CLOSE, %d "
+            "ZERO_VOLUME): no witness exists for those rows, so it is "
+            "reported, not treated as a build failure."
+            % (len(residual_events), len(open_unresolved),
+               len(zero_unresolved)),
         ],
         "notes": [
             "5 of the 13 categories are used (CALENDAR_GAP, "
@@ -1059,6 +1305,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             "basis divergence without an OPEN_EQ anomaly is not an event of "
             "this ledger."
             % (int(last_diff), int(p_diff), len(basis_events)),
+            identity_caveat,
             "Zero volume: %d rows. %d sit on the %d dates where no row of "
             "the DB traded at all (calendar evidence, not a per-symbol "
             "guess); %d are per-symbol no-trade rows with no halt witness "

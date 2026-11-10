@@ -169,12 +169,13 @@
  "method": [
   "Anomaly detection is row-level and rule-based; the category is chosen from the measured root cause and the recorded witness, not from the anomaly kind.",
   "Every event carries the raw values that triggered it and the witness tags in the CSV; the tracked counts hold aggregates only, no raw rows.",
-  "A branch set that explains nothing is UNEXPLAINED / UNRESOLVED_SOURCE_GAP and fails the build; the measured UNEXPLAINED count is zero in this Seed. UNRESOLVED_SOURCE_GAP itself is a measured category: no witness exists for those rows."
+  "A branch set that explains nothing is emitted with root cause UNEXPLAINED (category UNRESOLVED_SOURCE_GAP); the build fails only when the UNEXPLAINED count is non-zero, and that count is zero in this Seed. The category UNRESOLVED_SOURCE_GAP itself is a measured residual with 50489 events (47993 OPEN_EQ_PREV_CLOSE, 2496 ZERO_VOLUME): no witness exists for those rows, so it is reported, not treated as a build failure."
  ],
  "notes": [
   "5 of the 13 categories are used (CALENDAR_GAP, INVALID_SOURCE_RECORD, PRICE_BASIS_DIFFERENCE, VERIFIED_NO_EVENT, UNRESOLVED_SOURCE_GAP). The eight zero categories are zero for a stated reason, not by omission: SOURCE_MISMATCH and SOURCE_REVISION need two sources for one row, and price_history keeps exactly one row per (symbol, date) with a writer tag, not a source pair; CORPORATE_ACTION_MISSING, EVENT_DATE_MISMATCH and EVENT_RATIO_MISMATCH are event-chain findings owned by B5/B6 and cannot be read from a bare candle; SYMBOL_IDENTITY_MISMATCH is B7's identity join; MISSING_HISTORY is the absence of rows, which is B7's gap count, not a row event; PRECISION_OR_ROUNDING needs a rounding divergence, and every compared price here is bit-equal or clearly different, so no row required it.",
   "OPEN_EQ_PREV_CLOSE is decided by a witness, never by the kind: 7034 rows have a first-trade witness equal to open and are filed VERIFIED_NO_EVENT (15 of them also carry a halt tag), 3 have a basis witness and no first-trade equality (PRICE_BASIS_DIFFERENCE), 194 sit on a market-wide no-trade date (CALENDAR_GAP), and 47993 have no witness or a first-trade witness that differs (UNRESOLVED_SOURCE_GAP). 621 rows carry both a basis witness and the first-trade equality; the opening witness decides the open event and all tags stay in the witness column.",
   "The design's basis witness pool is larger than the OPEN_EQ population: 10938 price_history rows have last != close and 12624 daily_prices rows have p_last != p_closing, but only 624 OPEN_EQ events join one of those witnesses on their own symbol/date. A basis divergence without an OPEN_EQ anomaly is not an event of this ledger.",
+  "PRICE_BASIS_DIFFERENCE=3 is a join-policy count under the documented ISIN/ins_code precedence, not an absolute identity claim: 3 l_val18 names resolve to two ins_codes each, and the filed كيمازي 2026-10-10 event would be VERIFIED_NO_EVENT under the sibling code's daily row (price_first=open); the join policy is unchanged.",
   "Zero volume: 2692 rows. 194 sit on the 7 dates where no row of the DB traded at all (calendar evidence, not a per-symbol guess); 2496 are per-symbol no-trade rows with no halt witness (UNRESOLVED_SOURCE_GAP); 2 are non-flat bars whose price range contradicts zero volume (INVALID_SOURCE_RECORD); 0 have a halt witness. Of the previously invalid 141, 135 are flat price-change bars, 4 are first bars and 2 are non-flat range bars; only the 2 range bars are genuinely invalid and none has open=0.",
   "OPEN_EQ_PREV_CLOSE is not a legacy-only property: by source it is board 7400 and legacy-unknown 43233 and published 2 and rahavard365 4589 over 505036 comparable bars, so the equality spans the tagged writers. Zero-volume and invalid-OHLC rows, by contrast, all carry legacy-unknown.",
   "The 306 invalid OHLC rows carry legacy-unknown (306 rows); 10 of them resolve to an instruments row and 0 of those have a daily_prices row on the same day, so the root cause is the row's own field set and not a repair candidate.",
@@ -187,6 +188,7 @@
    "definition": "price_basis.last_of() vs closing_of() on the price_history row and on the same-day daily_prices p_last/p_closing",
    "events_with_basis_witness": 624,
    "filed_price_basis_difference": 3,
+   "identity_caveat": "PRICE_BASIS_DIFFERENCE=3 is a join-policy count under the documented ISIN/ins_code precedence, not an absolute identity claim: 3 l_val18 names resolve to two ins_codes each, and the filed كيمازي 2026-10-10 event would be VERIFIED_NO_EVENT under the sibling code's daily row (price_first=open); the join policy is unchanged.",
    "last_vs_close": 583,
    "p_last_vs_p_closing": 622,
    "whole_db_pool_last_vs_close": 10938,
@@ -347,8 +349,17 @@
   },
   "method": "previous close is the preceding bar of the same symbol in date order; the first bar of a symbol is never compared with itself; the category is decided by the witness, never by the kind",
   "residual_unverified": {
+   "attempted": [
+    "basis witness: price_basis.last_of vs closing_of on price_history and daily_prices p_last/p_closing",
+    "first-trade witness: positive daily_prices.price_first compared with open",
+    "halt witness: instrument_state.c_etaval_title (HALT_WORDS) on the exact symbol/date",
+    "session witness: whole-DB dates with zero traded rows"
+   ],
    "by_category": {
     "UNRESOLVED_SOURCE_GAP": 47993
+   },
+   "by_root_cause": {
+    "open_at_prior_close_unwitnessed": 47993
    },
    "by_src": {
     "board": 366,
@@ -360,10 +371,87 @@
     "first_trade:price_first_ne_open": 1,
     "none": 47992
    },
-   "events": 47993
+   "events": 47993,
+   "missing_witness": {
+    "daily_prices_window": {
+     "first_date": "2026-08-20",
+     "last_date": "2026-10-11",
+     "positive_price_first": 68778,
+     "rows": 118774,
+     "sessions": 32
+    },
+    "event_window": {
+     "first_date": "2010-01-04",
+     "last_date": "2026-11-09"
+    },
+    "instrument_state_window": {
+     "first_date": "2026-10-05",
+     "last_date": "2026-10-11",
+     "rows": 2421,
+     "snapshot_days": 5
+    },
+    "rows_after_daily_prices_window": 23,
+    "rows_before_daily_prices_window": 43761,
+    "rows_inside_by_state": {
+     "no_daily_row": 2010,
+     "no_ins_code": 1383,
+     "price_first_null_or_zero": 815,
+     "price_first_positive": 1
+    },
+    "rows_inside_daily_prices_window": 4209,
+    "rows_inside_instrument_state_window": 1,
+    "rows_outside_by_state": {
+     "no_daily_row": 40663,
+     "no_ins_code": 3121
+    },
+    "rows_total": 47993,
+    "rows_uncovered_by_daily_prices": 0,
+    "rows_with_halt_snapshot": 0,
+    "rows_with_positive_price_first": 1,
+    "rows_without_positive_price_first": 47992
+   },
+   "required_source": {
+    "alternatives": [
+     "halt/suspension snapshot on the exact symbol/date (instrument_state.c_etaval_title)",
+     "full-history exchange calendar; a whole-market no-session date only re-files CALENDAR_GAP rows and cannot verify a per-symbol open-at-prior-close equality"
+    ],
+    "missing": "43761 rows predate the daily_prices window, 23 follow it, 4208 inside it have no positive price_first, 0 are uncovered by daily_prices, and 0 carry a halt snapshot; the remaining 1 positive price_first row(s) differ from open.",
+    "present_coverage": "daily_prices 2026-08-20..2026-10-11 (32 sessions, 118774 rows, 68778 with positive price_first); instrument_state 2026-10-05..2026-10-11 (5 snapshot days, 2421 rows)",
+    "primary": "daily_prices.price_first (first-trade print) for every symbol/session in 2010-01-04..2026-11-09"
+   },
+   "verdict": "UNRESOLVED_SOURCE_GAP"
   },
   "rows": 55224,
   "verification": "witness_split_v1"
+ },
+ "residual_unverified": {
+  "build_gate": "only UNEXPLAINED fails the build; UNRESOLVED_SOURCE_GAP is a measured residual",
+  "by_category": {
+   "UNRESOLVED_SOURCE_GAP": 50489
+  },
+  "by_kind": {
+   "OPEN_EQ_PREV_CLOSE": 47993,
+   "ZERO_VOLUME": 2496
+  },
+  "by_root_cause": {
+   "no_trade_carried_close": 2357,
+   "no_trade_first_bar": 4,
+   "no_trade_price_change": 135,
+   "open_at_prior_close_unwitnessed": 47993
+  },
+  "by_src": {
+   "board": 366,
+   "legacy-unknown": 45533,
+   "published": 1,
+   "rahavard365": 4589
+  },
+  "by_witness": {
+   "first_trade:price_first_ne_open": 2,
+   "none": 50487
+  },
+  "detail": "open_eq_prev_close.residual_unverified and zero_volume.residual_unverified bind each kind to its required source and missing witness rows",
+  "events": 50489,
+  "verdict": "UNRESOLVED_SOURCE_GAP"
  },
  "rows_scanned": 511139,
  "rows_with_anomaly": 55669,
@@ -499,8 +587,19 @@
   ],
   "no_session_rows": 194,
   "residual_unverified": {
+   "attempted": [
+    "session witness: whole-DB dates with zero traded rows",
+    "halt witness: instrument_state.c_etaval_title (HALT_WORDS) on the exact symbol/date",
+    "bar shape: flat carried close, flat price change, first bar, non-flat range",
+    "first-trade witness: positive daily_prices.price_first"
+   ],
    "by_category": {
     "UNRESOLVED_SOURCE_GAP": 2496
+   },
+   "by_root_cause": {
+    "no_trade_carried_close": 2357,
+    "no_trade_first_bar": 4,
+    "no_trade_price_change": 135
    },
    "by_src": {
     "legacy-unknown": 2496
@@ -509,7 +608,52 @@
     "first_trade:price_first_ne_open": 1,
     "none": 2495
    },
-   "events": 2496
+   "events": 2496,
+   "missing_witness": {
+    "daily_prices_window": {
+     "first_date": "2026-08-20",
+     "last_date": "2026-10-11",
+     "positive_price_first": 68778,
+     "rows": 118774,
+     "sessions": 32
+    },
+    "event_window": {
+     "first_date": "2024-09-22",
+     "last_date": "2026-09-30"
+    },
+    "instrument_state_window": {
+     "first_date": "2026-10-05",
+     "last_date": "2026-10-11",
+     "rows": 2421,
+     "snapshot_days": 5
+    },
+    "rows_after_daily_prices_window": 0,
+    "rows_before_daily_prices_window": 2298,
+    "rows_inside_by_state": {
+     "no_daily_row": 179,
+     "price_first_null_or_zero": 18,
+     "price_first_positive": 1
+    },
+    "rows_inside_daily_prices_window": 198,
+    "rows_inside_instrument_state_window": 0,
+    "rows_outside_by_state": {
+     "no_daily_row": 2298
+    },
+    "rows_total": 2496,
+    "rows_uncovered_by_daily_prices": 0,
+    "rows_with_halt_snapshot": 0,
+    "rows_with_positive_price_first": 1,
+    "rows_without_positive_price_first": 2495
+   },
+   "required_source": {
+    "alternatives": [
+     "full-history daily trade tape (daily_prices.price_first) to distinguish a traded first print from a no-trade row"
+    ],
+    "missing": "2298 rows predate the daily_prices window, 0 follow it, 197 inside it have no positive price_first, 0 are uncovered by daily_prices, and 0 carry a halt snapshot; instrument_state starts 2026-10-05, after the last zero-volume row (2026-09-30).",
+    "present_coverage": "daily_prices 2026-08-20..2026-10-11 (32 sessions, 118774 rows, 68778 with positive price_first); instrument_state 2026-10-05..2026-10-11 (5 snapshot days, 2421 rows)",
+    "primary": "per-symbol halt/suspension snapshots covering 2024-09-22..2026-09-30, or a full-history exchange calendar that marks the symbol's no-session days"
+   },
+   "verdict": "UNRESOLVED_SOURCE_GAP"
   },
   "rows": 2692
  }

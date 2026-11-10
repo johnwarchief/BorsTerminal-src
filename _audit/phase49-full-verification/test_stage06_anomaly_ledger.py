@@ -38,6 +38,14 @@ def _make_db(path):
     con.executemany(
         "INSERT INTO price_history VALUES (?,?,?,?,?,?,?,?,?,?)",
         [triple, triple, triple])
+    # A second symbol with an open-at-prior-close and no witness: the residual
+    # payload must count it and name the missing source.
+    unresolved = [
+        ("U", "2020-01-01", 5, 5, 5, 5, 1, None, None, "legacy-unknown"),
+        ("U", "2020-01-02", 5, 5, 5, 5, 1, None, None, "legacy-unknown"),
+    ]
+    con.executemany(
+        "INSERT INTO price_history VALUES (?,?,?,?,?,?,?,?,?,?)", unresolved)
     con.commit()
     con.close()
 
@@ -228,6 +236,26 @@ def main():
         assert payload["by_kind"]["DUPLICATE_DATE"] == 2, payload["by_kind"]
         assert payload["duplicate_dates"]["sql_check"] == 2, payload
         assert payload["checks"]["uncategorized_events"] == 0, payload
+        # The residual population is bound to its root cause and missing
+        # source, not just counted.
+        residual = payload["residual_unverified"]
+        assert residual["events"] == 1, residual
+        assert residual["by_kind"] == {"OPEN_EQ_PREV_CLOSE": 1,
+                                       "ZERO_VOLUME": 0}, residual
+        assert residual["by_root_cause"] == {
+            "open_at_prior_close_unwitnessed": 1}, residual
+        open_residual = payload["open_eq_prev_close"]["residual_unverified"]
+        assert open_residual["by_root_cause"] == {
+            "open_at_prior_close_unwitnessed": 1}, open_residual
+        assert open_residual["missing_witness"]["rows_total"] == 1
+        assert open_residual["required_source"]["primary"], open_residual
+        assert open_residual["attempted"], open_residual
+        assert open_residual["verdict"] == "UNRESOLVED_SOURCE_GAP"
+        zero_residual = payload["zero_volume"]["residual_unverified"]
+        assert zero_residual["events"] == 0, zero_residual
+        assert zero_residual["by_root_cause"] == {}, zero_residual
+        assert payload["open_eq_prev_close"]["basis_witness"][
+            "identity_caveat"], payload["open_eq_prev_close"]
         with open(out_csv, encoding="utf-8") as fh:
             assert len(fh.read().splitlines()) == 1 + len(events)
     print("ANOMALY EDGE TESTS OK")
