@@ -450,7 +450,8 @@ def test_cli_end_to_end():
         assert err.startswith(
             "SYMBOL LEDGER FAIL: expected 3 symbols, found 2"), err
         print("negative control (expected): --expect-symbols 3 rejected "
-              "with rc=2 and the SYMBOL LEDGER FAIL message", flush=True)
+              "with rc=2 (fail-closed message asserted, not leaked)",
+              flush=True)
     finally:
         os.chdir(cwd)
         try:
