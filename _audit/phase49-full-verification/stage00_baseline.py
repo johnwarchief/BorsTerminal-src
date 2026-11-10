@@ -35,6 +35,10 @@ if DEV not in sys.path:
 import phase49_manifest as PM  # noqa: E402
 
 CHUNK = 1 << 22
+# ``head`` records the checkout the snapshot ran on, not the commit that later
+# carries this file (the snapshot is committed afterwards, so HEAD moves).
+HEAD_NOTE = ("head is the git HEAD at snapshot time, not the commit that "
+             "contains this baseline (the file is committed afterwards)")
 DEFAULT_MANIFEST = os.path.join(HERE, "evidence", "stage00_baseline.manifest.json")
 
 
@@ -116,6 +120,7 @@ def snapshot(pack, db, captures=None):
     capture_files = capture_shas(captures)
     return {
         "head": git_head(),
+        "head_note": HEAD_NOTE,
         "pack": {"path": _rel(pack),
                  "version": manifest.get("version"),
                  "counts": manifest.get("counts"),

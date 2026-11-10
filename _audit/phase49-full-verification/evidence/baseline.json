@@ -1,5 +1,6 @@
 {
- "head": "1e1e0596672b129e9c0d65c7894de89015dcd8d3",
+ "head": "b43b1a662defe7de5f952879e2d567f3ad7df256",
+ "head_note": "head is the git HEAD at snapshot time, not the commit that contains this baseline (the file is committed afterwards)",
  "pack": {
   "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
   "version": "ra365-phase49-rebuild-full-v2",

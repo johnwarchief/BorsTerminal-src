@@ -4,10 +4,27 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import stage00_baseline as S  # noqa: E402
 
+DB = "_audit/phase49-finalization/seed/market.db"
+PACK = "data/ra365_corrections/ra365-phase49-rebuild-full-v2"
+
+
+def missing_fixtures():
+    """Fixtures are gitignored, so a fresh clone legitimately lacks them."""
+    out = []
+    for rel, check in ((DB, os.path.isfile), (PACK, os.path.isdir)):
+        full = S._abs(rel)
+        if not check(full):
+            out.append(rel)
+    return out
+
 
 def main():
-    rep = S.snapshot(pack=r"data/ra365_corrections/ra365-phase49-rebuild-full-v2",
-                     db=r"_audit/phase49-finalization/seed/market.db")
+    absent = missing_fixtures()
+    if absent:
+        for rel in absent:
+            print("SKIP: %s missing (gitignored fixture)" % rel)
+        return 0
+    rep = S.snapshot(pack=PACK, db=DB)
     assert rep["head"] == S.git_head()
     assert rep["pack"]["counts"]["steps"] == 8280, rep["pack"]
     assert len(rep["pack"]["factors_sha256"]) == 64

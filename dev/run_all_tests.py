@@ -919,6 +919,10 @@ SUITES = [
     ('dev/test_suite_registry_guard.py',
                                      'suite registry guard unit tests: category/profile/disposition/lane agreement'),
     ('dev/test_runner_profiles.py',  'runner lanes: --list/--profile/--only select from the registry, not by category'),
+    # Phase 4.9.1 (B0b): the stage manifest helper is how every verification
+    # stage proves which bytes it consumed, but the gate never ran its test.
+    ('dev/test_phase49_manifest.py',
+                                     'stage manifest helper: input/output hashes deterministic'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند

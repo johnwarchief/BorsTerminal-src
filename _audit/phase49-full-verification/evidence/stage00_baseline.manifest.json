@@ -6,7 +6,7 @@
   "pack_symbols": 951,
   "symbols_with_history": 6103
  },
- "finished_at": "2026-11-10T19:10:32Z",
+ "finished_at": "2026-11-10T19:16:05Z",
  "inputs": {
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
   "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
@@ -14,7 +14,7 @@
   "data/ra365_corrections/ra365-phase49-rebuild-full-v2/raw_ohlc.jsonl": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a"
  },
  "outputs": {
-  "_audit/phase49-full-verification/evidence/baseline.json": "2907a93b628fdc8fbffe5440abc2bb50feaf2dc9015c9421e38ff56af7e0da42"
+  "_audit/phase49-full-verification/evidence/baseline.json": "46c7e340d9f6f210e47d7596efaff471f36dcd16e84c8e94c11d41e8ec4c4300"
  },
  "stage": "stage00_baseline"
 }
