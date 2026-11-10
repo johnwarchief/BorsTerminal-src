@@ -1,0 +1,7 @@
+Indicator Support and Resistance Retest Breakout Signals for Trading View
+ 
+This script identifies support and resistance zones using pairs of swing highs and swing lows that occur within a volatility-adjusted price tolerance. Instead of drawing levels from a single pivot, it waits for two matching swings to confirm a zone, helping filter out isolated highs and lows that may have little significance.
+
+Each zone contains a buy/sell volume balance estimate calculated from lower timeframe data. This provides additional context about the activity that formed the zone and helps visualize whether buying or selling pressure was more dominant during its creation.
+
+The script also tracks how price interacts with existing zones after they form. When price fully breaks through a zone and later retests it, bullish or bearish retest signals are generated based on the direction of the breakout.

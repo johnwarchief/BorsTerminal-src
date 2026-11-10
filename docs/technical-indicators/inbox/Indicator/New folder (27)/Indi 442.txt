@@ -1,0 +1,161 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+indicator("Pivot Channel TrendLines [BigBeluga]", overlay = true, max_lines_count = 500, max_labels_count = 500)
+
+// ＩＮＰＵＴＳ ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――{
+
+GRP_SETTINGS = "Pivot Settings"
+length              = input.int(15, title="Pivot Lookback Length", minval=1, group=GRP_SETTINGS, tooltip="Number of bars before and after to confirm a high or low pivot.")
+tendLineExtension   = input.int(70, title="Trendline Extension Length", minval=1, group=GRP_SETTINGS, tooltip="Distance in bars to project extension trendlines and check for breakouts.")
+extStyleInput       = input.string("Dotted", title="Extension Line Style", options=["Dashed", "Dotted", "Solid"], group=GRP_SETTINGS, tooltip="Visual style for the extension trendlines.")
+
+GRP_VISUALS  = "Colors & Style Settings"
+phColor             = input.color(color.blue, title="Pivot High Color", group=GRP_VISUALS, tooltip="Color for upper trendlines, labels, and high price dashes.")
+plColor             = input.color(color.lime, title="Pivot Low Color", group=GRP_VISUALS, tooltip="Color for lower trendlines, labels, and low price dashes.")
+
+GRP_DASHES   = "Last Pivot Price Dash Settings"
+showLastPivotDashes = input.bool(true, title="Show Last Pivot Price", group=GRP_DASHES, tooltip="Display horizontal dashed lines and price labels for the latest high and low pivots.")
+dashStyleInput      = input.string("Dashed", title="Line Style", options=["Dashed", "Dotted", "Solid"], group=GRP_DASHES, tooltip="Visual style for the pivot price dashes.")
+
+GRP_SIGNALS  = "Direction Label Settings"
+showDirLabels       = input.bool(true, title="Show Direction Labels", group=GRP_SIGNALS, tooltip="Display 'Up' / 'Down' labels when price breaks active extension trendlines.")
+
+// Line Style Parsing
+dashStyle = dashStyleInput == "Dashed" ? line.style_dashed : dashStyleInput == "Dotted" ? line.style_dotted : line.style_solid
+extStyle  = extStyleInput == "Dashed" ? line.style_dashed : extStyleInput == "Dotted" ? line.style_dotted : line.style_solid
+
+// }
+// ＣＡＬＣＵＬＡＴＩＯＮＳ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――{
+
+ph = ta.pivothigh(length, length)
+pl = ta.pivotlow(length, length)
+
+var float phVal = 0.0 
+var int phIndx  = 1
+
+var float plVal = 0.0 
+var int plIndx  = 1
+
+atr = ta.atr(200)
+
+// Active extension line parameters
+var int upperStartBar  = na
+var float upperStartY  = na
+var float upperSlope   = na
+var bool upperActive   = false
+
+var int lowerStartBar  = na
+var float lowerStartY  = na
+var float lowerSlope   = na
+var bool lowerActive   = false
+
+// Direction handle
+var label labelDirect = na
+
+// Pivot Dash handles
+var line phDashLine   = na
+var label phDashLabel = na
+var line plDashLine   = na
+var label plDashLabel = na
+
+// Pivot High Logic
+if not na(ph)
+    line.new(phIndx, phVal, bar_index[length], ph, width = 2, color = phColor)
+
+    val = (ph - phVal) / (bar_index[length] - phIndx)
+
+    label.new(bar_index[length], ph, style = label.style_circle, size = size.tiny, color = color.new(phColor, 50))
+
+    if ph < phVal and (phVal - ph) >= atr
+        line.new(bar_index[length], ph, bar_index[length] + tendLineExtension, ph + val * tendLineExtension, style = extStyle, color = phColor)
+        
+        upperStartBar := bar_index[length]
+        upperStartY   := ph
+        upperSlope    := val
+        upperActive   := true
+
+    phVal  := ph 
+    phIndx := bar_index[length]
+
+    if showLastPivotDashes
+        line.delete(phDashLine)
+        label.delete(phDashLabel)
+        phDashLine  := line.new(bar_index[length], ph, bar_index, ph, style = dashStyle, color = phColor, width = 1)
+        phDashLabel := label.new(bar_index, ph, text = str.tostring(ph, "#.##"), style = label.style_label_left, color = phColor, textcolor = color.white, size = size.small)
+
+// Pivot Low Logic
+if not na(pl)
+    line.new(plIndx, plVal, bar_index[length], pl, color = plColor, width = 2)
+
+    val = (pl - plVal) / (bar_index[length] - plIndx)
+
+    label.new(bar_index[length], pl, style = label.style_circle, size = size.tiny, color = color.new(plColor, 50))
+
+    if plVal < pl and (pl - plVal) >= atr
+        line.new(bar_index[length], pl, bar_index[length] + tendLineExtension, pl + val * tendLineExtension, style = extStyle, color = plColor)
+        
+        lowerStartBar := bar_index[length]
+        lowerStartY   := pl
+        lowerSlope    := val
+        lowerActive   := true
+
+    plVal  := pl 
+    plIndx := bar_index[length]
+
+    if showLastPivotDashes
+        line.delete(plDashLine)
+        label.delete(plDashLabel)
+        plDashLine  := line.new(bar_index[length], pl, bar_index, pl, style = dashStyle, color = plColor, width = 1)
+        plDashLabel := label.new(bar_index, pl, text = str.tostring(pl, "#.##"), style = label.style_label_left, color = plColor, textcolor = color.white, size = size.small)
+
+// Directional Breakout Engine
+if showDirLabels
+    if upperActive
+        int barsPassedUpper = bar_index - upperStartBar
+        
+        if barsPassedUpper <= tendLineExtension and barsPassedUpper >= 0
+            float expectedUpperPrice = upperStartY + upperSlope * barsPassedUpper
+            
+            if close > expectedUpperPrice and barstate.isconfirmed
+                label.delete(labelDirect)
+                labelDirect := label.new(bar_index, low, "Up", style = label.style_label_up, color = phColor, textcolor = color.white, size = size.small)
+                upperActive := false
+
+        else if barsPassedUpper > tendLineExtension
+            upperActive := false
+
+    if lowerActive
+        int barsPassedLower = bar_index - lowerStartBar
+        
+        if barsPassedLower <= tendLineExtension and barsPassedLower >= 0
+            float expectedLowerPrice = lowerStartY + lowerSlope * barsPassedLower
+            
+            if close < expectedLowerPrice and barstate.isconfirmed
+                label.delete(labelDirect)
+                labelDirect := label.new(bar_index, high, "Down", style = label.style_label_down, color = plColor, textcolor = color.white, size = size.small)
+                lowerActive := false
+        else if barsPassedLower > tendLineExtension
+            lowerActive := false
+
+// }
+// ＰＬＯＴ ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――{
+
+if showLastPivotDashes and barstate.islast
+    if not na(phDashLine)
+        line.set_x2(phDashLine, bar_index)
+        label.set_x(phDashLabel, bar_index)
+    if not na(plDashLine)
+        line.set_x2(plDashLine, bar_index)
+        label.set_x(plDashLabel, bar_index)
+
+// }
+
+
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
+

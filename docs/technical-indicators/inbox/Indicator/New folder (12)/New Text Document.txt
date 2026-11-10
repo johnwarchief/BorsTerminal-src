@@ -1,0 +1,17 @@
+Indicator Super Trend Pullback Signals for Trading View
+ 
+Super trend Pullback Signals is a trend-following continuation indicator designed to identify structured pullbacks within established trends.
+
+The script combines Super trend detection with ATR-based pullback analysis, Dynamic Value Zones, and momentum confirmation to highlight areas where trend continuation may be developing after a retracement.
+ 
+Important Features:
+
+Built-in Supertrend trend detection
+Dynamic Value Zone around the Supertrend line
+ATR-based Pullback Quality Filter (PQF)
+Momentum confirmation candle requirement
+One signal per trend leg
+Bullish and Bearish continuation signals
+Trend flip markers
+Alert support
+Clean chart visualization
