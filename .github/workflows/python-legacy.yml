@@ -1,0 +1,59 @@
+name: python-legacy
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  legacy-maintenance:
+    name: legacy Python maintenance (report-only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps for legacy API guards
+        working-directory: frontend
+        run: npm ci --ignore-scripts
+
+      - name: Legacy suites
+        run: python dev/run_all_tests.py --profile legacy
+
+  legacy-static:
+    name: legacy static JS syntax (report-only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check first-party JS
+        run: |
+          set -e
+          for f in \
+            static/app.js static/fundamental_ui.js static/portfolio_ui.js \
+            static/tech_rtv.js static/tech_tools.js static/tech_365.js \
+            static/mstat.js static/selection.js static/calendar/calendar.js \
+            static/calendar/calendarService.js static/vendor/drawing_math.js
+          do
+            if [ -f "$f" ]; then node --check "$f"; else echo "skip (not in repo): $f"; fi
+          done
