@@ -1882,7 +1882,7 @@
    "profile": "legacy",
    "go_equivalent": "backend-go/internal/chart/chartdb_test.go:TestAsOfIsARealCutoff",
    "ts_equivalent": null,
-   "reason": "as_of is a real candle cutoff and the cache key carries it so two cutoffs never cross-serve; the Go analysis test asserts the same bars, verdict movement and one key per cutoff",
+   "reason": "as_of is a real candle cutoff and the cache key carries it so two cutoffs never cross-serve; the Go analysis test asserts the same bars, verdict movement and one key per cutoff (the Go key also carries the ruleset version, analysis.go:98, but the test does not assert that component, and the basis/entry-hint/tf key matrix is Python-only)",
    "retirement_date": null
   },
   "dev/test_fts_basis_anchor_v1.py": {
