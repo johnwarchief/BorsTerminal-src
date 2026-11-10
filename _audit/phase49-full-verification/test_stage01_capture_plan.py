@@ -124,6 +124,37 @@ def dedupe_case():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def ambiguous_case():
+    """Two ids for one key: neither wins silently; the key is flagged."""
+    per = "\u06a9\u062a\u0648"   # Persian kaf
+    ara = "\u0643\u062a\u0648"   # Arabic kaf, same normalised key
+    tmp = tempfile.mkdtemp()
+    try:
+        db = os.path.join(tmp, "market.db"); make_db(db)
+        pack = os.path.join(tmp, "pack")
+        make_pack(pack, [{"symbol": per, "asset_id": "7",
+                          "validity": "unverified"}])
+        live = os.path.join(tmp, "live")
+        make_pack(live, [{"symbol": per, "asset_id": "7"},
+                         {"symbol": ara, "asset_id": "9"}])
+        out = os.path.join(tmp, "out")
+        plan = S.build(db, pack, live, out)
+        k = S.key(per)
+        assert plan["counts"]["asset_map_ambiguous"] == [k], plan["counts"]
+        assert plan["counts"]["mapped"] == 0, plan["counts"]
+        unmapped = json.load(open(os.path.join(out, "capture-unmapped.json"),
+                                  encoding="utf-8"))
+        row = [u for u in unmapped if u["key"] == k]
+        assert row and row[0]["reason"] == "AMBIGUOUS_ASSET_ID", unmapped
+        assert row[0]["asset_ids"] == ["7", "9"], row
+        syms = json.load(open(os.path.join(out, "symbols.json"),
+                              encoding="utf-8"))
+        assert not any(str(s["asset_id"]) in ("7", "9") for s in syms), syms
+        print("  ambiguous case OK")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def real_case():
     absent = [rel for rel, check in ((DB, os.path.isfile), (PACK, os.path.isdir),
                                      (LIVE, os.path.isdir))
@@ -166,6 +197,7 @@ def real_case():
 def main():
     brief_case()
     dedupe_case()
+    ambiguous_case()
     real_case()
     print("CAPTURE PLAN TESTS OK")
     return 0

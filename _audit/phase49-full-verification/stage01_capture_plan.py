@@ -24,6 +24,10 @@ and last DB date.
 The live pack is the only asset-id map (828 symbols). A symbol without an
 asset id is *not* dropped and no id is invented for it: it is written to
 ``capture-unmapped.json`` with ``reason=NO_ASSET_ID`` and counted as a blocker.
+If one normalised key carries two different ids in the live pack, the first row
+does not silently win: the key is left out of the map, listed under
+``asset_map_ambiguous``, and its symbols are written with
+``reason=AMBIGUOUS_ASSET_ID`` (plus the conflicting ``asset_ids``).
 
 The Seed DB is opened read-only (``mode=ro``); neither the seed nor the packs
 are written. Stdlib only. JSON is deterministic: UTF-8, sorted keys,
@@ -113,16 +117,30 @@ def load_pack(path):
 
 
 def asset_map(rows):
-    """``key(symbol) -> asset_id`` from the live pack; report ambiguous keys."""
-    out, ambiguous = {}, set()
+    """``key(symbol) -> asset_id`` from the live pack; report ambiguous keys.
+
+    A key mapped to two different ids is a real conflict, so the first row must
+    not silently win: the key is omitted from ``out`` and recorded in
+    ``ambiguous`` as ``key -> sorted ids``. Callers report those symbols with
+    ``reason=AMBIGUOUS_ASSET_ID`` instead of treating them as unmapped-by-absence.
+    """
+    ids_by_key, order = {}, []
     for r in rows:
         k = key(r.get("symbol"))
         aid = r.get("asset_id")
         if not k or aid in (None, ""):
             continue
-        if k in out and str(out[k]) != str(aid):
-            ambiguous.add(k)
-        out.setdefault(k, aid)
+        if k not in ids_by_key:
+            ids_by_key[k] = set()
+            order.append(k)
+        ids_by_key[k].add(str(aid))
+    out, ambiguous = {}, {}
+    for k in order:
+        ids = ids_by_key[k]
+        if len(ids) == 1:
+            out[k] = next(iter(ids))
+        else:
+            ambiguous[k] = sorted(ids)
     return out, ambiguous
 
 
@@ -242,9 +260,12 @@ def build(db, pack, live_pack, out_dir, min_span_days=365, extra=None):
                       "mapped": aid is not None, "sources": sources,
                       "symbol": sym})
         if aid is None:
-            unmapped.append({"in_db": k in db_keys, "key": k,
-                             "reason": "NO_ASSET_ID", "sources": sources,
-                             "symbol": sym})
+            row = {"in_db": k in db_keys, "key": k, "reason": "NO_ASSET_ID",
+                   "sources": sources, "symbol": sym}
+            if k in ambiguous:
+                row["reason"] = "AMBIGUOUS_ASSET_ID"
+                row["asset_ids"] = ambiguous[k]
+            unmapped.append(row)
             continue
         symbols.append({"asset_id": num, "symbol": sym,
                         "ins_code": inst.get(k, {}).get("ins_code", ""),
@@ -314,6 +335,22 @@ def write_manifest(plan, args):
                              args.manifest)
 
 
+def _safe_stdout():
+    """Never let a non-UTF-8 console turn a printed count into a crash.
+
+    Windows consoles default to cp1252; one Persian symbol name in the summary
+    must not raise ``UnicodeEncodeError`` after the plan files are written and
+    before the manifest is. Non-UTF-8 streams replace unencodable glyphs; real
+    UTF-8 streams are untouched. Streams without ``reconfigure`` (tests, pipes
+    wrapped by a harness) are left alone.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--db", required=True, help="Seed market.db (read-only)")
@@ -330,6 +367,7 @@ def main(argv=None):
                     help="stage manifest path ('' disables)")
     a = ap.parse_args(argv)
 
+    _safe_stdout()
     os.chdir(ROOT)
     try:
         extra = []
@@ -340,6 +378,11 @@ def main(argv=None):
                 raise ValueError("--extra-symbols must be a JSON list")
         plan = build(a.db, a.pack, a.live_pack, a.out_dir, a.min_span_days,
                      extra)
+        # Evidence before commentary: the tracked manifest is written before
+        # any summary print, so a console that cannot render a symbol name can
+        # no longer cost the stage its manifest.
+        if a.manifest:
+            write_manifest(plan, a)
     except (OSError, ValueError, sqlite3.Error) as exc:
         print("CAPTURE PLAN FAIL: %s" % exc, file=sys.stderr)
         return 2
@@ -347,7 +390,6 @@ def main(argv=None):
     shown = {k: v for k, v in plan.items() if k != "union"}
     print(json.dumps(shown, ensure_ascii=False, indent=1, sort_keys=True))
     if a.manifest:
-        write_manifest(plan, a)
         print("CAPTURE PLAN MANIFEST: %s" % _rel(a.manifest))
     return 0
 

@@ -16,7 +16,7 @@
   "union_by_symbol": 1130,
   "unmapped": 339
  },
- "finished_at": "2026-11-10T19:33:14Z",
+ "finished_at": "2026-11-10T19:45:19Z",
  "inputs": {
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
   "data/ra365_corrections/ra365-live40-v1/factors.jsonl": "75be4441c4b5f068bb700e3dbdd9d618b054654b90ef4c4036540964f2d59988",
