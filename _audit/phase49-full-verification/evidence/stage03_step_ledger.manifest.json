@@ -12,7 +12,7 @@
   "VERIFIED_REFERENCE": 485,
   "rows": 8308
  },
- "finished_at": "2026-11-10T20:27:35Z",
+ "finished_at": "2026-11-10T20:29:45Z",
  "inputs": {
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
   "_audit/phase49-full-verification/captures/reference-index-30.json": "05fc5b50a6b632eff464598e755e4bd0bb96961d5065446a3d5291896b557062",
@@ -23,7 +23,7 @@
  },
  "outputs": {
   "_audit/phase49-full-verification/evidence/step-ledger-counts.json": "0d7016d4e95f5cec5d64eee48c8c920d244157d85ecee1d387a6416d341c2556",
-  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "a030832be851fcbfbabf3a86b0d06581aa1faa38b31e8561d4c2361c4e42d6d4"
+  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "88808b8a65949d6d4be29ab7631231bd2135c5dd2f7150fd6a4413ad5de3dbcb"
  },
  "stage": "stage03_step_ledger"
 }

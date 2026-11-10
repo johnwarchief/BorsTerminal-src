@@ -540,6 +540,9 @@ def classify(step, official, reference, rules, audit=None, notices=None):
     if dropped:
         status = "INVALID_DROPPED"
         compare, cause = "NO_EVIDENCE", ""
+        if r1 == "MATCH":
+            notes.append("new R1 matches the dropped ratio; the manifest "
+                         "drop predates the B3 reference index")
         base = "R1" if (reference.get(sym) and _d(ds)
                         and (rec.get("type0") or {}).get("first")
                         and rec["type0"]["first"] <= ds
