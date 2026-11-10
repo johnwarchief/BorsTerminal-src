@@ -1,0 +1,125 @@
+{
+ "by_evidence_tier": {
+  "I1": 6073,
+  "O1": 1504,
+  "O1+I1": 25,
+  "O1+O2": 1,
+  "O1+R1": 151,
+  "O1+R1+I1": 12,
+  "O2+I1": 4,
+  "R1": 494,
+  "R1+I1": 44
+ },
+ "by_status": {
+  "CONFLICT_DUPLICATE": 100,
+  "CONFLICT_RATIO": 195,
+  "INSUFFICIENT_EVIDENCE": 1075,
+  "INVALID_DROPPED": 28,
+  "PARTIAL_OFFICIAL": 399,
+  "PARTIAL_REFERENCE": 8,
+  "RECONSTRUCTED_AUDITED": 4955,
+  "VERIFIED_MULTI_SOURCE": 80,
+  "VERIFIED_OFFICIAL": 983,
+  "VERIFIED_REFERENCE": 485
+ },
+ "by_validity": {
+  "invalid_dropped": 28,
+  "reconstructed_verified": 6300,
+  "unverified": 1358,
+  "verified": 622
+ },
+ "comparison_result": {
+  "MATCH": 1566,
+  "MISMATCH": 215,
+  "NO_EVIDENCE": 6105,
+  "PARTIAL": 422
+ },
+ "inputs": {
+  "notices": 36348,
+  "official_events": 4480,
+  "official_exact_keys": 4456,
+  "pack_dropped_steps": 28,
+  "pack_valid_steps": 8280,
+  "reference_changes": 624,
+  "reference_symbols": 36
+ },
+ "notes": "O1 joined on normalised symbol with the frozen +-5 day shift; R1 joined on key with ratio = 1/ratio_change; I1 is internal reconstruction, not independent evidence.",
+ "official_witness": {
+  "match": 1075,
+  "mismatch": 210,
+  "partial": 408,
+  "used": 1693
+ },
+ "pack": "ra365-phase49-rebuild-full-v2",
+ "reconstruction_audit": {
+  "audited_rows": 8280,
+  "by_validity": {
+   "invalid_dropped": {
+    "rows": 28
+   },
+   "reconstructed_verified": {
+    "failed": 38,
+    "passed": 6262,
+    "rows": 6300
+   },
+   "unverified": {
+    "failed": 1354,
+    "passed": 4,
+    "rows": 1358
+   },
+   "verified": {
+    "failed": 301,
+    "passed": 321,
+    "rows": 622
+   }
+  },
+  "failed": 1693,
+  "passed": 6587,
+  "reasons": {
+   "duplicate-date": 100,
+   "missing-provenance": 1651,
+   "ratio-out-of-range": 2,
+   "symbol-identity": 100
+  }
+ },
+ "reference_witness": {
+  "match": 643,
+  "mismatch": 8,
+  "partial": 24,
+  "used": 675
+ },
+ "rows": 8308,
+ "schema": 1,
+ "stage": "stage03_step_ledger",
+ "status_by_validity": {
+  "invalid_dropped": {
+   "INVALID_DROPPED": 28
+  },
+  "reconstructed_verified": {
+   "CONFLICT_DUPLICATE": 36,
+   "CONFLICT_RATIO": 72,
+   "INSUFFICIENT_EVIDENCE": 2,
+   "PARTIAL_OFFICIAL": 361,
+   "RECONSTRUCTED_AUDITED": 4951,
+   "VERIFIED_OFFICIAL": 878
+  },
+  "unverified": {
+   "CONFLICT_DUPLICATE": 50,
+   "CONFLICT_RATIO": 99,
+   "INSUFFICIENT_EVIDENCE": 1073,
+   "PARTIAL_OFFICIAL": 5,
+   "PARTIAL_REFERENCE": 8,
+   "RECONSTRUCTED_AUDITED": 4,
+   "VERIFIED_MULTI_SOURCE": 9,
+   "VERIFIED_OFFICIAL": 105,
+   "VERIFIED_REFERENCE": 5
+  },
+  "verified": {
+   "CONFLICT_DUPLICATE": 14,
+   "CONFLICT_RATIO": 24,
+   "PARTIAL_OFFICIAL": 33,
+   "VERIFIED_MULTI_SOURCE": 71,
+   "VERIFIED_REFERENCE": 480
+  }
+ }
+}
