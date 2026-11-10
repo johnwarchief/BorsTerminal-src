@@ -27,6 +27,12 @@ jobs:
       - name: Workflow layout test
         run: python dev/test_workflows_layout.py
 
+      # The Seed release gate's own test: stdlib only, so it runs with the
+      # structural checks before the dependency install and fails fast when
+      # the gate's blocked/approved contract regresses (fail-open risk).
+      - name: Seed release gate self-test
+        run: python scripts/test_check_seed_release.py
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

@@ -210,9 +210,13 @@ jobs:
         # publishable. The tracked root market.db has no seed_manifest table
         # yet, so this gate blocks on purpose until the owner decides; do not
         # add --owner-approved-reference-redistribution here without that
-        # decision.
+        # decision. The gate's own test runs first: a nonzero return means the
+        # blocked/approved contract regressed (fail-open risk), and a Seed
+        # packaged through an unproven gate is not acceptable.
         shell: pwsh
         run: |
+          python scripts/test_check_seed_release.py
+          if ($LASTEXITCODE -ne 0) { Write-Output "::error::[seed] gate self-test failed"; exit 1 }
           if (Test-Path market.db) {
             $out = python scripts/check_seed_release.py --db market.db 2>&1
             $code = $LASTEXITCODE
