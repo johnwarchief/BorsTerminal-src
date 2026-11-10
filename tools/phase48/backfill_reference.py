@@ -66,6 +66,30 @@ def now_iso():
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 
 
+def canonical_iso_day(value):
+    """تاریخِ ISOِ متعارفِ صفرپر (`YYYY-MM-DD`)؛ هر شکلِ دیگری ValueError است."""
+    try:
+        d = dt.date.fromisoformat(value)
+    except (TypeError, ValueError):
+        raise ValueError(
+            "invalid --since %r: expected a canonical ISO date YYYY-MM-DD"
+            % (value,))
+    if str(d) != value:
+        raise ValueError(
+            "invalid --since %r: expected a canonical zero-padded ISO date "
+            "YYYY-MM-DD (did you mean %s?)" % (value, d.isoformat()))
+    return d
+
+
+def iso_day_arg(value):
+    """نوعِ argparse برایِ `--since`؛ خطایِ روشن و خروجِ غیرصفر رویِ ورودیِ نامتعارف."""
+    try:
+        canonical_iso_day(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc))
+    return value
+
+
 def sha256_file(path):
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -96,6 +120,8 @@ def _ref_key(r):
 
 def load_ref_daily(path, symbols, since=None):
     """فقط raw/D؛ با `since` فقط تاریخ‌هایِ مساوی یا پس ازِ آن؛ تکرارِ تاریخ: اولی می‌ماند، تعارض شمرده می‌شود."""
+    if since:
+        canonical_iso_day(since)
     wanted = set(symbols)
     out = {s: {} for s in symbols}
     meta = {"ref_rows": 0, "duplicates": 0, "conflicts": 0}
@@ -609,7 +635,8 @@ def main(argv=None):
     a.add_argument("--run-id", default="")
     a.add_argument("--reuse-work", action="store_true")
     a.add_argument("--dry-run", action="store_true")
-    a.add_argument("--since", default="")
+    a.add_argument("--since", type=iso_day_arg, default=None,
+                   metavar="YYYY-MM-DD")
     a.add_argument("--out", required=True)
     a.add_argument("--md", default="")
     r = sub.add_parser("rollback")

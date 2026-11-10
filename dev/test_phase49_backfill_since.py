@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Prove --since inserts only recent missing dates and stays idempotent."""
+import contextlib
 import gzip
+import io
 import json
 import os
 import sqlite3
@@ -46,6 +48,15 @@ def dates_in(db_path, symbol):
     try:
         return [r[0] for r in con.execute(
             "SELECT date FROM price_history WHERE symbol=? ORDER BY date", (symbol,))]
+    finally:
+        con.close()
+
+
+def count_rahavard(db_path):
+    con = sqlite3.connect(db_path)
+    try:
+        return con.execute(
+            "SELECT COUNT(*) FROM price_history WHERE src='rahavard365'").fetchone()[0]
     finally:
         con.close()
 
@@ -98,6 +109,29 @@ def main():
         cli = json.load(fh)
     assert cli["would_insert"] == 1 and cli["inserted"] == 0, cli["totals"]
     assert cli["ref_rows"] == 1, cli["ref_rows"]
+
+    # CLI: a non-canonical `--since` is a parser error before any work: no DB,
+    # no report, no inserted row. `2026-1-1` and `20260101` used to fall through
+    # to a lexical filter and silently insert 0.
+    for bad in ("2026-1-1", "20260101", "garbage", "2026-13-45"):
+        bad_work = os.path.join(tmp, "work-bad-" + bad.replace("-", "_"))
+        bad_out = os.path.join(tmp, "bad-" + bad.replace("-", "_") + ".json")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            try:
+                brc = B.main(["apply", "--src", src, "--work", bad_work,
+                              "--ref", ref, "--symbols", syms,
+                              "--run-id", "test-bad-since",
+                              "--since", bad, "--out", bad_out])
+            except SystemExit as exc:
+                brc = exc.code
+        assert brc not in (0, None), (bad, brc)
+        msg = err.getvalue()
+        assert "--since" in msg and "canonical" in msg, (bad, msg)
+        assert not os.path.exists(bad_out), (bad, "report written")
+        bad_db = os.path.join(bad_work, "market.db")
+        assert not os.path.exists(bad_db) or count_rahavard(bad_db) == 0, \
+            (bad, "rows written")
 
     print("BACKFILL SINCE TESTS OK")
     return 0
