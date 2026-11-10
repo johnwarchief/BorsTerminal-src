@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """گاردِ B4 — فیکسچر، اوراکل و طلایی‌هایِ بنیادی و نوار.
 
-۱) فیکسچر قطعی است (دو build در دو پوشۀ موقت، هشِ یکسان) و با نسخۀ کامیت‌شده یکی است.
+۱) فیکسچر قطعی است (دو build در دو پوشۀ موقت، هشِ یکسان) و با نسخۀ کامیت‌شده در ساختار و همهٔ ردیف‌ها یکی است.
 ۲) هر طلایی با اجرایِ تازهٔ اوراکل برابر است (پارسِ JSON، نه رشته).
 ۳) هر کیس محتوایِ خودش را دارد: رأیِ پنج‌محور، سه‌حالۀ null/False، دورۀ فصلی،
    clampها، حالتِ صندوق، و روزهایِ نوار با placeholder — تا «Δ=۰ رویِ بدنهٔ تهی»
@@ -20,6 +20,7 @@ import io
 import json
 import os
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -51,6 +52,53 @@ def sha(path):
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()[:16]
+
+
+def logical_db(path):
+    """Logical content of a SQLite file: schema text plus every row, value-exact.
+
+    A raw sha256 also hashes the SQLite header (bytes 98-99 are
+    SQLITE_VERSION_NUMBER) and the page layout, so a byte-identical *content*
+    fails on any other SQLite build. The fixture's contract is its schema and
+    its rows, so compare exactly those: the sqlite_master DDL plus the full row
+    multiset of every table. repr keeps cell types apart (1 vs 1.0 vs '1' vs
+    None), so no value can hide behind a string conversion.
+    """
+    con = sqlite3.connect("file:%s?mode=ro" % path.replace("\\", "/"), uri=True)
+    try:
+        master = con.execute(
+            "SELECT type, name, tbl_name, COALESCE(sql, '') FROM sqlite_master "
+            "ORDER BY type, name").fetchall()
+        tables = {}
+        for typ, name, _tbl, ddl in master:
+            if typ != "table" or name.startswith("sqlite_"):
+                continue
+            rows = con.execute('SELECT * FROM "%s"' % name.replace('"', '""')).fetchall()
+            tables[name] = (ddl, len(rows), sorted(repr(r) for r in rows))
+        return {"master": tuple(master), "tables": tables}
+    finally:
+        con.close()
+
+
+def logical_diff(a, b):
+    """First difference between two logical_db() results; '' when equal."""
+    if a["master"] != b["master"]:
+        return "schema objects differ"
+    if set(a["tables"]) != set(b["tables"]):
+        return "tables differ: %r vs %r" % (sorted(a["tables"]), sorted(b["tables"]))
+    for name in sorted(a["tables"]):
+        ddl_a, n_a, rows_a = a["tables"][name]
+        ddl_b, n_b, rows_b = b["tables"][name]
+        if ddl_a != ddl_b:
+            return "%s: DDL differs" % name
+        if n_a != n_b:
+            return "%s: %d rows vs %d" % (name, n_a, n_b)
+        if rows_a != rows_b:
+            for ra, rb in zip(rows_a, rows_b):
+                if ra != rb:
+                    return "%s: row differs: %s vs %s" % (name, ra[:120], rb[:120])
+            return "%s: row multiset differs" % name
+    return ""
 
 
 def read_json(path):
@@ -432,13 +480,16 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="b4f-a-") as a, tempfile.TemporaryDirectory(prefix="b4f-b-") as b:
             rcs = (build_fixture(a), build_fixture(b))
             fresh = [{n: sha(os.path.join(r, n)) for n in names} for r in (a, b)]
-        committed = {n: sha(os.path.join(FIX, n)) for n in names}
+            fresh_logical = [{n: logical_db(os.path.join(r, n)) for n in names} for r in (a, b)]
+        committed_logical = {n: logical_db(os.path.join(FIX, n)) for n in names}
         check("fundamental fixture is deterministic", rcs == (0, 0) and fresh[0] == fresh[1], "rc=%r" % (rcs,))
-        check("committed fixture equals a fresh build", fresh[0] == committed,
-              "fresh=%s committed=%s" % (fresh[0], committed))
+        bad = {n: logical_diff(fresh_logical[0][n], committed_logical[n]) for n in names}
+        bad = {n: d for n, d in bad.items() if d}
+        check("committed fixture equals a fresh build (schema + every row)", not bad,
+              "; ".join("%s: %s" % (n, d) for n, d in bad.items()))
     except Exception as e:                                        # noqa: BLE001
         check("fundamental fixture is deterministic", False, repr(e))
-        check("committed fixture equals a fresh build", False, repr(e))
+        check("committed fixture equals a fresh build (schema + every row)", False, repr(e))
 
     saved = {k: os.environ.get(k) for k in
              ("BORS_DATA_DIR", "BORS_CHART_CDN", "BORS_CODAL_OFFLINE", "BORS_NO_FETCH_LOOPS")}
