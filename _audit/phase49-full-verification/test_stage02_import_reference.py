@@ -15,6 +15,7 @@ Four synthetic cases plus one real-fixture case:
   does not (fresh clone / CI).
 """
 import gzip
+import hashlib
 import json
 import os
 import shutil
@@ -67,6 +68,9 @@ def brief_case():
     assert idx[ALEF]["factor_exact"] == 0, idx[ALEF]
     assert idx[ALEF]["factor_within_0.1pct"] == 0, idx[ALEF]
     assert idx[ALEF]["factor_undefined_ratio"] == 0, idx[ALEF]
+    # provenance keys are part of the schema even for in-memory rows
+    assert idx[ALEF]["source"] is None, idx[ALEF]
+    assert idx[ALEF]["capture_sha256"] is None, idx[ALEF]
     print("  brief case OK")
 
 
@@ -197,11 +201,26 @@ def cli_case():
                        encoding="utf-8") as fh:
             written = [json.loads(line) for line in fh if line.strip()]
         assert len(written) == 4, written
+        with gzip.open(os.path.join(normalized, "bars.ndjson.gz"), "rb") as fh:
+            bars_sha = hashlib.sha256(fh.read()).hexdigest()
         assert "reference index: 1 symbols" in proc.stdout, proc.stdout
         idx = json.load(open(out, encoding="utf-8"))
         assert len(idx) == 1 and ALEF in idx, idx
         assert idx[ALEF]["type0"]["n"] == 2, idx[ALEF]
         assert abs(idx[ALEF]["factor_changes"][0]["ratio_change"] - 0.9) < 1e-12
+        # provenance: every record names its capture and the bars it consumed
+        for rec in idx.values():
+            assert os.path.basename(rec["source"]) == "capture.json", rec
+            assert rec["capture_sha256"] == bars_sha, rec
+        # the digest must survive a second run over the same rows
+        normalized2 = os.path.join(tmp, "normalized-again")
+        out2 = os.path.join(tmp, "reference-index-again.json")
+        subprocess.check_call(
+            [sys.executable, os.path.join(HERE, "stage02_import_reference.py"),
+             "--capture", capture, "--normalized", normalized2,
+             "--out", out2, "--manifest", ""], cwd=ROOT)
+        again = json.load(open(out2, encoding="utf-8"))
+        assert again[ALEF]["capture_sha256"] == bars_sha, again[ALEF]
         print("  cli case OK")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -224,6 +243,12 @@ def real_case():
                     + rec["factor_undefined_ratio"]
                     + len(rec["factor_changes"]) == rec["factor_days"] - 1), rec
         assert sum(len(r["factor_changes"]) for r in idx.values()) > 0, idx
+        with gzip.open(os.path.join(normalized, "bars.ndjson.gz"), "rb") as fh:
+            bars_sha = hashlib.sha256(fh.read()).hexdigest()
+        expected_source = S._rel(CAPTURE_7)
+        for rec in idx.values():
+            assert rec["source"] == expected_source, rec
+            assert rec["capture_sha256"] == bars_sha, rec
         print("  real fixture OK (7 symbols, %d changes)"
               % sum(len(r["factor_changes"]) for r in idx.values()))
     finally:

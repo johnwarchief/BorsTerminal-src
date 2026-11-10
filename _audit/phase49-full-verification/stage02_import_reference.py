@@ -22,6 +22,16 @@ For every daily date present in both ``type0`` (raw) and ``type7`` (adjusted),
 0.1% rule from ``stageC_reference_parity.py``). The threshold is not configurable
 here on purpose.
 
+Provenance
+----------
+Every record carries ``source`` (repo-relative path of the capture that fed the
+import) and ``capture_sha256`` (SHA-256 of the decompressed ``bars.ndjson.gz``
+payload actually consumed). The digest covers the bars, not the ``.gz``
+container: the gzip header embeds a wall-clock mtime, so container hashes would
+differ between runs over identical rows. Provenance lives on each record rather
+than in a ``__meta__`` entry so consumers that iterate every key keep seeing
+only symbols.
+
 Every comparable transition is counted: ``factor_exact`` (ratio exactly 1.0),
 ``factor_within_0.1pct`` (0 < |ratio-1| <= 1e-3), ``factor_undefined_ratio``
 (the previous level was zero, so the ratio does not exist) and
@@ -40,6 +50,7 @@ output SHA-256s plus counts), never bars or raw rows. Stdlib only.
 """
 import argparse
 import gzip
+import hashlib
 import json
 import math
 import os
@@ -96,8 +107,27 @@ def series_type(row):
     return None
 
 
-def build_index(rows):
+def read_bars(bars_path):
+    """Return ``(rows, sha256)`` for the importer's ``bars.ndjson.gz``.
+
+    The digest is the one stored as ``capture_sha256``: SHA-256 of the
+    decompressed NDJSON payload the index is actually built from. It is stable
+    across runs over the same rows, unlike a hash of the gzip container.
+    """
+    with gzip.open(bars_path, "rb") as fh:
+        payload = fh.read()
+    rows = [json.loads(line) for line in payload.decode("utf-8").splitlines()
+            if line.strip()]
+    return rows, hashlib.sha256(payload).hexdigest()
+
+
+def build_index(rows, source=None, capture_sha256=None):
     """Build ``{normalised_key: record}`` from imported daily bars.
+
+    ``source`` and ``capture_sha256`` are copied onto every record, so an index
+    read later can prove which capture and which bars bytes produced it. Both
+    default to ``None`` (keys are always present) for callers that build an
+    index from in-memory rows, such as the unit tests.
 
     Bars that are undated, non-daily, unclassifiable or have a non-finite close
     are skipped. For a repeated (key, type, date) the first row wins and the
@@ -179,6 +209,8 @@ def build_index(rows):
         spellings = sorted(raw_symbols.get(key, ()))
         out[key] = {
             "key": key,
+            "source": source,
+            "capture_sha256": capture_sha256,
             "symbol": min(spellings, key=lambda s: (len(s), s))
             if spellings else None,
             "raw_symbols": spellings,
@@ -237,13 +269,9 @@ def build(capture, normalized, out, manifest=""):
                            "--out", normalized])
 
     bars_path = os.path.join(normalized, "bars.ndjson.gz")
-    rows = []
-    with gzip.open(bars_path, "rt", encoding="utf-8") as fh:
-        for line in fh:
-            if line.strip():
-                rows.append(json.loads(line))
+    rows, bars_sha256 = read_bars(bars_path)
 
-    index = build_index(rows)
+    index = build_index(rows, source=_rel(capture), capture_sha256=bars_sha256)
     _write_json(out, index)
     counts = _counts(index, rows)
     if manifest:

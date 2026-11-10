@@ -15,14 +15,14 @@
   "type7_series": 7,
   "zero_raw_days": 0
  },
- "finished_at": "2026-11-10T19:53:10Z",
+ "finished_at": "2026-11-10T20:05:04Z",
  "inputs": {
   "_audit/phase49-finalization/rahavard/capture-7.json": "13a805fa88864ca8258fd54af4920e9eeec0da0ca39f0ae84ea6bd0c8468d97a",
-  "_audit/phase49-full-verification/captures/normalized-7/bars.ndjson.gz": "d465267c4ac90bc0c3e0775640a67caad6e862b1b8371e0446fc1278980aeef3",
+  "_audit/phase49-full-verification/captures/normalized-7/bars.ndjson.gz": "53b0921c458c279ceb1f989241d00e023849adad4709398ad488a09d5ed7f45a",
   "tools/phase45/rahavard/import_capture.py": "dd1be8e2d9b3bf9cebed751e0171d867861d65ed4e7cb6cf5bf382677ee6372a"
  },
  "outputs": {
-  "_audit/phase49-full-verification/captures/reference-index-7.json": "cc208a1e14a009181c754376a77babbc19bac8dd419688dc22a728c3d9ae4b60"
+  "_audit/phase49-full-verification/captures/reference-index-7.json": "afa30d692c2cc089d79b896d1a7cd640df2dbb14c3f461a3b2861dd700876a33"
  },
  "stage": "stage02_import_reference"
 }
