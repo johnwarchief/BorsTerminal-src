@@ -1,0 +1,32 @@
+{
+ "counts": {
+  "asset_map_ambiguous": [],
+  "asset_map_symbols": 828,
+  "long_history": 854,
+  "mapped": 758,
+  "min_span_days": 365,
+  "min_span_sessions": 240,
+  "owner_extra": 0,
+  "pack_steps_unverified": 1358,
+  "pack_symbols_unverified": 782,
+  "pack_unverified": 754,
+  "scope_without_db_history": 0,
+  "short_history_six": 6,
+  "union": 1097,
+  "union_by_symbol": 1130,
+  "unmapped": 339
+ },
+ "finished_at": "2026-11-10T19:33:14Z",
+ "inputs": {
+  "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+  "data/ra365_corrections/ra365-live40-v1/factors.jsonl": "75be4441c4b5f068bb700e3dbdd9d618b054654b90ef4c4036540964f2d59988",
+  "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "data/ra365_corrections/ra365-phase49-rebuild-full-v2/manifest.json": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c"
+ },
+ "outputs": {
+  "_audit/phase49-full-verification/capture-plan/capture-plan.json": "7dbe2a62073f73bb5beb38779be075914f8b178f954e7f728490922d9590cfd4",
+  "_audit/phase49-full-verification/capture-plan/capture-unmapped.json": "da1ffb55429fbbfdd3f124683bc608ccbfe3c3a763792a58d0767880e128a2bb",
+  "_audit/phase49-full-verification/capture-plan/symbols.json": "4e5ad3d67d3db6a9e4eedb3fe7d7908ab2be707dca9656d7af5eb0ad52de27b0"
+ },
+ "stage": "stage01_capture_plan"
+}
