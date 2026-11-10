@@ -94,8 +94,8 @@ def _ref_key(r):
     return tuple(repr(float(r[k])) for k in ("open", "high", "low", "close", "volume"))
 
 
-def load_ref_daily(path, symbols):
-    """فقط raw/D؛ تکرارِ تاریخ: اولی می‌ماند، تعارض شمرده می‌شود."""
+def load_ref_daily(path, symbols, since=None):
+    """فقط raw/D؛ با `since` فقط تاریخ‌هایِ مساوی یا پس ازِ آن؛ تکرارِ تاریخ: اولی می‌ماند، تعارض شمرده می‌شود."""
     wanted = set(symbols)
     out = {s: {} for s in symbols}
     meta = {"ref_rows": 0, "duplicates": 0, "conflicts": 0}
@@ -112,6 +112,8 @@ def load_ref_daily(path, symbols):
                 continue
             d = r.get("date")
             if not d:
+                continue
+            if since and str(r.get("date") or "") < since:
                 continue
             meta["ref_rows"] += 1
             prev = out[sym].get(d)
@@ -306,12 +308,12 @@ def compare_raw_rows(local_rows, ref_rows):
 
 
 def apply_backfill(src_db, work_dir, ref_path, symbols, run_id,
-                   reuse_work=False, dry_run=False):
+                   reuse_work=False, dry_run=False, since=None):
     symbols = list(dict.fromkeys(symbols))
     if not symbols:
         raise ValueError("symbols list is empty")
     src_db, ref_path = os.path.abspath(src_db), os.path.abspath(ref_path)
-    ref_rows, ref_meta = load_ref_daily(ref_path, symbols)
+    ref_rows, ref_meta = load_ref_daily(ref_path, symbols, since=since)
     src_hash = sha256_file(src_db)
     ref_hash = sha256_file(ref_path)
     started = now_iso()
@@ -607,6 +609,7 @@ def main(argv=None):
     a.add_argument("--run-id", default="")
     a.add_argument("--reuse-work", action="store_true")
     a.add_argument("--dry-run", action="store_true")
+    a.add_argument("--since", default="")
     a.add_argument("--out", required=True)
     a.add_argument("--md", default="")
     r = sub.add_parser("rollback")
@@ -623,7 +626,8 @@ def main(argv=None):
     symbols = load_symbols(args.symbols)
     run_id = args.run_id or "rahavard-" + dt.datetime.now().strftime("%Y%m%dT%H%M%S")
     rep = apply_backfill(args.src, args.work, args.ref, symbols, run_id,
-                         reuse_work=args.reuse_work, dry_run=args.dry_run)
+                         reuse_work=args.reuse_work, dry_run=args.dry_run,
+                         since=args.since or None)
     write_json(rep, args.out)
     if args.md:
         write_markdown(rep, args.md)
