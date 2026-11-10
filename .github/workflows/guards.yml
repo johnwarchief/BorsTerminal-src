@@ -30,6 +30,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # dev/chart_api_check_v95.py and dev/npm_lock_v1040.py read the real
+      # frontend/node_modules tree; without it the guards failed for an
+      # environment reason, not a product defect. Install exactly the lockfile
+      # (no build scripts needed for the guards, so --ignore-scripts is safe).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps for API guards
+        working-directory: frontend
+        run: npm ci --ignore-scripts
+
       - name: Run all offline guard suites
         # Run the suites through tee so, on failure, the tail can be surfaced as
         # check-run annotations (readable via the check-runs API even when the

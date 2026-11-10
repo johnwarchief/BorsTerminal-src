@@ -1,0 +1,41 @@
+{
+ "capture_file": "capture-7.json",
+ "capture_sha256": "13a805fa88864ca8258fd54af4920e9eeec0da0ca39f0ae84ea6bd0c8468d97a",
+ "source": {
+  "kind": "rahavard365-web-api",
+  "endpoint": "https://rahavard365.com",
+  "captured_at": "2026-11-10T11:36:19Z",
+  "browser": "Chrome/157.0.8103.38",
+  "types": [
+   "type0",
+   "type7"
+  ],
+  "resolutions": [
+   "D",
+   "W",
+   "M"
+  ],
+  "countback": 100000,
+  "from": "2010-01-01T00:00:00Z",
+  "to": "2026-11-10T00:00:00Z",
+  "input_sha256": "41b3daf3ca2358b3fcaeda448abf99af9c0d26a66914b3d9564621af75dc312b"
+ },
+ "series": 42,
+ "totals": {
+  "rows": 51226,
+  "duplicate_rows_dropped": 0,
+  "conflicting_duplicates": 0,
+  "undated_rows": 0,
+  "null_field_rows": 0
+ },
+ "per_resolution": {
+  "D": 39704,
+  "M": 2274,
+  "W": 9248
+ },
+ "per_adjust": {
+  "adjusted": 25613,
+  "raw": 25613
+ },
+ "bars_sha256": "c2a3d253b27bcc41a541c23d51402c04e89476e8b9e13e68871e07bb9b63db65"
+}

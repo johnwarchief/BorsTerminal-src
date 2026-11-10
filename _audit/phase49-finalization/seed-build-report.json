@@ -1,0 +1,21 @@
+{
+ "seed_db": "_audit/phase49-finalization/seed/market.db",
+ "seed_db_sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+ "seed_db_size": 270614528,
+ "seed_lzma": "_audit/phase49-finalization/seed/market.db.lzma",
+ "seed_lzma_sha256": "46ff29830b99626c22dff43601c1e6b203ab0340e67727e41992732d14a6e35c",
+ "seed_lzma_size": 63159112,
+ "roundtrip_sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+ "roundtrip_ok": true,
+ "integrity": [
+  "ok"
+ ],
+ "price_history_rows": 511139,
+ "symbols": 6103,
+ "validity_status_counts": {
+  "unverified": 5188,
+  "reconstructed_verified": 880,
+  "verified": 35
+ },
+ "open_corrections": 3105
+}

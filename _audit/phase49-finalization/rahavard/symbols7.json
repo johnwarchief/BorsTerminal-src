@@ -1,0 +1,44 @@
+[
+ {
+  "asset_id": 182,
+  "symbol": "شنفت",
+  "ins_code": "14073782708315535",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 17495,
+  "symbol": "فافق",
+  "ins_code": "22424135367941584",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 458,
+  "symbol": "فخاس",
+  "ins_code": "4733285133017464",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 569,
+  "symbol": "فولاژ",
+  "ins_code": "40808043719554948",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 207,
+  "symbol": "لخزر",
+  "ins_code": "65414507129586385",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 599,
+  "symbol": "ولانا",
+  "ins_code": "66830065858417081",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 485,
+  "symbol": "مارون",
+  "ins_code": "53449700212786324",
+  "basis": "real_close"
+ }
+]

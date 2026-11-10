@@ -1,0 +1,17 @@
+{
+ "run_id": "phase49-open-fix-2026-11-10",
+ "source_db": "_audit/phase49-finalization/db/restored-work.db",
+ "out": "_audit/phase49-finalization/seed/market.db",
+ "candidates": 3105,
+ "applied": 3105,
+ "rejected": 0,
+ "missing_reference": 0,
+ "reasons": {},
+ "integrity": [
+  "ok"
+ ],
+ "price_history_rows": 511139,
+ "corrections_rows": 3105,
+ "corrections_symbols": 11,
+ "reference_sha256": "ab3b6a938684b088f4c01d7139ce3822118ecaf518bcdc8f61d40fe5d9912c7a"
+}

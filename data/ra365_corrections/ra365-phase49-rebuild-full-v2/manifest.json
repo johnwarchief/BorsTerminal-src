@@ -1,0 +1,6925 @@
+{
+ "schema": "ra365-correction-pack-v1",
+ "version": "ra365-phase49-rebuild-full-v2",
+ "correction_version": "ra365-phase49-rebuild-full-v2",
+ "mode": "authoritative",
+ "as_of": "2026-10-25",
+ "created_at": "2026-11-10",
+ "tool": "phase49-finalization stageD_merge_reference.py",
+ "source": "rahavard type0/type7 owner-authenticated capture 2026-11-10 + tracked pack",
+ "reference_sha256": "ab3b6a938684b088f4c01d7139ce3822118ecaf518bcdc8f61d40fe5d9912c7a,c2a3d253b27bcc41a541c23d51402c04e89476e8b9e13e68871e07bb9b63db65",
+ "files": {
+  "factors": "factors.jsonl",
+  "raw_ohlc": "raw_ohlc.jsonl"
+ },
+ "file_sha256": {
+  "factors": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "raw_ohlc": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a"
+ },
+ "factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+ "raw_ohlc_sha256": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a",
+ "counts": {
+  "symbols": 951,
+  "steps": 8280,
+  "verified_steps": 622,
+  "reconstructed_verified_steps": 6300,
+  "unverified_steps": 1358,
+  "invalid_dropped_steps": 28,
+  "pre2020_steps": 623
+ },
+ "captured_symbols": [
+  "حآفرين",
+  "خودرو",
+  "دالبر",
+  "دعبيد",
+  "سبهان",
+  "سخاش",
+  "سرود",
+  "شبندر",
+  "شتران",
+  "شستا",
+  "شصفها",
+  "شنفت",
+  "شپديس",
+  "شپنا",
+  "فارس",
+  "فافق",
+  "فخاس",
+  "فزر",
+  "فملي",
+  "فنوال",
+  "فولاد",
+  "فولاژ",
+  "كچاد",
+  "كگل",
+  "لخزر",
+  "مارون",
+  "مبين",
+  "هانيكو",
+  "وبملت",
+  "وتجارت",
+  "ولانا",
+  "ولقمان",
+  "ومعادن",
+  "وملت",
+  "پشاهن",
+  "چكاوه"
+ ],
+ "dropped_steps": [
+  {
+   "symbol": "دالبر",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.5992106179200001
+  },
+  {
+   "symbol": "دعبيد",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.862472
+  },
+  {
+   "symbol": "سبهان",
+   "date": "2010-01-06",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.73741
+  },
+  {
+   "symbol": "سبهان",
+   "date": "2023-03-28",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.978287
+  },
+  {
+   "symbol": "سخاش",
+   "date": "2010-01-16",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.5385872223
+  },
+  {
+   "symbol": "سرود",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.842707
+  },
+  {
+   "symbol": "شصفها",
+   "date": "2017-07-25",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.909965
+  },
+  {
+   "symbol": "شنفت",
+   "date": "2024-08-24",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.0010670479512118647
+  },
+  {
+   "symbol": "شپنا",
+   "date": "2010-02-16",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.858201
+  },
+  {
+   "symbol": "فافق",
+   "date": "2024-08-24",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.37176767937323946
+  },
+  {
+   "symbol": "فخاس",
+   "date": "2024-08-24",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.014481867904621595
+  },
+  {
+   "symbol": "فملي",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.857828
+  },
+  {
+   "symbol": "فملي",
+   "date": "2023-03-28",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.997543
+  },
+  {
+   "symbol": "فنوال",
+   "date": "2010-01-05",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.834779
+  },
+  {
+   "symbol": "فولاد",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.717248
+  },
+  {
+   "symbol": "فولاژ",
+   "date": "2024-08-31",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.003892936743249364
+  },
+  {
+   "symbol": "كگل",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.799707
+  },
+  {
+   "symbol": "كگل",
+   "date": "2024-06-22",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.9125312155650732
+  },
+  {
+   "symbol": "لخزر",
+   "date": "2024-08-24",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.006882045659261813
+  },
+  {
+   "symbol": "مارون",
+   "date": "2024-08-24",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.09678153402202964
+  },
+  {
+   "symbol": "وبملت",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.857978
+  },
+  {
+   "symbol": "وتجارت",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.835375
+  },
+  {
+   "symbol": "ولانا",
+   "date": "2026-07-15",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.3333333333333333
+  },
+  {
+   "symbol": "ومعادن",
+   "date": "2010-01-02",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.846059
+  },
+  {
+   "symbol": "پشاهن",
+   "date": "2018-01-21",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.909172
+  },
+  {
+   "symbol": "پشاهن",
+   "date": "2018-04-11",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.909312
+  },
+  {
+   "symbol": "چكاوه",
+   "date": "2010-01-04",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.747899
+  },
+  {
+   "symbol": "چكاوه",
+   "date": "2023-03-28",
+   "decision": "drop-contradicted",
+   "ref_ratio": null,
+   "our_ratio": 0.968377
+  }
+ ],
+ "per_symbol": {
+  "آ س پ": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آباد": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آبادا": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آبادا3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "آبين": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آتيمس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آرام": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آردينه": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آردينه3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "آرمان": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آريا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آريان": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آسا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آساس": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آسام": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آسان": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 21,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آسيا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آفاق": {
+   "steps": 44,
+   "verified": 0,
+   "reconstructed_verified": 44,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آكام": {
+   "steps": 40,
+   "verified": 0,
+   "reconstructed_verified": 40,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آكو": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آلومينا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آلومینا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "آوا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آواك": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آواپارس": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آينده": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "آپ": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آکو": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آگاس": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "آگاس2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اتكاسا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "اتكام": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اتكاي": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "احيا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اخابر": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اخشان": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "اردستان": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ارزش": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ارزش مسكن": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ارزش2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ارفع": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ارمغان": {
+   "steps": 82,
+   "verified": 0,
+   "reconstructed_verified": 81,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اروند": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "اسياتك": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اطلس": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اعتلا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "افرا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "افق": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "افق ملت": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اكسيژن": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اكسيژن2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "البرز": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "الكتروماد": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "الماس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "الکتروماد": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "اميد": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "امين": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "امين شهر": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "امين يكم": {
+   "steps": 81,
+   "verified": 0,
+   "reconstructed_verified": 81,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "انار": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "انتخاب": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اندوخته داريوش": {
+   "steps": 19,
+   "verified": 0,
+   "reconstructed_verified": 19,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "انرژي": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اهرم": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اوان": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اوج": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اوصتا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اوصتا2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اپال": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "اپرداز": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "باران": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بازرگام": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بالاس": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بالبر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بانيان": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بانيان3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بايكا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بترانس": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بتك": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بتيس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بجهرم": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بخاور": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بذر": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بركت": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بركت3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بزاگرس": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بزندگي": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بساما": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بسويچ": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بشهاب": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بفجر": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بكاب": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بكابل": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بكام": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بلوط": {
+   "steps": 22,
+   "verified": 0,
+   "reconstructed_verified": 22,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بموتو": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بمولد": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بميلا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بمپنا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بنو": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بنيرو": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بهامرز": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بهير": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بهپاك": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بورس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بوعلي": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بيوتيك": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بپاس": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بپرديس": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "بپويا": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بپيوند": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "بگيلان": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تابا": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تابان": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "تاتمس": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تاديكو": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "تاصيكو": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تايرا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تاپكيش": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تاپيكو": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تاپیکو": {
+   "steps": 17,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 17,
+   "pre2020": 9
+  },
+  "تبرك": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تجلي": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تداوم": {
+   "steps": 69,
+   "verified": 0,
+   "reconstructed_verified": 69,
+   "unverified": 0,
+   "pre2020": 29
+  },
+  "ترنج ثابت": {
+   "steps": 26,
+   "verified": 0,
+   "reconstructed_verified": 26,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "تسه1403": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تسه1404": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "تسه1405": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تشتاد": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تفارس": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تفيرو": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "تكاردان": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تكشا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تكمبا": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تكنار": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تكنو": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تكيميا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "تليسه": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تماوند": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تمحركه": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تمشك": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تملت": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تنوين": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "توان": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "توريل": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "توسن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تيپيكو": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تپسي": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تپكو": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تپمپي": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تپولا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "تکنار": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 1
+  },
+  "تکیمیا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "ثابت اكسيژن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ثاخت": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثاصفا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ثالوند": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثامان": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثاميد": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثاميد3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثباغ": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثبهساز": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثبهساز3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثتران": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثتوسا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثجنوب": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثجوان": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثروتم": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثرود": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثزاگرس": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثشاهد": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثشرق": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثعتما": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثعمرا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثغرب": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثفارس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثقزوي": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثمسكن": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثنا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثنام": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثنظام": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثنور": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثنوسا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثپرديس": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثپهران": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ثپهران3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "جم": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "جم پيلن": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "جهرم": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "جوين": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حآسا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حآفرين": {
+   "steps": 6,
+   "verified": 6,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "حبندر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حتايد": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حتوكا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حخزر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حرهشا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حريل": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حسير": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حسينا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حشكوه": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حفارس": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حفاري": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حكشتي": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حيات": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "حپارسا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حپترو": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حپرتو": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حگردش": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "حگهر": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خاذين": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خاور": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خبازرس": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خبرنا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "خبرگان": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خبنيان": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خبهمن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خبهمن3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "ختراك": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ختور": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ختوقا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خديزل": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خراسان": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خريخت": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خرينگ": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خزاميا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خزر": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خساپا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خساپا3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خشرق": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خصدرا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خعمرا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خفناور": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خفنر": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خفولا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خكار": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خكاوه": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خكرمان": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "خكمك": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خلنت": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خليبل": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خمحركه": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خمحور": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خمهر": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خموتور": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خنصير": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خنور": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خودرو": {
+   "steps": 13,
+   "verified": 13,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 11
+  },
+  "خودرو3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خودكفا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "خوساز": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خيمن": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "خپويش": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خچرخش": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خگستر": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "خگستر3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دابور": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 3
+  },
+  "داتام": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "داترا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دارا": {
+   "steps": 42,
+   "verified": 0,
+   "reconstructed_verified": 41,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دارا يكم": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دارا2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "داراب": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "دارو": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "داريوش": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "داسوه": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 3
+  },
+  "دالبر": {
+   "steps": 29,
+   "verified": 29,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 15
+  },
+  "دامون": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "دامين": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دانا": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دانيك": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "داوه": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دبالك": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دبالک": {
+   "steps": 17,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 17,
+   "pre2020": 6
+  },
+  "دتماد": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دتوزيع": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دتوليد": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "دجابر": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 3
+  },
+  "دحاوي": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ددام": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 1
+  },
+  "ددانا": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "درازك": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "درازي": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "درازی": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 4,
+   "pre2020": 0
+  },
+  "درسا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "درهآور": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دروز": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دريا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "درپاد": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "دزاگرس": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "دزهراوي": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دزهراوی": {
+   "steps": 16,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 16,
+   "pre2020": 11
+  },
+  "دسانكو": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دسبحا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دسبحان": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دسينا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دشيري": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دشيمي": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دعبيد": {
+   "steps": 27,
+   "verified": 27,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 15
+  },
+  "دفارا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 1
+  },
+  "دفرا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دقاضي": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دكوثر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دكيمي": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دكپسول": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دلر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دلقما": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 3
+  },
+  "دماوند": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دهدشت": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دي سهام": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ديران": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "دپارس": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 3
+  },
+  "دکپسول": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 10,
+   "pre2020": 1
+  },
+  "ذرت": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ذوب": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رافزا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رانفور": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رانيز": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "رايا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "رتاپ": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رتكو": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "رشد": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 21,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "رفاه": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ركيش": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رمپنا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رنيك": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ريشمك": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "رپويا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "زاگرس": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زبينا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زدشت": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زشريف": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زشگزا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زفارس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "زفجر": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زفكا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زقيام": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زقیام": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 10,
+   "pre2020": 2
+  },
+  "زكشت": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زكوثر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زماهان": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زملارد": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زمگسا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زنجان": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زنگان": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زهلال": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "زپارس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "زگلدشت": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سآبيك": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساذري": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساراب": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساربيل": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساربیل": {
+   "steps": 22,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 22,
+   "pre2020": 13
+  },
+  "ساروج": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساروم": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سافرون": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سافرون2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سام": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سامان": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساوه": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ساينا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سباقر": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سبجنو": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سبزوا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سبهان": {
+   "steps": 18,
+   "verified": 18,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 10
+  },
+  "ستران": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سجام": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سخاش": {
+   "steps": 19,
+   "verified": 19,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 10
+  },
+  "سخزر": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سخند": {
+   "steps": 75,
+   "verified": 0,
+   "reconstructed_verified": 74,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سخواف": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سخوز": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سدبير": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سدشت": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سدور": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سرو": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سرو2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سرود": {
+   "steps": 19,
+   "verified": 19,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 11
+  },
+  "سرچشمه": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سشرق": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سشمال": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سصفها": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سصوفي": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سغدير": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سغرب": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سفار": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سفارس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سفارود": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سفاسي": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سفانو": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سقاين": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سقاین": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 21,
+   "pre2020": 13
+  },
+  "سكارون": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سكرد": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سكرما": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سلار": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سليم": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سمازن": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سمتاز": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سمگا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سنوين": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سنير": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سنیر": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 21,
+   "pre2020": 12
+  },
+  "سهرمز": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سهگمت": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سيتا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سيدكو": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سيستم": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سيسكو": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سيلام": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سيمرغ": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سيناد": {
+   "steps": 18,
+   "verified": 0,
+   "reconstructed_verified": 18,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "سپ": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سپاها": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سپيد": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سپيدار": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "سپيدار3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "شاراك": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شاروم": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شاروم3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "شاملا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شاوان": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شبريز": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شبصير": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شبندر": {
+   "steps": 16,
+   "verified": 16,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 8
+  },
+  "شبهرن": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شتران": {
+   "steps": 24,
+   "verified": 24,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 11
+  },
+  "شتهران": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 0,
+   "pre2020": 2
+  },
+  "شتوكا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شجم": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شدوص": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شراز": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شرانل": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شرنگي": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شساخت": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شستا": {
+   "steps": 9,
+   "verified": 9,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "شستا3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شستان": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شسينا": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شسپا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شصدف": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شصفها": {
+   "steps": 4,
+   "verified": 4,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 3
+  },
+  "شغدير": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شفا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شفارا": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شفارس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شفام": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شفن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شكام": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شكبير": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شكربن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شكلر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شلرد": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شلعاب": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شليا": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شمس": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "شملي": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شمواد": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شنفت": {
+   "steps": 26,
+   "verified": 26,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 13
+  },
+  "شهر": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شوينده": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شيراز": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شيران": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شيفته": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "شپارس": {
+   "steps": 26,
+   "verified": 0,
+   "reconstructed_verified": 25,
+   "unverified": 1,
+   "pre2020": 14
+  },
+  "شپاس": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شپاكسا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شپترو": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شپديس": {
+   "steps": 19,
+   "verified": 19,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 11
+  },
+  "شپديس2": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "شپديس3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شپلي": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شپنا": {
+   "steps": 25,
+   "verified": 25,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 11
+  },
+  "شکلر": {
+   "steps": 26,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 26,
+   "pre2020": 17
+  },
+  "شگامرن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شگستر": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "شگل": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "شگويا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "صايند": {
+   "steps": 36,
+   "verified": 0,
+   "reconstructed_verified": 35,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "صايند2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "صبا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "صنوين": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "عاليس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "عقيق": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غاذر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غالبر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غانيزان": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "غبشهر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غبهار": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غبهنوش": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غدام": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غدانه": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غدشت": {
+   "steps": 24,
+   "verified": 0,
+   "reconstructed_verified": 23,
+   "unverified": 1,
+   "pre2020": 12
+  },
+  "غديس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غزر": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غزنجان": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غسالم": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غشاذر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غشان": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غشصفا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غشهد": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غشهداب": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غشوكو": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غصينو": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غفارس": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غكورش": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غمارگ": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "غمايه": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غمهرا": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غمينو": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غمینو": {
+   "steps": 19,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 19,
+   "pre2020": 8
+  },
+  "غناب": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غنوش": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غنيلي": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غويتا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غپآذر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غپاك": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غپونه": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غپينو": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غچين": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غکورش": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 8,
+   "pre2020": 0
+  },
+  "غگرجي": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غگز": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غگل": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غگلستا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غگلپا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "غگيلا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فاذر": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فاراك": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فارس": {
+   "steps": 19,
+   "verified": 19,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 7
+  },
+  "فافزا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فافق": {
+   "steps": 6,
+   "verified": 6,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فالوم": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فاما": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فاهواز": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فايرا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فایرا": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 15,
+   "pre2020": 5
+  },
+  "فباهنر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فباهنر3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "فبستم": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فبيرا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فتوسا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فجام": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فجر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فجهان": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فجوش": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فخاس": {
+   "steps": 24,
+   "verified": 24,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 13
+  },
+  "فخوز": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فرآور": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فرابورس": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فرود": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فروس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فروسيل": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فروي": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فروژ": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فزر": {
+   "steps": 6,
+   "verified": 6,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فزرين": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فسا": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فسازان": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فسبزوار": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فسرب": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فسوژ": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فسپا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فصبا": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فصبا3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فطلوع": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فغدير": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فكمند": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فلات": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فلامي": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فلوله": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فماك": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فمراد": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فملي": {
+   "steps": 26,
+   "verified": 26,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 13
+  },
+  "فملی": {
+   "steps": 31,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 31,
+   "pre2020": 16
+  },
+  "فن آوا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فن افزار": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فنر": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فنفت": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فنوال": {
+   "steps": 18,
+   "verified": 17,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 7
+  },
+  "فنورد": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فهامون": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فهامون3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فوكا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "فولاد": {
+   "steps": 26,
+   "verified": 26,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 14
+  },
+  "فولاي": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فولاژ": {
+   "steps": 25,
+   "verified": 25,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 13
+  },
+  "فيروزه": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فيروزه2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فپنتا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "فگستر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قاروم": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "قاسم": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قتربت": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "قثابت": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "قجام": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قرن": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قرن2": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "قزوين": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قشرين": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قشكر": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قشهد": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قشير": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قصفها": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قلرست": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قمرو": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قنقش": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قنيشا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قهكمت": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قيستو": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قپيرا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "قچار": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كابگن": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كاذر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كارام": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كاردان": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كاريز": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كاريس": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كاريس2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كارين": {
+   "steps": 42,
+   "verified": 0,
+   "reconstructed_verified": 42,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كازرو": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كاسپين": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كالا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كالا3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كاما": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كانسار": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كاوه": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كايتا": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كايزد": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كباده": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كبافق": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كترام": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كتوسعه": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كتوكا": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كحافظ": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كخاك": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كدما": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كرازي": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كربن": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كرماشا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كرمان": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كروميت": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كزغال": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كساوه": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كساپا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كسرا": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كسرام": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كسعدي": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كشرق": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كصدف": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كطبس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كفرآور": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كفرا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كفپارس": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كقزوي": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كلر": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كلوند": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كليد": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كماسه": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كمرجان": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كمند": {
+   "steps": 82,
+   "verified": 0,
+   "reconstructed_verified": 82,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كمنگنز": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كمينا": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كنور": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كهرام": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كهمدا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كوثر": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كورز": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كولان": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كولان3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كوير": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كوچين": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كوچين3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كي بي سي": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كيا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كيانا": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كيسون": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كيمازي": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كيميا": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كيمياتك": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كپارس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كپرسپوليس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "كپرسپوليس3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كپرور": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كپشير": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كچاد": {
+   "steps": 28,
+   "verified": 28,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 14
+  },
+  "كچاد2": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 4,
+   "pre2020": 0
+  },
+  "كچاد3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كگاز": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كگل": {
+   "steps": 31,
+   "verified": 31,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 15
+  },
+  "كگل3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كگهر": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "كگهر2": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "لابسا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لبن": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "لبوتان": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لخانه": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لخزر": {
+   "steps": 22,
+   "verified": 22,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 11
+  },
+  "لسرما": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لطيف": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لطیف": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 7,
+   "pre2020": 0
+  },
+  "لكما": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لوتوس": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لپارس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "لپيام": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ما": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ماديرا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "مارون": {
+   "steps": 16,
+   "verified": 16,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 9
+  },
+  "مالك آتيه": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "مانا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "مبين": {
+   "steps": 14,
+   "verified": 14,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 5
+  },
+  "محتشم": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "مداران": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "مدير": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "مديريت": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "معيار ": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "معين": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "مفاخر": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ملت": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "ممسني": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "مهر": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "مهر3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "مهرمام": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "مهرگان": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "مهرگان3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ميدكو": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ميهن": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ناما": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نان": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "نان3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "نبابك": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "نبروج": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "نتوس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "نخريس": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نخل": {
+   "steps": 50,
+   "verified": 0,
+   "reconstructed_verified": 50,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "نطرين": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نماد": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "نماد3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نمرينو": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نهال": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نوري": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نوري3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "نوين": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نيان": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نيرو": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "نيشكر": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "نيلي": {
+   "steps": 43,
+   "verified": 0,
+   "reconstructed_verified": 43,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "هامرز": {
+   "steps": 56,
+   "verified": 0,
+   "reconstructed_verified": 56,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "هانيكو": {
+   "steps": 2,
+   "verified": 2,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "هانيكو3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "هاي وب": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "هاي وب3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "هجرت": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "هرمز": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "هم وزن": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "هماي": {
+   "steps": 61,
+   "verified": 0,
+   "reconstructed_verified": 61,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "همراه": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "همگام": {
+   "steps": 19,
+   "verified": 0,
+   "reconstructed_verified": 19,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "هيبريد": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وآتوس": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وآذر": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وآرين": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وآفر": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وآفري": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وآوا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "واتي": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "واحصا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "واحيا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وارس": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "واعتبار": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "والبر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "والماس": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "واميد": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وامير": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وامين": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وامید": {
+   "steps": 26,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 26,
+   "pre2020": 15
+  },
+  "وايرا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وايران": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبازار": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبانك": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبرق": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبشهر": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبصادر": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبملت": {
+   "steps": 21,
+   "verified": 21,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 10
+  },
+  "وبملت3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "وبهمن": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبوعلي": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وبيمه": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتجارت": {
+   "steps": 18,
+   "verified": 18,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 9
+  },
+  "وتعاون": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتوس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتوسكا": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتوسم": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتوشه": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتوصا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وتوكا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وثخوز": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وثنو": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وثوق": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وجامي": {
+   "steps": 15,
+   "verified": 0,
+   "reconstructed_verified": 14,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وحافظ": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وحكمت": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وخارزم": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وخارزم3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "وخاور": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وخاور2": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "ودانا": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ودي": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ورازي": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ورنا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وساخت": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسالت": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وساپا": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسبحان": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسديد": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسرمد": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسكاب": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسنا": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسين": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسينا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسينا2": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "وسپه": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسپه3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسپهر": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وسپهر3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "وسین": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 4,
+   "pre2020": 2
+  },
+  "وشمال": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وشهر": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وصنا": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وصندوق": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وصندوق2": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "وصنعت": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وطوبي": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وغدير": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وغدير3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وغدیر": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 21,
+   "pre2020": 13
+  },
+  "وفتخار": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وفردا": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وكادو": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وكار": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وكبهمن": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وكغدير": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولانا": {
+   "steps": 10,
+   "verified": 7,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 2
+  },
+  "ولبهمن": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولتجار": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ولراز": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 4,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولساپا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولشرق": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولصنم": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولغدر": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 4,
+   "pre2020": 0
+  },
+  "ولقمان": {
+   "steps": 8,
+   "verified": 8,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ولكار": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولملت": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولنوين": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وليز": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ولپارس": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ولکار": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 8,
+   "pre2020": 0
+  },
+  "ومدير": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ومشان": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ومعادن": {
+   "steps": 29,
+   "verified": 29,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 16
+  },
+  "ومعادن3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "ومعلم": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وملت": {
+   "steps": 3,
+   "verified": 3,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وملي": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ومهان": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ومهان2": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "ومپنا": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "ونفت": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ونوين": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ونوين2": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 5,
+   "pre2020": 0
+  },
+  "ونوين3": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "ونيرو": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ونيكي": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وهامون": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وهنر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وهور": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ويسا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "ويستا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وپارس": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وپاسار": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وپاسار2": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "وپايا": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "وپترو": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وپخش": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 2
+  },
+  "وپسا": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وپست": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وپويا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وگردش": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "وگستر": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پادا2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پاداش": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پارتا": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پارس": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پارسان": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پارسيان": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پارند": {
+   "steps": 82,
+   "verified": 0,
+   "reconstructed_verified": 82,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پاريز": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پاسا": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پاكشو": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پالايش": {
+   "steps": 4,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پالايش2": {
+   "steps": 2,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 2,
+   "pre2020": 0
+  },
+  "پاکشو": {
+   "steps": 20,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 20,
+   "pre2020": 7
+  },
+  "پتاير": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پترول": {
+   "steps": 10,
+   "verified": 0,
+   "reconstructed_verified": 9,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پتوسعه": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پتوسعه3": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پخش": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پدرخش": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 13,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پرداخت": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پرديس": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پسهند": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پشاهن": {
+   "steps": 7,
+   "verified": 7,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پكرمان": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پكوير": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پلاست": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 3,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "پلاسك": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 2,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پلوله": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پي پاد": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "پيزد": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چافست": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چاپ": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "چخزر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چدن": {
+   "steps": 13,
+   "verified": 0,
+   "reconstructed_verified": 12,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چفيبر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چكارن": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چكاوه": {
+   "steps": 13,
+   "verified": 13,
+   "reconstructed_verified": 0,
+   "unverified": 0,
+   "pre2020": 9
+  },
+  "چكاپا": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "چنوپا": {
+   "steps": 5,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "کتوکا": {
+   "steps": 17,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 17,
+   "pre2020": 7
+  },
+  "کخاک": {
+   "steps": 25,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 25,
+   "pre2020": 13
+  },
+  "کسعدی": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 21,
+   "pre2020": 10
+  },
+  "کطبس": {
+   "steps": 25,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 25,
+   "pre2020": 17
+  },
+  "کفپارس": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "کوچین": {
+   "steps": 3,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 3,
+   "pre2020": 0
+  },
+  "کپارس": {
+   "steps": 21,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 21,
+   "pre2020": 12
+  },
+  "کپرسپولیس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "کچاد": {
+   "steps": 38,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 38,
+   "pre2020": 17
+  },
+  "کگل": {
+   "steps": 46,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 46,
+   "pre2020": 23
+  },
+  "کگهر": {
+   "steps": 14,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 14,
+   "pre2020": 1
+  },
+  "گدنا": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گشان": {
+   "steps": 8,
+   "verified": 0,
+   "reconstructed_verified": 7,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گكوثر": {
+   "steps": 7,
+   "verified": 0,
+   "reconstructed_verified": 6,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گكيش": {
+   "steps": 11,
+   "verified": 0,
+   "reconstructed_verified": 10,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گلديس": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گلديس2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گنجينه": {
+   "steps": 46,
+   "verified": 0,
+   "reconstructed_verified": 45,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گنگين": {
+   "steps": 9,
+   "verified": 0,
+   "reconstructed_verified": 8,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گوهر": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 1,
+   "unverified": 0,
+   "pre2020": 0
+  },
+  "گوهر2": {
+   "steps": 1,
+   "verified": 0,
+   "reconstructed_verified": 0,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گوهران": {
+   "steps": 12,
+   "verified": 0,
+   "reconstructed_verified": 11,
+   "unverified": 1,
+   "pre2020": 0
+  },
+  "گپارس": {
+   "steps": 6,
+   "verified": 0,
+   "reconstructed_verified": 5,
+   "unverified": 1,
+   "pre2020": 0
+  }
+ }
+}

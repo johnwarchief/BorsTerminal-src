@@ -21,7 +21,9 @@ import importlib.util
 import io
 import json
 import os
+import pathlib
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -83,6 +85,40 @@ def sha(path):
 def read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def dump_logical(path):
+    """Logical SQLite content: table names, columns and sorted rows.
+
+    The committed fixture was written by a different SQLite build; page layout
+    is not content. Two fresh builds must still be byte-identical (checked
+    separately), while the committed fixture is compared by content.
+    """
+    uri = pathlib.Path(os.path.abspath(path)).as_uri() + "?mode=ro"
+    con = sqlite3.connect(uri, uri=True)
+    try:
+        tables = [r[0] for r in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
+        out = {}
+        for table in tables:
+            cur = con.execute('SELECT * FROM "%s"' % table.replace('"', '""'))
+            cols = tuple(d[0] for d in cur.description)
+            rows = sorted((tuple(r) for r in cur.fetchall()), key=repr)
+            out[table] = (cols, rows)
+        return out
+    finally:
+        con.close()
+
+
+def first_difference(committed, fresh):
+    if set(committed) != set(fresh):
+        return "table sets differ"
+    for table, (cols, rows) in committed.items():
+        if cols != fresh[table][0]:
+            return "columns differ in %s" % table
+        if rows != fresh[table][1]:
+            return "rows differ in %s" % table
+    return ""
 
 
 def build_fixture(tmp):
@@ -297,20 +333,29 @@ def case_content(scen, name, d):
 
 def main() -> int:
     # ۱) قطعیتِ فیکسچر
+    det = eq = (False, "fixture build did not run")
     try:
         with tempfile.TemporaryDirectory(prefix="b3-fix-a-") as a, \
                 tempfile.TemporaryDirectory(prefix="b3-fix-b-") as b:
             rcs = (build_fixture(a), build_fixture(b))
             names = ("market.db", "user.db", os.path.join("calendar", "cache.json"))
             fresh = [{n: sha(os.path.join(root, n)) for n in names} for root in (a, b)]
-        committed = {n: sha(os.path.join(FIX, n)) for n in names}
-        check("fixture build is deterministic (two temp builds, same sha256)",
-              rcs == (0, 0) and fresh[0] == fresh[1], "rc=%r" % (rcs,))
-        check("committed fixture equals a fresh build", fresh[0] == committed,
-              "fresh=%s committed=%s" % (fresh[0], committed))
+            det = (rcs == (0, 0) and fresh[0] == fresh[1], "rc=%r" % (rcs,))
+            diff = first_difference(
+                dump_logical(os.path.join(FIX, "market.db")),
+                dump_logical(os.path.join(a, "market.db")))
+            diff_user = first_difference(
+                dump_logical(os.path.join(FIX, "user.db")),
+                dump_logical(os.path.join(a, "user.db")))
+            cache_ok = read_json(os.path.join(FIX, "calendar", "cache.json")) == \
+                read_json(os.path.join(a, "calendar", "cache.json"))
+            eq = (not diff and not diff_user and cache_ok,
+                  "; ".join(x for x in (diff, diff_user,
+                                        "" if cache_ok else "cache.json differs") if x))
     except Exception as e:                                        # noqa: BLE001
-        check("fixture build is deterministic (two temp builds, same sha256)", False, repr(e))
-        check("committed fixture equals a fresh build", False, repr(e))
+        det = eq = (False, repr(e))
+    check("fixture build is deterministic (two temp builds, same sha256)", *det)
+    check("committed fixture equals a fresh build (logical content)", *eq)
 
     # ۲) طلایی‌ها — اوراکل در پوشۀ موقت اجرا می‌شود، پوشۀ کامیت‌شده دست‌نخورده می‌ماند.
     saved = {k: os.environ.get(k) for k in ENV_KEYS}

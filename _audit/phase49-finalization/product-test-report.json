@@ -1,0 +1,42 @@
+{
+ "tests": {
+  "upgrade_merge_restart": {
+   "before_rows": 25,
+   "modified_row": [
+    "2026-11-09",
+    4677.0
+   ],
+   "mode": "merge",
+   "state_status": "applied",
+   "rows_after": 511139,
+   "adjust_events": 12829,
+   "modified_row_kept": true,
+   "watchlist_kept": true,
+   "provenance_rows": 3105,
+   "validity_rows": 6103,
+   "duplicate_symbol_dates": 0,
+   "chart_count": 3689,
+   "chart_first": "2010-01-02",
+   "chart_last": "2026-11-09",
+   "events": 26,
+   "ma_bars": 2000,
+   "ma_lens": {
+    "ma120": 2000,
+    "ma20": 2000,
+    "ma5": 2000,
+    "ma50": 2000
+   },
+   "ma_periods": [
+    5,
+    20,
+    50,
+    120
+   ],
+   "rows_after_restart": 511139,
+   "idempotent": true,
+   "restart_state_reason": null,
+   "restart_chart_count": 3689
+  }
+ },
+ "schema": "phase49-product-test-v1"
+}

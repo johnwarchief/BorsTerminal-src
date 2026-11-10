@@ -31,7 +31,7 @@ import os
 import threading
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_VERSION = "ra365-r32b-v2"
+DEFAULT_VERSION = "ra365-phase49-rebuild-full-v2"
 DEFAULT_DIR = os.path.join(ROOT, "data", "ra365_corrections", DEFAULT_VERSION)
 KNOWN_SCHEMAS = ("ra365-correction-pack-v1", "ra365-reference-pack-v1")
 FACTOR_ACTIONS = ("replace_step", "suppress_step")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"math"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -250,9 +251,24 @@ func Test20FamousSymbols_RealMarketDB(t *testing.T) {
 }
 
 func TestRahavardCorrectionPackParity_ShastaFemeli(t *testing.T) {
-	pack := LoadPack("")
+	// This test pins the legacy R32B overlay pack. The product default is now
+	// the Phase 4.9 reference-verified rebuild, so load the legacy directory
+	// explicitly to keep testing the pack the assertion was written for.
+	legacy := ""
+	for _, base := range []string{"..", "../..", "../../..", "../../../.."} {
+		p := filepath.Join(base, "data", "ra365_corrections", "ra365-r32b-v2")
+		if _, err := os.Stat(filepath.Join(p, "manifest.json")); err == nil {
+			legacy = p
+			break
+		}
+	}
+	if legacy == "" {
+		t.Skip("legacy ra365-r32b-v2 pack not found")
+		return
+	}
+	pack := loadPackFromDir(legacy)
 	if pack == nil {
-		t.Skip("Rahavard correction pack not found in default search paths")
+		t.Skip("legacy Rahavard correction pack could not be loaded")
 		return
 	}
 
@@ -295,5 +311,3 @@ func TestRahavardCorrectionPackParity_ShastaFemeli(t *testing.T) {
 		t.Errorf("expected Rahavard joint step ratio ~0.713413714 for فملی")
 	}
 }
-
-

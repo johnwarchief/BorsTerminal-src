@@ -60,13 +60,18 @@ var requiredPriceHistoryColumns = []string{
 }
 
 // seedOnlyTables are tables the current schema does not define but the Go
-// runtime reads (adjust_events/adjust_verdict) or the canonical board SQL
-// expects (board_hist_*). They are created from the seed exactly as-is.
+// runtime reads (adjust_events/adjust_verdict), the canonical board SQL
+// expects (board_hist_*), or the Phase 4.9 provenance/validity metadata
+// records (seed_manifest/history_validity/adjust_pack_state/raw_history_corrections).
 var seedOnlyTables = map[string]bool{
-	"adjust_events":  true,
-	"adjust_verdict": true,
-	"board_hist_v":   true,
-	"board_hist_fv":  true,
+	"adjust_events":           true,
+	"adjust_verdict":          true,
+	"board_hist_v":            true,
+	"board_hist_fv":           true,
+	"adjust_pack_state":       true,
+	"history_validity":        true,
+	"seed_manifest":           true,
+	"raw_history_corrections": true,
 }
 
 // neverMerge tables hold user decisions, derived caches, pipeline state or a

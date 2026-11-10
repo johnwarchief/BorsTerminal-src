@@ -1,0 +1,182 @@
+[
+ {
+  "asset_id": 591,
+  "symbol": "شبندر",
+  "ins_code": "35366681030756042",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 484,
+  "symbol": "شپنا",
+  "ins_code": "7745894403636165",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 451,
+  "symbol": "فملي",
+  "ins_code": "35425587644337450",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 453,
+  "symbol": "فولاد",
+  "ins_code": "46348559193224090",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 462,
+  "symbol": "وبملت",
+  "ins_code": "778253364357513",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 461,
+  "symbol": "وتجارت",
+  "ins_code": "63917421733088077",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 637,
+  "symbol": "شتران",
+  "ins_code": "51617145873056483",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 7836,
+  "symbol": "شستا",
+  "ins_code": "2400322364771558",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 636,
+  "symbol": "شپديس",
+  "ins_code": "20562694899904339",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 703,
+  "symbol": "فارس",
+  "ins_code": "25244329144808274",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 16449,
+  "symbol": "فزر",
+  "ins_code": "8175784894140974",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 322,
+  "symbol": "شصفها",
+  "ins_code": "18346219759153870",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 2052,
+  "symbol": "ولقمان",
+  "ins_code": "31959715133485440",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 64,
+  "symbol": "وملت",
+  "ins_code": "10055255678920880",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 181,
+  "symbol": "پشاهن",
+  "ins_code": "44052047028305231",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 149,
+  "symbol": "فنوال",
+  "ins_code": "57875847776839336",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 382,
+  "symbol": "كچاد",
+  "ins_code": "18027801615184692",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 419,
+  "symbol": "كگل",
+  "ins_code": "35700344742885862",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 599,
+  "symbol": "ولانا",
+  "ins_code": "66830065858417081",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 291,
+  "symbol": "ومعادن",
+  "ins_code": "58931793851445922",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 6475,
+  "symbol": "حآفرين",
+  "ins_code": "21432551703060846",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 38716,
+  "symbol": "هانيكو",
+  "ins_code": "41529644566373651",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 238,
+  "symbol": "چكاوه",
+  "ins_code": "24254843881948059",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 373,
+  "symbol": "سبهان",
+  "ins_code": "32525655729432562",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 309,
+  "symbol": "سخاش",
+  "ins_code": "4470657233334072",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 302,
+  "symbol": "سرود",
+  "ins_code": "11964419322927535",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 167,
+  "symbol": "خودرو",
+  "ins_code": "65883838195688438",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 251,
+  "symbol": "دالبر",
+  "ins_code": "60451823714332895",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 293,
+  "symbol": "دعبيد",
+  "ins_code": "49054891736433700",
+  "basis": "real_close"
+ },
+ {
+  "asset_id": 500,
+  "symbol": "مبين",
+  "ins_code": "27922860956133067",
+  "basis": "real_close"
+ }
+]

@@ -188,12 +188,20 @@ func FindCorrectionsDir(dataDir string) string {
 			return env
 		}
 	}
-	candidates := []string{
-		filepath.Join(dataDir, "data", "ra365_corrections", "ra365-r32b-v2"),
-		filepath.Join(".", "data", "ra365_corrections", "ra365-r32b-v2"),
-		filepath.Join("..", "data", "ra365_corrections", "ra365-r32b-v2"),
-		filepath.Join("..", "..", "data", "ra365_corrections", "ra365-r32b-v2"),
-		filepath.Join("..", "..", "..", "data", "ra365_corrections", "ra365-r32b-v2"),
+	candidates := []string{}
+	roots := []string{
+		filepath.Join(dataDir, "data", "ra365_corrections"),
+		filepath.Join(".", "data", "ra365_corrections"),
+		filepath.Join("..", "data", "ra365_corrections"),
+		filepath.Join("..", "..", "data", "ra365_corrections"),
+		filepath.Join("..", "..", "..", "data", "ra365_corrections"),
+	}
+	// Prefer the Phase 4.9 reference-verified rebuild; keep the legacy
+	// r32b-v2 overlay pack as a fallback for older bundles.
+	for _, version := range []string{"ra365-phase49-rebuild-full-v2", "ra365-r32b-v2"} {
+		for _, root := range roots {
+			candidates = append(candidates, filepath.Join(root, version))
+		}
 	}
 	for _, c := range candidates {
 		if _, err := os.Stat(filepath.Join(c, "manifest.json")); err == nil {
@@ -227,7 +235,7 @@ func loadPackFromDir(dir string) *CorrectionPack {
 	}
 	ver := man.CorrectionVersion
 	if ver == "" {
-		ver = "ra365-r32b-v2"
+		ver = "ra365-phase49-rebuild-full-v2"
 	}
 	factorsName := man.Files.Factors
 	if factorsName == "" {

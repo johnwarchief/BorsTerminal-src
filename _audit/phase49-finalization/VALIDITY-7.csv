@@ -1,0 +1,8 @@
+symbol,rows,first_date,last_date,reference_coverage,ref_days,ref_first,ref_last,factor_steps,factor_verified,factor_reconstructed,factor_unverified,raw_open_corrected,factor_parity,adjusted_max_abs,status,notes
+شنفت,433,2024-08-24,2026-10-11,rahavard-type0-type7-2026-11-10,3488,2010-01-02,2026-11-10,26,26,0,0,0,PASS_FACTOR,520.0,verified,reference 2010-2026 capture; factor verdict PASS_FACTOR
+فافق,408,2024-08-24,2026-10-11,rahavard-type0-type7-2026-11-10,1078,2021-09-01,2026-11-10,6,6,0,0,0,PASS_FACTOR,490.0,verified,reference 2010-2026 capture; factor verdict PASS_FACTOR
+فخاس,434,2024-08-24,2026-10-11,rahavard-type0-type7-2026-11-10,3465,2010-01-02,2026-11-10,24,24,0,0,0,PASS_FACTOR,100.0,verified,reference 2010-2026 capture; factor verdict PASS_FACTOR
+فولاژ,439,2024-08-31,2026-10-11,rahavard-type0-type7-2026-11-10,3446,2011-03-09,2026-11-10,25,25,0,0,0,PASS_FACTOR,160.0,verified,reference 2010-2026 capture; factor verdict PASS_FACTOR
+لخزر,401,2024-08-24,2026-10-11,rahavard-type0-type7-2026-11-10,3240,2010-01-05,2026-11-08,22,22,0,0,0,PASS_FACTOR,150.0,verified,reference 2010-2026 capture; factor verdict PASS_FACTOR
+ولانا,1893,2013-11-30,2026-11-09,rahavard-type0-type7-2026-11-10,1892,2013-11-30,2026-11-10,10,7,0,3,0,PARTIAL_FACTOR,2234.3676118282892,reconstructed_verified,reference 2010-2026 capture; factor verdict PARTIAL_FACTOR
+مارون,513,2024-08-24,2026-10-11,rahavard-type0-type7-2026-11-10,3243,2011-12-27,2026-11-10,16,16,0,0,0,PASS_FACTOR,700.0,verified,reference 2010-2026 capture; factor verdict PASS_FACTOR

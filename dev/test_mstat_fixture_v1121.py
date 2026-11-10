@@ -20,14 +20,18 @@
 هرگز `market.db`/`user.db`ِ عملیاتیِ ریشه باز نمی‌شود: فیکسچر از نو ساخته
 می‌شود و اوراکل در پوشۀ موقت می‌نویسد (همان الگویِ گاردِ B1).
 """
+import base64
 import hashlib
 import importlib.util
 import io
 import json
 import os
+import pathlib
+import sqlite3
 import subprocess
 import sys
 import tempfile
+import zlib
 from contextlib import redirect_stdout
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,6 +98,60 @@ def sha(path):
 def read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _norm_blob(value):
+    try:
+        raw = base64.b64decode(value.encode("ascii"), validate=True)
+        return ("zlib", zlib.decompress(raw).hex())
+    except Exception:                                             # noqa: BLE001
+        return value
+
+
+def _norm_cell(value):
+    """سلولِ SQLite → مقدارِ قابلِ مقایسه؛ blobِ zlib (حتی درونِ JSON) با
+    بایت‌هایِ باز‌شده سنجیده می‌شود. فیکسچرِ کامیت‌شده با zlibِ پایتونِ دیگری
+    نوشته شده و جریانِ deflate بیت‌به‌بیت یکی نیست، ولی محتوایِ باز‌شده یکی است."""
+    if isinstance(value, str):
+        try:
+            obj = json.loads(value)
+        except Exception:                                         # noqa: BLE001
+            obj = None
+        if isinstance(obj, dict) and isinstance(obj.get("st"), str):
+            obj["st"] = _norm_blob(obj["st"])
+            return ("json", json.dumps(obj, sort_keys=True, ensure_ascii=False))
+        return _norm_blob(value)
+    return value
+
+
+def dump_logical(path):
+    """نامِ جدول‌ها، ستون‌ها و ردیف‌هایِ مرتب — نه چیدمانِ صفحۀ SQLite."""
+    uri = pathlib.Path(os.path.abspath(path)).as_uri() + "?mode=ro"
+    con = sqlite3.connect(uri, uri=True)
+    try:
+        tables = [r[0] for r in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
+        out = {}
+        for table in tables:
+            cur = con.execute('SELECT * FROM "%s"' % table.replace('"', '""'))
+            cols = tuple(d[0] for d in cur.description)
+            rows = sorted((tuple(_norm_cell(v) for v in r) for r in cur.fetchall()),
+                          key=repr)
+            out[table] = (cols, rows)
+        return out
+    finally:
+        con.close()
+
+
+def first_difference(committed, fresh):
+    if set(committed) != set(fresh):
+        return "table sets differ"
+    for table, (cols, rows) in committed.items():
+        if cols != fresh[table][0]:
+            return "columns differ in %s" % table
+        if rows != fresh[table][1]:
+            return "rows differ in %s" % table
+    return ""
 
 
 def _enrich_rows(d):
@@ -209,27 +267,28 @@ def panel_content(name, d):
 def main() -> int:
     # ۱) قطعیتِ فیکسچر — دو ساختِ مستقل در دو پوشۀ موقت؛ هیچ نوشتنی رویِ
     #    فیکسچرِ ردیابی‌شده، و مقایسه با همان فایلِ کامیت‌شده.
+    det = eq = (False, "fixture build did not run")
+    user_size = None
     try:
         with tempfile.TemporaryDirectory(prefix="b2-fix-a-") as a, \
                 tempfile.TemporaryDirectory(prefix="b2-fix-b-") as b:
             rcs = (build_fixture(a), build_fixture(b))
             fresh = [{n: sha(os.path.join(root, n))
                       for n in ("market.db", "user.db")} for root in (a, b)]
-        committed = {n: sha(os.path.join(FIX, n))
-                     for n in ("market.db", "user.db")}
-        check("fixture build is deterministic (two temp builds, same sha256)",
-              rcs == (0, 0) and fresh[0] == fresh[1],
-              "rc=%r a=%s b=%s" % (rcs, fresh[0], fresh[1]))
-        check("committed fixture equals a fresh build", fresh[0] == committed,
-              "fresh=%s committed=%s" % (fresh[0], committed))
-        check("user.db is the empty B1 database",
-              os.path.getsize(os.path.join(FIX, "user.db")) == 0,
-              "size=%d" % os.path.getsize(os.path.join(FIX, "user.db")))
+            det = (rcs == (0, 0) and fresh[0] == fresh[1],
+                   "rc=%r a=%s b=%s" % (rcs, fresh[0], fresh[1]))
+            diff = first_difference(
+                dump_logical(os.path.join(FIX, "market.db")),
+                dump_logical(os.path.join(a, "market.db")))
+            eq = (not diff, diff)
+            user_size = os.path.getsize(os.path.join(FIX, "user.db"))
     except Exception as e:                                        # noqa: BLE001
-        for label in ("fixture build is deterministic (two temp builds, same sha256)",
-                      "committed fixture equals a fresh build",
-                      "user.db is the empty B1 database"):
-            check(label, False, repr(e))
+        det = eq = (False, repr(e))
+    check("fixture build is deterministic (two temp builds, same sha256)", *det)
+    check("committed fixture equals a fresh build (logical content, zlib blobs decoded)",
+          *eq)
+    check("user.db is the empty B1 database",
+          user_size == 0, "size=%r" % (user_size,))
 
     # ۲) طلایی‌ها — اوراکل در پوشۀ موقت اجرا می‌شود و خروجیِ کامیت‌شده با آن
     #    مقایسه می‌شود (پارس‌شده؛ ترتیبِ کلید داور نیست). پوشۀ کامیت‌شده

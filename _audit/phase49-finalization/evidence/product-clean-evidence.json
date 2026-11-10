@@ -1,0 +1,55 @@
+{
+ "chart_count": 3689,
+ "first": "2010-01-02",
+ "last": "2026-11-09",
+ "events": 26,
+ "pack": "ra365-phase49-rebuild-full-v2",
+ "factor_first": 0.002328370752982343,
+ "wm": {
+  "W": {
+   "count": 833,
+   "first": "2009-W53",
+   "last": "2026-W46"
+  },
+  "M": {
+   "count": 196,
+   "first": "2010-01",
+   "last": "2026-11"
+  }
+ },
+ "adj_sample_n": 26,
+ "adj_sample_max_rel": 0.0017064846416382042,
+ "adj_sample_median_rel": 5.333331486502138e-09,
+ "ma_keys": [
+  "adjustSource",
+  "adjusted",
+  "bars",
+  "basis",
+  "events",
+  "ma",
+  "periods",
+  "status",
+  "symbol"
+ ],
+ "ma_count": 4,
+ "db_rows": 511139,
+ "open_corrections": 3105,
+ "validity_rows": 6103,
+ "seed_state": {
+  "version": 1,
+  "status": "applied",
+  "source": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-finalization\\product-test\\clean\\market.db.lzma",
+  "source_sha256": "ac34acb9116fb8e14a99ca1d0c6cbe20027f4382750c8c1455f83edfb87e03b1",
+  "source_size": 63175764,
+  "source_mod_unix": 1794312186,
+  "mode": "extract",
+  "applied_at_utc": "2026-11-10T12:12:25Z",
+  "db_path": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-finalization\\product-test\\clean\\market.db",
+  "db_size": 270614528,
+  "db_sha256": "fbfab55967feada57b15d47d0c24ead3801592e9670909e2e96e5da1da97b177",
+  "price_history_rows": 511139,
+  "price_history_first": "2010-01-02",
+  "price_history_last": "2026-11-09",
+  "daily_prices_rows": 118774
+ }
+}

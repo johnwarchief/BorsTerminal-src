@@ -1,0 +1,28 @@
+# Local-only heavy data, DB copies, authenticated reference captures and runtime
+# secrets. Tracked here: the mission scripts, small reports and derived CSVs.
+db/
+seed/
+packs/
+product-test/
+api-sandbox/
+__pycache__/
+*.log
+*.exe
+*.bin
+
+# Owner-authenticated Rahavard captures and raw reference series are not
+# redistributed (subscription data). Summaries/metadata stay trackable.
+rahavard/capture-*.json
+rahavard/normalized*/bars.ndjson.gz
+rahavard/normalized*/coverage.json
+
+# Scratch copies used while diagnosing B2 golden staleness.
+evidence/b2-fresh/
+evidence/b2-fixture/
+evidence/b2-golden-backup/
+evidence/b2-golden-tmpcheck/
+evidence/canonical/
+
+# Date-level reference price rows (owner data); the counts-only report is kept.
+open-corrections-30.csv
+evidence/open-audit-30.json

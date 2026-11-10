@@ -1,0 +1,637 @@
+{
+ "schema": "phase49-open-audit-summary-v1",
+ "ref": "_audit/phase49-finalization/rahavard/normalized30",
+ "per_symbol": {
+  "شبندر": {
+   "rahavard365": {
+    "n": 2400,
+    "ref_eq_db_open": 2400
+   },
+   "legacy-unknown": {
+    "n": 391,
+    "ref_eq_db_open": 34,
+    "ref_ne_db_open": 357,
+    "db_open_eq_prev_close": 354,
+    "provable_substitution": 354,
+    "other_difference": 3
+   },
+   "board": {
+    "n": 23,
+    "ref_eq_db_open": 20,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "شپنا": {
+   "rahavard365": {
+    "n": 2831,
+    "ref_eq_db_open": 2831
+   },
+   "legacy-unknown": {
+    "n": 414,
+    "ref_eq_db_open": 40,
+    "ref_ne_db_open": 374,
+    "db_open_eq_prev_close": 371,
+    "provable_substitution": 371,
+    "other_difference": 3
+   },
+   "board": {
+    "n": 23,
+    "ref_eq_db_open": 20,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "فملي": {
+   "rahavard365": {
+    "n": 3317,
+    "ref_eq_db_open": 3317
+   },
+   "legacy-unknown": {
+    "n": 393,
+    "ref_eq_db_open": 392,
+    "ref_ne_db_open": 1,
+    "other_difference": 1
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "فولاد": {
+   "rahavard365": {
+    "n": 3299,
+    "ref_eq_db_open": 3299
+   },
+   "legacy-unknown": {
+    "n": 359,
+    "ref_eq_db_open": 359
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "وبملت": {
+   "rahavard365": {
+    "n": 3087,
+    "ref_eq_db_open": 3087
+   },
+   "legacy-unknown": {
+    "n": 407,
+    "ref_eq_db_open": 407
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 26,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "وتجارت": {
+   "rahavard365": {
+    "n": 3057,
+    "ref_eq_db_open": 3057
+   },
+   "legacy-unknown": {
+    "n": 397,
+    "ref_eq_db_open": 397
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "شتران": {
+   "rahavard365": {
+    "n": 2294,
+    "ref_eq_db_open": 2294
+   },
+   "legacy-unknown": {
+    "n": 409,
+    "ref_eq_db_open": 38,
+    "ref_ne_db_open": 371,
+    "db_open_eq_prev_close": 368,
+    "provable_substitution": 368,
+    "other_difference": 3
+   },
+   "board": {
+    "n": 23,
+    "ref_eq_db_open": 20,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "شستا": {
+   "rahavard365": {
+    "n": 928,
+    "ref_eq_db_open": 928
+   },
+   "legacy-unknown": {
+    "n": 419,
+    "ref_eq_db_open": 418,
+    "ref_ne_db_open": 1,
+    "other_difference": 1
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "شپديس": {
+   "rahavard365": {
+    "n": 2994,
+    "ref_eq_db_open": 2994
+   },
+   "legacy-unknown": {
+    "n": 363,
+    "ref_eq_db_open": 363
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "فارس": {
+   "rahavard365": {
+    "n": 2578,
+    "ref_eq_db_open": 2578
+   },
+   "legacy-unknown": {
+    "n": 375,
+    "ref_eq_db_open": 375
+   },
+   "board": {
+    "n": 24,
+    "ref_eq_db_open": 21,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "فزر": {
+   "rahavard365": {
+    "n": 600,
+    "ref_eq_db_open": 600
+   },
+   "legacy-unknown": {
+    "n": 402,
+    "ref_eq_db_open": 402
+   },
+   "board": {
+    "n": 25,
+    "ref_eq_db_open": 21,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "شصفها": {
+   "rahavard365": {
+    "n": 2140,
+    "ref_eq_db_open": 2140
+   },
+   "legacy-unknown": {
+    "n": 344,
+    "ref_eq_db_open": 344
+   },
+   "board": {
+    "n": 12,
+    "ref_eq_db_open": 12
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "ولقمان": {
+   "rahavard365": {
+    "n": 614,
+    "ref_eq_db_open": 614
+   },
+   "legacy-unknown": {
+    "n": 359,
+    "ref_eq_db_open": 359
+   },
+   "board": {
+    "n": 26,
+    "ref_eq_db_open": 23,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "وملت": {
+   "rahavard365": {
+    "n": 2981,
+    "ref_eq_db_open": 2981
+   },
+   "__missing__": {
+    "ref_only": 2
+   },
+   "legacy-unknown": {
+    "n": 348,
+    "ref_eq_db_open": 348
+   },
+   "board": {
+    "n": 28,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   }
+  },
+  "پشاهن": {
+   "rahavard365": {
+    "n": 673,
+    "ref_eq_db_open": 673
+   },
+   "legacy-unknown": {
+    "n": 236,
+    "ref_eq_db_open": 236
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "فنوال": {
+   "rahavard365": {
+    "n": 2843,
+    "ref_eq_db_open": 2843
+   },
+   "__missing__": {
+    "ref_only": 2
+   },
+   "legacy-unknown": {
+    "n": 400,
+    "ref_eq_db_open": 40,
+    "ref_ne_db_open": 360,
+    "db_open_eq_prev_close": 358,
+    "provable_substitution": 358,
+    "other_difference": 2
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "كچاد": {
+   "rahavard365": {
+    "n": 3238,
+    "ref_eq_db_open": 3238
+   },
+   "legacy-unknown": {
+    "n": 399,
+    "ref_eq_db_open": 399
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "كگل": {
+   "rahavard365": {
+    "n": 3174,
+    "ref_eq_db_open": 3174
+   },
+   "legacy-unknown": {
+    "n": 384,
+    "ref_eq_db_open": 384
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "ولانا": {
+   "rahavard365": {
+    "n": 1524,
+    "ref_eq_db_open": 1524
+   },
+   "legacy-unknown": {
+    "n": 338,
+    "ref_eq_db_open": 338
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 26,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "ومعادن": {
+   "rahavard365": {
+    "n": 3154,
+    "ref_eq_db_open": 3154
+   },
+   "legacy-unknown": {
+    "n": 396,
+    "ref_eq_db_open": 395,
+    "ref_ne_db_open": 1,
+    "other_difference": 1
+   },
+   "board": {
+    "n": 28,
+    "ref_eq_db_open": 24,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "حآفرين": {
+   "rahavard365": {
+    "n": 706,
+    "ref_eq_db_open": 706
+   },
+   "legacy-unknown": {
+    "n": 387,
+    "ref_eq_db_open": 387
+   },
+   "board": {
+    "n": 28,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "هانيكو": {
+   "legacy-unknown": {
+    "n": 108,
+    "ref_eq_db_open": 108
+   },
+   "board": {
+    "n": 25,
+    "ref_eq_db_open": 22,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "rahavard365": {
+    "n": 21,
+    "ref_eq_db_open": 21
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "چكاوه": {
+   "rahavard365": {
+    "n": 2888,
+    "ref_eq_db_open": 2888
+   },
+   "__missing__": {
+    "ref_only": 6
+   },
+   "legacy-unknown": {
+    "n": 386,
+    "ref_eq_db_open": 385,
+    "ref_ne_db_open": 1,
+    "other_difference": 1
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "سبهان": {
+   "rahavard365": {
+    "n": 2919,
+    "ref_eq_db_open": 2919
+   },
+   "__missing__": {
+    "ref_only": 3
+   },
+   "legacy-unknown": {
+    "n": 416,
+    "ref_eq_db_open": 36,
+    "ref_ne_db_open": 380,
+    "db_open_eq_prev_close": 376,
+    "provable_substitution": 376,
+    "other_difference": 4
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "سخاش": {
+   "rahavard365": {
+    "n": 2686,
+    "ref_eq_db_open": 2686
+   },
+   "__missing__": {
+    "ref_only": 4
+   },
+   "legacy-unknown": {
+    "n": 420,
+    "ref_eq_db_open": 40,
+    "ref_ne_db_open": 380,
+    "db_open_eq_prev_close": 377,
+    "provable_substitution": 377,
+    "other_difference": 3
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "سرود": {
+   "rahavard365": {
+    "n": 3283,
+    "ref_eq_db_open": 3283
+   },
+   "__missing__": {
+    "ref_only": 5
+   },
+   "legacy-unknown": {
+    "n": 360,
+    "ref_eq_db_open": 46,
+    "ref_ne_db_open": 314,
+    "db_open_eq_prev_close": 312,
+    "provable_substitution": 312,
+    "other_difference": 2
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "خودرو": {
+   "rahavard365": {
+    "n": 3493,
+    "ref_eq_db_open": 3493
+   },
+   "legacy-unknown": {
+    "n": 48,
+    "ref_eq_db_open": 46,
+    "ref_ne_db_open": 2,
+    "db_open_eq_prev_close": 2,
+    "provable_substitution": 2
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 26,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  },
+  "دالبر": {
+   "rahavard365": {
+    "n": 3541,
+    "ref_eq_db_open": 3541
+   },
+   "__missing__": {
+    "ref_only": 4
+   },
+   "legacy-unknown": {
+    "n": 49,
+    "ref_eq_db_open": 46,
+    "ref_ne_db_open": 3,
+    "db_open_eq_prev_close": 3,
+    "provable_substitution": 3
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "دعبيد": {
+   "rahavard365": {
+    "n": 2813,
+    "ref_eq_db_open": 2813
+   },
+   "__missing__": {
+    "ref_only": 2
+   },
+   "legacy-unknown": {
+    "n": 382,
+    "ref_ne_db_open": 371,
+    "other_difference": 2,
+    "db_open_eq_prev_close": 369,
+    "provable_substitution": 369,
+    "ref_eq_db_open": 11
+   },
+   "board": {
+    "n": 29,
+    "ref_eq_db_open": 25,
+    "ref_ne_db_open": 4,
+    "other_difference": 4
+   }
+  },
+  "مبين": {
+   "rahavard365": {
+    "n": 2146,
+    "ref_eq_db_open": 2146
+   },
+   "legacy-unknown": {
+    "n": 223,
+    "ref_ne_db_open": 215,
+    "db_open_eq_prev_close": 215,
+    "provable_substitution": 215,
+    "ref_eq_db_open": 8
+   },
+   "board": {
+    "n": 22,
+    "ref_eq_db_open": 19,
+    "ref_ne_db_open": 3,
+    "other_difference": 3
+   },
+   "__missing__": {
+    "ref_only": 1
+   }
+  }
+ },
+ "corrections_by_symbol_src": {
+  "خودرو|legacy-unknown": 2,
+  "دالبر|legacy-unknown": 3,
+  "دعبيد|legacy-unknown": 369,
+  "سبهان|legacy-unknown": 376,
+  "سخاش|legacy-unknown": 377,
+  "سرود|legacy-unknown": 312,
+  "شبندر|legacy-unknown": 354,
+  "شتران|legacy-unknown": 368,
+  "شپنا|legacy-unknown": 371,
+  "فنوال|legacy-unknown": 358,
+  "مبين|legacy-unknown": 215
+ },
+ "corrections_total": 3105
+}
