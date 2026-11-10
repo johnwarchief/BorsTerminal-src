@@ -1,136 +1,129 @@
-# گزارش بازچینی و پالایش Technical Indicator Inbox
+# گزارش اصلاح‌شدهٔ بررسی و پالایش Technical Indicator Inbox
 
 - **تاریخ:** 2026-11-10
 - **شاخه:** `mission/technical-indicator-inbox-curation-2026-11-10`
-- **مبنای بررسی:** `main` در commit `9a919e82f5b836cc7ec4be5ba04a39ec2f74b4e2`
-- **نوع بررسی:** static source review و inventory؛ هیچ فایل باینری اجرا یا decompile نشد.
-- **دامنه:** `docs/technical-indicators/inbox/`، فایل‌های README و template، سورس‌های قابل‌خواندن و گزارش بررسی قبلی.
+- **مبنای اصلی:** `main` در `9a919e82f5b836cc7ec4be5ba04a39ec2f74b4e2`
+- **وضعیت:** نسخهٔ اصلاح‌شده؛ این سند تصمیم اولیهٔ شتاب‌زده را supersede می‌کند.
+- **دامنه:** فقط اسناد و فایل‌های زیر `docs/technical-indicators/`؛ هیچ Runtime code تغییر نکرده است.
 
-## خلاصهٔ تصمیم
+## ۱) اصلاح تصمیم قبلی
 
-پیش از بازچینی، ۲۶ ورودی در Inbox وجود داشت. ساختار جدید، دو سورس را به‌عنوان نامزد تحقیق نگه می‌دارد و به پوشهٔ مستقل منتقل می‌کند؛ دو سند راهنما نیز حفظ/به‌روزرسانی می‌شوند. ۲۲ ورودی دیگر از Inbox حذف می‌شوند. حذف از Inbox به معنی ادعای بی‌ارزش‌بودن همهٔ ایده‌ها نیست؛ به معنی نداشتن جایگاه به‌عنوان ورودی فعال این مرحله است.
+در بازبینی اولیه، `Indi 516.txt` (Double Tap) و چند فایل Ichimoku و سایر باینری‌ها به‌دلیل نداشتن سورس خوانا یا هم‌پوشانی احتمالی، زودهنگام از Inbox خارج شدند. این استدلال کافی نبود. «قابل‌خواندن نبودن فرمول باینری» یا «وجود مفهوم مشابه در محصول» دلیل حذف یک نامزد پژوهشی نیست.
 
-| پرونده | تصمیم | جایگاه |
+در این نسخه:
+- **Double Tap** با اولویت بالا حفظ شده است.
+- سورس **Adaptive Ichimoku** و هر دو باینری Ichimoku حفظ شده‌اند.
+- تمام باینری‌های احتمالی اندیکاتور در `binary-review-pending/` نگه داشته شده‌اند؛ صرفاً به‌دلیل عدم دسترسی به سورس حذف نمی‌شوند.
+- سه سورس Pine دیگر (Failed Breakout Level، Third Wave BB، StormCore composite) در صف بررسی باقی مانده‌اند.
+- فقط مواردی از Inbox خارج می‌شوند که ساختار سورس‌شان به‌وضوح EA، Strategy یا ابزار Replay باشد؛ این خروج از Inbox اندیکاتور به معنی حذف از کل پژوهش پروژه نیست.
+
+## ۲) دسته‌بندی فعلی
+
+### اولویت بالا
+
+| مورد | قابلیت | چرا نگه داشته می‌شود؟ |
 |---|---|---|
-| `Indi 533.txt` | نگه‌داری و انتقال بدون تغییر محتوای سورس | Research candidate — اولویت بالا |
-| `Indi 84.txt` | نگه‌داری و انتقال بدون تغییر محتوای سورس | Research candidate — اختیاری |
-| `README.md` | حفظ و به‌روزرسانی | راهنمای Inbox |
-| `INDICATOR_INTAKE_TEMPLATE.md` | حفظ و گسترش | قالب دریافت ورودی |
-| سایر ۲۲ ورودی | حذف از Inbox | دلایل زیر |
+| Double Tap 3D | Double Top/Bottom، neckline، score، RSI/volume divergence، stop/targets | یک Pattern Detection کامل با lifecycle است؛ ارزش آزمون و مقایسه دارد. |
+| Adaptive Ichimoku Nexus | خطوط کلاسیک/تطبیقی، Kumo، TK، Chikou، MTF، breakout/retest و momentum | می‌تواند لایهٔ روند/زمینه و چندسیگنال پیشرفته بسازد؛ ارزش آن به چند خط سنتی محدود نیست. |
+| Ichimoku Cloud EX5 | باینری MT5 | به‌عنوان variant مستقل حفظ شده؛ رفتار هنوز تأیید نشده. |
+| Ichimoku Signals Cloud EX4 | باینری MT4 | variant سیگنال‌محور حفظ شده؛ رفتار هنوز تأیید نشده. |
+| Liquidity & Structure | BSL/SSL، sweep، FVG/iFVG، supply/demand | چند ماژول مستقل با ارزش بررسی؛ بخش CVD فعلاً proxy مبتنی بر جهت کندل است، نه order flow واقعی. |
 
-هیچ موردی با این بازچینی به `implemented/` ارتقا پیدا نمی‌کند. هیچ اندیکاتوری در Runtime پیاده‌سازی نمی‌شود.
+### اولویت متوسط / اکتشافی
 
-## ۱) نامزدهای نگه‌داری‌شده
+| مورد | موضوع | وضعیت |
+|---|---|---|
+| MSnR Double Breakout Failed Level | شکست ناموفق سطح | close-confirm در بخش رویدادها دارد؛ باید با ساختار swing و سطح‌های خودمان مقایسه شود. |
+| 3rd Wave BB TrendLines | موج سوم، ZigZag، BB، RSI، trendline | وابستگی خارجی ZigZag و ریسک hindsight/repaint باید بررسی شود. |
+| StormCore SMC/Div/ST+ | SuperTrend، HTF FVG/OB/CHoCH، divergence | بستهٔ ترکیبی باید ماژول‌به‌ماژول ارزیابی شود، نه یکجا پذیرفته شود. |
+| سایر EX4/EX5ها | نامزدهای نامشخص | تا زمان مشاهدهٔ خروجی و/یا دریافت سورس در وضعیت BINARY_REVIEW_PENDING باقی می‌مانند. |
 
-### A. `liquidity-structure/indicator.pine` — از `Indi 533.txt`
+## ۳) Double Tap — یافته‌های فنی واقعی
 
-**اولویت تحقیق: بالا.** سورس Pine v6 شامل ماژول‌های Swing Liquidity (BSL/SSL)، sweep، PDH/PDL و PWH/PWL، FVG/iFVG، supply/demand zones و premium/discount range است.
+سورس `Indi 516.txt` یک Pine v6 indicator است، نه صرفاً یک overlay تزئینی:
+- پیوت high/low را با `pivLeft=8` و `pivRight=5` تأیید می‌کند؛ مختصات پیوت به `bar_index-pivRight` برمی‌گردد، پس تأخیر تأیید باید در خروجی ما جداگانه ثبت شود.
+- دو سقف/کف را با فاصلهٔ min/max bars و tolerance مبتنی بر ATR تطبیق می‌دهد.
+- neckline از extreme بین دو پیوت ساخته می‌شود و شرط پاکیزگی هندسی دارد.
+- ارتفاع الگو باید حداقل `1.5 × ATR` باشد.
+- score از peak match، RSI divergence، volume divergence، height، symmetry و prior trend ساخته می‌شود.
+- سیگنال شکست با close نسبت به neckline ساخته می‌شود و EMA/volume filter اختیاری دارد.
+- TP1/TP2 با ضریب ارتفاع الگو، حد ابطال با buffer ATR و انتقال stop به break price پس از TP1 دارد.
+- state machine برای forming، active، success، failed و timeout دارد؛ برخورد stop و target در یک کندل را stop فرض می‌کند.
 
-دلایل نگه‌داری: چند مفهوم مجزا و تست‌پذیر دارد که می‌توانند در کتابخانهٔ مستقل Pattern/Indicator بررسی شوند. لازم نیست بستهٔ بزرگ اسکریپت یکجا پذیرفته شود.
+مواردی که باید تست شوند:
+- گارد نداشتن سراسری `barstate.isconfirmed`: pivot تأییدشده است، ولی state/رسم روی کندل باز می‌تواند intrabar تغییر کند. `alert.freq_once_per_bar_close` برای alert وجود دارد، اما برای اثبات anti-repaint کافی نیست.
+- ATR زمان تأیید پیوت دوم در score و matching مصرف می‌شود؛ با ATR زمان وقوع pivot مقایسه شود.
+- score و Grade وزن‌های hand-crafted هستند و probability یا edge اثبات‌شده نیستند.
+- win-rate داشبورد ظاهراً timeoutها را در denominator کامل لحاظ نمی‌کند و نباید معیار عملکرد معتبر تلقی شود.
+- رفتار روی قیمت خام/تعدیل‌شده، کندل‌های کم‌حجم و دادهٔ دارای گپ باید بررسی شود.
 
-ریسک‌ها و محدودیت‌های کشف‌شده:
-- pivot right-bars تأخیر تأیید دارد؛ زمان pivot و زمان تأیید باید جدا باشند.
-- بسیاری از منطق‌های روی کندل جاری گارد سراسری close-confirm ندارند؛ repaint/intrabar باید دقیقاً تست شود.
-- «CVD» عمدتاً از جهت کندل برای تقسیم حجم مثبت/منفی proxy می‌سازد؛ این order flow یا bid/ask delta واقعی نیست.
-- تعریف OB heuristic است و نهادی بودن سفارش را اثبات نمی‌کند.
-- توابع روز/هفتهٔ قبلی باید با timezone و تقویم بورس ایران تطبیق یابند.
-- سربرگ MPL 2.0 دارد؛ اصالت مجوز و تعهدات لازم پیش از اقتباس/بازنشر باید بررسی شود.
+نتیجه: **RETAIN — HIGH PRIORITY / NOT YET VERIFIED**. هیچ‌یک از این caveatها دلیل حذف نیست؛ موارد آزمون و بهبودند.
 
-اولویت بررسی ماژول‌ها: BSL/SSL و sweep؛ سپس FVG/iFVG؛ سپس OB heuristic؛ سپس premium/discount به‌عنوان context. CVD proxy تا اثبات اعتبار جداگانه نباید به‌عنوان CVD واقعی معرفی شود.
+## ۴) Ichimoku — دامنهٔ واقعی تحقیق
 
-### B. `adaptive-ichimoku/indicator.pine` — از `Indi 84.txt`
+سورس `Indi 84.txt` چند مسیر دارد:
+- محاسبهٔ کلاسیک Tenkan/Kijun/Senkou و حالت تطبیقی بر اساس volatility؛
+- وضعیت قیمت نسبت به Kumo، TK cross/alignment و Chikou؛
+- flat Kijun به‌عنوان support/resistance context؛
+- Kumo breakout و retest؛
+- momentum pulse و confluence؛
+- state چندتایم‌فریمی.
 
-**اولویت تحقیق: اختیاری.** سورس Pine v6 شامل Ichimoku کلاسیک/تطبیقی مبتنی بر volatility، Kumo، Tenkan/Kijun، Chikou، breakout/retest، MTF و momentum/confluence است.
+دو نکتهٔ فنی برای ممیزی:
+1. سیگنال‌های اصلی با `barstate.isconfirmed` کنترل شده‌اند؛ MTF با state تایم‌فریم قبلی و `lookahead_on` الگوی رایج confirmed HTF را به‌کار می‌گیرد، ولی باید روی مرز timeframe و دادهٔ واقعی آزمون شود.
+2. تابع MTF در همین سورس از خطوط کلاسیک استفاده می‌کند حتی وقتی main mode روی Adaptive باشد؛ ممکن است خروجی MTF و چارت از دو definition متفاوت استفاده کنند.
 
-دلایل نگه‌داری: یک گزینهٔ context/trend مستقل است و نسخهٔ سورس‌دار آن از فایل‌های کامپایل‌شدهٔ Ichimoku قابل ارزیابی‌تر است.
+امتیاز ۰–۱۰۰ و وزن‌های آن هنوز فقط heuristic سازنده‌اند. این مسئله مانع نگه‌داری نیست؛ ابتدا باید خطوط/شرط‌های مستقل بررسی و سپس calibration انجام شود.
 
-ریسک‌ها و محدودیت‌های کشف‌شده:
-- سیگنال‌های اصلی با barstate.isconfirmed گیت شده‌اند؛ MTF از state تایم‌فریم قبلی استفاده می‌کند، اما باید روی مرزهای تایم‌فریم تست شود.
-- محاسبهٔ MTF کلاسیک است، حتی وقتی تنظیم اصلی در حالت Adaptive قرار دارد؛ این ناهمخوانی باید حل/مستند شود.
-- وزن‌های امتیاز ۰–۱۰۰ سلیقهٔ نویسنده‌اند، نه پارامترهای اعتبارسنجی‌شده.
-- fallbackهای `nz(..., close)` ممکن است کمبود داده را مخفی کنند.
-- مناسب‌بودن volume filter و دوره‌های تطبیقی برای بازار ایران نامعلوم است.
-- سربرگ MPL 2.0 دارد؛ اصالت مجوز و تعهدات استفاده باید بررسی شود.
+دو باینری دیگر نیز با نام Ichimoku در همان پوشه نگه داشته شده‌اند تا خروجی‌شان با نسخهٔ Pine مقایسه شود. برای باینری‌ها screenshot و settings لازم است؛ فرمول آن‌ها از سورس Pine قابل استنتاج نیست.
 
-مسیر تحقیق: baseline کلاسیک، سپس آزمون جداگانهٔ adaptive و MTF؛ score وزنی تا ارزیابی out-of-sample وارد محصول نشود.
+## ۵) استاتیک تریاژ EX4 / EX5
 
-## ۲) ورودی‌های حذف‌شده و دلیل
+برای هر ۱۱ باینری در این مرحله از GitHub contents با encoding=base64 استفاده و header و رشته‌های printable بررسی شد. نتیجهٔ این روش محدود است:
+- headerهای خانوادهٔ EX4/EX5 شناسایی شدند.
+- در `Fibo.ex4` رشته‌های قابل‌خواندن `Don Perry`، `lookback`، `lastbar` و `Fibo` وجود دارد.
+- در بیشتر باینری‌های دیگر رشته‌های معنی‌دار برای بازسازی الگوریتم دیده نشد.
+- این کار decompilation، اجرای MetaTrader، یا تأیید فرمول محسوب نمی‌شود.
 
-### سورس‌های Pine / TradingView
+پس تصمیم صحیح برای آن‌ها `BINARY_REVIEW_PENDING` است، نه `REJECT`. برای پیشبرد بررسی نیاز به screenshot واقعی از خروجی و Inputs/Settings در MetaTrader سازگار داریم؛ دریافت سورس اصلی/لینک سازنده بهتر است.
 
-| ورودی | تشخیص و دلیل خروج از Inbox |
-|---|---|
-| `Indi 516.txt` | Double Tap 3D؛ الگوی سقف/کف دوقلو با pivot، ATR و RSI. منطق کندل جاری گارد سراسری close-confirm ندارد؛ با ساختارهای موجود هم‌پوشانی دارد و تعریف/کیفیت سیگنال با نمونهٔ مرجع تثبیت نشده است. |
-| `Indi 518.txt` | MSnR Double Breakout Failed Level؛ close-confirm دارد، اما تعریف شکست ناموفق/سطح با ساختار مرجع FTS یکی نیست و ارزش افزودهٔ روشن نسبت به level/structure موجود اثبات نشده است. در این مرحله نامزد فعال نمی‌ماند. |
-| `Indi 534.txt` | StormCore SMC/Div/SuperTrend composite؛ ترکیبی از ماژول‌های هم‌پوشان با Indi533، CHoCH/RSI و ابزارهای تکنیکال موجود. منطق custom SuperTrend و score مستقل باید جداگانه از صفر سنجیده شوند؛ نگه‌داشتن کل بسته در Inbox باعث تکرار و ابهام می‌شود. |
-| `Indi 538.txt` | Gold Breakout 15M یک Pine **Strategy** است؛ سفارش‌های stop، entry/exit، position sizing و equity guard دارد. اندیکاتور نیست و استراتژی خاص XAUUSD است. |
-| `Indi 82.txt` | 3rd Wave BB TrendLines؛ به کتابخانهٔ خارجی ZigZag وابسته است و هم‌زمان Elliott 3rd wave، Bollinger، RSI و trendline دارد. تعریف و وابستگی بیرونی/ریسک hindsight برای این مرحله شفاف نیست؛ ارزش نگه‌داری کل اسکریپت پایین است. |
+## ۶) مواردی که با اطمینان از Inbox اندیکاتورها خارج می‌شوند
 
-### Expert Advisor و ابزار غیراندیکاتوری
+| فایل | تشخیص از روی سورس | مقصد/دلیل |
+|---|---|---|
+| `Breakout Retest Pro EA Source Code @IndicatorsforTV.mq4` | Expert Advisor؛ حساب/سفارش/OrderClose | اندیکاتور نیست؛ خارج از این Inbox |
+| `Breakout Retest Pro EA Source Code @IndicatorsforTV.ex4` | باینری همراه همان EA سورس‌دار | خارج از این Inbox |
+| `Gold Snap  v1.0.mq5` | Expert Advisor با `CTrade` و سفارش واقعی | استراتژی اجرایی طلا، نه اندیکاتور |
+| `Range Breakout With Filter.mq5` | Expert Advisor با `CTrade` و مدیریت ریسک | ربات معاملاتی |
+| `Range Breakout With Filter.ex5` | باینری همراه همان EA سورس‌دار | خارج از این Inbox |
+| `Replay Tool.mq5` | ابزار Market Replay و drawing | ابزار تحقیق/بازپخش، نه اندیکاتور |
+| `Indi 538.txt` | Pine Strategy با `strategy.entry/exit/cancel` | استراتژی بک‌تست طلا، نه indicator |
 
-| ورودی | تشخیص و دلیل خروج |
-|---|---|
-| `Breakout Retest Pro EA Source Code @IndicatorsforTV.mq4` | Expert Advisor؛ منطق معاملاتی و فراخوان‌های باز/بستن سفارش دارد. |
-| `Breakout Retest Pro EA Source Code @IndicatorsforTV.ex4` | فایل کامپایل‌شدهٔ همراه همان EA؛ نه اندیکاتور و نه قابل ممیزی مستقل. |
-| `Gold Snap  v1.0.mq5` | Expert Advisor با `CTrade`، محاسبهٔ حجم/ریسک و ثبت سفارش؛ یک استراتژی اجرایی طلاست. |
-| `Range Breakout With Filter.mq5` | Expert Advisor با `OnTick`، `CTrade`، مدیریت ریسک و prop-firm guard؛ اندیکاتور نیست. |
-| `Range Breakout With Filter.ex5` | باینری همراه همان Expert Advisor؛ برای بررسی منطق به‌تنهایی کافی نیست. |
-| `Replay Tool.mq5` | ابزار Market Replay و ترسیم Long/Short روی نمودار است؛ محاسبه‌گر اندیکاتوری نیست و در مسیر جداگانهٔ ابزار تحقیق/تست قرار می‌گیرد. |
+## ۷) تصاویر مورد نیاز از مالک
 
-### باینری‌های کامپایل‌شدهٔ غیرقابل‌ممیزی
+برای نهایی‌کردن اولویت‌ها و مقایسهٔ بصری، این تصاویر بیشترین ارزش را دارند:
+1. **Double Tap:** چارت با دو سقف/کف، neckline، شکست و TP/SL + پنجرهٔ تنظیمات.
+2. **Ichimokuها:** هر نسخه جداگانه روی یک نماد و تایم‌فریم مشخص + Inputs/Settings؛ به‌خصوص هر دو EX4/EX5 و Adaptive Ichimoku.
+3. **باینری‌های دیگر:** هرکدام که در گذشته روی نمودار سیگنال جالبی نشان داده‌اند، همراه settings و source link.
 
-این فایل‌ها سورس قابل‌خواندن در Inbox ندارند. نام فایل یا توضیح احتمالی سازنده برای تأیید الگوریتم، repainting، پارامترها و مجوز کافی نیست؛ بنابراین از ورودی فعال حذف شدند، نه اینکه فرمولشان تأیید یا رد شده باشد.
+تصویر باید تاریخ/ساعت، نماد و timeframe را نشان دهد. برای بازار ایران، بعداً نمونهٔ همان نماد در چارت تعدیل‌شده و خام مفید است. تصویر بدون تنظیمات و نماد برای بازتولید دقیق کافی نیست.
 
-| فایل | دلیل خروج |
-|---|---|
-| `AI RSI BB SCALPER.ex5` | باینری؛ منطق و ماهیت «AI» قابل تأیید نیست؛ نام scalper نیز نشان‌دهندهٔ تمرکز معاملاتی کوتاه‌مدت است. |
-| `FB_OBwin.ex4` | باینری بدون سورس و مستندات قابل‌ممیزی. |
-| `Fibo.ex4` | باینری بدون سورس؛ ابزار فیبو در FTS نیز context canonical تعریف شده و نیاز به duplicate سیاه‌جعبه‌ای نیست. |
-| `FiboRSI8_SingleShot_v122 @IndicatorsforTV.ex5` | باینری بدون سورس؛ فرمول/سیگنال و انطباق RSI/Fibonacci قابل تأیید نیست. |
-| `Machine Learning Regression Trend.ex5` | باینری بدون سورس؛ دادهٔ آموزش، target، leakage، روش اعتبارسنجی و مدل مشخص نیست. ادعای ML به‌تنهایی ارزش فنی اثبات نمی‌کند. |
-| `SuperTrend(wHA) @IndicatorsforTV.ex4` | باینری بدون سورس؛ فرمول و حتی تعریف دقیق variant از نام قابل استنتاج نیست. |
-| `fox_UP_DOWN_ARROW.ex5` | باینری سیگنال‌نما بدون سورس؛ منطق، repaint و مجوز نامعلوم. |
-| `ichimoku-cloud-indicator.ex5` | باینری بدون سورس؛ برای بررسی Ichimoku، نامزد سورس‌دار Indi84 قابل ممیزی‌تر است. |
-| `ichimoku-signals-cloud.ex4` | باینری بدون سورس؛ هم‌پوشانی با نامزد Ichimoku سورس‌دار. |
-| `indi sbnr2+save2_alert(1).ex4` | باینری بدون سورس؛ منطق و خروجی قابل تأیید نیست. |
-| `rsi ma - smooth (mtf + alerts + divergence) @IndicatorsforTV.ex4` | باینری بدون سورس؛ MTF/RSI divergence را نمی‌توان بدون الگوریتم و تست مرجع تأیید کرد و مفاهیم RSI/واگرایی در مسیرهای موجود نیز حضور دارند. |
+## ۸) قیدهای معماری و پذیرش
 
-## ۳) ساختار نهایی Inbox
+- هیچ‌یک از موارد این گزارش وارد `implemented/` نمی‌شوند.
+- هیچ Runtime code تغییر نمی‌کند.
+- FTS canonical مستقل می‌ماند و هیچ آستانه یا رأی FTS از این منابع استخراج نمی‌شود.
+- هر نامزد پذیرفته‌شده باید deterministic، قابل‌آزمون، دارای تعریف دقیق timestamp/confirmation، ضد-look-ahead، و سازگار با raw/adjusted basis باشد.
+- مواردی با مجوز نامعلوم فقط از نظر رفتار/ایده بررسی می‌شوند؛ اقتباس یا بازنشر مستقیم کد تا روشن‌شدن مجوز انجام نمی‌شود.
+- فایل‌های کامپایل‌شده ناشناس روی حساب واقعی اجرا نمی‌شوند.
 
-```text
-docs/technical-indicators/inbox/
-├── README.md
-├── INDICATOR_INTAKE_TEMPLATE.md
-├── liquidity-structure/
-│   ├── indicator.pine
-│   └── notes.md
-└── adaptive-ichimoku/
-    ├── indicator.pine
-    └── notes.md
-```
+## ۹) وضعیت نهایی
 
-سورس‌های دو نامزد به‌صورت متنی و بدون تغییر الگوریتم/محتوا منتقل می‌شوند؛ فقط مسیر و نام فایل برای نظم پوشه تغییر می‌کند. ۲۲ ورودی دیگر از Inbox حذف می‌شوند. این گزارش، نام تمام موارد و علت تصمیم را حفظ می‌کند.
+- **Double Tap:** RETAIN / HIGH PRIORITY / NOT YET VERIFIED
+- **Ichimoku source + two binaries:** RETAIN / HIGH PRIORITY / NOT YET VERIFIED
+- **Liquidity/SMC:** RETAIN / HIGH PRIORITY / MODULE-LEVEL REVIEW REQUIRED
+- **Failed breakout / Third Wave / StormCore:** RETAIN / EXPLORATORY
+- **EX4/EX5 not paired with known EA source:** RETAIN / BINARY_REVIEW_PENDING
+- **Known EAs, Strategy and Replay Tool:** EXCLUDE FROM INDICATOR INBOX
 
-## ۴) تصویر لازم است؟
-
-برای طبقه‌بندی اولیه و static review سورس، تصویر لازم نبود؛ بنابراین این مرحله بدون تصویر قابل انجام بود.
-
-برای پذیرش بصری هر نامزد، این دو تصویر مفیدند:
-1. `reference.png`: چارت با خروجی اندیکاتور و سیگنال/ناحیهٔ مشخص؛
-2. `settings.png`: پنجرهٔ تنظیمات همان اجرا.
-
-همراه تصاویر باید نماد، بازار، تایم‌فریم، زمان سیگنال و مبنای قیمت خام/تعدیل‌شده معلوم باشد. اگر تصویر در دسترس نیست، فقط مرحلهٔ visual-parity در وضعیت NOT_MEASURED می‌ماند؛ بررسی سورس متوقف نمی‌شود.
-
-## ۵) قیود معماری و پذیرش
-
-- هیچ فایل یا ایده‌ای در این گزارش به `implemented/` منتقل نمی‌شود.
-- هیچ کد Runtime یا منطق Go/React/SQLite تغییر نمی‌کند.
-- قواعد canonical FTS، veto هفتگی، Jet، CHoCH، Fibonacci، RSI/Hourglass و exit rules دست‌نخورده‌اند.
-- هیچ امتیاز ترکیبی، وزن، trigger یا threshold جدیدی به FTS اضافه نمی‌شود.
-- هر الگوریتم پذیرفته‌شده باید مستقل، deterministic، دارای semantics روشن برای unknown/insufficient/stale، ضد-repaint و قابل‌آزمون روی دادهٔ ایران باشد.
-- وجود header مجوز در Pine به‌تنهایی جایگزین بررسی اصالت منبع و تعهدات مجوز نیست.
-- حذف این ورودی‌ها از Inbox، حکم حقوقی یا ادعای بی‌ارزش‌بودن همهٔ ایده‌هایشان نیست؛ فقط تصمیم پالایش مخزن برای این مرحله است.
-
-## ۶) نتیجهٔ قابل‌تأیید
-
-این commit فقط تغییر مستندات و ساختار Inbox است. هیچ فایل کامپایل‌شده اجرا نشده، هیچ backtest یا benchmark بازار ایران انجام نشده و هیچ اندیکاتوری به‌عنوان VERIFIED اعلام نمی‌شود. وضعیت هر دو نامزد: **RESEARCH / UNVERIFIED**.
+این مرحله فقط طبقه‌بندی، مستندسازی و نظم‌دهی مخزن است. هیچ اندیکاتوری VERIFIED یا Production-ready اعلام نشده است.
