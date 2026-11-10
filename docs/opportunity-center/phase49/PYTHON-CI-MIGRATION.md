@@ -39,13 +39,14 @@ unused.
 
 | Lane | Workflow (Task A5) | Selection | Gate | Contents |
 | --- | --- | --- | --- | --- |
-| Production | `guards.yml` | no Python suite | blocking | Go (`go-backend`, `go-race`, `go-windows`), `frontend-v2`, `delivery-contract`, `data-integrity` (A only), `repo-hygiene`, `zero-python-runtime` |
+| Production | `guards.yml` | `python dev/run_all_tests.py --profile production` inside `data-integrity`: Category A only; Python is a test harness, never product runtime | blocking | Go (`go-backend`, `go-race`, `go-windows`), `frontend-v2`, `delivery-contract`, `data-integrity` (A only), `repo-hygiene`, `zero-python-runtime` |
 | Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 35 B suites (data contracts, fixture oracles, stdlib tooling guards) |
 | Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 209 suites (206 C + 3 A): MIGRATE until retired + DEPRECATE |
 
 `python-guards` and `js-syntax` leave the production gate; the legacy lane keeps them
 visible without blocking a release. The registry guard (`dev/suite_registry_guard.py`)
-runs in both Python lanes and fails the lane when a suite has no category, no
+runs in `python-tooling.yml` only - the legacy lane runs its profile and the static-JS
+syntax check, not the guard - and fails the lane when a suite has no category, no
 disposition, or a `MIGRATE` row whose Go/TS test does not exist.
 
 ## 3. Zero-Python runtime proof plan
@@ -55,7 +56,7 @@ disposition, or a `MIGRATE` row whose Go/TS test does not exist.
    components (`BorsTerminal_Ultimate.exe`, `BorsTerminal_Shell.exe`,
    `frontend/index.html`, `Version.txt`).
 2. **Process tree** - `cmd/runtimecheck` (A6) starts `borsd` with a temp
-   `BORS_DATA_DIR`, reads `/api/health`, enumerates the process tree and proves no
+   `BORS_DATA_DIR`, reads `/healthz`, enumerates the process tree and proves no
    `python`/`py`/`pythonw`/`libpython` is present; it kills only its own PID and
    writes a JSON artifact.
 3. **Installer** - `delivery-contract` installs the built setup into a runner temp
