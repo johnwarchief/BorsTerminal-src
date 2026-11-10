@@ -929,6 +929,11 @@ NO_DB_ISOLATION = {
     'dev/test_fundamental_fixture_b4.py',
     'dev/test_fundamental_vectors_b4.py',
 }
+# B3's chart goldens are generated with the committed v2 correction pack; the
+# global gate disable (BORS_CORRECTIONS_DISABLE=1, set at the top of this file
+# for legacy suites) would make its oracle skip the pack and mismatch every
+# chart golden (CI run 42827123901).
+CORRECTIONS_ENABLED = {'dev/test_chart_fixture_b3.py'}
 bad = []
 #: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
 #: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
@@ -978,6 +983,9 @@ for script, label in SUITES:
     if script in NO_DB_ISOLATION:
         suite_env = {k: v for k, v in env.items()
                      if k not in ('BORS_WORK_DIR', 'BORS_DB')}
+    if script in CORRECTIONS_ENABLED:
+        suite_env = {k: v for k, v in suite_env.items()
+                     if k != 'BORS_CORRECTIONS_DISABLE'}
     run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label,
         env_override=suite_env)
 if os.path.exists(FIXTURE_GEN):
