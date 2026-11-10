@@ -8,8 +8,9 @@ b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a  2848986  commi
 12f61720ecc6a503135aff6e25575fa5bd8cb645c056bb96dda52a9aad3af2f3  24441  committed  backend-go/internal/seed/seed.go
 01df55d10e7e22630dbf54f85fe948649ae4b97013c03c77d7e4ef3d07dfcddd  27765  committed  dev/test_chart_fixture_b3.py
 336a876b5793de75428bed7ecac85056a148a171148e1d71afcafcb11cef914a  23477  committed  dev/test_mstat_fixture_v1121.py
+07fc90cc027223be3bef0122301006ba77662a4609e9d0c325f6e146f14169eb  98179  committed  dev/run_all_tests.py
 d3f17df79ed73e01791da2be757d921f2e294480f4f658ae4978bbb0b56e380c  13274  committed  .github/workflows/guards.yml
-7d77dc80b7c0429b088a7b485f721976fa2680cd14f5839a16b7bc6705098f95  28230  committed  docs/opportunity-center/phase49/FINALIZATION-REPORT.md
+8a8ddb2aaeee56ae30f305ca310175cd3a7cd3f75d818e61505f328766eeff45  31188  committed  docs/opportunity-center/phase49/FINALIZATION-REPORT.md
 fd3c9b58684ec555435ba227ebc857b935a6ba786ce20ffbfc111ea164e9d0a1  2573602  committed  _audit/phase49-finalization/EVENT-MAPPING-FULL.csv
 a090856383d7e7ac134a3cfcb24ed6a4a5fb9f810b5075922963a153a858e6a3  6053  committed  _audit/phase49-finalization/VALIDITY-30.csv
 2a3a88fdb1a5b671c66f30b843ab729eaf7086fab43e98b609e4ad78dcdcec60  1571  committed  _audit/phase49-finalization/VALIDITY-7.csv
@@ -26,6 +27,7 @@ f409159c9940d28a7ef808d5ae84d77f41aa49919228575428eab6e8fd26ada5  1513530  commi
 ffcd2ae23e79f5233c1cb9eaa29374405e0a013f7914317695b7fb50042cdc2e  1018035  committed  _audit/phase49-finalization/evidence/canonical-summary.json
 9f856314d764932da945d3fca9209ed641e1d11fa99db24b75931dbdef72112f  261914  committed  _audit/phase49-finalization/evidence/reference-parity-30-final.json
 7ee4188a70bf429c5befc3a097bee25024bd9405242a082d664acd3fa219415c  63946  committed  _audit/phase49-finalization/evidence/reference-parity-7-final.json
+c55931f988455093d7e6346f084bc7058cfe2aa2b3b7530bfd94e97ea7d18edc  3967  committed  _audit/phase49-finalization/evidence/ci-runs.json
 a4fb53fcfcbf6e9918f42858725a95a87df70252a03bfb3e2ebb87a34512ef3c  4096  committed  _audit/phase49-finalization/reference-parity-30-final.csv
 8c8656cdff5cd7f7bab4dccdc02e60612164b9cf073d53f0a2dcd923af674151  1139  committed  _audit/phase49-finalization/reference-parity-7-final.csv
 537db9d55d06bbb7fda04ac23ad35089ff2731c3a15c9735331c208820eb0ef9  51879  committed  _audit/phase49-finalization/reference-step-decisions-all.csv

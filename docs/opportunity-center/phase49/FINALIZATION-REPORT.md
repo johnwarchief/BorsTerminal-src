@@ -30,9 +30,11 @@
 7. **پوشش «کل دیتابیس» کامل نیست:** از 6,103 نماد، فقط 25 نماد بیش از 10 سال سابقه و
    **5,254 نماد کمتر از 1 سال** دارند؛ 6,328 نماد هیچ شاهدِ تعدیلی ندارند. این عدد پنهان
    نشده و «Full Database Coverage» اعلام نمی‌شود.
-8. **یک قرمزِ واقعیِ ازپیش‌موجود در CI باقی است:** گارد B2 (mstat) طلایی‌هایش با خروجیِ
-   Pythonِ امروز یکی نیست، چون merge `072a2607` (2026-11-03) فیلدها/قواعدِ تازهٔ mstat را فقط
-   در Python آورد و پورت/طلایی‌های Go به‌روز نشدند. جزئیات در §۱۵ و `B1`.
+8. **`python-guards` در CI قرمز است (ازپیش‌موجود):** پس از اصلاح دو نقصِ محیطی
+   (نصب `node_modules` و seamِ `B0–B4`)، 24 سوئیت قرمز ماند؛ B1/seam سبز شدند و B3 به
+   49/50 رسید، اما B2/B4 (طلایی‌های کهنهٔ mstat/fundamental) و ~20 سوئیتِ دیگر
+   (m141، confidence، soft-warnings، mstat_local، funnel، watchlist، codal، …) از merge
+   `072a2607` به ارث رسیده‌اند و خارج از دامنهٔ Phase 4.9‌اند. جزئیات در §۱۴ و `B1`.
 
 ## ۱) تحویل‌شدنی ۱ — گزارش ریشه‌یابی
 
@@ -202,7 +204,8 @@ validity, source, suppressed_product_events, reason`.
 - شواهد سبز: `dev/test_phase49_correction_parity_v1.py` **76/76**،
   `test_ra365_round32b…` **14/14**، `test_ra365_round32c…` **12/12**، B1 **6/6**، B3 **50/50**،
   `go vet ./...` و `go test ./...` سبز.
-- **B2 قرمز است** (جزئیات §۱۵)؛ این قرمز به mstat مربوط است، نه به موتور تعدیل.
+- **B2 قرمز است** (جزئیات §۱۵)؛ B3 در CI فقط یک بررسیِ cross-platform (FTS vectors) دارد
+  و B4 سه بررسیِ طلاییِ کهنه؛ هیچ‌کدام به موتور تعدیل مربوط نیستند.
 
 ## ۹) تحویل‌شدنی ۹ — پاریتی خام/تعدیل‌شده با مرجع
 
@@ -331,28 +334,55 @@ cd backend-go && go vet ./... && go test ./... && cd ..
 ضبط مرجع نیازمند ورود دستی مالک به ره‌آورد است؛ اسکریپت‌های `capture_rahavard.mjs` و
 `import_capture.py` توکن را برنمی‌گردانند و هیچ Credentialی ذخیره نمی‌کنند.
 
-## ۱۴) تحویل‌شدنی ۱۴ — CI
+## ۱۴) تحویل‌شدنی ۱۴ — CI (واقعی)
 
-پس از push شاخه، Run واقعی GitHub Actions روی همین شاخه ثبت و در commit مستنداتِ بعدی
-(فقط docs) به این بخش اضافه می‌شود. وضعیت محلی تا این لحظه:
+سه Run واقعی روی همین شاخه ثبت شد؛ همه روی `johnwarchief/BorsTerminal-src`:
 
-| گیت | نتیجه |
+| Run | commit | Jobهای سبز | نتیجهٔ کلی | نکته |
+| --- | --- | ---: | --- | --- |
+| [42824363753](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42824363753) | `836e47e4` | 9/10 | failure | فقط `python-guards` قرمز؛ نصب `node_modules` (step 5/6) موفق |
+| [42827123901](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42827123901) | `69398bab` | 9/10 | failure | با اصلاح `NO_DB_ISOLATION`، B1 و BORS_DATA_DIR seam از فهرست FAILED حذف شدند |
+| [42828239358](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42828239358) | `b5d8e1e1` | 8/10 | failure | python-guards + یک تستِ flaky در Go Linux؛ Windows/race/delivery سبز |
+
+- **۱۰ Job:** `go backend` (Linux و دو Windows)، `go race detector`،
+  `desktop delivery` (BorsTerminal bundle + Tauri shell + installer + Seed merge)،
+  `frontend v2` (tsc/vitest/build)، `data integrity guards`، `node --check`،
+  `EOL/attributes/repo hygiene`، `python-guards`.
+- **اصلاح‌های CI این مرحله:** نصب `frontend` با `npm ci --ignore-scripts` در Jobِ python
+  (چون `chart_api_check_v95.py` و `npm_lock_v1040.py` درخت واقعی `node_modules` را
+  می‌خوانند)؛ اجرای B0–B4 و seam بدون `BORS_WORK_DIR/BORS_DB` (وگرنه seamِ
+  `BORS_DATA_DIR` را می‌شکستند)؛ نگه‌داشتن پک v2 فعال برای B3.
+- **پس از این اصلاح‌ها، 24 سوئیت در `python-guards` قرمز ماند** — همگی از merge
+  `072a2607` (2026-11-03) به ارث رسیده‌اند و در commit پایه هم قرمز بودند؛
+  نمونه‌های بازتولیدشده محلی: `fts_m141_parity_v97` (1 fail)،
+  `confidence_engine_v973` (IndexError)، `soft_warnings_v974` (3 fail)،
+  `mstat_local_v975` (AttributeError)، B2 (1 fail)، B4 (3 fail). فهرست کامل
+  در annotation همان Run آمده است (24 label).
+- **B3 در CI: 49/50.** تنها بررسیِ بازمانده `FTS engine vectors equal a fresh oracle run`
+  است؛ همین بررسی محلی دقیقاً برابر است، پس اختلاف، cross-platform (Linux/Windows
+  float/کتابخانه) است و به تعدیل مربوط نیست. B1 و seam اکنون در CI سبزند.
+- **Go Linux flake:** در Run سوم `TestGracefulShutdownWorkerContextCancelled`
+  با پیام «worker observed resources already closed» شکست؛ همان Job در Runهای
+  اول/دوم و دو Job ویندوز سبز بود. تستِ lifecycle وابسته به زمان است و به
+  تغییرهای این مرحله مربوط نیست (فایلش دست نخورده).
+
+| گیت محلی | نتیجه |
 | --- | --- |
 | `go vet ./...` | PASS (rc=0) |
 | `go test -count=1 ./...` | PASS (53 پکیج `ok`، rc=0، صفر FAIL) |
 | Phase 4.9 parity | 76/76 PASS |
 | Round 32B / 32C | 14/14 / 12/12 PASS |
-| B1 board | 6/6 PASS |
-| B3 chart | 50/50 PASS |
+| B1 board | 6/6 PASS (بدون DB override) |
+| B3 chart | 50/50 PASS (بدون DB override) |
 | B2 mstat | **1 FAIL** — طلایی‌ها با oracle فعلی یکی نیستند (B1 در §۱۵) |
-| Race detector | NOT_MEASURED محلی (نبود gcc/CGO) |
-| Frontend / Rust | NOT_MEASURED محلی (نبود `frontend/node_modules`) — جاب‌های CI مرجع‌اند |
+| Race detector | NOT_MEASURED محلی (نبود gcc/CGO) — Jobِ CI سبز |
+| Frontend / Rust | NOT_MEASURED محلی (نبود `node_modules`) — Jobِ CI سبز |
 
 ## ۱۵) تحویل‌شدنی ۱۵ — مسائل باز و تصمیم‌های مالک
 
 | # | موضوع | وضعیت | جزئیات / تصمیم لازم |
 | --- | --- | --- | --- |
-| B1 | B2 mstat: طلایی‌ها با Pythonِ امروز یکی نیستند | **FAIL (ازپیش‌موجود، مستقل از تعدیل)** | merge `072a2607` (2026-11-03) فیلدهای `asof.market_cap`, `value_source`, `queue_basis`, `breadth_basis`, `depth_symbols`, `macro.index.pi_*`, `gold/indexcards/orderflows/ownership`, `iv_*/nv_*` و قاعدهٔ `basis_dropped/note` را فقط در Python آورد؛ Go و طلایی‌ها به‌روز نشدند. رفع کامل = پورتِ mstat 4-axes به Go + بازتولید طلایی‌ها + به‌روزرسانی fixture؛ خارج از دامنهٔ Phase 4.9. گارد B2 این شکاف را آشکار می‌کند و پنهان نشده است. |
+| B1 | `python-guards` در CI: 24 سوئیت قرمزِ ازپیش‌موجود | **FAIL (مستقل از تعدیل)** | merge `072a2607` (2026-11-03) سطح Python را جلوتر از Go/طلایی‌ها/fixtureها برد: B2/B4 طلایی‌های کهنه، B3 فقط FTS-vectorsِ cross-platform (49/50)، و ~20 سوئیتِ m141/confidence/soft-warnings/mstat_local/funnel/watchlist/codal. `m141` و `mstat_local` و `confidence` محلی هم با خطای واقعی (نه محیطی) بازتولید شدند. رفع هرکدام نیازمند پورت/فیکسچر مستقل است؛ خارج از Phase 4.9. دو نقصِ محیطیِ CI (node_modules، DB override) در همین مرحله رفع شد. |
 | B2 | پوشش کل دیتابیس ناقص | **PARTIAL / INSUFFICIENT_DATA** | 5,254 نماد <1y، 6,328 نماد بدون شاهد تعدیل، 1,343 ابزار بدون تاریخچه. فقط 36 نماد مرجع مستقل دارند. تصمیم: اولویت‌بندی نمادهای دارای سابقه و سیاست Backfill. |
 | B3 | تاریخچهٔ خام 7 نماد کوتاه‌تاریخ | **BLOCKED (نیازمند تصمیم مالک)** | DB فقط از 2024-08 (≈400 ردیف) دارد؛ مرجع 1,078–3,488 روز دارد. تعدیل موجود تأیید شد، اما Backfill/انتشار دادهٔ مرجع مجوز جدا می‌خواهد. |
 | B4 | ولانا | **PARTIAL_FACTOR** | بیشینهٔ خطای نسبی factor 0.198% (>0.1% و <1%)، 3 گام `unverified`. بدون آستانه‌شکنی گزارش می‌شود. |
@@ -384,5 +414,5 @@ cd backend-go && go vet ./... && go test ./... && cd ..
 
 دلیل: زنجیرهٔ تعدیل برای 36 نمادِ دارای مرجع مستقل با 8,280 گامِ قابل‌ممیزی بسته شد و
 پاریتی موتور 30/30 است؛ اما پوشش کل دیتابیس کامل نیست (B2)، 7 نماد تاریخچهٔ خام ناقص دارند
-(B3)، ولانا PARTIAL است (B4)، و گارد B2 mstat یک قرمزِ واقعیِ باقی‌مانده است (B1). هیچ داده،
-factor یا رویدادی ساختگی وارد نشد و هیچ آستانه‌ای برای سبزشدن تست تغییر نکرد.
+(B3)، ولانا PARTIAL است (B4)، و `python-guards` در CI 24 سوئیتِ قرمزِ ازپیش‌موجود دارد
+(B1). هیچ داده، factor یا رویدادی ساختگی وارد نشد و هیچ آستانه‌ای برای سبزشدن تست تغییر نکرد.
