@@ -917,7 +917,18 @@ env = dict(os.environ, PYTHONIOENCODING='utf-8')
 # This suite explicitly tests the dev/portable path-resolution contract; the
 # global test workdir override is exactly what it must not see. It creates its
 # own temp dirs and never touches the operational DB.
-NO_DB_ISOLATION = {'dev/test_portable_v1.py'}
+# The B0-B4 fixture/seam suites build their own databases and set
+# BORS_DATA_DIR themselves; BORS_WORK_DIR/BORS_DB would override that seam and
+# make them read the gate DB instead of their fixture (CI run 42824363753).
+NO_DB_ISOLATION = {
+    'dev/test_portable_v1.py',
+    'dev/test_bors_data_dir_seam.py',
+    'dev/test_board_fixture_v1120.py',
+    'dev/test_mstat_fixture_v1121.py',
+    'dev/test_chart_fixture_b3.py',
+    'dev/test_fundamental_fixture_b4.py',
+    'dev/test_fundamental_vectors_b4.py',
+}
 bad = []
 #: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
 #: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
