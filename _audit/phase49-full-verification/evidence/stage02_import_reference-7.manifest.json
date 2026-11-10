@@ -1,0 +1,27 @@
+{
+ "counts": {
+  "daily_rows": 39704,
+  "date_conflicts": 0,
+  "factor_changes": 127,
+  "factor_days": 19852,
+  "factor_exact": 13030,
+  "factor_threshold": 0.001,
+  "factor_within_0.1pct": 6688,
+  "multi_spelling_symbols": 0,
+  "rows": 51226,
+  "symbols": 7,
+  "type0_series": 7,
+  "type7_series": 7,
+  "zero_raw_days": 0
+ },
+ "finished_at": "2026-11-10T19:50:22Z",
+ "inputs": {
+  "_audit/phase49-finalization/rahavard/capture-7.json": "13a805fa88864ca8258fd54af4920e9eeec0da0ca39f0ae84ea6bd0c8468d97a",
+  "_audit/phase49-full-verification/captures/normalized-7/bars.ndjson.gz": "97af250256b42393b53c2c3cad255734c7632749f866fdecc7f37747f887a63a",
+  "tools/phase45/rahavard/import_capture.py": "dd1be8e2d9b3bf9cebed751e0171d867861d65ed4e7cb6cf5bf382677ee6372a"
+ },
+ "outputs": {
+  "_audit/phase49-full-verification/captures/reference-index-7.json": "88550821a4c173585d87fb770106f1f83c060d9498597eb7167e49959bd8e917"
+ },
+ "stage": "stage02_import_reference"
+}
