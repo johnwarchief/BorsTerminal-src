@@ -19,12 +19,12 @@ type Finding struct {
 }
 
 var forbiddenExtensions = map[string]string{
-	".py":   "python source",
-	".pyc":  "python bytecode",
-	".pyo":  "python bytecode",
-	".pyd":  "python extension module",
-	".pyz":  "python zip app",
-	".pyw":  "python source",
+	".py":  "python source",
+	".pyc": "python bytecode",
+	".pyo": "python bytecode",
+	".pyd": "python extension module",
+	".pyz": "python zip app",
+	".pyw": "python source",
 }
 
 var binaryExtensions = map[string]bool{
@@ -37,6 +37,31 @@ var forbiddenNeedles = []string{
 	"fastapi",
 	"pyinstaller",
 	"libpython",
+}
+
+// requiredFiles شکلِ بستهٔ تولیدیِ Go/Tauri را ثابت می‌کند؛ نبودِ هرکدام یعنی
+// بسته از مسیرِ ساختِ دیگری آمده است. این فهرست باید با scripts/build_all.py
+// هم‌گام بماند.
+var requiredFiles = []string{
+	"BorsTerminal_Ultimate.exe",
+	"BorsTerminal_Shell.exe",
+	"frontend/index.html",
+	"Version.txt",
+}
+
+func scanLayout(root string) []Finding {
+	out := []Finding{}
+	for _, f := range requiredFiles {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(f))); err != nil {
+			out = append(out, Finding{Path: f, Reason: "required file missing"})
+		}
+	}
+	for _, d := range []string{"_internal", "site-packages", "python3.12", "python3"} {
+		if fi, err := os.Stat(filepath.Join(root, d)); err == nil && fi.IsDir() {
+			out = append(out, Finding{Path: d, Reason: "forbidden runtime directory"})
+		}
+	}
+	return out
 }
 
 func nameFinding(name string) string {
@@ -157,6 +182,7 @@ func run(args []string, stdout io.Writer) int {
 		fmt.Fprintln(stdout, err)
 		return 2
 	}
+	findings = append(findings, scanLayout(*root)...)
 	if *asJSON {
 		blob, _ := json.MarshalIndent(findings, "", "  ")
 		fmt.Fprintln(stdout, string(blob))

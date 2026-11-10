@@ -89,8 +89,22 @@ func TestPlainTextMentionIsNotABinaryFinding(t *testing.T) {
 	}
 }
 
+func writeProductionLayout(t *testing.T, dir string) {
+	t.Helper()
+	for _, f := range requiredFiles {
+		p := filepath.Join(dir, filepath.FromSlash(f))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestRunExitCodes(t *testing.T) {
 	clean := t.TempDir()
+	writeProductionLayout(t, clean)
 	if err := os.WriteFile(filepath.Join(clean, "borsd.exe"), []byte("MZ"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -103,6 +117,7 @@ func TestRunExitCodes(t *testing.T) {
 	}
 
 	dirty := t.TempDir()
+	writeProductionLayout(t, dirty)
 	if err := os.WriteFile(filepath.Join(dirty, "python.exe"), []byte("MZ"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -114,8 +129,36 @@ func TestRunExitCodes(t *testing.T) {
 		t.Fatalf("output = %s", out.String())
 	}
 
+	layout := t.TempDir()
+	out.Reset()
+	if code := run([]string{"-path", layout}, &out); code != 1 {
+		t.Fatalf("missing layout exit = %d: %s", code, out.String())
+	}
+	if !strings.Contains(out.String(), "required file missing") {
+		t.Fatalf("layout findings not merged into output: %s", out.String())
+	}
+
 	out.Reset()
 	if code := run([]string{}, &out); code != 2 {
 		t.Fatalf("missing path exit = %d", code)
+	}
+}
+
+func TestRequiredAndForbiddenLayout(t *testing.T) {
+	dir := t.TempDir()
+	if errs := scanLayout(dir); len(errs) == 0 {
+		t.Fatal("empty dir must fail required-file scan")
+	}
+	for _, f := range requiredFiles {
+		p := filepath.Join(dir, f)
+		_ = os.MkdirAll(filepath.Dir(p), 0o755)
+		_ = os.WriteFile(p, []byte("x"), 0o644)
+	}
+	if errs := scanLayout(dir); len(errs) != 0 {
+		t.Fatalf("unexpected errors: %v", errs)
+	}
+	_ = os.MkdirAll(filepath.Join(dir, "_internal"), 0o755)
+	if errs := scanLayout(dir); len(errs) == 0 {
+		t.Fatal("_internal must fail the layout scan")
 	}
 }
