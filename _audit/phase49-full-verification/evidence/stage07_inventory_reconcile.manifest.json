@@ -11,7 +11,7 @@
   "report_no_evidence_r32b": 6328,
   "union_symbols": 7409
  },
- "finished_at": "2026-11-10T23:16:12Z",
+ "finished_at": "2026-11-10T23:17:13Z",
  "inputs": {
   "_audit/phase49-finalization/evidence/db-inventory.json": "f409159c9940d28a7ef808d5ae84d77f41aa49919228575428eab6e8fd26ada5",
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
@@ -19,7 +19,7 @@
   "data/ra365_corrections/ra365-r32b-v2/factors.jsonl": "2194b4dfaaaf851f1256c8227963e089ee1503accc134a22057515fb346dc716"
  },
  "outputs": {
-  "_audit/phase49-full-verification/evidence/inventory-reconcile.json": "9e20687436d253b6c5066f448c6938e20935ef2f10e3d16b4af7a7a1c2b52914",
+  "_audit/phase49-full-verification/evidence/inventory-reconcile.json": "0aa8d297c2fa05f04bf162049dddb5e1e2cfd1341953768a284d6ae644d1b496",
   "_audit/phase49-full-verification/ledgers/INVENTORY-RECONCILIATION.csv": "0598286a433e65914bb01ce125d44f44b033bd4510a959d3df439c7579c3ceaa"
  },
  "stage": "stage07_inventory_reconcile"

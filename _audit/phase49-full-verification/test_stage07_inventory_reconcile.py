@@ -71,6 +71,10 @@ def _edge_tests():
             "instruments_without_history": 1,
             "union_symbols_without_evidence": 1,
             "history_plus_instruments_identity": 1}, rep
+        # Raw spellings are counted as written, keys after normalisation:
+        # "ب " is a fifth raw spelling and a second spelling without history.
+        assert rep["raw_universe"]["symbols"] == 5, rep["raw_universe"]
+        assert rep["raw_universe"]["no_price_history"] == 2, rep["raw_universe"]
 
         # The r32b block is the report's definition, not a second count: the
         # instrument-only key covered by the legacy pack never needs evidence,

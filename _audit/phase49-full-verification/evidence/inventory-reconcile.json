@@ -94,6 +94,7 @@
  },
  "notes": [
   "Two universes, named: 6103 history symbols split into 4635 with an instruments key and 1468 without; the 5941 named instruments split into 4635 with history and 1306 without. 5944 instruments rows minus 3 duplicate-name rows equals 5941 named keys; 0 shared keys spell the instruments name differently from the history symbol. Union = 7409.",
+  "Raw spellings: 7446 symbols = 6103 history + 1343 without a price_history row (the inventory's no_price_history flag); the key-level union is 7409 because the spelling variants collapse.",
   "The corrections pack is 951 raw symbols under 915 keys (36 alias spellings) and 8280 step rows; 915 of its keys are inside the history universe. History without a pack step = 5188 (85.0% of 6103).",
   "history_validity: 6103 rows (reconstructed_verified=880, unverified=5188, verified=35), 5188 unverified with 0 of them carrying a pack step; the unverified set matches the history symbols without a pack step.",
   "adjust_events: 12829 rows under 1087 raw symbols (1051 keys); 37 raw spellings are outside the history spelling set but 0 keys are outside the history key set. 890 of the pack keys already have product events; 161 symbols have product events and no pack step.",
@@ -129,6 +130,11 @@
   "recorded_symbols_with_pack_steps": 827,
   "recorded_symbols_with_product_events": 1087,
   "schema": "phase49-finalization-db-inventory-v1"
+ },
+ "raw_universe": {
+  "definition": "distinct raw spellings across price_history, instruments, pack and adjust_events; no_price_history counts the spellings with no price_history row",
+  "no_price_history": 1343,
+  "symbols": 7446
  },
  "report_no_evidence": {
   "current_pack": {

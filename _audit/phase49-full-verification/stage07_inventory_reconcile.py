@@ -283,7 +283,7 @@ def reconcile(con, pack_symbols=None, pack_steps=0, legacy_pack_symbols=None,
                 1 for s in product if s not in set(hist_raw)),
         }
 
-    pack_keys = None
+    pack_keys, pack_raw = None, set()
     if pack_symbols is not None:
         pack_raw = {str(s) for s in pack_symbols
                     if s is not None and str(s).strip()}
@@ -310,6 +310,16 @@ def reconcile(con, pack_symbols=None, pack_steps=0, legacy_pack_symbols=None,
                 (hist_keys | inst_keys) - evidence),
             "history_plus_instruments_identity": (
                 len(history_without) + len(instrument_only - evidence)),
+        }
+        raw_union = (set(hist_raw) | {name for _, name in inst_rows_list}
+                     | set(product) | pack_raw)
+        rep["raw_universe"] = {
+            "symbols": len(raw_union),
+            "no_price_history": len(raw_union - set(hist_raw)),
+            "definition": "distinct raw spellings across price_history, "
+                          "instruments, pack and adjust_events; "
+                          "no_price_history counts the spellings with no "
+                          "price_history row",
         }
 
     validity = _validity_rows(con)
@@ -472,6 +482,13 @@ def _notes(rep):
            rep["instruments"], rep["instruments_duplicate_name_rows"],
            rep["instruments_named"],
            rep["shared_keys_with_different_spelling"], rep["union_symbols"]),
+        "Raw spellings: %d symbols = %d history + %d without a price_history "
+        "row (the inventory's no_price_history flag); the key-level union is "
+        "%d because the spelling variants collapse."
+        % ((rep.get("raw_universe") or {}).get("symbols", 0),
+           rep["history_symbols"],
+           (rep.get("raw_universe") or {}).get("no_price_history", 0),
+           rep["union_symbols"]),
         "The corrections pack is %d raw symbols under %d keys (%d alias "
         "spellings) and %d step rows; %d of its keys are inside the history "
         "universe. History without a pack step = %d (%s)."
