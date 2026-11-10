@@ -7,7 +7,8 @@ actually exists today:
 
 * ``O1`` - a TSETMC flow event row (``price_adjust_events`` /
   ``share_change_events``) with the same (normalised) symbol and a date within
-  the frozen +-5-day shift window.
+  the frozen step-date shift window (``STEP_DATE_SHIFT_MAX_DAYS`` in the rules
+  file, 1-3 / 4-5 day tiers per spec §7.3).
 * ``O2`` - a CODAL notice whose corporate-action title sits within +-10 days.
   O2 only corroborates existence/date; it never changes a status by itself.
 * ``R1`` - the B3 reference factor index (Rahavard type0/type7), joined on
@@ -28,6 +29,13 @@ Conventions fixed here (and why)
   of the ratios of the *later* steps), so the audit checks
   ``cum(prev) == cum(next) * ratio(next)`` instead of assuming a decreasing
   chain. The brief's "cum-factor-increase" test was inverted.
+* Duplicate detection uses ``DEDUPE_RATIO_TOL`` from the rules file (1%), not
+  ``FACTOR_EXACT`` (0.1%): the two spellings of one event are a duplicate only
+  when their ratios differ by more than the frozen dedupe tolerance.
+* The final status is the highest one in the rules file's
+  ``step_status_precedence`` order among the statuses the evidence supports, so
+  ``CONFLICT_RATIO`` outranks ``CONFLICT_DUPLICATE`` exactly as the spec's
+  status table does. The precedence list is an order, never a membership set.
 * The CODAL ``publish_date`` column is unusable as a letter date (13,788 rows
   share one page date), but ``sent_date`` is the real Jalali letter date; it is
   converted with the frozen ``codal_periods.j2g_date``. Two rows have no
@@ -72,7 +80,6 @@ from symbol_identity import key  # noqa: E402
 from codal_periods import j2g_date  # noqa: E402
 import phase49_manifest as PM  # noqa: E402
 
-SHIFT_DAYS = 5
 NOTICE_DAYS = 10
 CORP_ACTION_WORDS = ("افزایش سرمایه", "سود نقدی", "حق تقدم", "تعدیل", "درصد")
 
@@ -142,7 +149,7 @@ class OfficialIndex(dict):
         self.setdefault((sym, ds), []).append(ev)
         self.by_symbol[sym].append((ds, ev))
 
-    def near(self, sym, ds, days=SHIFT_DAYS):
+    def near(self, sym, ds, days):
         """``[(delta_days, event)]`` inside the frozen shift window."""
         d0 = _d(ds)
         if d0 is None:
@@ -320,7 +327,7 @@ def _audit_reasons(step):
     return reasons
 
 
-def audit_reconstruction(steps, tol=1e-3, dup_tol=1e-3):
+def audit_reconstruction(steps, tol=1e-3, dup_tol=1e-2):
     """Chain/provenance audit keyed ``(raw symbol, ISO date)``.
 
     ``cum_factor_after`` is the product of the ratios of the later steps, so
@@ -328,12 +335,16 @@ def audit_reconstruction(steps, tol=1e-3, dup_tol=1e-3):
     ``cum(a) == cum(b) * ratio(b)``. The newest step must sit at 1.0.
     Invalid/dropped rows are not part of the valid chain.
 
+    ``tol`` and ``dup_tol`` default to the frozen §7.3 values (``FACTOR_EXACT``
+    and ``DEDUPE_RATIO_TOL``); :func:`build` always passes the rules-file
+    values, so the defaults only serve direct callers.
+
     The chain is audited per **raw** symbol: the pack carries the same
     instrument under Arabic and Persian kaf spellings (e.g. ``تاپيكو`` /
     ``تاپیکو``), and each spelling has its own complete cumulative chain.
     Duplicate detection is done once per normalised key + date; two spellings
-    with a materially different ratio for the same day are a duplicate event,
-    and both rows carry that reason.
+    with a ratio difference above ``dup_tol`` for the same day are a duplicate
+    event, and both rows carry that reason.
     """
     by_symbol = collections.defaultdict(list)
     groups = collections.defaultdict(list)
@@ -392,15 +403,21 @@ def audit_reconstruction(steps, tol=1e-3, dup_tol=1e-3):
     return audit
 
 
-def _audit_status(reasons):
-    """Map audit reasons to the frozen status set (never a blanket pass)."""
-    if "duplicate-date" in reasons:
-        cause = ("SYMBOL_IDENTITY_MISMATCH" if "symbol-identity" in reasons
-                 else "INVALID_SOURCE_RECORD")
-        return "CONFLICT_DUPLICATE", cause
-    if "cum-factor-chain" in reasons or "cum-factor-terminal" in reasons:
-        return "CONFLICT_CHAIN", "SOURCE_REVISION"
-    return "INSUFFICIENT_EVIDENCE", "UNRESOLVED_SOURCE_GAP"
+def _first_by_precedence(candidates, precedence):
+    """Highest-priority status among ``candidates`` (real order, not a set).
+
+    ``precedence`` is ``step_status_precedence`` from the rules file: an
+    ordered list every status must appear in. A candidate outside the frozen
+    list is a bug, not a fallback, so it raises.
+    """
+    order = {}
+    for i, name in enumerate(precedence):
+        order.setdefault(name, i)
+    unknown = [s for s in candidates if s not in order]
+    if unknown:
+        raise ValueError("status %r is not in the frozen step_status_precedence"
+                         % unknown[0])
+    return min(candidates, key=lambda s: order[s])
 
 
 def classify(step, official, reference, rules, audit=None, notices=None):
@@ -412,6 +429,8 @@ def classify(step, official, reference, rules, audit=None, notices=None):
     """
     t = rules["tolerances"]
     exact, material = t["FACTOR_EXACT"], t["FACTOR_MATERIAL"]
+    shift_days = t["STEP_DATE_SHIFT_MAX_DAYS"]
+    precedence = rules["step_status_precedence"]
     sym = key(step.get("symbol"))
     ds = str(step.get("effective_date"))[:10]
     ratio = _ratio(step.get("ratio"))
@@ -430,7 +449,7 @@ def classify(step, official, reference, rules, audit=None, notices=None):
     if ratio is not None:
         if hasattr(official, "near"):
             cands = [(delta, e, e.get("ratio"))
-                     for delta, e in official.near(sym, ds)]
+                     for delta, e in official.near(sym, ds, shift_days)]
         else:
             cands = [(0, e, e.get("ratio"))
                      for e in official.get((sym, ds), [])]
@@ -461,7 +480,7 @@ def classify(step, official, reference, rules, audit=None, notices=None):
             if cd is None or d0 is None:
                 continue
             delta = abs((cd - d0).days)
-            if delta <= SHIFT_DAYS:
+            if delta <= shift_days:
                 cands.append((delta, c, _ref_step_ratio(c)))
         picked = _pick_witness(cands, ratio, exact, material)
         if picked:
@@ -483,8 +502,15 @@ def classify(step, official, reference, rules, audit=None, notices=None):
         refs.append("codal:%s" % n.get("url"))
 
     # ---- status precedence ----------------------------------------------
+    # Collect every status the evidence supports, then let the frozen
+    # ``step_status_precedence`` list pick the strongest one. This is a real
+    # order, not a membership test: CONFLICT_RATIO outranks CONFLICT_DUPLICATE,
+    # so a duplicated spelling whose ratio also disagrees with a witness is
+    # reported as the ratio conflict the spec's table names first.
     compare = "NO_EVIDENCE"
     cause = ""
+    candidates = []
+    causes = {}
     if o1 and r1:
         if o1 == "MATCH" and r1 == "MATCH":
             status, compare = "VERIFIED_MULTI_SOURCE", "MATCH"
@@ -496,6 +522,9 @@ def classify(step, official, reference, rules, audit=None, notices=None):
             status, compare = "PARTIAL_OFFICIAL", "PARTIAL"
         else:
             status, compare = "PARTIAL_REFERENCE", "PARTIAL"
+        candidates.append(status)
+        if cause:
+            causes[status] = cause
     elif o1:
         compare = o1
         if o1 == "MATCH":
@@ -504,6 +533,9 @@ def classify(step, official, reference, rules, audit=None, notices=None):
             status = "PARTIAL_OFFICIAL"
         else:
             status, cause = "CONFLICT_RATIO", "EVENT_RATIO_MISMATCH"
+        candidates.append(status)
+        if cause:
+            causes[status] = cause
     elif r1:
         compare = r1
         if r1 == "MATCH":
@@ -512,28 +544,38 @@ def classify(step, official, reference, rules, audit=None, notices=None):
             status = "PARTIAL_REFERENCE"
         else:
             status, cause = "CONFLICT_RATIO", "EVENT_RATIO_MISMATCH"
+        candidates.append(status)
+        if cause:
+            causes[status] = cause
     else:
         if audit is None and not dropped:
             reasons = _audit_reasons(step)
         ok = bool((audit or {}).get("ok")) if audit is not None else not reasons
         if ok:
-            status = "RECONSTRUCTED_AUDITED"
+            candidates.append("RECONSTRUCTED_AUDITED")
             compare = "NO_EVIDENCE"
         else:
-            status, cause = _audit_status(reasons or ["missing-evidence"])
+            candidates.append("INSUFFICIENT_EVIDENCE")
+            causes["INSUFFICIENT_EVIDENCE"] = "UNRESOLVED_SOURCE_GAP"
             compare = "NO_EVIDENCE"
 
     # A duplicate/chain defect is a hard conflict even when a witness agrees:
     # the row is still a second record of the same event or sits on a broken
-    # cumulative chain. Missing provenance alone never overrides a witness.
+    # cumulative chain. Both join the candidate list and the precedence order
+    # decides against the witness status. Missing provenance alone never
+    # overrides a witness.
     if not dropped:
         if "duplicate-date" in reasons:
-            cause = ("SYMBOL_IDENTITY_MISMATCH" if "symbol-identity" in reasons
-                     else "INVALID_SOURCE_RECORD")
-            status = "CONFLICT_DUPLICATE"
-        elif ("cum-factor-chain" in reasons
-              or "cum-factor-terminal" in reasons):
-            status, cause = "CONFLICT_CHAIN", "SOURCE_REVISION"
+            candidates.append("CONFLICT_DUPLICATE")
+            causes["CONFLICT_DUPLICATE"] = (
+                "SYMBOL_IDENTITY_MISMATCH" if "symbol-identity" in reasons
+                else "INVALID_SOURCE_RECORD")
+        if ("cum-factor-chain" in reasons
+                or "cum-factor-terminal" in reasons):
+            candidates.append("CONFLICT_CHAIN")
+            causes["CONFLICT_CHAIN"] = "SOURCE_REVISION"
+    status = _first_by_precedence(candidates, precedence)
+    cause = causes.get(status, "")
     if not dropped:
         notes.append("audit:" + (",".join(reasons) if reasons else "pass"))
 
@@ -580,11 +622,29 @@ def _validate_rules(rules):
     missing = [k for k in need if k not in rules]
     if missing:
         raise ValueError("rules file missing: %s" % ", ".join(missing))
-    for k in ("FACTOR_EXACT", "FACTOR_MATERIAL", "EXACT_EQ"):
-        if k not in rules["tolerances"]:
+    tolerances = rules["tolerances"]
+    for k in ("FACTOR_EXACT", "FACTOR_MATERIAL", "EXACT_EQ",
+              "DEDUPE_RATIO_TOL", "STEP_DATE_SHIFT_MAX_DAYS",
+              "STEP_DATE_SHIFT_TIERS"):
+        if k not in tolerances:
             raise ValueError("rules tolerances missing %s" % k)
-    return (set(rules["step_status_precedence"]),
-            set(rules["evidence_tiers"]),
+    shift_max = tolerances["STEP_DATE_SHIFT_MAX_DAYS"]
+    if not isinstance(shift_max, int) or isinstance(shift_max, bool) \
+            or shift_max <= 0:
+        raise ValueError("STEP_DATE_SHIFT_MAX_DAYS must be a positive integer")
+    tiers = tolerances["STEP_DATE_SHIFT_TIERS"]
+    if not (isinstance(tiers, list) and tiers
+            and all(isinstance(p, list) and len(p) == 2 for p in tiers)):
+        raise ValueError("STEP_DATE_SHIFT_TIERS must be [start, end] pairs")
+    if tiers[-1][-1] != shift_max:
+        raise ValueError("STEP_DATE_SHIFT_TIERS does not end at "
+                         "STEP_DATE_SHIFT_MAX_DAYS")
+    precedence = rules["step_status_precedence"]
+    if (not isinstance(precedence, list)
+            or len(set(map(str, precedence))) != len(precedence)):
+        raise ValueError("step_status_precedence must be a list of unique "
+                         "statuses")
+    return (precedence, set(rules["evidence_tiers"]),
             set(rules["reconciliation_categories"]))
 
 
@@ -606,14 +666,16 @@ def _merge_reference(paths):
 
 def build(db, pack, references, rules_path, out, counts_path, manifest_path=""):
     rules = _load_rules(rules_path)
-    statuses, tiers_ok, categories = _validate_rules(rules)
+    precedence, tiers_ok, categories = _validate_rules(rules)
     official = load_official(db)
     notices = load_notices(db)
     reference = _merge_reference(references)
     steps = load_steps(pack)
     valid_steps = sum(1 for s in steps
                       if s.get("validity") != "invalid_dropped")
-    audit = audit_reconstruction(steps, rules["tolerances"]["FACTOR_EXACT"])
+    audit = audit_reconstruction(steps,
+                                 rules["tolerances"]["FACTOR_EXACT"],
+                                 rules["tolerances"]["DEDUPE_RATIO_TOL"])
 
     rows = []
     by_status = collections.Counter()
@@ -646,7 +708,7 @@ def build(db, pack, references, rules_path, out, counts_path, manifest_path=""):
         if c.get("_r1"):
             r1_stat["used"] += 1
             r1_stat[c["_r1"].lower()] += 1
-        if c["final_status"] not in statuses:
+        if c["final_status"] not in precedence:
             errors.append("status %r" % c["final_status"])
         for tier in c["evidence_tier"].split("+"):
             if tier not in tiers_ok:
@@ -694,6 +756,9 @@ def build(db, pack, references, rules_path, out, counts_path, manifest_path=""):
             "reference_symbols": len(reference),
             "reference_changes": sum(len(v.get("factor_changes") or [])
                                      for v in reference.values()),
+            "dedupe_ratio_tol": rules["tolerances"]["DEDUPE_RATIO_TOL"],
+            "step_date_shift_max_days":
+                rules["tolerances"]["STEP_DATE_SHIFT_MAX_DAYS"],
         },
         "rows": len(rows),
         "by_status": dict(sorted(by_status.items())),
@@ -712,9 +777,11 @@ def build(db, pack, references, rules_path, out, counts_path, manifest_path=""):
                                for v, c in sorted(status_by_validity.items())},
         "official_witness": dict(sorted(o1_stat.items())),
         "reference_witness": dict(sorted(r1_stat.items())),
-        "notes": ("O1 joined on normalised symbol with the frozen +-5 day "
-                  "shift; R1 joined on key with ratio = 1/ratio_change; "
-                  "I1 is internal reconstruction, not independent evidence."),
+        "notes": ("O1 joined on normalised symbol inside the rules-file step "
+                  "date shift window; R1 joined on key with ratio = "
+                  "1/ratio_change; duplicate detection uses DEDUPE_RATIO_TOL; "
+                  "statuses resolved by step_status_precedence order; I1 is "
+                  "internal reconstruction, not independent evidence."),
     }
     os.makedirs(os.path.dirname(os.path.abspath(counts_path)), exist_ok=True)
     with open(counts_path, "w", encoding="utf-8", newline="\n") as fh:

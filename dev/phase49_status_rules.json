@@ -5,7 +5,9 @@
   "FACTOR_EXACT": 0.001,
   "FACTOR_MATERIAL": 0.01,
   "OHLC_MATERIAL": 0.05,
-  "DEDUPE_RATIO_TOL": 0.01
+  "DEDUPE_RATIO_TOL": 0.01,
+  "STEP_DATE_SHIFT_MAX_DAYS": 5,
+  "STEP_DATE_SHIFT_TIERS": [[1, 3], [4, 5]]
  },
  "evidence_tiers": ["O1", "O2", "R1", "R2", "I1"],
  "step_status_precedence": [

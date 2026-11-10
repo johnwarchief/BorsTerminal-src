@@ -14,8 +14,14 @@ code and the design vocabulary:
   ``stage02_import_reference.py`` (the frozen importer rule);
 * ``DEDUPE_RATIO_TOL`` matches
   ``adjustment_corrections.NEAR_DEDUPE_RATIO_TOL``;
+* the step-date shift window is read from the real comparison in
+  ``stageC_reference_parity.py`` (``delta <= 5`` plus the ``delta_days`` 1-3 /
+  4-5 tier split) and pinned as ``STEP_DATE_SHIFT_MAX_DAYS`` /
+  ``STEP_DATE_SHIFT_TIERS``;
 * the 13 reconciliation categories, the five evidence tiers and both status
-  precedence lists are exactly the design lists, in order.
+  precedence lists are exactly the design lists, in order; the four
+  ``CONFLICT_*`` statuses keep the spec table order, because the ledgers read
+  the list as a real precedence, not as a membership set.
 
 A changed threshold, a missing/extra category, a reordered precedence list or a
 source module that no longer defines the constant fails loudly.  This guard
@@ -45,6 +51,13 @@ PINNED_TOLERANCES = {
     "DEDUPE_RATIO_TOL": 1e-2,
 }
 
+#: stageC step-matching window, spec §7.3: ``delta <= 5`` next to the
+#: ``shifted_1_3`` / ``shifted_4_5`` split at day 3.  The guard derives both
+#: numbers from the AST below; these are the values it must find.
+PINNED_SHIFT_MAX_DAYS = 5
+PINNED_SHIFT_TIER_END = 3
+PINNED_SHIFT_TIERS = [[1, 3], [4, 5]]
+
 #: stageC summary fields that carry each threshold (both spellings of the exact
 #: bucket exist).  The AST check reads the float literals under these keys.
 PARITY_FIELDS = {
@@ -64,6 +77,12 @@ EXPECTED_STEP_STATUSES = [
     "RECONSTRUCTED_AUDITED",
     "VERIFIED_MULTI_SOURCE", "VERIFIED_OFFICIAL", "VERIFIED_REFERENCE",
     "INVALID_DROPPED",
+]
+
+#: Spec §7.4 status table order.  The ledgers resolve competing statuses by
+#: this order, so a reorder inside the CONFLICT_* block changes verdicts.
+EXPECTED_CONFLICT_ORDER = [
+    "CONFLICT_RATIO", "CONFLICT_DATE", "CONFLICT_DUPLICATE", "CONFLICT_CHAIN",
 ]
 
 EXPECTED_SYMBOL_STATUSES = [
@@ -152,6 +171,115 @@ def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+_CMP_OPS = {ast.LtE: "<=", ast.Gt: ">", ast.Lt: "<", ast.GtE: ">=",
+            ast.Eq: "=="}
+
+
+def _delta_comparisons(path):
+    """``[(name, op, int)]`` for ``delta``/``delta_days`` compared to an int.
+
+    Stage C matches reference steps with ``delta <= 5`` and splits the matched
+    deltas with ``m["delta_days"] <= 3`` / ``m["delta_days"] > 3``.  Only those
+    two names take part, so unrelated integer comparisons stay invisible.
+    """
+    try:
+        tree = _tree(path)
+    except (OSError, SyntaxError, ValueError):
+        return []
+    out = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Compare) or len(node.ops) != 1:
+            continue
+        value = node.comparators[0]
+        if not (isinstance(value, ast.Constant)
+                and isinstance(value.value, int)
+                and not isinstance(value.value, bool)):
+            continue
+        left = node.left
+        name = None
+        if isinstance(left, ast.Name):
+            name = left.id
+        elif isinstance(left, ast.Subscript):
+            sl = left.slice
+            if isinstance(sl, ast.Constant) and isinstance(sl.value, str):
+                name = sl.value
+        op = _CMP_OPS.get(type(node.ops[0]))
+        if name in ("delta", "delta_days") and op:
+            out.append((name, op, value.value))
+    return out
+
+
+def shift_window(path=None):
+    """``(window_days, tier_boundary)`` read from stageC's step matching.
+
+    ``window_days`` is the ``delta <= N`` bound of the matching loop; the tier
+    boundary is the shared day count of the ``shifted_1_3`` (``<=``) and
+    ``shifted_4_5`` (``>``) buckets.  Each must appear exactly once; a missing
+    or duplicated expression yields ``None`` so the guard fails loudly.
+    """
+    found = _delta_comparisons(path or PARITY)
+    windows = sorted({v for name, op, v in found
+                      if name == "delta" and op == "<="})
+    low = sorted({v for name, op, v in found
+                  if name == "delta_days" and op == "<="})
+    high = sorted({v for name, op, v in found
+                   if name == "delta_days" and op == ">"})
+    if len(windows) != 1 or low != high or len(low) != 1:
+        return None
+    return windows[0], low[0]
+
+
+def _pairs(value):
+    """``[[a, b], ...]`` when every entry is a two-integer list, else None."""
+    if not isinstance(value, list):
+        return None
+    out = []
+    for item in value:
+        if not isinstance(item, list) or len(item) != 2:
+            return None
+        if not all(_number(x) and float(x).is_integer() for x in item):
+            return None
+        out.append([int(x) for x in item])
+    return out
+
+
+def _shift_errors(rules):
+    """Pin the step-date shift window and its 1-3 / 4-5 tiers."""
+    errors = []
+    tolerances = rules.get("tolerances")
+    if not isinstance(tolerances, dict):
+        return ["tolerances must be an object; the shift window cannot be pinned"]
+    window = shift_window()
+    if window is None:
+        errors.append("stageC step-date shift window (`delta <= N` with the "
+                      "`delta_days` 1-3/4-5 split) was not found exactly once "
+                      "in %s" % PARITY)
+        return errors
+    max_days, boundary = window
+    if (max_days, boundary) != (PINNED_SHIFT_MAX_DAYS, PINNED_SHIFT_TIER_END):
+        errors.append("stageC shift window is %r, expected %r"
+                      % (window, (PINNED_SHIFT_MAX_DAYS,
+                                  PINNED_SHIFT_TIER_END)))
+    expected_tiers = [[1, boundary], [boundary + 1, max_days]]
+    if expected_tiers != PINNED_SHIFT_TIERS:
+        errors.append("stageC shift tiers %r differ from the design %r"
+                      % (expected_tiers, PINNED_SHIFT_TIERS))
+
+    value = tolerances.get("STEP_DATE_SHIFT_MAX_DAYS")
+    if not (isinstance(value, int) and not isinstance(value, bool)):
+        errors.append("STEP_DATE_SHIFT_MAX_DAYS is missing or not an integer")
+    elif value != expected_tiers[-1][-1]:
+        errors.append("STEP_DATE_SHIFT_MAX_DAYS %r differs from the stageC "
+                      "window %d" % (value, expected_tiers[-1][-1]))
+    tiers = _pairs(tolerances.get("STEP_DATE_SHIFT_TIERS"))
+    if tiers is None:
+        errors.append("STEP_DATE_SHIFT_TIERS must be two [start, end] pairs")
+    elif tiers != expected_tiers:
+        errors.append("STEP_DATE_SHIFT_TIERS %r differ from the stageC tiers %r"
+                      % (tiers, expected_tiers))
+    return errors
+
+
 def _list_errors(label, actual, expected, errors):
     if not isinstance(actual, list):
         errors.append("%s must be a list" % label)
@@ -229,7 +357,21 @@ def validate_sources(rules):
             errors.append("NEAR_DEDUPE_RATIO_TOL in %s is %r, expected %r"
                           % (CORR, dedupe, PINNED_TOLERANCES["DEDUPE_RATIO_TOL"]))
 
+    errors.extend(_shift_errors(rules))
     errors.extend(_category_errors(rules))
+    return errors
+
+
+def _precedence_errors(rules):
+    """The CONFLICT_* block must keep the spec table order."""
+    errors = []
+    precedence = rules.get("step_status_precedence")
+    if not isinstance(precedence, list):
+        return ["step_status_precedence must be a list"]
+    conflicts = [s for s in precedence if str(s).startswith("CONFLICT_")]
+    if conflicts != EXPECTED_CONFLICT_ORDER:
+        errors.append("CONFLICT_* precedence %r differs from the spec table "
+                      "order %r" % (conflicts, EXPECTED_CONFLICT_ORDER))
     return errors
 
 
@@ -245,6 +387,7 @@ def validate_vocabulary(rules):
     _list_errors("symbol_status_precedence",
                  rules.get("symbol_status_precedence"),
                  EXPECTED_SYMBOL_STATUSES, errors)
+    errors.extend(_precedence_errors(rules))
     coverage = rules.get("coverage")
     if not isinstance(coverage, dict):
         errors.append("coverage must be an object")

@@ -1,29 +1,29 @@
 {
  "counts": {
-  "CONFLICT_DUPLICATE": 100,
-  "CONFLICT_RATIO": 195,
-  "INSUFFICIENT_EVIDENCE": 1075,
+  "CONFLICT_DUPLICATE": 10,
+  "CONFLICT_RATIO": 215,
+  "INSUFFICIENT_EVIDENCE": 1095,
   "INVALID_DROPPED": 28,
-  "PARTIAL_OFFICIAL": 399,
-  "PARTIAL_REFERENCE": 8,
-  "RECONSTRUCTED_AUDITED": 4955,
+  "PARTIAL_OFFICIAL": 408,
+  "PARTIAL_REFERENCE": 14,
+  "RECONSTRUCTED_AUDITED": 4975,
   "VERIFIED_MULTI_SOURCE": 80,
-  "VERIFIED_OFFICIAL": 983,
-  "VERIFIED_REFERENCE": 485,
+  "VERIFIED_OFFICIAL": 992,
+  "VERIFIED_REFERENCE": 491,
   "rows": 8308
  },
- "finished_at": "2026-11-10T20:29:45Z",
+ "finished_at": "2026-11-10T20:44:40Z",
  "inputs": {
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
   "_audit/phase49-full-verification/captures/reference-index-30.json": "05fc5b50a6b632eff464598e755e4bd0bb96961d5065446a3d5291896b557062",
   "_audit/phase49-full-verification/captures/reference-index-7.json": "afa30d692c2cc089d79b896d1a7cd640df2dbb14c3f461a3b2861dd700876a33",
   "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
   "data/ra365_corrections/ra365-phase49-rebuild-full-v2/manifest.json": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
-  "dev/phase49_status_rules.json": "9fa175df973435b510e1ed6d6315dff2b9fd5766dc2c0db5be04cde67b2535b9"
+  "dev/phase49_status_rules.json": "8397154f64e75aed1da455843a55e29c25c139dece95f134fa2a2767b02773b7"
  },
  "outputs": {
-  "_audit/phase49-full-verification/evidence/step-ledger-counts.json": "0d7016d4e95f5cec5d64eee48c8c920d244157d85ecee1d387a6416d341c2556",
-  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "88808b8a65949d6d4be29ab7631231bd2135c5dd2f7150fd6a4413ad5de3dbcb"
+  "_audit/phase49-full-verification/evidence/step-ledger-counts.json": "c9bca5933741dd69cec661d1160224fef259fd8d159367c954b4ffca0300e532",
+  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "a123bc603d1fa67cea5d89ecb36f6bcb27460e023b7e7837198e6cb67ef9f548"
  },
  "stage": "stage03_step_ledger"
 }
