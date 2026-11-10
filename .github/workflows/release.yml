@@ -202,6 +202,31 @@ jobs:
         # current version) and the installer from the same tag.
         run: python scripts/build_all.py --version $($env:TAG -replace '^v','')
 
+      - name: Seed release gate
+        # A8: refuse to package a Seed whose manifest reports reference-derived
+        # rows (price_history rows sourced from the licensed reference) without
+        # an explicit owner approval. A missing seed_manifest table, a missing
+        # key or a non-integer value also blocks: an unverifiable Seed is not
+        # publishable. The tracked root market.db has no seed_manifest table
+        # yet, so this gate blocks on purpose until the owner decides; do not
+        # add --owner-approved-reference-redistribution here without that
+        # decision.
+        shell: pwsh
+        run: |
+          if (Test-Path market.db) {
+            $out = python scripts/check_seed_release.py --db market.db 2>&1
+            $code = $LASTEXITCODE
+            $out | ForEach-Object { Write-Output $_ }
+            if ($code -ne 0) { Write-Output "::error::[seed] release blocked"; exit 1 }
+            if (-not ($out -match 'SEED_RELEASE_OK')) {
+              Write-Output "::error::[seed] gate printed no SEED_RELEASE_OK verdict; refusing to package"
+              exit 1
+            }
+          } else {
+            Write-Output "::error::[seed] market.db missing; cannot evaluate release gate"
+            exit 1
+          }
+
       - name: Compile Inno Installer
         # /D overrides AppVersion in bors_setup.iss so the tag and the built
         # setup filename always match (OutputBaseFilename uses {#AppVersion}).
