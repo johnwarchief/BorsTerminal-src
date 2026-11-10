@@ -1,0 +1,27 @@
+{
+ "counts": {
+  "BLOCKED_SOURCE": 0,
+  "CONFLICT": 90,
+  "INSUFFICIENT_EVIDENCE": 5913,
+  "RECONSTRUCTED_VERIFIED": 83,
+  "VERIFIED_NO_APPLICABLE_EVENT": 0,
+  "VERIFIED_WITH_EVENTS": 17,
+  "rows": 6103
+ },
+ "finished_at": "2026-11-10T21:50:35Z",
+ "inputs": {
+  "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+  "_audit/phase49-full-verification/capture-plan/capture-plan.json": "7dbe2a62073f73bb5beb38779be075914f8b178f954e7f728490922d9590cfd4",
+  "_audit/phase49-full-verification/capture-plan/symbols.json": "4e5ad3d67d3db6a9e4eedb3fe7d7908ab2be707dca9656d7af5eb0ad52de27b0",
+  "_audit/phase49-full-verification/captures/reference-index-30.json": "05fc5b50a6b632eff464598e755e4bd0bb96961d5065446a3d5291896b557062",
+  "_audit/phase49-full-verification/captures/reference-index-7.json": "afa30d692c2cc089d79b896d1a7cd640df2dbb14c3f461a3b2861dd700876a33",
+  "_audit/phase49-full-verification/evidence/step-ledger-counts.json": "c9bca5933741dd69cec661d1160224fef259fd8d159367c954b4ffca0300e532",
+  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "a123bc603d1fa67cea5d89ecb36f6bcb27460e023b7e7837198e6cb67ef9f548",
+  "dev/phase49_status_rules.json": "8397154f64e75aed1da455843a55e29c25c139dece95f134fa2a2767b02773b7"
+ },
+ "outputs": {
+  "_audit/phase49-full-verification/evidence/symbol-ledger-counts.json": "d5af41dc6d03fdd79ef91749e0c44318c99b3672c05b002edf259ea6fdab49c3",
+  "_audit/phase49-full-verification/ledgers/HISTORY-COVERAGE-LEDGER.csv": "63e8dde10339952aa491aacd10fa5f0df67b80b270bf5f7f1052c3d0ac5fc338"
+ },
+ "stage": "stage05_symbol_ledger"
+}

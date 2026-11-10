@@ -1,0 +1,315 @@
+{
+ "asset_coverage": {
+  "asset_map_entries": 758,
+  "capture_plan": {
+   "asset_map_symbols": 828,
+   "mapped": 758,
+   "pack_steps_unverified": 1358,
+   "pack_symbols_unverified": 782,
+   "pack_unverified": 754,
+   "unmapped": 339
+  },
+  "no_instruments_with_asset_id": 0,
+  "no_steps_with_asset_id": 3,
+  "with_asset_id": 758,
+  "with_steps_with_asset_id": 755,
+  "with_steps_without_asset_id": 160,
+  "without_asset_id": 5345
+ },
+ "blockers": {
+  "CONFLICT": {
+   "CONFLICT_DUPLICATE": 3,
+   "CONFLICT_RATIO": 90,
+   "STEP_CONFLICT": 90
+  },
+  "INSUFFICIENT_EVIDENCE": {
+   "INSUFFICIENT_EVIDENCE": 676,
+   "NO_PACK_STEPS": 5188,
+   "NO_REFERENCE_WINDOW": 5188,
+   "OFFICIAL_EVENT_WITHOUT_STEP": 33,
+   "PARTIAL_OFFICIAL": 263,
+   "SYMBOL_IDENTITY_MISMATCH": 1468
+  },
+  "RECONSTRUCTED_VERIFIED": {
+   "NO_INDEPENDENT_EVIDENCE": 83
+  }
+ },
+ "by_final_status": {
+  "BLOCKED_SOURCE": 0,
+  "CONFLICT": 90,
+  "INSUFFICIENT_EVIDENCE": 5913,
+  "RECONSTRUCTED_VERIFIED": 83,
+  "VERIFIED_NO_APPLICABLE_EVENT": 0,
+  "VERIFIED_WITH_EVENTS": 17
+ },
+ "by_identity_status": {
+  "resolved_instruments": 4633,
+  "resolved_instruments_ambiguous": 2,
+  "unresolved_no_instruments": 1468
+ },
+ "by_instrument_status": {
+  "": 5645,
+  "مجاز": 11,
+  "مجاز-متوقف": 22,
+  "ممنوع": 411,
+  "ممنوع-متوقف": 10,
+  "ممنوع-محفوظ": 4
+ },
+ "by_stale_status": {
+  "fresh": 29,
+  "halted": 444,
+  "recent": 2034,
+  "stale": 3596
+ },
+ "by_validity_match": {
+  "alias_steps_omitted": 35,
+  "match": 6068
+ },
+ "by_verification_method": {
+  "none": 5188,
+  "step-ledger": 915
+ },
+ "data_shape": {
+  "anomaly_rows": 2986,
+  "duplicate_date_rows": 0,
+  "first_date_min": "2010-01-02",
+  "gap_sessions": 197093,
+  "gap_symbols": 4542,
+  "invalid_ohlc_symbols": 32,
+  "last_date_max": "2026-11-09",
+  "price_rows": 511139,
+  "single_candle_symbols": 685,
+  "source_rows": {
+   "board": 69555,
+   "legacy-unknown": 369359,
+   "published": 3,
+   "rahavard365": 72222
+  }
+ },
+ "event_coverage": {
+  "no_step_official_in_range_events": 79,
+  "no_step_symbols_with_official_in_range": 33,
+  "none": 5188,
+  "official_absence_proof": "none",
+  "official_o1_in_range_events": 1572,
+  "official_o1_in_range_symbols": 595,
+  "official_o1_material_events": 1480,
+  "official_o1_rows": 4133,
+  "official_o1_rows_all": 4484,
+  "official_o1_rows_without_history": 351,
+  "official_o1_symbols": 713,
+  "official_o2_rows": 34228,
+  "official_o2_rows_all": 36350,
+  "official_o2_rows_without_history": 2122,
+  "official_o2_symbols": 990,
+  "pack": 915,
+  "rule": "O1/O2 rows are positive witnesses only; no ingest-complete proof exists in this round, so their absence is never used as proof of no event.",
+  "step_symbols_with_official_rows": 648
+ },
+ "factor_totals": {
+  "alias_duplicate_dates": 82,
+  "alias_only_steps": 468,
+  "alias_ratio_conflicts": 11,
+  "alias_ratio_partials": 39,
+  "alias_symbols": 35,
+  "blocked": 0,
+  "conflict": 208,
+  "consistency": "step_rows_valid - alias_duplicate_dates == factor_steps",
+  "factor_steps": 8198,
+  "insufficient": 1084,
+  "pack_validity": {
+   "invalid_dropped": 28,
+   "reconstructed_verified": 6300,
+   "unverified": 1358,
+   "verified": 622
+  },
+  "partial": 422,
+  "reconstructed": 4955,
+  "step_rows_invalid": 28,
+  "step_rows_total": 8308,
+  "step_rows_valid": 8280,
+  "unverified": 1714,
+  "verified": 1529
+ },
+ "halted_by_instrument_status": {
+  "مجاز-متوقف": 22,
+  "ممنوع": 408,
+  "ممنوع-متوقف": 10,
+  "ممنوع-محفوظ": 4
+ },
+ "identity": {
+  "ambiguous_rows": 2,
+  "asset_map_ambiguous_keys": [],
+  "duplicate_instrument_keys": [
+   {
+    "candidates": 2,
+    "in_history": true,
+    "key": "آواپارس"
+   },
+   {
+    "candidates": 2,
+    "in_history": false,
+    "key": "حیان072"
+   },
+   {
+    "candidates": 2,
+    "in_history": true,
+    "key": "کیمازی"
+   }
+  ],
+  "duplicate_instrument_keys_in_history": 2,
+  "duplicate_instrument_keys_total": 3,
+  "empty_keys": 0,
+  "isin_present": 3356,
+  "resolved_capture_plan": 0,
+  "resolved_instruments": 4633,
+  "resolved_instruments_ambiguous": 2,
+  "unresolved_no_instruments": 1468
+ },
+ "inputs": {
+  "asset_map": "_audit/phase49-full-verification/capture-plan/symbols.json",
+  "asset_map_entries": 758,
+  "capture_plan": "_audit/phase49-full-verification/capture-plan/capture-plan.json",
+  "db": "_audit/phase49-finalization/seed/market.db",
+  "latest_session": "2026-11-09",
+  "reference_index_symbols": 36,
+  "references": [
+   "_audit/phase49-full-verification/captures/reference-index-30.json",
+   "_audit/phase49-full-verification/captures/reference-index-7.json"
+  ],
+  "rules": "dev/phase49_status_rules.json",
+  "step_counts": "_audit/phase49-full-verification/evidence/step-ledger-counts.json",
+  "step_rows": 8308,
+  "step_rows_invalid": 28,
+  "step_rows_valid": 8280,
+  "step_symbols_keys": 915,
+  "step_symbols_raw": 951,
+  "steps": "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv",
+  "symbols": 6103,
+  "trading_sessions": 4056
+ },
+ "no_instruments": {
+  "by_final_status": {
+   "BLOCKED_SOURCE": 0,
+   "CONFLICT": 0,
+   "INSUFFICIENT_EVIDENCE": 1468,
+   "RECONSTRUCTED_VERIFIED": 0,
+   "VERIFIED_NO_APPLICABLE_EVENT": 0,
+   "VERIFIED_WITH_EVENTS": 0
+  },
+  "no_pack_no_reference": 1467,
+  "symbols": 1468,
+  "with_asset_id": 0,
+  "with_isin": 0,
+  "with_pack_steps": 1,
+  "with_reference": 0
+ },
+ "notes": [
+  "Join key is dev.symbol_identity.key; the raw symbol and ISIN are carried in every row. 36 Persian/Arabic spelling pairs share a key; the 82 duplicate effective dates they produce are collapsed with the history symbol's own spelling as the primary witness.",
+  "1468 symbols have no instruments row. They stay in the ledger as unresolved_no_instruments and INSUFFICIENT_EVIDENCE with SYMBOL_IDENTITY_MISMATCH in the blocker; they are not dropped. The 3 duplicate instruments keys are reported; 2 occur in the history universe and resolve through B1's ISIN-first choice.",
+  "Official O1/O2 rows are positive witnesses only. No ingest-completeness proof exists in this round, so O1=0/O2=0 is never used as proof of no event. 33 no-step symbols carry 79 in-range O1 events and are flagged OFFICIAL_EVENT_WITHOUT_STEP, not promoted or failed.",
+  "VERIFIED_NO_APPLICABLE_EVENT requires a resolved identity and a full R1 type0/type7 window with no factor changes. Only 36 of 951 pack symbols have a reference now and 0 no-step symbols have a full window, so the count is 0 until B11 reruns with the full capture.",
+  "5188 history_validity rows are unverified with factor_steps=0. None carries a pack step; the zero is accurate as a step count but is not a no-event claim. The raw-symbol validity table cannot see the 36 alias spellings: 550 raw alias steps (82 duplicate dates + 468 applicable) sit outside its count, so its unverified total is 808 vs the pack's 1358.",
+  "Halted means the latest instrument_state title contains توقف/معلق/ممنوع and the last bar is older than the latest session. A bar on the latest session wins over an outdated state. Up to 21 sessions behind is recent; more is stale.",
+  "BLOCKED_SOURCE is 0: no step carried it and identity failure is classified as SYMBOL_IDENTITY_MISMATCH / INSUFFICIENT_EVIDENCE per the design's identity rule.",
+  "The six final statuses are read verbatim from dev/phase49_status_rules.json symbol_status_precedence."
+ ],
+ "reference": {
+  "capture_pending": "Only 36 of 951 pack symbols have a reference index now; B11 reruns this stage with the full capture.",
+  "full": 36,
+  "index_symbols": 36,
+  "index_symbols_in_history": 36,
+  "no_steps_full": 0,
+  "no_steps_partial": 0,
+  "none": 6067,
+  "partial": 0,
+  "verified_no_applicable_event": 0,
+  "with_steps": 36
+ },
+ "rows": 6103,
+ "schema": 1,
+ "stage": "stage05_symbol_ledger",
+ "stale": {
+  "fresh": 29,
+  "fresh_over_state": 3,
+  "halted": 444,
+  "halted_by_title": {
+   "توقف": 32,
+   "معلق": 0,
+   "ممنوع": 422
+  },
+  "instrument_state_coverage": 458,
+  "latest_session": "2026-11-09",
+  "no_state": 5645,
+  "recent": 2034,
+  "recent_sessions_threshold": 21,
+  "stale": 3596,
+  "state_allowed_but_not_fresh": 11,
+  "state_source": "instrument_state latest c_etaval_title; the boards table carries only the board number and board_hist_v has no status column, so neither can distinguish a halt",
+  "state_uncovered": 5645,
+  "trading_sessions": 4056
+ },
+ "status_x_stale": {
+  "CONFLICT": {
+   "fresh": 11,
+   "halted": 9,
+   "recent": 65,
+   "stale": 5
+  },
+  "INSUFFICIENT_EVIDENCE": {
+   "fresh": 10,
+   "halted": 429,
+   "recent": 1887,
+   "stale": 3587
+  },
+  "RECONSTRUCTED_VERIFIED": {
+   "halted": 5,
+   "recent": 74,
+   "stale": 4
+  },
+  "VERIFIED_WITH_EVENTS": {
+   "fresh": 8,
+   "halted": 1,
+   "recent": 8
+  }
+ },
+ "validity_reconciliation": {
+  "alias_duplicate_dates": 82,
+  "alias_only_merged_steps": 468,
+  "alias_raw_steps": 550,
+  "alias_spelling_keys": 36,
+  "alias_spelling_raw_symbols": 72,
+  "by_status": {
+   "reconstructed_verified": 880,
+   "unverified": 5188,
+   "verified": 35
+  },
+  "delta_merged_minus_validity": 468,
+  "merged_factor_steps": 8198,
+  "pack_invalid_steps": 28,
+  "pack_steps_unverified": 1358,
+  "pack_symbols_keys": 915,
+  "pack_symbols_raw": 951,
+  "pack_symbols_unverified": 782,
+  "pack_unverified_keys": 754,
+  "pack_valid_steps": 8280,
+  "proof": "history_validity reconstructed_verified+verified = 6300+622; pack = 6300+622 (equal). The 550 raw steps under the 36 alias spellings are all unverified; 82 of them are duplicate dates already present under the history spelling, leaving 468 alias-only merged steps on 35 validity rows. history_validity unverified 808 + alias 550 = 1358; pack unverified 1358 (equal). 8280 valid rows - 82 duplicate dates = 8198 merged steps = 7730 validity steps + 468 (equal).",
+  "rows": 6103,
+  "rows_alias_steps_omitted": 35,
+  "rows_factor_steps_match": 6068,
+  "rows_factor_steps_mismatch": 35,
+  "rows_validity_missing": 0,
+  "rows_with_factor_unverified_positive": 746,
+  "sum_factor_reconstructed": 6300,
+  "sum_factor_steps": 7730,
+  "sum_factor_unverified": 808,
+  "sum_factor_verified": 622,
+  "unverified_rows": 5188,
+  "unverified_rows_identity_resolved": 3721,
+  "unverified_rows_no_instruments": 1467,
+  "unverified_rows_with_any_step_row": 0,
+  "unverified_rows_with_asset_id": 3,
+  "unverified_rows_with_pack_steps": 0,
+  "unverified_rows_with_reference": 0
+ }
+}
