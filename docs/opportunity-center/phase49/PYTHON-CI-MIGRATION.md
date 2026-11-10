@@ -16,8 +16,8 @@ Branch: `mission/phase49-full-verification-python-ci-2026-11-10`.
 | C - legacy Python backend, API, UI or build surface | 205 |
 | D - obsolete, checked code deleted | 0 |
 | KEEP | 49 |
-| MIGRATE (named Go/TS test owns the behaviour) | 14 |
-| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 195 |
+| MIGRATE (named Go/TS test owns the behaviour) | 13 |
+| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 196 |
 | REMOVE (deleted code) | 0 |
 
 Category = what the suite exercises. Disposition = what happens to it.
@@ -137,8 +137,9 @@ is green after the A4 fix.
   (`mstat_cache_durability_v1.py` - Go has one 45s TTL), the unitless-never-1e6 rule
   (`codal_unit_scale_v1090.py`), the board cache invalidation/empty-window controls
   (`board_hist_cache_v1056.py`), the closing-anchor invariance
-  (`price_basis_v1070.py`), and the notebook derivation of the tape formulas
-  (`tape_filters_v1034.py`).
+  (`price_basis_v1070.py`), `get()` on a missing watchlist row
+  (`user_watchlist_v1.py` - Go asserts upsert identity and the cap, not that claim),
+  and the notebook derivation of the tape formulas (`tape_filters_v1034.py`).
 - `B` now also covers stdlib-only CI-tooling guards that must keep running (the suite
   registry, runner profiles, version anchors, Persian glyphs, repo hygiene), which is
   the controller's ruling for the two new CI-tooling tests.
@@ -246,7 +247,7 @@ is green after the A4 fix.
 | `dev/mstat_group_validate_v1120.py` | C | DEPRECATE | legacy | `-` | unknown mstat group/tab is a loud 400 in the Python API; internal/mstat handlers validate params (TestHandlerParamRules) | 2026-11-10 |
 | `dev/mstat_industry_depth_semantics_v1.py` | A | KEEP | production | `-` | product panel contract: missing industry queue depth stays null, an available depth is summed (never a fake zero). No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
 | `dev/mstat_local_v975.py` | C | DEPRECATE | legacy | `-` | mstat dashboard computed from a local market.db by the Python engine; internal/mstat computes the live panels (TestPanelsMatchGolden) | 2026-11-10 |
-| `dev/mstat_snapshot_cache_v1.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallReturnsClone` | a panel never mutates the shared snapshot and separate DB files never share a key; TestCallReturnsClone + TestCallKeysAreIsolated assert exactly that | - |
+| `dev/mstat_snapshot_cache_v1.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallReturnsClone` | a panel never mutates the shared snapshot, separate DB files never share a key and a data marker change invalidates the snapshot; TestCallReturnsClone + TestCallKeysAreIsolated + TestCallMarkerChangeInvalidates assert exactly those three claims | - |
 | `dev/mstat_snapshot_singleflight_v1.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallSingleFlight` | cold concurrent panel requests share one build; the Go single-flight test asserts one compute across five concurrent callers | - |
 | `dev/mstat_swr_v1111.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallServesStaleWhileRebuilding` | stale-while-revalidate with a stale cap, single-flight, no error caching and no state cross-serve; TestCallNoStaleWhenDisallowed + TestCallDoesNotCacheErrors + TestCallSingleFlight cover the same locks (StaleMax=90s) | - |
 | `dev/mstat_value_source_semantics_v1.py` | A | KEEP | production | `-` | product panel contract: client value provenance is native/mixed/reconstructed, never silently relabelled. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
@@ -401,7 +402,7 @@ is green after the A4 fix.
 | `dev/tsetmc_p0_v1076.py` | C | DEPRECATE | legacy | `-` | tsetmc p0 native client values of the Python fetcher; internal/tsetmc owns client-type ingest (TestFetchAndIngestClientTypeAll) | 2026-11-10 |
 | `dev/typography_guard.py` | C | DEPRECATE | legacy | `-` | Tailwind size-class guard for frontend/ (v1); frontend-v2 owns its own theme and visual suites | 2026-11-10 |
 | `dev/undef_name_guard.py` | C | DEPRECATE | legacy | `-` | undefined-name scan of the Python tree; Go build and vet own this for the product | 2026-11-10 |
-| `dev/user_watchlist_v1.py` | C | MIGRATE | legacy | `backend-go/internal/watchlist/store_test.go:TestStoreCRUD` | watchlist CRUD on a missing row, upsert identity and cap layering; TestStoreCapLimit + TestStoreNegativeValidations cover the remaining two claims | - |
+| `dev/user_watchlist_v1.py` | C | DEPRECATE | legacy | `-` | watchlist CRUD of watchlist_store; internal/watchlist covers upsert identity and the cap (TestStoreCRUD, TestStoreCapLimit), but the suite's first claim - get() on a missing row never crashes - has no Go assertion, so this is not claimed as an equivalence | 2026-11-10 |
 | `dev/version_anchor_guard.py` | B | KEEP | data | `-` | release metadata integrity: every version anchor states the same release; stdlib-only tooling guard, passes here | - |
 | `dev/watch_export_v1106.py` | C | DEPRECATE | legacy | `-` | xlsx/csv watchlist export of the Python API; internal/export exports CSV only (TestBuildCSVAndDisposition); xlsx is retired | 2026-11-10 |
 | `dev/watchlist_matrix_v973.py` | C | DEPRECATE | legacy | `-` | watchlist store plus triple matrix of the Python app; internal/watchlist owns store and handlers (TestStoreCRUD, TestWatchlistHandlers) | 2026-11-10 |

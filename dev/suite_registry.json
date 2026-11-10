@@ -1162,7 +1162,7 @@
    "profile": "legacy",
    "go_equivalent": "backend-go/internal/mstat/service_test.go:TestCallReturnsClone",
    "ts_equivalent": null,
-   "reason": "a panel never mutates the shared snapshot and separate DB files never share a key; TestCallReturnsClone + TestCallKeysAreIsolated assert exactly that",
+   "reason": "a panel never mutates the shared snapshot, separate DB files never share a key and a data marker change invalidates the snapshot; TestCallReturnsClone + TestCallKeysAreIsolated + TestCallMarkerChangeInvalidates assert exactly those three claims",
    "retirement_date": null
   },
   "dev/mstat_snapshot_singleflight_v1.py": {
@@ -3018,12 +3018,12 @@
    "label": "user watchlist CRUD: get() on a missing row, upsert identity, cap layering",
    "kind": "SUITES",
    "category": "C",
-   "disposition": "MIGRATE",
+   "disposition": "DEPRECATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/watchlist/store_test.go:TestStoreCRUD",
+   "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "watchlist CRUD on a missing row, upsert identity and cap layering; TestStoreCapLimit + TestStoreNegativeValidations cover the remaining two claims",
-   "retirement_date": null
+   "reason": "watchlist CRUD of watchlist_store; internal/watchlist covers upsert identity and the cap (TestStoreCRUD, TestStoreCapLimit), but the suite's first claim - get() on a missing row never crashes - has no Go assertion, so this is not claimed as an equivalence",
+   "retirement_date": "2026-11-10"
   },
   "dev/version_anchor_guard.py": {
    "script": "dev/version_anchor_guard.py",
