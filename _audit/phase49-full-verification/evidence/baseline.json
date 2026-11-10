@@ -1,0 +1,45 @@
+{
+ "head": "1e1e0596672b129e9c0d65c7894de89015dcd8d3",
+ "pack": {
+  "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
+  "version": "ra365-phase49-rebuild-full-v2",
+  "counts": {
+   "symbols": 951,
+   "steps": 8280,
+   "verified_steps": 622,
+   "reconstructed_verified_steps": 6300,
+   "unverified_steps": 1358,
+   "invalid_dropped_steps": 28,
+   "pre2020_steps": 623
+  },
+  "factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "raw_ohlc_sha256": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a",
+  "manifest_sha256": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
+  "declared_sha256": {
+   "factors": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+   "raw_ohlc": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a"
+  }
+ },
+ "db": {
+  "path": "_audit/phase49-finalization/seed/market.db",
+  "sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+  "size": 270614528,
+  "price_history_rows": 511139,
+  "symbols_with_history": 6103,
+  "validity": {
+   "reconstructed_verified": 880,
+   "unverified": 5188,
+   "verified": 35
+  }
+ },
+ "captures": {
+  "dir": null,
+  "count": 0,
+  "files": {}
+ },
+ "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+ "tools": {
+  "git": "git version 2.53.0.windows.1",
+  "sqlite": "3.49.1"
+ }
+}
