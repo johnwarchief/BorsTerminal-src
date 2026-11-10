@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+import contextlib
+import io
+import json
 import os
 import sys
+import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import stage04_volana_rootcause as S  # noqa: E402
@@ -71,6 +75,66 @@ def main():
         "real_product_event", "effective_date_wrong",
         "definition_or_ca_difference", "reference_applied_differently",
         "duplicate_or_misclassified", "previous_cum_factor_wrong"}, answers
+    assert answers["definition_or_ca_difference"].startswith(
+        "0 rows in the official tables of this Seed DB; "
+        "not ingest-completeness proof"), answers
+
+    # 2026-05-23 is not "no" but "not pinned": the 87-day gap stays disclosed.
+    ref_523 = dict(ref, date="2026-05-23",
+                   daily_q={"prev_date": "2026-02-25", "q_prev": 1.0,
+                            "q": 1.0002, "ratio": 1.0002})
+    answers_523 = S._six_answers(ref_523, prod, off, chain, grp, {})
+    assert answers_523["effective_date_wrong"].startswith("not pinned:"), \
+        answers_523["effective_date_wrong"]
+    assert "87-day gap" in answers_523["effective_date_wrong"], answers_523
+
+    # The deep analysis is pinned to the three measured dates; any other
+    # pack must fail closed before the tracked evidence is written.
+    real_steps = [{"symbol": "ولانا", "effective_date": d, "ratio": 0.999,
+                   "ref_ratio": 0.999, "validity": "unverified"}
+                  for d in S.EXPECTED_STEP_DATES]
+    assert tuple(s["effective_date"] for s in
+                 S.validate_pack_steps(real_steps)) == S.EXPECTED_STEP_DATES
+    for broken in (real_steps[:2],
+                   real_steps[:2] + [dict(real_steps[0])]):
+        try:
+            S.validate_pack_steps(broken)
+        except ValueError as exc:
+            assert "expected exactly the three" in str(exc), exc
+        else:
+            raise AssertionError("short/duplicate pack was accepted: %r"
+                                 % (broken,))
+    wrong_date = [dict(s) for s in real_steps]
+    wrong_date[-1]["effective_date"] = "2026-05-24"
+    try:
+        S.validate_pack_steps(wrong_date)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("wrong-dated pack was accepted")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        steps_path = os.path.join(tmp, "steps.jsonl")
+        out_path = os.path.join(tmp, "evidence.json")
+        with open(steps_path, "w", encoding="utf-8", newline="\n") as fh:
+            for step in real_steps[:2]:
+                fh.write(json.dumps(step, ensure_ascii=False) + "\n")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc = S.main(["--steps", steps_path, "--out", out_path,
+                         "--no-deep"])
+        assert rc != 0, rc
+        assert not os.path.exists(out_path), out_path
+        assert "refusing to write evidence" in err.getvalue(), err.getvalue()
+
+        with open(steps_path, "w", encoding="utf-8", newline="\n") as fh:
+            for step in real_steps:
+                fh.write(json.dumps(step, ensure_ascii=False) + "\n")
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = S.main(["--steps", steps_path, "--out", out_path,
+                         "--no-deep"])
+        assert rc == 0, rc
+        assert os.path.isfile(out_path), out_path
 
     # The three real pack ratios multiply to the measured 0.198% group effect.
     real = (0.9990313041704958, 0.9991898460707485, 0.9997992371009847)

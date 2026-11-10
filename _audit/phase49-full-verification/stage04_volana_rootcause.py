@@ -90,6 +90,7 @@ SYMBOL = "ولانا"
 SHIFT_DAYS = 5
 NOTICE_DAYS = 10
 CA_WORDS = ("افزایش سرمایه", "سود نقدی", "حق تقدم", "تعدیل", "درصد", "مجمع")
+EXPECTED_STEP_DATES = ("2020-03-11", "2025-07-20", "2026-05-23")
 
 PACK = os.path.join(ROOT, "data", "ra365_corrections",
                     "ra365-phase49-rebuild-full-v2")
@@ -219,6 +220,26 @@ def load_pack_rows(path):
     rows = [r for r in _read_jsonl(path) if r.get("symbol") == SYMBOL]
     rows.sort(key=lambda r: str(r.get("effective_date"))[:10])
     return rows
+
+
+def validate_pack_steps(steps):
+    """Return the unverified Volana steps or fail closed.
+
+    The analysis is pinned to the three dates measured for this pack. A pack
+    with a different count or different dates invalidates the tracked
+    evidence, so the CLI must refuse to write it instead of silently
+    overwriting the reviewed summary with a mechanical-only report.
+    """
+    steps = [s for s in steps if s.get("symbol") == SYMBOL
+             and s.get("validity") == "unverified"]
+    steps.sort(key=lambda s: str(s.get("effective_date"))[:10])
+    dates = tuple(str(s.get("effective_date"))[:10] for s in steps)
+    if len(steps) != 3 or dates != EXPECTED_STEP_DATES:
+        raise ValueError(
+            "expected exactly the three Volana unverified steps %s; found "
+            "%d (%s)" % (", ".join(EXPECTED_STEP_DATES), len(steps),
+                         ", ".join(dates) if dates else "none"))
+    return steps
 
 
 def load_reference(path):
@@ -516,6 +537,13 @@ def chain_assessment(pack_rows, q):
 
 
 def _classify(reference, official, chain_row, group, rules):
+    """Assign the frozen status band.
+
+    ``group_effect`` is the additive effect of the three tiny ratios
+    (0.197847%, ``1 - product``), while the reported ``max_cumulative_error``
+    is the relative chain gap (0.198239%, ``1/product - 1``). Both values sit
+    in the same PARTIAL_REFERENCE band; no threshold changes.
+    """
     exact = rules["tolerances"]["FACTOR_EXACT"]
     material = rules["tolerances"]["FACTOR_MATERIAL"]
     if official["exact_best_error"] is not None:
@@ -600,20 +628,22 @@ def _six_answers(reference, product, official, chain_row, group, step,
                         "%d-day gap; the exact event date is not pinned by "
                         "the reference)" % (trans["prev_date"], gap_days))
     answers["effective_date_wrong"] = (
-        "no: the pack date equals the first reference daily q observation of "
+        "%s: the pack date equals the first reference daily q observation of "
         "the new level %s exactly (q %s -> %s, ratio %s)%s%s; the frozen "
         "shift window is %d days."
-        % (ds, _fmt(trans.get("q_prev")), _fmt(trans.get("q")), _fmt(qr),
+        % ("not pinned" if ds == "2026-05-23" else "no",
+           ds, _fmt(trans.get("q_prev")), _fmt(trans.get("q")), _fmt(qr),
            gap_note,
            ("; the product event date %s is %+d day(s) away"
             % (pe["date"], pe["delta_days"])) if pe else
            "; no product event exists to compare",
            SHIFT_DAYS))
     answers["definition_or_ca_difference"] = (
-        "no official corporate action: price_adjust_events=%d, "
-        "share_change_events=%d, corporate-action-titled CODAL notices=%d; "
-        "the transition is a sub-0.1%% reference factor re-basing (%s step), "
-        "not a CA definition difference."
+        "0 rows in the official tables of this Seed DB; not ingest-completeness "
+        "proof (price_adjust_events=%d, share_change_events=%d, "
+        "corporate-action-titled CODAL notices=%d); the transition is a "
+        "sub-0.1%% reference factor re-basing (%s step), not a CA definition "
+        "difference."
         % (len(product.get("price_adjust_events") or []),
            len(product.get("share_change_events") or []), ca_notices,
            _pct(step_size) if step_size is not None else "n/a"))
@@ -651,11 +681,7 @@ def _six_answers(reference, product, official, chain_row, group, step,
 # ---------------------------------------------------------------------------
 def analyze(pack_path, ledger_path, reference_path, reference7_path,
             normalized_path, db_path, rules_path, pack_manifest_path=None):
-    steps = [r for r in load_pack_rows(pack_path)
-             if r.get("validity") == "unverified"]
-    if len(steps) != 3:
-        raise ValueError("expected exactly 3 unverified ولانا steps, found %d"
-                         % len(steps))
+    steps = validate_pack_steps(load_pack_rows(pack_path))
     rules = load_rules(rules_path)
     q, quotes = load_q(normalized_path)
     ref_index = load_reference(reference_path)
@@ -952,6 +978,11 @@ def main(argv=None):
 
     steps = [json.loads(line) for line in open(args.steps, encoding="utf-8")
              if line.strip()]
+    try:
+        validate_pack_steps(steps)
+    except ValueError as exc:
+        print("stage04: refusing to write evidence: %s" % exc, file=sys.stderr)
+        return 2
     report = rootcause(steps)
     deep = None
     if not args.no_deep:
