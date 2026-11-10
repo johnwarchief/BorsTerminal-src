@@ -5,7 +5,9 @@ One event per (symbol, date, anomaly kind). The five kinds are the ones the
 design names in section 8.5 - ``INVALID_OHLC``, ``ZERO_FIELDS``,
 ``OPEN_EQ_PREV_CLOSE``, ``ZERO_VOLUME`` and ``DUPLICATE_DATE`` - and each event
 carries one of the 13 reconciliation categories from section 9 (the list is
-read from ``dev/phase49_status_rules.json``; nothing is redefined here).
+read from ``dev/phase49_status_rules.json``; nothing is redefined here). Every
+event also carries a ``witness`` column naming the evidence that decided its
+category, so the split can be recomputed from the CSV alone.
 
 Root cause method (evidence first, no guess promoted to fact)
 --------------------------------------------------------------
@@ -27,43 +29,68 @@ Root cause method (evidence first, no guess promoted to fact)
 
 ``OPEN_EQ_PREV_CLOSE``
     ``open`` equals the previous bar's close exactly (``EXACT_EQ`` = 1e-9).
-    The previous close is the preceding row of the same symbol in date order;
-    the first bar of a symbol is never compared with itself (the sketch this
-    stage replaces seeded the first bar with its own close, which would have
-    manufactured one false event per flat first bar). The equality is a
-    price-basis signal: the open carries no information of its own. It occurs
-    in every writer (legacy 11.9%, board 10.8%, rahavard365 6.4%), so it is a
-    general data property, not one writer's bug. Without an intraday source
-    the equality cannot be proven to be a copied base price rather than a real
-    opening at the prior close; the category is ``PRICE_BASIS_DIFFERENCE`` and
-    the counts file records that verification status explicitly.
+    Section 8.5 defines ``PRICE_BASIS_DIFFERENCE`` as the divergence between
+    LAST and the official closing - not as this equality - so the category is
+    decided by a witness, never by the kind:
+
+    * a date on which no row of the DB traded at all is a ``CALENDAR_GAP``;
+    * a first-trade witness (positive ``daily_prices.price_first``) equal to
+      ``open`` is ``VERIFIED_NO_EVENT``: the opening was a real trade at the
+      prior close, so no adjustment event is needed;
+    * a halt/suspension snapshot for the symbol on that date is also
+      ``VERIFIED_NO_EVENT``; it decides only when the first-trade witness is
+      absent, and the tag stays recorded either way;
+    * a basis witness on that symbol/date (``price_history.last`` vs
+      ``price_history.close``, or ``daily_prices.p_last`` vs
+      ``daily_prices.p_closing``, compared through ``price_basis.last_of`` /
+      ``closing_of``) is ``PRICE_BASIS_DIFFERENCE``;
+    * a first-trade witness that differs from ``open``, or no witness at all,
+      is ``UNRESOLVED_SOURCE_GAP`` - the ledger does not assert a basis or a
+      repair it cannot prove.
+
+    When both the basis witness and the first-trade equality are present (621
+    rows in the Seed), the first-trade witness decides the open event: it is
+    direct evidence that the opening price was traded, while the basis
+    witness is about the close. Both tags stay in the ``witness`` column, so
+    the other reading is recomputable. The first bar of a symbol is never
+    compared with itself (the sketch this stage replaces seeded the first bar
+    with its own close, which would have manufactured one false event per flat
+    first bar).
 
 ``ZERO_VOLUME``
     The row records no trade. The root cause is read from the row and the
     whole-DB session evidence, in this order: a date on which no row of the DB
-    traded at all (``market_no_session``); a non-flat bar with zero volume
-    (``no_trade_price_range`` - prices moved without volume, an inconsistent
-    record); the symbol's first bar (``no_trade_first_bar``); a flat bar whose
-    close equals the previous close (``no_trade_carried_close`` - the price was
-    carried, no trade); a flat bar whose close differs (``no_trade_price_change``
-    - a price change with no volume, again an inconsistent record). The first
-    two of the last four are ``CALENDAR_GAP`` (the session produced no trade);
-    the inconsistent records are ``INVALID_SOURCE_RECORD``.
+    traded at all (``market_no_session`` -> ``CALENDAR_GAP``); a halt snapshot
+    for the symbol/date (``no_trade_halt_witness`` -> ``VERIFIED_NO_EVENT``);
+    a non-flat bar with zero volume (``no_trade_price_range`` - a price range
+    with no volume is an internally inconsistent record ->
+    ``INVALID_SOURCE_RECORD``); the remaining per-symbol no-trade rows
+    (``no_trade_first_bar``, ``no_trade_carried_close``,
+    ``no_trade_price_change``) have valid OHLC fields but no halt or session
+    witness, so they are ``UNRESOLVED_SOURCE_GAP``. The 135 flat bars whose
+    close moved and the 4 first bars are not invalid records; only the 2
+    non-flat bars contradict themselves (``open > 0`` everywhere, so the
+    review's "genuinely invalid, e.g. open = 0" carve-out matches no row).
 
     ``instrument_state`` cannot root-cause these rows: its five snapshots cover
     2026-10-05..2026-10-11 and the last zero-volume row is 2026-09-30, so there
     is zero overlap. The counts file states that a halt cannot be separated
-    from a plain no-trade day in this DB instead of inventing a halt flag.
+    from a plain no-trade day in this DB instead of inventing a halt flag, and
+    the branch that would use a halt witness is implemented and unit-tested.
 
 ``DUPLICATE_DATE``
     ``price_history`` has ``PRIMARY KEY (symbol, date)``, so a duplicate is
     structurally impossible in the Seed; the SQL check returns 0 and the ledger
-    keeps the detector for an input that is not this table.
+    keeps the detector for an input that is not this table. The detector emits
+    one event per extra row of a repeated key and the SQL counts
+    ``COUNT(*) - 1`` per key, so a triple yields 2 on both sides and the build
+    does not fail; a mismatch would fail closed.
 
 An event whose branch set does not explain the row is emitted with root cause
 ``UNEXPLAINED`` and category ``UNRESOLVED_SOURCE_GAP``; the build fails when
 that count is not zero, so "all anomalies categorized" is machine-checked
-rather than asserted in prose.
+rather than asserted in prose. ``UNRESOLVED_SOURCE_GAP`` itself is a measured
+category (no witness exists), not an unexplained branch.
 
 CLI:
     python _audit/phase49-full-verification/stage06_anomaly_ledger.py \\
@@ -72,7 +99,8 @@ CLI:
 
 The CSV belongs in the gitignored ``ledgers/`` area; the tracked outputs are
 the small counts summary and the stage manifest under ``evidence/``. Stdlib
-only, the Seed DB is opened read-only, no network call.
+plus ``dev/phase49_manifest.py`` and the frozen ``price_basis.py`` (imported,
+never modified); the Seed DB is opened read-only, no network call.
 """
 import argparse
 import collections
@@ -92,6 +120,7 @@ while _DEV in sys.path:
 sys.path.insert(0, _DEV)
 
 import phase49_manifest as PM  # noqa: E402
+import price_basis as PB  # noqa: E402
 
 DEFAULT_RULES = os.path.join(ROOT, "dev", "phase49_status_rules.json")
 DEFAULT_COUNTS = os.path.join(HERE, "evidence", "anomaly-counts.json")
@@ -101,19 +130,23 @@ DEFAULT_MANIFEST = os.path.join(HERE, "evidence",
 KINDS = ("INVALID_OHLC", "ZERO_FIELDS", "OPEN_EQ_PREV_CLOSE", "ZERO_VOLUME",
          "DUPLICATE_DATE")
 
+# Same halt vocabulary as stage05's instrument_state reading (kept local so a
+# future stage05 rename cannot silently change this stage's witness).
+HALT_WORDS = ("توقف", "معلق", "ممنوع")
+
 # The sketch mapping of the brief, kept as the documented default per kind.
+# OPEN_EQ_PREV_CLOSE and ZERO_VOLUME stay unresolved unless a witness says
+# otherwise; the kind alone never asserts a basis or a calendar event.
 BASE_CATEGORY = {
     "INVALID_OHLC": "INVALID_SOURCE_RECORD",
     "ZERO_FIELDS": "INVALID_SOURCE_RECORD",
-    "OPEN_EQ_PREV_CLOSE": "PRICE_BASIS_DIFFERENCE",
-    "ZERO_VOLUME": "CALENDAR_GAP",
+    "OPEN_EQ_PREV_CLOSE": "UNRESOLVED_SOURCE_GAP",
+    "ZERO_VOLUME": "UNRESOLVED_SOURCE_GAP",
     "DUPLICATE_DATE": "INVALID_SOURCE_RECORD",
 }
 
 # Root cause -> category. Every root cause names a real, measured branch; the
-# category follows the cause instead of being copied from the kind, so a
-# zero-volume row that cannot be a no-trade session (prices moved) is not
-# filed as a calendar gap.
+# category follows the cause instead of being copied from the kind.
 ROOT_CATEGORY = {
     "missing_value": "INVALID_SOURCE_RECORD",
     "shadow_inverted": "INVALID_SOURCE_RECORD",
@@ -125,19 +158,22 @@ ROOT_CATEGORY = {
     "all_ohlc_zero": "INVALID_SOURCE_RECORD",
     "volume_null": "INVALID_SOURCE_RECORD",
     "market_no_session": "CALENDAR_GAP",
-    "no_trade_carried_close": "CALENDAR_GAP",
+    "open_at_prior_close_no_session": "CALENDAR_GAP",
+    "open_at_prior_close_halt": "VERIFIED_NO_EVENT",
+    "open_at_prior_close_basis": "PRICE_BASIS_DIFFERENCE",
+    "open_at_prior_close_first_trade": "VERIFIED_NO_EVENT",
+    "open_at_prior_close_unwitnessed": "UNRESOLVED_SOURCE_GAP",
+    "no_trade_halt_witness": "VERIFIED_NO_EVENT",
     "no_trade_price_range": "INVALID_SOURCE_RECORD",
-    "no_trade_first_bar": "INVALID_SOURCE_RECORD",
-    "no_trade_price_change": "INVALID_SOURCE_RECORD",
-    "open_at_prior_close_no_trade": "CALENDAR_GAP",
-    "flat_bar_at_prior_close": "PRICE_BASIS_DIFFERENCE",
-    "prior_close_with_flat_shadow": "PRICE_BASIS_DIFFERENCE",
-    "open_at_prior_close": "PRICE_BASIS_DIFFERENCE",
+    "no_trade_first_bar": "UNRESOLVED_SOURCE_GAP",
+    "no_trade_carried_close": "UNRESOLVED_SOURCE_GAP",
+    "no_trade_price_change": "UNRESOLVED_SOURCE_GAP",
     "duplicate_primary_key": "INVALID_SOURCE_RECORD",
     "UNEXPLAINED": "UNRESOLVED_SOURCE_GAP",
 }
 
-FIELDS = ("symbol", "date", "kind", "category", "root_cause", "evidence")
+FIELDS = ("symbol", "date", "kind", "category", "root_cause", "witness", "src",
+          "evidence")
 
 _RULES_CACHE = {}
 
@@ -180,13 +216,15 @@ def _ev(**kwargs):
                     for name, value in kwargs.items())
 
 
-def _event(symbol, date, kind, root_cause, evidence):
+def _event(symbol, date, kind, root_cause, witness, src, evidence):
     return {
         "symbol": symbol,
         "date": date,
         "kind": kind,
         "category": ROOT_CATEGORY.get(root_cause, BASE_CATEGORY[kind]),
         "root_cause": root_cause,
+        "witness": witness,
+        "src": src,
         "evidence": evidence,
     }
 
@@ -221,7 +259,153 @@ def _date_stats(rows):
     return {date: (value[0], value[1]) for date, value in stats.items()}
 
 
-def detect(rows, prev_close=None, date_stats=None, rules=None):
+def _positive(value):
+    """Positive price or None - the same semantics as price_basis._num.
+
+    ``last_of`` only validates the number, it does not read a file, so it is
+    safe to reuse for the daily_prices columns and for price_first.
+    """
+    return PB.last_of({"last": value})
+
+
+def _basis_tags(row, daily, exact):
+    """Basis witnesses on the same symbol/date, via price_basis as authority."""
+    tags = []
+    last = PB.last_of(row)
+    closing = PB.closing_of(row)
+    if last is not None and closing is not None and abs(last - closing) > exact:
+        tags.append("basis:last_vs_close")
+    if daily:
+        d_last = PB.last_of(daily)
+        d_closing = PB.closing_of(daily)
+        if (d_last is not None and d_closing is not None
+                and abs(d_last - d_closing) > exact):
+            tags.append("basis:p_last_vs_p_closing")
+    return tags
+
+
+def _first_trade(daily):
+    """First-trade witness from daily_prices.price_first, positive only."""
+    if not daily:
+        return None
+    return _positive(daily.get("price_first"))
+
+
+def _daily_evidence(daily):
+    """Daily_prices witness values, prefixed so they cannot be confused with
+    the price_history columns."""
+    out = {}
+    if not daily:
+        return out
+    if daily.get("last") is not None:
+        out["p_last"] = daily["last"]
+    if daily.get("closing") is not None:
+        out["p_closing"] = daily["closing"]
+    if daily.get("price_first") is not None:
+        out["price_first"] = daily["price_first"]
+    return out
+
+
+def _open_eq_event(row, o, h, l, c, v, pc, pd, exact, daily, halted,
+                   halt_title, no_session):
+    """Decide one OPEN_EQ_PREV_CLOSE event from its witnesses."""
+    if None not in (o, h, l, c):
+        if o == h == l == c:
+            shape = "flat"
+        elif h == l:
+            shape = "flat_shadow"
+        else:
+            shape = "range"
+    else:
+        shape = "incomplete"
+    basis = _basis_tags(row, daily, exact)
+    first = _first_trade(daily)
+    tags = list(basis)
+    if first is not None:
+        tags.append("first_trade:price_first_eq_open"
+                    if abs(first - o) <= exact
+                    else "first_trade:price_first_ne_open")
+    if halted:
+        tags.append("halt:instrument_state")
+    if no_session:
+        tags.append("session_calendar")
+    witness = "+".join(tags) if tags else "none"
+
+    if no_session:
+        root = "open_at_prior_close_no_session"
+    elif first is not None and abs(first - o) <= exact:
+        root = "open_at_prior_close_first_trade"
+    elif halted:
+        root = "open_at_prior_close_halt"
+    elif basis:
+        root = "open_at_prior_close_basis"
+    else:
+        root = "open_at_prior_close_unwitnessed"
+
+    evidence = dict(open=o, prev_close=pc, prev_date=pd, volume=v, high=h,
+                    low=l, close=c, shape=shape)
+    if row.get("last") is not None:
+        evidence["last"] = row["last"]
+    evidence.update(_daily_evidence(daily))
+    if halted and halt_title:
+        evidence["state_title"] = halt_title
+    return _event(row["symbol"], row["date"], "OPEN_EQ_PREV_CLOSE", root,
+                  witness, row.get("src"), _ev(**evidence))
+
+
+def _zero_volume_event(row, o, h, l, c, v, pc, pd, exact, date_stats,
+                       run_start, daily, halted, halt_title):
+    """Decide one ZERO_VOLUME event; only session-wide evidence is a gap."""
+    date = row["date"]
+    date_rows, date_traded = date_stats.get(date, (0, 0))
+    no_session = date_rows > 0 and date_traded == 0
+    flat = (o == h == l == c) if None not in (o, h, l, c) else False
+    held_since = run_start.get(row["symbol"], date)
+    first = _first_trade(daily)
+    tags = []
+    if halted:
+        tags.append("halt:instrument_state")
+    if first is not None:
+        tags.append("first_trade:price_first_eq_open"
+                    if abs(first - o) <= exact
+                    else "first_trade:price_first_ne_open")
+    if no_session:
+        tags.append("session_calendar")
+
+    if v is None:
+        root = "volume_null"
+        witness = "+".join(tags + ["row_fields"])
+    elif no_session:
+        root = "market_no_session"
+        witness = "+".join(tags) if tags else "session_calendar"
+    elif halted:
+        root = "no_trade_halt_witness"
+        witness = "+".join(tags) if tags else "halt:instrument_state"
+    elif not flat:
+        root = "no_trade_price_range"
+        witness = "+".join(tags + ["row_fields"])
+    elif pc is None:
+        root = "no_trade_first_bar"
+        witness = "+".join(tags) if tags else "none"
+    elif abs(c - pc) <= exact:
+        root = "no_trade_carried_close"
+        witness = "+".join(tags) if tags else "none"
+    else:
+        root = "no_trade_price_change"
+        witness = "+".join(tags) if tags else "none"
+
+    evidence = dict(open=o, high=h, low=l, close=c, volume=v, flat=flat,
+                    prev_close=pc, prev_date=pd, held_since=held_since,
+                    date_rows=date_rows, date_traded=date_traded)
+    evidence.update(_daily_evidence(daily))
+    if halted and halt_title:
+        evidence["state_title"] = halt_title
+    return _event(row["symbol"], date, "ZERO_VOLUME", root, witness,
+                  row.get("src"), _ev(**evidence))
+
+
+def detect(rows, prev_close=None, date_stats=None, rules=None,
+           daily_witness=None, halt_dates=None):
     """Return one event per anomaly, in (symbol, date, kind) input order.
 
     ``rows`` must be ordered by (symbol, date); ``prev_close`` may seed the
@@ -229,10 +413,18 @@ def detect(rows, prev_close=None, date_stats=None, rules=None):
     ``date_stats`` is absent it is measured from ``rows`` itself, so a caller
     that passes a fragment (the unit test) gets session evidence for that
     fragment only; the CLI always passes the whole-DB table.
+
+    ``daily_witness`` maps ``(symbol, date)`` to a dict with ``last``,
+    ``closing`` and ``price_first`` (the daily_prices row); ``halt_dates`` maps
+    ``(symbol, date)`` to the instrument_state title. With neither, every
+    OPEN_EQ and every per-symbol no-trade row is ``UNRESOLVED_SOURCE_GAP`` -
+    the conservative default.
     """
     rules = rules or {}
     exact = float(rules.get("exact_eq", (rules.get("tolerances") or {}).get(
         "EXACT_EQ", 1e-9)))
+    daily_witness = daily_witness or {}
+    halt_dates = halt_dates or {}
     seeds, overrides = {}, {}
     for key, value in (prev_close or {}).items():
         if isinstance(key, tuple):
@@ -256,11 +448,16 @@ def detect(rows, prev_close=None, date_stats=None, rules=None):
         c = row.get("close")
         v = row.get("volume")
         key = (symbol, date)
+        daily = daily_witness.get(key)
+        halted = key in halt_dates
+        halt_title = halt_dates.get(key) if halted else None
+        date_rows, date_traded = date_stats.get(date, (0, 0))
+        no_session = date_rows > 0 and date_traded == 0
 
         if key in seen:
             out.append(_event(symbol, date, "DUPLICATE_DATE",
-                              "duplicate_primary_key",
-                              "same_symbol_date_seen_twice"))
+                              "duplicate_primary_key", "primary_key",
+                              row.get("src"), "same_symbol_date_seen_twice"))
         seen.add(key)
 
         reasons = []
@@ -284,7 +481,8 @@ def detect(rows, prev_close=None, date_stats=None, rules=None):
         if reasons:
             out.append(_event(
                 symbol, date, "INVALID_OHLC",
-                _invalid_root(reasons, o, h, l, c),
+                _invalid_root(reasons, o, h, l, c), "row_fields",
+                row.get("src"),
                 "reasons=%s;%s" % (",".join(reasons),
                                    _ev(open=o, high=h, low=l, close=c,
                                        volume=v, src=row.get("src")))))
@@ -292,58 +490,21 @@ def detect(rows, prev_close=None, date_stats=None, rules=None):
                  and c is not None and o == 0 and h == 0 and l == 0
                  and c == 0)):
                 out.append(_event(symbol, date, "ZERO_FIELDS", "all_ohlc_zero",
+                                  "row_fields", row.get("src"),
                                   _ev(open=o, high=h, low=l, close=c,
                                       volume=v)))
 
         pc = overrides.get(key, prev.get(symbol))
         pd = prev_date.get(symbol)
         if o is not None and pc is not None and abs(o - pc) <= exact:
-            if v is not None and v <= 0:
-                out.append(_event(
-                    symbol, date, "OPEN_EQ_PREV_CLOSE",
-                    "open_at_prior_close_no_trade",
-                    _ev(open=o, prev_close=pc, prev_date=pd, volume=v, close=c)))
-            elif o == h == l == c:
-                out.append(_event(
-                    symbol, date, "OPEN_EQ_PREV_CLOSE",
-                    "flat_bar_at_prior_close",
-                    _ev(open=o, prev_close=pc, prev_date=pd, volume=v,
-                        high=h, low=l, close=c)))
-            elif h == l:
-                out.append(_event(
-                    symbol, date, "OPEN_EQ_PREV_CLOSE",
-                    "prior_close_with_flat_shadow",
-                    _ev(open=o, prev_close=pc, prev_date=pd, volume=v,
-                        high=h, low=l, close=c)))
-            else:
-                out.append(_event(
-                    symbol, date, "OPEN_EQ_PREV_CLOSE", "open_at_prior_close",
-                    _ev(open=o, prev_close=pc, prev_date=pd, volume=v,
-                        high=h, low=l, close=c)))
+            out.append(_open_eq_event(row, o, h, l, c, v, pc, pd, exact,
+                                      daily, halted, halt_title, no_session))
 
         if not v:
-            date_rows, date_traded = date_stats.get(date, (0, 0))
-            flat = (o == h == l == c) if None not in (o, h, l, c) else False
-            held_since = run_start.get(symbol, date)
-            if v is None:
-                root = "volume_null"
-            elif date_rows > 0 and date_traded == 0:
-                root = "market_no_session"
-            elif not flat:
-                root = "no_trade_price_range"
-            elif pc is None:
-                root = "no_trade_first_bar"
-            elif abs(c - pc) <= exact:
-                root = "no_trade_carried_close"
-            else:
-                root = "no_trade_price_change"
+            out.append(_zero_volume_event(row, o, h, l, c, v, pc, pd, exact,
+                                          date_stats, run_start, daily,
+                                          halted, halt_title))
             run_start.setdefault(symbol, date)
-            out.append(_event(
-                symbol, date, "ZERO_VOLUME", root,
-                _ev(open=o, high=h, low=l, close=c, volume=v, flat=flat,
-                    prev_close=pc, prev_date=pd, held_since=held_since,
-                    date_rows=date_rows, date_traded=date_traded,
-                    src=row.get("src"))))
         else:
             run_start.pop(symbol, None)
 
@@ -351,6 +512,28 @@ def detect(rows, prev_close=None, date_stats=None, rules=None):
             prev[symbol] = c
             prev_date[symbol] = date
     return out
+
+
+def _witness_consistent(event):
+    """The category must be reachable from the recorded witness."""
+    witness = event["witness"]
+    category = event["category"]
+    kind = event["kind"]
+    if category == "PRICE_BASIS_DIFFERENCE":
+        return witness.startswith("basis:") or "+basis:" in witness
+    if category == "VERIFIED_NO_EVENT":
+        return ("first_trade:price_first_eq_open" in witness
+                or witness.startswith("halt:") or "+halt:" in witness)
+    if category == "CALENDAR_GAP":
+        return witness == "session_calendar" or witness.endswith(
+            "+session_calendar")
+    if kind in ("OPEN_EQ_PREV_CLOSE", "ZERO_VOLUME"):
+        if category == "UNRESOLVED_SOURCE_GAP":
+            return (witness == "none" or witness.startswith("first_trade:")
+                    or "+first_trade:" in witness)
+        if category == "INVALID_SOURCE_RECORD":
+            return witness == "row_fields" or witness.endswith("+row_fields")
+    return True
 
 
 # --------------------------------------------------------------------------
@@ -411,9 +594,12 @@ def _sql_counts(con):
     zero_fields = con.execute(
         "SELECT COUNT(*) FROM price_history WHERE open=0 AND high=0 "
         "AND low=0 AND close=0").fetchone()[0]
+    # One extra row per repeated key: a triple contributes 2, matching the
+    # detector's one-event-per-extra-row rule.
     duplicates = con.execute(
-        "SELECT COUNT(*) FROM (SELECT 1 FROM price_history "
-        "GROUP BY symbol,date HAVING COUNT(*)>1)").fetchone()[0]
+        "SELECT COALESCE(SUM(extra),0) FROM (SELECT COUNT(*)-1 AS extra "
+        "FROM price_history GROUP BY symbol,date "
+        "HAVING COUNT(*)>1)").fetchone()[0]
     return {"rows": int(one), "zero_volume": int(zero_volume),
             "invalid_ohlc": int(invalid), "zero_fields": int(zero_fields),
             "duplicate_dates": int(duplicates)}
@@ -426,7 +612,51 @@ def _iso_even(value):
     return "%s-%s-%s" % (text[:4], text[4:6], text[6:])
 
 
-def _witness(con, events):
+def _load_witnesses(con):
+    """Daily and halt witness tables keyed by (symbol, date).
+
+    price_history already carries ``last``/``close``; daily_prices supplies
+    ``p_last``/``p_closing``/``price_first`` for 2026-08-20..2026-10-11 and
+    instrument_state supplies halt/suspension titles.
+    """
+    ins = {}
+    for name, code in con.execute(
+            "SELECT l_val18,ins_code FROM instruments "
+            "WHERE l_val18 IS NOT NULL AND TRIM(l_val18)<>'' "
+            "ORDER BY ins_code"):
+        ins.setdefault(name, code)
+    code_symbol = {}
+    for name, code in ins.items():
+        code_symbol.setdefault(code, name)
+    daily = {}
+    for code, even, p_closing, p_last, price_first in con.execute(
+            "SELECT ins_code,d_even,p_closing,p_last,price_first "
+            "FROM daily_prices"):
+        symbol = code_symbol.get(code)
+        if not symbol or even is None:
+            continue
+        date = _iso_even(int(even))
+        if not date:
+            continue
+        daily[(symbol, date)] = {"closing": p_closing, "last": p_last,
+                                 "price_first": price_first}
+    halts = {}
+    for symbol, even, title in con.execute(
+            "SELECT i.l_val18,s.d_even,s.c_etaval_title "
+            "FROM instrument_state s "
+            "JOIN instruments i ON i.ins_code=s.ins_code "
+            "WHERE i.l_val18 IS NOT NULL AND TRIM(i.l_val18)<>'' "
+            "AND s.c_etaval_title IS NOT NULL"):
+        if not any(word in title for word in HALT_WORDS):
+            continue
+        date = _iso_even(even)
+        if not date:
+            continue
+        halts.setdefault((symbol, date), title)
+    return daily, halts
+
+
+def _invalid_witness(con, events):
     """How many invalid rows have an instruments and a daily_prices witness."""
     if not events:
         return {"rows": 0, "instruments_matched": 0,
@@ -459,6 +689,19 @@ def _cross(events, left, right):
             for key, value in sorted(out.items())}
 
 
+def _witness_summary(events):
+    """Category, witness and source counts for a filtered event list."""
+    return {
+        "events": len(events),
+        "by_category": dict(sorted(collections.Counter(
+            e["category"] for e in events).items())),
+        "by_witness": dict(sorted(collections.Counter(
+            e["witness"] for e in events).items())),
+        "by_src": dict(sorted(collections.Counter(
+            str(e["src"]) for e in events).items())),
+    }
+
+
 def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
           expect_rows=0):
     rules = load_rules(rules_path)
@@ -480,22 +723,35 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             date_stats[date] = (int(total), int(traded or 0))
             if not traded:
                 session_rows.append((date, int(total)))
+        daily_witness, halt_dates = _load_witnesses(con)
+        last_diff = con.execute(
+            "SELECT COUNT(*) FROM price_history WHERE last>0 AND close>0 "
+            "AND ABS(last-close)>?", (exact,)).fetchone()[0]
+        p_diff = con.execute(
+            "SELECT COUNT(*) FROM daily_prices WHERE p_last>0 AND p_closing>0 "
+            "AND ABS(p_last-p_closing)>?", (exact,)).fetchone()[0]
         cursor = con.execute(
-            "SELECT symbol,date,open,high,low,close,volume,src "
+            "SELECT symbol,date,open,high,low,close,volume,last,src "
             "FROM price_history ORDER BY symbol,date")
         events = detect((dict(row) for row in cursor), date_stats=date_stats,
-                        rules=rules)
+                        rules=rules, daily_witness=daily_witness,
+                        halt_dates=halt_dates)
 
         by_kind = {kind: 0 for kind in KINDS}
         by_category = {name: 0 for name in categories}
         by_root = collections.Counter()
+        by_witness = collections.Counter()
         invalid_reasons = collections.Counter()
         for event in events:
             if event["category"] not in by_category:
                 raise ValueError("event with unknown category: %r" % (event,))
+            if not _witness_consistent(event):
+                raise ValueError("category does not follow the witness: %r"
+                                 % (event,))
             by_kind[event["kind"]] += 1
             by_category[event["category"]] += 1
             by_root[event["root_cause"]] += 1
+            by_witness[event["witness"]] += 1
             if event["kind"] == "INVALID_OHLC":
                 detail = event["evidence"].split(";", 1)[0]
                 for reason in detail[len("reasons="):].split(","):
@@ -547,7 +803,7 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             str(src): int(count) for src, count in con.execute(
                 "SELECT COALESCE(src,'null'),COUNT(*) FROM price_history "
                 "WHERE COALESCE(volume,0)=0 GROUP BY 1 ORDER BY 1")}
-        witness = _witness(con, invalid)
+        witness = _invalid_witness(con, invalid)
         state = con.execute(
             "SELECT MIN(d_even),MAX(d_even),COUNT(DISTINCT d_even) "
             "FROM instrument_state").fetchone()
@@ -570,6 +826,37 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
         writer.writeheader()
         writer.writerows(events)
 
+    basis_events = [e for e in open_eq if "basis:" in e["witness"]]
+    first_eq = [e for e in open_eq
+                if "first_trade:price_first_eq_open" in e["witness"]]
+    first_ne = [e for e in open_eq
+                if "first_trade:price_first_ne_open" in e["witness"]]
+    open_basis = [e for e in open_eq
+                  if e["category"] == "PRICE_BASIS_DIFFERENCE"]
+    open_first = [e for e in open_eq
+                  if e["root_cause"] == "open_at_prior_close_first_trade"]
+    open_halt = [e for e in open_eq
+                 if e["root_cause"] == "open_at_prior_close_halt"]
+    open_halt_tagged = [e for e in open_eq if "halt:" in e["witness"]]
+    open_calendar = [e for e in open_eq
+                     if e["category"] == "CALENDAR_GAP"]
+    open_unresolved = [e for e in open_eq
+                       if e["category"] == "UNRESOLVED_SOURCE_GAP"]
+    basis_tags = collections.Counter()
+    for event in basis_events:
+        for tag in event["witness"].split("+"):
+            if tag.startswith("basis:"):
+                basis_tags[tag] += 1
+    dual = [e for e in basis_events
+            if "first_trade:price_first_eq_open" in e["witness"]]
+    zero_invalid = [e for e in zero_volume
+                    if e["category"] == "INVALID_SOURCE_RECORD"]
+    zero_unresolved = [e for e in zero_volume
+                       if e["category"] == "UNRESOLVED_SOURCE_GAP"]
+    zero_calendar = [e for e in zero_volume
+                     if e["category"] == "CALENDAR_GAP"]
+    zero_halt = [e for e in zero_volume if "halt:" in e["witness"]]
+
     payload = {
         "schema": 1,
         "stage": "stage06_anomaly_ledger",
@@ -588,8 +875,11 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
         "by_kind": by_kind,
         "by_category": by_category,
         "by_root_cause": dict(sorted(by_root.items())),
+        "by_witness": dict(sorted(by_witness.items())),
         "kind_x_category": _cross(events, "kind", "category"),
         "kind_x_root_cause": _cross(events, "kind", "root_cause"),
+        "kind_x_witness": _cross(events, "kind", "witness"),
+        "witness_x_category": _cross(events, "witness", "category"),
         "invalid_ohlc": {
             "events": len(invalid),
             "rows": len(affected.get("INVALID_OHLC", ())),
@@ -612,23 +902,79 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             "events": len(open_eq),
             "rows": len(affected.get("OPEN_EQ_PREV_CLOSE", ())),
             "by_root_cause": dict(sorted(open_roots.items())),
-            "comparisons": sum(v["comparisons"]
-                               for v in sql_open_eq.values()),
+            "by_category": dict(sorted(collections.Counter(
+                e["category"] for e in open_eq).items())),
+            "by_witness": dict(sorted(collections.Counter(
+                e["witness"] for e in open_eq).items())),
             "by_src": sql_open_eq,
             "by_year": year_open_eq,
-            "verification": "unverified_no_intraday_witness",
+            "comparisons": sum(v["comparisons"]
+                               for v in sql_open_eq.values()),
+            "verification": "witness_split_v1",
+            "basis_witness": {
+                "definition": ("price_basis.last_of() vs closing_of() on the "
+                               "price_history row and on the same-day "
+                               "daily_prices p_last/p_closing"),
+                "events_with_basis_witness": len(basis_events),
+                "last_vs_close": basis_tags.get("basis:last_vs_close", 0),
+                "p_last_vs_p_closing": basis_tags.get(
+                    "basis:p_last_vs_p_closing", 0),
+                "both": sum(1 for e in basis_events
+                            if "basis:last_vs_close" in e["witness"]
+                            and "basis:p_last_vs_p_closing" in e["witness"]),
+                "filed_price_basis_difference": len(open_basis),
+                "also_first_trade_equal": len(dual),
+                "whole_db_pool_last_vs_close": int(last_diff),
+                "whole_db_pool_p_last_vs_p_closing": int(p_diff),
+            },
+            "first_trade_witness": {
+                "source": ("daily_prices.price_first, positive values only, "
+                           "for 2026-08-20..2026-10-11"),
+                "equals_open": len(first_eq),
+                "differs_from_open": len(first_ne),
+                "filed_verified_by_first_trade": len(open_first),
+            },
+            "calendar_witness": {
+                "source": "whole-DB date with zero traded rows",
+                "events": len(open_calendar),
+            },
+            "halt_witness": {
+                "source": "instrument_state.c_etaval_title (HALT_WORDS)",
+                "tagged_rows": len(open_halt_tagged),
+                "decided": len(open_halt),
+                "note": ("the halt tag is recorded on every matching row; it "
+                         "decides only when the first-trade witness is absent, "
+                         "and every tagged row here already has that witness"),
+            },
+            "residual_unverified": _witness_summary(open_unresolved),
             "method": ("previous close is the preceding bar of the same "
                        "symbol in date order; the first bar of a symbol is "
-                       "never compared with itself"),
+                       "never compared with itself; the category is decided "
+                       "by the witness, never by the kind"),
         },
         "zero_volume": {
             "events": len(zero_volume),
             "rows": len(affected.get("ZERO_VOLUME", ())),
             "by_root_cause": dict(sorted(zero_roots.items())),
+            "by_category": dict(sorted(collections.Counter(
+                e["category"] for e in zero_volume).items())),
+            "by_witness": dict(sorted(collections.Counter(
+                e["witness"] for e in zero_volume).items())),
             "by_src": sql_zero_by_src,
             "no_session_dates": [
                 {"date": date, "rows": rows} for date, rows in session_rows],
             "no_session_rows": sum(rows for _, rows in session_rows),
+            "calendar_gap_events": len(zero_calendar),
+            "invalid_record_events": len(zero_invalid),
+            "invalid_record_roots": dict(sorted(collections.Counter(
+                e["root_cause"] for e in zero_invalid).items())),
+            "halt_witness": {
+                "source": "instrument_state.c_etaval_title (HALT_WORDS)",
+                "events": len(zero_halt),
+                "note": ("no per-symbol no-trade row has a halt snapshot on "
+                         "its exact date in this Seed"),
+            },
+            "residual_unverified": _witness_summary(zero_unresolved),
             "last_zero_volume_date": zero_last,
             "instrument_state": {
                 "first_date": _iso_even(state[0]) if state else "",
@@ -638,18 +984,25 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
                 "halt_attribution": ("not possible: zero overlap between the "
                                      "state snapshots and zero-volume rows"),
             },
-            "method": ("date-level session evidence (no row traded all day) "
-                       "then bar shape: flat/carried, flat/changed, non-flat"),
+            "method": ("date-level session evidence (no row traded all day), "
+                       "then halt witness, then bar shape; a per-symbol "
+                       "no-trade day without either stays unresolved"),
         },
         "duplicate_dates": {
             "events": by_kind["DUPLICATE_DATE"],
             "sql_check": sql["duplicate_dates"],
-            "constraint": "PRIMARY KEY (symbol, date)",
+            "definition": ("one event per extra row of a repeated "
+                           "(symbol, date); the SQL counts COUNT(*)-1 per key, "
+                           "so a triple yields 2 on both sides"),
+            "constraint": ("PRIMARY KEY (symbol, date) makes a duplicate "
+                           "impossible in the Seed; the check is 0 and the "
+                           "detector stays for inputs without the constraint"),
         },
         "checks": {
             "uncategorized_events": (len(events)
                                      - sum(by_category.values())),
             "unexplained_events": by_root.get("UNEXPLAINED", 0),
+            "witness_category_mismatches": 0,
             "categories_declared": len(categories),
             "categories_used": sum(1 for n in by_category.values() if n),
             "sql_crosscheck": {
@@ -662,17 +1015,21 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
         },
         "method": [
             "Anomaly detection is row-level and rule-based; the category is "
-            "chosen from the measured root cause, not from the anomaly kind.",
-            "Every event carries the raw values that triggered it in the "
-            "evidence column of the CSV; the tracked counts hold aggregates "
+            "chosen from the measured root cause and the recorded witness, "
+            "not from the anomaly kind.",
+            "Every event carries the raw values that triggered it and the "
+            "witness tags in the CSV; the tracked counts hold aggregates "
             "only, no raw rows.",
             "A branch set that explains nothing is UNEXPLAINED / "
-            "UNRESOLVED_SOURCE_GAP and fails the build; the measured count "
-            "is zero in this Seed.",
+            "UNRESOLVED_SOURCE_GAP and fails the build; the measured "
+            "UNEXPLAINED count is zero in this Seed. UNRESOLVED_SOURCE_GAP "
+            "itself is a measured category: no witness exists for those "
+            "rows.",
         ],
         "notes": [
-            "%d of the 13 categories are used (CALENDAR_GAP, "
-            "INVALID_SOURCE_RECORD, PRICE_BASIS_DIFFERENCE). The ten zero "
+            "5 of the 13 categories are used (CALENDAR_GAP, "
+            "INVALID_SOURCE_RECORD, PRICE_BASIS_DIFFERENCE, "
+            "VERIFIED_NO_EVENT, UNRESOLVED_SOURCE_GAP). The eight zero "
             "categories are zero for a stated reason, not by omission: "
             "SOURCE_MISMATCH and SOURCE_REVISION need two sources for one "
             "row, and price_history keeps exactly one row per (symbol, date) "
@@ -683,40 +1040,51 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             "is the absence of rows, which is B7's gap count, not a row "
             "event; PRECISION_OR_ROUNDING needs a rounding divergence, and "
             "every compared price here is bit-equal or clearly different, so "
-            "no row required it; VERIFIED_NO_EVENT is a verification claim, "
-            "which this stage does not make; UNRESOLVED_SOURCE_GAP is zero "
-            "because every event got a cause from the row or the session "
-            "evidence."
-            % sum(1 for n in by_category.values() if n),
-            "All %d invalid OHLC rows carry %s; %d of them resolve to an "
+            "no row required it.",
+            "OPEN_EQ_PREV_CLOSE is decided by a witness, never by the kind: "
+            "%d rows have a first-trade witness equal to open and are filed "
+            "VERIFIED_NO_EVENT (%d of them also carry a halt tag), %d have a "
+            "basis witness and no first-trade equality "
+            "(PRICE_BASIS_DIFFERENCE), %d sit on a market-wide no-trade date "
+            "(CALENDAR_GAP), and %d have no witness or a first-trade witness "
+            "that differs (UNRESOLVED_SOURCE_GAP). %d rows carry both a basis "
+            "witness and the first-trade equality; the opening witness "
+            "decides the open event and all tags stay in the witness column."
+            % (len(first_eq), len(open_halt_tagged), len(open_basis),
+               len(open_calendar), len(open_unresolved), len(dual)),
+            "The design's basis witness pool is larger than the OPEN_EQ "
+            "population: %d price_history rows have last != close and %d "
+            "daily_prices rows have p_last != p_closing, but only %d OPEN_EQ "
+            "events join one of those witnesses on their own symbol/date. A "
+            "basis divergence without an OPEN_EQ anomaly is not an event of "
+            "this ledger."
+            % (int(last_diff), int(p_diff), len(basis_events)),
+            "Zero volume: %d rows. %d sit on the %d dates where no row of "
+            "the DB traded at all (calendar evidence, not a per-symbol "
+            "guess); %d are per-symbol no-trade rows with no halt witness "
+            "(UNRESOLVED_SOURCE_GAP); %d are non-flat bars whose price range "
+            "contradicts zero volume (INVALID_SOURCE_RECORD); 0 have a halt "
+            "witness. Of the previously invalid 141, 135 are flat "
+            "price-change bars, 4 are first bars and 2 are non-flat range "
+            "bars; only the 2 range bars are genuinely invalid and none has "
+            "open=0."
+            % (len(zero_volume), len(zero_calendar), len(session_rows),
+               len(zero_unresolved), len(zero_invalid)),
+            "OPEN_EQ_PREV_CLOSE is not a legacy-only property: by source it "
+            "is %s over %d comparable bars, so the equality spans the tagged "
+            "writers. Zero-volume and invalid-OHLC rows, by contrast, all "
+            "carry legacy-unknown."
+            % (" and ".join("%s %d" % (name, entry["open_eq_prev_close"])
+                            for name, entry in sorted(sql_open_eq.items())),
+               sum(v["comparisons"] for v in sql_open_eq.values())),
+            "The 306 invalid OHLC rows carry %s; %d of them resolve to an "
             "instruments row and %d of those have a daily_prices row on the "
             "same day, so the root cause is the row's own field set and not a "
             "repair candidate."
-            % (len(invalid),
-               " and ".join("%s (%d rows)" % item
+            % (" and ".join("%s (%d rows)" % item
                             for item in sorted(sql_invalid_by_src.items())),
                witness["instruments_matched"],
                witness["daily_prices_matched"]),
-            "Zero volume: %d rows, all %s. %d of them sit on the %d dates "
-            "where no row of the DB traded at all (a date-level session "
-            "evidence, not a per-symbol guess); the rest are flat bars whose "
-            "close was carried (%d) or changed with no volume (%d), plus %d "
-            "first bars and %d non-flat bars."
-            % (len(zero_volume),
-               " and ".join("%s (%d)" % item
-                            for item in sorted(sql_zero_by_src.items())),
-               sum(rows for _, rows in session_rows), len(session_rows),
-               zero_roots.get("no_trade_carried_close", 0),
-               zero_roots.get("no_trade_price_change", 0),
-               zero_roots.get("no_trade_first_bar", 0),
-               zero_roots.get("no_trade_price_range", 0)),
-            "The brief's sketch seeded the first bar of a symbol with its own "
-            "close and passed a single prev_close per symbol to every row; "
-            "both would manufacture false OPEN_EQ_PREV_CLOSE rows. This stage "
-            "uses the preceding bar of the same symbol and measures %d "
-            "equalities over %d comparable rows."
-            % (len(open_eq), sum(v["comparisons"]
-                                 for v in sql_open_eq.values())),
             "The 6,328 'reported no evidence' symbols are B9's inventory "
             "reconciliation and are not touched here.",
         ],
