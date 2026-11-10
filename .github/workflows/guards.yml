@@ -250,7 +250,7 @@ jobs:
           if ($bad) { $bad | ForEach-Object { Write-Output "::error::python artifact: $($_.FullName)" }; exit 1 }
           Copy-Item "$dir/market.db" "$rt/market.db" -Force
           if (Test-Path "$dir/data") { Copy-Item -Recurse "$dir/data" "$rt/data" }
-          ( cd backend-go; go run ./cmd/runtimecheck --borsd "$dir/BorsTerminal_Ultimate.exe" --data-dir $rt --port 18082 --out "$env:RUNNER_TEMP/runtimecheck-installed.json" )
+          go -C backend-go run ./cmd/runtimecheck --borsd "$dir/BorsTerminal_Ultimate.exe" --data-dir $rt --port 18082 --out "$env:RUNNER_TEMP/runtimecheck-installed.json"
           $uninst = Get-ChildItem $dir -Filter "unins*.exe" | Select-Object -First 1
           if ($uninst) { Start-Process -FilePath $uninst.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait }
 
@@ -318,7 +318,7 @@ jobs:
           $rt = Join-Path $env:RUNNER_TEMP "rt"
           New-Item -ItemType Directory -Force $rt | Out-Null
           Copy-Item market.db "$rt/market.db"
-          ( cd backend-go; go run ./cmd/runtimecheck --borsd ../dist-ci/BorsTerminal_Ultimate.exe --data-dir $rt --port 18081 --out "$env:RUNNER_TEMP/runtimecheck.json" )
+          go -C backend-go run ./cmd/runtimecheck --borsd ../dist-ci/BorsTerminal_Ultimate.exe --data-dir $rt --port 18081 --out "$env:RUNNER_TEMP/runtimecheck.json"
           if (-not (Test-Path "$env:RUNNER_TEMP/runtimecheck.json")) { Write-Output "::error::runtimecheck produced no report"; exit 1 }
           Get-Content "$env:RUNNER_TEMP/runtimecheck.json"
 

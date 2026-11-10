@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Read-only: this lane never writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   data-tooling:
     name: data/research suites (python dev/run_all_tests.py --profile data)
@@ -17,6 +21,11 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+
+      # Structural gate for the lane split itself: stdlib only, so it runs
+      # before the dependency install and fails fast.
+      - name: Workflow layout test
+        run: python dev/test_workflows_layout.py
 
       - name: Install dependencies
         run: |
