@@ -67,11 +67,11 @@ def validate(registry, suites):
             errors.append("%s: bad disposition %r" % (script, disp))
         if prof not in PROFILES:
             errors.append("%s: bad profile %r" % (script, prof))
-        # Category/profile must agree only while the suite stays in its lane.
-        # Plan A3 migrates an A/B suite that already has a Go/TS equivalent:
-        # that entry keeps its category but moves to profile=legacy until the
-        # Python suite is retired.
-        if disp == "KEEP":
+        # Category/profile must agree except for a migrating suite: Plan A3
+        # migrates an A/B suite that already has a Go/TS equivalent.  That entry
+        # keeps its category and moves to profile=legacy (enforced below) until
+        # the Python suite is retired, so the lane mapping does not apply.
+        if disp != "MIGRATE":
             if cat == "A" and prof not in ("production", "data"):
                 errors.append("%s: category A must be production or data" % script)
             if cat == "B" and prof != "data":
