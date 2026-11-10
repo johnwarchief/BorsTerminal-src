@@ -145,6 +145,10 @@ CARD_CASES = {
 }
 ZERO_STEP = chr(0x06F0)          # «۰» — پیامِ حذفِ خودکار درِ صدرِ بینش‌ها
 MCAP_KEY = "ارزش بازار"          # کلیدِ ارزشِ بازار درِ بخشِ «secondary»
+# دلیلِ «نه شاخص ۴» درِ سه‌حالِ بی‌ارزش‌بازار/بی‌فروش — عینِ ثابتِ Go
+# `a45ReasonNoMcap` و `fts_engine.ind4_reason_text(available=False)`؛ این‌جا
+# با برابریِ کامل سنجیده می‌شود تا تغییرِ واژه بی‌صدا نماند.
+NO_MCAP_REASON = "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."
 
 
 def build_fixture(tmp):
@@ -356,10 +360,14 @@ def card_case_content(name, d):
               and "N/A" in str(a4.get("reason") or ""))
         return ok, "axis4=%r" % ({k: a4.get(k) for k in ("na", "exempt", "available")},)
     if name == "card_no_sales":
+        # محورِ ۴ «سنجیده نشد» است نه «رد»: در این شاخه `pass` سه‌حال است
+        # (None)، نه False — همان قراردادِ `api/fundamental.py` و Go.
         ok = (a4.get("na") is True and a4.get("gap_cause") == "annual_sales"
-              and a4.get("available") is False and a4.get("pass") is False
-              and "سنجیده" in str(a4.get("reason") or ""))
-        return ok, "axis4=%r" % ({k: a4.get(k) for k in ("na", "gap_cause", "available")},)
+              and a4.get("available") is False and a4.get("pass") is None
+              and str(a4.get("reason") or "") == NO_MCAP_REASON)
+        return ok, "axis4=%r reason=%r" % (
+            {k: a4.get(k) for k in ("na", "gap_cause", "available", "pass")},
+            a4.get("reason"))
     if name == "card_up_months6":
         up = read_json(os.path.join(GOLD, "card_up", "body.json"))
         ok = (d == up and d.get("score") == 4 and d.get("verdict") == "WATCH")
