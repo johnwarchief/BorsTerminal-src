@@ -163,5 +163,16 @@
   "decision": "Not a failure in the gate (named SKIP). B (data housekeeping); stays UNCLASSIFIED in A3 because it cannot execute without the baseline.",
   "evidence": "_audit/phase49-full-verification/evidence/logs/dev_db_housekeeping.py_selftest.log",
   "commit": null
+ },
+ {
+  "suite": "dev/test_rule_map_citations.py",
+  "label": "FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file",
+  "category": "C",
+  "disposition": "KEEP",
+  "error": "10/11 passed - FAIL 'NAME:LINE references land on the function line': _fts_analyze_candles:5603 (real def line 5610), _fts_jet_setup:4581 (4588), _fts_analyze_symbol:6011 (6018) in api/chart.py",
+  "root_cause": "REAL, reproduced: docs/FTS-RULE-ALGORITHM-MAP.md carries stale NAME:LINE citations - api/chart.py grew by 7 lines above those defs (likely the correction-pack work) and the three citations were not refreshed. The guard is correct; the document is stale.",
+  "decision": "Root-caused, not fixed in A3: the citation table documents the legacy api/chart.py engine map (C), the fix is a docs edit (5603->5610, 4581->4588, 6011->6018) outside this task's file scope, and it guards no product/data contract. Deferred to A4 together with the doc.",
+  "evidence": "_audit/phase49-full-verification/evidence/logs/dev_test_rule_map_citations.py.log",
+  "commit": null
  }
 ]
