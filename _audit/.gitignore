@@ -139,3 +139,4 @@ phase49/continuation/*.exe~
 /phase49-full-verification/seed/
 /phase49-full-verification/logs/
 /phase49-full-verification/ledgers/
+/phase49-full-verification/backfill-plan/
