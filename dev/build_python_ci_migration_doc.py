@@ -50,11 +50,11 @@ def build(reg, evidence):
     deprecate = sum(v for k, v in c.items() if k[1] == "DEPRECATE")
     remove = sum(v for k, v in c.items() if k[1] == "REMOVE")
     keep = sum(v for k, v in c.items() if k[1] == "KEEP")
-    # The legacy lane is selected by `profile`, not by `category`: four A rows
-    # (test_cumulative_db_v1020, market_db_union_v1069, single_writer_guard,
-    # test_bors_data_dir_seam) still carry a live MIGRATE equivalence and run in
-    # the legacy lane until they retire.  Counting only C under-reported the lane
-    # (205 instead of the registry's 209), so the number comes from the profile.
+    # The legacy lane is selected by `profile`, not by `category`: three A rows
+    # (test_cumulative_db_v1020, market_db_union_v1069, single_writer_guard) carry
+    # a live MIGRATE equivalence and run in the legacy lane until they retire.
+    # Counting only C under-reported the lane (205 instead of the registry's 209),
+    # so the number comes from the profile.
     legacy = [e for e in reg.values() if e["profile"] == "legacy"]
     legacy_c = sum(1 for e in legacy if e["category"] == "C")
     legacy_a = sum(1 for e in legacy if e["category"] == "A")
@@ -86,16 +86,18 @@ def build(reg, evidence):
     add("| REMOVE (deleted code) | %d |" % remove)
     add("")
     add("Category = what the suite exercises. Disposition = what happens to it.")
-    add("A/B keep the Python harness (`KEEP`, profiles `production`/`data`); C/D, plus four A")
-    add("rows whose Python guard still is the only gate, live in the `legacy` profile and carry")
-    add("either a real equivalence (`MIGRATE`) or a reason plus a retirement date (`DEPRECATE`).")
+    add("A/B keep the Python harness (`KEEP`, profiles `production`/`data`); C/D, plus three A")
+    add("rows whose Python guard still runs until retirement, live in the `legacy` profile and")
+    add("carry either a real equivalence (`MIGRATE`) or a reason plus a retirement date (`DEPRECATE`).")
     add("")
     add("**D = 0 is a measured result, not an omission.** Every remaining suite was parsed with")
     add("`ast`: every local module it imports exists at HEAD, and every imported symbol exists")
     add("in that module (0 missing modules, 0 missing symbols across the 221 rows). The suites")
     add("that reference retired v1 artefacts point at files that are still in the repository")
     add("(`archive/legacy_static/*`, `frontend/*`); no suite checks code that was deleted, and")
-    add("`run_all_tests.py` is untouched, so no suite was dropped. `REMOVE` is therefore unused.")
+    add("every suite remains in `run_all_tests.py` (the one `test_cumulative_db_v1020` label")
+    add("sync is a wording change, not a drop), so no suite was dropped. `REMOVE` is therefore")
+    add("unused.")
     add("")
     add("## 2. Three-lane CI target")
     add("")
@@ -200,7 +202,7 @@ def build(reg, evidence):
     add("  (`user_watchlist_v1.py` - Go asserts upsert identity and the cap, not that claim),")
     add("  the notebook derivation of the tape formulas (`tape_filters_v1034.py`), the FTS")
     add("  analysis-cache basis and the chart-read basis re-resolution (`fts_cache_basis_v1078.py`")
-    add("  - `internal/chart` appends the basis to the key at `analysis.go:98`, no Go test")
+    add("  - `internal/chart` appends the basis to the key at `analysis.go:102`, no Go test")
     add("  asserts it), the `StaleMax` cap and its negative control (`mstat_swr_v1111.py` - the")
     add("  Go tests advance only `DefaultTTL+1s`), cross-DB cache-key isolation")
     add("  (`mstat_snapshot_cache_v1.py` - `TestCallKeysAreIsolated` isolates panel/parameter")

@@ -550,7 +550,7 @@
    "profile": "legacy",
    "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "the FTS analysis cache key carries the price basis and every chart read re-resolves that basis (_attach_live_bar); internal/chart owns both paths and its key appends the basis (analysis.go:98), but no Go test asserts either claim - TestCacheKeyFollowsBasis covers only the keyLevels/MA caches",
+   "reason": "the FTS analysis cache key carries the price basis and every chart read re-resolves that basis (_attach_live_bar); internal/chart owns both paths and its key appends the basis (analysis.go:102), but no Go test asserts either claim - TestCacheKeyFollowsBasis covers only the keyLevels/MA caches",
    "retirement_date": "2026-11-10"
   },
   "dev/fts_chart_engine_v1037.py": {
@@ -1625,13 +1625,13 @@
    "script": "dev/test_bors_data_dir_seam.py",
    "label": "BORS_DATA_DIR seam: override wins, unset keeps the repo paths",
    "kind": "SUITES",
-   "category": "A",
-   "disposition": "MIGRATE",
+   "category": "C",
+   "disposition": "DEPRECATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/config/config_test.go:TestDataDirPrecedence",
+   "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "BORS_DATA_DIR seam keeps runs off the operational DB; the Go config precedence is the live contract",
-   "retirement_date": null
+   "reason": "BORS_DATA_DIR seam keeps runs off the operational DB; backend-go/internal/config owns the live precedence and TestDataDirPrecedence asserts only the env-set and flag-set (flag wins) halves - the Python suite's unset-keeps-the-repo-paths fallback has no Go assertion",
+   "retirement_date": "2026-11-10"
   },
   "dev/test_calendar_captcha_v1.py": {
    "script": "dev/test_calendar_captcha_v1.py",

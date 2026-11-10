@@ -11,27 +11,29 @@ Branch: `mission/phase49-full-verification-python-ci-2026-11-10`.
 | Measure | Count |
 | --- | ---: |
 | Suites in the runner (`SUITES` + `JS_SUITES`) | 258 |
-| A - live product/data contract | 18 |
+| A - live product/data contract | 17 |
 | B - data / research / CI-tooling guard | 35 |
-| C - legacy Python backend, API, UI or build surface | 205 |
+| C - legacy Python backend, API, UI or build surface | 206 |
 | D - obsolete, checked code deleted | 0 |
-| Legacy lane (`profile=legacy` rows) | 209 (205 C + 4 A) |
+| Legacy lane (`profile=legacy` rows) | 209 (206 C + 3 A) |
 | KEEP | 49 |
-| MIGRATE (named Go/TS test owns the behaviour) | 9 |
-| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 200 |
+| MIGRATE (named Go/TS test owns the behaviour) | 8 |
+| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 201 |
 | REMOVE (deleted code) | 0 |
 
 Category = what the suite exercises. Disposition = what happens to it.
-A/B keep the Python harness (`KEEP`, profiles `production`/`data`); C/D, plus four A
-rows whose Python guard still is the only gate, live in the `legacy` profile and carry
-either a real equivalence (`MIGRATE`) or a reason plus a retirement date (`DEPRECATE`).
+A/B keep the Python harness (`KEEP`, profiles `production`/`data`); C/D, plus three A
+rows whose Python guard still runs until retirement, live in the `legacy` profile and
+carry either a real equivalence (`MIGRATE`) or a reason plus a retirement date (`DEPRECATE`).
 
 **D = 0 is a measured result, not an omission.** Every remaining suite was parsed with
 `ast`: every local module it imports exists at HEAD, and every imported symbol exists
 in that module (0 missing modules, 0 missing symbols across the 221 rows). The suites
 that reference retired v1 artefacts point at files that are still in the repository
 (`archive/legacy_static/*`, `frontend/*`); no suite checks code that was deleted, and
-`run_all_tests.py` is untouched, so no suite was dropped. `REMOVE` is therefore unused.
+every suite remains in `run_all_tests.py` (the one `test_cumulative_db_v1020` label
+sync is a wording change, not a drop), so no suite was dropped. `REMOVE` is therefore
+unused.
 
 ## 2. Three-lane CI target
 
@@ -39,7 +41,7 @@ that reference retired v1 artefacts point at files that are still in the reposit
 | --- | --- | --- | --- | --- |
 | Production | `guards.yml` | no Python suite | blocking | Go (`go-backend`, `go-race`, `go-windows`), `frontend-v2`, `delivery-contract`, `data-integrity` (A only), `repo-hygiene`, `zero-python-runtime` |
 | Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 35 B suites (data contracts, fixture oracles, stdlib tooling guards) |
-| Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 209 suites (205 C + 4 A): MIGRATE until retired + DEPRECATE |
+| Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 209 suites (206 C + 3 A): MIGRATE until retired + DEPRECATE |
 
 `python-guards` and `js-syntax` leave the production gate; the legacy lane keeps them
 visible without blocking a release. The registry guard (`dev/suite_registry_guard.py`)
@@ -155,7 +157,7 @@ is green after the A4 fix.
   (`user_watchlist_v1.py` - Go asserts upsert identity and the cap, not that claim),
   the notebook derivation of the tape formulas (`tape_filters_v1034.py`), the FTS
   analysis-cache basis and the chart-read basis re-resolution (`fts_cache_basis_v1078.py`
-  - `internal/chart` appends the basis to the key at `analysis.go:98`, no Go test
+  - `internal/chart` appends the basis to the key at `analysis.go:102`, no Go test
   asserts it), the `StaleMax` cap and its negative control (`mstat_swr_v1111.py` - the
   Go tests advance only `DefaultTTL+1s`), cross-DB cache-key isolation
   (`mstat_snapshot_cache_v1.py` - `TestCallKeysAreIsolated` isolates panel/parameter
@@ -217,7 +219,7 @@ is green after the A4 fix.
 | `dev/execution_service_v1.py` | C | DEPRECATE | legacy | `-` | no replacement: the Python execution service (dry-run default, reconcile-only) retires | 2026-11-10 |
 | `dev/execution_timing_v1.py` | C | DEPRECATE | legacy | `-` | no replacement: the Python monotonic scheduler/clock-quality probe retires | 2026-11-10 |
 | `dev/fts_antirepaint_v1086.py` | C | DEPRECATE | legacy | `-` | anti-repaint rules of api/chart; internal/chart rules own prefix stability (TestRuleClosedOnlyStructure, TestRuleBucketForming) | 2026-11-10 |
-| `dev/fts_cache_basis_v1078.py` | C | DEPRECATE | legacy | `-` | the FTS analysis cache key carries the price basis and every chart read re-resolves that basis (_attach_live_bar); internal/chart owns both paths and its key appends the basis (analysis.go:98), but no Go test asserts either claim - TestCacheKeyFollowsBasis covers only the keyLevels/MA caches | 2026-11-10 |
+| `dev/fts_cache_basis_v1078.py` | C | DEPRECATE | legacy | `-` | the FTS analysis cache key carries the price basis and every chart read re-resolves that basis (_attach_live_bar); internal/chart owns both paths and its key appends the basis (analysis.go:102), but no Go test asserts either claim - TestCacheKeyFollowsBasis covers only the keyLevels/MA caches | 2026-11-10 |
 | `dev/fts_chart_engine_v1037.py` | C | DEPRECATE | legacy | `-` | fib belts and setup markers from the Python chart engine; internal/chart owns the FTS payload (TestFTSVectors); the v1 TS overlays are retired | 2026-11-10 |
 | `dev/fts_defaults_parity_guard.py` | C | DEPRECATE | legacy | `-` | server FTS defaults vs the v1 FE drawer; internal/ftsconfig owns the defaults (TestStore_DefaultsAndPersistence) and frontend-v2 reads them | 2026-11-10 |
 | `dev/fts_engine_honesty_v1066.py` | C | DEPRECATE | legacy | `-` | engine honesty rules (no invented week/fib/stop/MA52 numbers) of api/chart; internal/chart and internal/fundamental own honesty in the Go payload | 2026-11-10 |
@@ -307,7 +309,7 @@ is green after the A4 fix.
 | `dev/test_adjustment_phasea.py` | C | DEPRECATE | legacy | `-` | adjustment mode semantics of api; internal/chart adjust engine owns the chain (TestAdjustmentEngine_ComputeFactors) | 2026-11-10 |
 | `dev/test_arg_parse_v10.py` | B | KEEP | data | `-` | release tooling: make_patch --from argument parsing gate | - |
 | `dev/test_board_fixture_v1120.py` | B | KEEP | data | `-` | B1 board fixture: goldens, deterministic build and Go sql_text.go byte-exactness; the oracle imports api.market, so locally NOT_MEASURED (fastapi absent) | - |
-| `dev/test_bors_data_dir_seam.py` | A | MIGRATE | legacy | `backend-go/internal/config/config_test.go:TestDataDirPrecedence` | BORS_DATA_DIR seam keeps runs off the operational DB; the Go config precedence is the live contract | - |
+| `dev/test_bors_data_dir_seam.py` | C | DEPRECATE | legacy | `-` | BORS_DATA_DIR seam keeps runs off the operational DB; backend-go/internal/config owns the live precedence and TestDataDirPrecedence asserts only the env-set and flag-set (flag wins) halves - the Python suite's unset-keeps-the-repo-paths fallback has no Go assertion | 2026-11-10 |
 | `dev/test_calendar_captcha_v1.py` | C | DEPRECATE | legacy | `-` | calendar 429 captcha handoff of the Python fetcher; internal/codal retries with backoff (TestPoliteClient_RetryAfter_Seconds); captcha handoff is not ported | 2026-11-10 |
 | `dev/test_calendar_merge_v11.py` | C | DEPRECATE | legacy | `-` | calendar Cat6 merge of the Python codal cache; internal/period and internal/chart own the Go calendar path | 2026-11-10 |
 | `dev/test_calendar_v92.py` | C | DEPRECATE | legacy | `-` | legacy calendar py<->js category parity; the JS calendar is retired and internal/period owns the calendar | 2026-11-10 |
