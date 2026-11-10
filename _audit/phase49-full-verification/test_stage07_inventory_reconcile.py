@@ -74,7 +74,35 @@ def _edge_tests():
         # Raw spellings are counted as written, keys after normalisation:
         # "ب " is a fifth raw spelling and a second spelling without history.
         assert rep["raw_universe"]["symbols"] == 5, rep["raw_universe"]
+        assert rep["raw_universe"]["keys"] == 4, rep["raw_universe"]
         assert rep["raw_universe"]["no_price_history"] == 2, rep["raw_universe"]
+        assert rep["raw_universe"][
+            "no_price_history_instrument_only"] == 1, rep["raw_universe"]
+        assert rep["raw_universe"][
+            "no_price_history_alias_spellings"] == 0, rep["raw_universe"]
+        assert rep["raw_universe"]["no_price_history_other"] == 1, rep
+
+        # An alias spelling of a history key is counted raw but collapses onto
+        # its key: 3 raw spellings, 2 keys, 1 double-counted key.
+        alias_db = os.path.join(tmp, "alias.db")
+        acon = sqlite3.connect(alias_db)
+        acon.executescript(
+            "CREATE TABLE price_history(symbol TEXT, date TEXT);"
+            "CREATE TABLE instruments(ins_code TEXT, l_val18 TEXT);")
+        acon.executemany("INSERT INTO price_history VALUES (?,?)",
+                         [("ج", "2026-01-01"), ("د", "2026-01-01")])
+        acon.commit()
+        alias_rep = S.reconcile(acon, pack_symbols={"ج "},
+                                product_symbols={"ج"})
+        acon.close()
+        raw = alias_rep["raw_universe"]
+        assert raw["symbols"] == 3 and raw["keys"] == 2, raw
+        assert raw["no_price_history"] == 1, raw
+        assert raw["no_price_history_instrument_only"] == 0, raw
+        assert raw["no_price_history_alias_spellings"] == 1, raw
+        assert raw["no_price_history_other"] == 0, raw
+        assert raw["alias_spellings_from_pack"] == 1, raw
+        assert raw["alias_spellings_from_product_events"] == 0, raw
 
         # The r32b block is the report's definition, not a second count: the
         # instrument-only key covered by the legacy pack never needs evidence,

@@ -7,6 +7,7 @@
   "no_evidence_history_split": true,
   "pack_keys_split": true,
   "pack_symbols_inside_history": true,
+  "raw_no_history_split": true,
   "report_no_evidence_adds_up": true,
   "union_equals_history_plus_instrument_only": true
  },
@@ -94,7 +95,7 @@
  },
  "notes": [
   "Two universes, named: 6103 history symbols split into 4635 with an instruments key and 1468 without; the 5941 named instruments split into 4635 with history and 1306 without. 5944 instruments rows minus 3 duplicate-name rows equals 5941 named keys; 0 shared keys spell the instruments name differently from the history symbol. Union = 7409.",
-  "Raw spellings: 7446 symbols = 6103 history + 1343 without a price_history row (the inventory's no_price_history flag); the key-level union is 7409 because the spelling variants collapse.",
+  "Raw spellings: 7446 symbols = 6103 history + 1343 without a price_history row (the inventory's no_price_history flag). The 1343 split into 1306 instruments-only raw names + 37 pack/adjust_events alias spellings whose normalised keys are in history (36 of them are also pack spellings, 37 are adjust_events spellings; 0 other), so the 7446 raw spellings double-count 37 keys against the 7409-key union.",
   "The corrections pack is 951 raw symbols under 915 keys (36 alias spellings) and 8280 step rows; 915 of its keys are inside the history universe. History without a pack step = 5188 (85.0% of 6103).",
   "history_validity: 6103 rows (reconstructed_verified=880, unverified=5188, verified=35), 5188 unverified with 0 of them carrying a pack step; the unverified set matches the history symbols without a pack step.",
   "adjust_events: 12829 rows under 1087 raw symbols (1051 keys); 37 raw spellings are outside the history spelling set but 0 keys are outside the history key set. 890 of the pack keys already have product events; 161 symbols have product events and no pack step.",
@@ -132,8 +133,14 @@
   "schema": "phase49-finalization-db-inventory-v1"
  },
  "raw_universe": {
-  "definition": "distinct raw spellings across price_history, instruments, pack and adjust_events; no_price_history counts the spellings with no price_history row",
+  "alias_spellings_from_pack": 36,
+  "alias_spellings_from_product_events": 37,
+  "definition": "distinct raw spellings across price_history, instruments, pack and adjust_events; no_price_history counts the spellings with no price_history row, split into instrument-only names, pack/adjust_events alias spellings whose normalised key is in history, and other",
+  "keys": 7409,
   "no_price_history": 1343,
+  "no_price_history_alias_spellings": 37,
+  "no_price_history_instrument_only": 1306,
+  "no_price_history_other": 0,
   "symbols": 7446
  },
  "report_no_evidence": {

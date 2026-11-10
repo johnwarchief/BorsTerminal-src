@@ -43,8 +43,10 @@ The 6,328 "no adjustment evidence" figure
     (827 symbols). Its universe is the union
     ``history | instruments | pack | adjust_events`` (7,446 raw symbols) and
     the flag means "no ``adjust_events`` row and no pack step". It is not a
-    history-symbol count (6,103) and not a pack-step count (5,188 by key,
-    5,152 by raw spelling).
+    history-symbol count (6,103) and not a pack-step count: history without a
+    pack step is 5,188 raw spellings and 5,188 keys, because history spells
+    every key exactly once and the pack's 36 alias spellings are not history
+    spellings.
 
     Reproduced here exactly: 6,328 = 5,022 history symbols without evidence
     + 1,306 instruments without history, using that r32b pack. With the
@@ -311,15 +313,29 @@ def reconcile(con, pack_symbols=None, pack_steps=0, legacy_pack_symbols=None,
             "history_plus_instruments_identity": (
                 len(history_without) + len(instrument_only - evidence)),
         }
-        raw_union = (set(hist_raw) | {name for _, name in inst_rows_list}
-                     | set(product) | pack_raw)
+        hist_spellings = set(hist_raw)
+        inst_raw = {name for _, name in inst_rows_list}
+        raw_union = hist_spellings | inst_raw | set(product) | pack_raw
+        no_history = raw_union - hist_spellings
+        instrument_only_raw = {s for s in no_history if s in inst_raw}
+        aliases = {s for s in no_history - instrument_only_raw
+                   if key(s) in hist_keys}
+        other = no_history - instrument_only_raw - aliases
         rep["raw_universe"] = {
             "symbols": len(raw_union),
-            "no_price_history": len(raw_union - set(hist_raw)),
+            "keys": len({key(s) for s in raw_union}),
+            "no_price_history": len(no_history),
+            "no_price_history_instrument_only": len(instrument_only_raw),
+            "no_price_history_alias_spellings": len(aliases),
+            "no_price_history_other": len(other),
+            "alias_spellings_from_pack": len(aliases & pack_raw),
+            "alias_spellings_from_product_events": len(aliases & set(product)),
             "definition": "distinct raw spellings across price_history, "
                           "instruments, pack and adjust_events; "
                           "no_price_history counts the spellings with no "
-                          "price_history row",
+                          "price_history row, split into instrument-only "
+                          "names, pack/adjust_events alias spellings whose "
+                          "normalised key is in history, and other",
         }
 
     validity = _validity_rows(con)
@@ -456,6 +472,13 @@ def _note_checks(rep):
             rep["no_adjustment_evidence"]["history_symbols_with_evidence"]
             + rep["no_adjustment_evidence"]["history_symbols_without_evidence"]
             == rep["history_symbols"])
+    if "raw_universe" in rep:
+        raw = rep["raw_universe"]
+        checks["raw_no_history_split"] = (
+            raw["no_price_history_instrument_only"]
+            + raw["no_price_history_alias_spellings"]
+            + raw["no_price_history_other"]
+            == raw["no_price_history"])
     if "report_no_evidence" in rep:
         checks["report_no_evidence_adds_up"] = (
             rep["report_no_evidence"]["union_symbols_without_evidence"]
@@ -483,12 +506,27 @@ def _notes(rep):
            rep["instruments_named"],
            rep["shared_keys_with_different_spelling"], rep["union_symbols"]),
         "Raw spellings: %d symbols = %d history + %d without a price_history "
-        "row (the inventory's no_price_history flag); the key-level union is "
-        "%d because the spelling variants collapse."
+        "row (the inventory's no_price_history flag). The %d split into %d "
+        "instruments-only raw names + %d pack/adjust_events alias spellings "
+        "whose normalised keys are in history (%d of them are also pack "
+        "spellings, %d are adjust_events spellings; %d other), so the %d "
+        "raw spellings double-count %d keys against the %d-key union."
         % ((rep.get("raw_universe") or {}).get("symbols", 0),
            rep["history_symbols"],
            (rep.get("raw_universe") or {}).get("no_price_history", 0),
-           rep["union_symbols"]),
+           (rep.get("raw_universe") or {}).get("no_price_history", 0),
+           (rep.get("raw_universe") or {}).get(
+               "no_price_history_instrument_only", 0),
+           (rep.get("raw_universe") or {}).get(
+               "no_price_history_alias_spellings", 0),
+           (rep.get("raw_universe") or {}).get("alias_spellings_from_pack", 0),
+           (rep.get("raw_universe") or {}).get(
+               "alias_spellings_from_product_events", 0),
+           (rep.get("raw_universe") or {}).get("no_price_history_other", 0),
+           (rep.get("raw_universe") or {}).get("symbols", 0),
+           (rep.get("raw_universe") or {}).get("symbols", 0)
+           - (rep.get("raw_universe") or {}).get("keys", 0),
+           (rep.get("raw_universe") or {}).get("keys", 0)),
         "The corrections pack is %d raw symbols under %d keys (%d alias "
         "spellings) and %d step rows; %d of its keys are inside the history "
         "universe. History without a pack step = %d (%s)."
