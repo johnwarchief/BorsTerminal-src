@@ -546,12 +546,12 @@
    "label": "FTS analysis cache key carries the price basis (with a negative control)",
    "kind": "SUITES",
    "category": "C",
-   "disposition": "MIGRATE",
+   "disposition": "DEPRECATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/chart/handlers_test.go:TestCacheKeyFollowsBasis",
+   "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "the analysis cache key carries the price basis and a basis switch changes the MA; the Go handler test asserts the same key and the same negative control",
-   "retirement_date": null
+   "reason": "the FTS analysis cache key carries the price basis and every chart read re-resolves that basis (_attach_live_bar); internal/chart owns both paths and its key appends the basis (analysis.go:98), but no Go test asserts either claim - TestCacheKeyFollowsBasis covers only the keyLevels/MA caches",
+   "retirement_date": "2026-11-10"
   },
   "dev/fts_chart_engine_v1037.py": {
    "script": "dev/fts_chart_engine_v1037.py",
@@ -1158,12 +1158,12 @@
    "label": "shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation",
    "kind": "SUITES",
    "category": "C",
-   "disposition": "MIGRATE",
+   "disposition": "DEPRECATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/mstat/service_test.go:TestCallReturnsClone",
+   "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "a panel never mutates the shared snapshot, separate DB files never share a key and a data marker change invalidates the snapshot; TestCallReturnsClone + TestCallKeysAreIsolated + TestCallMarkerChangeInvalidates assert exactly those three claims",
-   "retirement_date": null
+   "reason": "a panel never mutates the shared snapshot and a data-marker change invalidates it (TestCallReturnsClone, TestCallMarkerChangeInvalidates), but the third claim - two separate DB files never share a cache key - has no Go assertion: TestCallKeysAreIsolated isolates panel/parameter keys inside one Service, and cross-DB isolation in internal/mstat is only structural (one map per Service)",
+   "retirement_date": "2026-11-10"
   },
   "dev/mstat_snapshot_singleflight_v1.py": {
    "script": "dev/mstat_snapshot_singleflight_v1.py",
@@ -1182,12 +1182,12 @@
    "label": "mstat panels: stale-while-revalidate + stale cap + single-flight, errors never cached, 3 negative controls",
    "kind": "SUITES",
    "category": "C",
-   "disposition": "MIGRATE",
+   "disposition": "DEPRECATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/mstat/service_test.go:TestCallServesStaleWhileRebuilding",
+   "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "stale-while-revalidate with a stale cap, single-flight, no error caching and no state cross-serve; TestCallNoStaleWhenDisallowed + TestCallDoesNotCacheErrors + TestCallSingleFlight cover the same locks (StaleMax=90s)",
-   "retirement_date": null
+   "reason": "stale-while-revalidate, single-flight, no error caching and no state cross-serve on mstat panels; internal/mstat owns the cache, but its tests advance only DefaultTTL+1s and never assert the StaleMax=90s cap or its negative control, so the Python harness is the only gate for that claim",
+   "retirement_date": "2026-11-10"
   },
   "dev/mstat_value_source_semantics_v1.py": {
    "script": "dev/mstat_value_source_semantics_v1.py",
@@ -1827,14 +1827,14 @@
   },
   "dev/test_cumulative_db_v1020.py": {
    "script": "dev/test_cumulative_db_v1020.py",
-   "label": "market.db re-extracts on a new bundled baseline",
+   "label": "market.db merges a new bundled baseline over the existing database",
    "kind": "SUITES",
    "category": "A",
    "disposition": "MIGRATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/seed/seed_test.go:TestEnsureExtractsSeedWhenDatabaseMissing",
+   "go_equivalent": "backend-go/internal/seed/seed_test.go:TestEnsureMergePreservesExistingAndAddsHistory",
    "ts_equivalent": null,
-   "reason": "a new bundled baseline must be extracted over the old DB; Go seed extraction owns this path",
+   "reason": "a new bundled baseline merges over the existing market.db instead of replacing it: existing rows and current-only tables survive, seed history is added, the seed's user tables are not copied and a pre-merge backup is written; internal/seed owns that upgrade path and TestEnsureMergePreservesExistingAndAddsHistory asserts it",
    "retirement_date": null
   },
   "dev/test_db_isolation_v1.py": {
@@ -1878,12 +1878,12 @@
    "label": "FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak",
    "kind": "SUITES",
    "category": "C",
-   "disposition": "MIGRATE",
+   "disposition": "DEPRECATE",
    "profile": "legacy",
-   "go_equivalent": "backend-go/internal/chart/chartdb_test.go:TestAsOfIsARealCutoff",
+   "go_equivalent": null,
    "ts_equivalent": null,
-   "reason": "as_of is a real candle cutoff and the cache key carries it so two cutoffs never cross-serve; the Go analysis test asserts the same bars, verdict movement and one key per cutoff (the Go key also carries the ruleset version, analysis.go:98, but the test does not assert that component, and the basis/entry-hint/tf key matrix is Python-only)",
-   "retirement_date": null
+   "reason": "as_of is a real lookahead-free candle cutoff; internal/chart owns it and TestAsOfIsARealCutoff asserts the bars, the verdict movement and one key per cutoff, but the key's ruleset-version (rs=) and tf=daily assertions are Python-only, so the equivalence would be partial",
+   "retirement_date": "2026-11-10"
   },
   "dev/test_fts_basis_anchor_v1.py": {
    "script": "dev/test_fts_basis_anchor_v1.py",

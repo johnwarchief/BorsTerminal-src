@@ -15,15 +15,16 @@ Branch: `mission/phase49-full-verification-python-ci-2026-11-10`.
 | B - data / research / CI-tooling guard | 35 |
 | C - legacy Python backend, API, UI or build surface | 205 |
 | D - obsolete, checked code deleted | 0 |
+| Legacy lane (`profile=legacy` rows) | 209 (205 C + 4 A) |
 | KEEP | 49 |
-| MIGRATE (named Go/TS test owns the behaviour) | 13 |
-| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 196 |
+| MIGRATE (named Go/TS test owns the behaviour) | 9 |
+| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 200 |
 | REMOVE (deleted code) | 0 |
 
 Category = what the suite exercises. Disposition = what happens to it.
-A/B keep the Python harness (`KEEP`, profiles `production`/`data`); C/D live in the
-`legacy` profile and carry either a real equivalence (`MIGRATE`) or a reason plus a
-retirement date (`DEPRECATE`).
+A/B keep the Python harness (`KEEP`, profiles `production`/`data`); C/D, plus four A
+rows whose Python guard still is the only gate, live in the `legacy` profile and carry
+either a real equivalence (`MIGRATE`) or a reason plus a retirement date (`DEPRECATE`).
 
 **D = 0 is a measured result, not an omission.** Every remaining suite was parsed with
 `ast`: every local module it imports exists at HEAD, and every imported symbol exists
@@ -38,7 +39,7 @@ that reference retired v1 artefacts point at files that are still in the reposit
 | --- | --- | --- | --- | --- |
 | Production | `guards.yml` | no Python suite | blocking | Go (`go-backend`, `go-race`, `go-windows`), `frontend-v2`, `delivery-contract`, `data-integrity` (A only), `repo-hygiene`, `zero-python-runtime` |
 | Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 35 B suites (data contracts, fixture oracles, stdlib tooling guards) |
-| Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 205 C suites (MIGRATE until retired + DEPRECATE) |
+| Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 209 suites (205 C + 4 A): MIGRATE until retired + DEPRECATE |
 
 `python-guards` and `js-syntax` leave the production gate; the legacy lane keeps them
 visible without blocking a release. The registry guard (`dev/suite_registry_guard.py`)
@@ -69,7 +70,10 @@ on this machine, so the annotation itself could not be read; the 24 rows below a
 **16 failures Task A3 root-caused** plus **the first eight additional FAILED labels of
 the tracked CI capture `_audit/ci_guards_log.txt`** (in capture order), each
 re-measured here through `dev/run_all_tests.py --only`. Every row links to a tracked
-excerpt; the ignored `logs/*.log` files are never the citation.
+excerpt; the ignored `logs/*.log` files are never the citation. Each row also carries
+`excerpt_sha256` (sha256 of the tracked excerpt, so the evidence verifies from a fresh
+clone) and `source_log_sha256` (provenance of the ignored source log, which the
+excerpt's own `# sha256:` header repeats).
 
 | # | Suite | Status | Cat/Disp | Error (measured) | Evidence |
 | ---: | --- | --- | --- | --- | --- |
@@ -80,7 +84,7 @@ excerpt; the ignored `logs/*.log` files are never the citation.
 | 5 | `dev/test_board_fixture_v1120.py` | NOT_MEASURED | B/KEEP | B1: 5/6 checks pass; the only failing check is 'goldens equal a fresh oracle run (parsed JSON)' with ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_board_fixture_v1120.py.txt) |
 | 6 | `dev/test_mstat_fixture_v1121.py` | NOT_MEASURED | B/KEEP | B2: 63/64 checks pass; the only failing check is 'goldens equal a fresh oracle run (parsed JSON)' with ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_mstat_fixture_v1121.py.txt) |
 | 7 | `dev/test_chart_fixture_b3.py` | NOT_MEASURED | B/KEEP | B3: 44 passed / 3 failed; all three failures (goldens oracle, FTS engine vectors, CDN-seam negative control) die on ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_chart_fixture_b3.py.txt) |
-| 8 | `dev/test_fundamental_fixture_b4.py` | MEASURED_FAIL | B/KEEP | B4: 42 passed / 3 failed. Remaining: 'fundamental goldens equal a fresh oracle run' (fastapi), 'card oracle runs clean' (rc=1, fastapi), 'card/card_no_sales has content'. The two fixture checks now pass: 'fundamental fix | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_fixture_b4.py.txt) |
+| 8 | `dev/test_fundamental_fixture_b4.py` | NOT_MEASURED | B/KEEP | B4: 43 passed / 2 failed. The only failing checks are the two fastapi oracle sections: 'fundamental goldens equal a fresh oracle run' (ModuleNotFoundError: No module named 'fastapi') and 'card oracle runs clean' (rc=1, s | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_fixture_b4.py.txt) |
 | 9 | `dev/test_fundamental_vectors_b4.py` | NOT_MEASURED | B/KEEP | 1/2: 'both oracle scripts run' fails — tools/parity/gen_fundamental_vectors.py rc=1 with ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_vectors_b4.py.txt) |
 | 10 | `dev/chart_api_check_v95.py` | MEASURED_FAIL | C/DEPRECATE | 10/18 passed: FAIL klinecharts installed (MISSING) plus 7 dependent checks and the negative control | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_chart_api_check_v95.py.txt) |
 | 11 | `dev/qa_routes_guard.py` | MEASURED_FAIL | C/DEPRECATE | FileNotFoundError: [WinError 2] at dev/qa_routes_guard.py:82 (subprocess.run(node ...)) | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_qa_routes_guard.py.txt) |
@@ -122,6 +126,16 @@ is green after the A4 fix.
    `_fts_analyze_candles:5603` -> `5610`, `_fts_jet_setup:4581` -> `4588`,
    `_fts_analyze_symbol:6011` -> `6018`, matching the real `def` lines in
    `api/chart.py`. Before: `10/11 passed`. After: `11/11 passed`.
+3. **B4 stale `card_no_sales` reason predicate** (`dev/test_fundamental_fixture_b4.py`).
+   The predicate required the retired axis-4 wording (the sales-to-market-cap note) and
+   `pass is False`, while the current branch emits the no-market-cap/no-sales reason and
+   a tri-state `pass: null` - the same values as Go's `a45ReasonNoMcap`
+   (`backend-go/internal/fundamental/axis45.go:795/846`) and the committed golden
+   (`card_no_sales/body.json:146/155`). The case now asserts full-string equality with
+   the current reason plus `pass is None`, keeping the exact `na`/`gap_cause`/`available`
+   checks. Before: `FAIL card/card_no_sales has content` (42 passed / 3 failed). After:
+   `PASS card/card_no_sales has content` (43 passed / 2 failed; both remaining reds are
+   the `fastapi` oracle sections listed above). No golden or fixture byte changed.
 
 ## 5. Method (and what was deliberately *not* migrated)
 
@@ -139,7 +153,14 @@ is green after the A4 fix.
   (`board_hist_cache_v1056.py`), the closing-anchor invariance
   (`price_basis_v1070.py`), `get()` on a missing watchlist row
   (`user_watchlist_v1.py` - Go asserts upsert identity and the cap, not that claim),
-  and the notebook derivation of the tape formulas (`tape_filters_v1034.py`).
+  the notebook derivation of the tape formulas (`tape_filters_v1034.py`), the FTS
+  analysis-cache basis and the chart-read basis re-resolution (`fts_cache_basis_v1078.py`
+  - `internal/chart` appends the basis to the key at `analysis.go:98`, no Go test
+  asserts it), the `StaleMax` cap and its negative control (`mstat_swr_v1111.py` - the
+  Go tests advance only `DefaultTTL+1s`), cross-DB cache-key isolation
+  (`mstat_snapshot_cache_v1.py` - `TestCallKeysAreIsolated` isolates panel/parameter
+  keys inside one `Service`), and the `as_of` key's ruleset/tf components
+  (`test_fts_asof_cutoff.py`).
 - `B` now also covers stdlib-only CI-tooling guards that must keep running (the suite
   registry, runner profiles, version anchors, Persian glyphs, repo hygiene), which is
   the controller's ruling for the two new CI-tooling tests.
@@ -196,7 +217,7 @@ is green after the A4 fix.
 | `dev/execution_service_v1.py` | C | DEPRECATE | legacy | `-` | no replacement: the Python execution service (dry-run default, reconcile-only) retires | 2026-11-10 |
 | `dev/execution_timing_v1.py` | C | DEPRECATE | legacy | `-` | no replacement: the Python monotonic scheduler/clock-quality probe retires | 2026-11-10 |
 | `dev/fts_antirepaint_v1086.py` | C | DEPRECATE | legacy | `-` | anti-repaint rules of api/chart; internal/chart rules own prefix stability (TestRuleClosedOnlyStructure, TestRuleBucketForming) | 2026-11-10 |
-| `dev/fts_cache_basis_v1078.py` | C | MIGRATE | legacy | `backend-go/internal/chart/handlers_test.go:TestCacheKeyFollowsBasis` | the analysis cache key carries the price basis and a basis switch changes the MA; the Go handler test asserts the same key and the same negative control | - |
+| `dev/fts_cache_basis_v1078.py` | C | DEPRECATE | legacy | `-` | the FTS analysis cache key carries the price basis and every chart read re-resolves that basis (_attach_live_bar); internal/chart owns both paths and its key appends the basis (analysis.go:98), but no Go test asserts either claim - TestCacheKeyFollowsBasis covers only the keyLevels/MA caches | 2026-11-10 |
 | `dev/fts_chart_engine_v1037.py` | C | DEPRECATE | legacy | `-` | fib belts and setup markers from the Python chart engine; internal/chart owns the FTS payload (TestFTSVectors); the v1 TS overlays are retired | 2026-11-10 |
 | `dev/fts_defaults_parity_guard.py` | C | DEPRECATE | legacy | `-` | server FTS defaults vs the v1 FE drawer; internal/ftsconfig owns the defaults (TestStore_DefaultsAndPersistence) and frontend-v2 reads them | 2026-11-10 |
 | `dev/fts_engine_honesty_v1066.py` | C | DEPRECATE | legacy | `-` | engine honesty rules (no invented week/fib/stop/MA52 numbers) of api/chart; internal/chart and internal/fundamental own honesty in the Go payload | 2026-11-10 |
@@ -247,9 +268,9 @@ is green after the A4 fix.
 | `dev/mstat_group_validate_v1120.py` | C | DEPRECATE | legacy | `-` | unknown mstat group/tab is a loud 400 in the Python API; internal/mstat handlers validate params (TestHandlerParamRules) | 2026-11-10 |
 | `dev/mstat_industry_depth_semantics_v1.py` | A | KEEP | production | `-` | product panel contract: missing industry queue depth stays null, an available depth is summed (never a fake zero). No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
 | `dev/mstat_local_v975.py` | C | DEPRECATE | legacy | `-` | mstat dashboard computed from a local market.db by the Python engine; internal/mstat computes the live panels (TestPanelsMatchGolden) | 2026-11-10 |
-| `dev/mstat_snapshot_cache_v1.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallReturnsClone` | a panel never mutates the shared snapshot, separate DB files never share a key and a data marker change invalidates the snapshot; TestCallReturnsClone + TestCallKeysAreIsolated + TestCallMarkerChangeInvalidates assert exactly those three claims | - |
+| `dev/mstat_snapshot_cache_v1.py` | C | DEPRECATE | legacy | `-` | a panel never mutates the shared snapshot and a data-marker change invalidates it (TestCallReturnsClone, TestCallMarkerChangeInvalidates), but the third claim - two separate DB files never share a cache key - has no Go assertion: TestCallKeysAreIsolated isolates panel/parameter keys inside one Service, and cross-DB isolation in internal/mstat is only structural (one map per Service) | 2026-11-10 |
 | `dev/mstat_snapshot_singleflight_v1.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallSingleFlight` | cold concurrent panel requests share one build; the Go single-flight test asserts one compute across five concurrent callers | - |
-| `dev/mstat_swr_v1111.py` | C | MIGRATE | legacy | `backend-go/internal/mstat/service_test.go:TestCallServesStaleWhileRebuilding` | stale-while-revalidate with a stale cap, single-flight, no error caching and no state cross-serve; TestCallNoStaleWhenDisallowed + TestCallDoesNotCacheErrors + TestCallSingleFlight cover the same locks (StaleMax=90s) | - |
+| `dev/mstat_swr_v1111.py` | C | DEPRECATE | legacy | `-` | stale-while-revalidate, single-flight, no error caching and no state cross-serve on mstat panels; internal/mstat owns the cache, but its tests advance only DefaultTTL+1s and never assert the StaleMax=90s cap or its negative control, so the Python harness is the only gate for that claim | 2026-11-10 |
 | `dev/mstat_value_source_semantics_v1.py` | A | KEEP | production | `-` | product panel contract: client value provenance is native/mixed/reconstructed, never silently relabelled. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
 | `dev/notifications_sources_cache_v1.py` | C | DEPRECATE | legacy | `-` | notification source-facts cache of notifications.py; internal/notifications owns the feed and source states (TestSources, TestFeedAndFilters) | 2026-11-10 |
 | `dev/npm_lock_v1040.py` | C | DEPRECATE | legacy | `-` | guards the legacy frontend npm tree and the python-guards npm-ci step; frontend-v2 owns its own lockfile in the frontend-v2 job | 2026-11-10 |
@@ -303,11 +324,11 @@ is green after the A4 fix.
 | `dev/test_codal_validation_v11.py` | B | KEEP | data | `-` | data validation: staging validation gates reject corrupt rows before they reach the DB | - |
 | `dev/test_compat_guard_v1012.py` | C | DEPRECATE | legacy | `-` | Windows GPU/software-render guard for the Python webview shell; the Tauri shell owns renderer compatibility | 2026-11-10 |
 | `dev/test_corporate_ledger_v1.py` | B | KEEP | data | `-` | data engineering: the canonical corporate-action ledger uses the official source ratio, dedupes same-day rows and never fabricates | - |
-| `dev/test_cumulative_db_v1020.py` | A | MIGRATE | legacy | `backend-go/internal/seed/seed_test.go:TestEnsureExtractsSeedWhenDatabaseMissing` | a new bundled baseline must be extracted over the old DB; Go seed extraction owns this path | - |
+| `dev/test_cumulative_db_v1020.py` | A | MIGRATE | legacy | `backend-go/internal/seed/seed_test.go:TestEnsureMergePreservesExistingAndAddsHistory` | a new bundled baseline merges over the existing market.db instead of replacing it: existing rows and current-only tables survive, seed history is added, the seed's user tables are not copied and a pre-merge backup is written; internal/seed owns that upgrade path and TestEnsureMergePreservesExistingAndAddsHistory asserts it | - |
 | `dev/test_db_isolation_v1.py` | C | DEPRECATE | legacy | `-` | BORS_DATA_DIR/BORS_DB seam and BORS_NO_FETCH_LOOPS gate of bors_config; internal/config owns both (TestDataDirPrecedence, TestReadOnlyAndNoLoops); dev/db_fingerprint.py retires | 2026-11-10 |
 | `dev/test_delta_update.py` | C | DEPRECATE | legacy | `-` | delta patch select/apply of the Python updater; internal/update owns the updater (TestDownloadVerifiesSignedArtifact, TestBackupAndRestoreProgramFiles) | 2026-11-10 |
 | `dev/test_dps_formula_v1.py` | C | DEPRECATE | legacy | `-` | DPS/reserve formulas of api; internal/chart adjust engine owns the DPS leg (TestAdjustmentEngine_ComputeFactors) | 2026-11-10 |
-| `dev/test_fts_asof_cutoff.py` | C | MIGRATE | legacy | `backend-go/internal/chart/chartdb_test.go:TestAsOfIsARealCutoff` | as_of is a real candle cutoff and the cache key carries it so two cutoffs never cross-serve; the Go analysis test asserts the same bars, verdict movement and one key per cutoff (the Go key also carries the ruleset version, analysis.go:98, but the test does not assert that component, and the basis/entry-hint/tf key matrix is Python-only) | - |
+| `dev/test_fts_asof_cutoff.py` | C | DEPRECATE | legacy | `-` | as_of is a real lookahead-free candle cutoff; internal/chart owns it and TestAsOfIsARealCutoff asserts the bars, the verdict movement and one key per cutoff, but the key's ruleset-version (rs=) and tf=daily assertions are Python-only, so the equivalence would be partial | 2026-11-10 |
 | `dev/test_fts_basis_anchor_v1.py` | C | DEPRECATE | legacy | `-` | basis switch must not move the closing anchor; internal/pricebasis covers the basis mechanics (TestApplyBasisLastMissingFallsBackToClosing) but not the anchor invariance | 2026-11-10 |
 | `dev/test_fts_event_identity_v1.py` | C | DEPRECATE | legacy | `-` | event identity (date, kept) separated from the coefficient in the Python ledger; internal/chart TestFactorsFromEvents covers event->factor, the identity split is not ported | 2026-11-10 |
 | `dev/test_fts_evidence_v11.py` | C | DEPRECATE | legacy | `-` | EPS evidence labels across card/row/scan; internal/fundamental goldens own the payload (TestFundamentalGoldens) | 2026-11-10 |

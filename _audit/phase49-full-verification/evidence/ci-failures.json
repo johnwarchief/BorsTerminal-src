@@ -10,7 +10,8 @@
   "root_cause": "The suite exercises the Python FTS engine, whose scan_symbol imports the FastAPI package lazily. fastapi is not installed here and there is no PyPI route (pip download times out), so the Python layer of this failure cannot run on this machine.",
   "decision": "No code change. C/DEPRECATE: internal/chart owns the live FTS rules (TestFTSRealSymbolParity, TestFTSVectors); the Python engine retires with the legacy lane.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_fts_m141_parity_v97.py.txt",
-  "log_sha256": "e2f385f1bc6fc0bc2d0b1aa0f50e60e442a905816d735690d91142e1fb00b643",
+  "source_log_sha256": "e2f385f1bc6fc0bc2d0b1aa0f50e60e442a905816d735690d91142e1fb00b643",
+  "excerpt_sha256": "0164c881187c97c0d15a061e92216783b51ba88e762c6691ae11b36bec57008e",
   "commit": "36e4b595"
  },
  {
@@ -24,7 +25,8 @@
   "root_cause": "Same lazy FastAPI import chain; fastapi absent and not installable here.",
   "decision": "No code change. C/DEPRECATE: internal/chart owns the live FTS verdict (TestFTSVectors).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_confidence_engine_v973.py.txt",
-  "log_sha256": "a662fefbec8651974948d3f9ac0a7040ce499b985626583045d894b413431c08",
+  "source_log_sha256": "a662fefbec8651974948d3f9ac0a7040ce499b985626583045d894b413431c08",
+  "excerpt_sha256": "9486ce688b6c3f451b105890af6f0c11536156478c4af1c35e9cc04e8a622ed9",
   "commit": "36e4b595"
  },
  {
@@ -38,7 +40,8 @@
   "root_cause": "Same lazy FastAPI import chain; fastapi absent and not installable here.",
   "decision": "No code change. C/DEPRECATE: internal/chart owns the soft verdict ladder (TestFTSVectors).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_soft_warnings_v974.py.txt",
-  "log_sha256": "60aeb1ed6131e9e8c5deb719a5488051a074ff4f451cc8ce4cdbeaa1ace8528e",
+  "source_log_sha256": "60aeb1ed6131e9e8c5deb719a5488051a074ff4f451cc8ce4cdbeaa1ace8528e",
+  "excerpt_sha256": "fef8c41297eae7bacd9cc147c5ba2e0ff6c4ed254e9a04e53d8c17667a864fe6",
   "commit": "36e4b595"
  },
  {
@@ -52,7 +55,8 @@
   "root_cause": "test_tsetmc imports requests at module load (it is a live TSETMC fetcher), so every suite that reuses its CSV helpers needs requests; requests is absent and not installable here.",
   "decision": "No code change. C/DEPRECATE: internal/mstat owns the live panels (TestPanelsMatchGolden).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_mstat_local_v975.py.txt",
-  "log_sha256": "4eb1221c3baae3dbba27bcfe7e6f7f07ad4ef3b97dc522da44ae1f56459f0dc5",
+  "source_log_sha256": "4eb1221c3baae3dbba27bcfe7e6f7f07ad4ef3b97dc522da44ae1f56459f0dc5",
+  "excerpt_sha256": "63df62a026b044f13ec2777665825f60ccdfc156931ddc61bbc335490fce9ebd",
   "commit": "36e4b595"
  },
  {
@@ -66,7 +70,8 @@
   "root_cause": "The B1 oracle imports api.market; fastapi is absent here and cannot be installed (no PyPI route). The deterministic build, the logical dump against the committed fixture, sql_text.go byte-equality and the row-shape checks all pass.",
   "decision": "B/data KEEP (fixture guards internal/store SQL text + board goldens). The oracle section is NOT_MEASURED on this machine, not a product defect.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_board_fixture_v1120.py.txt",
-  "log_sha256": "b37b6c2dabc4dc9b47ad887b3025350fa371942c1d6b8cd412b5e81834180975",
+  "source_log_sha256": "b37b6c2dabc4dc9b47ad887b3025350fa371942c1d6b8cd412b5e81834180975",
+  "excerpt_sha256": "4e9dbdf924c24b2ec523e436b905c83f1d3ca569e8ab9010a5180547dd919ddc",
   "commit": "36e4b595"
  },
  {
@@ -80,7 +85,8 @@
   "root_cause": "The B2 oracle imports api.market; fastapi is absent here and cannot be installed (no PyPI route).",
   "decision": "B/data KEEP (fixture guards internal/mstat goldens + pinned clock). The oracle section is NOT_MEASURED on this machine.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_mstat_fixture_v1121.py.txt",
-  "log_sha256": "d8dc5cc98da8eaac7513beb905455181a93420298f7bb8f31ac5161b96e49a3f",
+  "source_log_sha256": "d8dc5cc98da8eaac7513beb905455181a93420298f7bb8f31ac5161b96e49a3f",
+  "excerpt_sha256": "0d9bd286977ac3a22025887838b4929ca5a859f11fc069be4f4b088f2caefd89",
   "commit": "36e4b595"
  },
  {
@@ -94,7 +100,8 @@
   "root_cause": "Every failing B3 section runs a Python oracle over api.chart; fastapi is absent here and cannot be installed (no PyPI route).",
   "decision": "B/data KEEP (fixture guards internal/chart goldens and offline seams). The oracle sections are NOT_MEASURED on this machine.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_chart_fixture_b3.py.txt",
-  "log_sha256": "8287de6c41fba56d53f64fb0f0e6db7354d0790428b1926d773302687fe63c1c",
+  "source_log_sha256": "8287de6c41fba56d53f64fb0f0e6db7354d0790428b1926d773302687fe63c1c",
+  "excerpt_sha256": "14c8789e78747b762bb212cf6b3343953c5bd222647b138fd2d99ee204052a60",
   "commit": "36e4b595"
  },
  {
@@ -103,13 +110,14 @@
   "category": "B",
   "disposition": "KEEP",
   "profile": "data",
-  "status": "MEASURED_FAIL",
-  "error": "B4: 42 passed / 3 failed. Remaining: 'fundamental goldens equal a fresh oracle run' (fastapi), 'card oracle runs clean' (rc=1, fastapi), 'card/card_no_sales has content'. The two fixture checks now pass: 'fundamental fixture is deterministic — rc=(0, 0)' and 'committed fixture equals a fresh build (schema + every row)'.",
-  "root_cause": "The oracle/card sections import api.fundamental, so fastapi absence blocks them. Separately, the committed-vs-fresh check used a raw file sha256, which also hashes the SQLite header (bytes 96-99 = SQLITE_VERSION_NUMBER) and page layout: the committed fixture was written by SQLite 3.50.4 (3050004) while this machine runs 3.49.1, so logically identical files hashed differently in CI.",
-  "decision": "B/data KEEP. Carried defect fixed in A4: logical_db/logical_diff compare sqlite_master DDL plus every table's full row multiset (value-exact via repr) and the two-build byte-determinism check is kept. The oracle sections remain NOT_MEASURED here.",
+  "status": "NOT_MEASURED",
+  "error": "B4: 43 passed / 2 failed. The only failing checks are the two fastapi oracle sections: 'fundamental goldens equal a fresh oracle run' (ModuleNotFoundError: No module named 'fastapi') and 'card oracle runs clean' (rc=1, same import error). Every fixture and card content check is green, including 'card/card_no_sales has content' (pass=None, reason = the no-market-cap/no-sales message) and 'committed fixture equals a fresh build (schema + every row)'.",
+  "root_cause": "Both remaining red sections run a Python oracle that imports api.chart, so fastapi absence blocks them (no PyPI route on this machine). The two earlier non-dependency defects - the raw-sha256 fixture comparator and the stale card_no_sales reason predicate - are fixed in A4.",
+  "decision": "B/data KEEP. Carried defects fixed in A4: (1) logical_db/logical_diff compare sqlite_master DDL plus every table's full row multiset, value-exact via repr, with the two-build byte-determinism check kept; (2) the card_no_sales predicate now asserts the exact a45ReasonNoMcap string and pass is None (the tri-state), not False. The two oracle sections stay NOT_MEASURED here and must be re-read from CI in C8; nothing is called passing that did not run.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_fixture_b4.py.txt",
-  "log_sha256": "1cb348584fe619d92d8ae5327e66234ea9f9be9b487712cf2fba556a6564282b",
-  "commit": "36e4b595",
+  "source_log_sha256": "e330e70232d32ade476e6fe4367b6a0d3e1d935464285246a0107835d2634f3f",
+  "excerpt_sha256": "f11e7a890d07f282394edbd36a5e1763596065f2b90cd32c15ca9b8a49e35ead",
+  "commit": "976ac9e7",
   "carried_defect": {
    "name": "raw SQLite sha256 comparator",
    "before": "FAIL committed fixture equals a fresh build — fresh={'market.db': '14dda855c5c1a57c', 'user.db': 'e2fe8dccad41994c'} committed={'market.db': '7cee7d1cf4fc132e', 'user.db': '18f3ac1bfb6c0d6b'}",
@@ -128,7 +136,8 @@
   "root_cause": "The vector generator imports api.fundamental; fastapi is absent here and cannot be installed (no PyPI route).",
   "decision": "B/data KEEP (fresh-oracle vector guard). The oracle run is NOT_MEASURED on this machine.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_vectors_b4.py.txt",
-  "log_sha256": "255e10d5eb81371cd8ff6ca8279953e3b4183ae62929b1af7ce5b0e53d5a0f22",
+  "source_log_sha256": "255e10d5eb81371cd8ff6ca8279953e3b4183ae62929b1af7ce5b0e53d5a0f22",
+  "excerpt_sha256": "874c88e0b2adae044c0ef932577b53f73b02f9e6d2a2f9114e4b289d191ad6ed",
   "commit": "36e4b595"
  },
  {
@@ -142,7 +151,8 @@
   "root_cause": "The guard reads the real frontend/node_modules tree; node/npm and network are absent here, and the legacy frontend tree is no longer installed by CI after A5.",
   "decision": "No code change. C/DEPRECATE: frontend-v2 owns the chart UI (chart-panel.spec.tsx); the legacy npm-ci step this guard depended on leaves the production gate.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_chart_api_check_v95.py.txt",
-  "log_sha256": "24850fd5f4b308810972ca43975b04b0b04f74cf823f0ce2a9eee5d155542445",
+  "source_log_sha256": "24850fd5f4b308810972ca43975b04b0b04f74cf823f0ce2a9eee5d155542445",
+  "excerpt_sha256": "c6240f43089512e1bda6de00b83a15b408b327237e19484a31fb4aef7318a544",
   "commit": "36e4b595"
  },
  {
@@ -156,7 +166,8 @@
   "root_cause": "node is absent on this machine; the guard shells out to the QA parser.",
   "decision": "No code change. C/DEPRECATE: the route table it derives belongs to frontend/src/routes.tsx (v1); frontend-v2 owns its routes.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_qa_routes_guard.py.txt",
-  "log_sha256": "0c5f5ddc6ff102bec42a83a1ce8156a7647faa8c29afd197daa4fb0116b994b8",
+  "source_log_sha256": "0c5f5ddc6ff102bec42a83a1ce8156a7647faa8c29afd197daa4fb0116b994b8",
+  "excerpt_sha256": "242ba8ce3b7b9ba4919e81c87273df1a64fb51798aa13587bfd0d89781833aa7",
   "commit": "36e4b595"
  },
  {
@@ -170,7 +181,8 @@
   "root_cause": "The probe target imports api; the harness logic itself is green.",
   "decision": "No code change. C/DEPRECATE: the Python output counter (dev/guard_counts.py) is harness-only and retires with the legacy lane.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_guard_counts_v1110.py.txt",
-  "log_sha256": "a01fd367b645e1067474b49ae57fd04ed225c2b7bfe13d36bc3e3837adc31596",
+  "source_log_sha256": "a01fd367b645e1067474b49ae57fd04ed225c2b7bfe13d36bc3e3837adc31596",
+  "excerpt_sha256": "1a57bfeaebc2566a03ed417759f770e3069fe750af3e01eb7b869225f5e37ac2",
   "commit": "36e4b595"
  },
  {
@@ -184,7 +196,8 @@
   "root_cause": "The fetch-loop gate probe imports the Python notifier, which needs httpx (in requirements.txt, absent here and not installable).",
   "decision": "No code change. C/DEPRECATE: internal/config owns the BORS_DATA_DIR precedence and the no-loops gate (TestDataDirPrecedence, TestReadOnlyAndNoLoops); the Python seam and dev/db_fingerprint.py retire.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_db_isolation_v1.py.txt",
-  "log_sha256": "800afbadc7107cf299eb2327f4fd7d9fc37eeecdec0f56342602d85f474fd295",
+  "source_log_sha256": "800afbadc7107cf299eb2327f4fd7d9fc37eeecdec0f56342602d85f474fd295",
+  "excerpt_sha256": "e9f71870ff2a31e4f0166460342c6e0374b2494991ceefff4c1329f8f91c868b",
   "commit": "36e4b595"
  },
  {
@@ -198,7 +211,8 @@
   "root_cause": "The reference pack is deliberately gitignored and absent on this machine; the runner reports a named SKIP, never a silent green.",
   "decision": "B/data KEEP. Not a pass and not a gate failure; the fixture must be provided to measure the engine.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_adjustment_engine_v1.py.txt",
-  "log_sha256": "e517546f802d305c5d8869be3c8bf8eebfc2b24a370d718c6a4a3a6ca984f067",
+  "source_log_sha256": "e517546f802d305c5d8869be3c8bf8eebfc2b24a370d718c6a4a3a6ca984f067",
+  "excerpt_sha256": "b8c8db373612129338db6012363d8dd43afb5f0e4cde77d0542cedf2298b0e0a",
   "commit": "36e4b595"
  },
  {
@@ -212,7 +226,8 @@
   "root_cause": "The release baseline market.db.lzma is gitignored and absent on this machine.",
   "decision": "B/data KEEP. Named SKIP, not a silent green.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_db_housekeeping.py_--selftest.txt",
-  "log_sha256": "359a093f0f1dfe8ae08f92e4c5be790976851a0859943531d69d6dbdc92b9127",
+  "source_log_sha256": "359a093f0f1dfe8ae08f92e4c5be790976851a0859943531d69d6dbdc92b9127",
+  "excerpt_sha256": "4ecd5f74d32ebf057bc76cf7da78342c4b07e2706155d102e6ef8628a5dcfac2",
   "commit": "36e4b595"
  },
  {
@@ -226,7 +241,8 @@
   "root_cause": "api/chart.py grew by 7 lines above those defs and docs/FTS-RULE-ALGORITHM-MAP.md kept stale citations; the guard was right and the document was stale.",
   "decision": "C/DEPRECATE: the three citations are now 5610/4588/6018 and the test is green at 11/11; the map stays a historical reference for the Python engine.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_rule_map_citations.py.txt",
-  "log_sha256": "f2851d6ecf39f41c79fd1c57f93fafc260b39f5e159a354edd3f02f071d1d30d",
+  "source_log_sha256": "f2851d6ecf39f41c79fd1c57f93fafc260b39f5e159a354edd3f02f071d1d30d",
+  "excerpt_sha256": "fbe636fcc7ef8e8a6f5b8abdf07fc430142a93333d1b23ebd6a044f9cc8088d7",
   "commit": "36e4b595",
   "carried_defect": {
    "name": "stale NAME:LINE citations in docs/FTS-RULE-ALGORITHM-MAP.md",
@@ -246,7 +262,8 @@
   "root_cause": "The suite imports api for the triple matrix; fastapi is absent here and cannot be installed (no PyPI route).",
   "decision": "C/DEPRECATE: internal/watchlist owns store + handlers (TestStoreCRUD, TestWatchlistHandlers).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_watchlist_matrix_v973.py.txt",
-  "log_sha256": "e1a1772a04363a1a8bd07373736531ff2ddd24ad0c2169f7aedf487c57f9aea3",
+  "source_log_sha256": "e1a1772a04363a1a8bd07373736531ff2ddd24ad0c2169f7aedf487c57f9aea3",
+  "excerpt_sha256": "5b37d032aba339a0fb73f3e99c0d2b907bb52329afd57c484a5f7ebad18f9e57",
   "commit": "36e4b595"
  },
  {
@@ -260,7 +277,8 @@
   "root_cause": "The suite walks the Python feed->engine->chart chain, which imports api; fastapi is absent here.",
   "decision": "C/DEPRECATE: internal/chart owns the live analysis (TestChartGoldens, TestFTSVectors).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/_audit_candle_integrity_roundj.py.txt",
-  "log_sha256": "9449963c4e860ef842c4fb5bdd052466128afca217dd62a62664088174a298af",
+  "source_log_sha256": "9449963c4e860ef842c4fb5bdd052466128afca217dd62a62664088174a298af",
+  "excerpt_sha256": "6802c1e11d7911437e78fbad44b641126bba2c29d27c21b6062a914cb884b24f",
   "commit": "36e4b595"
  },
  {
@@ -274,7 +292,8 @@
   "root_cause": "The suite imports api for the screener/card comparison; fastapi is absent here.",
   "decision": "C/DEPRECATE: internal/screening owns the Go eligibility verdict (TestEligibility).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_fts_screener_card_parity_v10.py.txt",
-  "log_sha256": "938cb9ab367f243380379999499dbe16ce85364582b3f6bdbf807a23c56a3e9a",
+  "source_log_sha256": "938cb9ab367f243380379999499dbe16ce85364582b3f6bdbf807a23c56a3e9a",
+  "excerpt_sha256": "604d065896c11a64e9da03693b9e7148162ef17a186ad374fe2b993a6205dea3",
   "commit": "36e4b595"
  },
  {
@@ -288,7 +307,8 @@
   "root_cause": "The suite imports api to compare scan_symbol with bulk_scan; fastapi is absent here.",
   "decision": "C/DEPRECATE: the Go engine has one analysis path (internal/chart TestFTSVectors).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_fts_engine_paths_parity_v1076.py.txt",
-  "log_sha256": "3f249c3879550ad41704af2144c4c17f24c290ab394f68c17c08e5fc99ac5cca",
+  "source_log_sha256": "3f249c3879550ad41704af2144c4c17f24c290ab394f68c17c08e5fc99ac5cca",
+  "excerpt_sha256": "a175ec56ef581526e70d93e7fcb2c38ecfc7569884b9457e8988628f97a7ae82",
   "commit": "36e4b595"
  },
  {
@@ -302,7 +322,8 @@
   "root_cause": "The guard imports api.fundamental for the F-05 checks; fastapi is absent here.",
   "decision": "C/DEPRECATE: internal/codal extractor + validator own the F-rules (TestParseNumericValue, TestValidate_*).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_codal_logic_guard.py.txt",
-  "log_sha256": "37644f115539675d6da7d18e959caf98af0007df6de30905fb9fb9f2829a0c9d",
+  "source_log_sha256": "37644f115539675d6da7d18e959caf98af0007df6de30905fb9fb9f2829a0c9d",
+  "excerpt_sha256": "93ed0372e3535703e9f88f3cd456c89d6bddbf04710ab1afd35d640b3c1a4fdb",
   "commit": "36e4b595"
  },
  {
@@ -316,7 +337,8 @@
   "root_cause": "The suite imports codal_fetcher/test_tsetmc, which need requests; requests is absent here.",
   "decision": "C/DEPRECATE: internal/sync owns incremental sync (TestClientSnapshotLifecycle_WithUserDB).",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_incremental_sync_resilience.py.txt",
-  "log_sha256": "76161099de569dd8129266548b2738d3e96985a611ff8371583b05dcb13fa59d",
+  "source_log_sha256": "76161099de569dd8129266548b2738d3e96985a611ff8371583b05dcb13fa59d",
+  "excerpt_sha256": "e5b9e0591d26f2659dc65057be37cb37bbc38d74dbef13209254138476033859",
   "commit": "36e4b595"
  },
  {
@@ -330,7 +352,8 @@
   "root_cause": "The suite loads codal_fetcher, which imports requests at module load; requests is absent here.",
   "decision": "C/MIGRATE: internal/period pins the same canonical period contract (TestSQLBehaviorGolden, TestGolden); the Python path retires.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_codal_period_canonical_v1075.py.txt",
-  "log_sha256": "f7132f994f952295b7c90d1c65c8c882bc5c81693ad4d19303801d109da3eb1e",
+  "source_log_sha256": "f7132f994f952295b7c90d1c65c8c882bc5c81693ad4d19303801d109da3eb1e",
+  "excerpt_sha256": "6432fb970936704431fb0668cf0e938c39c509420ed66656fbcae62a71fd4d1f",
   "commit": "36e4b595"
  },
  {
@@ -344,7 +367,8 @@
   "root_cause": "The suite loads codal_fetcher, which imports requests at module load; requests is absent here.",
   "decision": "C/MIGRATE: internal/fundamental TestQuarterReferenceRowsPicksOnePerPeriod asserts the same winner rule; the Python path retires.",
   "evidence": "_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_codal_reference_select_v1088.py.txt",
-  "log_sha256": "43e11c1c3a7b92a401bd07d88e2de2beabf553f3ab3d0b61442db23c36587c26",
+  "source_log_sha256": "43e11c1c3a7b92a401bd07d88e2de2beabf553f3ab3d0b61442db23c36587c26",
+  "excerpt_sha256": "2fefc8955030ba929022166105729aa245278d8da1fcf413966e136aaf4abb77",
   "commit": "36e4b595"
  }
 ]

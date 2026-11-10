@@ -423,7 +423,8 @@ SUITES = [
     # ۵۲ کندل، و روزانۀ na در آغالتِ «خنثیِ مجاز». بی‌شبکه و بی‌market.db.
     ('dev/fts_engine_honesty_v1066.py',
                                      'FTS engine publishes no made-up numbers (week, fib, stop, MA52, na)'),
-    ('dev/test_cumulative_db_v1020.py', 'market.db re-extracts on a new bundled baseline'),
+    ('dev/test_cumulative_db_v1020.py',
+                                     'market.db merges a new bundled baseline over the existing database'),
     # --pack تنها تاریخِ آخرین نشست را می‌دید؛ روی این ماشین بانکِ مخزن با
     # نشستِ همان روز ۱۴٬۸۶۶ ردیف daily_prices کم‌تر از بیس‌لاینِ منتشرشده داشت.
     # با بانکِ کوچکِ مصنوعی: رد، پذیرشِ --allow-shrink، و «ناشناخته ≠ صفر».

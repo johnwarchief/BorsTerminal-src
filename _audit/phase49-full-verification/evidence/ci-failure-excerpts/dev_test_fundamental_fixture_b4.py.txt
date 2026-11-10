@@ -1,22 +1,54 @@
-# source: _audit/phase49-full-verification/evidence/logs/a4-dev_test_fundamental_fixture_b4.log
-# sha256: 1cb348584fe619d92d8ae5327e66234ea9f9be9b487712cf2fba556a6564282b
-         PASS card/card_mcap_missing has content ? mcap_error='market_cap_missing_value' excluded=True steps=['?', '?', '?', '?', '?', '?']
-         PASS card/card_mixed has content ? mcap_error='symbol_not_on_board' gap_cause='market_cap'
-         PASS card/card_no_board_row has content ? mcap_error='market_cap_missing_value' asof=None
-         FAIL card/card_no_sales has content ? axis4={'na': True, 'gap_cause': 'annual_sales', 'available': False}
-         PASS card/card_not_found has content ? 404 shape kept
-         PASS card/card_thin has content ? states={'1_growth': None, '2_eps_trend': None, '3_gross_margin': None, '4_sales_to_mcap': False, '5_industry': True} gaps=['1a_monetary_growth', '1b_physical_volume', '2_eps_trend', '3_gross_margin', '4_sales_to_mcap']
-         PASS card/card_up has content ? verdict='WATCH' score=4 states={'1_growth': False, '2_eps_trend': True, '3_gross_margin': True, '4_sales_to_mcap': True, '5_industry': True}
-         PASS card/card_up_months6 has content ? months=6 body == card_up
-         PASS card/card_up_score5 has content ? verdict='STRONG' score=5 inflation=40.0
-         PASS dated/undated boundary is really enforced by the same GLOB ? up=10 mixed=5 mixed_dated=1
-       fundamental fixture guard: 42 passed / 3 failed
-1 suite counted, 0 silent (exit-code only), 0 skipped (fixture missing)
-FAILED: fundamental + tape-history fixture, oracle, goldens
-[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
-[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_vn15telj
-[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
-[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
-PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
-[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_vn15telj
-[gate] unisolated invocation ? delegating to dev/gate_db_guard.py
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_test_fundamental_fixture_b4.direct.log
+# sha256: e330e70232d32ade476e6fe4367b6a0d3e1d935464285246a0107835d2634f3f
+  PASS fundamental fixture is deterministic — rc=(0, 0)
+  PASS committed fixture equals a fresh build (schema + every row)
+  FAIL fundamental goldens equal a fresh oracle run — ModuleNotFoundError("No module named 'fastapi'")
+  PASS s1/fund_down has content — eps=[66.56, 57.25, 49.23] margin=11.0
+  PASS s1/fund_fund has content — verdict='FTS ندارد' score=None
+  PASS s1/fund_mixed has content — pct=33.3 series=4
+  PASS s1/fund_thin has content — all gaps, no fabricated zero
+  PASS s1/fund_unknown has content — 404 shape kept
+  PASS s1/fund_up has content — verdict='WATCH' score=4 states={'1_growth': False, '2_eps_trend': True, '3_gross_margin': True, '4_sales_to_mcap': True, '5_industry': True}
+  PASS s1/fund_up_months6 has content — verdict='WATCH' score=4 states={'1_growth': False, '2_eps_trend': True, '3_gross_margin': True, '4_sales_to_mcap': True, '5_industry': True}
+  PASS s1/quarters_clamp_high has content — count=7 first='1405/09/30'
+  PASS s1/quarters_clamp_zero has content — clamp to 1 row: 1
+  PASS s1/quarters_missing has content — expected no dated quarter rows
+  PASS s1/quarters_mixed has content — expected no dated quarter rows
+  PASS s1/quarters_negative has content — clamp to 1 row: 1
+  PASS s1/quarters_thin has content — expected no dated quarter rows
+  PASS s1/quarters_up has content — count=7 first='1405/09/30'
+  PASS s1/sectors has content — n=8 sorted
+  PASS s1/tape_all has content — codes='' ⇒ no symbols, days still listed
+  PASS s1/tape_cap_codes has content — 500 codes must collapse to the distinct set
+  PASS s1/tape_clamp_days has content — clamp keeps the four watched days
+  PASS s1/tape_four has content — symbols=3 days=4
+  PASS s1/tape_one_day has content — days=[20261028]
+  PASS s1/tape_unknown_code has content — symbols=1 flags=7
+  PASS s1/tape_zero_days has content — clamp keeps the four watched days
+  PASS s2/fund_down has content — thr=70.0 margin_min=40.0
+  PASS s2/fund_thin has content — thr=70.0 margin_min=40.0
+  PASS s2/fund_up has content — thr=40.0 e3pass=False st3=False
+  PASS s3/tape_empty_meta has content — no tape tables ⇒ empty, not an error
+  PASS s3/tape_missing_tables has content — no tape tables ⇒ empty, not an error
+  PASS golden tree holds s1..s3 plus the card goldens — dirs=['card_down', 'card_fund', 'card_holding', 'card_mcap_missing', 'card_mixed', 'card_no_board_row', 'card_no_sales', 'card_not_found', 'card_thin', 'card_up', 'card_up_months6', 'card_up_score5', 's1', 's2', 's3'] files=['card_index.json']
+  FAIL card oracle runs clean — rc=1 ^^^^^
+  File "C:\Users\STU\Desktop\borsterminal\tools\parity\gen_fundamental_card_golden.py", line 234, in main
+    import api.chart as ch
+  File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+    from fastapi import APIRouter
+ModuleNotFoundError: No module named 'fastapi'
+
+  PASS card/card_down has content — eps=[66.56, 57.25, 49.23] margin=11.0
+  PASS card/card_fund has content — verdict='FTS ندارد' score=None applicable=False
+  PASS card/card_holding has content — axis4={'na': True, 'exempt': True, 'available': False}
+  PASS card/card_mcap_missing has content — mcap_error='market_cap_missing_value' excluded=True steps=['۰', '۱', '۲', '۳', '۴', '۵']
+  PASS card/card_mixed has content — mcap_error='symbol_not_on_board' gap_cause='market_cap'
+  PASS card/card_no_board_row has content — mcap_error='market_cap_missing_value' asof=None
+  PASS card/card_no_sales has content — axis4={'na': True, 'gap_cause': 'annual_sales', 'available': False, 'pass': None} reason='دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.'
+  PASS card/card_not_found has content — 404 shape kept
+  PASS card/card_thin has content — states={'1_growth': None, '2_eps_trend': None, '3_gross_margin': None, '4_sales_to_mcap': False, '5_industry': True} gaps=['1a_monetary_growth', '1b_physical_volume', '2_eps_trend', '3_gross_margin', '4_sales_to_mcap']
+  PASS card/card_up has content — verdict='WATCH' score=4 states={'1_growth': False, '2_eps_trend': True, '3_gross_margin': True, '4_sales_to_mcap': True, '5_industry': True}
+  PASS card/card_up_months6 has content — months=6 body == card_up
+  PASS card/card_up_score5 has content — verdict='STRONG' score=5 inflation=40.0
+  PASS dated/undated boundary is really enforced by the same GLOB — up=10 mixed=5 mixed_dated=1
+fundamental fixture guard: 43 passed / 2 failed
