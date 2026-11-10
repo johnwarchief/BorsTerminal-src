@@ -1,0 +1,241 @@
+{
+ "count": 3,
+ "field_note": "rootcause() keeps the brief's names: product_ratio in the mechanical block is the pack step ratio; the pack's canonical prod_ratio column is null for these rows.",
+ "group": {
+  "chain_error_2016": 0.001982393002416316,
+  "chain_error_after_2019": 0.0010117768370854208,
+  "group_effect": 0.0019784708955612462,
+  "inverse_group_effect": 0.001982393002420091,
+  "max_cumulative_error": 0.001982393002416316,
+  "max_cumulative_error_date": "2016-08-03",
+  "ratio_product": 0.9980215291044388
+ },
+ "inputs": {
+  "db": {
+   "path": "_audit/phase49-finalization/seed/market.db",
+   "sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc"
+  },
+  "ledger": {
+   "path": "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv",
+   "sha256": "a123bc603d1fa67cea5d89ecb36f6bcb27460e023b7e7837198e6cb67ef9f548"
+  },
+  "normalized_bars": {
+   "capture_sha256": "28bb94d54630bb78d2845bf041efab6aa0866efaf94d25583265f72078b42c86",
+   "path": "_audit/phase49-full-verification/captures/normalized-30/bars.ndjson.gz"
+  },
+  "pack": {
+   "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl",
+   "sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24"
+  },
+  "reference": {
+   "path": "_audit/phase49-full-verification/captures/reference-index-30.json",
+   "sha256": "05fc5b50a6b632eff464598e755e4bd0bb96961d5065446a3d5291896b557062"
+  },
+  "reference7": {
+   "path": "_audit/phase49-full-verification/captures/reference-index-7.json",
+   "sha256": "afa30d692c2cc089d79b896d1a7cd640df2dbb14c3f461a3b2861dd700876a33"
+  },
+  "rules": {
+   "path": "dev/phase49_status_rules.json",
+   "sha256": "8397154f64e75aed1da455843a55e29c25c139dece95f134fa2a2767b02773b7"
+  }
+ },
+ "max_cumulative_error": 0.001982393002416316,
+ "max_rel_error": 0.001982393002416316,
+ "max_rel_error_basis": "max(per-step pack/reference ratio error, largest pack cum_factor_after discrepancy against the reference daily q). The three steps' individual ratio errors are ~0; their cumulative double-count effect is the 0.198% value. The brief's 0.198% expectation is cumulative, not a per-step ratio error.",
+ "pack_manifest": {
+  "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2/manifest.json",
+  "sha256": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c"
+ },
+ "per_step_max_rel_error": 0.0,
+ "regime_composition": {
+  "2019-03-19": {
+   "absorbed_2020_ratio": 1.0009696351109922,
+   "official_2019_ratio": 1.0027092928745625,
+   "regime_ratio": 1.0036815550110518
+  },
+  "2026-08-02": {
+   "absorbed_2025_2026_05_ratio": 1.0010117768370825,
+   "official_2026_07_15_ratio": 3.003035330511248,
+   "official_2026_08_02_ratio": 2.6628352490421436,
+   "regime_ratio": 7.996588332204274
+  }
+ },
+ "related_findings": [
+  {
+   "detail": "The pack 2019-03-19 ratio 0.9963319491 equals 1/(official 2019 q change 1.0027092929 * tiny 2020 q change 1.0009696351). B5 compares it with the single R1 change 0.9972980276; the 0.09697% gap is below FACTOR_EXACT, so B5 marks the row VERIFIED_REFERENCE even though the 2020 tiny step is already inside the 2019 ratio.",
+   "id": "HIDDEN_DOUBLE_COUNT_2019"
+  },
+  {
+   "detail": "The pack 2026-08-02 ratio 0.1250533301 equals q(2024-03-30) = 1/(3.0030353305 * 2.6628352490), the regime ratio spanning the 2026-07-15 change, the 2026-08-02 change and the 2025/2026-05 tiny steps. B5 compares it with the single R1 change at 2026-08-02 (0.3755395683) and correctly reports CONFLICT_RATIO. The fix is to restore the dropped 2026-07-15 step and use single-step ratios (B11), not to change the threshold.",
+   "id": "CONFLICT_2026_08_02"
+  },
+  {
+   "detail": "The manifest dropped a 0.333333 step at 2026-07-15 whose ratio matches the R1 change 3.0 exactly (1/3); B5 already flags it as contradicted by B3. Its effect is absorbed into the 2026-08-02 ratio.",
+   "id": "DROPPED_2026_07_15"
+  }
+ ],
+ "schema": "phase49-volana-rootcause-v1",
+ "statuses": {
+  "PARTIAL_REFERENCE": 3
+ },
+ "steps": [
+  {
+   "canonical_prod_ratio": null,
+   "cause": "MATCH",
+   "cause_note": "The frozen category PRECISION_OR_ROUNDING names the sub-threshold reference factor nature; the exact chain error is the double count described in root_cause.",
+   "discrepancy_cause": "PRECISION_OR_ROUNDING",
+   "duplicate_check": {
+    "same_date_rows": 1,
+    "same_day_group": false,
+    "spellings": [
+     "ولانا"
+    ]
+   },
+   "effective_date": "2020-03-11",
+   "final_status": "PARTIAL_REFERENCE",
+   "ledger_status": {
+    "comparison_result": "NO_EVIDENCE",
+    "evidence_tier": "I1",
+    "final_status": "RECONSTRUCTED_AUDITED",
+    "notes": "pack replace_step (reference-derived) wins over product | tiny step below reference detection | audit:pass",
+    "risk_score": "0.0009687"
+   },
+   "official_rows": 0,
+   "pack_ratio": 0.9990313041704958,
+   "previous_cum_factor": {
+    "date": "2019-03-19",
+    "pack_cum": 0.123279840357214,
+    "q_over_cum_minus_1": 0.0010117768370854208,
+    "reference_q": 0.12340457204416701
+   },
+   "product_event": {
+    "date": "2020-03-09",
+    "delta_days": -2,
+    "ratio": 0.998963,
+    "relative_error": 6.837040061768995e-05,
+    "source": "base-price-discontinuity"
+   },
+   "product_ratio": 0.9990313041704958,
+   "ratio_error": 2.220446049250313e-16,
+   "reference_daily_q_ratio": 1.0009696351109922,
+   "reference_ratio": 0.9990313041704958,
+   "relative_error": 0.0,
+   "root_cause": "REFERENCE_SUBTHRESHOLD_STEP_DOUBLE_COUNTED",
+   "six_questions": {
+    "definition_or_ca_difference": "no official corporate action: price_adjust_events=0, share_change_events=0, corporate-action-titled CODAL notices=0; the transition is a sub-0.1% reference factor re-basing (0.096870% step), not a CA definition difference.",
+    "duplicate_or_misclassified": "no duplicate: 1 pack row(s) on 2020-03-11, spelling(s) ولانا, no same-day group; the REF_ONLY/unverified class is correct; the action label replace_step is imprecise because prod_ratio is null, but the event is not misclassified.",
+    "effective_date_wrong": "no: the pack date equals the first reference daily q observation of the new level 2020-03-11 exactly (q 0.123404572044 -> 0.12352422945, ratio 1.00096963511) (the previous reference q observation is 2020-02-26, a 14-day gap; the exact event date is not pinned by the reference); the product event date 2020-03-09 is -2 day(s) away; the frozen shift window is 5 days.",
+    "previous_cum_factor_wrong": "yes: pack cum_factor_after at the previous step (2019-03-19) is 0.123279840357 while the reference q is 0.123404572044 (q/cum-1 = 0.101178%); at 2016-08-03 the gap is 0.198239%; the internal chain cum(prev)=cum(next)*ratio(next) holds, so the error is the double-counted sub-threshold steps, not a broken chain formula.",
+    "real_product_event": "partial: product adjust_events has 2020-03-09 ratio 0.998963 (-2 day(s) from the pack date, 0.006837% from the pack ratio); the canonical product chain used by the pack has no event (prod_ratio=null); official O1 has 0 row(s).",
+    "reference_applied_differently": "yes at the index/regime layer: the reference daily q applies the step exactly (q ratio 1.00096963511 vs pack-implied 1.00096963511, error 2.22044604925e-16); the reference factor_changes list only records transitions above 0.1% and has no entry on this date; stageD ref_regimes absorbed the step into the 2019-03-19 regime ratio, so the kept base-pack step is double-counted."
+   },
+   "step_size": 0.000968695829504207
+  },
+  {
+   "canonical_prod_ratio": null,
+   "cause": "MATCH",
+   "cause_note": "The frozen category PRECISION_OR_ROUNDING names the sub-threshold reference factor nature; the exact chain error is the double count described in root_cause.",
+   "discrepancy_cause": "PRECISION_OR_ROUNDING",
+   "duplicate_check": {
+    "same_date_rows": 1,
+    "same_day_group": false,
+    "spellings": [
+     "ولانا"
+    ]
+   },
+   "effective_date": "2025-07-20",
+   "final_status": "PARTIAL_REFERENCE",
+   "ledger_status": {
+    "comparison_result": "NO_EVIDENCE",
+    "evidence_tier": "I1",
+    "final_status": "RECONSTRUCTED_AUDITED",
+    "notes": "pack replace_step (reference-derived) wins over product | tiny step below reference detection | audit:pass",
+    "risk_score": "0.00081015"
+   },
+   "official_rows": 0,
+   "pack_ratio": 0.9991898460707485,
+   "previous_cum_factor": {
+    "date": "2024-03-30",
+    "pack_cum": 0.124926931876361,
+    "q_over_cum_minus_1": 0.0010117768370800917,
+    "reference_q": 0.125053330052361
+   },
+   "product_event": {
+    "date": "2025-07-20",
+    "delta_days": 0,
+    "ratio": 0.998652,
+    "relative_error": 0.0005382821621572331,
+    "source": "base-price-discontinuity"
+   },
+   "product_ratio": 0.9991898460707485,
+   "ratio_error": 0.0,
+   "reference_daily_q_ratio": 1.0008108108108158,
+   "reference_ratio": 0.9991898460707485,
+   "relative_error": 0.0,
+   "root_cause": "REFERENCE_SUBTHRESHOLD_STEP_DOUBLE_COUNTED",
+   "six_questions": {
+    "definition_or_ca_difference": "no official corporate action: price_adjust_events=0, share_change_events=0, corporate-action-titled CODAL notices=0; the transition is a sub-0.1% reference factor re-basing (0.081015% step), not a CA definition difference.",
+    "duplicate_or_misclassified": "no duplicate: 1 pack row(s) on 2025-07-20, spelling(s) ولانا, no same-day group; the REF_ONLY/unverified class is correct; the action label replace_step is imprecise because prod_ratio is null, but the event is not misclassified.",
+    "effective_date_wrong": "no: the pack date equals the first reference daily q observation of the new level 2025-07-20 exactly (q 0.125053330052 -> 0.125154724644, ratio 1.00081081081) (the previous reference q observation is 2025-07-08, a 12-day gap; the exact event date is not pinned by the reference); the product event date 2025-07-20 is +0 day(s) away; the frozen shift window is 5 days.",
+    "previous_cum_factor_wrong": "yes: pack cum_factor_after at the previous step (2024-03-30) is 0.124926931876 while the reference q is 0.125053330052 (q/cum-1 = 0.101178%); at 2016-08-03 the gap is 0.198239%; the internal chain cum(prev)=cum(next)*ratio(next) holds, so the error is the double-counted sub-threshold steps, not a broken chain formula.",
+    "real_product_event": "partial: product adjust_events has 2025-07-20 ratio 0.998652 (+0 day(s) from the pack date, 0.053828% from the pack ratio); the canonical product chain used by the pack has no event (prod_ratio=null); official O1 has 0 row(s).",
+    "reference_applied_differently": "yes at the index/regime layer: the reference daily q applies the step exactly (q ratio 1.00081081081 vs pack-implied 1.00081081081, error 0); the reference factor_changes list only records transitions above 0.1% and has no entry on this date; stageD ref_regimes absorbed the step into the 2026-08-02 regime ratio, so the kept base-pack step is double-counted."
+   },
+   "step_size": 0.0008101539292515447
+  },
+  {
+   "canonical_prod_ratio": null,
+   "cause": "MATCH",
+   "cause_note": "The frozen category PRECISION_OR_ROUNDING names the sub-threshold reference factor nature; the exact chain error is the double count described in root_cause.",
+   "discrepancy_cause": "PRECISION_OR_ROUNDING",
+   "duplicate_check": {
+    "same_date_rows": 1,
+    "same_day_group": false,
+    "spellings": [
+     "ولانا"
+    ]
+   },
+   "effective_date": "2026-05-23",
+   "final_status": "PARTIAL_REFERENCE",
+   "ledger_status": {
+    "comparison_result": "NO_EVIDENCE",
+    "evidence_tier": "I1",
+    "final_status": "RECONSTRUCTED_AUDITED",
+    "notes": "pack replace_step (reference-derived) wins over product | tiny step below reference detection | audit:pass",
+    "risk_score": "0.00020076"
+   },
+   "official_rows": 0,
+   "pack_ratio": 0.9997992371009847,
+   "previous_cum_factor": {
+    "date": "2025-07-20",
+    "pack_cum": 0.125028223983288,
+    "q_over_cum_minus_1": 0.0010117768370836444,
+    "reference_q": 0.125154724644296
+   },
+   "product_event": null,
+   "product_ratio": 0.9997992371009847,
+   "ratio_error": 0.0,
+   "reference_daily_q_ratio": 1.0002008032128504,
+   "reference_ratio": 0.9997992371009847,
+   "relative_error": 0.0,
+   "root_cause": "REFERENCE_SUBTHRESHOLD_STEP_DOUBLE_COUNTED_NO_PRODUCT_EVENT",
+   "six_questions": {
+    "definition_or_ca_difference": "no official corporate action: price_adjust_events=0, share_change_events=0, corporate-action-titled CODAL notices=0; the transition is a sub-0.1% reference factor re-basing (0.020076% step), not a CA definition difference.",
+    "duplicate_or_misclassified": "no duplicate: 1 pack row(s) on 2026-05-23, spelling(s) ولانا, no same-day group; the REF_ONLY/unverified class is correct; the action label replace_step is imprecise because prod_ratio is null, but the event is not misclassified.",
+    "effective_date_wrong": "no: the pack date equals the first reference daily q observation of the new level 2026-05-23 exactly (q 0.125154724644 -> 0.125179856115, ratio 1.00020080321) (the previous reference q observation is 2026-02-25, a 87-day gap; the exact event date is not pinned by the reference); no product event exists to compare; the frozen shift window is 5 days.",
+    "previous_cum_factor_wrong": "yes: pack cum_factor_after at the previous step (2025-07-20) is 0.125028223983 while the reference q is 0.125154724644 (q/cum-1 = 0.101178%); at 2016-08-03 the gap is 0.198239%; the internal chain cum(prev)=cum(next)*ratio(next) holds, so the error is the double-counted sub-threshold steps, not a broken chain formula.",
+    "real_product_event": "no: no product adjust_event within 5 days; nearest product event 2026-07-01 (+39 days, outside the 5-day window); the canonical product chain used by the pack has no event (prod_ratio=null); official O1 has 0 row(s).",
+    "reference_applied_differently": "yes at the index/regime layer: the reference daily q applies the step exactly (q ratio 1.00020080321 vs pack-implied 1.00020080321, error 0); the reference factor_changes list only records transitions above 0.1% and has no entry on this date; stageD ref_regimes absorbed the step into the 2026-08-02 regime ratio, so the kept base-pack step is double-counted."
+   },
+   "step_size": 0.0002007628990152721
+  }
+ ],
+ "symbol": "ولانا",
+ "thresholds": {
+  "FACTOR_EXACT": 0.001,
+  "FACTOR_MATERIAL": 0.01,
+  "changed": false,
+  "note": "the 0.1% threshold is unchanged; nothing is verified while the measured discrepancy exceeds it"
+ }
+}
