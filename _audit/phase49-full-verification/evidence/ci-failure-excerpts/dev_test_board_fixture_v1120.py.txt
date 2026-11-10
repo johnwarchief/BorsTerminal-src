@@ -1,13 +1,19 @@
-# source: _audit/phase49-full-verification/evidence/logs/dev_test_board_fixture_v1120.py.log
-# sha256: 39cfbae456ad7541501af3a55fa3bb8c41149a7c4858d74da70f1bd8c7d41cb7
-CMD C:\Users\STU\Documents\Qoder\2026-10-19\0af806b0\.q3-tooling\py312\python.exe dev\test_board_fixture_v1120.py
-RC 1
-SECS 1.51
-----
-  ok   fixture build is deterministic (two builds, same sha256)
-  ok   fixture rows equal the committed fixture (logical dump, all tables)
-  ok   sql_text.go is the extractor's byte-exact output
-  FAIL goldens equal a fresh oracle run (parsed JSON) ? ModuleNotFoundError("No module named 'fastapi'")
-  ok   fixture has exactly 30 market_watch rows
-  ok   fixture has exactly one instruments row absent from market_watch
-board_fixture_v1120: 5 passed / 1 failed
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_test_board_fixture_v1120.log
+# sha256: b37b6c2dabc4dc9b47ad887b3025350fa371942c1d6b8cd412b5e81834180975
+  FAIL B1 board fixture + goldens + SQL text are current rc=1 | 5/6
+       ok   fixture build is deterministic (two builds, same sha256)
+         ok   fixture rows equal the committed fixture (logical dump, all tables)
+         ok   sql_text.go is the extractor's byte-exact output
+         FAIL goldens equal a fresh oracle run (parsed JSON) ? ModuleNotFoundError("No module named 'fastapi'")
+         ok   fixture has exactly 30 market_watch rows
+         ok   fixture has exactly one instruments row absent from market_watch
+       board_fixture_v1120: 5 passed / 1 failed
+1 suite counted, 0 silent (exit-code only), 0 skipped (fixture missing)
+FAILED: B1 board fixture + goldens + SQL text are current
+[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
+[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_p0xfab3w
+[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_p0xfab3w
+[gate] unisolated invocation ? delegating to dev/gate_db_guard.py

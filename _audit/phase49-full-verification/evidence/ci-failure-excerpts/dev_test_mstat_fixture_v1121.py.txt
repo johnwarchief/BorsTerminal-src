@@ -1,5 +1,5 @@
-# source: _audit/phase49-full-verification/evidence/logs/dev_test_mstat_fixture_v1121.py.log
-# sha256: 5a39f4c5ffa6f53f051aad93cecb822ea20c821b1c763434ef1e0fa52b1d9535
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_test_mstat_fixture_v1121.py.direct.log
+# sha256: d8dc5cc98da8eaac7513beb905455181a93420298f7bb8f31ac5161b96e49a3f
   PASS summary has the ten category rows
   PASS summary eq_all row has symbols > 0
   PASS phase clock is the pinned instant

@@ -1,0 +1,22 @@
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_watchlist_matrix_v973.log
+# sha256: e1a1772a04363a1a8bd07373736531ff2ddd24ad0c2169f7aedf487c57f9aea3
+           fund_rows = confidence_engine.fund_map(mconn, cfg=fts_cfg)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\STU\Desktop\borsterminal\confidence_engine.py", line 958, in fund_map
+           for r in fts_engine.bulk_scan(conn, cfg=cfg or {}):
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\STU\Desktop\borsterminal\fts_engine.py", line 3113, in bulk_scan
+           from api.fundamental import (axis1_state, ind1b_from_parts,
+         File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+           from fastapi import APIRouter
+       ModuleNotFoundError: No module named 'fastapi'
+0 suite counted, 1 silent (exit-code only), 0 skipped (fixture missing)
+  silent: watchlist store + triple matrix + parity
+FAILED: watchlist store + triple matrix + parity
+[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
+[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_sk46rcjl
+[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_sk46rcjl
+[gate] unisolated invocation ? delegating to dev/gate_db_guard.py

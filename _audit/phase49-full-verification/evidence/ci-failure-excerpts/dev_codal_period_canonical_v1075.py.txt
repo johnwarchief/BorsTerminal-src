@@ -1,0 +1,20 @@
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_codal_period_canonical_v1075.log
+# sha256: f7132f994f952295b7c90d1c65c8c882bc5c81693ad4d19303801d109da3eb1e
+  FAIL one canonical period rule; SQL and Python agree; every consumer sees one count rc=1 | ???????? (??? exit code)  [????????]
+       Traceback (most recent call last):
+         File "C:\Users\STU\Desktop\borsterminal\dev\codal_period_canonical_v1075.py", line 37, in <module>
+           import codal_fetcher as CF  # noqa: E402
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\STU\Desktop\borsterminal\codal_fetcher.py", line 25, in <module>
+           import requests
+       ModuleNotFoundError: No module named 'requests'
+0 suite counted, 1 silent (exit-code only), 0 skipped (fixture missing)
+  silent: one canonical period rule; SQL and Python agree; every consumer sees one count
+FAILED: one canonical period rule; SQL and Python agree; every consumer sees one count
+[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
+[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_1neg5zhd
+[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_1neg5zhd
+[gate] unisolated invocation ? delegating to dev/gate_db_guard.py

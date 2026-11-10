@@ -17,7 +17,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REGISTRY = os.path.join(ROOT, "dev", "suite_registry.json")
 EVIDENCE = os.path.join(ROOT, "_audit", "phase49-full-verification", "evidence", "ci-failures.json")
 DOC = os.path.join(ROOT, "docs", "opportunity-center", "phase49", "PYTHON-CI-MIGRATION.md")
-REL_EVIDENCE = "../../../_audit/phase49-full-verification/evidence"
 
 
 def load():
@@ -130,10 +129,9 @@ def build(reg, evidence):
     add("| # | Suite | Status | Cat/Disp | Error (measured) | Evidence |")
     add("| ---: | --- | --- | --- | --- | --- |")
     for i, row in enumerate(evidence, 1):
-        add("| %d | `%s` | %s | %s/%s | %s | [excerpt](%s/%s) |" % (
+        add("| %d | `%s` | %s | %s/%s | %s | [excerpt](../../../%s) |" % (
             i, row["suite"], row["status"], row["category"], row["disposition"],
-            cell(row["error"])[:220], REL_EVIDENCE,
-            os.path.basename(row["evidence"])))
+            cell(row["error"])[:220], row["evidence"]))
     add("")
     add("Statuses: `MEASURED_FAIL` = reproduced here (the failure is real); `NOT_MEASURED` =")
     add("the only failing section needs a dependency this machine cannot install")

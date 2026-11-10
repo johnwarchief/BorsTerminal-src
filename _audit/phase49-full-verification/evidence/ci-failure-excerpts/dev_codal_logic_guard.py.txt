@@ -1,0 +1,22 @@
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_codal_logic_guard.log
+# sha256: 37644f115539675d6da7d18e959caf98af0007df6de30905fb9fb9f2829a0c9d
+         PASS F-05 ?? ????? ???? ? GPM ???? ??????: mandatory (????? ????? ???????)
+       Traceback (most recent call last):
+         File "C:\Users\STU\Desktop\borsterminal\dev\codal_logic_guard.py", line 184, in <module>
+           sys.exit(main())
+                    ^^^^^^
+         File "C:\Users\STU\Desktop\borsterminal\dev\codal_logic_guard.py", line 127, in main
+           from api import fundamental as _FD          # import? ???? (???? ?? ????? ?????)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+           from fastapi import APIRouter
+       ModuleNotFoundError: No module named 'fastapi'
+1 suite counted, 0 silent (exit-code only), 0 skipped (fixture missing)
+FAILED: codal logic contract F-01..F-05 (amendment)
+[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
+[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_7d2ehohw
+[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_7d2ehohw
+[gate] unisolated invocation ? delegating to dev/gate_db_guard.py

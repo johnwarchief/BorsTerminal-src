@@ -1,22 +1,21 @@
-# source: _audit/phase49-full-verification/evidence/logs/dev_test_db_isolation_v1.py.log
-# sha256: 1cdca71fe5dc0a28e5af162c6ab2840de42feec693c6f162ca858872972664cb
-CMD C:\Users\STU\Documents\Qoder\2026-10-19\0af806b0\.q3-tooling\py312\python.exe dev\test_db_isolation_v1.py
-RC 1
-SECS 6.75
-----
-  ok   env-override probe runs
-  ok   BORS_WORK_DIR redirects WORK_DIR
-  ok   BORS_DB redirects DB_PATH
-  ok   USER_DB_PATH follows WORK_DIR
-  ok   protected DB still has exactly its one row
-  ok   redirected DB received the write, source did not
-  ok   without overrides DB_PATH is the repo market.db
-  ok   fingerprint written
-  ok   same rows in a different order => same logical fingerprint
-  ok   one inserted row => fingerprint difference detected
-  FAIL BORS_NO_FETCH_LOOPS=1 closes the fetch gate   ? [notifier] unavailable: No module named 'httpx'
-False
-  FAIL unset BORS_NO_FETCH_LOOPS leaves the gate open   ? [notifier] unavailable: No module named 'httpx'
-True
-result: 10 pass, 2 fail
-10/12
+# source: _audit/phase49-full-verification/evidence/logs/a4-dev_test_db_isolation_v1.log
+# sha256: 800afbadc7107cf299eb2327f4fd7d9fc37eeecdec0f56342602d85f474fd295
+  FAIL DB isolation: temp copy, logical fingerprint, fetch-loop gate rc=1 | 0 pass / 2 fail
+         ok   fingerprint written
+         ok   same rows in a different order => same logical fingerprint
+         ok   one inserted row => fingerprint difference detected
+         FAIL BORS_NO_FETCH_LOOPS=1 closes the fetch gate   ? [notifier] unavailable: No module named 'httpx'
+       False
+         FAIL unset BORS_NO_FETCH_LOOPS leaves the gate open   ? [notifier] unavailable: No module named 'httpx'
+       True
+       result: 10 pass, 2 fail
+       10/12
+1 suite counted, 0 silent (exit-code only), 0 skipped (fixture missing)
+FAILED: DB isolation: temp copy, logical fingerprint, fetch-loop gate
+[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
+[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_bge51ybo
+[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_bge51ybo
+[gate] unisolated invocation ? delegating to dev/gate_db_guard.py

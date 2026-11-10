@@ -1,0 +1,20 @@
+# source: _audit/phase49-full-verification/evidence/logs/a4-_audit_candle_integrity_roundj.log
+# sha256: 9449963c4e860ef842c4fb5bdd052466128afca217dd62a62664088174a298af
+  FAIL candle integrity + published-TSETMC parity along feed ? engine ? chart rc=1 | ???????? (??? exit code)  [????????]
+       Traceback (most recent call last):
+         File "C:\Users\STU\Desktop\borsterminal\_audit\candle_integrity_roundj.py", line 26, in <module>
+           from api import chart as CH          # noqa: E402
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\STU\Desktop\borsterminal\api\__init__.py", line 7, in <module>
+           from fastapi import APIRouter
+       ModuleNotFoundError: No module named 'fastapi'
+0 suite counted, 1 silent (exit-code only), 0 skipped (fixture missing)
+  silent: candle integrity + published-TSETMC parity along feed ? engine ? chart
+FAILED: candle integrity + published-TSETMC parity along feed ? engine ? chart
+[gate-isolation] protected_db=C:\Users\STU\Desktop\borsterminal\market.db
+[gate-isolation] workdir=C:\Users\STU\AppData\Local\Temp\bors_gate_lng90zdl
+[gate-isolation] logical_before=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] logical_after=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0
+[gate-isolation] workdir kept for evidence: C:\Users\STU\AppData\Local\Temp\bors_gate_lng90zdl
+[gate] unisolated invocation ? delegating to dev/gate_db_guard.py
