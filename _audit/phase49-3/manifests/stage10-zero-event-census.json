@@ -1,0 +1,10 @@
+{
+ "elapsed_seconds": 0.092,
+ "exit_code": 0,
+ "finished_utc": "2026-11-11T22:51:12Z",
+ "payload_path": "_audit/phase49-3/evidence/ZERO-EVENT-CENSUS.json",
+ "payload_sha256": "6e57b308215a599d6f49df1d911e7cfe2f1bdfb388e840ae18752660086cc14b",
+ "schema": "phase49-3-stage-manifest-v2",
+ "stage": "stage10_zero_event_census",
+ "started_utc": "2026-11-11T22:51:12Z"
+}

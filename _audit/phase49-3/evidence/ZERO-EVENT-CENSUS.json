@@ -1,0 +1,175 @@
+{
+ "at_risk_keys": [
+  "آوا",
+  "افقملت",
+  "اوج",
+  "اوصتا",
+  "بذر",
+  "تمشک",
+  "ثروتم",
+  "داریوش",
+  "سافرون",
+  "صنوین",
+  "مدیر",
+  "نیکگستر",
+  "ویستا",
+  "پادا"
+ ],
+ "at_risk_q_bitwise_constant_keys": [
+  "آوا",
+  "افقملت",
+  "اوج",
+  "اوصتا",
+  "بذر",
+  "تمشک",
+  "ثروتم",
+  "داریوش",
+  "سافرون",
+  "صنوین",
+  "مدیر",
+  "نیکگستر",
+  "ویستا",
+  "پادا"
+ ],
+ "at_risk_strictly_constant_keys": [
+  "آوا",
+  "افقملت",
+  "اوج",
+  "اوصتا",
+  "بذر",
+  "تمشک",
+  "ثروتم",
+  "داریوش",
+  "سافرون",
+  "صنوین",
+  "مدیر",
+  "نیکگستر",
+  "ویستا",
+  "پادا"
+ ],
+ "at_risk_subthreshold_drift_keys": [],
+ "bars_scanned": false,
+ "base_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "candles_built": false,
+ "census": {
+  "at_risk_candidates": 14,
+  "at_risk_daily_bars_total": 20289,
+  "at_risk_q_bitwise_constant": 14,
+  "at_risk_strictly_constant": 14,
+  "at_risk_subthreshold_drift": 0,
+  "paired_symbols": 759,
+  "symbols_total": 759,
+  "symbols_with_changes": 745,
+  "unpaired_symbols": 0
+ },
+ "cohort_overlap": {
+  "count": 1,
+  "keys": [
+   "پادا"
+  ]
+ },
+ "controls": {
+  "A_totals_reproduce_stage06": {
+   "detail": "symbols_total=759 stage06=759",
+   "ok": true
+  },
+  "B_live_zero_event_پادا_in_candidates": {
+   "detail": "in_at_risk=True",
+   "ok": true
+  },
+  "C_injected_change_removes_candidate": {
+   "detail": "14 -> 13 (victim آوا)",
+   "ok": true
+  },
+  "D_broken_pairing_removes_candidate": {
+   "detail": "14 -> 13, unpaired=1",
+   "ok": true
+  },
+  "E_subthreshold_drift_separated": {
+   "detail": "drift=1 strict=13",
+   "ok": true
+  },
+  "F_partition_is_exhaustive": {
+   "detail": "14 + 745 + 0 == 759",
+   "ok": true
+  },
+  "G_buckets_split_candidates": {
+   "detail": "14 + 0 == 14",
+   "ok": true
+  },
+  "H_cohort_overlap_counted": {
+   "detail": "overlap=1 of 30",
+   "ok": true
+  },
+  "I_bitwise_constant_classifier_sees_drift": {
+   "detail": "14 -> 13, candidates unchanged=14",
+   "ok": true
+  },
+  "J_live_zero_event_پادا_q_bitwise_constant": {
+   "detail": "in_bitwise_constant=True",
+   "ok": true
+  }
+ },
+ "controls_passed": 10,
+ "controls_total": 10,
+ "db_opened": false,
+ "failures": [],
+ "index_aggregates_match_stage06": true,
+ "index_aggregates_recomputed": {
+  "date_conflicts": 0,
+  "factor_changes": 13921,
+  "factor_days": 2101752,
+  "symbols": 759,
+  "zero_raw_days": 0
+ },
+ "inputs": {
+  "_audit/phase49-3/evidence/COHORT-SELECTION.json": {
+   "sha256": "857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901"
+  },
+  "_audit/phase49-3/evidence/RESTORED-CAPTURE-VERIFICATION.json": {
+   "sha256": "b9c96302b8987c1a183203fe4e51aa5409ef7c5158e464b8e8133906c56d80c9"
+  },
+  "_audit/phase49-3/evidence/RUNTIME-READPATH.json": {
+   "sha256": "6a50ac7b040aa2979d30cef36f6fdea85dd9f7f5add1d7e287153daaeb761808"
+  },
+  "_audit/phase49-3/evidence/coverage-reconciliation.json": {
+   "sha256": "55b7338c700cf3fb13cb0cf4c5e3a07dbb049c8826be58575f649ddf55846526"
+  },
+  "_audit/phase49-full-verification/captures/reference-index-all.json": {
+   "bytes": 2010378,
+   "matches_recorded_evidence": true,
+   "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
+  }
+ },
+ "interpretation": {
+  "candidate_not_confirmed_live": "only the cohort was run through the live read path. For the other candidates the zero-factor outcome is derived from the index, not observed over HTTP; that confirmation is NOT_MEASURED",
+  "confirmed_live": [
+   "پادا"
+  ],
+  "defect_not_fixed": "this census changes no code and no data; the owner ruling in report section 12.2 is still required",
+  "q_level_not_measured": "a zero-change symbol's absolute q is absent from the index. q==1 gives the geometry-only defect measured on پادا; q==c!=1 would also break close parity. Telling them apart needs a bars scan and is NOT_MEASURED outside the cohort",
+  "tolerance_gap_measured_closed": "the index ignores q drift below 1e-3 while the frozen ingest q_changes uses 1e-9, so a zero-change symbol could in principle still yield engine factors. Measured here: every candidate has factor_exact == factor_days - 1 with all other buckets empty, i.e. every daily ratio was exactly 1.0 and q is bitwise constant, which the 1e-9 step also reads as no change. The gap therefore does not bite for this population"
+ },
+ "live_zero_event_symbols_from_stage08": [
+  "پادا"
+ ],
+ "mission": "Phase 4.9.3 coverage expansion",
+ "not_a_processing_of_the_universe": true,
+ "not_measured": [
+  "absolute q level of candidates outside the cohort",
+  "live read-path confirmation of candidates outside the cohort",
+  "defect scope on the Seed Candidate (absent on this host)",
+  "any UI screenshot"
+ ],
+ "schema": "phase49-3-zero-event-census-v1",
+ "scope": "census of the restored reference index only; read-only",
+ "stage": "stage10_zero_event_census",
+ "status": "PASS",
+ "symbols_censused": 759,
+ "tolerances_quoted_not_changed": {
+  "index_factor_exact": 0.001,
+  "ingest_q_step": 1e-09
+ },
+ "universe_symbols_not_processed": 6103,
+ "unpaired_keys": []
+}
