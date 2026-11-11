@@ -1,0 +1,581 @@
+{
+ "batches": [
+  {
+   "bytes": 40516575,
+   "captured_at": "2026-11-10T23:35:05Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-01.json",
+   "normalized_bars": 236110,
+   "normalized_bars_sha256": "cc965b515a0f19168793b010c484a6d037bca101c2a335e5251e5dd7ec7fd49f",
+   "raw_bars": 236110,
+   "series": 192,
+   "sha256": "03a59153195b73839d4ab4ba764ebd5ea0fa0ac502b96fb67a8d098ec2950ccd",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 47176687,
+   "captured_at": "2026-11-10T23:37:46Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-02.json",
+   "normalized_bars": 271308,
+   "normalized_bars_sha256": "4b5ffdfeced980644022bc5549c22ac70185f3a4cb6c6021dbc17e8351898f2a",
+   "raw_bars": 271308,
+   "series": 192,
+   "sha256": "9c78f44a310bdb89898c912fb740f08bf3fef0220e21dcb4adc4ea4a380da2ff",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 53026407,
+   "captured_at": "2026-11-10T23:40:16Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-03.json",
+   "normalized_bars": 304580,
+   "normalized_bars_sha256": "7ed55fc549337e173f5ba83aba75cf0d427a2a1ccce60c23ad59f6d1cb6d99c6",
+   "raw_bars": 304580,
+   "series": 192,
+   "sha256": "fb8eae859f5f8fdc37f3d1978a5179d6f00d74644f95dc662bb0f3614fe86f75",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 70013938,
+   "captured_at": "2026-11-10T23:42:29Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-04.json",
+   "normalized_bars": 401684,
+   "normalized_bars_sha256": "2ef910dcebbdbf82cc302823220614ba46e0fdce8eda2a765b70193829ee31ad",
+   "raw_bars": 401684,
+   "series": 192,
+   "sha256": "2c686fec1f3d47079ca08cd94b419d03434dc0c63edea16c02195e1d647ae479",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 68357134,
+   "captured_at": "2026-11-10T23:45:04Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-05.json",
+   "normalized_bars": 391514,
+   "normalized_bars_sha256": "d5f66d2f7ca481c859a22b008a0f5b75391a7721c7de79642a93f1d5c2ff5a85",
+   "raw_bars": 391514,
+   "series": 192,
+   "sha256": "d868eb9a9eb673c2dd5f894cafe2b39e4448c5ab4913dba0fd62785d36ecbac8",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 52092500,
+   "captured_at": "2026-11-10T23:47:44Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-06.json",
+   "normalized_bars": 299342,
+   "normalized_bars_sha256": "481d0858d5d01a89b7a054952929110f4e2a6dd1c5c18dce0500bab6e57b94ef",
+   "raw_bars": 299342,
+   "series": 192,
+   "sha256": "3399c6997837c76373d7b64005ab96602fb2db98b00238bc143bca8b21d15cf7",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 65780525,
+   "captured_at": "2026-11-10T23:50:20Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-07.json",
+   "normalized_bars": 376780,
+   "normalized_bars_sha256": "b66259b56bbc4dce969b38d9c66ed5ed05ee5ade8a80dd4950163fe6838f27bf",
+   "raw_bars": 376780,
+   "series": 192,
+   "sha256": "b9e44966a86efd0da387ac18786997d26d76438186da7bc2ed16337a12cd2a94",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 58375066,
+   "captured_at": "2026-11-10T23:52:39Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-08.json",
+   "normalized_bars": 335630,
+   "normalized_bars_sha256": "b548a6a5307ecc5f809f768eff1373ca40a7fbd6f624e4794d1038500dbd98f4",
+   "raw_bars": 335630,
+   "series": 192,
+   "sha256": "8d6efc8c94a6cbf3a4236ff676f679399fe76c888c702880daf26400939b9fc9",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 64469059,
+   "captured_at": "2026-11-10T23:54:39Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-09.json",
+   "normalized_bars": 369866,
+   "normalized_bars_sha256": "5a05902c093ae76c625702148900cdcae0efd7dfc66a24b3618863482f28eaad",
+   "raw_bars": 369866,
+   "series": 192,
+   "sha256": "714b84c0d51bfc5312fc4e5b850b6bcc867134e9e2eba3ba139be8846d324913",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 57730872,
+   "captured_at": "2026-11-10T23:56:40Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-10.json",
+   "normalized_bars": 330732,
+   "normalized_bars_sha256": "41434ad95c8392a6771fa1ecb7504bfcd6ca9ae790c6219ede14810e4ef593e0",
+   "raw_bars": 330732,
+   "series": 192,
+   "sha256": "0c168aaf59370ce03df1b2ba3ea632c392b861c8907d692e0ada84c2e2b9cb2f",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 56306444,
+   "captured_at": "2026-11-10T23:58:40Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-11.json",
+   "normalized_bars": 323780,
+   "normalized_bars_sha256": "1ebefc3cc1d7bd863c51e1f4876e8b9488196553833ad8ff0298567d3ce2140b",
+   "raw_bars": 323780,
+   "series": 192,
+   "sha256": "c7811fa8b0c00c8e32f7008e4bde156f29bedcd45eafe85cd180a311b0074a02",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 59711316,
+   "captured_at": "2026-11-11T00:00:33Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-12.json",
+   "normalized_bars": 342032,
+   "normalized_bars_sha256": "ebaf8d3a733732d5ed7c05ab7a61039a85c7cc552679fd15b5a0436b7bf90371",
+   "raw_bars": 342032,
+   "series": 192,
+   "sha256": "b68a847731521e20b33422296c6fbb012b4b946a26a546ab32f93ff359e3cf5e",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 59429418,
+   "captured_at": "2026-11-11T00:02:43Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-13.json",
+   "normalized_bars": 340540,
+   "normalized_bars_sha256": "ed8167d882bbf98e1a715513b75eabb6719813bff5a1c3007c4ffea8b1612c73",
+   "raw_bars": 340540,
+   "series": 192,
+   "sha256": "fdf79dcdecae808e926ae282a750c93f994e10f77cb32358406366de8864e8bd",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 61608269,
+   "captured_at": "2026-11-11T00:04:42Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-14.json",
+   "normalized_bars": 353742,
+   "normalized_bars_sha256": "1ee8450fa43ca96fa28e24b5ff6f1f041329ea9bae9121d816b73305fea65dd9",
+   "raw_bars": 353742,
+   "series": 192,
+   "sha256": "bdba9ff26d8781e4ad5e5452ecbb3c52f9cc26445de06c52ed3556b1440b2e18",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 56907986,
+   "captured_at": "2026-11-11T00:06:41Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-15.json",
+   "normalized_bars": 327126,
+   "normalized_bars_sha256": "04b2f1d019c2894e4ca875d6a16ab7ba47ca7a9394bb490d98ae5a35081aacef",
+   "raw_bars": 327126,
+   "series": 192,
+   "sha256": "8020d2b436262381992fa86b3d2bc4242d5df93af7a81f7d736cc3b122321117",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 48
+  },
+  {
+   "bytes": 41190882,
+   "captured_at": "2026-11-11T00:08:39Z",
+   "empty_series": 0,
+   "failed_series": 0,
+   "file": "_audit/phase49-full-verification/captures/capture-batch-16.json",
+   "normalized_bars": 235796,
+   "normalized_bars_sha256": "240a57dd581582895621e9a2beb4819a36def54bae7ef7e095d0bac2fb00547e",
+   "raw_bars": 235796,
+   "series": 152,
+   "sha256": "f72629aaa36459088f320d3a2365f68ed70398faa0e50b512e1dd7c5deb2e796",
+   "source": {
+    "browser": "Chrome/157.0.8103.38",
+    "countback": 100000,
+    "endpoint": "https://rahavard365.com",
+    "from": "1990-01-01T00:00:00Z",
+    "kind": "rahavard365-web-api",
+    "license": "owner subscription; not redistributable",
+    "resolutions": [
+     "D",
+     "W"
+    ],
+    "session": "owner-browser-cdp",
+    "to": "2026-11-11T00:00:00Z",
+    "types": [
+     "type0",
+     "type7"
+    ]
+   },
+   "symbols": 38
+  }
+ ],
+ "capture": {
+  "browser": "Chrome/157.0.8103.38",
+  "captured_at_max": "2026-11-11T00:08:39Z",
+  "captured_at_min": "2026-11-10T23:35:05Z",
+  "countback": 100000,
+  "endpoint": "https://rahavard365.com",
+  "from": "1990-01-01T00:00:00Z",
+  "kind": "rahavard365-web-api",
+  "license": "owner subscription; not redistributable",
+  "resolutions": [
+   "D",
+   "W"
+  ],
+  "session": "owner-browser-cdp",
+  "to": "2026-11-11T00:00:00Z",
+  "types": [
+   "type0",
+   "type7"
+  ]
+ },
+ "extra": {
+  "added_symbols": [
+   "هانیکو"
+  ],
+  "bars_merged": 402,
+  "bytes": 37852097,
+  "captured_at": "2026-11-10T11:29:35Z",
+  "file": "_audit/phase49-finalization/rahavard/capture-30.json",
+  "normalized_bars": 215182,
+  "overlapping_symbols": 29,
+  "raw_bars": 215182,
+  "series": 180,
+  "sha256": "b893630b2dfdab7ad55ef4a6a91475690b99226267429ad148d3cc8cc2ae6cd8",
+  "symbols": 30
+ },
+ "failures": [],
+ "manifest": "_audit/phase49-full-verification/captures/manifests/merge-all.json",
+ "merged": {
+  "aggregate_capture_definition": "sha256 of the concatenated per-batch capture SHA-256 hex strings, batch order",
+  "aggregate_capture_sha256": "be1e46701a0bd9893592d52c371607c8124e5d00dba3f4b192196f1f163f8702",
+  "bars_container_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+  "bars_file": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+  "bars_payload_sha256": "6aec345f817cd96a0dc8eb631cdfa206deee740afb077b5f4621dd1f821fb844",
+  "first_date": "1991-03-23",
+  "index_file": "_audit/phase49-full-verification/captures/reference-index-all.json",
+  "last_date": "2026-11-10",
+  "per_resolution": {
+   "D": 4203504,
+   "M": 20,
+   "W": 1037440
+  },
+  "per_type": {
+   "type0": 2620482,
+   "type7": 2620482
+  }
+ },
+ "normalization": {
+  "bar_identity": "(asset_id, resolution, type, date)",
+  "factor_rule": "factor = type7_close / type0_close on common daily dates; step when |factor/prev - 1| > 1e-3",
+  "importer": "tools/phase45/rahavard/import_capture.py",
+  "importer_sha256": "dd1be8e2d9b3bf9cebed751e0171d867861d65ed4e7cb6cf5bf382677ee6372a",
+  "method": "ISO/epoch timestamps to YYYY-MM-DD; one row per key; identical repeats dropped, differing repeats counted and resolved first-wins; no estimation, missing fields stay null",
+  "stage02": "_audit/phase49-full-verification/stage02_import_reference.py",
+  "stage02_sha256": "7fe9794c4936f3d282127cd6fa124d497f555b6178a8c8aca96276d5d55c51b2"
+ },
+ "raw_capture_committed": false,
+ "stage": "phase49-full-verification/reference-capture",
+ "totals": {
+  "batches": 16,
+  "conflicting_duplicates": 0,
+  "duplicates_dropped": 0,
+  "empty_series": 0,
+  "failed_series": 0,
+  "merged_bars": 5240964,
+  "merged_symbols": 759,
+  "normalized_bars": 5240562,
+  "raw_bars": 5240562,
+  "series": 3032,
+  "symbols": 758
+ },
+ "tracked_files": "only this summary; captures/, normalized bars and the merged factor index stay gitignored"
+}
