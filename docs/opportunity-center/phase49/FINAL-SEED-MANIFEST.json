@@ -1,0 +1,142 @@
+{
+ "counts": {
+  "adjustment_step_ledger_rows": 8308,
+  "adjustment_step_ledger_symbols": 951,
+  "history_validity_rows": 6103,
+  "ledger_symbols_without_history": 0,
+  "open_corrections": 3105,
+  "open_corrections_symbols": 11,
+  "price_history_rows": 544284,
+  "reference_derived_rows": 105367,
+  "rows_added_vs_base": 33145,
+  "symbols_in_db_missing_from_ledger": 0,
+  "symbols_with_history": 6103,
+  "user_watchlists_rows": 0
+ },
+ "created_at": "2026-11-11T02:57:57Z",
+ "inputs": {
+  "base": {
+   "path": "_audit/phase49-finalization/seed/market.db",
+   "price_history_rows": 511139,
+   "sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+   "size": 270614528,
+   "symbols_with_history": 6103,
+   "user_tables": {
+    "user_watchlists": 0
+   }
+  },
+  "pack": {
+   "as_of": "2026-10-25",
+   "counts": {
+    "invalid_dropped_steps": 28,
+    "pre2020_steps": 623,
+    "reconstructed_verified_steps": 6300,
+    "steps": 8280,
+    "symbols": 951,
+    "unverified_steps": 1358,
+    "verified_steps": 622
+   },
+   "factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+   "manifest_sha256": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
+   "mode": "authoritative",
+   "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
+   "raw_ohlc_sha256": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a",
+   "reference_sha256": "ab3b6a938684b088f4c01d7139ce3822118ecaf518bcdc8f61d40fe5d9912c7a,c2a3d253b27bcc41a541c23d51402c04e89476e8b9e13e68871e07bb9b63db65",
+   "version": "ra365-phase49-rebuild-full-v2"
+  },
+  "reference_summary": {
+   "aggregate_capture_sha256": "be1e46701a0bd9893592d52c371607c8124e5d00dba3f4b192196f1f163f8702",
+   "capture_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+   "captured_at": "2026-11-11T00:08:39Z",
+   "path": "_audit/phase49-full-verification/evidence/capture-summary.json",
+   "reference_index_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+   "sha256": "6cbeb62811f42d143a9d6b5c10324e2eae57b6914e8f875a3ee0e50d6154da8b"
+  },
+  "steps_ledger": {
+   "path": "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv",
+   "rows": 8308,
+   "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
+  },
+  "symbols_ledger": {
+   "path": "_audit/phase49-full-verification/ledgers/HISTORY-COVERAGE-LEDGER.csv",
+   "rows": 6103,
+   "sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650"
+  },
+  "work": {
+   "path": "_audit/phase49-full-verification/db/backfill-v2/market.db",
+   "price_history_rows": 544284,
+   "sha256": "52ccaf6af65789defc88fee0d7754a1aff54e25161200ba699d87b1edb08124f",
+   "size": 287117312,
+   "symbols_with_history": 6103,
+   "user_tables": {
+    "user_watchlists": 0
+   }
+  }
+ },
+ "integrity": {
+  "duplicate_pairs": 0,
+  "integrity_check": "ok",
+  "ok": true
+ },
+ "out_dir": "_audit/phase49-full-verification/seed",
+ "price_history_rows": 544284,
+ "reference_derived_rows": 105367,
+ "roundtrip_ok": true,
+ "schema": "phase49-full-verification-final-seed-manifest-v1",
+ "seed_db": {
+  "path": "_audit/phase49-full-verification/seed/market.db",
+  "sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "size": 281088000
+ },
+ "seed_gzip": {
+  "path": "_audit/phase49-full-verification/seed/market.db.gz",
+  "roundtrip_ok": true,
+  "roundtrip_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "sha256": "9512202b9854326838d15b7ade46ccf5db99d4467b686693866fd3e06ede5d31",
+  "size": 103211107
+ },
+ "seed_lzma": {
+  "format": "xz",
+  "path": "_audit/phase49-full-verification/seed/market.db.lzma",
+  "preset": "9|EXTREME",
+  "roundtrip_ok": true,
+  "roundtrip_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3",
+  "size": 64131004
+ },
+ "seed_manifest": {
+  "adjustment_step_ledger_rows": "8308",
+  "adjustment_step_ledger_symbols": "951",
+  "aggregate_capture_sha256": "be1e46701a0bd9893592d52c371607c8124e5d00dba3f4b192196f1f163f8702",
+  "created_at": "2026-11-11T02:57:57Z",
+  "open_corrections": "3105",
+  "open_corrections_symbols": "11",
+  "pack_factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "pack_reference_sha256": "ab3b6a938684b088f4c01d7139ce3822118ecaf518bcdc8f61d40fe5d9912c7a,c2a3d253b27bcc41a541c23d51402c04e89476e8b9e13e68871e07bb9b63db65",
+  "pack_version": "ra365-phase49-rebuild-full-v2",
+  "price_history_rows": "544284",
+  "provenance": "rahavard365 licensed footprint (phase48 + phase49 backfill) + phase49 reference-verified adjustment pack",
+  "reference_capture_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "reference_captured_at": "2026-11-11T00:08:39Z",
+  "reference_derived_rows": "105367",
+  "reference_index_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "schema": "phase49-full-verification-seed-v1",
+  "symbols_with_history": "6103",
+  "validity_status_counts": "{\"reconstructed_verified\": 46, \"unverified\": 6000, \"verified\": 57}"
+ },
+ "symbols_with_history": 6103,
+ "user_data": {
+  "base_tables": {
+   "user_watchlists": 0
+  },
+  "preserved": true,
+  "seed_tables": {
+   "user_watchlists": 0
+  }
+ },
+ "validity_status_counts": {
+  "reconstructed_verified": 46,
+  "unverified": 6000,
+  "verified": 57
+ }
+}

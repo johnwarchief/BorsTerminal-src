@@ -1,0 +1,101 @@
+{
+ "checks": {
+  "db_hash_matches_manifest": true,
+  "duplicate_pairs_zero": true,
+  "gzip_hash_matches_manifest": true,
+  "history_validity_18_columns": true,
+  "history_validity_rows_6103": true,
+  "integrity_check_ok": true,
+  "lzma_hash_matches_manifest": true,
+  "new_seed_sha_differs_from_old": true,
+  "price_history_rows_544284": true,
+  "roundtrip_ok": true,
+  "seed_manifest_keys_present": true,
+  "status_counts_from_ledger": true,
+  "symbols_with_history_6103": true
+ },
+ "counts": {
+  "duplicate_symbol_date_pairs": 0,
+  "history_validity_rows": 6103,
+  "ledger_final_status_counts": {
+   "CONFLICT": 90,
+   "INSUFFICIENT_EVIDENCE": 5910,
+   "RECONSTRUCTED_VERIFIED": 46,
+   "VERIFIED_NO_APPLICABLE_EVENT": 2,
+   "VERIFIED_WITH_EVENTS": 55
+  },
+  "price_history_rows": 544284,
+  "reference_derived_rows": 105367,
+  "rows_added_vs_base": 33145,
+  "symbols_with_history": 6103,
+  "validity_status_counts": {
+   "reconstructed_verified": 46,
+   "unverified": 6000,
+   "verified": 57
+  }
+ },
+ "created_at": "2026-11-11T03:05:18Z",
+ "manifest": {
+  "path": "_audit/phase49-full-verification/seed/FINAL-SEED-MANIFEST.json",
+  "sha256": "6a930818b05f3ef180064e7c8c908830bac5a72d89b28111dd43fba9cb859aa7",
+  "size": 5468
+ },
+ "old_seed": {
+  "db": {
+   "path": "_audit/phase49-finalization/seed/market.db",
+   "sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+   "size": 270614528
+  },
+  "gzip": {
+   "path": "_audit/phase49-finalization/seed/market.db.gz",
+   "sha256": "41e90ffc2431100931bd35b99b9221eaf964cda250d5fa07e066ab374cb2e4ad",
+   "size": 101045110
+  },
+  "lzma": {
+   "path": "_audit/phase49-finalization/seed/market.db.lzma",
+   "sha256": "46ff29830b99626c22dff43601c1e6b203ab0340e67727e41992732d14a6e35c",
+   "size": 63159112
+  },
+  "untouched": true
+ },
+ "provenance": {
+  "aggregate_capture_sha256": "be1e46701a0bd9893592d52c371607c8124e5d00dba3f4b192196f1f163f8702",
+  "base_db_sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+  "pack_factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "pack_manifest_sha256": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
+  "pack_raw_ohlc_sha256": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a",
+  "pack_reference_sha256": "ab3b6a938684b088f4c01d7139ce3822118ecaf518bcdc8f61d40fe5d9912c7a,c2a3d253b27bcc41a541c23d51402c04e89476e8b9e13e68871e07bb9b63db65",
+  "pack_version": "ra365-phase49-rebuild-full-v2",
+  "reference_capture_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "reference_captured_at": "2026-11-11T00:08:39Z",
+  "reference_index_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "reference_summary_sha256": "6cbeb62811f42d143a9d6b5c10324e2eae57b6914e8f875a3ee0e50d6154da8b",
+  "steps_ledger_sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28",
+  "symbols_ledger_sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650",
+  "work_db_sha256": "52ccaf6af65789defc88fee0d7754a1aff54e25161200ba699d87b1edb08124f"
+ },
+ "schema": "phase49-full-verification-seed-integrity-v1",
+ "seed": {
+  "db": {
+   "path": "_audit/phase49-full-verification/seed/market.db",
+   "sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+   "size": 281088000
+  },
+  "gzip": {
+   "path": "_audit/phase49-full-verification/seed/market.db.gz",
+   "roundtrip_ok": true,
+   "roundtrip_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+   "sha256": "9512202b9854326838d15b7ade46ccf5db99d4467b686693866fd3e06ede5d31",
+   "size": 103211107
+  },
+  "lzma": {
+   "format": "xz",
+   "path": "_audit/phase49-full-verification/seed/market.db.lzma",
+   "preset": "9|EXTREME",
+   "roundtrip_ok": true,
+   "roundtrip_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+   "sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3",
+   "size": 64131004
+  }
+ }
+}

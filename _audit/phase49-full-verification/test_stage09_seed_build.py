@@ -142,6 +142,40 @@ def _manifest_storage_test():
     assert rep["reference_captured_at"] == "2026-11-10T00:00:00Z"
 
 
+def _real_summary_shape_test():
+    """The committed capture summary nests provenance under merged/capture."""
+    ref = {
+        "capture": {"captured_at_max": "2026-11-11T00:08:39Z"},
+        "extra": {"captured_at": "2026-11-11T00:05:00Z"},
+        "merged": {
+            "aggregate_capture_sha256": "agg",
+            "reference_index_all": {"sha256": "idx"},
+        },
+    }
+    assert S._capture_sha(ref) == "idx"
+    assert S._reference_index_sha(ref) == "idx"
+    assert S._aggregate_capture_sha(ref) == "agg"
+    assert S._captured_at(ref) == "2026-11-11T00:08:39Z"
+    con = _memory_db()
+    rep = S.build_metadata(con, {}, [], [_symbol()], ref)
+    assert rep["reference_capture_sha256"] == "idx"
+    assert rep["reference_index_sha256"] == "idx"
+    assert rep["aggregate_capture_sha256"] == "agg"
+    assert rep["reference_captured_at"] == "2026-11-11T00:08:39Z"
+    stored = dict(con.execute("SELECT key, value FROM seed_manifest"))
+    assert stored["reference_capture_sha256"] == "idx"
+    assert stored["reference_index_sha256"] == "idx"
+    assert stored["aggregate_capture_sha256"] == "agg"
+    # An explicit top-level hash still wins over the nested fields.
+    assert S._capture_sha(dict(ref, capture_sha256="top")) == "top"
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "summary.json")
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(ref, fh)
+        assert S.load_reference_summary(path)["merged"][
+            "reference_index_all"]["sha256"] == "idx"
+
+
 def _write_csv(path, header, rows):
     with open(path, "w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh, lineterminator="\n")
@@ -408,6 +442,7 @@ def main():
     _duplicate_symbol_test()
     _symbol_spaces_test()
     _manifest_storage_test()
+    _real_summary_shape_test()
     _full_build_test()
     _refusal_test()
     _gz_test()

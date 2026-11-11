@@ -120,9 +120,18 @@ def _text(value):
     return "" if value is None else str(value)
 
 
+def _merged(ref):
+    return (ref or {}).get("merged") or {}
+
+
 def _capture_sha(ref):
+    """The reference provenance hash: explicit top-level, else the merged index."""
     ref = ref or {}
-    return _text(ref.get("capture_sha256") or ref.get("sha256") or "")
+    merged = _merged(ref)
+    index = merged.get("reference_index_all") or {}
+    return _text(ref.get("capture_sha256") or ref.get("sha256")
+                 or index.get("sha256")
+                 or merged.get("aggregate_capture_sha256") or "")
 
 
 def _captured_at(ref):
@@ -130,7 +139,19 @@ def _captured_at(ref):
     source = ref.get("source")
     if isinstance(source, dict) and source.get("captured_at"):
         return _text(source["captured_at"])
-    return _text(ref.get("captured_at") or "")
+    capture = ref.get("capture") or {}
+    extra = ref.get("extra") or {}
+    return _text(ref.get("captured_at") or capture.get("captured_at_max")
+                 or extra.get("captured_at") or "")
+
+
+def _reference_index_sha(ref):
+    index = _merged(ref).get("reference_index_all") or {}
+    return _text(index.get("sha256") or "")
+
+
+def _aggregate_capture_sha(ref):
+    return _text(_merged(ref).get("aggregate_capture_sha256") or "")
 
 
 def _stored(value):
@@ -291,6 +312,8 @@ def build_metadata(con, pack, steps, symbols, ref):
         "pack_factors_sha256": ((pack or {}).get("file_sha256") or {}).get("factors", ""),
         "reference_derived_rows": ref_rows,
         "reference_capture_sha256": _capture_sha(ref),
+        "reference_index_sha256": _reference_index_sha(ref),
+        "aggregate_capture_sha256": _aggregate_capture_sha(ref),
         "reference_captured_at": _captured_at(ref),
         "validity_status_counts": dict(sorted(counts.items())),
         "adjustment_step_ledger_rows": len(steps or []),
@@ -496,6 +519,8 @@ def build(base, work, pack_path, steps_path, symbols_path, ref_path,
             "price_history_rows": rows,
             "symbols_with_history": db_symbols,
             "pack_reference_sha256": pack.get("reference_sha256", ""),
+            "reference_index_sha256": _reference_index_sha(ref),
+            "aggregate_capture_sha256": _aggregate_capture_sha(ref),
             "open_corrections": corrections,
             "open_corrections_symbols": correction_symbols,
             "provenance": "rahavard365 licensed footprint (phase48 + phase49 "
@@ -598,6 +623,8 @@ def build(base, work, pack_path, steps_path, symbols_path, ref_path,
                 "path": _rel(ref_path),
                 "sha256": sha256(ref_path),
                 "capture_sha256": metadata["reference_capture_sha256"],
+                "reference_index_sha256": metadata["reference_index_sha256"],
+                "aggregate_capture_sha256": metadata["aggregate_capture_sha256"],
                 "captured_at": metadata["reference_captured_at"],
             },
         },
