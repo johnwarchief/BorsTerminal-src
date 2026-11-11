@@ -266,6 +266,40 @@ def main():
                             a["failed_sets_identical"], len(a["new_failures"]),
                             len(a["resolved_failures"])))
 
+    # Preserved CI records for earlier commits.  A file cannot hold CI results
+    # about itself, so each commit's record is kept separately and never
+    # overwritten; the chain is gated here so a stale or mis-bound record cannot
+    # silently ride along.
+    ci_chain = "NONE"
+    chain_parts = []
+    seen_shas = {ci_sha}
+    for fname in sorted(os.listdir(os.path.join(AUDIT, "evidence"))):
+        if not (fname.startswith("CI-") and fname.endswith(".json")):
+            continue
+        p = os.path.join(AUDIT, "evidence", fname)
+        r = json.load(io.open(p, encoding="utf-8"))
+        rsha = r.get("commit_sha", "?")
+        if rsha in seen_shas:
+            sys.exit("FATAL: %s binds a commit already recorded elsewhere" % fname)
+        seen_shas.add(rsha)
+        if r.get("status") != "COMPLETE":
+            sys.exit("FATAL: %s is not COMPLETE" % fname)
+        if r.get("base_commit") != BASE_COMMIT:
+            sys.exit("FATAL: %s is pinned to another base commit" % fname)
+        if r.get("report_only_failures_caused_by_this_mission"):
+            sys.exit("FATAL: %s attributes a report-only failure to this"
+                     " mission" % fname)
+        for run in r.get("runs", []):
+            if run.get("head_sha") != rsha:
+                sys.exit("FATAL: %s run %s head_sha is not its commit_sha"
+                         % (fname, run.get("run_id")))
+        chain_parts.append("%s=%s(blocking=%s,jobs=%s)"
+                           % (rsha[:8], r.get("status"),
+                              r.get("all_blocking_jobs_success"),
+                              r.get("all_jobs_success")))
+    if chain_parts:
+        ci_chain = " ".join(chain_parts)
+
     gates = json.load(io.open(os.path.join(AUDIT, "evidence", "gates.json"),
                               encoding="utf-8"))
     go = gates["go"]
@@ -303,6 +337,9 @@ def main():
         "# ci_data_lane: %s (the local --profile data run failed 5 suites on a"
         " host without fastapi/pypdfium2; CI is the authority for that lane)"
         % ci_data_lane,
+        "# ci_preserved_chain: %s (each earlier commit's CI record kept"
+        " separately; none overwritten, every run head_sha == its commit_sha)"
+        % ci_chain,
         "# independent_db_revision: %s" % s7["revision"],
         "# independent_db: %s (fresh from the frozen Phase 4.9.2 SCHEMA; NOT a"
         " copy of the Seed Candidate or the Pilot DB, both absent on this host)"

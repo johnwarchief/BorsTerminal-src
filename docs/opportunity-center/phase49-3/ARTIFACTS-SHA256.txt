@@ -9,6 +9,7 @@
 # ci_jobs: workflows_success=True jobs_success=False blocking_jobs_success=True (python-legacy is continue-on-error: workflow success is NOT all-jobs success)
 # ci_report_only_attribution: legacy Python maintenance (report-only): 30/211 failed here vs 30/211 at base, identical_sets=True new=0 resolved=0
 # ci_data_lane: data/research suites (python dev/run_all_tests.py --profile data) conclusion=success report_only=False (the local --profile data run failed 5 suites on a host without fastapi/pypdfium2; CI is the authority for that lane)
+# ci_preserved_chain: 59a1c918=COMPLETE(blocking=True,jobs=False) 612c9658=COMPLETE(blocking=True,jobs=False) (each earlier commit's CI record kept separately; none overwritten, every run head_sha == its commit_sha)
 # independent_db_revision: 4832047eecc35dd0d6e729b8b6f58479e92b9350a72e68b535d76e70cbe09080
 # independent_db: _audit/phase49-3/db/cohort.db (fresh from the frozen Phase 4.9.2 SCHEMA; NOT a copy of the Seed Candidate or the Pilot DB, both absent on this host)
 # independent_db_sha256: 99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd (65437696 bytes)
@@ -32,10 +33,11 @@
 7111c01dd1df7bec6cabb5f7d7d3b6512f40f257e5a43da7908c288c80528912  7292  docs/opportunity-center/phase49-3/CI-FINAL-RESULTS.json
 857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901  51450  docs/opportunity-center/phase49-3/COHORT-SELECTION.json
 2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22  2962335  docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-MAP.csv
-7105b81d6d367d6d282123dab4d06e2910e4bb35040598a8c6438e28d083c39e  100333  docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-REPORT.md
+11f4bf6cb67d27145a3fc5e732fd3f5759615d7751c9cfa84de749da5f62740c  110575  docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-REPORT.md
 # --- section 2 ---
 8dcfd38e191bec20919fbc49c5febc7ed574bb0ca713abc2dacee5ce0ad45b7e  16628  _audit/phase49-3/ledgers/COHORT-EVENT-EVIDENCE.csv
 2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22  2962335  _audit/phase49-3/ledgers/COVERAGE-EXPANSION-MAP.csv
+f3dd9cc6439f26d2ed79b93831c1881d0e9e9280071bdd20bf82c1a2fb105de7  7292  _audit/phase49-3/evidence/CI-59a1c918.json
 a2db9bcc2dcdbc1d265c0635c339df19a83d08c4889f9951a16a78a807af70d4  7290  _audit/phase49-3/evidence/CI-612c9658.json
 e0a58be2af0e548b4f267579046ec20cd1781b15eeb7f8ba5999692517c07be0  38315  _audit/phase49-3/evidence/COHORT-CANDLES.json
 857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901  51450  _audit/phase49-3/evidence/COHORT-SELECTION.json
@@ -59,9 +61,10 @@ f11b0a02f62517fe8bb2bdf80339e2532f22ccf5a6d3cd82fd55bbbdea160a31  10816  _audit/
 2d2cd49ef8ad1523c375ff33dd07868455089800ccf839c57b5875344b85ae39  401  _audit/phase49-3/manifests/stage09-idempotency.json
 47fdfbab858381a8754ec0c68a2ac0d9e7e76ab311bf68bd638fb37dccd8e73c  365  _audit/phase49-3/manifests/stage10-zero-event-census.json
 # --- section 3 ---
-8c9c8ff82161ba7dc06c46edeacfed1a1714da8c763bc6b94230156acfd96ea5  21494  _audit/phase49-3/build_artifacts_manifest.py
+263913b0f410026ddb0c558c6cd7e063276062087b8d94bbc22a4c9a8f00e461  23354  _audit/phase49-3/build_artifacts_manifest.py
 757b73e7f3fb471c4fe8d59406abe27af7021e7d95a2ef9b9aa0c2e8a72eb177  24245  _audit/phase49-3/build_coverage_map.py
 643b5df83e0ded6a7083df61aa2aebd0c3d7787e67f1bf2b3365102fa684d4c8  14828  _audit/phase49-3/fetch_ci.py
+5f59a7ba0b3361cbdae8799ced83f027db75e71de20a29b9086f6e1aa328fec7  1587  _audit/phase49-3/record_ci_for_commit.py
 5caf370e0e4c4ae11a530bdc763bffdc2e4684c3c2f13c4b341dcdafd1a0fa3d  17583  _audit/phase49-3/select_cohort.py
 92cbe7f047d6b8d66483edefb9b49a28fbd6a92c868c6825c3b8a2495fa9bb48  29284  _audit/phase49-3/stage03_cohort_evidence.py
 954e66e184e13ff3c9515a53aa4ec8cb668527c58f8b3424dffdca571cf7466d  17560  _audit/phase49-3/stage04_product_readiness.py
@@ -71,10 +74,12 @@ f11b0a02f62517fe8bb2bdf80339e2532f22ccf5a6d3cd82fd55bbbdea160a31  10816  _audit/
 b2a571da59f665169c0c6003728746aed8e93ba4de420d3a39fa5f7e0f42dba8  27016  _audit/phase49-3/stage08_runtime_readpath.py
 67ed578584af215928ec495e68b4fd5a2439015d9ef94b67f31f0804dce3f16e  16979  _audit/phase49-3/stage09_idempotency.py
 7ad5608febbe80147781e95dd6ec9636c9f835fb7206b0c716b9b0a7c0374e50  19313  _audit/phase49-3/stage10_zero_event_census.py
+f83ec7ea0767daafe3c21c50afbe78aa486cc6eabe86b6cab2b01a066b0be64a  4654  _audit/phase49-3/test_manifest_ci_chain_controls.py
 3b2abb3ac7ea2b88f26253d07c47f52ff29ef8390a68e0aa84347abb01eb0044  2576  _audit/phase49-3/test_stage03_controls.py
 6bdab1838bc04825114423899b78839b37a2cf59327607b324ab353f1df88023  12264  _audit/phase49-3/test_stage06_controls.py
 eed5c143f571a644e63a2776cc6d7d74f6a05dc27cc9828cb2c0e54af09e1b2d  11639  _audit/phase49-3/test_stage07_controls.py
 f6a8d25034cb292f0bbd797b08423a7405a42b71943adb78c745986d1264abd7  11776  _audit/phase49-3/test_stage08_controls.py
+064e1c01a47a0a286f7b07943fd723bdbf3ad5c1e65cf6286f1b0e148985ba84  7459  _audit/phase49-3/verify_pushed_bytes.py
 # --- section 4 ---
 4e47e750653ab10bff0f039f2e94d5ce1fb3b91fc59a3fee8ec626300a000fd0  3461  backend-go/internal/chart/measured.go
 88b457050ddac90c00d97dd96c0abebb4a205ea6cbf374c72eaf91376778f277  61545  backend-go/internal/chart/canonical.go
