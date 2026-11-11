@@ -8,17 +8,13 @@
 #    * the working tree gets LF, except Windows-only launchers
 #    * known-binary assets are never touched
 # ============================================================
-
 * text=auto eol=lf
-
 # ---- Windows launchers must keep CRLF in the working tree ----
 *.bat  text eol=crlf
 *.cmd  text eol=crlf
 *.ps1  text eol=crlf
-
 # ---- POSIX shell launchers must keep LF ----
 *.sh   text eol=lf
-
 # ---- Generated / vendored payloads: never normalise or diff ----
 *.ttf       -text
 *.woff      -text
@@ -35,8 +31,9 @@
 *.rar       -text
 *.7z        -text
 *.lzma      -text
-
 # ---- SQLite databases are binary blobs ----
 *.db        -text
 *.db-shm    -text
 *.db-wal    -text
+_audit/phase49-full-verification/captures/bars-all.ndjson.gz filter=lfs diff=lfs merge=lfs -text
+_audit/phase49-full-verification/captures/reference-index-all.json filter=lfs diff=lfs merge=lfs -text

@@ -133,7 +133,9 @@ phase49/continuation/db/
 phase49/continuation/evidence/
 phase49/continuation/packs/
 phase49/continuation/*.exe~
-/phase49-full-verification/captures/
+/phase49-full-verification/captures/*
+!/phase49-full-verification/captures/bars-all.ndjson.gz
+!/phase49-full-verification/captures/reference-index-all.json
 /phase49-full-verification/capture-plan/
 /phase49-full-verification/db/
 /phase49-full-verification/seed/
