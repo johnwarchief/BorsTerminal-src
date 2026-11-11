@@ -1,0 +1,47 @@
+{
+  "schema": "phase49-3-lfs-transfer-verification-v1",
+  "branch": "mission/phase49-3-capture-lfs-2026-11-11",
+  "commit_sha": "18dd46a7",
+  "repository": "johnwarchief/BorsTerminal-src",
+  "remote_url": "https://github.com/johnwarchief/BorsTerminal-src.git",
+  "lfs_version": "git-lfs/3.7.1",
+  "transfer_date": "2026-11-11",
+  "files": [
+    {
+      "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+      "size_bytes": 145864430,
+      "sha256_before": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+      "sha256_after": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+      "expected_prefix": "272336c0",
+      "lfs_pointer_oid": "sha256:272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+      "lfs_pointer_size": 145864430,
+      "match": true
+    },
+    {
+      "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+      "size_bytes": 2010378,
+      "sha256_before": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+      "sha256_after": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+      "expected_prefix": "83544012",
+      "lfs_pointer_oid": "sha256:83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+      "lfs_pointer_size": 2010378,
+      "match": true
+    }
+  ],
+  "verification_method": "Fresh shallow clone from GitHub to temp directory, SHA256 computed on downloaded files",
+  "lfs_fsck": "OK",
+  "all_match": true,
+  "constraints_honored": {
+    "no_new_capture": true,
+    "no_seed_db_change": true,
+    "no_production_db_change": true,
+    "no_main_change": true,
+    "no_merge_tag_release": true
+  },
+  "files_changed_in_commit": [
+    ".gitattributes",
+    "_audit/.gitignore",
+    "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+    "_audit/phase49-full-verification/captures/reference-index-all.json"
+  ]
+}
