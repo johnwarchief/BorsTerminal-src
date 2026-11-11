@@ -325,6 +325,90 @@ def build(out_json, out_csv, out_plan, manifest_path):
                                "o1_", "r1_", "o2_", "ref_ratio", "prod_ratio",
                                "ratio_only", "seed_price", "expected_"))}
 
+    # Mission section 6 asks for three populations to be recorded separately:
+    # reference events the pack does not carry, ratios that differ, and events
+    # with no reference change.  All three are derivable from the committed step
+    # ledger, so they are measured here rather than left to the blocked capture.
+    allv = [r for m in members for r in by_key.get(key(m["symbol"]), [])
+            if r["final_status"] != "INVALID_DROPPED"]
+    ref_only = [r for r in allv if r["provenance"] == "reference"]
+    outside_pack = [r for r in allv if "outside pack coverage" in r["notes"]]
+    no_ref = [r for r in allv if not r["ref_ratio"].strip()]
+    ref_derived = [r for r in allv
+                   if r["method"] == "reference-factor-step-v1"]
+    pack_wins = [r for r in allv if r["provenance"] == "pack"
+                 and not r["prod_ratio"].strip()]
+    mismatch = [r for r in allv if r["comparison_result"] == "MISMATCH"]
+
+    def _detail(rs):
+        return [{"symbol": r["symbol"], "effective_date": r["effective_date"],
+                 "provenance": r["provenance"], "method": r["method"],
+                 "ratio": r["ratio"], "ref_ratio": r["ref_ratio"],
+                 "prod_ratio": r["prod_ratio"],
+                 "evidence_tier": r["evidence_tier"],
+                 "evidence_ref": r["evidence_ref"],
+                 "final_status": r["final_status"], "notes": r["notes"]}
+                for r in sorted(rs, key=lambda x: (x["symbol"],
+                                                   x["effective_date"]))]
+
+    prov_split = {
+        "population": ("the %d valid step-ledger rows of the 30 cohort symbols;"
+                       " every row is a step the ledger carries forward"
+                       % len(allv)),
+        "reference_events_absent_from_product_and_pack": {
+            "count": len(ref_only),
+            "discriminator": "provenance == 'reference'",
+            "detail": _detail(ref_only),
+        },
+        "product_events_outside_pack_coverage": {
+            "count": len(outside_pack),
+            "discriminator": "notes contain 'outside pack coverage'",
+        },
+        "differing_ratios": {
+            "count": len(mismatch),
+            "discriminator": "comparison_result == 'MISMATCH'",
+            "cause_split": dict(sorted(collections.Counter(
+                r["discrepancy_cause"] for r in mismatch).items())),
+            "conflict_ratio_final_status": sum(
+                1 for r in allv if r["final_status"] == "CONFLICT_RATIO"),
+        },
+        "events_with_no_reference_change_value": {
+            "count": len(no_ref),
+            "discriminator": "ref_ratio field empty in the committed ledger",
+            "comparison_split": dict(sorted(collections.Counter(
+                r["comparison_result"] for r in no_ref).items())),
+            "meaning": ("no reference factor-change value is recorded for that"
+                        " date in the ledger; this is a ledger field absence,"
+                        " not proof that the reference index holds no event"),
+        },
+        "reference_derived_steps": {
+            "count": len(ref_derived),
+            "discriminator": "method == 'reference-factor-step-v1'",
+            "final_status_split": dict(sorted(collections.Counter(
+                r["final_status"] for r in ref_derived).items())),
+        },
+        "pack_step_wins_over_product": {
+            "count": len(pack_wins),
+            "discriminator": ("provenance == 'pack' and prod_ratio empty"),
+            "detail": _detail(pack_wins),
+        },
+        "capture_level_scope": {
+            "status": "NOT_MEASURED",
+            "why": ("the complete reference-index-versus-engine population"
+                    " (phase49-2 measured 67 reference MISSING rows that way)"
+                    " needs the paired capture bytes, which are absent; the"
+                    " counts above are only what the committed step ledger"
+                    " already carries, and must not be read as the full"
+                    " reference-only event count"),
+        },
+        "action": ("nothing rewritten: conflicting ratios and witness-less rows"
+                   " keep their ratio, provenance and status"),
+    }
+    if len(allv) != totals["event_rows_valid"]:
+        print("FATAL provenance split population %d != event_rows_valid %d"
+              % (len(allv), totals["event_rows_valid"]), file=sys.stderr)
+        return 2
+
     payload = {
         "schema": "phase49-3-cohort-event-evidence-v1",
         "stage": "stage03_cohort_evidence",
@@ -371,6 +455,7 @@ def build(out_json, out_csv, out_plan, manifest_path):
             out, "discrepancy_causes").items())),
         "final_status_totals": dict(sorted(_sum_json(
             out, "final_statuses").items())),
+        "event_provenance_split": prov_split,
         "identity_audit_flags": {
             "meaning": ("SYMBOL_IDENTITY_MISMATCH in the frozen ledger is an "
                         "alias-spelling duplicate-date ratio conflict "
@@ -424,6 +509,14 @@ def build(out_json, out_csv, out_plan, manifest_path):
     print("  candle-level: BLOCKED x%d (%s)" % (len(out), CANDLE_BLOCK))
     print("  identity-audit flag rows: %d (wrong-instrument: %d)"
           % (len(flagged), len(wrong_instrument)))
+    print("  provenance split: ref-only=%d outside-pack=%d differing=%d"
+          " no-ref-value=%d ref-derived=%d pack-wins=%d"
+          % (prov_split["reference_events_absent_from_product_and_pack"]["count"],
+             prov_split["product_events_outside_pack_coverage"]["count"],
+             prov_split["differing_ratios"]["count"],
+             prov_split["events_with_no_reference_change_value"]["count"],
+             prov_split["reference_derived_steps"]["count"],
+             prov_split["pack_step_wins_over_product"]["count"]))
     return 0
 
 

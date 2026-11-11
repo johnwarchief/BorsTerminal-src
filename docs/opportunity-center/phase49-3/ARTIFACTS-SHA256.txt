@@ -3,8 +3,10 @@
 # deterministic: no timestamp in the payload; rerun is byte-identical
 # verdict: BLOCKED_CAPTURE_REQUIRED
 # code_commit: e09ccd95d51c94082640cda75ef3de2b2008f9d2 (base; this mission changed no engine code)
-# ci_status: PENDING (no CI run recorded yet)
-# ci_commit: -
+# ci_status: COMPLETE
+# ci_commit: 612c9658d3c69f0cd64ff8fa46c7c3e1491d6c7e
+# ci_jobs: workflows_success=True jobs_success=False blocking_jobs_success=True (python-legacy is continue-on-error: workflow success is NOT all-jobs success)
+# ci_report_only_attribution: legacy Python maintenance (report-only): 30/211 failed here vs 30/211 at base, identical_sets=True new=0 resolved=0
 # independent_db_revision: NOT_CREATED (no working DB copy was built: the paired capture bytes are absent, and fabricating inputs is forbidden)
 # independent_db_rows: NOT_MEASURED (raw=0 adjusted=0 factors=0 written by this mission)
 # go: 55 packages ok, 3 without test files, 0 failures
@@ -14,29 +16,30 @@
 # section: 1=deliverables 2=ledgers/evidence/manifests 3=mission scripts 4=code, gates and pinned inputs 5=inputs not committed (recorded hashes)
 # note: this manifest does not list itself
 # --- section 1 ---
+a2db9bcc2dcdbc1d265c0635c339df19a83d08c4889f9951a16a78a807af70d4  7290  docs/opportunity-center/phase49-3/CI-FINAL-RESULTS.json
 857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901  51450  docs/opportunity-center/phase49-3/COHORT-SELECTION.json
 2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22  2962335  docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-MAP.csv
-5e93d9835537af7dce6d7fee9af242d7c4abb187273414c42a87e2a27254fac7  37433  docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-REPORT.md
+59271dfdc71fba5a07a8909b3f02d57c76fed823d75e2bf9c33f01f31b9bd152  48179  docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-REPORT.md
 # --- section 2 ---
 8dcfd38e191bec20919fbc49c5febc7ed574bb0ca713abc2dacee5ce0ad45b7e  16628  _audit/phase49-3/ledgers/COHORT-EVENT-EVIDENCE.csv
 2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22  2962335  _audit/phase49-3/ledgers/COVERAGE-EXPANSION-MAP.csv
 857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901  51450  _audit/phase49-3/evidence/COHORT-SELECTION.json
 af31f836e53a1f119b0a2b6df15d9520e3fe0d02b3db78479f9d144390fd4d38  5368  _audit/phase49-3/evidence/capture-restore-plan.json
-b7b3b7cd89a4497372b23f13fd627ee3634cb78bad9b53a200aa42f89a917529  49374  _audit/phase49-3/evidence/cohort-event-evidence.json
+97749aaf65f3d78cd206a963f8455ca90c1378f033d652a8dbb5f96b32d94739  53114  _audit/phase49-3/evidence/cohort-event-evidence.json
 55b7338c700cf3fb13cb0cf4c5e3a07dbb049c8826be58575f649ddf55846526  7273  _audit/phase49-3/evidence/coverage-reconciliation.json
 603e01b903bd0c0e728dbff9a2dd94d0aa85ee58acfd0042c98a541367cb0531  9292  _audit/phase49-3/evidence/gates.json
 f11b0a02f62517fe8bb2bdf80339e2532f22ccf5a6d3cd82fd55bbbdea160a31  10816  _audit/phase49-3/evidence/product-readiness.json
 07f8be11a1acde63e4eee4ae16eec27bcf49cd8e9a645c164826efb885b1a0b1  1781  _audit/phase49-3/manifests/stage01_coverage_map.manifest.json
 5a8925b1c0d97ce1dbb7768e882437dc154048f862232f77385c6b5e912c8781  1265  _audit/phase49-3/manifests/stage02_cohort_selection.manifest.json
-8bf1ee9a5c20ee60aa599ee8655ebb2f84e35fa21dcc212037968d6b7aafbf0a  1657  _audit/phase49-3/manifests/stage03_cohort_evidence.manifest.json
+96ac5a9bda290d182692ee3e353939cbed1446de4dedb5ec867843777ab251de  1657  _audit/phase49-3/manifests/stage03_cohort_evidence.manifest.json
 82b7b4150b28e4c69f64d7bf710c7f7a71e9f0d0321b0db69abd066c2d234165  1359  _audit/phase49-3/manifests/stage04_product_readiness.manifest.json
 7e8772b1858ba17e58736a42b56f20f2b1a12ca0f62add97ceaac38fceada55e  2256  _audit/phase49-3/manifests/stage05_gates.manifest.json
 # --- section 3 ---
-589014788c9f98658e564407a5e9a1b2161c33ae4f9503b5993eba21eae7cc86  10373  _audit/phase49-3/build_artifacts_manifest.py
+dee06a26d3c81e32f8491356049ba7d28ee23a9a3d2f2b5df4ed10d2b889cd46  11918  _audit/phase49-3/build_artifacts_manifest.py
 757b73e7f3fb471c4fe8d59406abe27af7021e7d95a2ef9b9aa0c2e8a72eb177  24245  _audit/phase49-3/build_coverage_map.py
-9bb0b3521c4b1988c9790ed41ee73b8fb5cbae50fe7a186909669432d396ca6f  8582  _audit/phase49-3/fetch_ci.py
+643b5df83e0ded6a7083df61aa2aebd0c3d7787e67f1bf2b3365102fa684d4c8  14828  _audit/phase49-3/fetch_ci.py
 5caf370e0e4c4ae11a530bdc763bffdc2e4684c3c2f13c4b341dcdafd1a0fa3d  17583  _audit/phase49-3/select_cohort.py
-6d02ddfcfe3317fbc52a383d4471981f60fa35750704d5233abc07970599df33  24250  _audit/phase49-3/stage03_cohort_evidence.py
+92cbe7f047d6b8d66483edefb9b49a28fbd6a92c868c6825c3b8a2495fa9bb48  29284  _audit/phase49-3/stage03_cohort_evidence.py
 954e66e184e13ff3c9515a53aa4ec8cb668527c58f8b3424dffdca571cf7466d  17560  _audit/phase49-3/stage04_product_readiness.py
 7139a38998cf7bb7d3e56d99420544cc6492ddc609430eb6b9d462a3e8162088  14190  _audit/phase49-3/stage05_gates.py
 3b2abb3ac7ea2b88f26253d07c47f52ff29ef8390a68e0aa84347abb01eb0044  2576  _audit/phase49-3/test_stage03_controls.py

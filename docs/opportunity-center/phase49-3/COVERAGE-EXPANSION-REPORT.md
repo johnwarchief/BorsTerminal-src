@@ -49,7 +49,8 @@
 | موتور دست‌نخورده + سوئیت‌های Go | **PASS** | ۵۵ بسته ok، صفر شکست، `go vet` exit 0 |
 | پروفایل production | **PASS** | exit 0، ALL SUITES PASSED |
 | پروفایل data | **FAIL از پیش موجود** | ۵ سوئیت؛ کنترل روی کامیت پایه counts یکسان داد |
-| CI واقعی روی کامیت نهایی | جداگانه | `CI-FINAL-RESULTS.json` با SHA خودش |
+| CI واقعی روی `612c9658` — jobهای بازدارنده | **PASS** | guards ۹/۹ job، python-tooling ۱/۱ job |
+| CI واقعی — lane report-only | **FAIL از پیش موجود** | job نگهداشت Python: ۳۰/۲۱۱ سوئیت، مجموعهٔ نام‌ها عیناً برابر پایه |
 
 ---
 
@@ -140,6 +141,28 @@ steps … One (فيروزه2) carries a pack step».
 `ref_coverage = full` **و** `identity_status = resolved_instruments` **و**
 `raw_ohlc_valid = ok`.
 
+### ۳.۷ نگاشت ۶۴ ستون به ابعاد خواسته‌شدهٔ مأموریت
+
+هر بعدی که مأموریت خواست، ستون مستقل دارد. حضور Reference و وجود Capture
+جفت‌شده عمداً دو ستون جدا هستند (بعد ۴ در برابر بعد ۷).
+
+| بعد خواسته‌شده | ستون‌های ماتریس |
+| --- | --- |
+| هویت استاندارد / هویت معتبر | `key`, `identity_status`, `instrument_candidates` |
+| instruments و وضعیت asset-id | `ins_code`, `isin`, `asset_id`, `instrument_status`, `instrument_state_date`, `asset_id_state` |
+| halt و تازگی | `stale_status`, `stale_basis`, `sessions_behind`, `latest_session` |
+| حضور Reference Index و نوع پوشش | `ref_coverage`, `ref_type0_bars`, `ref_first`, `ref_last` |
+| حضور و شمار Factor Step | `step_rows`, `factor_steps`, `factor_verified`, `factor_reconstructed`, `factor_unverified`, `factor_conflict`, `factor_partial`, `factor_insufficient` |
+| OHLCV خام معتبر | `raw_ohlc_valid`, `seed_price_rows` |
+| حضور Capture جفت‌شدهٔ type0/type7 | `paired_type0_type7_evidenced` (اثبات‌شده) در برابر `local_capture_bytes` (بایت موجود) |
+| کامل‌بودن بازهٔ تاریخی | `window_span_ok`, `session_completeness`, `seed_trading_sessions`, `seed_duplicate_dates`, `seed_first_date`, `seed_last_date` |
+| شمار کندل قابل استفاده | `ingestable_raw_rows`, `history_gain_rows`, `adjusted_available`, `pilot_adjusted_rows` |
+| OHLC نامعتبر / اختلاف Price Basis | `invalid_ohlc_legacy`, `anomalies`, `gaps`, `legacy_unknown_rows`, `price_basis_risk`, `rahavard365_rows`, `board_rows` |
+| eligibility ورود به محاسبه+verify | `verification_eligible` |
+| علت دقیق Block | `block_cause`, `ledger_remaining_blocker`, `recovery_class` |
+| منبع لازم برای رفع Block | `required_source` |
+| زمینهٔ ledger و pilot قبلی | `symbol`, `evidence_tier`, `event_coverage`, `official_o1`, `official_o1_in_range`, `ledger_final_status`, `phase49_2_status`, `phase49_2_queue_reason`, `pilot_raw_rows`, `pilot_factors`, `pilot_verified_exact`, `pilot_max_rel_error`, `pilot_revision` |
+
 ---
 
 ## ۴. کشف جدید: `ref_coverage = full` تضمین بازه است، نه کامل‌بودن نشست‌ها
@@ -205,13 +228,18 @@ adjusted OHLC را ثابت نمی‌کند. type0 بدون شاهد type7 بر�
 | --- | --- | --- | --- | --- |
 | pilot قبلی (۳۰) | ۳۴٬۲۴۷ | ۱۰۵٬۶۹۲ | +۷۱٬۴۴۵ | ۳٫۰۹× |
 | `QUEUE_REFERENCE_ONLY` (۶۷۵) | ۲۷۴٬۶۳۵ | ۱٬۸۴۲٬۶۹۵ | **+۱٬۵۶۸٬۰۶۰** | ۶٫۷۱× |
-| halted با Reference (۵۴) | — | ۱۵۳٬۳۶۵ | مشروط به رأی مالک | — |
+| halted با Reference (۵۴) | ۱۸٬۱۲۱ | ۱۵۳٬۳۶۵ | +۱۳۵٬۲۴۴ (مشروط به رأی مالک) | ۸٫۴۶× |
 | گروه جدید (۳۰) | ۲۸٬۰۵۱ | ۸۴٬۴۵۲ | **+۵۶٬۴۰۱** | ۳٫۰۱× |
 
 این اعداد **EVIDENCED EXPECTATION** از فهرست کامیت‌شده‌اند، نه اندازه‌گیری محلی:
 بایت‌های Capture روی این ماشین نیستند. جمع `ref_days` روی ۷۵۹ نماد `ref_full`
 دقیقاً ۲٬۱۰۱٬۷۵۲ می‌شود که با `factor_days` ثبت‌شده در `capture-summary.json`
 مطابقت دارد — این یک cross-check مستقل است.
+
+هر چهار ردیف جدول بالا مستقیماً از خود ماتریس کامیت‌شده بازجمع زده شدند (نه از
+JSON شواهد) و اعداد یکسان درآمدند. روش پیش‌بینی هم اعتبارسنجی شد: برای هر ۳۰ نماد
+pilot قبلی `ingestable_raw_rows == ref_type0_bars` است، یعنی همان ستونی که برای
+گروه جدید پیش‌بینی می‌کند، برای گروه قبلی دقیقاً برابر اندازه‌گیری واقعی بوده است.
 
 ### ۵.۲ شواهد Capture موجود
 
@@ -369,6 +397,51 @@ ingest خام/adjusted، محاسبهٔ نسبت type0/type7، ساخت Factor،
 > (۷۵۹ نماد، ۲٬۶۲۰٬۴۸۲ bar برای هر type، SHA ثبت‌شده). آنچه غایب است **بایت‌های**
 > آن روی این ماشین است، چون دادهٔ licensed و gitignored است.
 > این «نبود نشست معتبر» نیست و «نبود Reference» هم نیست.
+
+### ۷.۴ سه جمعیت جداگانه‌ای که مأموریت خواست (§۶)
+
+مأموریت خواست «رویدادهای مرجعِ غایب از pack»، «نسبت‌های متفاوت» و «رویدادهای
+بدون تغییر مرجع» **جداگانه** ثبت شوند. هر سه از ledger کامیت‌شده قابل استخراج‌اند،
+پس اندازه‌گیری شدند و به Capture موکول نشدند. جمعیت: همان ۴۸۷ ردیف معتبر
+(یک assertion برابری آن را با `event_rows_valid` گیت می‌کند).
+
+| جمعیت | تعداد | discriminator |
+| --- | --- | --- |
+| رویداد مرجع غایب از product **و** pack | **۱** | `provenance == 'reference'` |
+| رویداد product بیرون از پوشش pack | **۱۵۶** | notes شامل `outside pack coverage` |
+| نسبت‌های متفاوت (`MISMATCH`) | **۶۷** | `comparison_result == 'MISMATCH'` |
+| رویداد بدون مقدار تغییر مرجع | **۱۵۱** | فیلد `ref_ratio` خالی |
+| stepهای مرجع‌مشتق | **۶۲** | `method == 'reference-factor-step-v1'` |
+| step pack که بر product پیروز شد | **۳** | `provenance == 'pack'` و `prod_ratio` خالی |
+
+تفکیک‌ها:
+
+- **۶۷ نسبت متفاوت** = `EVENT_RATIO_MISMATCH` ۳۵ + `SOURCE_MISMATCH` ۳۲؛
+  `final_status = CONFLICT_RATIO` نیز ۶۷.
+- **۱۵۱ بدون مقدار مرجع** = `MATCH` ۳۶ + `MISMATCH` ۴۵ + `NO_EVIDENCE` ۴۴ +
+  `PARTIAL` ۲۶.
+- **۶۲ مرجع‌مشتق** = `VERIFIED_REFERENCE` ۵۳ + `CONFLICT_RATIO` ۷ +
+  `CONFLICT_DUPLICATE` ۱ + `PARTIAL_OFFICIAL` ۱.
+
+آن **یک** رویداد مرجعِ کاملاً غایب از pack:
+
+| نماد | تاریخ | نسبت | شاهد | وضعیت |
+| --- | --- | --- | --- | --- |
+| `وتجارت` | ۲۰۱۵-۰۷-۲۷ | `0.9893955461293765` | R1 `capture:2015-07-27` | `VERIFIED_REFERENCE` |
+
+یادداشت خود ledger: «reference factor step missing from product/pack». این ردیف
+**بازنویسی نشد**؛ نسبت، provenance و وضعیتش حفظ شد.
+
+**دو مرزبندی صداقت که نباید رد شوند:**
+
+1. عدد **۱** شمار رویدادهای مرجعِ غایب از pack **در جمعیت ledger** است، نه شمار
+   کامل آن‌ها در فهرست مرجع. مقایسهٔ کامل فهرست-مرجع با موتور (همان کاری که
+   Phase 4.9.2 با آن ۶۷ ردیف `MISSING` را یافت) به بایت‌های Capture نیاز دارد و
+   `NOT_MEASURED` است. صریح در `capture_level_scope` ثبت شد.
+2. **۱۵۱** یعنی فیلد `ref_ratio` در ledger خالی است؛ این **غیبت فیلد** است، نه
+   اثبات اینکه فهرست مرجع در آن تاریخ رویدادی ندارد.
+
+هیچ‌کدام از این ردیف‌ها verified جدید نشدند و هیچ نسبتی از روی نوع حدس زده نشد.
 
 ---
 
@@ -541,11 +614,86 @@ abort می‌کند. Worktree کنترل پس از اجرا حذف شد و هر 
 هر دو گیت B و C **پیش از نوشتن هیچ خروجی** abort کردند. پس این گیت‌ها واقعاً
 می‌توانند شکست بخورند؛ passشان vacuous نیست.
 
-### ۱۰.۶ صداقت CI — قلم‌هایی که نباید بزرگ‌نمایی شوند
+### ۱۰.۶ CI واقعی روی کامیت مصنوعات `612c9658`
 
-- **python-legacy:** این lane report-only است. در فاز قبلی workflow آن
-  `success` شد در حالی که job نگهداشت Python آن `failure` بود. موفقیت سطح
-  workflow هرگز به‌معنی موفقیت همهٔ jobها گزارش نمی‌شود.
+هر سه workflow روی **همین SHA** اجرا و تمام شدند (`head_sha` هر run برابر
+`612c9658d3c69f0cd64ff8fa46c7c3e1491d6c7e`). منبع: `CI-FINAL-RESULTS.json`.
+
+| workflow | run id | شمارهٔ اجرا | نتیجهٔ workflow | jobها |
+| --- | --- | --- | --- | --- |
+| `guards` | `43041402983` | ۱۱۲۵ | success | **۹ از ۹ success** |
+| `python-tooling` | `43041402907` | ۷ | success | **۱ از ۱ success** |
+| `python-legacy` | `43041402885` | ۷ | success | **۱ success + ۱ failure** |
+
+۹ job گارد: zero-python runtime proof، go backend (vet/ast-arch/unit-tests)،
+data integrity guards، frontend v2 (typecheck/vitest/build)، EOL/attributes/no
+tracked junk، go backend on windows (۲۰۲۲ و latest)، go race detector،
+desktop delivery.
+
+**سه پرچم جدا، و هیچ‌کدام از دیگری استنتاج نشده:**
+
+| پرچم | مقدار |
+| --- | --- |
+| `all_workflows_success` | true |
+| `all_jobs_success` | **false** |
+| `all_blocking_jobs_success` | true |
+
+#### تلهٔ report-only — روی همین کامیت هم تکرار شد
+
+`python-legacy` در YAML هر دو job خود را `continue-on-error: true` گذاشته است.
+پس workflow آن `success` گزارش می‌شود در حالی که job
+`legacy Python maintenance (report-only)` روی این کامیت **`failure`** است.
+این دقیقاً همان الگوی فاز قبلی است و **به‌عنوان موفقیت همهٔ jobها گزارش نمی‌شود**.
+
+#### انتساب شکست: از پیش موجود، سوئیت‌به‌سوئیت اثبات شد
+
+job شکست‌خورده در این کامیت و در کامیت پایه با هم مقایسه شدند:
+
+| | این کامیت `612c9658` | پایه `e09ccd95` |
+| --- | --- | --- |
+| job id | `130593855060` | `130514848221` |
+| run id | `43041402885` | `43018306670` |
+| کل سوئیت‌ها | ۲۱۱ | ۲۱۱ |
+| OK | ۱۸۱ | ۱۸۱ |
+| FAIL | **۳۰** | **۳۰** |
+
+**مجموعهٔ نام‌های شکست‌خورده عیناً یکسان است: `new = ۰`، `resolved = ۰`.**
+پس این شکست به این مأموریت منتسب نیست — این مأموریت هیچ کد تولیدی تغییر نداده
+است. ریشهٔ غالب، drift سوئیت‌های Python قدیمی با مهاجرت Go است؛ نمونهٔ واقعی از
+log: `AttributeError: module 'symbol_identity' has no attribute 'pred'` و
+`AttributeError: module 'api.chart' has no attribute '_adjust_events_for'`.
+
+**یک تلهٔ اندازه‌گیری که گرفته شد:** نام سوئیت‌ها خودشان ویرگول دارند
+(مثل `EPS evidence labels: one tier label on card, row and scan_symbol`).
+جداکردن خطِ خلاصهٔ `FAILED:` روی ویرگول **۴۶ قطعه** می‌دهد، نه ۳۰ سوئیت.
+شمارش درست از خط‌های تک‌سوئیتی (`OK|FAIL <name> rc=N`) می‌آید و با بازساختن
+همان خط خلاصه از آن‌ها اثبات می‌شود که parser همهٔ سوئیت‌ها را دیده
+(`parse_complete = true` در هر دو طرف).
+
+**چهار کنترل منفی روی همین parser** (همه رفتار درست):
+
+| کنترل | انتظار | نتیجه |
+| --- | --- | --- |
+| A — log واقعی | ۳۰ FAIL، parse کامل | ۳۰، true ✓ |
+| B — کاشتن یک سوئیت شکست‌خوردهٔ جدید | در `new_failures` دیده شود | `PLANTED_NEW_BROKEN_SUITE` ✓ |
+| C — حذف یک خط سوئیت با نگه‌داشتن خلاصه | `parse_complete = false` | false ✓ |
+| D — سبزشدن یک سوئیت | در `resolved_failures` دیده شود | نام همان سوئیت ✓ |
+
+پس اگر این مأموریت واقعاً سوئیتی را می‌شکست، این مقایسه آن را نشان می‌داد؛
+`identical = true` آن vacuous نیست. recorder در صورت `new > 0` با exit غیرصفر
+و پیام FATAL متوقف می‌شود.
+
+**کامیت docs-only بعدی:** `CI-FINAL-RESULTS.json` نمی‌تواند نتیجهٔ CI روی خودش
+را در خود داشته باشد، پس این فایل به کامیت مصنوعات `612c9658` گره خورده است.
+CI کامیت docs-only جداگانه بررسی و در پیام تحویل به مالک با SHA دقیق گزارش
+می‌شود.
+
+### ۱۰.۷ صداقت CI — قلم‌هایی که نباید بزرگ‌نمایی شوند
+
+- **python-legacy:** این lane report-only است. هم در فاز قبلی و هم روی
+  `612c9658` workflow آن `success` شد در حالی که job نگهداشت Python آن
+  `failure` بود. موفقیت سطح workflow هرگز به‌معنی موفقیت همهٔ jobها گزارش
+  نمی‌شود.
 - **CI روی `3dc7318a`** هرگز به‌جای CI روی کامیت docs `e09ccd95` ارائه نمی‌شود.
   هر نتیجه SHA خودش را نام می‌برد.
 - **Stage E:** استخراج کامل LZMA در فاز قبلی هم انجام نشد؛ آزمون مستقیم محصول
@@ -596,8 +744,8 @@ revision/rebuild همان‌گونه پذیرفته ماندند.
 **پوشش واقعاً چقدر می‌تواند افزایش یابد؟**
 
 - **بدون هیچ Capture جدید:** ۶۷۵ نماد `QUEUE_REFERENCE_ONLY` قابل بازیابی‌اند
-  (+۱٬۵۶۸٬۰۶۰ ردیف، ۶٫۷۱ برابر). ۵۴ نماد halted دیگر (+۱۵۳٬۳۶۵ bar) مشروط به
-  رأی مالک دربارهٔ halted.
+  (+۱٬۵۶۸٬۰۶۰ ردیف، ۶٫۷۱ برابر). ۵۴ نماد halted دیگر (+۱۳۵٬۲۴۴ ردیف از
+  ۱۵۳٬۳۶۵ bar مرجع، ۸٫۴۶ برابر) مشروط به رأی مالک دربارهٔ halted.
 - **گروه ۳۰ منجمد:** +۵۶٬۴۰۱ ردیف مورد انتظار (۲۸٬۰۵۱ → ۸۴٬۴۵۲).
 - **با Capture جدید:** ۳٬۳۰۸ نماد دیگر.
 - **نیازمند منبع/تصمیم دیگر:** ۱٬۴۶۸ حل هویت، ۱۹۱ نقشهٔ asset-id،
@@ -620,7 +768,7 @@ re-capture روی یک نشست authenticated موجود) تا گروه ۳۰ م�
 | `docs/opportunity-center/phase49-3/COHORT-SELECTION.json` | گروه ۳۰ منجمد با دلایل و SHA ورودی |
 | `docs/opportunity-center/phase49-3/COVERAGE-EXPANSION-MAP.csv` | ماتریس ۶٬۱۰۳ × ۶۴ |
 | `docs/opportunity-center/phase49-3/ARTIFACTS-SHA256.txt` | هش همهٔ گزارش‌ها، شواهد، ورودی‌ها و خروجی‌ها |
-| `docs/opportunity-center/phase49-3/CI-FINAL-RESULTS.json` | CI واقعی با SHA خودش |
+| `docs/opportunity-center/phase49-3/CI-FINAL-RESULTS.json` | CI واقعی روی `612c9658`؛ سه پرچم جدا (workflow/job/blocking) + انتساب سوئیت‌به‌سوئیت شکست report-only به کامیت پایه |
 | `_audit/phase49-3/evidence/` | شواهد مشتق کامیت‌شده |
 | `_audit/phase49-3/ledgers/` | ledgerهای مشتق کامیت‌شده |
 | `_audit/phase49-3/manifests/` | manifest هر مرحله با SHA ورودی/خروجی، counts، زمان، وضعیت |

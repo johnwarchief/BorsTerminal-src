@@ -143,10 +143,33 @@ def main():
 
     ci_status = "PENDING (no CI run recorded yet)"
     ci_sha = "-"
+    ci_jobs = "NOT_MEASURED"
+    ci_legacy = "NOT_MEASURED"
     if os.path.exists(CI):
         rec = json.load(io.open(CI, encoding="utf-8"))
         ci_status = rec.get("status", "UNKNOWN")
         ci_sha = rec.get("commit_sha", "?")
+        ci_jobs = ("workflows_success=%s jobs_success=%s blocking_jobs_success=%s"
+                   % (rec.get("all_workflows_success"),
+                      rec.get("all_jobs_success"),
+                      rec.get("all_blocking_jobs_success")))
+        attr = rec.get("report_only_failure_attribution", [])
+        if rec.get("report_only_failures_caused_by_this_mission"):
+            sys.exit("FATAL: a report-only CI failure gained suites at this"
+                     " commit; the manifest must not call it pre-existing")
+        for a in attr:
+            if a.get("status") != "MEASURED":
+                ci_legacy = "%s: %s" % (a["job"], a.get("status"))
+                continue
+            if not a["parse_complete_both"]:
+                sys.exit("FATAL: legacy suite parse incomplete for %s" % a["job"])
+            c, b = a["this_commit_counts"], a["base_commit_counts"]
+            ci_legacy = ("%s: %d/%d failed here vs %d/%d at base,"
+                         " identical_sets=%s new=%d resolved=%d"
+                         % (a["job"], c["suites_failed"], c["suites_total"],
+                            b["suites_failed"], b["suites_total"],
+                            a["failed_sets_identical"], len(a["new_failures"]),
+                            len(a["resolved_failures"])))
 
     gates = json.load(io.open(os.path.join(AUDIT, "evidence", "gates.json"),
                               encoding="utf-8"))
@@ -171,6 +194,9 @@ def main():
         "# code_commit: %s (base; this mission changed no engine code)" % BASE_COMMIT,
         "# ci_status: %s" % ci_status,
         "# ci_commit: %s" % ci_sha,
+        "# ci_jobs: %s (python-legacy is continue-on-error: workflow success is"
+        " NOT all-jobs success)" % ci_jobs,
+        "# ci_report_only_attribution: %s" % ci_legacy,
         "# independent_db_revision: NOT_CREATED"
         " (no working DB copy was built: the paired capture bytes are absent,"
         " and fabricating inputs is forbidden)",

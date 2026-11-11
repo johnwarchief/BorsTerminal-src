@@ -13,6 +13,112 @@
   "PARTIAL": 25,
   "PASS": 4
  },
+ "event_provenance_split": {
+  "action": "nothing rewritten: conflicting ratios and witness-less rows keep their ratio, provenance and status",
+  "capture_level_scope": {
+   "status": "NOT_MEASURED",
+   "why": "the complete reference-index-versus-engine population (phase49-2 measured 67 reference MISSING rows that way) needs the paired capture bytes, which are absent; the counts above are only what the committed step ledger already carries, and must not be read as the full reference-only event count"
+  },
+  "differing_ratios": {
+   "cause_split": {
+    "EVENT_RATIO_MISMATCH": 35,
+    "SOURCE_MISMATCH": 32
+   },
+   "conflict_ratio_final_status": 67,
+   "count": 67,
+   "discriminator": "comparison_result == 'MISMATCH'"
+  },
+  "events_with_no_reference_change_value": {
+   "comparison_split": {
+    "MATCH": 36,
+    "MISMATCH": 45,
+    "NO_EVIDENCE": 44,
+    "PARTIAL": 26
+   },
+   "count": 151,
+   "discriminator": "ref_ratio field empty in the committed ledger",
+   "meaning": "no reference factor-change value is recorded for that date in the ledger; this is a ledger field absence, not proof that the reference index holds no event"
+  },
+  "pack_step_wins_over_product": {
+   "count": 3,
+   "detail": [
+    {
+     "effective_date": "2020-07-04",
+     "evidence_ref": "capture:2020-07-04",
+     "evidence_tier": "R1",
+     "final_status": "VERIFIED_REFERENCE",
+     "method": "multi_field_step_inference",
+     "notes": "pack replace_step (reference-derived) wins over product | audit:pass",
+     "prod_ratio": "",
+     "provenance": "pack",
+     "ratio": "0.9912880279895273",
+     "ref_ratio": "0.9912880279895273",
+     "symbol": "لخانه"
+    },
+    {
+     "effective_date": "2023-08-05",
+     "evidence_ref": "capture:2023-08-05",
+     "evidence_tier": "R1",
+     "final_status": "VERIFIED_REFERENCE",
+     "method": "multi_field_step_inference",
+     "notes": "pack replace_step (reference-derived) wins over product | audit:pass",
+     "prod_ratio": "",
+     "provenance": "pack",
+     "ratio": "0.996538531608672",
+     "ref_ratio": "0.996538531608672",
+     "symbol": "لخانه"
+    },
+    {
+     "effective_date": "2020-05-31",
+     "evidence_ref": "capture:2020-05-31",
+     "evidence_tier": "R1",
+     "final_status": "VERIFIED_REFERENCE",
+     "method": "multi_field_step_inference",
+     "notes": "pack replace_step (reference-derived) wins over product | audit:pass",
+     "prod_ratio": "",
+     "provenance": "pack",
+     "ratio": "0.9967734501037091",
+     "ref_ratio": "0.9967734501037091",
+     "symbol": "نطرين"
+    }
+   ],
+   "discriminator": "provenance == 'pack' and prod_ratio empty"
+  },
+  "population": "the 487 valid step-ledger rows of the 30 cohort symbols; every row is a step the ledger carries forward",
+  "product_events_outside_pack_coverage": {
+   "count": 156,
+   "discriminator": "notes contain 'outside pack coverage'"
+  },
+  "reference_derived_steps": {
+   "count": 62,
+   "discriminator": "method == 'reference-factor-step-v1'",
+   "final_status_split": {
+    "CONFLICT_DUPLICATE": 1,
+    "CONFLICT_RATIO": 7,
+    "PARTIAL_OFFICIAL": 1,
+    "VERIFIED_REFERENCE": 53
+   }
+  },
+  "reference_events_absent_from_product_and_pack": {
+   "count": 1,
+   "detail": [
+    {
+     "effective_date": "2015-07-27",
+     "evidence_ref": "capture:2015-07-27",
+     "evidence_tier": "R1",
+     "final_status": "VERIFIED_REFERENCE",
+     "method": "reference-factor-step-v1",
+     "notes": "reference factor step missing from product/pack | audit:missing-provenance",
+     "prod_ratio": "",
+     "provenance": "reference",
+     "ratio": "0.9893955461293765",
+     "ref_ratio": "0.9893955461293765",
+     "symbol": "وتجارت"
+    }
+   ],
+   "discriminator": "provenance == 'reference'"
+  }
+ },
  "final_status_totals": {
   "CONFLICT_DUPLICATE": 2,
   "CONFLICT_RATIO": 67,
