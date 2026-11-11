@@ -88,7 +88,52 @@
     "CONFLICT_DUPLICATE->CONFLICT_RATIO": 4,
     "INSUFFICIENT_EVIDENCE->CONFLICT_RATIO": 4
    }
-  }
+  },
+  "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
+ },
+ "independence": {
+  "verified_group_total": 5983,
+  "independently_evidenced": 1137,
+  "components": {
+   "VERIFIED_MULTI_SOURCE": 955,
+   "VERIFIED_OFFICIAL": 95,
+   "VERIFIED_REFERENCE_product_derived": 87
+  },
+  "verified_reference": {
+   "total": 4933,
+   "reference_derived_confirmations": 4846,
+   "product_derived": 87,
+   "reference_derived_definition": "method multi_field_step_inference (4,588 pack rows) or reference-factor-step-v1 (258 rows) with float(ratio) == float(ref_ratio) within 1e-12 (4,846 of 4,846 match).",
+   "reference_derived_note": "A VERIFIED_REFERENCE row whose ratio came from the reference index confirms that same source; it is not independent validation. All 4,367 RECONSTRUCTED_AUDITED->VERIFIED_REFERENCE moves sit inside these 4,846 rows.",
+   "product_derived_note": "87 rows keep a product/base-price-discontinuity ratio (base-price-discontinuity+official-merge) that happens to agree with the reference within FACTOR_EXACT; these are the only VERIFIED_REFERENCE rows with a product-side witness."
+  },
+  "shifted_witness": {
+   "window_days": "1-5",
+   "VERIFIED_MULTI_SOURCE": 839,
+   "VERIFIED_OFFICIAL": 58,
+   "VERIFIED_REFERENCE_product_derived": 59,
+   "total": 956,
+   "note": "Primary-witness date shifts (O1 for VMS/VO, R1 for the 87 product-derived VR rows) inside STEP_DATE_SHIFT_MAX_DAYS = 5."
+  },
+  "exact_date": 181,
+  "exact_date_note": "1,137 - 956 = 181 independently evidenced rows use an exact-date primary witness. 24 of the 955 VMS rows carry only an R1 shift (not an O1 shift), so a strict no-shift-anywhere count is 157.",
+  "ratio_out_of_range_verified_reference": {
+   "rows": 2,
+   "items": [
+    {
+     "symbol": "زملارد",
+     "effective_date": "2025-09-21",
+     "ratio": 1.1463500143474685
+    },
+    {
+     "symbol": "غمارگ",
+     "effective_date": "2025-10-06",
+     "ratio": 1.23344984138127
+    }
+   ],
+   "note": "Both are reference-derived pack steps (ref_ratio == ratio) and stay listed in ADJUSTMENT-EVIDENCE-LEDGER.csv with audit:ratio-out-of-range; they are visible, not suppressed, and they are not independent evidence."
+  },
+  "statement": "The 5,983 VERIFIED_* rows are 1,137 independently evidenced plus 4,846 reference-confirmed pack steps. The group must not be described as 5,983 independently verified."
  },
  "symbol_ledger": {
   "path": "_audit/phase49-full-verification/ledgers/HISTORY-COVERAGE-LEDGER.csv",
@@ -121,7 +166,7 @@
    "halted": 444
   },
   "reference": {
-   "coverage_note": "756 of 951 pack symbols and 759 of 6103 history symbols carry a reference index in this run; 756 step-bearing and 3 no-step symbols are covered.",
+   "coverage_note": "792 of 951 raw pack spellings (83.3%) and 756 of 915 normalised pack keys carry a reference index in this run; 759 of 6103 history symbols do too. 756 step-bearing and 3 no-step symbols are covered.",
    "full": 759,
    "index_symbols": 759,
    "index_symbols_in_history": 759,
@@ -130,7 +175,12 @@
    "none": 5344,
    "partial": 0,
    "verified_no_applicable_event": 2,
-   "with_steps": 756
+   "with_steps": 756,
+   "pack_symbols_raw": 951,
+   "pack_symbols_keys": 915,
+   "pack_symbols_covered_raw": 792,
+   "pack_symbols_covered_keys": 756,
+   "coverage_pct_raw": 83.3
   },
   "factor_totals": {
    "alias_duplicate_dates": 82,
@@ -159,7 +209,8 @@
     "INSUFFICIENT_EVIDENCE->VERIFIED_NO_APPLICABLE_EVENT": 2,
     "INSUFFICIENT_EVIDENCE->VERIFIED_WITH_EVENTS": 1
    }
-  }
+  },
+  "sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650"
  },
  "validity_reconciliation": {
   "history_validity_unverified_rows": 5188,
@@ -169,7 +220,10 @@
   "pack_steps_unverified": 1358,
   "merged_factor_steps": 8198,
   "merged_factor_steps_verified": 5927,
-  "merged_factor_steps_verified_note": "merged verified = 8,198 - 916 insufficient - 535 partial - 212 conflict - 608 reconstructed-audit-only"
+  "merged_factor_steps_verified_note": "merged verified = 8,198 - 916 insufficient - 535 partial - 212 conflict - 608 reconstructed-audit-only",
+  "no_instrument_rows_total": 1468,
+  "no_instrument_rows_in_zero_step_remainder": 1467,
+  "no_instrument_note": "1,468 history symbols have no instruments row; 1,467 of them have zero steps and sit inside the 5,185-row remainder. One (فيروزه2) carries a pack step, so 1,468 is not the count inside 5,185."
  },
  "verification_method_movement": {
   "steps_from_insufficient_evidence_to_verified": 75,

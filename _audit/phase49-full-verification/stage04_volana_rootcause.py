@@ -827,6 +827,32 @@ def analyze(pack_path, ledger_path, reference_path, reference7_path,
             "six_questions": r["six_questions"],
         })
 
+    ledger_statuses = collections.Counter(
+        (r["ledger"] or {}).get("final_status") or "MISSING"
+        for r in results)
+    status_disclosure = {
+        "assessment_field": "statuses and steps[].final_status",
+        "assessment_meaning": (
+            "PARTIAL_REFERENCE here is B6's economic-difference label from "
+            "the measured cumulative error (%.6f%%: above FACTOR_EXACT "
+            "%.3f%% and below FACTOR_MATERIAL %.3f%%). It is not a B5 ledger "
+            "status and it does not verify a step."
+            % (100.0 * group["max_cumulative_error"],
+               100.0 * rules["tolerances"]["FACTOR_EXACT"],
+               100.0 * rules["tolerances"]["FACTOR_MATERIAL"])),
+        "ledger_field": "steps[].ledger_status",
+        "ledger_statuses": dict(sorted(ledger_statuses.items())),
+        "ledger_note": (
+            "The same three rows are %s in "
+            "ADJUSTMENT-EVIDENCE-LEDGER.csv; B6's label is an assessment and "
+            "does not promote them, so the B5 ledger status stands."
+            % ", ".join(sorted(ledger_statuses))),
+        "steps": [
+            {"effective_date": r["effective_date"],
+             "assessment_status": r["final_status"],
+             "ledger_status": (r["ledger"] or {}).get("final_status")}
+            for r in results],
+    }
     summary = {
         "schema": "phase49-volana-rootcause-v1",
         "symbol": SYMBOL,
@@ -839,6 +865,7 @@ def analyze(pack_path, ledger_path, reference_path, reference7_path,
                     "while the measured discrepancy exceeds it",
         },
         "statuses": dict(statuses),
+        "status_disclosure": status_disclosure,
         "group": group,
         "regime_composition": regime_composition,
         "max_cumulative_error": group["max_cumulative_error"],
@@ -931,8 +958,8 @@ def _merge(mech, deep):
         target = by_date.setdefault(s["effective_date"], {})
         target.update(s)
     merged["steps"] = [by_date[k] for k in sorted(by_date)]
-    for key in ("schema", "thresholds", "statuses", "group",
-                "regime_composition", "related_findings", "inputs",
+    for key in ("schema", "thresholds", "statuses", "status_disclosure",
+                "group", "regime_composition", "related_findings", "inputs",
                 "field_note", "pack_manifest"):
         if key in deep:
             merged[key] = deep[key]

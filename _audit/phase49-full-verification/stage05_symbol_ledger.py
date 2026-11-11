@@ -1216,10 +1216,19 @@ def build(db, steps_path, references, asset_map_path, out, counts_path,
                 "proof exists in this round, so their absence is never used "
                 "as proof of no event.",
     }
+    covered_raw = sum(1 for s in raw_step_symbols if key(s) in reference)
+    covered_keys = sum(1 for k in raw_step_keys if k in reference)
+    coverage_pct_raw = (round(100.0 * covered_raw / len(raw_step_symbols), 1)
+                        if raw_step_symbols else 0.0)
     reference_summary = {
         "index_symbols": len(reference),
         "index_symbols_in_history": sum(
             1 for k in reference if k in history_keys),
+        "pack_symbols_raw": len(raw_step_symbols),
+        "pack_symbols_keys": len(raw_step_keys),
+        "pack_symbols_covered_raw": covered_raw,
+        "pack_symbols_covered_keys": covered_keys,
+        "coverage_pct_raw": coverage_pct_raw,
         "full": sum(1 for r in ledger if r["ref_coverage"] == "full"),
         "partial": sum(1 for r in ledger if r["ref_coverage"] == "partial"),
         "none": sum(1 for r in ledger if r["ref_coverage"] == "none"),
@@ -1232,11 +1241,15 @@ def build(db, steps_path, references, asset_map_path, out, counts_path,
         "verified_no_applicable_event": by_final.get(
             "VERIFIED_NO_APPLICABLE_EVENT", 0),
         "coverage_note": (
-            "%d of %d pack symbols and %d of %d history symbols carry a "
-            "reference index in this run; %d step-bearing and %d no-step "
-            "symbols are covered."
-            % (sum(1 for k in reference if k in raw_step_keys),
+            "%d of %d raw pack spellings (%.1f%%) and %d of %d normalised "
+            "pack keys carry a reference index in this run; %d of %d history "
+            "symbols do too. %d step-bearing and %d no-step symbols are "
+            "covered."
+            % (covered_raw,
                len(raw_step_symbols),
+               coverage_pct_raw,
+               covered_keys,
+               len(raw_step_keys),
                sum(1 for k in reference if k in history_keys),
                len(history_keys),
                sum(1 for r in with_steps if r["ref_coverage"] != "none"),
@@ -1407,11 +1420,14 @@ def build(db, steps_path, references, asset_map_path, out, counts_path,
             % (event_coverage["no_step_symbols_with_official_in_range"],
                event_coverage["no_step_official_in_range_events"]),
             "VERIFIED_NO_APPLICABLE_EVENT requires a resolved identity and a "
-            "full R1 type0/type7 window with no factor changes. %d of %d pack "
-            "symbols carry a reference index and %d no-step symbols have "
-            "a full window, so the count is %d."
-            % (reference_summary["index_symbols"],
-               len(raw_step_symbols), reference_summary["no_steps_full"],
+            "full R1 type0/type7 window with no factor changes. %d of %d raw "
+            "pack spellings (%d of %d normalised keys) carry a reference "
+            "index and %d no-step symbols have a full window, so the count "
+            "is %d."
+            % (reference_summary["pack_symbols_covered_raw"],
+               len(raw_step_symbols),
+               reference_summary["pack_symbols_covered_keys"],
+               len(raw_step_keys), reference_summary["no_steps_full"],
                reference_summary["verified_no_applicable_event"]),
             "%d history_validity rows are unverified with factor_steps=0. "
             "None carries a pack step; the zero is accurate as a step count "

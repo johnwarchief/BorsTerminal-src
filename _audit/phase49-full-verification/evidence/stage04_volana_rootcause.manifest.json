@@ -6,7 +6,7 @@
   },
   "unverified_steps": 3
  },
- "finished_at": "2026-11-11T01:06:56Z",
+ "finished_at": "2026-11-11T01:26:45Z",
  "inputs": {
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
   "_audit/phase49-full-verification/captures/bars-all.ndjson.gz": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
@@ -18,7 +18,7 @@
   "dev/phase49_status_rules.json": "8397154f64e75aed1da455843a55e29c25c139dece95f134fa2a2767b02773b7"
  },
  "outputs": {
-  "_audit/phase49-full-verification/evidence/volana-rootcause.json": "e6e70d7eedf150039e3bb86cf6e8f8f4ae2ab6908b94d5bb8c7853f49d8eefde",
+  "_audit/phase49-full-verification/evidence/volana-rootcause.json": "b3673e63157a36515ffc5a094e2fc0fb037f10c5b23d46963b52eb261f58fb3f",
   "_audit/phase49-full-verification/ledgers/volana-rootcause-ledger.json": "38d8cc6c561fa0622f264d8ac8c38d921a68246fc65eabc6328a74726309ce70"
  },
  "stage": "stage04_volana_rootcause"

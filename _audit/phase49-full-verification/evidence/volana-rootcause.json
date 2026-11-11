@@ -76,6 +76,32 @@
   }
  ],
  "schema": "phase49-volana-rootcause-v1",
+ "status_disclosure": {
+  "assessment_field": "statuses and steps[].final_status",
+  "assessment_meaning": "PARTIAL_REFERENCE here is B6's economic-difference label from the measured cumulative error (0.198239%: above FACTOR_EXACT 0.100% and below FACTOR_MATERIAL 1.000%). It is not a B5 ledger status and it does not verify a step.",
+  "ledger_field": "steps[].ledger_status",
+  "ledger_note": "The same three rows are RECONSTRUCTED_AUDITED in ADJUSTMENT-EVIDENCE-LEDGER.csv; B6's label is an assessment and does not promote them, so the B5 ledger status stands.",
+  "ledger_statuses": {
+   "RECONSTRUCTED_AUDITED": 3
+  },
+  "steps": [
+   {
+    "assessment_status": "PARTIAL_REFERENCE",
+    "effective_date": "2020-03-11",
+    "ledger_status": "RECONSTRUCTED_AUDITED"
+   },
+   {
+    "assessment_status": "PARTIAL_REFERENCE",
+    "effective_date": "2025-07-20",
+    "ledger_status": "RECONSTRUCTED_AUDITED"
+   },
+   {
+    "assessment_status": "PARTIAL_REFERENCE",
+    "effective_date": "2026-05-23",
+    "ledger_status": "RECONSTRUCTED_AUDITED"
+   }
+  ]
+ },
  "statuses": {
   "PARTIAL_REFERENCE": 3
  },
