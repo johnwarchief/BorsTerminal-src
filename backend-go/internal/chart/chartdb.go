@@ -390,6 +390,9 @@ func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int
 	}
 	applied, rejected, factors, chain, coverage := s.canonicalAdjustment(
 		ctx, symbol, times, canonEvents, closings)
+	if stringValue(chain["revision"]) != "" {
+		src = "local-measured-factors"
+	}
 	if falseRejected == nil {
 		falseRejected = []map[string]any{}
 	}

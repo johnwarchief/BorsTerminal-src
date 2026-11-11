@@ -946,6 +946,18 @@ func (s *Service) canonicalAdjustment(ctx context.Context, symbol string, times 
 	for i, t := range times {
 		t10[i] = date10(t)
 	}
+	// Phase 4.9.2: reference-measured factors are authoritative for covered
+	// symbols. They come from the type7/type0 capture and replace the
+	// product-discovered steps and the pack for that symbol.
+	if measured, revision, ok := s.measuredFactorEvents(ctx, symbol); ok {
+		measured = effectiveEventDates(measured, t10)
+		applied, engineRejected, chainEvents, _ := engineEvents(measured)
+		factors, chain := chainFactors(t10, chainEvents)
+		chain["source"] = "local-measured-factors"
+		chain["revision"] = revision
+		coverage := s.ledgerCoverage(ctx, symbol, t10, applied)
+		return applied, engineRejected, factors, chain, coverage
+	}
 	ins := s.resolveInsCode(ctx, symbol)
 	events = effectiveEventDates(events, t10)
 	officialPA := s.officialPriceAdjustEvents(ctx, symbol, t10, closings)
@@ -1954,6 +1966,12 @@ func (s *Service) adjustCapabilityFull(ctx context.Context, applied []canonEvent
 // ---------- کندل ----------
 
 func (s *Service) canonicalPriceHistory(ctx context.Context, symbol string) ([]map[string]any, int, int, int, error) {
+	// Phase 4.9.2: a covered symbol is served from the captured reference raw
+	// series, which carries the full history and its own provenance. The
+	// Seed's price_history is left untouched and remains the fallback.
+	if rows, ok, err := s.referenceRawHistory(ctx, symbol); err == nil && ok {
+		return rows, len(rows), 0, 0, nil
+	}
 	pred, params := s.pred(ctx, "symbol", symbol)
 	q := fmt.Sprintf("SELECT symbol,date,open,high,low,close,volume,last,value,src "+
 		"FROM price_history WHERE %s ORDER BY date DESC, volume DESC", pred)

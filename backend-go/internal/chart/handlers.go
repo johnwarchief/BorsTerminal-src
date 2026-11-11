@@ -32,9 +32,13 @@ func (s *Service) ChartDB(w http.ResponseWriter, r *http.Request) {
 	body := s.chartDBBody(r.Context(), symbol, 3)
 	// معادلِ wrapperِ مسیرِ پایتون (`get_chart_db_visible`): کندلِ دیدنی
 	// literal + تصحیح‌های فیلد خامِ بستهٔ نسخه‌دار، پس از price_basis و FTS.
+	// نمادِ پوشش‌داده‌شده با فاکتورهای مرجع، سریِ خامِ type0 خودش را دارد؛
+	// تصحیحِ نمایشیِ بسته روی آن اعمال نمی‌شود.
 	if cands, ok := body["candles"].([]map[string]any); ok {
-		ins := s.resolveInsCode(r.Context(), symbol)
-		body["candles"] = literalDisplayCandles(LoadPack(s.dataDir), ins, symbol, cands)
+		if _, _, measured := s.measuredFactorEvents(r.Context(), symbol); !measured {
+			ins := s.resolveInsCode(r.Context(), symbol)
+			body["candles"] = literalDisplayCandles(LoadPack(s.dataDir), ins, symbol, cands)
+		}
 	}
 	httpapi.WriteJSON(w, http.StatusOK, body)
 }
