@@ -653,7 +653,8 @@ def build(base, work, pack_path, steps_path, symbols_path, ref_path,
             "base_tables": base_summary["user_tables"],
             "seed_tables": seed_users,
             "preserved": not (set(base_summary["user_tables"]) - set(seed_users)),
-        },        "seed_manifest": stored_manifest,
+        },
+        "seed_manifest": stored_manifest,
     }
     _write_json(manifest_path, manifest)
     print("seed build OK: db=%s lzma=%s gzip=%s manifest=%s"

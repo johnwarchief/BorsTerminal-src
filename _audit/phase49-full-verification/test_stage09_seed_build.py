@@ -4,6 +4,7 @@ idempotency, and the refusal rules. Temp databases only; the real seed and the
 captures are never touched.
 """
 import contextlib
+import csv
 import gzip
 import hashlib
 import io
@@ -142,7 +143,6 @@ def _manifest_storage_test():
 
 
 def _write_csv(path, header, rows):
-    import csv
     with open(path, "w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh, lineterminator="\n")
         writer.writerow(header)
