@@ -1,0 +1,314 @@
+{
+ "schema": "phase49-full-verification-product-tests-v1",
+ "status": "PASS",
+ "command": "python _audit/phase49-full-verification/stageE_product_tests_new.py",
+ "artifact": {
+  "raw": "_audit/phase49-full-verification/db/product-test-report.json"
+ },
+ "checks": {
+  "clean_extraction": {
+   "pass": true,
+   "detail": {
+    "seed_state": {
+     "status": "applied",
+     "mode": "extract",
+     "price_history_rows": 544284
+    },
+    "db_rows": 544284,
+    "provenance_rows": 3105,
+    "validity_rows": 6103
+   }
+  },
+  "clean_chart_db": {
+   "pass": true,
+   "detail": {
+    "chart": {
+     "count": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09",
+     "events": 26,
+     "cap": "ra365-phase49-rebuild-full-v2",
+     "adj_sample_n": 26,
+     "adj_sample_max_rel": 0.0017064846416382042,
+     "adj_sample_median_rel": 5.333331486502138e-09
+    },
+    "seed": {
+     "rows": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09"
+    }
+   }
+  },
+  "clean_daily_reference": {
+   "pass": true,
+   "detail": {
+    "adj_sample_n": 26,
+    "adj_sample_max_rel": 0.0017064846416382042,
+    "adj_sample_median_rel": 5.333331486502138e-09
+   }
+  },
+  "clean_weekly": {
+   "pass": true,
+   "detail": {
+    "count": 833,
+    "first": "2009-W53",
+    "last": "2026-W46"
+   }
+  },
+  "clean_monthly": {
+   "pass": true,
+   "detail": {
+    "count": 196,
+    "first": "2010-01",
+    "last": "2026-11"
+   }
+  },
+  "upgrade_merge": {
+   "pass": true,
+   "detail": {
+    "state": {
+     "status": "applied",
+     "mode": "merge",
+     "reason": null,
+     "price_history_rows": 544284,
+     "price_history_first": "1991-05-11"
+    },
+    "rows": 544284,
+    "provenance_rows": 3105
+   }
+  },
+  "user_data_preservation": {
+   "pass": true,
+   "detail": {
+    "modified_row_kept": true,
+    "watchlist_kept": true
+   }
+  },
+  "upgrade_chart_db": {
+   "pass": true,
+   "detail": {
+    "chart": {
+     "count": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09",
+     "events": 26,
+     "cap": "ra365-phase49-rebuild-full-v2",
+     "adj_sample_n": 26,
+     "adj_sample_max_rel": 0.0017064846416382042,
+     "adj_sample_median_rel": 5.333331486502138e-09
+    },
+    "seed": {
+     "rows": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09"
+    }
+   }
+  },
+  "upgrade_weekly": {
+   "pass": true,
+   "detail": {
+    "count": 833,
+    "first": "2009-W53",
+    "last": "2026-W46"
+   }
+  },
+  "upgrade_monthly": {
+   "pass": true,
+   "detail": {
+    "count": 196,
+    "first": "2010-01",
+    "last": "2026-11"
+   }
+  },
+  "ma_full_history": {
+   "pass": true,
+   "detail": {
+    "count": 4,
+    "keys": [
+     "adjustSource",
+     "adjusted",
+     "bars",
+     "basis",
+     "events",
+     "ma",
+     "periods",
+     "status",
+     "symbol"
+    ]
+   }
+  },
+  "restart_idempotent": {
+   "pass": true,
+   "detail": {
+    "rows_before": 544284,
+    "rows_after": 544284,
+    "duplicate_symbol_dates": 0,
+    "restart_state_reason": null,
+    "restart_chart_count": 3689
+   }
+  }
+ },
+ "harness_report": {
+  "schema": "phase49-product-test-v1",
+  "binary": "_audit\\phase49-full-verification\\borsd.exe",
+  "seed": "_audit\\phase49-full-verification\\seed\\market.db",
+  "pack": "data\\ra365_corrections\\ra365-phase49-rebuild-full-v2",
+  "reference_bars": "_audit\\phase49-full-verification\\captures\\bars-all.ndjson.gz",
+  "seed_sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3",
+  "tests": {
+   "clean_install": {
+    "seed_state": {
+     "version": 1,
+     "status": "applied",
+     "source": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-full-verification\\db\\product-test\\clean\\market.db.lzma",
+     "source_sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3",
+     "source_size": 64131004,
+     "source_mod_unix": 1794366108,
+     "mode": "extract",
+     "applied_at_utc": "2026-11-11T05:12:04Z",
+     "db_path": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-full-verification\\db\\product-test\\clean\\market.db",
+     "db_size": 281088000,
+     "db_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+     "price_history_rows": 544284,
+     "price_history_first": "1991-05-11",
+     "price_history_last": "2026-11-10",
+     "daily_prices_rows": 118774
+    },
+    "chart": {
+     "count": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09",
+     "events": 26,
+     "cap": "ra365-phase49-rebuild-full-v2",
+     "adj_sample_n": 26,
+     "adj_sample_max_rel": 0.0017064846416382042,
+     "adj_sample_median_rel": 5.333331486502138e-09
+    },
+    "wm": {
+     "W": {
+      "count": 833,
+      "first": "2009-W53",
+      "last": "2026-W46"
+     },
+     "M": {
+      "count": 196,
+      "first": "2010-01",
+      "last": "2026-11"
+     }
+    },
+    "db_rows": 544284,
+    "provenance_rows": 3105,
+    "validity_rows": 6103
+   },
+   "upgrade_merge": {
+    "state": {
+     "status": "applied",
+     "mode": "merge",
+     "reason": null,
+     "price_history_rows": 544284,
+     "price_history_first": "1991-05-11"
+    },
+    "rows": 544284,
+    "adjust_events": 12829,
+    "modified_row_kept": true,
+    "watchlist_kept": true,
+    "provenance_rows": 3105,
+    "chart": {
+     "count": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09",
+     "events": 26,
+     "cap": "ra365-phase49-rebuild-full-v2",
+     "adj_sample_n": 26,
+     "adj_sample_max_rel": 0.0017064846416382042,
+     "adj_sample_median_rel": 5.333331486502138e-09
+    },
+    "wm": {
+     "W": {
+      "count": 833,
+      "first": "2009-W53",
+      "last": "2026-W46"
+     },
+     "M": {
+      "count": 196,
+      "first": "2010-01",
+      "last": "2026-11"
+     }
+    }
+   },
+   "ma_full_history": {
+    "count": 4,
+    "keys": [
+     "adjustSource",
+     "adjusted",
+     "bars",
+     "basis",
+     "events",
+     "ma",
+     "periods",
+     "status",
+     "symbol"
+    ]
+   },
+   "restart_idempotent": {
+    "rows_before": 544284,
+    "rows_after": 544284,
+    "same": true,
+    "state_reason": null,
+    "chart": {
+     "count": 3689,
+     "first": "2010-01-02",
+     "last": "2026-11-09",
+     "events": 26,
+     "cap": "ra365-phase49-rebuild-full-v2",
+     "adj_sample_n": 26,
+     "adj_sample_max_rel": 0.0017064846416382042,
+     "adj_sample_median_rel": 5.333331486502138e-09
+    }
+   }
+  }
+ },
+ "generated_at": "2026-11-11T08:28:28",
+ "commit": "fd8a7dd4abbc0e70acff91789c6dd09e7fc9526c",
+ "branch": "mission/phase49-full-verification-python-ci-2026-11-10",
+ "environment": {
+  "interpreter": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-19\\0af806b0\\.q3-tooling\\venv\\Scripts\\python.exe"
+ },
+ "inputs": {
+  "seed_db": {
+   "path": "_audit/phase49-full-verification/seed/market.db",
+   "sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5"
+  },
+  "seed_lzma": {
+   "path": "_audit/phase49-full-verification/seed/market.db.lzma",
+   "sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3"
+  },
+  "borsd": {
+   "path": "_audit/phase49-full-verification/borsd.exe",
+   "sha256": "5c1457e78ce18f9803b5b20e24f92b04c8c59d8b4123d5b39a67a84ef61baf0c"
+  },
+  "pack": {
+   "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
+   "manifest_sha256": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
+   "factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+   "raw_ohlc_sha256": "b02e8859db53081a2b9f69c1a28cd513b54d968b53944363bfbd7932a399975a"
+  },
+  "reference_bars": {
+   "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+   "sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a"
+  }
+ },
+ "seed_facts": {
+  "price_history_rows": 544284,
+  "provenance_rows": 3105,
+  "validity_rows": 6103,
+  "foolad_rows": 3689,
+  "foolad_first": "2010-01-02",
+  "foolad_last": "2026-11-09",
+  "foolad": {
+   "rows": 3689,
+   "first": "2010-01-02",
+   "last": "2026-11-09"
+  }
+ }
+}
