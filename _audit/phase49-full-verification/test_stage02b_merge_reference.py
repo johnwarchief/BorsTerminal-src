@@ -8,7 +8,8 @@ The cases are synthetic so the test never needs the gitignored owner capture:
   rows of a symbol already covered by the full capture are excluded;
 * index: the extra record of an already-covered symbol is dropped (full wins),
   a new extra symbol is added, and the kept record keeps its provenance and its
-  exact sequence counters (never a sum of two records);
+  exact sequence counters (never a sum of two records); a fuller batch record
+  replaces a shorter one and the overlap reports the real kinds;
 * determinism: two runs over the same inputs produce the same payload hash,
   container hash and row sequence.
 """
@@ -109,6 +110,9 @@ def merge_case():
         assert counts["symbols_extra_added"] == 1, counts
         assert counts["symbols_extra_overlapping"] == 1, counts
         assert len(counts["index_overlaps"]) == 2, counts["index_overlaps"]
+        kinds = sorted((o["kept_kind"], o["dropped_kind"])
+                       for o in counts["index_overlaps"])
+        assert kinds == [("batch", "batch"), ("batch", "extra")], kinds
 
         with gzip.open(os.path.join(tmp, "bars-all.ndjson.gz"), "rt",
                        encoding="utf-8") as fh:
@@ -232,7 +236,53 @@ def summary_case():
         assert summary["extra"]["symbols"] == 1, summary["extra"]
         assert summary["merged"]["bars_payload_sha256"] == \
             counts["bars"]["payload_sha256"], summary["merged"]
+        pinned = summary["merged"]["reference_index_all"]
+        index_path = os.path.join(tmp, "index-all.json")
+        with open(index_path, "rb") as fh:
+            index_sha = hashlib.sha256(fh.read()).hexdigest()
+        assert pinned["file"].endswith("index-all.json"), pinned
+        assert pinned["sha256"] == index_sha, pinned
+        assert pinned["symbols"] == 3, pinned
+        assert pinned["factor_days"] == 3, pinned
+        assert pinned["factor_changes"] == 0, pinned
         print("  summary case OK")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def overlap_case():
+    """A fuller batch record wins; the report names the real kinds."""
+    tmp = tempfile.mkdtemp()
+    try:
+        short = [
+            row("AAA", "type0", "raw", "2020-01-01", 100),
+            row("AAA", "type0", "raw", "2020-01-02", 100),
+            row("AAA", "type7", "adjusted", "2020-01-01", 100),
+            row("AAA", "type7", "adjusted", "2020-01-02", 90),
+        ]
+        full = short + [
+            row("AAA", "type0", "raw", "2020-01-03", 100),
+            row("AAA", "type7", "adjusted", "2020-01-03", 90),
+        ]
+        _, short_idx = write_index(os.path.join(tmp, "index-short.json"),
+                                   short, "capture-short.json", "sha-short")
+        _, full_idx = write_index(os.path.join(tmp, "index-full.json"),
+                                  full, "capture-full.json", "sha-full")
+        merged, overlaps = M.merge_indexes(
+            [("short", short_idx), ("full", full_idx)], [])
+        assert len(overlaps) == 1, overlaps
+        assert overlaps[0] == {
+            "key": "aaa",
+            "kept_source": "capture-full.json",
+            "dropped_source": "capture-short.json",
+            "kept_kind": "batch",
+            "dropped_kind": "batch",
+        }, overlaps[0]
+        aaa = merged["aaa"]
+        assert aaa["capture_sha256"] == "sha-full", aaa
+        assert aaa["factor_days"] == 3, aaa
+        assert len(aaa["factor_changes"]) == 1, aaa
+        print("  overlap case OK")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -240,6 +290,7 @@ def summary_case():
 def main():
     merge_case()
     summary_case()
+    overlap_case()
     print("MERGE REFERENCE TESTS OK")
     return 0
 

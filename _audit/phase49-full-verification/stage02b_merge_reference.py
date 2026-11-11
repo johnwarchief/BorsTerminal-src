@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Stage 02b - merge the per-batch reference imports into one reference set.
 
-Stage 02 imports each capture batch on its own. This stage joins the results
-without reparsing a capture and without loading 5.2M bars into memory:
+Stage 02 imports each capture batch on its own. This stage joins the stage-02
+results without re-importing any bars and without loading 5.2M rows into
+memory:
 
 * ``--batch-bars`` / ``--extra-bars`` are the importer's ``bars.ndjson.gz``
   files. Each one is already sorted by ``(asset_id, resolution, type, date)``.
@@ -29,9 +30,11 @@ the batch that fed it.
 ``--summary-out`` (with one ``--capture`` per batch) also writes the small
 tracked capture summary: per-batch file SHA-256/size, captured_at, series,
 symbols and raw bar counts, the aggregate capture digest, the merged counts and
-an explicitly empty failure list. It reads the captures only for their
-``source`` block and ledger counts - never the bars - so the summary carries no
-raw series, cookies, tokens or account ids.
+an explicitly empty failure list. This path does ``json.load`` each raw capture
+once, so the bars pass through memory to be counted, but only counts and the
+safe ``source`` block are emitted: the summary carries no raw series, cookies,
+tokens or account ids. The bar merge never opens a capture; only this summary
+path does, and only to count.
 
 CLI:
     python _audit/phase49-full-verification/stage02b_merge_reference.py \\
@@ -204,6 +207,11 @@ def merge_indexes(batch_indexes, extra_indexes):
     A batch record wins over an extra record for the same key by policy; two
     batch records of one key keep the fuller sequence (ties keep the first).
     ``factor_changes`` are never concatenated and counters are never summed.
+
+    The overlap entry names the kind of the record that actually won and the
+    kind of the record that was dropped. The kind of the previous holder is
+    read *before* ``source_kind[key]`` is overwritten, so a replacement is
+    attributed to the winner and not to the incoming stream twice.
     """
     merged, overlaps = {}, []
     source_kind = {}
@@ -219,18 +227,19 @@ def merge_indexes(batch_indexes, extra_indexes):
                 continue
             kept = merged[key]
             if kind == "extra" or _coverage(record) <= _coverage(kept):
-                dropped = record
+                winner, winner_kind = kept, source_kind[key]
+                dropped, dropped_kind = record, kind
             else:
-                dropped = kept
+                winner, winner_kind = record, kind
+                dropped, dropped_kind = kept, source_kind[key]
                 merged[key] = record
                 source_kind[key] = kind
             overlaps.append({
                 "key": key,
-                "kept_source": kept["source"] if dropped is record
-                else record["source"],
+                "kept_source": winner["source"],
                 "dropped_source": dropped["source"],
-                "kept_kind": source_kind[key],
-                "dropped_kind": kind,
+                "kept_kind": winner_kind,
+                "dropped_kind": dropped_kind,
             })
     return dict(sorted(merged.items())), overlaps
 
@@ -257,8 +266,8 @@ def _normalized_facts(bars_path):
 def _capture_facts(path):
     """File identity, ledger counts and the safe ``source`` block of a capture.
 
-    The raw ``bars`` arrays are not copied anywhere; only the ledger counts and
-    the source metadata leave this function.
+    The raw ``bars`` arrays are parsed but never copied; only the ledger counts
+    and the source metadata leave this function.
     """
     path = _abs(path)
     with open(path, encoding="utf-8") as fh:
@@ -352,6 +361,7 @@ def build_capture_summary(captures, batch_bars, extra_capture, counts,
         "merged": {
             "bars_file": _rel(_abs(out_bars)),
             "index_file": counts["index_file"],
+            "reference_index_all": counts["reference_index_all"],
             "bars_payload_sha256": bars["payload_sha256"],
             "bars_container_sha256": bars["container_sha256"],
             "per_resolution": bars["per_resolution"],
@@ -437,6 +447,15 @@ def merge(batch_bars, batch_indexes, out_bars, out_index,
                        {"path": _rel(_abs(extra_bars))}))
     bars_report = merge_bars(inputs, _abs(out_bars))
     _write_json(_abs(out_index), merged_index)
+    index_stats = {
+        "file": _rel(_abs(out_index)),
+        "sha256": PM.sha256(_abs(out_index)),
+        "symbols": len(merged_index),
+        "factor_days": sum(int(r["factor_days"])
+                           for r in merged_index.values()),
+        "factor_changes": sum(len(r["factor_changes"])
+                              for r in merged_index.values()),
+    }
 
     counts = {
         "symbols_full": len(full_keys),
@@ -446,6 +465,7 @@ def merge(batch_bars, batch_indexes, out_bars, out_index,
         "extra_added_keys": sorted(allowed_extra),
         "index_overlaps": overlaps,
         "index_file": _rel(_abs(out_index)),
+        "reference_index_all": index_stats,
         "bars": bars_report,
         "inputs": [stats for _, _, stats in inputs],
     }

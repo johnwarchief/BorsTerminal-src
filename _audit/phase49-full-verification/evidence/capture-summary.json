@@ -551,6 +551,13 @@
   "per_type": {
    "type0": 2620482,
    "type7": 2620482
+  },
+  "reference_index_all": {
+   "factor_changes": 13921,
+   "factor_days": 2101752,
+   "file": "_audit/phase49-full-verification/captures/reference-index-all.json",
+   "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+   "symbols": 759
   }
  },
  "normalization": {
