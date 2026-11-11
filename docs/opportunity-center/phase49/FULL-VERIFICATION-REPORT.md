@@ -77,8 +77,9 @@ The verdict carries these blockers:
     FastAPI failures were environmental and are now resolved by measurement, not by a
     label change ([S19], `CI-FINAL-RESULTS.json`).
 12. **The legacy Python lane stays visibly red by design.** On `ea179e3c`,
-    `python-legacy` is report-only (`continue-on-error`): 30 of 211 legacy suites fail and
-    their job is marked `failure`, while the workflow run itself is green. B2 moved from
+    `python-legacy` is report-only (`continue-on-error`): 30 of the 210 legacy suites fail
+    and their job is marked `failure`, while the workflow run itself is green. (The runner
+    reports 211 entries because it also counts the fixture-preparation step.) B2 moved from
     the blocking data lane to this lane in C8 because the retired Python mstat engine now
     emits legacy-only panels/fields that the Go port intentionally does not (regenerating
     the shared goldens breaks five Go tests); the Go tests that read the same fixture and
@@ -132,9 +133,9 @@ read for this report. A number that is derived from two cited files is marked in
 | S15 | `_audit/phase49-full-verification/evidence/backfill-idempotency.json` | `2461dea8f994fb6d30fcad3c72450f8f2077b659df9d511af8e22df14fb4f269` |
 | S16 | `_audit/phase49-full-verification/evidence/backfill-price-basis.json` | `2fa944c8509b560f8ef95d397f8e99b3cede6a68f18832a80fc896f4bbd587b6` |
 | S17 | `_audit/phase49-full-verification/evidence/backfill-availability.json` | `ce5207435ccfa980875d35dfd18675e58ba5e750eb20d63c9d6eef9ae11e2264` |
-| S18 | `_audit/phase49-full-verification/evidence/ci-failures.json` | `6a29f3d33b9bae227f783d7267c2855d8894e6ce995bed47693ab1eeb9f1d55a` |
+| S18 | `_audit/phase49-full-verification/evidence/ci-failures.json` | `39acd64c8e13815980b1f7231a0174a027493594b85da9ac8f12ed1889c87e22` |
 | S19 | `_audit/phase49-full-verification/evidence/local-gates.json` | `1a247d0272f3dc65f000c1b97599b6dc4f5e9fd5de130d6f7d9f1b5d112e65f9` |
-| S20 | `docs/opportunity-center/phase49/CI-FINAL-RESULTS.json` | `de0fb369fa7963b970ee7aa92e513db67f42989609218fd89ef1f827c069b102` |
+| S20 | `docs/opportunity-center/phase49/CI-FINAL-RESULTS.json` | `a53f428dd34fb8947c3ee8891673984e66843056c91c1e096ad92ded4e8d6e8e` |
 | C1 | `_audit/phase49-full-verification/capture-plan/capture-plan.json` | `7dbe2a62073f73bb5beb38779be075914f8b178f954e7f728490922d9590cfd4` |
 | L1 | `docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv` (8,308 rows + header) | `c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28` |
 | L2 | `docs/opportunity-center/phase49/HISTORY-COVERAGE-LEDGER.csv` (6,103 rows + header) | `c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650` |

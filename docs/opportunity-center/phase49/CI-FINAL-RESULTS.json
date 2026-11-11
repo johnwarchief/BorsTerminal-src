@@ -3,7 +3,11 @@
  "branch": "mission/phase49-full-verification-python-ci-2026-11-10",
  "repository": "johnwarchief/BorsTerminal-src",
  "status": "COMPLETE",
- "expected_workflows": ["guards", "python-tooling", "python-legacy"],
+ "expected_workflows": [
+  "guards",
+  "python-tooling",
+  "python-legacy"
+ ],
  "fetched_at": "2026-11-11T08:32:00Z",
  "runs": [
   {
@@ -78,7 +82,7 @@
    "run_id": 42985995569,
    "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995569",
    "conclusion": "success",
-   "note": "report-only lane (continue-on-error). The legacy Python job fails by design, and that failure stays visible: 30 of 211 legacy suites are red (retired Python engine/API guards, including B2 after its C8 reclassification). The workflow conclusion is success because the lane never blocks a release. Job log sha256 01e4b9b81cf4bc0c4f0721779c00e48fd3c1194e186938f94768efe4e531ea9b",
+   "note": "report-only lane (continue-on-error). The legacy Python job fails by design, and that failure stays visible: 30 of the 210 legacy suites (the runner reports 211 entries because it also counts the fixture-preparation step) are red (retired Python engine/API guards, including B2 after its C8 reclassification). The workflow conclusion is success because the lane never blocks a release. Job log sha256 01e4b9b81cf4bc0c4f0721779c00e48fd3c1194e186938f94768efe4e531ea9b",
    "jobs": [
     {
      "name": "legacy static JS syntax (report-only)",

@@ -220,8 +220,8 @@ counts disagree with the pack.
 | New unadjustable backfill drops | 4 | No pack factor and no official event at the boundary | Pack step or official corporate action |
 | Volana cumulative error | 3 steps | Dropped 2026-07-15 step and absorbed ratios | Pack correction decision |
 | Seed release | 105,367 reference-derived rows | Licensing gate | Owner approval |
-| Vitest chart labels | 1 test file | Local run PASS: 106 files / 865 tests [S19]; the `frontend-v2` CI job has not reproduced it yet | Final CI `frontend-v2` job (C8) |
-| Final CI | 3 workflows | Not run | C8 |
+| Vitest chart labels | 1 test file | Local run PASS: 106 files / 865 tests [S19]; reproduced in CI by the `frontend v2` job on `ea179e3c` | Closed in final CI (`CI-FINAL-RESULTS.json`) |
+| Final CI | 3 workflows | Complete on `ea179e3c`: `guards` 9/9 jobs success, `python-tooling` `ALL SUITES PASSED`, `python-legacy` report-only success with 30 legacy failures visible | Recorded in `CI-FINAL-RESULTS.json` |
 
 No item above is closed by a label change. Each one either has a witness or stays in the
 list.
