@@ -1,0 +1,210 @@
+{
+ "schema": 1,
+ "stage": "b11_full_reference_ledger_counts",
+ "reference": {
+  "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+  "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "symbols": 759,
+  "factor_days": 2101752,
+  "factor_changes": 13921,
+  "symbols_with_changes": 745,
+  "supersedes": [
+   "reference-index-7.json",
+   "reference-index-30.json"
+  ],
+  "supersedes_note": "The 7-symbol capture is fully inside the all index; the 30-symbol capture adds only هانیکو. Only the all index is passed to B5/B7 so nothing is counted twice."
+ },
+ "step_ledger": {
+  "path": "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv",
+  "rows": 8308,
+  "valid_rows": 8280,
+  "invalid_rows": 28,
+  "by_status": {
+   "CONFLICT_DUPLICATE": 6,
+   "CONFLICT_RATIO": 223,
+   "INSUFFICIENT_EVIDENCE": 916,
+   "INVALID_DROPPED": 28,
+   "PARTIAL_OFFICIAL": 408,
+   "PARTIAL_REFERENCE": 136,
+   "RECONSTRUCTED_AUDITED": 608,
+   "VERIFIED_MULTI_SOURCE": 955,
+   "VERIFIED_OFFICIAL": 95,
+   "VERIFIED_REFERENCE": 4933
+  },
+  "before_full_reference_by_status": {
+   "CONFLICT_DUPLICATE": 10,
+   "CONFLICT_RATIO": 215,
+   "INSUFFICIENT_EVIDENCE": 1095,
+   "INVALID_DROPPED": 28,
+   "PARTIAL_OFFICIAL": 408,
+   "PARTIAL_REFERENCE": 14,
+   "RECONSTRUCTED_AUDITED": 4975,
+   "VERIFIED_MULTI_SOURCE": 80,
+   "VERIFIED_OFFICIAL": 992,
+   "VERIFIED_REFERENCE": 491
+  },
+  "by_validity": {
+   "invalid_dropped": 28,
+   "reconstructed_verified": 6300,
+   "unverified": 1358,
+   "verified": 622
+  },
+  "by_evidence_tier": {
+   "I1": 1524,
+   "O1": 163,
+   "O1+R1": 1529,
+   "O1+R1+O2": 1,
+   "R1": 5053,
+   "R1+I1": 34,
+   "R1+O2": 4
+  },
+  "reference_witness": {
+   "match": 6412,
+   "mismatch": 18,
+   "partial": 165,
+   "used": 6595
+  },
+  "official_witness": {
+   "match": 1075,
+   "mismatch": 210,
+   "partial": 408,
+   "used": 1693
+  },
+  "comparison_result": {
+   "MATCH": 5989,
+   "MISMATCH": 223,
+   "NO_EVIDENCE": 1552,
+   "PARTIAL": 544
+  },
+  "status_transitions": {
+   "unchanged": 2861,
+   "changed": 5447,
+   "moves": {
+    "RECONSTRUCTED_AUDITED->VERIFIED_REFERENCE": 4367,
+    "VERIFIED_OFFICIAL->VERIFIED_MULTI_SOURCE": 875,
+    "INSUFFICIENT_EVIDENCE->PARTIAL_REFERENCE": 100,
+    "INSUFFICIENT_EVIDENCE->VERIFIED_REFERENCE": 75,
+    "VERIFIED_OFFICIAL->PARTIAL_REFERENCE": 22,
+    "CONFLICT_DUPLICATE->CONFLICT_RATIO": 4,
+    "INSUFFICIENT_EVIDENCE->CONFLICT_RATIO": 4
+   }
+  }
+ },
+ "symbol_ledger": {
+  "path": "_audit/phase49-full-verification/ledgers/HISTORY-COVERAGE-LEDGER.csv",
+  "rows": 6103,
+  "by_status": {
+   "BLOCKED_SOURCE": 0,
+   "CONFLICT": 90,
+   "INSUFFICIENT_EVIDENCE": 5910,
+   "RECONSTRUCTED_VERIFIED": 46,
+   "VERIFIED_NO_APPLICABLE_EVENT": 2,
+   "VERIFIED_WITH_EVENTS": 55
+  },
+  "before_full_reference_by_status": {
+   "BLOCKED_SOURCE": 0,
+   "CONFLICT": 90,
+   "INSUFFICIENT_EVIDENCE": 5913,
+   "RECONSTRUCTED_VERIFIED": 83,
+   "VERIFIED_NO_APPLICABLE_EVENT": 0,
+   "VERIFIED_WITH_EVENTS": 17
+  },
+  "by_identity_status": {
+   "resolved_instruments": 4633,
+   "resolved_instruments_ambiguous": 2,
+   "unresolved_no_instruments": 1468
+  },
+  "stale": {
+   "fresh": 29,
+   "recent": 2034,
+   "stale": 3596,
+   "halted": 444
+  },
+  "reference": {
+   "coverage_note": "756 of 951 pack symbols and 759 of 6103 history symbols carry a reference index in this run; 756 step-bearing and 3 no-step symbols are covered.",
+   "full": 759,
+   "index_symbols": 759,
+   "index_symbols_in_history": 759,
+   "no_steps_full": 3,
+   "no_steps_partial": 0,
+   "none": 5344,
+   "partial": 0,
+   "verified_no_applicable_event": 2,
+   "with_steps": 756
+  },
+  "factor_totals": {
+   "alias_duplicate_dates": 82,
+   "alias_only_steps": 468,
+   "alias_ratio_conflicts": 11,
+   "alias_ratio_partials": 39,
+   "alias_symbols": 35,
+   "blocked": 0,
+   "conflict": 212,
+   "consistency": "step_rows_valid - alias_duplicate_dates == factor_steps",
+   "factor_steps": 8198,
+   "insufficient": 916,
+   "partial": 535,
+   "reconstructed": 608,
+   "step_rows_invalid": 28,
+   "step_rows_total": 8308,
+   "step_rows_valid": 8280,
+   "unverified": 1663,
+   "verified": 5927
+  },
+  "status_transitions": {
+   "unchanged": 6063,
+   "changed": 40,
+   "moves": {
+    "RECONSTRUCTED_VERIFIED->VERIFIED_WITH_EVENTS": 37,
+    "INSUFFICIENT_EVIDENCE->VERIFIED_NO_APPLICABLE_EVENT": 2,
+    "INSUFFICIENT_EVIDENCE->VERIFIED_WITH_EVENTS": 1
+   }
+  }
+ },
+ "validity_reconciliation": {
+  "history_validity_unverified_rows": 5188,
+  "unverified_rows_with_reference": 3,
+  "unverified_rows_with_reference_note": "3 of the 5,188 zero-step rows now have a full reference window: 2 became VERIFIED_NO_APPLICABLE_EVENT and 1 stays INSUFFICIENT_EVIDENCE with REFERENCE_FACTOR_CHANGES_WITHOUT_STEPS.",
+  "unverified_rows_no_reference_remaining": 5185,
+  "pack_steps_unverified": 1358,
+  "merged_factor_steps": 8198,
+  "merged_factor_steps_verified": 5927,
+  "merged_factor_steps_verified_note": "merged verified = 8,198 - 916 insufficient - 535 partial - 212 conflict - 608 reconstructed-audit-only"
+ },
+ "verification_method_movement": {
+  "steps_from_insufficient_evidence_to_verified": 75,
+  "steps_from_partial_to_verified": 0,
+  "steps_remaining_insufficient_evidence": 916,
+  "steps_remaining_partial": 544,
+  "steps_from_verified_to_partial": 22,
+  "steps_note": "The 22 VERIFIED_OFFICIAL->PARTIAL_REFERENCE moves are stricter, not a regression: a reference window now exists and the step sits between FACTOR_EXACT (0.1%) and FACTOR_MATERIAL (1%).",
+  "symbols_from_insufficient_evidence_to_verified": 3,
+  "symbols_from_reconstructed_to_verified_with_events": 37,
+  "symbols_remaining_insufficient_evidence": 5910,
+  "symbols_remaining_conflict": 90,
+  "symbols_remaining_reconstructed_verified": 46
+ },
+ "reconstructed_audit_outcomes": {
+  "rows": 6300,
+  "passed": 6293,
+  "failed": 7,
+  "note": "Unchanged by the full reference; the audit re-derives the pack chain and does not read the reference."
+ },
+ "blockers": {
+  "unmapped_no_asset_id": 339,
+  "symbols_without_instruments_row": 1468,
+  "halted_symbols": 444,
+  "anomaly_residual": {
+   "events": 50489,
+   "open_eq_prev_close": 47993,
+   "zero_volume": 2496,
+   "category": "UNRESOLVED_SOURCE_GAP"
+  }
+ },
+ "commands": [
+  "python _audit/phase49-full-verification/stage03_step_ledger.py --db _audit/phase49-finalization/seed/market.db --pack data/ra365_corrections/ra365-phase49-rebuild-full-v2 --reference _audit/phase49-full-verification/captures/reference-index-all.json --rules dev/phase49_status_rules.json --out _audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv",
+  "python _audit/phase49-full-verification/stage05_symbol_ledger.py --db _audit/phase49-finalization/seed/market.db --steps _audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv --reference _audit/phase49-full-verification/captures/reference-index-all.json --asset-map _audit/phase49-full-verification/capture-plan/symbols.json --capture-plan _audit/phase49-full-verification/capture-plan/capture-plan.json --step-counts _audit/phase49-full-verification/evidence/step-ledger-counts.json --out _audit/phase49-full-verification/ledgers/HISTORY-COVERAGE-LEDGER.csv",
+  "python _audit/phase49-full-verification/stage06_anomaly_ledger.py --db _audit/phase49-finalization/seed/market.db --out _audit/phase49-full-verification/ledgers/anomaly-ledger.csv",
+  "python _audit/phase49-full-verification/stage04_volana_rootcause.py --steps data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl --out _audit/phase49-full-verification/evidence/volana-rootcause.json --reference _audit/phase49-full-verification/captures/reference-index-all.json --reference7 _audit/phase49-full-verification/captures/reference-index-7.json --normalized _audit/phase49-full-verification/captures/bars-all.ndjson.gz"
+ ]
+}

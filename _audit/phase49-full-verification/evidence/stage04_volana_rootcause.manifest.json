@@ -6,20 +6,20 @@
   },
   "unverified_steps": 3
  },
- "finished_at": "2026-11-10T21:20:22Z",
+ "finished_at": "2026-11-11T01:06:56Z",
  "inputs": {
   "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
-  "_audit/phase49-full-verification/captures/normalized-30/bars.ndjson.gz": "0ab4c470883fee33df5fbcabf7a19014a7fca2daa24538f4713dcb8b01a63a32",
-  "_audit/phase49-full-verification/captures/reference-index-30.json": "05fc5b50a6b632eff464598e755e4bd0bb96961d5065446a3d5291896b557062",
+  "_audit/phase49-full-verification/captures/bars-all.ndjson.gz": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
   "_audit/phase49-full-verification/captures/reference-index-7.json": "afa30d692c2cc089d79b896d1a7cd640df2dbb14c3f461a3b2861dd700876a33",
-  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "a123bc603d1fa67cea5d89ecb36f6bcb27460e023b7e7837198e6cb67ef9f548",
+  "_audit/phase49-full-verification/captures/reference-index-all.json": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28",
   "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
   "data/ra365_corrections/ra365-phase49-rebuild-full-v2/manifest.json": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
   "dev/phase49_status_rules.json": "8397154f64e75aed1da455843a55e29c25c139dece95f134fa2a2767b02773b7"
  },
  "outputs": {
-  "_audit/phase49-full-verification/evidence/volana-rootcause.json": "a53d7560a49047cc0e06f134de30ab0e553d4f58c3c84bdf9fca535798675b4b",
-  "_audit/phase49-full-verification/ledgers/volana-rootcause-ledger.json": "ae415820fb759a347afdc315bd7ca42d56576bb6f8bb94827598b065cd8c6584"
+  "_audit/phase49-full-verification/evidence/volana-rootcause.json": "e6e70d7eedf150039e3bb86cf6e8f8f4ae2ab6908b94d5bb8c7853f49d8eefde",
+  "_audit/phase49-full-verification/ledgers/volana-rootcause-ledger.json": "38d8cc6c561fa0622f264d8ac8c38d921a68246fc65eabc6328a74726309ce70"
  },
  "stage": "stage04_volana_rootcause"
 }

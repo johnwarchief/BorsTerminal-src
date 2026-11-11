@@ -1231,11 +1231,16 @@ def build(db, steps_path, references, asset_map_path, out, counts_path,
                                 if r["ref_coverage"] == "partial"),
         "verified_no_applicable_event": by_final.get(
             "VERIFIED_NO_APPLICABLE_EVENT", 0),
-        "capture_pending": (
-            "Only %d of %d pack symbols have a reference index now; B11 "
-            "reruns this stage with the full capture."
+        "coverage_note": (
+            "%d of %d pack symbols and %d of %d history symbols carry a "
+            "reference index in this run; %d step-bearing and %d no-step "
+            "symbols are covered."
             % (sum(1 for k in reference if k in raw_step_keys),
-               len(raw_step_symbols))),
+               len(raw_step_symbols),
+               sum(1 for k in reference if k in history_keys),
+               len(history_keys),
+               sum(1 for r in with_steps if r["ref_coverage"] != "none"),
+               sum(1 for r in no_steps if r["ref_coverage"] == "full"))),
     }
     factor_totals = {
         "step_rows_valid": step_rows_total,
@@ -1402,10 +1407,9 @@ def build(db, steps_path, references, asset_map_path, out, counts_path,
             % (event_coverage["no_step_symbols_with_official_in_range"],
                event_coverage["no_step_official_in_range_events"]),
             "VERIFIED_NO_APPLICABLE_EVENT requires a resolved identity and a "
-            "full R1 type0/type7 window with no factor changes. Only %d of "
-            "%d pack symbols have a reference now and %d no-step symbols have "
-            "a full window, so the count is %d until B11 reruns with the full "
-            "capture."
+            "full R1 type0/type7 window with no factor changes. %d of %d pack "
+            "symbols carry a reference index and %d no-step symbols have "
+            "a full window, so the count is %d."
             % (reference_summary["index_symbols"],
                len(raw_step_symbols), reference_summary["no_steps_full"],
                reference_summary["verified_no_applicable_event"]),

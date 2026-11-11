@@ -1,25 +1,24 @@
 {
  "by_evidence_tier": {
-  "I1": 6073,
-  "O1": 1528,
-  "O1+I1": 1,
-  "O1+O2": 1,
-  "O1+R1": 163,
-  "O2+I1": 4,
-  "R1": 508,
-  "R1+I1": 30
+  "I1": 1524,
+  "O1": 163,
+  "O1+R1": 1529,
+  "O1+R1+O2": 1,
+  "R1": 5053,
+  "R1+I1": 34,
+  "R1+O2": 4
  },
  "by_status": {
-  "CONFLICT_DUPLICATE": 10,
-  "CONFLICT_RATIO": 215,
-  "INSUFFICIENT_EVIDENCE": 1095,
+  "CONFLICT_DUPLICATE": 6,
+  "CONFLICT_RATIO": 223,
+  "INSUFFICIENT_EVIDENCE": 916,
   "INVALID_DROPPED": 28,
   "PARTIAL_OFFICIAL": 408,
-  "PARTIAL_REFERENCE": 14,
-  "RECONSTRUCTED_AUDITED": 4975,
-  "VERIFIED_MULTI_SOURCE": 80,
-  "VERIFIED_OFFICIAL": 992,
-  "VERIFIED_REFERENCE": 491
+  "PARTIAL_REFERENCE": 136,
+  "RECONSTRUCTED_AUDITED": 608,
+  "VERIFIED_MULTI_SOURCE": 955,
+  "VERIFIED_OFFICIAL": 95,
+  "VERIFIED_REFERENCE": 4933
  },
  "by_validity": {
   "invalid_dropped": 28,
@@ -28,10 +27,10 @@
   "verified": 622
  },
  "comparison_result": {
-  "MATCH": 1566,
-  "MISMATCH": 215,
-  "NO_EVIDENCE": 6105,
-  "PARTIAL": 422
+  "MATCH": 5989,
+  "MISMATCH": 223,
+  "NO_EVIDENCE": 1552,
+  "PARTIAL": 544
  },
  "inputs": {
   "dedupe_ratio_tol": 0.01,
@@ -40,8 +39,8 @@
   "official_exact_keys": 4456,
   "pack_dropped_steps": 28,
   "pack_valid_steps": 8280,
-  "reference_changes": 624,
-  "reference_symbols": 36,
+  "reference_changes": 13921,
+  "reference_symbols": 759,
   "step_date_shift_max_days": 5
  },
  "notes": "O1 joined on normalised symbol inside the rules-file step date shift window; R1 joined on key with ratio = 1/ratio_change; duplicate detection uses DEDUPE_RATIO_TOL; statuses resolved by step_status_precedence order; I1 is internal reconstruction, not independent evidence.",
@@ -84,10 +83,10 @@
   }
  },
  "reference_witness": {
-  "match": 643,
-  "mismatch": 8,
-  "partial": 24,
-  "used": 675
+  "match": 6412,
+  "mismatch": 18,
+  "partial": 165,
+  "used": 6595
  },
  "rows": 8308,
  "schema": 1,
@@ -99,21 +98,21 @@
   "reconstructed_verified": {
    "CONFLICT_DUPLICATE": 4,
    "CONFLICT_RATIO": 75,
-   "INSUFFICIENT_EVIDENCE": 2,
    "PARTIAL_OFFICIAL": 370,
-   "RECONSTRUCTED_AUDITED": 4971,
-   "VERIFIED_OFFICIAL": 878
+   "RECONSTRUCTED_AUDITED": 604,
+   "VERIFIED_MULTI_SOURCE": 839,
+   "VERIFIED_OFFICIAL": 39,
+   "VERIFIED_REFERENCE": 4369
   },
   "unverified": {
-   "CONFLICT_DUPLICATE": 4,
-   "CONFLICT_RATIO": 110,
-   "INSUFFICIENT_EVIDENCE": 1093,
+   "CONFLICT_RATIO": 118,
+   "INSUFFICIENT_EVIDENCE": 916,
    "PARTIAL_OFFICIAL": 5,
-   "PARTIAL_REFERENCE": 14,
+   "PARTIAL_REFERENCE": 136,
    "RECONSTRUCTED_AUDITED": 4,
-   "VERIFIED_MULTI_SOURCE": 9,
-   "VERIFIED_OFFICIAL": 114,
-   "VERIFIED_REFERENCE": 5
+   "VERIFIED_MULTI_SOURCE": 45,
+   "VERIFIED_OFFICIAL": 56,
+   "VERIFIED_REFERENCE": 78
   },
   "verified": {
    "CONFLICT_DUPLICATE": 2,

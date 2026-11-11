@@ -17,19 +17,19 @@
   },
   "ledger": {
    "path": "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv",
-   "sha256": "a123bc603d1fa67cea5d89ecb36f6bcb27460e023b7e7837198e6cb67ef9f548"
+   "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
   },
   "normalized_bars": {
-   "capture_sha256": "28bb94d54630bb78d2845bf041efab6aa0866efaf94d25583265f72078b42c86",
-   "path": "_audit/phase49-full-verification/captures/normalized-30/bars.ndjson.gz"
+   "capture_sha256": "f35edfb2efe3987ec3ab515d5d08eb4f2cda1717b39029fac7a7dd17a31722cd",
+   "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz"
   },
   "pack": {
    "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl",
    "sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24"
   },
   "reference": {
-   "path": "_audit/phase49-full-verification/captures/reference-index-30.json",
-   "sha256": "05fc5b50a6b632eff464598e755e4bd0bb96961d5065446a3d5291896b557062"
+   "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+   "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
   },
   "reference7": {
    "path": "_audit/phase49-full-verification/captures/reference-index-7.json",
