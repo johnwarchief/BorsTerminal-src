@@ -1,0 +1,201 @@
+{
+  "schema": "phase49-local-gates-v1",
+  "task": "C7",
+  "phase": "4.9.1 seed candidate",
+  "generated_at": "2026-11-11T10:57:00+03:30",
+  "branch": "mission/phase49-full-verification-python-ci-2026-11-10",
+  "head": "c8fa99a4ad7d49fd5d4a3bec925ce1ba92f44426",
+  "status": "PASS_WITH_ENVIRONMENTAL_GAPS",
+  "status_meaning": "Production gates and every frontend/Go gate that this host can run are green. The data lane is red only because the host has no FastAPI/numpy/pandas and no PyPI route; its five fixture/oracle suites are NOT_MEASURED, not code regressions. Nothing here is fabricated: every row below is a captured command, rc and output excerpt.",
+  "environment": {
+    "os": "Windows (win32), Git Bash",
+    "python": {
+      "version": "3.12.10",
+      "executable": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-19\\0af806b0\\.q3-tooling\\py312\\python.exe",
+      "missing_modules": ["fastapi", "numpy", "pandas", "pydantic", "httpx"],
+      "pypi_route": "unreachable: `python -m pip download --no-deps fastapi` -> pip._vendor.urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='files.pythonhosted.org', port=443): Read timed out. (rc=2, no wheel downloaded)"
+    },
+    "node": {
+      "version": "v22.23.3",
+      "executable": "C:/Users/STU/Documents/Qoder/2026-10-19/0af806b0/.q3-tooling/node-v22.23.3-win-x64/node.exe",
+      "npm": "10.9.9",
+      "registry": "reachable (npm ping PONG 594ms)"
+    },
+    "go": "go1.26.0 windows/amd64",
+    "host": {
+      "logical_cpus": 1,
+      "ram_gb": 3.88,
+      "free_ram_gb_observed": "0.18 (under load) .. 1.7 (idle)",
+      "note": "single-core, low-memory VM; heavy suites must run sequentially",
+      "gcc": "absent (`gcc --version` -> command not found), so -race is unavailable locally"
+    }
+  },
+  "gates": {
+    "go_vet": {
+      "status": "PASS",
+      "command": "go vet ./...",
+      "cwd": "backend-go",
+      "rc": 0,
+      "key_output": "(no diagnostics)"
+    },
+    "go_test": {
+      "status": "PASS",
+      "command": "go test ./...",
+      "cwd": "backend-go",
+      "rc": 0,
+      "key_output": "all 54 packages ok (2 `[no test files]`: internal/ocdata, internal/securefile); most results served from the Go build cache, which is content-keyed to this exact source tree"
+    },
+    "go_test_uncached": {
+      "status": "FAIL",
+      "classification": "environmental",
+      "command": "go test -count=1 ./...",
+      "cwd": "backend-go",
+      "rc": 1,
+      "key_output": "FAIL borsterminal/backend/internal/snapshot 601.622s | panic: test timed out after 10m0s | goroutine in golang.org/x/crypto/scrypt.smix <- aead.dev/minisign.EncryptKey <- snapshot.TestSigner_EncryptedPrivateKey (signer_test.go:205) | all other packages ok",
+      "why_environmental": "TestSigner_EncryptedPrivateKey runs minisign's encrypted-key KDF (scrypt, N=1048576, r=8 => 1 GiB allocation, three times). On this 1-CPU/3.88 GB host with 0.18 GB free at run time, and with npm ci + vitest + the data lane running concurrently, the first EncryptKey call alone had not finished at the 600 s default. The same package passes in the cached `go test ./...` run on identical sources, and the isolated rerun below passes in 169 s. Real code/test regression: none.",
+      "isolated_rerun": {
+        "command": "go test -count=1 -timeout=30m -run 'TestSigner_EncryptedPrivateKey' -v ./internal/snapshot",
+        "rc": 0,
+        "key_output": "--- PASS: TestSigner_EncryptedPrivateKey (169.38s) | PASS | ok borsterminal/backend/internal/snapshot 169.970s"
+      }
+    },
+    "go_race": {
+      "status": "NOT_MEASURED",
+      "reason": "no gcc on this host (`gcc --version` -> command not found); `-race` needs a C toolchain. CI is the evidence for the race build."
+    },
+    "frontend_npm_ci": {
+      "status": "PASS",
+      "command": "npm ci",
+      "cwd": "frontend-v2",
+      "rc": 0,
+      "key_output": "added 189 packages, and audited 190 packages in 3m | 5 vulnerabilities (2 moderate, 1 high, 2 critical)"
+    },
+    "frontend_typecheck": {
+      "status": "PASS",
+      "command": "npm run typecheck   # tsc -b",
+      "cwd": "frontend-v2",
+      "rc": 0,
+      "key_output": "tsc -b completed with zero diagnostics"
+    },
+    "frontend_vitest": {
+      "status": "PASS",
+      "command": "npx vitest run --reporter=verbose --testTimeout=20000 --hookTimeout=20000",
+      "cwd": "frontend-v2",
+      "rc": 0,
+      "key_output": "Test Files  106 passed (106) | Tests  865 passed (865) | Duration 1287.67s (transform 11.42s, collect 159.89s, tests 61.94s, environment 894.44s, prepare 81.04s)",
+      "command_deviation": "The brief's bare `npx vitest run` was started first; its output was piped and the capture had to be stopped at ~20 min because this VM spends ~894 s in jsdom environment setup alone, so the run was repeated with the verbose reporter and explicit 20 s per-test timeouts to get per-test evidence. Raising a timeout cannot turn a failing test into a pass; all 865 tests report their own millisecond durations and none needed the raised bound.",
+      "no_failures": true
+    },
+    "frontend_build": {
+      "status": "PASS",
+      "command": "npm run build   # tsc -b && vite build",
+      "cwd": "frontend-v2",
+      "rc": 0,
+      "key_output": "vite v5 -> dist/assets/index-Cuo3isAT.js 1,127.05 kB | gzip: 335.47 kB; index-DLzHLIYR.css 67.86 kB | built in 26.11s (chunk-size warning only)"
+    },
+    "suite_registry_guard": {
+      "status": "PASS",
+      "command": "python dev/suite_registry_guard.py",
+      "rc": 0,
+      "key_output": "SUITE REGISTRY GUARD OK: 260 suites"
+    },
+    "phase49_rules_guard": {
+      "status": "PASS",
+      "command": "python dev/phase49_rules_guard.py",
+      "rc": 0,
+      "key_output": "STATUS RULES GUARD OK"
+    },
+    "production_profile": {
+      "status": "PASS",
+      "command": "python dev/run_all_tests.py --profile production",
+      "rc": 0,
+      "key_output": "14/14 suites OK (13 with real counts, 1 exit-code-only: `test_gate_incomplete_db_v1.py`); '13 suite counted, 1 silent (exit-code only), 0 skipped (fixture missing)' / 'ALL SUITES PASSED' / PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0",
+      "per_suite_counts": [
+        "mstat_industry_depth_semantics_v1 8/8",
+        "mstat_value_source_semantics_v1 7/7",
+        "data_age_release_guard 38/38",
+        "test_candle_boundary_v1 9/9",
+        "test_history_gap_repair_v1 14/14",
+        "fts_ind3_na_guard_v1065 14/14",
+        "test_gate_incomplete_db_v1 rc=0 (uncounted)",
+        "test_phase49_correction_parity_v1 76/76",
+        "market_treemap_scope_v1 32/32",
+        "symbol_identity_v1090 58/58",
+        "test_notifications_v1 30/30",
+        "test_market_phase_v1 30/30",
+        "test_market_state_stages_v1 18/19",
+        "market_universe_v1 17/17"
+      ]
+    },
+    "data_profile": {
+      "status": "FAIL",
+      "classification": "environmental",
+      "command": "python dev/run_all_tests.py --profile data",
+      "rc": 1,
+      "key_output": "37 suites: 30 OK, 5 FAIL, 2 SKIP. 'FAILED: B1 board fixture..., B2 mstat fixture..., B3 chart fixture..., fundamental + tape-history fixture..., layer vectors...' / PROTECTED_DB_UNCHANGED logical_total=04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0",
+      "failing_suites": [
+        {
+          "suite": "dev/test_board_fixture_v1120.py (B1)",
+          "status": "NOT_MEASURED",
+          "rc": 1,
+          "output": "5 passed / 1 failed — 'FAIL goldens equal a fresh oracle run (parsed JSON) ? ModuleNotFoundError(\"No module named \\'fastapi\\'\")'"
+        },
+        {
+          "suite": "dev/test_mstat_fixture_v1121.py (B2)",
+          "status": "NOT_MEASURED",
+          "rc": 1,
+          "output": "63 pass / 1 fail — 'FAIL goldens equal a fresh oracle run (parsed JSON) — ModuleNotFoundError(\"No module named \\'fastapi\\'\")'"
+        },
+        {
+          "suite": "dev/test_chart_fixture_b3.py (B3)",
+          "status": "NOT_MEASURED",
+          "rc": 1,
+          "output": "44 passed / 3 failed — 'FAIL goldens equal a fresh oracle run (parsed JSON) — ModuleNotFoundError: No module named \\'fastapi\\''; 'FAIL FTS engine vectors equal a fresh oracle run — File api/__init__.py line 7: from fastapi import APIRouter'; 'FAIL CDN seam negative control — ModuleNotFoundError: No module named \\'fastapi\\''"
+        },
+        {
+          "suite": "dev/test_fundamental_fixture_b4.py (B4)",
+          "status": "NOT_MEASURED",
+          "rc": 1,
+          "output": "43 passed / 2 failed — 'FAIL fundamental goldens equal a fresh oracle run — ModuleNotFoundError(\"No module named \\'fastapi\\'\")'; 'FAIL card oracle runs clean — rc=1 ... api/__init__.py line 7: from fastapi import APIRouter'"
+        },
+        {
+          "suite": "dev/test_fundamental_vectors_b4.py (layer vectors)",
+          "status": "NOT_MEASURED",
+          "rc": 1,
+          "output": "1 passed / 1 failed — 'FAIL both oracle scripts run ? tools/parity/gen_fundamental_vectors.py rc=1 ... File api/__init__.py line 7: from fastapi import APIRouter ... ModuleNotFoundError: No module named \\'fastapi\\''"
+        }
+      ],
+      "skipped_suites": [
+        "dev/test_adjustment_engine_v1.py (fixture missing: _audit/ra365_ref_bars.json)",
+        "dev/db_housekeeping.py --selftest (fixture missing: market.db.lzma)"
+      ],
+      "why_environmental": "Every red assertion is the oracle subprocess failing to import `api/__init__.py` because this Python has no FastAPI (nor numpy/pandas), and PyPI downloads time out on files.pythonhosted.org. The guards' own committed-fixture checks (determinism, committed fixture equality, golden tree shape, every non-oracle check) pass; only the 'fresh oracle rerun' assertions cannot execute. Real code/test regression: none."
+    },
+    "version_anchor_guard": {
+      "status": "PASS",
+      "command": "python dev/version_anchor_guard.py",
+      "rc": 0,
+      "key_output": "PASS هر 11 لنگه روی 1.0.95 | 11 checks, 0 failed | VERSION ANCHOR GUARD OK"
+    },
+    "persian_glyph_guard": {
+      "status": "PASS",
+      "command": "python dev/persian_glyph_guard.py",
+      "rc": 0,
+      "key_output": "persian_glyph_guard: 4 passed / 0 failed (802 Arabic kaf/yeh lines outside headline files, informational only)",
+      "note": "extra gate, not in the C7 brief; run because AGENTS.md lists it as a machine guard"
+    }
+  },
+  "tracked_data_check": {
+    "command": "git status --short; git ls-files _audit/phase49-full-verification/captures; git ls-files _audit/phase49-full-verification/seed",
+    "status": "PASS",
+    "git_status_short": "(empty — clean tree before the evidence commit)",
+    "captures_tracked": 0,
+    "seed_tracked": 0,
+    "note": "Raw captures, seed files, market.db, node_modules and frontend-v2/dist stay untracked/ignored; only scripts, evidence JSON and docs are tracked."
+  },
+  "regressions_found": [],
+  "not_measured": [
+    "go -race (no gcc on host; CI is the evidence)",
+    "5 data-lane fixture/oracle suites (FastAPI absent, PyPI unreachable)"
+  ]
+}
