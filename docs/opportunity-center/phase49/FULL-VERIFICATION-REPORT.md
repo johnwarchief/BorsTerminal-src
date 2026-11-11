@@ -3,6 +3,7 @@
 - Branch: `mission/phase49-full-verification-python-ci-2026-11-10`
 - Mission base: `f7fc8e8a` (design spec section 1); baseline snapshot was taken at HEAD `b43b1a66`
 - Working HEAD when this report was assembled: `19d3a885feb6f463ae36907caf43acd07092df7a`
+- C7 local-gate revision: HEAD `748d8519` (evidence measured on tree `c8fa99a4`)
 - Final CI: **PENDING** (`CI-FINAL-RESULTS.json` is a pending record; C8 must fill it)
 - Verdict: **`PHASE49_PARTIAL_WITH_EXPLICIT_BLOCKERS`**
 
@@ -60,9 +61,15 @@ The verdict carries these blockers:
 10. **The Seed release gate blocks.** `seed_manifest.reference_derived_rows` = 105,367, so
     `scripts/check_seed_release.py` returns `SEED_RELEASE_BLOCKED` without owner approval
     for reference redistribution ([M1], [S10]).
-11. **Vitest is `NOT_MEASURED` locally.** The chart-label source assertion is committed, but
-    `frontend-v2/node_modules` is absent and the offline install fails `ENOTCACHED`; final CI
-    must run it ([S8]).
+11. **The frontend gates are measured locally; the data lane is not.** C7 installed
+    `frontend-v2/node_modules` with `npm ci` and ran `tsc -b`, `vite build` and
+    `npx vitest run` (verbose reporter, explicit 20 s per-test bound; the evidence file
+    records the deviation): all pass, with 106/106 test files and 865/865 tests, including
+    the chart-label assertion ([S19], commit `748d8519`). The same host's `--profile data`
+    run returned 30 PASS / 5 FAIL / 2 SKIP; all five failures are
+    `ModuleNotFoundError: No module named 'fastapi'` in the suites' fresh-oracle subprocess
+    (no FastAPI/numpy/pandas locally, PyPI unreachable), so those five suites stay
+    `NOT_MEASURED` and the data lane remains CI-dependent ([S19]).
 12. **Final CI has not run.** No run id, job result or URL exists yet; inventing one would
     violate the evidence rule. C8 owns that measurement (`CI-FINAL-RESULTS.json`).
 
@@ -75,6 +82,7 @@ The verdict carries these blockers:
 | Baseline snapshot HEAD | `b43b1a66` (snapshot-time HEAD, not the commit that contains the file) | [S1] |
 | Working HEAD | `19d3a885feb6f463ae36907caf43acd07092df7a` | `git rev-parse HEAD` |
 | C5 measured tree | `fd8a7dd4` (evidence JSON `commit` fields) | [S8], [S9] |
+| C7 local gates | measured on tree `c8fa99a4`, evidence committed in `748d8519` | [S19] |
 | Correction pack | `ra365-phase49-rebuild-full-v2`, 8,280 steps, 951 symbols, `as_of` 2026-10-25 | [S1], [M1] |
 | Pack manifest SHA-256 | `458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c` | [S1], [S8], [M1] |
 | Pack factors SHA-256 | `aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24` | [S1], [S8], [M1] |
@@ -112,6 +120,7 @@ read for this report. A number that is derived from two cited files is marked in
 | S16 | `_audit/phase49-full-verification/evidence/backfill-price-basis.json` | `2fa944c8509b560f8ef95d397f8e99b3cede6a68f18832a80fc896f4bbd587b6` |
 | S17 | `_audit/phase49-full-verification/evidence/backfill-availability.json` | `ce5207435ccfa980875d35dfd18675e58ba5e750eb20d63c9d6eef9ae11e2264` |
 | S18 | `_audit/phase49-full-verification/evidence/ci-failures.json` | `957891576db1dace83ee414aa85d57324f51b229ddbacbf71c2650d472d021f9` |
+| S19 | `_audit/phase49-full-verification/evidence/local-gates.json` | `1a247d0272f3dc65f000c1b97599b6dc4f5e9fd5de130d6f7d9f1b5d112e65f9` |
 | C1 | `_audit/phase49-full-verification/capture-plan/capture-plan.json` | `7dbe2a62073f73bb5beb38779be075914f8b178f954e7f728490922d9590cfd4` |
 | L1 | `docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv` (8,308 rows + header) | `c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28` |
 | L2 | `docs/opportunity-center/phase49/HISTORY-COVERAGE-LEDGER.csv` (6,103 rows + header) | `c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650` |
@@ -130,7 +139,7 @@ read for this report. A number that is derived from two cited files is marked in
 | 6 | Backfill the six short-history symbols | `PASS` | All six present in the capture with raw daily bars; 19,540 rows inserted, 0 invalid, full reference date coverage (`missing_ref=0`) [S13], [S17], [S15]. |
 | 7 | Determine identity/status of instruments without history and history outside instruments | `INSUFFICIENT_EVIDENCE` | 1,468 history symbols have no instruments row and stay `unresolved_no_instruments` + `SYMBOL_IDENTITY_MISMATCH`; 1,306 named instruments have no history; 3 duplicate instrument keys are reported, 2 inside history [S4], [S7]. The identity is explicitly unresolved, not guessed. |
 | 8 | Root-cause important OHLC anomalies and gaps | `PASS` | Every emitted event has a measured root cause or the explicit residual `UNRESOLVED_SOURCE_GAP`; `uncategorized_events=0`, `unexplained_events=0`; each kind matches its independent SQL cross-check [S5]. 53,176 events still need a source this round does not have [S5]. |
-| 9 | Settle Python CI and green Production Gates | `NOT_MEASURED` | The three workflows exist and the suite registry guard is green locally (260 suites), but the final CI run has not happened; only C8 can produce PASS/FAIL. `CI-FINAL-RESULTS.json` is `PENDING_FINAL_CI` (the record itself; [S18] covers the local failure accounting). |
+| 9 | Settle Python CI and green Production Gates | `NOT_MEASURED` | The three workflows exist, the suite registry guard is green locally (260 suites), and C7 ran the production profile locally at 14/14 suites PASS; but the final CI run has not happened, so only C8 can produce PASS/FAIL. The C7 data profile gave 30 PASS / 5 FAIL / 2 SKIP, all five failures `ModuleNotFoundError: fastapi` (environmental), so that lane is CI-dependent [S19]. `CI-FINAL-RESULTS.json` is `PENDING_FINAL_CI` (the record itself; [S18] covers the local failure accounting). |
 | 10 | Verify the Seed Candidate for integrity/idempotency/provenance/Go parity | `PASS` | Integrity `ok`, duplicate pairs 0, XZ and gzip round-trips equal the DB SHA, manifest hashes match, 33,145 provenance rows with 0 wrong source/type and 0 changed seed rows, 30/30 engine parity and 12/12 product checks [S10], [S15], [S8], [S9]. Release remains blocked separately by the licensing gate [M1]. |
 
 ## 5. Capture scope and coverage
@@ -455,7 +464,7 @@ required` and exits 1. This is the designed behaviour, not a defect [M1].
 | Go chart-db label tests (`ChartDB`) | PASS, 2 tests | [S8] |
 | Engine parity, 30 symbols | PASS 30/30, `mismatches: []`; every symbol `go==py`, events equal, `factor_max_rel=0`, `candle_field_diffs=0` | [S8] |
 | Product harness | PASS 12/12 checks | [S9] |
-| Vitest chart labels | `NOT_MEASURED`; `frontend-v2/node_modules` absent, offline install `ENOTCACHED` | [S8] |
+| Vitest chart labels | PASS locally: 106/106 test files, 865/865 tests (`npm ci`, then `npx vitest run`); the `frontend-v2` CI job still must reproduce it | [S19] |
 
 Product checks cover clean extraction (544,284 rows, 3,105 provenance rows, 6,103 validity
 rows), chart-db reads (فولاد 3,689 bars, 2010-01-02..2026-11-09, 26 events), weekly 833 and
@@ -497,6 +506,16 @@ Failure accounting in `PYTHON-CI-MIGRATION.md`: 24 rows = 16 `MEASURED_FAIL`,
 with its own SHA-256. The 177 suites that cannot execute locally for a missing third-party
 package are never called passing.
 
+C7 measured the two local runner profiles on this branch: `--profile production` passed
+14/14 suites (13 with real counts, one exit-code-only, `PROTECTED_DB_UNCHANGED`), and
+`--profile data` returned 30 PASS / 5 FAIL / 2 SKIP. Every one of the five failures is
+`ModuleNotFoundError: No module named 'fastapi'` raised by the suite's fresh-oracle
+subprocess, because this host has no FastAPI, numpy or pandas and PyPI downloads time out;
+the guards' own committed-fixture checks pass, so no code regression is implied. The five B
+suites (B1 board, B2 mstat, B3 chart, B4 fundamental, B4 layer vectors) stay
+`NOT_MEASURED`, and the `data-tooling` CI job, which installs the requirements, is their
+measurement [S19].
+
 Final CI is pending. `CI-FINAL-RESULTS.json` records status `PENDING_FINAL_CI`, commit
 `19d3a885...`, expected workflows `guards`, `python-tooling`, `python-legacy`, and an empty
 `runs` array. C8 replaces it with measured data; this report deliberately contains no run
@@ -532,6 +551,8 @@ Solved in this round:
 - Volana and the 7 new drops are root-caused and recorded [S12], [S6].
 - The 6,328/6,103 inventory discrepancy is explained [S7].
 - Python-Go engine parity (30/30) and 12/12 product checks pass [S8], [S9].
+- The frontend gates pass locally under C7: `npm ci`, `tsc -b`, `vite build` and
+  865/865 vitest tests in 106 files, including the chart-label assertion [S19].
 - Python CI is split into three lanes with a 260-suite registry and 24 failures root-caused
   [S18].
 
@@ -546,7 +567,8 @@ Not solved / explicit blockers:
 - 53,176 unresolved anomaly events; 306 legacy invalid OHLC; 4 unadjustable new backfill
   rows; 3 corporate-action-missing boundaries; widened-open extremes [S5], [S6], [S13].
 - Seed release blocked by the reference-redistribution gate (105,367 rows) [M1].
-- Vitest chart labels `NOT_MEASURED` locally [S8].
+- Vitest chart labels and the other frontend gates pass locally, but the `frontend-v2` CI job
+  has not run; the five data-lane suites that need FastAPI are `NOT_MEASURED` locally [S19].
 - Final CI `PENDING`; production gate status cannot be stated until C8 (`CI-FINAL-RESULTS.json`).
 
 ## 15. Owner decisions required
@@ -604,9 +626,11 @@ python dev/build_python_ci_migration_doc.py --check
 python _audit/phase49-full-verification/stage11_deliverables.py
 ```
 
-The final CI run and the Vitest execution are not reproducible from this machine state:
+The frontend gates and both runner profiles are reproducible from this machine state (C7 ran
+them); the final CI run is not, because `gh` is absent:
 
 ```bash
-cd frontend-v2 && npm ci && npx vitest run src/features/chart   # NOT_MEASURED locally
+cd frontend-v2 && npm ci && npx vitest run   # C7 PASS: 106 files / 865 tests [S19]
+python dev/run_all_tests.py --profile data   # C7: 30 PASS / 5 FAIL / 2 SKIP (fastapi absent)
 gh run list --branch mission/phase49-full-verification-python-ci-2026-11-10  # C8, gh absent
 ```

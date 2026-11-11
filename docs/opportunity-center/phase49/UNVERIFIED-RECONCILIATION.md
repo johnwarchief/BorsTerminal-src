@@ -19,6 +19,7 @@ Source keys used below:
 | S11 | `_audit/phase49-full-verification/evidence/ledger-counts.json` | `a638236db0ddf57d1443e9c450ae4dec9eb3a42414cd0c10b7844b02ca8015c3` |
 | S12 | `_audit/phase49-full-verification/evidence/volana-rootcause.json` | `b3673e63157a36515ffc5a094e2fc0fb037f10c5b23d46963b52eb261f58fb3f` |
 | S15 | `_audit/phase49-full-verification/evidence/backfill-idempotency.json` | `2461dea8f994fb6d30fcad3c72450f8f2077b659df9d511af8e22df14fb4f269` |
+| S19 | `_audit/phase49-full-verification/evidence/local-gates.json` | `1a247d0272f3dc65f000c1b97599b6dc4f5e9fd5de130d6f7d9f1b5d112e65f9` |
 | C1 | `_audit/phase49-full-verification/capture-plan/capture-plan.json` | `7dbe2a62073f73bb5beb38779be075914f8b178f954e7f728490922d9590cfd4` |
 | L1 | `docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv` | `c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28` |
 | L2 | `docs/opportunity-center/phase49/HISTORY-COVERAGE-LEDGER.csv` | `c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650` |
@@ -219,7 +220,7 @@ counts disagree with the pack.
 | New unadjustable backfill drops | 4 | No pack factor and no official event at the boundary | Pack step or official corporate action |
 | Volana cumulative error | 3 steps | Dropped 2026-07-15 step and absorbed ratios | Pack correction decision |
 | Seed release | 105,367 reference-derived rows | Licensing gate | Owner approval |
-| Vitest chart labels | 1 test file | Dependencies absent locally | CI |
+| Vitest chart labels | 1 test file | Local run PASS: 106 files / 865 tests [S19]; the `frontend-v2` CI job has not reproduced it yet | Final CI `frontend-v2` job (C8) |
 | Final CI | 3 workflows | Not run | C8 |
 
 No item above is closed by a label change. Each one either has a witness or stays in the
