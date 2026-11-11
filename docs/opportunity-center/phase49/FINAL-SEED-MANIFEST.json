@@ -79,6 +79,23 @@
   "ok": true
  },
  "out_dir": "_audit/phase49-full-verification/seed",
+ "owner_approvals": [
+  {
+   "approval_record": "docs/opportunity-center/phase49-2/OWNER-APPROVAL-REFERENCE-DERIVED.json",
+   "approved": true,
+   "approved_at": "2026-11-11",
+   "approver": "BorsTerminal project owner",
+   "conditions": [
+    "provenance and traceability of reference-derived rows preserved",
+    "approval does not mark rows or adjustment steps as verified",
+    "technical validity, symbol identity and adjustment-chain controls remain",
+    "publication requires the owner's review of the Seed Candidate report"
+   ],
+   "reference_derived_rows": 105367,
+   "scope": "reference_derived_rows",
+   "seed_db_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5"
+  }
+ ],
  "price_history_rows": 544284,
  "reference_derived_rows": 105367,
  "roundtrip_ok": true,

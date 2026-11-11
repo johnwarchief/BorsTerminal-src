@@ -205,13 +205,13 @@ jobs:
       - name: Seed release gate
         # A8: refuse to package a Seed whose manifest reports reference-derived
         # rows (price_history rows sourced from the licensed reference) without
-        # an explicit owner approval. A missing seed_manifest table, a missing
-        # key or a non-integer value also blocks: an unverifiable Seed is not
-        # publishable. The tracked root market.db has no seed_manifest table
-        # yet, so this gate blocks on purpose until the owner decides; do not
-        # add --owner-approved-reference-redistribution here without that
-        # decision. The gate's own test runs first: a nonzero return means the
-        # blocked/approved contract regressed (fail-open risk), and a Seed
+        # a recorded owner approval. Phase 4.9.2 records that decision in
+        # docs/opportunity-center/phase49-2/OWNER-APPROVAL-REFERENCE-DERIVED.json
+        # and the gate validates it against the live manifest row count and
+        # reference hashes. A missing seed_manifest table, a missing key or a
+        # non-integer value still blocks: an unverifiable Seed is not
+        # publishable. The gate's own test runs first: a nonzero return means
+        # the blocked/approved contract regressed (fail-open risk), and a Seed
         # packaged through an unproven gate is not acceptable.
         shell: pwsh
         run: |

@@ -1,0 +1,32 @@
+{
+  "schema": "phase49-2-owner-approval-reference-derived-v1",
+  "approved": true,
+  "scope": "reference_derived_rows",
+  "approved_at": "2026-11-11",
+  "approver": "BorsTerminal project owner",
+  "approval_quote_fa": "تأیید مالک پروژه برای استفاده از ۱۰۵٬۳۶۷ ردیف Reference-derived در Seed صادر است.",
+  "approval_message_fa": [
+    "این تأیید را در مستندات و Manifest پروژه ثبت کن.",
+    "گیت check_seed_release.py را مطابق تأیید مالک اصلاح کن تا صرفاً به دلیل وجود این ردیف‌ها، انتشار Seed را مسدود نکند.",
+    "منشأ، Provenance و قابلیت ردیابی این داده‌ها حفظ شود.",
+    "این تأیید به معنی Verified شدن خودکار داده‌ها یا Adjustmentهای تأییدنشده نیست؛ کنترل‌های صحت فنی، هویت نماد و زنجیرهٔ تعدیل همچنان برقرار باشند.",
+    "Seed جدید را از نظر Integrity، Hash، Idempotency و تست‌های محصول مجدداً بررسی کن.",
+    "این تغییر به معنی اجازهٔ انتشار فوری نیست؛ پس از اجرای تست‌ها، گزارش نهایی Seed Candidate را برای بررسی من ارائه بده.",
+    "main، Release و Tag همچنان خارج از محدودهٔ مأموریت هستند."
+  ],
+  "expected_reference_derived_rows": 105367,
+  "reference_capture_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "reference_index_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "seed_db_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "seed_db_size": 281088000,
+  "seed_manifest": "docs/opportunity-center/phase49/FINAL-SEED-MANIFEST.json",
+  "conditions": [
+    "provenance and traceability of reference-derived rows are preserved",
+    "approval does not mark rows or adjustment steps as verified",
+    "technical validity, symbol identity and adjustment-chain controls remain in force",
+    "publication still requires the owner's review of the Seed Candidate report",
+    "main, release tags and merges remain out of scope"
+  ],
+  "note": "The approval binds to the Seed Candidate identified by seed_db_sha256; the release gate validates the live DB manifest (row count + capture hashes), so a different DB with the same rows is still accepted only when its manifest provenance matches.",
+  "recorded_by": "Phase 4.9.2 implementation agent"
+}
