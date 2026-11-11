@@ -1,0 +1,106 @@
+{
+ "tool": "phase49-c3-price-basis-preflight",
+ "basis_rule": "local close = last (else closing); ref close = type0/raw/D close (last trade)",
+ "tolerance": {
+  "name": "OHLC_MATERIAL",
+  "value": 0.05
+ },
+ "generated_at": "2026-11-11T01:36:52+00:00",
+ "source_db": "_audit/phase49-finalization/seed/market.db",
+ "ref": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+ "overall_median_rel_diff": 0.00715,
+ "overall_common_dates": 2489,
+ "verdict": "OK",
+ "per_symbol": [
+  {
+   "symbol": "شنفت",
+   "local_rows": 433,
+   "ref_raw_d": 6284,
+   "common": 431,
+   "median_rel_diff": 0.006749,
+   "max_rel_diff": 0.041429,
+   "over_5pct": 0,
+   "last_missing": 423,
+   "close_by": {
+    "other": 348,
+    "closing": 77,
+    "last": 6
+   }
+  },
+  {
+   "symbol": "فافق",
+   "local_rows": 408,
+   "ref_raw_d": 1078,
+   "common": 406,
+   "median_rel_diff": 0.004935,
+   "max_rel_diff": 0.043364,
+   "over_5pct": 0,
+   "last_missing": 398,
+   "close_by": {
+    "other": 291,
+    "closing": 109,
+    "last": 6
+   }
+  },
+  {
+   "symbol": "فخاس",
+   "local_rows": 434,
+   "ref_raw_d": 3900,
+   "common": 432,
+   "median_rel_diff": 0.00852,
+   "max_rel_diff": 0.030717,
+   "over_5pct": 0,
+   "last_missing": 424,
+   "close_by": {
+    "other": 379,
+    "closing": 47,
+    "last": 6
+   }
+  },
+  {
+   "symbol": "فولاژ",
+   "local_rows": 439,
+   "ref_raw_d": 3446,
+   "common": 437,
+   "median_rel_diff": 0.009569,
+   "max_rel_diff": 0.042096,
+   "over_5pct": 0,
+   "last_missing": 429,
+   "close_by": {
+    "other": 378,
+    "closing": 53,
+    "last": 6
+   }
+  },
+  {
+   "symbol": "لخزر",
+   "local_rows": 401,
+   "ref_raw_d": 4078,
+   "common": 399,
+   "median_rel_diff": 0.005587,
+   "max_rel_diff": 0.034803,
+   "over_5pct": 0,
+   "last_missing": 391,
+   "close_by": {
+    "other": 312,
+    "closing": 81,
+    "last": 6
+   }
+  },
+  {
+   "symbol": "مارون",
+   "local_rows": 513,
+   "ref_raw_d": 3243,
+   "common": 384,
+   "median_rel_diff": 0.006053,
+   "max_rel_diff": 0.034749,
+   "over_5pct": 0,
+   "last_missing": 376,
+   "close_by": {
+    "other": 323,
+    "closing": 55,
+    "last": 6
+   }
+  }
+ ]
+}

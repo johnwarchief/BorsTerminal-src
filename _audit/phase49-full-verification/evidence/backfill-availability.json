@@ -1,0 +1,82 @@
+{
+ "tool": "phase49-c3-capture-availability-recheck",
+ "generated_at": "2026-11-11T01:35:31+00:00",
+ "source_file": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+ "source_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+ "total_rows_scanned": 5240964,
+ "rule": "exact bar symbol; type==type0; adjust==raw; resolution==D",
+ "type0_adjust_raw_mismatch_rows": 0,
+ "planned": {
+  "six": 6,
+  "freshness": 644
+ },
+ "available": {
+  "six": 6,
+  "freshness": 644
+ },
+ "six": [
+  {
+   "symbol": "شنفت",
+   "ledger_asset_id": "182",
+   "bar_asset_ids": [
+    "182"
+   ],
+   "raw_d_bars": 6284,
+   "first": "1991-05-11",
+   "last": "2026-11-10"
+  },
+  {
+   "symbol": "فافق",
+   "ledger_asset_id": "17495",
+   "bar_asset_ids": [
+    "17495"
+   ],
+   "raw_d_bars": 1078,
+   "first": "2021-09-01",
+   "last": "2026-11-10"
+  },
+  {
+   "symbol": "فخاس",
+   "ledger_asset_id": "458",
+   "bar_asset_ids": [
+    "458"
+   ],
+   "raw_d_bars": 3900,
+   "first": "2007-10-30",
+   "last": "2026-11-10"
+  },
+  {
+   "symbol": "فولاژ",
+   "ledger_asset_id": "569",
+   "bar_asset_ids": [
+    "569"
+   ],
+   "raw_d_bars": 3446,
+   "first": "2011-03-09",
+   "last": "2026-11-10"
+  },
+  {
+   "symbol": "لخزر",
+   "ledger_asset_id": "207",
+   "bar_asset_ids": [
+    "207"
+   ],
+   "raw_d_bars": 4078,
+   "first": "1996-03-18",
+   "last": "2026-11-08"
+  },
+  {
+   "symbol": "مارون",
+   "ledger_asset_id": "485",
+   "bar_asset_ids": [
+    "485"
+   ],
+   "raw_d_bars": 3243,
+   "first": "2011-12-27",
+   "last": "2026-11-10"
+  }
+ ],
+ "freshness_excluded": [],
+ "freshness_excluded_file": "_audit/phase49-full-verification/backfill-plan/symbols-freshness-capture-blocked.csv",
+ "freshness_applied_file": "_audit/phase49-full-verification/backfill-plan/symbols-freshness-applied.csv"
+}
