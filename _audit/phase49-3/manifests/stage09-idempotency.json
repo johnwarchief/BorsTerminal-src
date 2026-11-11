@@ -1,0 +1,10 @@
+{
+ "elapsed_seconds": 18.365,
+ "exit_code": 0,
+ "finished_utc": "2026-11-11T22:00:07Z",
+ "payload_path": "_audit/phase49-3/evidence/IDEMPOTENCY.json",
+ "payload_sha256": "a434f6ce4d7e58478dc85d6bf5ffca969833805f36c6776a735f85426891e68c",
+ "pinned_db_sha256": "99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd",
+ "stage": "stage09_idempotency",
+ "started_utc": "2026-11-11T21:59:49Z"
+}

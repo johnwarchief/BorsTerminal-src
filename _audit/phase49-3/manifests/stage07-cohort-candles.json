@@ -1,0 +1,11 @@
+{
+ "elapsed_seconds": 29.706,
+ "exit_code": 0,
+ "finished_utc": "2026-11-11T21:41:42Z",
+ "payload_path": "_audit/phase49-3/evidence/COHORT-CANDLES.json",
+ "payload_sha256": "e0a58be2af0e548b4f267579046ec20cd1781b15eeb7f8ba5999692517c07be0",
+ "stage": "stage07_cohort_candles",
+ "started_utc": "2026-11-11T21:41:12Z",
+ "working_db_sha256": "99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd",
+ "working_db_size_bytes": 65437696
+}

@@ -1,0 +1,25 @@
+{
+ "elapsed_seconds": 37.289,
+ "exit_code": 0,
+ "finished_utc": "2026-11-11T22:11:41Z",
+ "materialize_requested": true,
+ "materialized": {
+  "_audit/phase49-full-verification/captures/bars-all.ndjson.gz": {
+   "destination_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+   "destination_size_bytes": 145864430,
+   "gitignored": true,
+   "matches_verified_source": true
+  },
+  "_audit/phase49-full-verification/captures/reference-index-all.json": {
+   "destination_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+   "destination_size_bytes": 2010378,
+   "gitignored": true,
+   "matches_verified_source": true
+  }
+ },
+ "mission_head_at_run": "d7121dc17c58e56d5a0bbcd59262d0cdae215d12",
+ "payload_path": "_audit/phase49-3/evidence/RESTORED-CAPTURE-VERIFICATION.json",
+ "payload_sha256": "b9c96302b8987c1a183203fe4e51aa5409ef7c5158e464b8e8133906c56d80c9",
+ "stage": "stage06_verify_restored_capture",
+ "started_utc": "2026-11-11T22:11:04Z"
+}

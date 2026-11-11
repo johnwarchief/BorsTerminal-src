@@ -3,13 +3,16 @@
 
 Deterministic: no wall clock anywhere in the payload, so a rerun over unchanged
 inputs is byte-identical.  The file lists itself nowhere (a self-hash cannot
-converge).  Inputs that deliberately stay out of git are listed with the SHA-256
-*recorded by the phase that produced them*, read back from committed evidence
-rather than retyped, and marked absent on this host.
+converge).  Licensed inputs that stay out of git are listed with the SHA-256
+*recorded by the phase that produced them*: when the bytes are present they are
+re-measured here and must match, and when they are absent the recorded hash is
+kept and marked ABSENT rather than retyped.  Working-DB facts are read back from
+committed stage evidence, never hardcoded.
 """
 from __future__ import annotations
 
 import hashlib
+import gzip
 import io
 import json
 import os
@@ -23,7 +26,7 @@ CI = os.path.join(DOCS, "CI-FINAL-RESULTS.json")
 SELF = "docs/opportunity-center/phase49-3/ARTIFACTS-SHA256.txt"
 
 BASE_COMMIT = "e09ccd95d51c94082640cda75ef3de2b2008f9d2"
-VERDICT = "BLOCKED_CAPTURE_REQUIRED"
+VERDICT = "PARTIAL"
 
 CODE = [
     "backend-go/internal/chart/measured.go",
@@ -103,17 +106,81 @@ def prior_inputs():
 
 
 def capture_inputs():
+    """Licensed capture inputs, restored by the owner over Git LFS.
+
+    Each is listed with the hash recorded by phase49-full-verification. When the
+    bytes are present they are re-measured here and must match that recorded
+    hash; a mismatch aborts rather than publishing a stale manifest. When they
+    are absent the recorded hash is kept and marked ABSENT, never re-typed.
+    """
     p = os.path.join(ROOT, CAPTURE_SUMMARY.replace("/", os.sep))
     merged = json.load(io.open(p, encoding="utf-8"))["merged"]
     idx = merged["reference_index_all"]
     return [
-        (merged["bars_file"], merged["bars_container_sha256"], "-",
-         "licensed paired type0/type7 bars, gzip container (not committed)"),
-        (merged["bars_file"], merged["bars_payload_sha256"], "-",
-         "same file, uncompressed NDJSON payload hash (not committed)"),
-        (idx["file"], idx["sha256"], "-",
-         "licensed reference index, 759 symbols (not committed)"),
+        (merged["bars_file"], merged["bars_container_sha256"],
+         "licensed paired type0/type7 bars, gzip container", "container"),
+        (merged["bars_file"], merged["bars_payload_sha256"],
+         "same file, uncompressed NDJSON payload hash", "payload"),
+        (idx["file"], idx["sha256"],
+         "licensed reference index, 759 symbols", "container"),
     ]
+
+
+def measure_capture(path, kind):
+    """Hash the container bytes, or the decompressed NDJSON payload."""
+    if kind != "payload":
+        return sha(path), os.path.getsize(path)
+    h = hashlib.sha256()
+    n = 0
+    with gzip.open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+            n += len(chunk)
+    return h.hexdigest(), n
+
+
+def cohort_db_facts():
+    """Read the working-DB facts back from committed stage evidence."""
+    ev = os.path.join(AUDIT, "evidence")
+    mf = os.path.join(AUDIT, "manifests")
+    s6 = json.load(io.open(os.path.join(ev, "RESTORED-CAPTURE-VERIFICATION.json"),
+                           encoding="utf-8"))
+    s7 = json.load(io.open(os.path.join(ev, "COHORT-CANDLES.json"),
+                           encoding="utf-8"))
+    s8 = json.load(io.open(os.path.join(ev, "RUNTIME-READPATH.json"),
+                           encoding="utf-8"))
+    s9 = json.load(io.open(os.path.join(ev, "IDEMPOTENCY.json"),
+                           encoding="utf-8"))
+    m7 = json.load(io.open(os.path.join(mf, "stage07-cohort-candles.json"),
+                           encoding="utf-8"))
+    for name, rec in (("stage06", s6), ("stage07", s7), ("stage08", s8),
+                      ("stage09", s9)):
+        if rec.get("base_commit") != BASE_COMMIT:
+            sys.exit("FATAL: %s evidence is pinned to another base commit" % name)
+    if s6["status"] != "PASS":
+        sys.exit("FATAL: stage06 is not PASS; the capture bytes are not verified")
+    if s7["status"] != "PASS":
+        sys.exit("FATAL: stage07 is not PASS; refusing to publish its rows")
+    if s9["status"] != "PASS":
+        sys.exit("FATAL: stage09 is not PASS; refusing to claim idempotency")
+    if s7["engine_source_diff_vs_base"] != "(empty)":
+        sys.exit("FATAL: engine source differs from base")
+    if s7["working_db"]["red_line_dbs_opened_for_write"]:
+        sys.exit("FATAL: a red-line DB was opened for write")
+    if s8["substrate"]["red_line_dbs_opened"]:
+        sys.exit("FATAL: stage08 opened a red-line DB")
+    if not s9["checks"]["pinned_db_untouched"]:
+        sys.exit("FATAL: stage09 did not leave the pinned DB untouched")
+    if m7["payload_sha256"] != sha(os.path.join(ev, "COHORT-CANDLES.json")):
+        sys.exit("FATAL: stage07 payload drifted from its manifest hash")
+    pinned = s9["pinned_working_db"]
+    if pinned["sha256_before"] != m7["working_db_sha256"]:
+        sys.exit("FATAL: stage09 pinned a different working DB than stage07 built")
+    if pinned["sha256_after"] != pinned["sha256_before"]:
+        sys.exit("FATAL: stage09 changed the pinned working DB")
+    if s9["pinned_revision"] != s7["revision"]:
+        sys.exit("FATAL: stage09 pinned a different revision than stage07 wrote")
+    return s6, s7, s8, s9, m7
 
 
 def main():
@@ -186,22 +253,72 @@ def main():
     if len(dl["suites"]) != dl["count"]:
         sys.exit("FATAL: data-lane failure count disagrees with its suite list")
 
+    s6, s7, s8, s9, m7 = cohort_db_facts()
+    cnt = s7["counts"]
+    anchor = s7["anchor_invariant"]
+    geo = s8["candle_geometry_finding"]
+
     out = [
         "# Phase 4.9.3 artifact SHA-256 manifest",
         "# generated by _audit/phase49-3/build_artifacts_manifest.py",
         "# deterministic: no timestamp in the payload; rerun is byte-identical",
         "# verdict: %s" % VERDICT,
+        "# verdict_basis: stage06 PASS, stage07 PASS, stage08 PARTIAL, stage09 PASS",
         "# code_commit: %s (base; this mission changed no engine code)" % BASE_COMMIT,
         "# ci_status: %s" % ci_status,
         "# ci_commit: %s" % ci_sha,
         "# ci_jobs: %s (python-legacy is continue-on-error: workflow success is"
         " NOT all-jobs success)" % ci_jobs,
         "# ci_report_only_attribution: %s" % ci_legacy,
-        "# independent_db_revision: NOT_CREATED"
-        " (no working DB copy was built: the paired capture bytes are absent,"
-        " and fabricating inputs is forbidden)",
-        "# independent_db_rows: NOT_MEASURED (raw=0 adjusted=0 factors=0 written"
-        " by this mission)",
+        "# independent_db_revision: %s" % s7["revision"],
+        "# independent_db: %s (fresh from the frozen Phase 4.9.2 SCHEMA; NOT a"
+        " copy of the Seed Candidate or the Pilot DB, both absent on this host)"
+        % s7["working_db"]["path"],
+        "# independent_db_sha256: %s (%d bytes)" % (
+            m7["working_db_sha256"], m7["working_db_size_bytes"]),
+        "# independent_db_rows: raw=%d adjusted=%d factors=%d candles=%d"
+        " (written to the working DB only; no red-line DB was opened)" % (
+            cnt["reference_raw_rows"], cnt["reference_adjusted_rows"],
+            cnt["adjustment_factors"], s7["candlebuild_result"]["adjusted_rows"]),
+        "# cohort_symbols: %d ingested, %d materialized by the builder,"
+        " %d zero-event (see stage08)" % (
+            cnt["symbols_ingested"], s7["builder_coverage"]["symbols_materialized"],
+            len(s7["builder_coverage"]["zero_event_symbols"])),
+        "# candle_parity: close max_rel=%r mismatch_rows=%d volume_mismatch=0" % (
+            s7["parity"]["field_max_rel_error"]["close"],
+            s7["parity"]["close_diff_rows"]),
+        "# anchor_invariant: %d/%d symbols hold q(last)==1, max_abs_q_minus_one=%r"
+        % (anchor["symbols_checked"] - anchor["violations"],
+           anchor["symbols_checked"], anchor["max_abs_q_minus_one"]),
+        "# runtime_readpath: %s; measured-path symbols=%d/%d; adjusted close"
+        " max_rel=%r; is_ui_test=%s; screenshot=%s" % (
+            s8["status"], len(s8["measured_path_symbols"]),
+            s8["measurement"]["symbols_queried"],
+            s8["adjusted_close_max_rel_overall"],
+            s8["measurement"]["is_ui_test"], s8["measurement"]["screenshot"]),
+        "# runtime_finding: %d served candles with invalid geometry, all on %s;"
+        " %s attributed to the literal high/low reset, %d unattributed;"
+        " NOT fixed — owner ruling required" % (
+            geo["served_rows_invalid_total"],
+            ",".join(sorted(geo["served_rows_with_invalid_geometry"])),
+            geo["raw_diff_attributed_to_literal_reset"],
+            len(geo["raw_diff_unattributed_symbols"])),
+        "# idempotency: %d/%d checks pass, negative control included;"
+        " factor details compared semantically (int/float serialization artifact"
+        " disclosed in the payload)" % (
+            sum(1 for v in s9["checks"].values() if v), len(s9["checks"])),
+        "# capture_day_quarantine: rule date >= capture_day applied;"
+        " capture_day=%s, last captured bar=%s, quarantined=%d" % (
+            s7["capture"]["capture_day"], s6["bars_recount"]["last_date"],
+            sum(s7["capture"]["quarantined_bars"].values())),
+        "# restored_capture: bars=%d symbols=%d type0=%d type7=%d;"
+        " cohort type0/day=%d type7/day=%d fully_covered=%s" % (
+            s6["bars_recount"]["bars_total"], s6["bars_recount"]["symbols_identity_keys"],
+            s6["bars_recount"]["per_type"]["type0"],
+            s6["bars_recount"]["per_type"]["type7"],
+            s6["cohort_summary"]["type0_daily_bars_total"],
+            s6["cohort_summary"]["type7_daily_bars_total"],
+            s6["cohort_summary"]["cohort_fully_covered"]),
         "# go: %s packages ok, %s without test files, %s failures" % (
             go["packages_ok"], go["packages_no_test_files"], go["failures"]),
         "# profile production: exit %s, %s suites counted, ALL_SUITES_PASSED=%s" % (
@@ -212,7 +329,7 @@ def main():
             data["exit_code"], data["suites_counted"], dl["count"]),
         "# format: sha256  size_bytes  path",
         "# section: 1=deliverables 2=ledgers/evidence/manifests 3=mission scripts"
-        " 4=code, gates and pinned inputs 5=inputs not committed (recorded hashes)",
+        " 4=code, gates and pinned inputs 5=licensed/absent inputs (recorded hashes)",
         "# note: this manifest does not list itself",
     ]
     for header, group in (("1", deliverables), ("2", evidence),
@@ -249,22 +366,34 @@ def main():
             absent.append(r)
             out.append("%s  %s  %s  # %s — ABSENT on this host; hash recorded by"
                        " phase49-2, not re-measured here" % (h, size, r, note))
-    for r, h, size, note in capture_inputs():
+    restored = []
+    for r, h, note, kind in capture_inputs():
         p = os.path.join(ROOT, r.replace("/", os.sep))
+        label = "%s (%s)" % (note, kind)
         if os.path.exists(p):
-            sys.exit("FATAL: %s is present; re-measure it before publishing" % r)
-        absent.append(r)
-        out.append("%s  %s  %s  # %s — ABSENT on this host; hash recorded by"
-                   " phase49-full-verification, not re-measured here"
-                   % (h, size, r, note))
+            actual, size = measure_capture(p, kind)
+            if actual != h:
+                sys.exit("FATAL: present input %s [%s] does not match its"
+                         " recorded hash; refusing to publish a stale manifest"
+                         % (r, kind))
+            restored.append(r)
+            out.append("%s  %d  %s  # %s — PRESENT, re-measured here and equal"
+                       " to the hash recorded by phase49-full-verification;"
+                       " licensed, gitignored on this branch" % (actual, size, r, label))
+        else:
+            absent.append(r)
+            out.append("%s  -  %s  # %s — ABSENT on this host; hash recorded by"
+                       " phase49-full-verification, not re-measured here"
+                       % (h, r, label))
 
     text = "\n".join(out) + "\n"
     with io.open(OUT, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text)
     print("wrote", rel(OUT))
     print("deliverables=%d evidence=%d scripts=%d code=%d absent_inputs=%d"
+          " restored_inputs=%d"
           % (len(deliverables), len(evidence), len(scripts), len(CODE),
-             len(set(absent))))
+             len(set(absent)), len(set(restored))))
     print("verdict=%s ci=%s" % (VERDICT, ci_status))
 
 

@@ -1,0 +1,149 @@
+{
+ "base_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "baseline": {
+  "audit_reasons": {
+   "missing_pack_step": 271,
+   "no_reference_change": 15,
+   "superseded_ratio": 1
+  },
+  "candle_content_sha256": "dec11147c3b17e4c972a83e5ce9fb41bbc7b9d4c656bd236b9b05c4c11bff699",
+  "candle_rows": 83254,
+  "counts": {
+   "adjustment_factor_audit": 287,
+   "adjustment_factors": 606,
+   "factor_action_links": 335,
+   "reference_adjusted": 84452,
+   "reference_raw": 84452
+  },
+  "factor_content_sha256": "d750e79f39cf25928a3e468de9206e6358fc6d9962e4f1110ab19be4c715da43",
+  "factor_details": {
+   "raw_text_sha256": "beaa35122a2bb759bdc3552ceec951c5c981da25ea3c77d3234e25c5c2301511",
+   "rows": 606,
+   "semantic_sha256": "c9dd7fbbab6a5d96fafa14fec1877ec814f7d9615d8553dbb4d5cdd090974b75"
+  },
+  "factor_rows": 606
+ },
+ "checks": {
+  "pinned_db_untouched": true,
+  "rebuild_candles_identical": true,
+  "rebuild_summary_identical": true,
+  "rebuild_twice_no_growth": true,
+  "rebuild_zero_mismatch": true,
+  "reingest_audit_trail_identical": true,
+  "reingest_counts_identical": true,
+  "reingest_factor_details_semantically_identical": true,
+  "reingest_factors_identical": true,
+  "reingest_revision_stable": true,
+  "revision_sensitive_to_reference": true,
+  "upsert_no_accumulation": true
+ },
+ "details_serialization_artifact": {
+  "cause": "the capture carried some closes as JSON integers; reconstructing the input from SQLite REAL columns returns them as floats, so json.dumps writes 39290.0 where the first ingest wrote 39290. Every other factor column is byte-identical and the parsed details compare equal.",
+  "measured_example": {
+   "date": "2026-09-06",
+   "first_ingest": "prev_close: 39290",
+   "reingest": "prev_close: 39290.0",
+   "symbol": "آكو"
+  },
+  "not_an_engine_difference": true,
+  "raw_text_identical": false,
+  "semantic_content_identical": true
+ },
+ "failures": [],
+ "honesty": {
+  "clock_excluded_from_revision": "the revision hashes capture sha + symbol|date|ratio only, so a later ingested_at cannot change it",
+  "no_data_invented": "the negative control perturbs a COPY in a gitignored directory and is never ingested into the pinned working DB",
+  "no_tolerance_changed": "the builder's own 1e-9 EXACT threshold decides mismatch_rows",
+  "not_a_rerun_of_phase49_2": "the pilot group's accepted idempotency result is untouched; this measures the new cohort only"
+ },
+ "mission": "Phase 4.9.3 coverage expansion",
+ "negative_control": {
+  "date": "2026-08-19",
+  "perturbation": "one reference_adjusted close multiplied by 1.01",
+  "revision": "0bef6815bde0764f9549aa98a620e38bcf4efcdeba46baab234b731807cbf4c1",
+  "revision_changed": true,
+  "symbol": "آكو",
+  "why": "proves the revision is content-addressed and that reingest_revision_stable is not a tautology"
+ },
+ "pinned_revision": "4832047eecc35dd0d6e729b8b6f58479e92b9350a72e68b535d76e70cbe09080",
+ "pinned_working_db": {
+  "opened_read_only": true,
+  "path": "_audit/phase49-3/db/cohort.db",
+  "sha256_after": "99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd",
+  "sha256_before": "99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd"
+ },
+ "rebuild_runs": [
+  {
+   "adjusted_rows": 83254,
+   "exact_rows": 83254,
+   "max_rel_error": 1.5543122344752192e-15,
+   "mismatch_rows": 0,
+   "missing_reference_adjusted": [],
+   "missing_reference_raw": [],
+   "revisions": [
+    "4832047eecc35dd0d6e729b8b6f58479e92b9350a72e68b535d76e70cbe09080"
+   ],
+   "symbols": 29,
+   "verified_rows": 83254,
+   "worst_date": "2010-08-02",
+   "worst_symbol": "گوهر"
+  },
+  {
+   "adjusted_rows": 83254,
+   "exact_rows": 83254,
+   "max_rel_error": 1.5543122344752192e-15,
+   "mismatch_rows": 0,
+   "missing_reference_adjusted": [],
+   "missing_reference_raw": [],
+   "revisions": [
+    "4832047eecc35dd0d6e729b8b6f58479e92b9350a72e68b535d76e70cbe09080"
+   ],
+   "symbols": 29,
+   "verified_rows": 83254,
+   "worst_date": "2010-08-02",
+   "worst_symbol": "گوهر"
+  }
+ ],
+ "rebuild_twice_content_sha256": "dec11147c3b17e4c972a83e5ce9fb41bbc7b9d4c656bd236b9b05c4c11bff699",
+ "reference_provenance": "reconstructed from the pinned working DB's reference_raw and reference_adjusted; stage06 verified the capture bytes and stage07 pinned this DB by SHA-256. No second capture scan, no invented bar.",
+ "rerun": {
+  "clock_differs_from_source": true,
+  "ingested_at": "2026-11-12T00:00:00Z",
+  "revision": "4832047eecc35dd0d6e729b8b6f58479e92b9350a72e68b535d76e70cbe09080",
+  "run_id": "phase49-3-idempotency-rerun"
+ },
+ "rerun_measured": {
+  "audit_reasons": {
+   "missing_pack_step": 271,
+   "no_reference_change": 15,
+   "superseded_ratio": 1
+  },
+  "candle_content_sha256": "dec11147c3b17e4c972a83e5ce9fb41bbc7b9d4c656bd236b9b05c4c11bff699",
+  "candle_rows": 83254,
+  "counts": {
+   "adjustment_factor_audit": 287,
+   "adjustment_factors": 606,
+   "factor_action_links": 335,
+   "reference_adjusted": 84452,
+   "reference_raw": 84452
+  },
+  "factor_content_sha256": "d750e79f39cf25928a3e468de9206e6358fc6d9962e4f1110ab19be4c715da43",
+  "factor_details": {
+   "raw_text_sha256": "83e77316e594e527d44287b72f4b85a5b49c7fd1e8c683de18ed244ff42cbc10",
+   "rows": 606,
+   "semantic_sha256": "c9dd7fbbab6a5d96fafa14fec1877ec814f7d9615d8553dbb4d5cdd090974b75"
+  },
+  "factor_rows": 606
+ },
+ "schema": "phase49-3-idempotency-v1",
+ "source_run": {
+  "capture_sha256": "6aec345f817cd96a0dc8eb631cdfa206deee740afb077b5f4621dd1f821fb844",
+  "captured_at": "2026-11-11T00:08:39Z",
+  "run_id": "phase49-3-cohort-6aec345f817c"
+ },
+ "status": "PASS",
+ "upsert": {
+  "rows_after": 606,
+  "rows_before": 606
+ }
+}
