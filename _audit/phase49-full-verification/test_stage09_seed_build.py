@@ -176,6 +176,64 @@ def _real_summary_shape_test():
             "reference_index_all"]["sha256"] == "idx"
 
 
+def _malformed_summary_test():
+    """Malformed provenance shapes fail with the CLI prefix and no out dir."""
+    cases = [
+        ("merged_string", {"capture_sha256": "abc",
+                           "captured_at": "2026-11-10",
+                           "merged": "oops"}, "merged"),
+        ("index_string", {"capture_sha256": "abc",
+                          "captured_at": "2026-11-10",
+                          "merged": {"reference_index_all": "oops"}},
+         "reference_index_all"),
+        ("capture_string", {"capture_sha256": "abc",
+                            "captured_at": "2026-11-10",
+                            "capture": "oops"}, "capture"),
+        ("extra_string", {"capture_sha256": "abc",
+                          "captured_at": "2026-11-10",
+                          "extra": "oops"}, "extra"),
+        ("source_string", {"capture_sha256": "abc",
+                           "source": "oops"}, "source"),
+        ("missing_captured_at", {"capture_sha256": "abc"}, "captured_at"),
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        base, work, pack, steps, symbols, ref = _fixture(tmp)
+        for name, payload, needle in cases:
+            bad = os.path.join(tmp, "bad-%s.json" % name)
+            with open(bad, "w", encoding="utf-8", newline="\n") as fh:
+                json.dump(payload, fh)
+            out = os.path.join(tmp, "seed-%s" % name)
+            rc, err = _run(out, base, work, pack, steps, symbols, bad)
+            assert rc == 2, (name, rc, err)
+            assert err.startswith("stage09_seed_build: "), (name, err)
+            assert needle in err, (name, err)
+            assert not os.path.exists(out), (name, out)
+        # The core helpers themselves raise ValueError, not AttributeError.
+        for payload in ({"merged": "oops"},
+                        {"merged": {"reference_index_all": "oops"}}):
+            try:
+                S._capture_sha(payload)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("accepted malformed summary %r" % payload)
+        for payload in ({"source": "oops"}, {"capture": "oops"},
+                        {"extra": "oops"}):
+            try:
+                S._captured_at(payload)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("accepted malformed summary %r" % payload)
+        con = _memory_db()
+        try:
+            S.build_metadata(con, {}, [], [_symbol()], {"merged": "oops"})
+        except ValueError as exc:
+            assert "merged" in str(exc), str(exc)
+        else:
+            raise AssertionError("build_metadata accepted a string merged value")
+
+
 def _write_csv(path, header, rows):
     with open(path, "w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh, lineterminator="\n")
@@ -443,6 +501,7 @@ def main():
     _symbol_spaces_test()
     _manifest_storage_test()
     _real_summary_shape_test()
+    _malformed_summary_test()
     _full_build_test()
     _refusal_test()
     _gz_test()

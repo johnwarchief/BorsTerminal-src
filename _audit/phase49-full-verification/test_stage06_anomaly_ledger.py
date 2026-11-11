@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import sqlite3
 import sys
@@ -258,6 +259,29 @@ def main():
             "identity_caveat"], payload["open_eq_prev_close"]
         with open(out_csv, encoding="utf-8") as fh:
             assert len(fh.read().splitlines()) == 1 + len(events)
+        # The seven post-backfill drop classifications are attached for C5,
+        # not re-categorized as candle anomalies.
+        assert "post_backfill_anomalies" not in payload
+        post_path = os.path.join(tmp, "post-backfill.json")
+        with open(post_path, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump({
+                "schema": "test-post-backfill",
+                "events": [{}, {}],
+                "counts": {
+                    "events": 2, "new_rows": 2,
+                    "by_category": {"UNRESOLVED_SOURCE_GAP": 2},
+                    "blockers": 2,
+                    "blocker_dates": [{"symbol": "S", "date": "2020-01-01"}]},
+            }, fh)
+        _, attached = S.build(
+            db, os.path.join(tmp, "ledger-post.csv"),
+            os.path.join(tmp, "counts-post.json"), "",
+            post_backfill_path=post_path)
+        post = attached["post_backfill_anomalies"]
+        assert post["events"] == 2 and post["blockers"] == 2, post
+        assert post["by_category"] == {"UNRESOLVED_SOURCE_GAP": 2}, post
+        assert post["blocker_dates"] == [{"symbol": "S", "date": "2020-01-01"}], post
+        assert post["schema"] == "test-post-backfill", post
     print("ANOMALY EDGE TESTS OK")
     return 0
 

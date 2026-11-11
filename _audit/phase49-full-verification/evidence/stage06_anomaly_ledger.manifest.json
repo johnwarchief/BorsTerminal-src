@@ -2,19 +2,19 @@
  "counts": {
   "DUPLICATE_DATE": 0,
   "INVALID_OHLC": 306,
-  "OPEN_EQ_PREV_CLOSE": 55224,
+  "OPEN_EQ_PREV_CLOSE": 57911,
   "ZERO_FIELDS": 0,
   "ZERO_VOLUME": 2692,
-  "rows": 58222
+  "rows": 60909
  },
- "finished_at": "2026-11-11T01:07:24Z",
+ "finished_at": "2026-11-11T03:40:55Z",
  "inputs": {
-  "_audit/phase49-finalization/seed/market.db": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
+  "_audit/phase49-full-verification/seed/market.db": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
   "dev/phase49_status_rules.json": "8397154f64e75aed1da455843a55e29c25c139dece95f134fa2a2767b02773b7"
  },
  "outputs": {
-  "_audit/phase49-full-verification/evidence/anomaly-counts.json": "7d906c0226840f7e173ef72a9825090bca1864f2c009c52e264b367386b42364",
-  "_audit/phase49-full-verification/ledgers/anomaly-ledger.csv": "885f3d444bfe1b9aa73df40538abfeb311a1616576fd6315190de09805b34185"
+  "_audit/phase49-full-verification/evidence/anomaly-counts.json": "a9ce48b6f1e9e844a40a18a2ec63cf4868ec26d4979a3f6fe07c5fdaea8aa047",
+  "_audit/phase49-full-verification/ledgers/anomaly-ledger.csv": "84daca443d6a1230480f76d65a7feeb45123e97fe549968a47c223d74b1637aa"
  },
  "stage": "stage06_anomaly_ledger"
 }

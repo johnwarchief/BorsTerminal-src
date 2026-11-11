@@ -120,33 +120,53 @@ def _text(value):
     return "" if value is None else str(value)
 
 
+def _object(value, what):
+    """A JSON object from a summary field; missing is empty, wrong type fails.
+
+    A malformed summary must be refused before any output directory is
+    created, not crash later with an AttributeError deep inside the build.
+    """
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("%s must be a JSON object, found %s"
+                         % (what, type(value).__name__))
+    return value
+
+
 def _merged(ref):
-    return (ref or {}).get("merged") or {}
+    ref = _object(ref, "reference summary")
+    return _object(ref.get("merged"), "reference summary merged")
+
+
+def _reference_index(ref):
+    return _object(_merged(ref).get("reference_index_all"),
+                   "reference summary merged.reference_index_all")
 
 
 def _capture_sha(ref):
     """The reference provenance hash: explicit top-level, else the merged index."""
-    ref = ref or {}
+    ref = _object(ref, "reference summary")
     merged = _merged(ref)
-    index = merged.get("reference_index_all") or {}
+    index = _reference_index(ref)
     return _text(ref.get("capture_sha256") or ref.get("sha256")
                  or index.get("sha256")
                  or merged.get("aggregate_capture_sha256") or "")
 
 
 def _captured_at(ref):
-    ref = ref or {}
-    source = ref.get("source")
-    if isinstance(source, dict) and source.get("captured_at"):
+    ref = _object(ref, "reference summary")
+    source = _object(ref.get("source"), "reference summary source")
+    if source.get("captured_at"):
         return _text(source["captured_at"])
-    capture = ref.get("capture") or {}
-    extra = ref.get("extra") or {}
+    capture = _object(ref.get("capture"), "reference summary capture")
+    extra = _object(ref.get("extra"), "reference summary extra")
     return _text(ref.get("captured_at") or capture.get("captured_at_max")
                  or extra.get("captured_at") or "")
 
 
 def _reference_index_sha(ref):
-    index = _merged(ref).get("reference_index_all") or {}
+    index = _reference_index(ref)
     return _text(index.get("sha256") or "")
 
 
@@ -250,12 +270,22 @@ def load_symbols(path):
 
 
 def load_reference_summary(path):
-    """Read the capture summary; a capture hash is required for provenance."""
+    """Read the capture summary; hash and capture time are required.
+
+    The nested provenance objects are validated here so a malformed shape
+    fails before the out directory is created, and a missing timestamp cannot
+    reach the manifest as an empty field.
+    """
     data = _read_json(path, "reference summary")
     if not isinstance(data, dict):
         raise ValueError("%s: expected a JSON object" % path)
     if not _capture_sha(data):
         raise ValueError("%s: reference summary has no capture_sha256" % path)
+    if not _captured_at(data):
+        raise ValueError(
+            "%s: reference summary has no captured_at (checked "
+            "source.captured_at, capture.captured_at_max, extra.captured_at "
+            "and top-level captured_at)" % path)
     return data
 
 

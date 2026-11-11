@@ -129,6 +129,8 @@ DEFAULT_RULES = os.path.join(ROOT, "dev", "phase49_status_rules.json")
 DEFAULT_COUNTS = os.path.join(HERE, "evidence", "anomaly-counts.json")
 DEFAULT_MANIFEST = os.path.join(HERE, "evidence",
                                 "stage06_anomaly_ledger.manifest.json")
+DEFAULT_POST_BACKFILL = os.path.join(HERE, "evidence",
+                                     "post-backfill-anomalies.json")
 
 KINDS = ("INVALID_OHLC", "ZERO_FIELDS", "OPEN_EQ_PREV_CLOSE", "ZERO_VOLUME",
          "DUPLICATE_DATE")
@@ -202,6 +204,15 @@ def load_rules(path=DEFAULT_RULES):
     }
     _RULES_CACHE[path] = rules
     return rules
+
+
+def _int(value, what, default=None):
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ValueError("%s is not an integer: %r" % (what, value))
 
 
 def _fmt(value):
@@ -824,8 +835,45 @@ def _witness_summary(events):
     }
 
 
+def _post_backfill_summary(path):
+    """Attach the seven C4 one-session-drop classifications to this ledger.
+
+    They are outside the five anomaly kinds (a price drop with valid OHLC is
+    not an invalid row), so the summary is carried as a cross-reference and
+    never re-categorized by this stage. An absent path disables the block.
+    """
+    if not path:
+        return None
+    if not os.path.isfile(path):
+        raise ValueError("post-backfill evidence not found: %s" % path)
+    with open(path, encoding="utf-8") as fh:
+        try:
+            data = json.load(fh)
+        except ValueError as exc:
+            raise ValueError("post-backfill evidence is not valid JSON: %s"
+                             % exc)
+    if not isinstance(data, dict):
+        raise ValueError("post-backfill evidence must be a JSON object")
+    counts = data.get("counts") or {}
+    if not isinstance(counts, dict):
+        raise ValueError("post-backfill evidence counts must be an object")
+    events = data.get("events") or []
+    return {
+        "path": _rel(path),
+        "schema": data.get("schema"),
+        "events": _int(counts.get("events", len(events)), "post-backfill events"),
+        "new_rows": _int(counts.get("new_rows"), "post-backfill new_rows"),
+        "by_category": counts.get("by_category") or {},
+        "blockers": _int(counts.get("blockers"), "post-backfill blockers"),
+        "blocker_dates": counts.get("blocker_dates") or [],
+        "note": ("one-session drops are outside the five B8 kinds; "
+                 "the full evidence is in the named file, recorded here so C5 "
+                 "sees the blockers alongside the candle anomalies"),
+    }
+
+
 def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
-          expect_rows=0):
+          expect_rows=0, post_backfill_path=""):
     rules = load_rules(rules_path)
     categories = rules["categories"]
     exact = rules["exact_eq"]
@@ -1345,6 +1393,10 @@ def build(db, out, counts_path, manifest_path="", rules_path=DEFAULT_RULES,
             "last_date": last_date,
         },
     }
+    post_backfill = _post_backfill_summary(post_backfill_path)
+    if post_backfill:
+        payload["post_backfill_anomalies"] = post_backfill
+
     os.makedirs(os.path.dirname(os.path.abspath(counts_path)), exist_ok=True)
     with open(counts_path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(payload, fh, ensure_ascii=False, indent=1, sort_keys=True)
@@ -1368,12 +1420,15 @@ def main(argv=None):
     ap.add_argument("--rules", default=DEFAULT_RULES)
     ap.add_argument("--expect-rows", type=int, default=0,
                     help="fail when the price_history row count differs")
+    ap.add_argument("--post-backfill-evidence", default=DEFAULT_POST_BACKFILL,
+                    help="optional post-backfill drop evidence to attach "
+                         "('' disables)")
     args = ap.parse_args(argv)
     os.chdir(ROOT)
     try:
         events, payload = build(
             args.db, args.out, args.counts, args.manifest, args.rules,
-            args.expect_rows)
+            args.expect_rows, args.post_backfill_evidence)
     except (OSError, ValueError, sqlite3.Error) as exc:
         print("ANOMALY LEDGER FAIL: %s" % exc, file=sys.stderr)
         return 2

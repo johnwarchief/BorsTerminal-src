@@ -1,5 +1,5 @@
 {
- "anomaly_events": 58222,
+ "anomaly_events": 60909,
  "by_category": {
   "CALENDAR_GAP": 388,
   "CORPORATE_ACTION_MISSING": 0,
@@ -12,13 +12,13 @@
   "SOURCE_MISMATCH": 0,
   "SOURCE_REVISION": 0,
   "SYMBOL_IDENTITY_MISMATCH": 0,
-  "UNRESOLVED_SOURCE_GAP": 50489,
+  "UNRESOLVED_SOURCE_GAP": 53176,
   "VERIFIED_NO_EVENT": 7034
  },
  "by_kind": {
   "DUPLICATE_DATE": 0,
   "INVALID_OHLC": 306,
-  "OPEN_EQ_PREV_CLOSE": 55224,
+  "OPEN_EQ_PREV_CLOSE": 57911,
   "ZERO_FIELDS": 0,
   "ZERO_VOLUME": 2692
  },
@@ -31,7 +31,7 @@
   "open_at_prior_close_basis": 3,
   "open_at_prior_close_first_trade": 7034,
   "open_at_prior_close_no_session": 194,
-  "open_at_prior_close_unwitnessed": 47993,
+  "open_at_prior_close_unwitnessed": 50680,
   "source_open_zero": 12,
   "source_shadow_and_open_zero": 294
  },
@@ -46,7 +46,7 @@
   "first_trade:price_first_eq_open": 6403,
   "first_trade:price_first_eq_open+halt:instrument_state": 10,
   "first_trade:price_first_ne_open": 2,
-  "none": 50487,
+  "none": 53174,
   "row_fields": 308,
   "session_calendar": 388
  },
@@ -64,20 +64,20 @@
   "unexplained_events": 0,
   "witness_category_mismatches": 0
  },
- "dates": 4056,
+ "dates": 7233,
  "duplicate_dates": {
   "constraint": "PRIMARY KEY (symbol, date) makes a duplicate impossible in the Seed; the check is 0 and the detector stays for inputs without the constraint",
   "definition": "one event per extra row of a repeated (symbol, date); the SQL counts COUNT(*)-1 per key, so a triple yields 2 on both sides",
   "events": 0,
   "sql_check": 0
  },
- "first_date": "2010-01-02",
+ "first_date": "1991-05-11",
  "inputs": {
-  "dates": 4056,
-  "db": "_audit/phase49-finalization/seed/market.db",
-  "first_date": "2010-01-02",
-  "last_date": "2026-11-09",
-  "rows": 511139,
+  "dates": 7233,
+  "db": "_audit/phase49-full-verification/seed/market.db",
+  "first_date": "1991-05-11",
+  "last_date": "2026-11-10",
+  "rows": 544284,
   "rules": "dev/phase49_status_rules.json",
   "symbols": 6103
  },
@@ -112,7 +112,7 @@
   "OPEN_EQ_PREV_CLOSE": {
    "CALENDAR_GAP": 194,
    "PRICE_BASIS_DIFFERENCE": 3,
-   "UNRESOLVED_SOURCE_GAP": 47993,
+   "UNRESOLVED_SOURCE_GAP": 50680,
    "VERIFIED_NO_EVENT": 7034
   },
   "ZERO_VOLUME": {
@@ -130,7 +130,7 @@
    "open_at_prior_close_basis": 3,
    "open_at_prior_close_first_trade": 7034,
    "open_at_prior_close_no_session": 194,
-   "open_at_prior_close_unwitnessed": 47993
+   "open_at_prior_close_unwitnessed": 50680
   },
   "ZERO_VOLUME": {
    "market_no_session": 194,
@@ -155,7 +155,7 @@
    "first_trade:price_first_eq_open": 6403,
    "first_trade:price_first_eq_open+halt:instrument_state": 10,
    "first_trade:price_first_ne_open": 1,
-   "none": 47992,
+   "none": 50679,
    "session_calendar": 194
   },
   "ZERO_VOLUME": {
@@ -165,19 +165,19 @@
    "session_calendar": 194
   }
  },
- "last_date": "2026-11-09",
+ "last_date": "2026-11-10",
  "method": [
   "Anomaly detection is row-level and rule-based; the category is chosen from the measured root cause and the recorded witness, not from the anomaly kind.",
   "Every event carries the raw values that triggered it and the witness tags in the CSV; the tracked counts hold aggregates only, no raw rows.",
-  "A branch set that explains nothing is emitted with root cause UNEXPLAINED (category UNRESOLVED_SOURCE_GAP); the build fails only when the UNEXPLAINED count is non-zero, and that count is zero in this Seed. The category UNRESOLVED_SOURCE_GAP itself is a measured residual with 50489 events (47993 OPEN_EQ_PREV_CLOSE, 2496 ZERO_VOLUME): no witness exists for those rows, so it is reported, not treated as a build failure."
+  "A branch set that explains nothing is emitted with root cause UNEXPLAINED (category UNRESOLVED_SOURCE_GAP); the build fails only when the UNEXPLAINED count is non-zero, and that count is zero in this Seed. The category UNRESOLVED_SOURCE_GAP itself is a measured residual with 53176 events (50680 OPEN_EQ_PREV_CLOSE, 2496 ZERO_VOLUME): no witness exists for those rows, so it is reported, not treated as a build failure."
  ],
  "notes": [
   "5 of the 13 categories are used (CALENDAR_GAP, INVALID_SOURCE_RECORD, PRICE_BASIS_DIFFERENCE, VERIFIED_NO_EVENT, UNRESOLVED_SOURCE_GAP). The eight zero categories are zero for a stated reason, not by omission: SOURCE_MISMATCH and SOURCE_REVISION need two sources for one row, and price_history keeps exactly one row per (symbol, date) with a writer tag, not a source pair; CORPORATE_ACTION_MISSING, EVENT_DATE_MISMATCH and EVENT_RATIO_MISMATCH are event-chain findings owned by B5/B6 and cannot be read from a bare candle; SYMBOL_IDENTITY_MISMATCH is B7's identity join; MISSING_HISTORY is the absence of rows, which is B7's gap count, not a row event; PRECISION_OR_ROUNDING needs a rounding divergence, and every compared price here is bit-equal or clearly different, so no row required it.",
-  "OPEN_EQ_PREV_CLOSE is decided by a witness, never by the kind: 7034 rows have a first-trade witness equal to open and are filed VERIFIED_NO_EVENT (15 of them also carry a halt tag), 3 have a basis witness and no first-trade equality (PRICE_BASIS_DIFFERENCE), 194 sit on a market-wide no-trade date (CALENDAR_GAP), and 47993 have no witness or a first-trade witness that differs (UNRESOLVED_SOURCE_GAP). 621 rows carry both a basis witness and the first-trade equality; the opening witness decides the open event and all tags stay in the witness column.",
+  "OPEN_EQ_PREV_CLOSE is decided by a witness, never by the kind: 7034 rows have a first-trade witness equal to open and are filed VERIFIED_NO_EVENT (15 of them also carry a halt tag), 3 have a basis witness and no first-trade equality (PRICE_BASIS_DIFFERENCE), 194 sit on a market-wide no-trade date (CALENDAR_GAP), and 50680 have no witness or a first-trade witness that differs (UNRESOLVED_SOURCE_GAP). 621 rows carry both a basis witness and the first-trade equality; the opening witness decides the open event and all tags stay in the witness column.",
   "The design's basis witness pool is larger than the OPEN_EQ population: 10938 price_history rows have last != close and 12624 daily_prices rows have p_last != p_closing, but only 624 OPEN_EQ events join one of those witnesses on their own symbol/date. A basis divergence without an OPEN_EQ anomaly is not an event of this ledger.",
   "PRICE_BASIS_DIFFERENCE=3 is a join-policy count under the documented ISIN/ins_code precedence, not an absolute identity claim: 3 l_val18 names resolve to two ins_codes each, and the filed كيمازي 2026-10-10 event would be VERIFIED_NO_EVENT under the sibling code's daily row (price_first=open); the join policy is unchanged.",
   "Zero volume: 2692 rows. 194 sit on the 7 dates where no row of the DB traded at all (calendar evidence, not a per-symbol guess); 2496 are per-symbol no-trade rows with no halt witness (UNRESOLVED_SOURCE_GAP); 2 are non-flat bars whose price range contradicts zero volume (INVALID_SOURCE_RECORD); 0 have a halt witness. Of the previously invalid 141, 135 are flat price-change bars, 4 are first bars and 2 are non-flat range bars; only the 2 range bars are genuinely invalid and none has open=0.",
-  "OPEN_EQ_PREV_CLOSE is not a legacy-only property: by source it is board 7400 and legacy-unknown 43233 and published 2 and rahavard365 4589 over 505036 comparable bars, so the equality spans the tagged writers. Zero-volume and invalid-OHLC rows, by contrast, all carry legacy-unknown.",
+  "OPEN_EQ_PREV_CLOSE is not a legacy-only property: by source it is board 7400 and legacy-unknown 43233 and published 2 and rahavard365 7276 over 538181 comparable bars, so the equality spans the tagged writers. Zero-volume and invalid-OHLC rows, by contrast, all carry legacy-unknown.",
   "The 306 invalid OHLC rows carry legacy-unknown (306 rows); 10 of them resolve to an instruments row and 0 of those have a daily_prices row on the same day, so the root cause is the row's own field set and not a repair candidate.",
   "The 6,328 'reported no evidence' symbols are B9's inventory reconciliation and are not touched here."
  ],
@@ -197,14 +197,14 @@
   "by_category": {
    "CALENDAR_GAP": 194,
    "PRICE_BASIS_DIFFERENCE": 3,
-   "UNRESOLVED_SOURCE_GAP": 47993,
+   "UNRESOLVED_SOURCE_GAP": 50680,
    "VERIFIED_NO_EVENT": 7034
   },
   "by_root_cause": {
    "open_at_prior_close_basis": 3,
    "open_at_prior_close_first_trade": 7034,
    "open_at_prior_close_no_session": 194,
-   "open_at_prior_close_unwitnessed": 47993
+   "open_at_prior_close_unwitnessed": 50680
   },
   "by_src": {
    "board": {
@@ -213,7 +213,7 @@
     "rate": 0.1083
    },
    "legacy-unknown": {
-    "comparisons": 364505,
+    "comparisons": 364511,
     "open_eq_prev_close": 43233,
     "rate": 0.1186
    },
@@ -223,9 +223,9 @@
     "rate": 0.6667
    },
    "rahavard365": {
-    "comparisons": 72193,
-    "open_eq_prev_close": 4589,
-    "rate": 0.0636
+    "comparisons": 105332,
+    "open_eq_prev_close": 7276,
+    "rate": 0.0691
    }
   },
   "by_witness": {
@@ -239,83 +239,178 @@
    "first_trade:price_first_eq_open": 6403,
    "first_trade:price_first_eq_open+halt:instrument_state": 10,
    "first_trade:price_first_ne_open": 1,
-   "none": 47992,
+   "none": 50679,
    "session_calendar": 194
   },
   "by_year": {
+   "1991": {
+    "comparisons": 74,
+    "open_eq_prev_close": 74,
+    "rate": 1.0
+   },
+   "1992": {
+    "comparisons": 142,
+    "open_eq_prev_close": 142,
+    "rate": 1.0
+   },
+   "1993": {
+    "comparisons": 57,
+    "open_eq_prev_close": 57,
+    "rate": 1.0
+   },
+   "1994": {
+    "comparisons": 101,
+    "open_eq_prev_close": 101,
+    "rate": 1.0
+   },
+   "1995": {
+    "comparisons": 186,
+    "open_eq_prev_close": 91,
+    "rate": 0.4892
+   },
+   "1996": {
+    "comparisons": 206,
+    "open_eq_prev_close": 65,
+    "rate": 0.3155
+   },
+   "1997": {
+    "comparisons": 90,
+    "open_eq_prev_close": 6,
+    "rate": 0.0667
+   },
+   "1998": {
+    "comparisons": 198,
+    "open_eq_prev_close": 71,
+    "rate": 0.3586
+   },
+   "1999": {
+    "comparisons": 142,
+    "open_eq_prev_close": 62,
+    "rate": 0.4366
+   },
+   "2000": {
+    "comparisons": 241,
+    "open_eq_prev_close": 77,
+    "rate": 0.3195
+   },
+   "2001": {
+    "comparisons": 221,
+    "open_eq_prev_close": 51,
+    "rate": 0.2308
+   },
+   "2002": {
+    "comparisons": 251,
+    "open_eq_prev_close": 68,
+    "rate": 0.2709
+   },
+   "2003": {
+    "comparisons": 286,
+    "open_eq_prev_close": 71,
+    "rate": 0.2483
+   },
+   "2004": {
+    "comparisons": 269,
+    "open_eq_prev_close": 24,
+    "rate": 0.0892
+   },
+   "2005": {
+    "comparisons": 213,
+    "open_eq_prev_close": 18,
+    "rate": 0.0845
+   },
+   "2006": {
+    "comparisons": 230,
+    "open_eq_prev_close": 17,
+    "rate": 0.0739
+   },
+   "2007": {
+    "comparisons": 407,
+    "open_eq_prev_close": 24,
+    "rate": 0.059
+   },
+   "2008": {
+    "comparisons": 412,
+    "open_eq_prev_close": 14,
+    "rate": 0.034
+   },
+   "2009": {
+    "comparisons": 340,
+    "open_eq_prev_close": 49,
+    "rate": 0.1441
+   },
    "2010": {
-    "comparisons": 3302,
-    "open_eq_prev_close": 223,
-    "rate": 0.0675
-   },
-   "2011": {
-    "comparisons": 3563,
-    "open_eq_prev_close": 262,
-    "rate": 0.0735
-   },
-   "2012": {
-    "comparisons": 3432,
-    "open_eq_prev_close": 249,
-    "rate": 0.0726
-   },
-   "2013": {
-    "comparisons": 4221,
-    "open_eq_prev_close": 179,
-    "rate": 0.0424
-   },
-   "2014": {
-    "comparisons": 3868,
-    "open_eq_prev_close": 212,
-    "rate": 0.0548
-   },
-   "2015": {
-    "comparisons": 4476,
-    "open_eq_prev_close": 334,
-    "rate": 0.0746
-   },
-   "2016": {
-    "comparisons": 4828,
-    "open_eq_prev_close": 355,
-    "rate": 0.0735
-   },
-   "2017": {
-    "comparisons": 4764,
-    "open_eq_prev_close": 307,
-    "rate": 0.0644
-   },
-   "2018": {
-    "comparisons": 5123,
-    "open_eq_prev_close": 318,
-    "rate": 0.0621
-   },
-   "2019": {
-    "comparisons": 5295,
-    "open_eq_prev_close": 254,
-    "rate": 0.048
-   },
-   "2020": {
-    "comparisons": 5439,
-    "open_eq_prev_close": 174,
-    "rate": 0.032
-   },
-   "2021": {
-    "comparisons": 5715,
-    "open_eq_prev_close": 332,
-    "rate": 0.0581
-   },
-   "2022": {
-    "comparisons": 6445,
-    "open_eq_prev_close": 465,
+    "comparisons": 3799,
+    "open_eq_prev_close": 274,
     "rate": 0.0721
    },
+   "2011": {
+    "comparisons": 4284,
+    "open_eq_prev_close": 334,
+    "rate": 0.078
+   },
+   "2012": {
+    "comparisons": 4319,
+    "open_eq_prev_close": 315,
+    "rate": 0.0729
+   },
+   "2013": {
+    "comparisons": 5194,
+    "open_eq_prev_close": 219,
+    "rate": 0.0422
+   },
+   "2014": {
+    "comparisons": 4888,
+    "open_eq_prev_close": 348,
+    "rate": 0.0712
+   },
+   "2015": {
+    "comparisons": 5379,
+    "open_eq_prev_close": 462,
+    "rate": 0.0859
+   },
+   "2016": {
+    "comparisons": 5961,
+    "open_eq_prev_close": 458,
+    "rate": 0.0768
+   },
+   "2017": {
+    "comparisons": 5893,
+    "open_eq_prev_close": 402,
+    "rate": 0.0682
+   },
+   "2018": {
+    "comparisons": 6274,
+    "open_eq_prev_close": 399,
+    "rate": 0.0636
+   },
+   "2019": {
+    "comparisons": 6420,
+    "open_eq_prev_close": 300,
+    "rate": 0.0467
+   },
+   "2020": {
+    "comparisons": 6562,
+    "open_eq_prev_close": 204,
+    "rate": 0.0311
+   },
+   "2021": {
+    "comparisons": 6894,
+    "open_eq_prev_close": 428,
+    "rate": 0.0621
+   },
+   "2022": {
+    "comparisons": 7777,
+    "open_eq_prev_close": 562,
+    "rate": 0.0723
+   },
    "2023": {
-    "comparisons": 6542,
-    "open_eq_prev_close": 506,
+    "comparisons": 7896,
+    "open_eq_prev_close": 610,
     "rate": 0.0773
    },
    "2024": {
-    "comparisons": 60294,
-    "open_eq_prev_close": 5491,
+    "comparisons": 61115,
+    "open_eq_prev_close": 5570,
     "rate": 0.0911
    },
    "2025": {
@@ -324,17 +419,17 @@
     "rate": 0.1126
    },
    "2026": {
-    "comparisons": 214436,
-    "open_eq_prev_close": 27180,
-    "rate": 0.1268
+    "comparisons": 228167,
+    "open_eq_prev_close": 27561,
+    "rate": 0.1208
    }
   },
   "calendar_witness": {
    "events": 194,
    "source": "whole-DB date with zero traded rows"
   },
-  "comparisons": 505036,
-  "events": 55224,
+  "comparisons": 538181,
+  "events": 57911,
   "first_trade_witness": {
    "differs_from_open": 1,
    "equals_open": 7034,
@@ -356,22 +451,22 @@
     "session witness: whole-DB dates with zero traded rows"
    ],
    "by_category": {
-    "UNRESOLVED_SOURCE_GAP": 47993
+    "UNRESOLVED_SOURCE_GAP": 50680
    },
    "by_root_cause": {
-    "open_at_prior_close_unwitnessed": 47993
+    "open_at_prior_close_unwitnessed": 50680
    },
    "by_src": {
     "board": 366,
     "legacy-unknown": 43037,
     "published": 1,
-    "rahavard365": 4589
+    "rahavard365": 7276
    },
    "by_witness": {
     "first_trade:price_first_ne_open": 1,
-    "none": 47992
+    "none": 50679
    },
-   "events": 47993,
+   "events": 50680,
    "missing_witness": {
     "daily_prices_window": {
      "first_date": "2026-08-20",
@@ -381,8 +476,8 @@
      "sessions": 32
     },
     "event_window": {
-     "first_date": "2010-01-04",
-     "last_date": "2026-11-09"
+     "first_date": "1991-05-28",
+     "last_date": "2026-11-10"
     },
     "instrument_state_window": {
      "first_date": "2026-10-05",
@@ -390,8 +485,8 @@
      "rows": 2421,
      "snapshot_days": 5
     },
-    "rows_after_daily_prices_window": 23,
-    "rows_before_daily_prices_window": 43761,
+    "rows_after_daily_prices_window": 404,
+    "rows_before_daily_prices_window": 46067,
     "rows_inside_by_state": {
      "no_daily_row": 2010,
      "no_ins_code": 1383,
@@ -401,63 +496,93 @@
     "rows_inside_daily_prices_window": 4209,
     "rows_inside_instrument_state_window": 1,
     "rows_outside_by_state": {
-     "no_daily_row": 40663,
+     "no_daily_row": 43350,
      "no_ins_code": 3121
     },
-    "rows_total": 47993,
+    "rows_total": 50680,
     "rows_uncovered_by_daily_prices": 0,
     "rows_with_halt_snapshot": 0,
     "rows_with_positive_price_first": 1,
-    "rows_without_positive_price_first": 47992
+    "rows_without_positive_price_first": 50679
    },
    "required_source": {
     "alternatives": [
      "halt/suspension snapshot on the exact symbol/date (instrument_state.c_etaval_title)",
      "full-history exchange calendar; a whole-market no-session date only re-files CALENDAR_GAP rows and cannot verify a per-symbol open-at-prior-close equality"
     ],
-    "missing": "43761 rows predate the daily_prices window, 23 follow it, 4208 inside it have no positive price_first, 0 are uncovered by daily_prices, and 0 carry a halt snapshot; the remaining 1 positive price_first row(s) differ from open.",
+    "missing": "46067 rows predate the daily_prices window, 404 follow it, 4208 inside it have no positive price_first, 0 are uncovered by daily_prices, and 0 carry a halt snapshot; the remaining 1 positive price_first row(s) differ from open.",
     "present_coverage": "daily_prices 2026-08-20..2026-10-11 (32 sessions, 118774 rows, 68778 with positive price_first); instrument_state 2026-10-05..2026-10-11 (5 snapshot days, 2421 rows)",
-    "primary": "daily_prices.price_first (first-trade print) for every symbol/session in 2010-01-04..2026-11-09"
+    "primary": "daily_prices.price_first (first-trade print) for every symbol/session in 1991-05-28..2026-11-10"
    },
    "verdict": "UNRESOLVED_SOURCE_GAP"
   },
-  "rows": 55224,
+  "rows": 57911,
   "verification": "witness_split_v1"
+ },
+ "post_backfill_anomalies": {
+  "blocker_dates": [
+   {
+    "date": "1995-07-26",
+    "symbol": "شنفت"
+   },
+   {
+    "date": "2026-11-02",
+    "symbol": "طلا"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "تپسي"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "غشان"
+   }
+  ],
+  "blockers": 4,
+  "by_category": {
+   "CORPORATE_ACTION_MISSING": 3,
+   "UNRESOLVED_SOURCE_GAP": 4
+  },
+  "events": 7,
+  "new_rows": 7,
+  "note": "one-session drops are outside the five B8 kinds; the full evidence is in the named file, recorded here so C5 sees the blockers alongside the candle anomalies",
+  "path": "_audit/phase49-full-verification/evidence/post-backfill-anomalies.json",
+  "schema": "phase49-post-backfill-anomalies-v1"
  },
  "residual_unverified": {
   "build_gate": "only UNEXPLAINED fails the build; UNRESOLVED_SOURCE_GAP is a measured residual",
   "by_category": {
-   "UNRESOLVED_SOURCE_GAP": 50489
+   "UNRESOLVED_SOURCE_GAP": 53176
   },
   "by_kind": {
-   "OPEN_EQ_PREV_CLOSE": 47993,
+   "OPEN_EQ_PREV_CLOSE": 50680,
    "ZERO_VOLUME": 2496
   },
   "by_root_cause": {
    "no_trade_carried_close": 2357,
    "no_trade_first_bar": 4,
    "no_trade_price_change": 135,
-   "open_at_prior_close_unwitnessed": 47993
+   "open_at_prior_close_unwitnessed": 50680
   },
   "by_src": {
    "board": 366,
    "legacy-unknown": 45533,
    "published": 1,
-   "rahavard365": 4589
+   "rahavard365": 7276
   },
   "by_witness": {
    "first_trade:price_first_ne_open": 2,
-   "none": 50487
+   "none": 53174
   },
   "detail": "open_eq_prev_close.residual_unverified and zero_volume.residual_unverified bind each kind to its required source and missing witness rows",
-  "events": 50489,
+  "events": 53176,
   "verdict": "UNRESOLVED_SOURCE_GAP"
  },
- "rows_scanned": 511139,
- "rows_with_anomaly": 55669,
+ "rows_scanned": 544284,
+ "rows_with_anomaly": 58356,
  "rows_with_anomaly_by_kind": {
   "INVALID_OHLC": 306,
-  "OPEN_EQ_PREV_CLOSE": 55224,
+  "OPEN_EQ_PREV_CLOSE": 57911,
   "ZERO_VOLUME": 2692
  },
  "schema": 1,
@@ -465,7 +590,7 @@
  "symbols": 6103,
  "symbols_by_kind": {
   "INVALID_OHLC": 44,
-  "OPEN_EQ_PREV_CLOSE": 3548,
+  "OPEN_EQ_PREV_CLOSE": 3549,
   "ZERO_VOLUME": 97
  },
  "witness_x_category": {
@@ -500,7 +625,7 @@
    "UNRESOLVED_SOURCE_GAP": 2
   },
   "none": {
-   "UNRESOLVED_SOURCE_GAP": 50487
+   "UNRESOLVED_SOURCE_GAP": 53174
   },
   "row_fields": {
    "INVALID_SOURCE_RECORD": 308

@@ -1,5 +1,22 @@
 {
+ "builder_validation": {
+  "error_prefix": "stage09_seed_build:",
+  "malformed_shapes_rejected": [
+   "merged",
+   "reference_index_all",
+   "capture",
+   "extra",
+   "source",
+   "missing_captured_at"
+  ],
+  "partial_seed_dir_on_error": false,
+  "reason": "valid-path logic unchanged; malformed summaries are rejected before --out-dir is created",
+  "seed_rebuilt": false,
+  "seed_sha256_after": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5"
+ },
  "checks": {
+  "b8_zero_unexplained": true,
+  "builder_malformed_summary_rejected": true,
   "db_hash_matches_manifest": true,
   "duplicate_pairs_zero": true,
   "gzip_hash_matches_manifest": true,
@@ -8,9 +25,12 @@
   "integrity_check_ok": true,
   "lzma_hash_matches_manifest": true,
   "new_seed_sha_differs_from_old": true,
+  "post_backfill_anomalies_recorded": true,
+  "post_backfill_blockers_recorded": true,
   "price_history_rows_544284": true,
   "roundtrip_ok": true,
   "seed_manifest_keys_present": true,
+  "seed_sha_unchanged_after_builder_hardening": true,
   "status_counts_from_ledger": true,
   "symbols_with_history_6103": true
  },
@@ -58,6 +78,86 @@
   },
   "untouched": true
  },
+ "post_backfill_anomalies": {
+  "b8_counts": {
+   "anomaly_events": 60909,
+   "by_category": {
+    "CALENDAR_GAP": 388,
+    "CORPORATE_ACTION_MISSING": 0,
+    "EVENT_DATE_MISMATCH": 0,
+    "EVENT_RATIO_MISMATCH": 0,
+    "INVALID_SOURCE_RECORD": 308,
+    "MISSING_HISTORY": 0,
+    "PRECISION_OR_ROUNDING": 0,
+    "PRICE_BASIS_DIFFERENCE": 3,
+    "SOURCE_MISMATCH": 0,
+    "SOURCE_REVISION": 0,
+    "SYMBOL_IDENTITY_MISMATCH": 0,
+    "UNRESOLVED_SOURCE_GAP": 53176,
+    "VERIFIED_NO_EVENT": 7034
+   },
+   "by_kind": {
+    "DUPLICATE_DATE": 0,
+    "INVALID_OHLC": 306,
+    "OPEN_EQ_PREV_CLOSE": 57911,
+    "ZERO_FIELDS": 0,
+    "ZERO_VOLUME": 2692
+   },
+   "delta": {
+    "anomaly_events": 2687,
+    "by_category": {
+     "UNRESOLVED_SOURCE_GAP": 2687
+    },
+    "by_kind": {
+     "DUPLICATE_DATE": 0,
+     "INVALID_OHLC": 0,
+     "OPEN_EQ_PREV_CLOSE": 2687,
+     "ZERO_FIELDS": 0,
+     "ZERO_VOLUME": 0
+    }
+   },
+   "path": "_audit/phase49-full-verification/evidence/anomaly-counts.json",
+   "previous_anomaly_events": 58222,
+   "previous_rows_scanned": 511139,
+   "rows_scanned": 544284,
+   "uncategorized_events": 0,
+   "unexplained_events": 0
+  },
+  "blocker_dates": [
+   {
+    "date": "1995-07-26",
+    "symbol": "شنفت"
+   },
+   {
+    "date": "2026-11-02",
+    "symbol": "طلا"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "تپسي"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "غشان"
+   }
+  ],
+  "blockers": 4,
+  "by_category": {
+   "CORPORATE_ACTION_MISSING": 3,
+   "UNRESOLVED_SOURCE_GAP": 4
+  },
+  "events": 7,
+  "legacy_invalid_ohlc": {
+   "all_src": "legacy-unknown",
+   "close_outside_high_low": 294,
+   "new_rows": 0,
+   "open_high_low_zero_close_positive": 294,
+   "open_zero_with_valid_shadow": 12,
+   "rows": 306
+  },
+  "new_rows": 7,
+  "path": "_audit/phase49-full-verification/evidence/post-backfill-anomalies.json"
+ },
  "provenance": {
   "aggregate_capture_sha256": "be1e46701a0bd9893592d52c371607c8124e5d00dba3f4b192196f1f163f8702",
   "base_db_sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
@@ -97,5 +197,6 @@
    "sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3",
    "size": 64131004
   }
- }
+ },
+ "updated_at": "2026-11-11T03:42:20Z"
 }

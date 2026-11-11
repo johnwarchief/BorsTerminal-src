@@ -1,0 +1,969 @@
+{
+ "b8_cross_reference": {
+  "delta": {
+   "anomaly_events": 2687,
+   "by_category": {
+    "UNRESOLVED_SOURCE_GAP": 2687
+   },
+   "by_kind": {
+    "DUPLICATE_DATE": 0,
+    "INVALID_OHLC": 0,
+    "OPEN_EQ_PREV_CLOSE": 2687,
+    "ZERO_FIELDS": 0,
+    "ZERO_VOLUME": 0
+   }
+  },
+  "ledger": "_audit/phase49-full-verification/evidence/anomaly-counts.json",
+  "ledger_events_at_seven_dates": 0,
+  "ledger_kinds": [
+   "INVALID_OHLC",
+   "ZERO_FIELDS",
+   "OPEN_EQ_PREV_CLOSE",
+   "ZERO_VOLUME",
+   "DUPLICATE_DATE"
+  ],
+  "new_seed": {
+   "anomaly_events": 60909,
+   "by_category": {
+    "CALENDAR_GAP": 388,
+    "CORPORATE_ACTION_MISSING": 0,
+    "EVENT_DATE_MISMATCH": 0,
+    "EVENT_RATIO_MISMATCH": 0,
+    "INVALID_SOURCE_RECORD": 308,
+    "MISSING_HISTORY": 0,
+    "PRECISION_OR_ROUNDING": 0,
+    "PRICE_BASIS_DIFFERENCE": 3,
+    "SOURCE_MISMATCH": 0,
+    "SOURCE_REVISION": 0,
+    "SYMBOL_IDENTITY_MISMATCH": 0,
+    "UNRESOLVED_SOURCE_GAP": 53176,
+    "VERIFIED_NO_EVENT": 7034
+   },
+   "by_kind": {
+    "DUPLICATE_DATE": 0,
+    "INVALID_OHLC": 306,
+    "OPEN_EQ_PREV_CLOSE": 57911,
+    "ZERO_FIELDS": 0,
+    "ZERO_VOLUME": 2692
+   },
+   "rows_scanned": 544284,
+   "uncategorized_events": 0,
+   "unexplained_events": 0
+  },
+  "note": "The B8 five kinds do not include one-session price drops. None of the seven dates emits a B8 event, so the drops are recorded here and in seed-integrity.json; the B8 counts are regenerated on the new seed. The related new row شنفت 1991-12-10 (open=42,400=prior close, close=8,600) is already a B8 OPEN_EQ_PREV_CLOSE event, category UNRESOLVED_SOURCE_GAP.",
+  "previous_seed": {
+   "anomaly_events": 58222,
+   "by_category": {
+    "CALENDAR_GAP": 388,
+    "CORPORATE_ACTION_MISSING": 0,
+    "EVENT_DATE_MISMATCH": 0,
+    "EVENT_RATIO_MISMATCH": 0,
+    "INVALID_SOURCE_RECORD": 308,
+    "MISSING_HISTORY": 0,
+    "PRECISION_OR_ROUNDING": 0,
+    "PRICE_BASIS_DIFFERENCE": 3,
+    "SOURCE_MISMATCH": 0,
+    "SOURCE_REVISION": 0,
+    "SYMBOL_IDENTITY_MISMATCH": 0,
+    "UNRESOLVED_SOURCE_GAP": 50489,
+    "VERIFIED_NO_EVENT": 7034
+   },
+   "by_kind": {
+    "DUPLICATE_DATE": 0,
+    "INVALID_OHLC": 306,
+    "OPEN_EQ_PREV_CLOSE": 55224,
+    "ZERO_FIELDS": 0,
+    "ZERO_VOLUME": 2692
+   },
+   "rows_scanned": 511139
+  }
+ },
+ "counts": {
+  "blocker_dates": [
+   {
+    "date": "1995-07-26",
+    "symbol": "شنفت"
+   },
+   {
+    "date": "2026-11-02",
+    "symbol": "طلا"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "تپسي"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "غشان"
+   }
+  ],
+  "blockers": 4,
+  "by_category": {
+   "CORPORATE_ACTION_MISSING": 3,
+   "UNRESOLVED_SOURCE_GAP": 4
+  },
+  "events": 7,
+  "new_rows": 7,
+  "non_blockers": 3
+ },
+ "created_at": "2026-11-11T03:38:55Z",
+ "events": [
+  {
+   "adjust_events": [],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-six-2026-11-11",
+   "blocker": true,
+   "calendar_days_since_prev": 15,
+   "category": "UNRESOLVED_SOURCE_GAP",
+   "classification": "The raw type0 boundary 39,999 -> 13,500 is an unadjusted 3.10x split shown by the reference type7 ratio (3.80864675267e-06 -> 1.17926988342e-05), but the pack has no factor step before 2010-06-01, and adjust_events/share_change_events/price_adjust_events are empty. The app chain cannot adjust these 1995 rows; explicit C5 blocker.",
+   "date": "1995-07-26",
+   "drop": {
+    "close_to_prev_close": 0.3375084377109428,
+    "open_to_prev_close": 0.3375084377109428
+   },
+   "history_validity": {
+    "factor_steps": 26,
+    "factor_unverified": 2,
+    "factor_verified": 24,
+    "first_date": "2024-08-24",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=PARTIAL_OFFICIAL:2",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": null,
+   "new_row": true,
+   "next_pack_factor": {
+    "class": "REFERENCE",
+    "cum_factor_after": 0.001723617954169,
+    "effective_date": "2010-06-01",
+    "event_sig": "reference-step",
+    "ratio": 0.9960182025028468,
+    "validity": "verified"
+   },
+   "pack_factor": null,
+   "pack_factor_exact_date": false,
+   "pack_first_step": "2010-06-01",
+   "pack_last_step": "2026-08-08",
+   "pack_steps_total": 26,
+   "prev_close": 39999.0,
+   "prev_date": "1995-07-11",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 39999,
+     "date": "1995-07-11",
+     "high": 39999,
+     "low": 39999,
+     "open": 38114,
+     "type": "type0",
+     "volume": 5791
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 0.15234206145999935,
+     "date": "1995-07-11",
+     "high": 0.15234206145999935,
+     "low": 0.15234206145999935,
+     "open": 0.14516276233121864,
+     "type": "type7",
+     "volume": 5791
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 13500,
+     "date": "1995-07-26",
+     "high": 13500,
+     "low": 13500,
+     "open": 13500,
+     "type": "type0",
+     "volume": 140
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 0.15920143426155556,
+     "date": "1995-07-26",
+     "high": 0.15920143426155556,
+     "low": 0.15920143426155556,
+     "open": 0.15920143426155556,
+     "type": "type7",
+     "volume": 140
+    },
+    "type7_ratio_step": 3.0962962962962908,
+    "type7_to_type0_ratio_before": 3.8086467526688003e-06,
+    "type7_to_type0_ratio_on_date": 1.1792698834189301e-05
+   },
+   "row": {
+    "close": 13500.0,
+    "date": "1995-07-26",
+    "high": 13500.0,
+    "last": 13500.0,
+    "low": 13500.0,
+    "open": 13500.0,
+    "src": "rahavard365",
+    "volume": 140.0
+   },
+   "share_change_events": [],
+   "step_ledger": null,
+   "symbol": "شنفت"
+  },
+  {
+   "adjust_events": [
+    {
+     "date": "2014-06-02",
+     "ratio": 0.342924,
+     "source": "base-price-discontinuity"
+    },
+    {
+     "date": "2014-06-08",
+     "ratio": 0.901976,
+     "source": "base-price-discontinuity"
+    }
+   ],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-six-2026-11-11",
+   "blocker": false,
+   "calendar_days_since_prev": 27,
+   "category": "CORPORATE_ACTION_MISSING",
+   "classification": "The raw type0 boundary 35,221 -> 11,000 (open) / 10,560 (close) is the 2014-06-02 3:1 share increase plus the recorded base-price steps; the reference-verified pack step on this exact date (ratio 0.3090697336, cum_factor_after 0.0065362038) keeps the type7 adjusted series continuous (71.1514 -> 69.0223). adjust_events sit at 2014-06-02/06-08, not on the boundary, so the corporate action is missing from the boundary event row, not from the adjustment chain.",
+   "date": "2014-06-17",
+   "drop": {
+    "close_to_prev_close": 0.2998211294398228,
+    "open_to_prev_close": 0.31231367649981545
+   },
+   "history_validity": {
+    "factor_steps": 26,
+    "factor_unverified": 2,
+    "factor_verified": 24,
+    "first_date": "2024-08-24",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=PARTIAL_OFFICIAL:2",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": {
+    "class": "REFERENCE",
+    "cum_factor_after": 0.002020142759428,
+    "effective_date": "2013-05-21",
+    "event_sig": "reference-step",
+    "ratio": 0.9070459193158544,
+    "validity": "verified"
+   },
+   "new_row": true,
+   "next_pack_factor": {
+    "class": "REFERENCE",
+    "cum_factor_after": 0.00738059062867,
+    "effective_date": "2015-06-23",
+    "event_sig": "reference-step",
+    "ratio": 0.8855935932412208,
+    "validity": "verified"
+   },
+   "pack_factor": {
+    "action": "replace_step",
+    "class": "REFERENCE",
+    "cum_factor_after": 0.006536203775086,
+    "effective_date": "2014-06-17",
+    "event_sig": "reference-step",
+    "ratio": 0.3090697335856753,
+    "source": "rahavard-type7-type0",
+    "validity": "verified"
+   },
+   "pack_factor_exact_date": true,
+   "pack_first_step": "2010-06-01",
+   "pack_last_step": "2026-08-08",
+   "pack_steps_total": 26,
+   "prev_close": 35221.0,
+   "prev_date": "2014-05-21",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 35221,
+     "date": "2014-05-21",
+     "high": 35221,
+     "low": 32901,
+     "open": 33800,
+     "type": "type0",
+     "volume": 155599
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 71.15144812979739,
+     "date": "2014-05-21",
+     "high": 71.15144812979739,
+     "low": 66.4647169279255,
+     "open": 68.28082526865086,
+     "type": "type7",
+     "volume": 155599
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 10560,
+     "date": "2014-06-17",
+     "high": 11000,
+     "low": 10560,
+     "open": 11000,
+     "type": "type0",
+     "volume": 19457
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 69.022311864909,
+     "date": "2014-06-17",
+     "high": 71.89824152594689,
+     "low": 69.022311864909,
+     "open": 71.89824152594689,
+     "type": "type7",
+     "volume": 19457
+    },
+    "type7_ratio_step": 3.2355157795572245,
+    "type7_to_type0_ratio_before": 0.00202014275942754,
+    "type7_to_type0_ratio_on_date": 0.0065362037750860795
+   },
+   "row": {
+    "close": 10560.0,
+    "date": "2014-06-17",
+    "high": 11000.0,
+    "last": 10560.0,
+    "low": 10560.0,
+    "open": 11000.0,
+    "src": "rahavard365",
+    "volume": 19457.0
+   },
+   "share_change_events": [
+    {
+     "d_even": 20140602,
+     "ratio": 0.33333333,
+     "shares_new": 750000000.0,
+     "shares_old": 250000000.0,
+     "source": "tsetmc_share_change_by_flow"
+    }
+   ],
+   "step_ledger": {
+    "comparison_result": "MATCH",
+    "discrepancy_cause": "",
+    "evidence_ref": "capture:2014-06-17",
+    "evidence_tier": "R1",
+    "final_status": "VERIFIED_REFERENCE",
+    "method": "reference-factor-step-v1",
+    "notes": "reference factor step missing from product/pack | audit:missing-provenance",
+    "provenance": "reference"
+   },
+   "symbol": "شنفت"
+  },
+  {
+   "adjust_events": [
+    {
+     "date": "2021-10-25",
+     "ratio": 0.149742,
+     "source": "base-price-discontinuity"
+    }
+   ],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-six-2026-11-11",
+   "blocker": false,
+   "calendar_days_since_prev": 73,
+   "category": "CORPORATE_ACTION_MISSING",
+   "classification": "The raw type0 boundary 60,150 -> 9,000 (open) / 8,870 (close) is the 2021-10-25 share increase (ratio 0.14978012); adjust_events records 0.149742 on 2021-10-25 (one session before the resume) and the reference-verified pack step on 2021-10-26 (ratio 0.1497801168, cum_factor_after 0.2941650095) keeps type7 continuous (2,650.21 -> 2,609.24). The boundary event row is missing, the chain is not.",
+   "date": "2021-10-26",
+   "drop": {
+    "close_to_prev_close": 0.14746467165419783,
+    "open_to_prev_close": 0.14962593516209477
+   },
+   "history_validity": {
+    "factor_steps": 26,
+    "factor_unverified": 2,
+    "factor_verified": 24,
+    "first_date": "2024-08-24",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=PARTIAL_OFFICIAL:2",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": {
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 0.044060069487126,
+    "effective_date": "2021-06-20",
+    "event_sig": "dps",
+    "ratio": 0.9449062439590167,
+    "validity": "verified"
+   },
+   "new_row": true,
+   "next_pack_factor": {
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 0.318016226533594,
+    "effective_date": "2022-06-11",
+    "event_sig": "dps",
+    "ratio": 0.9250000000000017,
+    "validity": "verified"
+   },
+   "pack_factor": {
+    "action": "replace_step",
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 0.294165009543575,
+    "effective_date": "2021-10-26",
+    "event_sig": "share",
+    "ratio": 0.1497801167973366,
+    "source": "rahavard_reference_frozen_v2",
+    "validity": "verified"
+   },
+   "pack_factor_exact_date": true,
+   "pack_first_step": "2010-06-01",
+   "pack_last_step": "2026-08-08",
+   "pack_steps_total": 26,
+   "prev_close": 60150.0,
+   "prev_date": "2021-08-14",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 60150,
+     "date": "2021-08-14",
+     "high": 60600,
+     "low": 59610,
+     "open": 60600,
+     "type": "type0",
+     "volume": 1496230
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 2650.213179650647,
+     "date": "2021-08-14",
+     "high": 2670.040210919854,
+     "low": 2626.4207421275987,
+     "open": 2670.040210919854,
+     "type": "type7",
+     "volume": 1496230
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 8870,
+     "date": "2021-10-26",
+     "high": 9100,
+     "low": 8550,
+     "open": 9000,
+     "type": "type0",
+     "volume": 11427710
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 2609.24363465151,
+     "date": "2021-10-26",
+     "high": 2676.9015868465326,
+     "low": 2515.110831597566,
+     "open": 2647.485085892175,
+     "type": "type7",
+     "volume": 11427710
+    },
+    "type7_ratio_step": 6.676453600000011,
+    "type7_to_type0_ratio_before": 0.0440600694871263,
+    "type7_to_type0_ratio_on_date": 0.294165009543575
+   },
+   "row": {
+    "close": 8870.0,
+    "date": "2021-10-26",
+    "high": 9100.0,
+    "last": 8870.0,
+    "low": 8550.0,
+    "open": 9000.0,
+    "src": "rahavard365",
+    "volume": 11427710.0
+   },
+   "share_change_events": [
+    {
+     "d_even": 20211025,
+     "ratio": 0.14978012,
+     "shares_new": 16691134000.0,
+     "shares_old": 2500000000.0,
+     "source": "tsetmc_share_change_by_flow"
+    }
+   ],
+   "step_ledger": {
+    "comparison_result": "MATCH",
+    "discrepancy_cause": "",
+    "evidence_ref": "share_change_events:2021-10-25@shift1d;capture:2021-10-26",
+    "evidence_tier": "O1+R1",
+    "final_status": "VERIFIED_MULTI_SOURCE",
+    "method": "multi_field_step_inference",
+    "notes": "pack replace_step (reference-derived) wins over product | O1 date shifted 1d; witness ratio 0.149780116797 | audit:pass",
+    "provenance": "pack"
+   },
+   "symbol": "شنفت"
+  },
+  {
+   "adjust_events": [
+    {
+     "date": "2023-01-09",
+     "ratio": 0.090879,
+     "source": "base-price-discontinuity"
+    },
+    {
+     "date": "2023-03-28",
+     "ratio": 0.993477,
+     "source": "base-price-discontinuity"
+    }
+   ],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-six-2026-11-11",
+   "blocker": false,
+   "calendar_days_since_prev": 56,
+   "category": "CORPORATE_ACTION_MISSING",
+   "classification": "The raw type0 boundary 151,000 -> 14,350 is the 1:11 share increase recorded on 2023-01-09 (ratio 0.09090909) during the 2022-12-26..2023-02-20 suspension; the reference-verified pack step on the resume date 2023-02-20 (ratio 0.0909090909, cum_factor_after 0.1119626217) keeps type7 continuous (1,536.94 -> 1,606.66). The boundary event row is missing, the chain is not.",
+   "date": "2023-02-20",
+   "drop": {
+    "close_to_prev_close": 0.09503311258278145,
+    "open_to_prev_close": 0.09503311258278145
+   },
+   "history_validity": {
+    "factor_steps": 22,
+    "factor_unverified": 1,
+    "factor_verified": 21,
+    "first_date": "2024-08-24",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=PARTIAL_OFFICIAL:1",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": {
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 0.010178420155035,
+    "effective_date": "2022-07-12",
+    "event_sig": "dps",
+    "ratio": 0.9717174573994148,
+    "validity": "verified"
+   },
+   "new_row": true,
+   "next_pack_factor": {
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 0.115869946701443,
+    "effective_date": "2023-07-15",
+    "event_sig": "dps",
+    "ratio": 0.9662783568363,
+    "validity": "verified"
+   },
+   "pack_factor": {
+    "action": "replace_step",
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 0.11196262170538,
+    "effective_date": "2023-02-20",
+    "event_sig": "share",
+    "ratio": 0.0909090909090914,
+    "source": "rahavard_reference_frozen_v2",
+    "validity": "verified"
+   },
+   "pack_factor_exact_date": true,
+   "pack_first_step": "2010-07-13",
+   "pack_last_step": "2026-07-27",
+   "pack_steps_total": 22,
+   "prev_close": 151000.0,
+   "prev_date": "2022-12-26",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 151000,
+     "date": "2022-12-26",
+     "high": 152500,
+     "low": 148170,
+     "open": 152500,
+     "type": "type0",
+     "volume": 439333
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 1536.9414434102246,
+     "date": "2022-12-26",
+     "high": 1552.2090736427765,
+     "low": 1508.1365143714768,
+     "open": 1552.2090736427765,
+     "type": "type7",
+     "volume": 439333
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 14350,
+     "date": "2023-02-20",
+     "high": 14350,
+     "low": 14350,
+     "open": 14350,
+     "type": "type0",
+     "volume": 1092316
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 1606.663621472203,
+     "date": "2023-02-20",
+     "high": 1606.663621472203,
+     "low": 1606.663621472203,
+     "open": 1606.663621472203,
+     "type": "type7",
+     "volume": 1092316
+    },
+    "type7_ratio_step": 10.999999999999941,
+    "type7_to_type0_ratio_before": 0.0101784201550346,
+    "type7_to_type0_ratio_on_date": 0.11196262170538
+   },
+   "row": {
+    "close": 14350.0,
+    "date": "2023-02-20",
+    "high": 14350.0,
+    "last": 14350.0,
+    "low": 14350.0,
+    "open": 14350.0,
+    "src": "rahavard365",
+    "volume": 1092316.0
+   },
+   "share_change_events": [
+    {
+     "d_even": 20230109,
+     "ratio": 0.09090909,
+     "shares_new": 1663200000.0,
+     "shares_old": 151200000.0,
+     "source": "tsetmc_share_change_by_flow"
+    }
+   ],
+   "step_ledger": {
+    "comparison_result": "MATCH",
+    "discrepancy_cause": "",
+    "evidence_ref": "capture:2023-02-20",
+    "evidence_tier": "R1",
+    "final_status": "VERIFIED_REFERENCE",
+    "method": "multi_field_step_inference",
+    "notes": "pack replace_step (reference-derived) wins over product | audit:pass",
+    "provenance": "pack"
+   },
+   "symbol": "لخزر"
+  },
+  {
+   "adjust_events": [],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-fresh-2026-11-11",
+   "blocker": true,
+   "calendar_days_since_prev": 2,
+   "category": "UNRESOLVED_SOURCE_GAP",
+   "classification": "The raw type0 boundary 1,757,900 -> 178,200 (open) / 177,761 (close) is an unadjusted 10:1 split shown by the reference type7 ratio (0.1 -> 1.0), but طلا has zero pack steps, the pack as_of is 2026-10-25 (before the boundary), no adjust/share/price_adjust event, and adjust_verdict says no-adjustment-event. The app chain cannot adjust the new 2026-11-02 row; explicit C5 blocker.",
+   "date": "2026-11-02",
+   "drop": {
+    "close_to_prev_close": 0.10112122418795154,
+    "open_to_prev_close": 0.10137095397917971
+   },
+   "history_validity": {
+    "factor_steps": 0,
+    "factor_unverified": 0,
+    "factor_verified": 0,
+    "first_date": "2024-08-24",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=REFERENCE_FACTOR_CHANGES_WITHOUT_STEPS:1;NO_PACK_STEPS",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": null,
+   "new_row": true,
+   "next_pack_factor": null,
+   "pack_factor": null,
+   "pack_factor_exact_date": false,
+   "pack_first_step": null,
+   "pack_last_step": null,
+   "pack_steps_total": 0,
+   "prev_close": 1757900.0,
+   "prev_date": "2026-10-31",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 1757900,
+     "date": "2026-10-31",
+     "high": 1781999,
+     "low": 1750000,
+     "open": 1770000,
+     "type": "type0",
+     "volume": 9967572
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 175790,
+     "date": "2026-10-31",
+     "high": 178199.9,
+     "low": 175000,
+     "open": 177000,
+     "type": "type7",
+     "volume": 9967572
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 177761,
+     "date": "2026-11-02",
+     "high": 180000,
+     "low": 177316,
+     "open": 178200,
+     "type": "type0",
+     "volume": 54601383
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 177761,
+     "date": "2026-11-02",
+     "high": 180000,
+     "low": 177316,
+     "open": 178200,
+     "type": "type7",
+     "volume": 54601383
+    },
+    "type7_ratio_step": 10.0,
+    "type7_to_type0_ratio_before": 0.1,
+    "type7_to_type0_ratio_on_date": 1.0
+   },
+   "row": {
+    "close": 177761.0,
+    "date": "2026-11-02",
+    "high": 180000.0,
+    "last": 177761.0,
+    "low": 177316.0,
+    "open": 178200.0,
+    "src": "rahavard365",
+    "volume": 54601383.0
+   },
+   "share_change_events": [],
+   "step_ledger": null,
+   "symbol": "طلا"
+  },
+  {
+   "adjust_events": [],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-fresh-2026-11-11",
+   "blocker": true,
+   "calendar_days_since_prev": 9,
+   "category": "UNRESOLVED_SOURCE_GAP",
+   "classification": "The raw type0 boundary 32,510 -> 4,970 is an unadjusted 6.69x split shown by the reference type7 ratio (0.1495061587 -> 1.0); the latest pack step is 2026-06-21 (ratio 0.9931972789), there is no factor on 2026-11-10 and no adjust/share/price_adjust event. The app chain cannot adjust the new 2026-11-10 row; explicit C5 blocker.",
+   "date": "2026-11-10",
+   "drop": {
+    "close_to_prev_close": 0.15287603814211012,
+    "open_to_prev_close": 0.15287603814211012
+   },
+   "history_validity": {
+    "factor_steps": 5,
+    "factor_unverified": 1,
+    "factor_verified": 4,
+    "first_date": "2026-06-21",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=INSUFFICIENT_EVIDENCE:1",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": {
+    "class": "PRODUCT",
+    "cum_factor_after": 1.0,
+    "effective_date": "2026-06-21",
+    "event_sig": "product",
+    "ratio": 0.9931972789,
+    "validity": "unverified"
+   },
+   "new_row": true,
+   "next_pack_factor": null,
+   "pack_factor": null,
+   "pack_factor_exact_date": false,
+   "pack_first_step": "2022-10-08",
+   "pack_last_step": "2026-06-21",
+   "pack_steps_total": 5,
+   "prev_close": 32510.0,
+   "prev_date": "2026-11-01",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 32510,
+     "date": "2026-11-01",
+     "high": 33290,
+     "low": 32510,
+     "open": 33290,
+     "type": "type0",
+     "volume": 8335315
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 4860.445220720268,
+     "date": "2026-11-01",
+     "high": 4977.060024539456,
+     "low": 4860.445220720268,
+     "open": 4977.060024539456,
+     "type": "type7",
+     "volume": 8335315
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 4970,
+     "date": "2026-11-10",
+     "high": 4970,
+     "low": 4970,
+     "open": 4970,
+     "type": "type0",
+     "volume": 796721
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 4970,
+     "date": "2026-11-10",
+     "high": 4970,
+     "low": 4970,
+     "open": 4970,
+     "type": "type7",
+     "volume": 796721
+    },
+    "type7_ratio_step": 6.688687666185106,
+    "type7_to_type0_ratio_before": 0.149506158742549,
+    "type7_to_type0_ratio_on_date": 1.0
+   },
+   "row": {
+    "close": 4970.0,
+    "date": "2026-11-10",
+    "high": 4970.0,
+    "last": 4970.0,
+    "low": 4970.0,
+    "open": 4970.0,
+    "src": "rahavard365",
+    "volume": 796721.0
+   },
+   "share_change_events": [],
+   "step_ledger": null,
+   "symbol": "تپسي"
+  },
+  {
+   "adjust_events": [],
+   "backfill_ref_adjust": "raw",
+   "backfill_ref_type": "type0",
+   "backfill_run_id": "phase49-c3fix-fresh-2026-11-11",
+   "blocker": true,
+   "calendar_days_since_prev": 22,
+   "category": "UNRESOLVED_SOURCE_GAP",
+   "classification": "The raw type0 boundary 23,400 -> 6,250 (open) / 6,140 (close) is an unadjusted 3.83x split shown by the reference type7 ratio (0.2608805602 -> 1.0); the pack as_of is 2026-10-25 and the latest pack step is 2026-02-22 (ratio 0.8796886058), there is no factor on 2026-11-10 and no adjust/share/price_adjust event. The app chain cannot adjust the new 2026-11-10 row; explicit C5 blocker.",
+   "date": "2026-11-10",
+   "drop": {
+    "close_to_prev_close": 0.2623931623931624,
+    "open_to_prev_close": 0.2670940170940171
+   },
+   "history_validity": {
+    "factor_steps": 10,
+    "factor_unverified": 2,
+    "factor_verified": 8,
+    "first_date": "2024-08-24",
+    "last_date": "2026-10-11",
+    "notes": "INSUFFICIENT_EVIDENCE; blocker=INSUFFICIENT_EVIDENCE:1;PARTIAL_OFFICIAL:1",
+    "status": "unverified"
+   },
+   "nearest_prior_pack_factor": {
+    "class": "RATIO_DIFF",
+    "cum_factor_after": 1.0,
+    "effective_date": "2026-02-22",
+    "event_sig": "dps",
+    "ratio": 0.8796886058032559,
+    "validity": "reconstructed_verified"
+   },
+   "new_row": true,
+   "next_pack_factor": null,
+   "pack_factor": null,
+   "pack_factor_exact_date": false,
+   "pack_first_step": "2020-05-31",
+   "pack_last_step": "2026-02-22",
+   "pack_steps_total": 10,
+   "prev_close": 23400.0,
+   "prev_date": "2026-10-19",
+   "price_adjust_events": [],
+   "reference": {
+    "prev_type0": {
+     "adjust": "raw",
+     "close": 23400,
+     "date": "2026-10-19",
+     "high": 23420,
+     "low": 22250,
+     "open": 22250,
+     "type": "type0",
+     "volume": 31429936
+    },
+    "prev_type7": {
+     "adjust": "adjusted",
+     "close": 6104.605108195597,
+     "date": "2026-10-19",
+     "high": 6109.8227193991825,
+     "low": 5804.592463989403,
+     "open": 5804.592463989403,
+     "type": "type7",
+     "volume": 31429936
+    },
+    "type0": {
+     "adjust": "raw",
+     "close": 6140,
+     "date": "2026-11-10",
+     "high": 6250,
+     "low": 5920,
+     "open": 6250,
+     "type": "type0",
+     "volume": 183525379
+    },
+    "type7": {
+     "adjust": "adjusted",
+     "close": 6140,
+     "date": "2026-11-10",
+     "high": 6250,
+     "low": 5920,
+     "open": 6250,
+     "type": "type7",
+     "volume": 183525379
+    },
+    "type7_ratio_step": 3.8331717752856562,
+    "type7_to_type0_ratio_before": 0.260880560179299,
+    "type7_to_type0_ratio_on_date": 1.0
+   },
+   "row": {
+    "close": 6140.0,
+    "date": "2026-11-10",
+    "high": 6250.0,
+    "last": 6140.0,
+    "low": 5920.0,
+    "open": 6250.0,
+    "src": "rahavard365",
+    "volume": 183525379.0
+   },
+   "share_change_events": [],
+   "step_ledger": null,
+   "symbol": "غشان"
+  }
+ ],
+ "legacy_invalid_ohlc": {
+  "all_src": "legacy-unknown",
+  "close_outside_high_low": 294,
+  "new_rows": 0,
+  "note": "Pre-existing Phase 4.8 rows, unchanged by the C3 backfill: the new seed still holds 306 INVALID_OHLC events, all legacy-unknown; 0 come from the 33,145 new rows. B8 cross-checks the count against SQL.",
+  "open_high_low_zero_close_positive": 294,
+  "open_zero_with_valid_shadow": 12,
+  "rows": 306
+ },
+ "method": [
+  "Scan price_history in (symbol, date) order; compare each new C3 backfill row with the immediately preceding bar of the same symbol.",
+  "Candidate = open/prev_close or close/prev_close below 1/3, plus the reference type7/type0 ratio step >3x on the boundary; exclude rows whose open equals the prior close (those are B8 OPEN_EQ_PREV_CLOSE events, e.g. شنفت 1991-12-10).",
+  "For each candidate read: the seed row, the backfill_rows run/ref_type, the reference type0/type7 current and previous bars, the exact-date and nearest pack factor steps, adjust_events/share_change_events/price_adjust_events within 30 days, the B5 step-ledger row, and history_validity status/notes.",
+  "Category: a verified pack factor on the exact boundary that keeps the type7 series continuous = CORPORATE_ACTION_MISSING (the boundary event row is absent but the adjustment chain covers it, non-blocking). No pack factor and no official event = UNRESOLVED_SOURCE_GAP (explicit C5 blocker: the app chain cannot adjust the new rows).",
+  "No seed bytes were changed; the seed SHA-256 remains 57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5."
+ ],
+ "pack": {
+  "as_of": "2026-10-25",
+  "factors_sha256": "aa8e13fc2d172c3e3355e86bba1bd505b5070269d0a47baf0c3c2d59784ceb24",
+  "manifest_sha256": "458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c",
+  "path": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
+  "steps": 8280,
+  "symbols": 951,
+  "version": "ra365-phase49-rebuild-full-v2"
+ },
+ "reference": {
+  "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+  "sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+  "types": "rahavard type0 (raw) and type7 (adjusted), daily resolution"
+ },
+ "schema": "phase49-post-backfill-anomalies-v1",
+ "scope": "one-session drops >3x in the 33,145 rows inserted by the C3 backfill (run ids phase49-c3fix-six-2026-11-11 and phase49-c3fix-fresh-2026-11-11) whose boundary is not an OPEN_EQ_PREV_CLOSE event and whose drop is not recorded by adjust_events on the boundary date",
+ "seed": {
+  "path": "_audit/phase49-full-verification/seed/market.db",
+  "price_history_rows": 544284,
+  "sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5"
+ }
+}
