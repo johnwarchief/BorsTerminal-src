@@ -9,7 +9,8 @@ Adjusted در بانک محلی، موتور Go مستقل، مقایسهٔ کا
 در صف per-symbol است؛ این گزارش آن را به‌عنوان Blocker سراسری مطرح نمی‌کند.
 
 **مبنا:** شاخهٔ `mission/phase49-full-verification-python-ci-2026-11-10`،
-Commit شروع `6d63e89d`، Seed فاز ۴.۹.۱ با SHA-256
+Commit شروع `6d63e89d`، Commit کد/دادهٔ `3dc7318a` (CI سبز: `guards`
+۹/۹ job، `python-tooling`، `python-legacy`)، Seed فاز ۴.۹.۱ با SHA-256
 `57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5`،
 Capture تازه از نشست مالک با SHA-256
 `6c8999ec2401a37a1c17370be6d06f155055d8d593b99c08100d3dd42beb8834`.
@@ -28,7 +29,7 @@ Capture تازه از نشست مالک با SHA-256
 | دیتابیس مستقل | ۱۰۵٬۶۹۲ کندل خام + ۱۰۵٬۶۹۲ کندل Adjusted + ۱٬۰۲۷ Factor + ۱٬۲۳۲ Action |
 | تأیید | ۱۰۵٬۶۹۲ از ۱۰۵٬۶۹۲ ردیف `EXACT` |
 | به‌روزرسانی | Revision عوض می‌شود، زنجیره بازمحاسبه می‌شود، ساخت دوباره ایدمپوتنت است |
-| Seed | تأیید مالک ثبت شد؛ گیت باز شد؛ ۱۴/۱۴ بررسی Integrity/Hash/Idempotency سبز |
+| Seed | تأیید مالک ثبت شد؛ گیت باز شد؛ ۱۴/۱۴ بررسی Integrity/Hash/Idempotency و ۸/۸ بررسی محصول سبز |
 
 ## ۲. آنچه از موتور فعلی قابل استفاده بود
 
@@ -190,8 +191,8 @@ Factor اندازه‌گیری‌شده پس از رویداد، Factor=1 در �
 
 - تأیید مالک در `docs/opportunity-center/phase49-2/OWNER-APPROVAL-REFERENCE-DERIVED.json`
   و بلوک `owner_approvals` در `FINAL-SEED-MANIFEST.json` ثبت شد.
-- `python scripts/check_seed_release.py --db _audit/.../seed/market.db` →
-  `SEED_RELEASE_OK` با ذکر رکورد تأیید و تاریخ.
+- `python scripts/check_seed_release.py --db _audit/phase49-full-verification/seed/market.db`
+  → `SEED_RELEASE_OK` با ذکر رکورد تأیید و تاریخ.
 - ۱۴/۱۴ بررسی Integrity/Hash/Round-trip/تعداد در `seed-recheck.json` سبز؛
   تست ایدمپوتنسی `stage09` سبز.
 - تست‌های محصول Seed: `_audit/phase49-2/evidence/seed-product-check.json` —
@@ -224,9 +225,17 @@ Factor اندازه‌گیری‌شده پس از رویداد، Factor=1 در �
 کندِ lzma روی این هاست عملی نشد؛ به‌جایش `seed_product_check.py` روی کپی
 مستقیم Seed اجرا شد و ۸/۸ بررسی سبز بود (بخش ۹).
 
-CI نهایی پس از Push اجرا و نتیجهٔ واقعی در
-`docs/opportunity-center/phase49-2/CI-FINAL-RESULTS.json` ثبت می‌شود؛ تا آن
-لحظه وضعیت این گزارش `CI_PENDING` است.
+CI نهایی روی Commit `3dc7318a` اجرا و نتیجهٔ واقعی در
+`docs/opportunity-center/phase49-2/CI-FINAL-RESULTS.json` ثبت شد:
+
+| Workflow | Run | نتیجه |
+| --- | --- | --- |
+| `guards` | [43016492221](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221) | success — هر ۹ job (Go vet/test/race/windows، data integrity، zero-python، frontend، repo hygiene، desktop delivery/installer) |
+| `python-tooling` | [43016492177](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492177) | success — seed gate self-test + data profile |
+| `python-legacy` | [43016492198](https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492198) | success (report-only) — job قدیمی پایتون به‌صورت طراحی‌شده failure گزارش می‌شود؛ static JS سبز |
+
+وضعیت نهایی این گزارش `CI_COMPLETE` است؛ Commitهای بعدی فقط شاهد/مستندات را
+تغییر می‌دهند و Commit معتبر CI همان `3dc7318a` می‌ماند.
 
 ## ۱۱. موانع واقعی باقی‌مانده
 
@@ -252,7 +261,9 @@ CI نهایی پس از Push اجرا و نتیجهٔ واقعی در
 
 `main` تغییر نکرد، Merge/Tag/Release انجام نشد، دیتابیس Production تغییر نکرد،
 FTS دست‌نخورده ماند، هیچ داده/ضریب حدس زده نشد، و هیچ ردیف Reference-derived
-بدون تأیید ثبت‌شده منتشر نشد.
+بدون تأیید ثبت‌شده منتشر نشد. DB مستقل روی کپیِ مجزا در `_audit/phase49-2/db/`
+ساخته و با همان کپی آزموده شد؛ جایگزینی آن با DB عملیاتی/توزیع، به اجازهٔ
+صریح مالک نیاز دارد.
 
 ---
 
@@ -261,7 +272,7 @@ FTS دست‌نخورده ماند، هیچ داده/ضریب حدس زده نش
 | فایل | محتوا |
 | --- | --- |
 | `_audit/phase49-2/evidence/baseline.json` | شمارش‌های شروع مأموریت |
-| `_audit/phase49-2/rahavard/pilot-capture.json` | ۶۰ سری type0/type7 + Marks |
+| `_audit/phase49-2/rahavard/pilot-capture.json` | ۶۰ سری type0/type7 + Marks (دادهٔ خام مرجع؛ عمداً خارج از Git، SHA `6c8999ec…`) |
 | `_audit/phase49-2/rahavard/pilot-analysis.json` | تغییرهای q و تطبیق با پک |
 | `_audit/phase49-2/rahavard/engine-parity-before.json` | پاریتی موتور قدیم |
 | `_audit/phase49-2/rahavard/engine-parity-after.json` | پاریتی موتور اصلاح‌شده |

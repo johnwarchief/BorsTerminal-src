@@ -45,8 +45,8 @@ func fixture(t *testing.T) *sql.DB {
 		}
 	}
 	if _, err := db.Exec(
-		"INSERT INTO adjustment_factors VALUES('الف','2026-01-03',0.5,'capital_increase',"+
-			"'rahavard-type7-type0','implied-ratio-change','reference-exact',"+
+		"INSERT INTO adjustment_factors VALUES('الف','2026-01-03',0.5,'capital_increase'," +
+			"'rahavard-type7-type0','implied-ratio-change','reference-exact'," +
 			"'MEASURED_REFERENCE',2,1,120,'cap','run','rev1','{}','now')"); err != nil {
 		t.Fatal(err)
 	}

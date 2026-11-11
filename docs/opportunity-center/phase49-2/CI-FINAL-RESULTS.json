@@ -1,0 +1,99 @@
+{
+ "commit_sha": "3dc7318a899e48007f841e9023a6612fd00969bc",
+ "branch": "mission/phase49-full-verification-python-ci-2026-11-10",
+ "repository": "johnwarchief/BorsTerminal-src",
+ "status": "COMPLETE",
+ "expected_workflows": [
+  "guards",
+  "python-tooling",
+  "python-legacy"
+ ],
+ "fetched_at": "2026-11-11T12:08:45Z",
+ "runs": [
+  {
+   "workflow": "guards",
+   "run_id": 43016492221,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221",
+   "conclusion": "success",
+   "jobs": [
+    {
+     "name": "go race detector (cmd/borsd + generation runtime)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508782859"
+    },
+    {
+     "name": "EOL / attributes / no tracked junk",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783065"
+    },
+    {
+     "name": "go backend (vet / ast-arch / unit-tests)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783096"
+    },
+    {
+     "name": "data integrity guards (ingestion / candles / backfill)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783192"
+    },
+    {
+     "name": "frontend v2 (typecheck / vitest / build)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783204"
+    },
+    {
+     "name": "go backend on windows (windows-latest)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783231"
+    },
+    {
+     "name": "go backend on windows (windows-2022)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783271"
+    },
+    {
+     "name": "zero-python runtime proof (Go process tree)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130508783391"
+    },
+    {
+     "name": "desktop delivery (Windows bundle + Tauri shell + installer)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492221/job/130510847383"
+    }
+   ]
+  },
+  {
+   "workflow": "python-tooling",
+   "run_id": 43016492177,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492177",
+   "conclusion": "success",
+   "jobs": [
+    {
+     "name": "data/research suites (python dev/run_all_tests.py --profile data)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492177/job/130508782767"
+    }
+   ]
+  },
+  {
+   "workflow": "python-legacy",
+   "run_id": 43016492198,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492198",
+   "conclusion": "success",
+   "jobs": [
+    {
+     "name": "legacy Python maintenance (report-only)",
+     "conclusion": "failure",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492198/job/130508782377"
+    },
+    {
+     "name": "legacy static JS syntax (report-only)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43016492198/job/130508782827"
+    }
+   ]
+  }
+ ],
+ "all_expected_success": true
+}

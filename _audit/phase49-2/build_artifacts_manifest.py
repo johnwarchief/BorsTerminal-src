@@ -62,6 +62,7 @@ SCRIPTS = [
     "_audit/phase49-2/seed_product_check.py",
     "_audit/phase49-2/test_phase49_2.py",
     "_audit/phase49-2/record_local_gates.py",
+    "_audit/phase49-2/fetch_ci.py",
     "_audit/phase49-2/build_artifacts_manifest.py",
 ]
 
@@ -76,6 +77,7 @@ CODE = [
     "backend-go/cmd/candlebuild/main.go",
     "scripts/check_seed_release.py",
     "scripts/test_check_seed_release.py",
+    ".github/workflows/release.yml",
     "docs/opportunity-center/phase49/FINAL-SEED-MANIFEST.json",
     "data/ra365_corrections/ra365-phase49-rebuild-full-v2/manifest.json",
     "data/ra365_corrections/ra365-phase49-rebuild-full-v2/factors.jsonl",
@@ -109,7 +111,7 @@ def main():
     if os.path.exists(CI):
         rec = json.load(open(CI, encoding="utf-8"))
         ci_status = "%s commit %s" % (rec.get("status", "UNKNOWN"),
-                                      rec.get("commit", "?"))
+                                      rec.get("commit_sha", "?"))
     ingest = json.load(open(os.path.join(ROOT, "_audit", "phase49-2", "evidence",
                                         "candle-ingest.json"), encoding="utf-8"))
     counts = ingest.get("counts") or {}
