@@ -250,9 +250,10 @@ Source: [L2], 6,103 data rows, 57 columns; counts in [S4], [S11].
 | `BLOCKED_SOURCE` | 0 | [S4], [L2] |
 | **Total** | **6,103** | [S4], [L2] |
 
-Of the 5,910 + 90 = 6,000 unverified symbols, 5,188 have zero pack steps (5,185 with no
-reference and 3 with a reference); the other 812 carry steps that map to
-`INSUFFICIENT_EVIDENCE` or `CONFLICT` [S11], [S4].
+Of the 5,910 + 90 = 6,000 unverified symbols, 5,186 are zero-step rows: 5,185 with no
+reference and 1 that has a reference window but stays `INSUFFICIENT_EVIDENCE`. The other
+814 carry steps (790 validity `reconstructed_verified` + 24 validity `verified`) and map to
+`INSUFFICIENT_EVIDENCE` or `CONFLICT` at symbol level [L2], [S11], [S4].
 
 ### 7.2 Identity, staleness, blockers
 
