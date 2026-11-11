@@ -158,7 +158,7 @@ a residual, not closed by a label change [S3], [L1].
 | Asset-map symbols | 828 | [S4] |
 | Mapped | 758 | [S4] |
 | Unmapped (`NO_ASSET_ID`) | 339 | [S4] |
-| - of which pack-unverified keys | 96 (the 1,358 unverified steps cover 782 raw spellings = 754 keys: 658 mapped, 96 unmapped) | [C1] |
+| - of which pack-unverified keys | 96 (the 1,358 baseline-unverified steps cover 782 raw spellings = 754 keys: 658 mapped, 96 unmapped) | [C1] |
 | History symbols with an asset id | 758 | [S4] |
 | History symbols without an asset id | 5,345 | [S4] |
 

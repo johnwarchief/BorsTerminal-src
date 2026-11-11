@@ -2,7 +2,7 @@
 
 - Branch: `mission/phase49-full-verification-python-ci-2026-11-10`
 - Mission base: `f7fc8e8a` (design spec section 1); baseline snapshot was taken at HEAD `b43b1a66`
-- Working HEAD when this report was assembled: `d142fb5d9bb5a77a86d0678c1db2cbf1aef92485`
+- Working HEAD when this report was assembled: `19d3a885feb6f463ae36907caf43acd07092df7a`
 - Final CI: **PENDING** (`CI-FINAL-RESULTS.json` is a pending record; C8 must fill it)
 - Verdict: **`PHASE49_PARTIAL_WITH_EXPLICIT_BLOCKERS`**
 
@@ -73,7 +73,7 @@ The verdict carries these blockers:
 | Branch | `mission/phase49-full-verification-python-ci-2026-11-10` | this tree |
 | Mission base | `f7fc8e8a` | design spec section 1 |
 | Baseline snapshot HEAD | `b43b1a66` (snapshot-time HEAD, not the commit that contains the file) | [S1] |
-| Working HEAD | `d142fb5d9bb5a77a86d0678c1db2cbf1aef92485` | `git rev-parse HEAD` |
+| Working HEAD | `19d3a885feb6f463ae36907caf43acd07092df7a` | `git rev-parse HEAD` |
 | C5 measured tree | `fd8a7dd4` (evidence JSON `commit` fields) | [S8], [S9] |
 | Correction pack | `ra365-phase49-rebuild-full-v2`, 8,280 steps, 951 symbols, `as_of` 2026-10-25 | [S1], [M1] |
 | Pack manifest SHA-256 | `458cd5ebfdcc7a752c7eba9839eba75c13db1efefd4fcf572b41095ef936578c` | [S1], [S8], [M1] |
@@ -307,7 +307,7 @@ reference and 1 that has a reference window but stays `INSUFFICIENT_EVIDENCE`. T
 | Duplicate instrument keys | 3 (`آواپارس`, `حیان072`, `کیمازی`); 2 in history | [S7] |
 | Stale status | fresh 29; recent 2,034; stale 3,596; halted 444 | [S4], [L2] |
 | Halted by instrument title | ممنوع 422; توقف 32 | [S4] |
-| Pack steps unverified | 1,358 across 782 raw pack spellings = 754 normalised keys; 658 keys mapped, 96 unmapped | [S4], [C1] |
+| Baseline-unverified pack steps | 1,358 across 782 raw pack spellings = 754 normalised keys; 658 keys mapped, 96 unmapped | [S4], [C1] |
 
 ### 7.3 6,328 versus 6,103
 
@@ -498,7 +498,7 @@ with its own SHA-256. The 177 suites that cannot execute locally for a missing t
 package are never called passing.
 
 Final CI is pending. `CI-FINAL-RESULTS.json` records status `PENDING_FINAL_CI`, commit
-`d142fb5d...`, expected workflows `guards`, `python-tooling`, `python-legacy`, and an empty
+`19d3a885...`, expected workflows `guards`, `python-tooling`, `python-legacy`, and an empty
 `runs` array. C8 replaces it with measured data; this report deliberately contains no run
 URL or job result.
 
