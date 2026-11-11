@@ -238,6 +238,10 @@ def main():
         rec = json.load(io.open(CI, encoding="utf-8"))
         ci_status = rec.get("status", "UNKNOWN")
         ci_sha = rec.get("commit_sha", "?")
+        for run in rec.get("runs", []):
+            if run.get("head_sha") != ci_sha:
+                sys.exit("FATAL: CI-FINAL-RESULTS.json run %s head_sha is not"
+                         " its commit_sha" % run.get("run_id"))
         ci_jobs = ("workflows_success=%s jobs_success=%s blocking_jobs_success=%s"
                    % (rec.get("all_workflows_success"),
                       rec.get("all_jobs_success"),

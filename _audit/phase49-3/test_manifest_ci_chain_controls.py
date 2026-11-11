@@ -47,6 +47,8 @@ def cleanup():
 
 def main():
     base = load(MAIN_CI)
+    with open(MAIN_CI, "rb") as fh:
+        main_bytes = fh.read()
     good = load(os.path.join(EV, "CI-59a1c918.json"))
     before = sorted(os.listdir(EV))
     results = []
@@ -104,12 +106,29 @@ def main():
         results.append(("N4_incomplete_record_aborts",
                         rc != 0 and "is not COMPLETE" in out, "rc=%d" % rc))
         os.remove(p)
+
+        # Negative 5: the primary record's runs must be SHA-bound too, not just
+        # the preserved ones.  Restored byte-exactly in the finally block.
+        bad = json.loads(json.dumps(base))
+        bad["runs"][0]["head_sha"] = "a" * 40
+        with io.open(MAIN_CI, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(bad, fh)
+        rc, out = run_builder()
+        results.append(("N5_primary_record_head_sha_must_bind",
+                        rc != 0 and "CI-FINAL-RESULTS.json run" in out,
+                        "rc=%d" % rc))
     finally:
+        with open(MAIN_CI, "wb") as fh:
+            fh.write(main_bytes)
         removed = cleanup()
         after = sorted(os.listdir(EV))
         results.append(("C_evidence_dir_restored", after == before and not removed,
                         "removed=%d before=%d after=%d"
                         % (len(removed), len(before), len(after))))
+        with open(MAIN_CI, "rb") as fh:
+            restored = fh.read()
+        results.append(("C_main_ci_bytes_restored", restored == main_bytes,
+                        "bytes=%d" % len(restored)))
 
     passed = sum(1 for _, ok, _ in results if ok)
     for name, ok, detail in results:
