@@ -1,0 +1,50 @@
+{
+ "db_written": false,
+ "elapsed_ms": 198.4,
+ "generated_at": "2026-11-11T13:32:13Z",
+ "idempotent_payload": true,
+ "inputs": {
+  "_audit/phase49-2/evidence/coverage-status.json": {
+   "bytes": 18515,
+   "sha256": "16abbf90da10d73555772ad6c31de9e9b86e3110268f89c596c6b1e66ba145b7"
+  },
+  "_audit/phase49-2/ledgers/COVERAGE-STATUS.csv": {
+   "bytes": 817364,
+   "sha256": "b5015a9a356a64736b14a70bdade5ec9233345a52941ed02c0f2241eb36870b3"
+  },
+  "_audit/phase49-full-verification/evidence/backfill-availability.json": {
+   "bytes": 2556,
+   "sha256": "ce5207435ccfa980875d35dfd18675e58ba5e750eb20d63c9d6eef9ae11e2264"
+  },
+  "_audit/phase49-full-verification/evidence/capture-summary.json": {
+   "bytes": 17351,
+   "sha256": "6cbeb62811f42d143a9d6b5c10324e2eae57b6914e8f875a3ee0e50d6154da8b"
+  },
+  "_audit/phase49-full-verification/evidence/ledger-counts.json": {
+   "bytes": 10823,
+   "sha256": "a638236db0ddf57d1443e9c450ae4dec9eb3a42414cd0c10b7844b02ca8015c3"
+  },
+  "docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv": {
+   "bytes": 2527513,
+   "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
+  },
+  "docs/opportunity-center/phase49/HISTORY-COVERAGE-LEDGER.csv": {
+   "bytes": 2057162,
+   "sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650"
+  }
+ },
+ "outputs": {
+  "_audit/phase49-3/evidence/coverage-reconciliation.json": {
+   "bytes": 7273,
+   "sha256": "55b7338c700cf3fb13cb0cf4c5e3a07dbb049c8826be58575f649ddf55846526"
+  },
+  "_audit/phase49-3/ledgers/COVERAGE-EXPANSION-MAP.csv": {
+   "bytes": 2962335,
+   "rows": 6103,
+   "sha256": "2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22"
+  }
+ },
+ "schema": "phase49-3-stage-manifest-v1",
+ "stage": "stage01_coverage_map",
+ "status": "PASS"
+}

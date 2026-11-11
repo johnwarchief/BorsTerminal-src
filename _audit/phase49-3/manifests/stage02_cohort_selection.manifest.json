@@ -1,0 +1,38 @@
+{
+ "db_written": false,
+ "elapsed_ms": 113.7,
+ "generated_at": "2026-11-11T13:37:26Z",
+ "idempotent_payload": true,
+ "inputs": {
+  "_audit/phase49-2/ledgers/COVERAGE-STATUS.csv": {
+   "bytes": 817364,
+   "sha256": "b5015a9a356a64736b14a70bdade5ec9233345a52941ed02c0f2241eb36870b3"
+  },
+  "_audit/phase49-3\\evidence\\coverage-reconciliation.json": {
+   "bytes": 7273,
+   "sha256": "55b7338c700cf3fb13cb0cf4c5e3a07dbb049c8826be58575f649ddf55846526"
+  },
+  "_audit/phase49-3\\ledgers\\COVERAGE-EXPANSION-MAP.csv": {
+   "bytes": 2962335,
+   "sha256": "2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22"
+  },
+  "docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv": {
+   "bytes": 2527513,
+   "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
+  },
+  "docs/opportunity-center/phase49/HISTORY-COVERAGE-LEDGER.csv": {
+   "bytes": 2057162,
+   "sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650"
+  }
+ },
+ "outputs": {
+  "_audit/phase49-3\\evidence\\COHORT-SELECTION.json": {
+   "bytes": 51450,
+   "rows": 30,
+   "sha256": "857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901"
+  }
+ },
+ "schema": "phase49-3-stage-manifest-v1",
+ "stage": "stage02_cohort_selection",
+ "status": "PASS"
+}

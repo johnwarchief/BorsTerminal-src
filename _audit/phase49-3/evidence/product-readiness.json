@@ -1,0 +1,279 @@
+{
+ "base_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "code_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "engine": {
+  "byte_unchanged_vs_base": true,
+  "diff_stdout": "",
+  "files": {
+   "backend-go/cmd/candlebuild/main.go": "ad2c5bd3b2d648506fa7c699f5ad32818664f01551737439bb27268def08f354",
+   "backend-go/internal/candlebuild/candlebuild.go": "bca362898a9e31110baa89194afc5407539149aa90bacbfc0b10237281aab037",
+   "backend-go/internal/chart/canonical.go": "88b457050ddac90c00d97dd96c0abebb4a205ea6cbf374c72eaf91376778f277",
+   "backend-go/internal/chart/chartdb.go": "f70c63f89f81d5b920fe35045ef700ee9c385ed8f8ca57bc807d46763b0f0900",
+   "backend-go/internal/chart/handlers.go": "8dbe4f050fd8b1103ff7ece357ca7b97341d6be96ef24fee6c78bca13163183d",
+   "backend-go/internal/chart/measured.go": "4e47e750653ab10bff0f039f2e94d5ce1fb3b91fc59a3fee8ec626300a000fd0"
+  }
+ },
+ "inputs": {
+  "backend-go/cmd/candlebuild/main.go": "ad2c5bd3b2d648506fa7c699f5ad32818664f01551737439bb27268def08f354",
+  "backend-go/internal/candlebuild/candlebuild.go": "bca362898a9e31110baa89194afc5407539149aa90bacbfc0b10237281aab037",
+  "backend-go/internal/chart/canonical.go": "88b457050ddac90c00d97dd96c0abebb4a205ea6cbf374c72eaf91376778f277",
+  "backend-go/internal/chart/chartdb.go": "f70c63f89f81d5b920fe35045ef700ee9c385ed8f8ca57bc807d46763b0f0900",
+  "backend-go/internal/chart/handlers.go": "8dbe4f050fd8b1103ff7ece357ca7b97341d6be96ef24fee6c78bca13163183d",
+  "backend-go/internal/chart/measured.go": "4e47e750653ab10bff0f039f2e94d5ce1fb3b91fc59a3fee8ec626300a000fd0"
+ },
+ "isolated_copy_plan": {
+  "forbidden": [
+   "modifying the Seed Candidate",
+   "modifying the Production DB",
+   "copying either red-line DB onto the other",
+   "fabricating capture data",
+   "loosening any acceptance tolerance"
+  ],
+  "precondition": "restore the licensed capture artifacts first",
+  "steps": [
+   "verify SHA-256 of bars-all.ndjson.gz and reference-index-all.json against the recorded values",
+   "create a NEW working copy under _audit/phase49-3/db/ from the restored Seed bytes; never write to the Seed Candidate path and never copy the Pilot DB onto it",
+   "record the working copy's own SHA-256 and revision before and after ingest",
+   "ingest reference_raw + reference_adjusted for the frozen 30 with independent provenance",
+   "build adjustment_factors with the accepted Phase 4.9.2 logic",
+   "run cmd/candlebuild -db <working copy> to materialize adjusted_candles + adjustment_verification + candle_build_revisions",
+   "compare every OHLC against reference_adjusted; check volume constancy; prove revision, update chain and idempotency",
+   "only then call GET /api/chart-db/{symbol} on the working copy, and take a real UI screenshot if a browser is available"
+  ]
+ },
+ "items": [
+  {
+   "basis": "table, columns, revision, source label and API route located in committed source with verified line numbers",
+   "item": "runtime_contract_identified",
+   "status": "PASS"
+  },
+  {
+   "basis": "git diff of backend-go/ against the mission base commit is empty; the stage aborts if it is not",
+   "item": "engine_byte_unchanged",
+   "status": "PASS"
+  },
+  {
+   "basis": "no Seed/Pilot DB and no capture bytes on this machine; creating a copy would require fabricating inputs, which the mission forbids",
+   "item": "isolated_working_db_created",
+   "status": "NOT_MEASURED"
+  },
+  {
+   "basis": "adjusted_candles absent from every DB present here",
+   "item": "candles_table_compared",
+   "status": "NOT_MEASURED"
+  },
+  {
+   "basis": "adjustment_factors absent from every DB present here",
+   "item": "factors_table_compared",
+   "status": "NOT_MEASURED"
+  },
+  {
+   "basis": "GET /api/chart-db/{symbol} identified but not called: no Runtime-compatible DB to serve the new cohort",
+   "item": "api_path_exercised",
+   "status": "NOT_MEASURED"
+  },
+  {
+   "basis": "no real UI screenshot was taken; an API test is never reported as a screenshot or a UI test",
+   "item": "chart_ui_screenshot",
+   "status": "NOT_MEASURED"
+  },
+  {
+   "basis": "the Seed Candidate is absent and must not be modified; the gate is not re-run and its threshold is not changed",
+   "item": "seed_release_gate_rerun",
+   "status": "NOT_MEASURED"
+  }
+ ],
+ "only_db_present": {
+  "bytes": 26378240,
+  "can_exercise_measured_factor_path": false,
+  "carries_adjustment_tables": false,
+  "git_tracked": true,
+  "is_pilot_db": false,
+  "is_seed_candidate": false,
+  "path": "market.db",
+  "schema": {
+   "adjusted_candles": "ABSENT",
+   "adjustment_factors": "ABSENT",
+   "adjustment_verification": "ABSENT",
+   "candle_build_revisions": "ABSENT",
+   "price_history": 2209,
+   "reference_adjusted": "ABSENT",
+   "reference_raw": "ABSENT",
+   "tables": 44
+  },
+  "sha256": "c0979d4e61a369c4107952b8b70a7df21a887da8bf2db73d9114cb3e1511c8a9"
+ },
+ "pilot_db_recorded": {
+  "bytes": 364670976,
+  "path": "_audit/phase49-2/db/market.db",
+  "sha256": "8445624f1f947d80273a18d5560ae7db6337207cc93a51242e35693be183dd2b"
+ },
+ "product_test_possible": false,
+ "production_db": {
+  "note": "the installed app's DB carries an active -wal and -shm; it was never opened, copied or modified by this mission",
+  "opened_for_write": false,
+  "path": "C:/Users/PCMOD/AppData/Local/Programs/BorsTerminal Ultimate/market.db"
+ },
+ "required_inputs": [
+  {
+   "block": "ABSENT_FROM_THIS_MACHINE",
+   "bytes": null,
+   "name": "seed_candidate_db",
+   "path": "_audit/phase49-full-verification/seed/market.db",
+   "present": false,
+   "sha256": null,
+   "why": "the frozen Seed Candidate; must never be modified or used as a dev copy"
+  },
+  {
+   "block": "ABSENT_FROM_THIS_MACHINE",
+   "bytes": null,
+   "name": "pilot_db",
+   "path": "_audit/phase49-2/db/market.db",
+   "present": false,
+   "sha256": null,
+   "why": "the independent Phase 4.9.2 pilot DB; must never be copied onto the Seed"
+  },
+  {
+   "block": "ABSENT_FROM_THIS_MACHINE",
+   "bytes": null,
+   "name": "capture_bars",
+   "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+   "present": false,
+   "sha256": null,
+   "why": "merged paired type0/type7 bars (licensed, gitignored)"
+  },
+  {
+   "block": "ABSENT_FROM_THIS_MACHINE",
+   "bytes": null,
+   "name": "reference_index",
+   "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+   "present": false,
+   "sha256": null,
+   "why": "merged factor index, 759 symbols (licensed, gitignored)"
+  },
+  {
+   "block": "ABSENT_FROM_THIS_MACHINE",
+   "bytes": null,
+   "name": "pilot_capture",
+   "path": "_audit/phase49-2/rahavard/pilot-capture.json",
+   "present": false,
+   "sha256": null,
+   "why": "the prior 30-symbol raw capture (licensed, gitignored)"
+  }
+ ],
+ "runtime_contract": {
+  "api_route": "GET /api/chart-db/{symbol}",
+  "materialized_by_candlebuild": [
+   "adjusted_candles",
+   "adjustment_verification",
+   "candle_build_revisions"
+  ],
+  "note": "the Runtime reads adjustment_factors and reference_raw directly; adjusted_candles is the materialized build output, not the Runtime's read path",
+  "probes": [
+   {
+    "citation": "backend-go/internal/chart/measured.go:15",
+    "file": "backend-go/internal/chart/measured.go",
+    "line": 15,
+    "located": true,
+    "meaning": "the chart Runtime reads adjustment_factors (date, ratio, kind, revision) per symbol, ordered by date",
+    "probe": "runtime_factor_read"
+   },
+   {
+    "citation": "backend-go/internal/chart/measured.go:53",
+    "file": "backend-go/internal/chart/measured.go",
+    "line": 53,
+    "located": true,
+    "meaning": "the chart Runtime reads reference_raw as a separate provenance-carrying raw series; the Seed price_history is never modified",
+    "probe": "runtime_raw_read"
+   },
+   {
+    "citation": "backend-go/internal/chart/measured.go:33",
+    "file": "backend-go/internal/chart/measured.go",
+    "line": 33,
+    "located": true,
+    "meaning": "measured factor events are labelled rahavard-type7-type0",
+    "probe": "factor_event_source"
+   },
+   {
+    "citation": "backend-go/internal/chart/measured.go:95",
+    "file": "backend-go/internal/chart/measured.go",
+    "line": 95,
+    "located": true,
+    "meaning": "reference raw rows are labelled rahavard-type0",
+    "probe": "raw_row_source"
+   },
+   {
+    "citation": "backend-go/internal/chart/chartdb.go:394",
+    "file": "backend-go/internal/chart/chartdb.go",
+    "line": 394,
+    "located": true,
+    "meaning": "a non-empty chain revision switches the reported price-history source to local-measured-factors",
+    "probe": "runtime_source_switch"
+   },
+   {
+    "citation": "backend-go/internal/candlebuild/candlebuild.go:22",
+    "file": "backend-go/internal/candlebuild/candlebuild.go",
+    "line": 22,
+    "located": true,
+    "meaning": "candlebuild materializes adjusted_candles(symbol,date,OHLC,volume,factor,revision)",
+    "probe": "adjusted_candles_schema"
+   },
+   {
+    "citation": "backend-go/internal/candlebuild/candlebuild.go:26",
+    "file": "backend-go/internal/candlebuild/candlebuild.go",
+    "line": 26,
+    "located": true,
+    "meaning": "candlebuild materializes adjustment_verification with status, reference_close, adjusted_close, rel_error, revision, capture_sha256",
+    "probe": "verification_schema"
+   },
+   {
+    "citation": "backend-go/internal/candlebuild/candlebuild.go:31",
+    "file": "backend-go/internal/candlebuild/candlebuild.go",
+    "line": 31,
+    "located": true,
+    "meaning": "candle_build_revisions carries per-symbol revision, capture_sha256, raw/factor/adjusted row counts, max_rel_error, worst_date, built_at",
+    "probe": "revisions_schema"
+   },
+   {
+    "citation": "backend-go/internal/candlebuild/candlebuild.go:94",
+    "file": "backend-go/internal/candlebuild/candlebuild.go",
+    "line": 94,
+    "located": true,
+    "meaning": "the build is driven by the symbols present in adjustment_factors",
+    "probe": "build_driver"
+   },
+   {
+    "citation": "backend-go/internal/httpapi/server.go:264",
+    "file": "backend-go/internal/httpapi/server.go",
+    "line": 264,
+    "located": true,
+    "meaning": "the endpoint that exercises this path is GET /api/chart-db/{symbol}",
+    "probe": "api_route"
+   }
+  ],
+  "raw_table": "reference_raw",
+  "reads_columns": [
+   "date",
+   "ratio",
+   "kind",
+   "revision"
+  ],
+  "reads_table": "adjustment_factors",
+  "revision_effect": "a non-empty chain revision switches the reported source to local-measured-factors"
+ },
+ "schema": "phase49-3-product-readiness-v1",
+ "seed_candidate_recorded": {
+  "bytes": 281088000,
+  "path": "_audit/phase49-full-verification/seed/market.db",
+  "price_history_rows": 544284,
+  "sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "symbols": 6103
+ },
+ "stage": "stage04_product_readiness",
+ "status_counts": {
+  "BLOCKED": 0,
+  "NOT_MEASURED": 6,
+  "PARTIAL": 0,
+  "PASS": 2
+ }
+}

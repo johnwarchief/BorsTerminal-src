@@ -1,0 +1,28 @@
+{
+ "clock_in_payload": false,
+ "code_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "deterministic": true,
+ "inputs": {
+  "backend-go/cmd/candlebuild/main.go": "ad2c5bd3b2d648506fa7c699f5ad32818664f01551737439bb27268def08f354",
+  "backend-go/internal/candlebuild/candlebuild.go": "bca362898a9e31110baa89194afc5407539149aa90bacbfc0b10237281aab037",
+  "backend-go/internal/chart/canonical.go": "88b457050ddac90c00d97dd96c0abebb4a205ea6cbf374c72eaf91376778f277",
+  "backend-go/internal/chart/chartdb.go": "f70c63f89f81d5b920fe35045ef700ee9c385ed8f8ca57bc807d46763b0f0900",
+  "backend-go/internal/chart/handlers.go": "8dbe4f050fd8b1103ff7ece357ca7b97341d6be96ef24fee6c78bca13163183d",
+  "backend-go/internal/chart/measured.go": "4e47e750653ab10bff0f039f2e94d5ce1fb3b91fc59a3fee8ec626300a000fd0"
+ },
+ "outputs": {
+  "_audit/phase49-3/evidence/product-readiness.json": "f11b0a02f62517fe8bb2bdf80339e2532f22ccf5a6d3cd82fd55bbbdea160a31"
+ },
+ "product_test_status": "NOT_MEASURED",
+ "row_counts": {
+  "contract_probes": 10,
+  "required_inputs": 5,
+  "status_items": 8
+ },
+ "runtime_seconds": 0.116,
+ "schema": "phase49-3-stage-manifest-v1",
+ "script": "_audit/phase49-3/stage04_product_readiness.py",
+ "script_sha256": "954e66e184e13ff3c9515a53aa4ec8cb668527c58f8b3424dffdca571cf7466d",
+ "stage": "stage04_product_readiness",
+ "status": "PASS_CONTRACT_ONLY"
+}

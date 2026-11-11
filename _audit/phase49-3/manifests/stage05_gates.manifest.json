@@ -1,0 +1,37 @@
+{
+ "clock_in_payload": false,
+ "code_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "deterministic": true,
+ "inputs": {
+  "control_fts_notebook_examples_v1089.txt": "1b2df79f1e8016192ff66e45fb9107463a9a238a6e6a027f49cf7118f81d4e12",
+  "control_test_board_fixture_v1120.txt": "10a62e24938d4053838a476233c3cc69a18d28b566d50f97a37e787cfccfadab",
+  "control_test_chart_fixture_b3.txt": "8a98b8f9bb436d2f12239a69801b43af6e7a6e2ece61f3939f0734a799fc5a7a",
+  "control_test_fundamental_fixture_b4.txt": "8c97cdbb8e6a3e1621fe5dd1e74fab35db8555f7084a7be32e0bf784240cedc6",
+  "control_test_fundamental_vectors_b4.txt": "789ba6948bc8ee3bb54bfa620cdb67e160683f0a4cc7072390960f302e59275a",
+  "gate_persian_glyph_guard.txt": "feaa18cce5bd311f9dc998adfd0515622545cae184a72e0a767272f13bf0b29c",
+  "gate_phase49_rules_guard.txt": "0714ba1cc1f4a130696520d7ad572b5f451ef36c93716552797cbd22ceed00d7",
+  "gate_suite_registry_guard.txt": "d913a9132c7b95ad9231f069925f37b4d22f881b01b0fa36849ab39fedfc5df6",
+  "gate_test_check_seed_release.txt": "e439ecc11cfc2c31b3785ccf67f8945fa4e50f33399fbc5580d7e363f89b7861",
+  "gate_test_workflows_layout.txt": "c8c4bc2e0addfb906ff8af5cbea279e7f1b8582e4708284845bc9c4b177a7a62",
+  "go_all.txt": "3f6b2d25e7d98c3c136a1ac4e3667504677231a07d29485d3fc98e51c783cef0",
+  "go_chart_candlebuild.txt": "0e930f76777652f3121173874d759f3c551ecac7252928783ae2d67bd8d2cdf5",
+  "go_vet.txt": "591005c80b468bcabc48c53e2bb08228a8b05fd88ebf622f21acf7dd366dbb3b",
+  "profile_data.txt": "ee234225238684cd5f164e975738c9f28a1c1843168332ca67c5e0e83bafedd7",
+  "profile_production.txt": "cbfdb6196a940f967cfdb11a79bed1550716eed8db0e96327c521afe9cceb096",
+  "stage03_controls.txt": "4701826dcde5082406b32972f5d2d2ef31f1caa3e4a3dd2454c08d2b4b4d2f31"
+ },
+ "outputs": {
+  "_audit/phase49-3/evidence/gates.json": "603e01b903bd0c0e728dbff9a2dd94d0aa85ee58acfd0042c98a541367cb0531"
+ },
+ "row_counts": {
+  "control_suites": 5,
+  "fast_gates": 5,
+  "go_packages_ok": 55
+ },
+ "runtime_seconds": 0.052,
+ "schema": "phase49-3-stage-manifest-v1",
+ "script": "_audit/phase49-3/stage05_gates.py",
+ "script_sha256": "7139a38998cf7bb7d3e56d99420544cc6492ddc609430eb6b9d462a3e8162088",
+ "stage": "stage05_gates",
+ "status": "PASS_WITH_PROVEN_PRE_EXISTING_DATA_LANE_FAILURES"
+}

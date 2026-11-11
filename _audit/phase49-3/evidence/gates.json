@@ -1,0 +1,245 @@
+{
+ "code_commit_verified": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "data_lane_failures": {
+  "action_taken": "none: no suite, guard or threshold was changed, skipped or weakened; the failures are reported as-is and CI is the authority for the data lane",
+  "caused_by_this_mission": false,
+  "control_worktree_removed_after_run": true,
+  "count": 5,
+  "proof": "the same five suites were run in a separate detached worktree at e09ccd95d51c94082640cda75ef3de2b2008f9d2 with zero local changes; pass/fail counts are identical for all five",
+  "root_cause": "missing local Python dependencies: fastapi (4 suites) and pypdfium2 (notebook suite, which then produces nine zero-size PNG crops)",
+  "suites": [
+   {
+    "control_counts_at_base": {
+     "failed": 1,
+     "passed": 5
+    },
+    "control_fastapi_errors": 1,
+    "control_pypdfium2_errors": 0,
+    "control_zero_size_png": 0,
+    "counts_identical": true,
+    "suite": "dev/test_board_fixture_v1120.py",
+    "summary_label": "board_fixture_v1120",
+    "worktree_counts": {
+     "failed": 1,
+     "passed": 5
+    }
+   },
+   {
+    "control_counts_at_base": {
+     "failed": 3,
+     "passed": 44
+    },
+    "control_fastapi_errors": 3,
+    "control_pypdfium2_errors": 0,
+    "control_zero_size_png": 0,
+    "counts_identical": true,
+    "suite": "dev/test_chart_fixture_b3.py",
+    "summary_label": "chart fixture guard",
+    "worktree_counts": {
+     "failed": 3,
+     "passed": 44
+    }
+   },
+   {
+    "control_counts_at_base": {
+     "failed": 2,
+     "passed": 43
+    },
+    "control_fastapi_errors": 2,
+    "control_pypdfium2_errors": 0,
+    "control_zero_size_png": 0,
+    "counts_identical": true,
+    "suite": "dev/test_fundamental_fixture_b4.py",
+    "summary_label": "fundamental fixture guard",
+    "worktree_counts": {
+     "failed": 2,
+     "passed": 43
+    }
+   },
+   {
+    "control_counts_at_base": {
+     "failed": 1,
+     "passed": 1
+    },
+    "control_fastapi_errors": 1,
+    "control_pypdfium2_errors": 0,
+    "control_zero_size_png": 0,
+    "counts_identical": true,
+    "suite": "dev/test_fundamental_vectors_b4.py",
+    "summary_label": "fundamental vector freshness guard",
+    "worktree_counts": {
+     "failed": 1,
+     "passed": 1
+    }
+   },
+   {
+    "control_counts_at_base": {
+     "failed": 10,
+     "passed": 35
+    },
+    "control_fastapi_errors": 0,
+    "control_pypdfium2_errors": 1,
+    "control_zero_size_png": 9,
+    "counts_identical": true,
+    "suite": "dev/fts_notebook_examples_v1089.py",
+    "summary_label": "fts_notebook_examples_v1089",
+    "worktree_counts": {
+     "failed": 10,
+     "passed": 35
+    }
+   }
+  ]
+ },
+ "environment": {
+  "ci_go": "1.27.3 (actions/setup-go in guards.yml)",
+  "ci_python": "3.12 (actions/setup-python in guards.yml / python-tooling.yml)",
+  "local_deps_installed": false,
+  "local_go": "go version go1.27.3 windows/amd64",
+  "local_python": "Python 3.15.2",
+  "note": "CI runs `pip install -r requirements.txt`; this local environment has no fastapi and no pypdfium2, which is the proven cause of every data-lane failure"
+ },
+ "fast_gates": [
+  {
+   "label": "workflow layout (python-tooling CI)",
+   "log_present": true,
+   "script": "dev/test_workflows_layout.py",
+   "status": "PASS",
+   "verdict": "WORKFLOW LAYOUT TESTS OK"
+  },
+  {
+   "label": "Seed release gate self-test",
+   "log_present": true,
+   "script": "scripts/test_check_seed_release.py",
+   "status": "PASS",
+   "verdict": "SEED RELEASE GATE EDGE CASES OK"
+  },
+  {
+   "label": "suite registry guard",
+   "log_present": true,
+   "script": "dev/suite_registry_guard.py",
+   "status": "PASS",
+   "verdict": "SUITE REGISTRY GUARD OK: 260 suites"
+  },
+  {
+   "label": "Phase 4.9 status rules guard",
+   "log_present": true,
+   "script": "dev/phase49_rules_guard.py",
+   "status": "PASS",
+   "verdict": "STATUS RULES GUARD OK"
+  },
+  {
+   "label": "Persian glyph guard",
+   "log_present": true,
+   "script": "dev/persian_glyph_guard.py",
+   "status": "PASS",
+   "verdict": "persian_glyph_guard: 4 passed / 0 failed"
+  }
+ ],
+ "go": {
+  "failures": 0,
+  "full_command": "go test ./... -count=1",
+  "full_exit_code": 0,
+  "packages_no_test_files": 3,
+  "packages_ok": 55,
+  "status": "PASS",
+  "targeted_command": "go test ./internal/chart ./internal/candlebuild -count=1",
+  "targeted_log_verdict": "ok  \tborsterminal/backend/internal/chart\t1.213s\nok  \tborsterminal/backend/internal/candlebuild\t0.020s",
+  "vet_command": "go vet ./...",
+  "vet_exit_code": 0
+ },
+ "honesty": {
+  "ci_sha_binding": "CI on a code commit is never presented as CI on a later docs commit; each result names its own SHA.",
+  "market_universe_threshold": "405.5ms measured against an unchanged 400ms threshold on a single-core host; the standalone suite is 17/17. The threshold was NOT changed and the benchmark was not re-run, since this mission changes no code.",
+  "python_legacy_lane": "report-only by design; in the prior phase its workflow concluded success while its Python maintenance job was failure. A workflow-level success is never reported as all jobs passing.",
+  "seed_release_gate": "SEED_RELEASE_OK is a gate verdict, not publication permission; the gate was not re-run against the absent Seed Candidate and its conditions were not changed.",
+  "stage_e_lzma": "full Stage E LZMA extraction was not performed in the prior phase either; a direct product test on the Seed copy replaced it (8/8 green). That limitation stands."
+ },
+ "items": [
+  {
+   "detail": "55 packages ok, 3 without test files, 0 failures",
+   "item": "go_test_all",
+   "status": "PASS"
+  },
+  {
+   "detail": "exit 0",
+   "item": "go_vet_all",
+   "status": "PASS"
+  },
+  {
+   "detail": "internal/chart + internal/candlebuild, -count=1",
+   "item": "candlebuild_and_adjustment_suites",
+   "status": "PASS"
+  },
+  {
+   "detail": "stage01/02/03/04 payloads byte-identical on rerun; stage03 negative controls A/B/C behave as specified",
+   "item": "idempotency_of_new_artifacts",
+   "status": "PASS"
+  },
+  {
+   "detail": "scripts/test_check_seed_release.py exit 0",
+   "item": "seed_release_gate_self_test",
+   "status": "PASS"
+  },
+  {
+   "detail": "dev/run_all_tests.py --profile production, exit 0",
+   "item": "production_profile",
+   "status": "PASS"
+  },
+  {
+   "detail": "exit 1; five suites fail on missing fastapi/pypdfium2; identical counts proven at the pristine base commit",
+   "item": "data_profile",
+   "status": "FAIL_PRE_EXISTING_ENVIRONMENT"
+  },
+  {
+   "detail": "recorded separately in CI-FINAL-RESULTS.json after the branch is pushed; each result names its own SHA",
+   "item": "real_ci_on_final_commit",
+   "status": "PENDING"
+  }
+ ],
+ "log_sha256": {
+  "control_fts_notebook_examples_v1089.txt": "1b2df79f1e8016192ff66e45fb9107463a9a238a6e6a027f49cf7118f81d4e12",
+  "control_test_board_fixture_v1120.txt": "10a62e24938d4053838a476233c3cc69a18d28b566d50f97a37e787cfccfadab",
+  "control_test_chart_fixture_b3.txt": "8a98b8f9bb436d2f12239a69801b43af6e7a6e2ece61f3939f0734a799fc5a7a",
+  "control_test_fundamental_fixture_b4.txt": "8c97cdbb8e6a3e1621fe5dd1e74fab35db8555f7084a7be32e0bf784240cedc6",
+  "control_test_fundamental_vectors_b4.txt": "789ba6948bc8ee3bb54bfa620cdb67e160683f0a4cc7072390960f302e59275a",
+  "gate_persian_glyph_guard.txt": "feaa18cce5bd311f9dc998adfd0515622545cae184a72e0a767272f13bf0b29c",
+  "gate_phase49_rules_guard.txt": "0714ba1cc1f4a130696520d7ad572b5f451ef36c93716552797cbd22ceed00d7",
+  "gate_suite_registry_guard.txt": "d913a9132c7b95ad9231f069925f37b4d22f881b01b0fa36849ab39fedfc5df6",
+  "gate_test_check_seed_release.txt": "e439ecc11cfc2c31b3785ccf67f8945fa4e50f33399fbc5580d7e363f89b7861",
+  "gate_test_workflows_layout.txt": "c8c4bc2e0addfb906ff8af5cbea279e7f1b8582e4708284845bc9c4b177a7a62",
+  "go_all.txt": "3f6b2d25e7d98c3c136a1ac4e3667504677231a07d29485d3fc98e51c783cef0",
+  "go_chart_candlebuild.txt": "0e930f76777652f3121173874d759f3c551ecac7252928783ae2d67bd8d2cdf5",
+  "go_vet.txt": "591005c80b468bcabc48c53e2bb08228a8b05fd88ebf622f21acf7dd366dbb3b",
+  "profile_data.txt": "ee234225238684cd5f164e975738c9f28a1c1843168332ca67c5e0e83bafedd7",
+  "profile_production.txt": "cbfdb6196a940f967cfdb11a79bed1550716eed8db0e96327c521afe9cceb096",
+  "stage03_controls.txt": "4701826dcde5082406b32972f5d2d2ef31f1caa3e4a3dd2454c08d2b4b4d2f31"
+ },
+ "profiles": {
+  "data": {
+   "all_suites_passed": false,
+   "command": "python dev/run_all_tests.py --profile data",
+   "exit_code": 1,
+   "failed_line": "FAILED: B1 board fixture + goldens + SQL text are current, B3 chart fixture + goldens + offline seams are current, fundamental + tape-history fixture, oracle, goldens, layer vectors are a fresh oracle run, not hand-edited, notebook numeric examples reproduce; its two internal conflicts stay open",
+   "lane": "data",
+   "protected_db_unchanged": true,
+   "status": "FAIL",
+   "suites_counted": 20,
+   "suites_silent_exit_only": 14,
+   "suites_skipped_fixture_missing": 2
+  },
+  "production": {
+   "all_suites_passed": true,
+   "command": "python dev/run_all_tests.py --profile production",
+   "exit_code": 0,
+   "failed_line": "",
+   "lane": "production",
+   "protected_db_unchanged": true,
+   "status": "PASS",
+   "suites_counted": 13,
+   "suites_silent_exit_only": 1,
+   "suites_skipped_fixture_missing": 0
+  }
+ },
+ "schema": "phase49-3-gates-v1",
+ "stage": "stage05_gates"
+}

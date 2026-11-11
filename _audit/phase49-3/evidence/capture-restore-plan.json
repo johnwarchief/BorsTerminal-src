@@ -1,0 +1,187 @@
+{
+ "block_cause": "BLOCKED_CAPTURE_BYTES_ABSENT",
+ "block_cause_precise": "the paired type0/type7 capture is EVIDENCED as already taken (759 symbols, 2,620,482 bars per type, container SHA recorded) but the capture BYTES are not present on this machine; they are gitignored licensed data. This is not 'no valid session' and not 'no reference exists'.",
+ "cohort_size": 30,
+ "cohort_symbols": [
+  "آكو",
+  "امين شهر",
+  "بسويچ",
+  "تاصيكو",
+  "ثغرب",
+  "خمحور",
+  "دزهراوي",
+  "دكيمي",
+  "ريشمك",
+  "سصوفي",
+  "شبندر",
+  "شمس",
+  "شگستر",
+  "فملي",
+  "فولاي",
+  "كسعدي",
+  "كگل",
+  "لخانه",
+  "مبين",
+  "نخريس",
+  "نطرين",
+  "هماي",
+  "وتجارت",
+  "وغدير",
+  "وكغدير",
+  "ومعادن",
+  "ومپنا",
+  "پادا",
+  "پرديس",
+  "گوهر"
+ ],
+ "credentials": "never requested, never stored",
+ "expected_rows_after_restore": {
+  "basis": "ref_days (per-symbol type0 daily bar count) from the committed history ledger; the prior 30-symbol pilot showed ref_days == pilot_raw_rows for 30/30",
+  "expected_gain_rows": 56401,
+  "expected_raw_rows": 84452,
+  "seed_price_rows": 28051
+ },
+ "fallback_path": {
+  "action": "re-capture only if restore is impossible",
+  "if_no_valid_session": "do not fabricate data and do not produce a fake capture; keep BLOCKED_CAPTURE_REQUIRED",
+  "must_record": [
+   "symbol identity (key, ins_code, asset_id)",
+   "fetch date",
+   "last complete session",
+   "series type",
+   "resolution",
+   "SHA-256"
+  ],
+  "parameters": {
+   "asset_ids": [
+    "113",
+    "122",
+    "17",
+    "17402",
+    "17780",
+    "18234",
+    "204",
+    "20817",
+    "25222",
+    "26258",
+    "2662",
+    "2670",
+    "28106",
+    "291",
+    "308",
+    "347",
+    "366",
+    "4062",
+    "419",
+    "441",
+    "451",
+    "4590",
+    "461",
+    "48315",
+    "500",
+    "5559",
+    "591",
+    "624",
+    "66",
+    "739"
+   ],
+   "capture_day_candle": "QUARANTINED; never enters the adjustment chain",
+   "countback": 100000,
+   "endpoint": "https://rahavard365.com",
+   "from": "1990-01-01T00:00:00Z",
+   "resolutions": [
+    "D"
+   ],
+   "symbols": [
+    "آكو",
+    "امين شهر",
+    "بسويچ",
+    "تاصيكو",
+    "ثغرب",
+    "خمحور",
+    "دزهراوي",
+    "دكيمي",
+    "ريشمك",
+    "سصوفي",
+    "شبندر",
+    "شمس",
+    "شگستر",
+    "فملي",
+    "فولاي",
+    "كسعدي",
+    "كگل",
+    "لخانه",
+    "مبين",
+    "نخريس",
+    "نطرين",
+    "هماي",
+    "وتجارت",
+    "وغدير",
+    "وكغدير",
+    "ومعادن",
+    "ومپنا",
+    "پادا",
+    "پرديس",
+    "گوهر"
+   ],
+   "types": [
+    "type0",
+    "type7"
+   ]
+  },
+  "precondition": "an already-authenticated Rahavard session that the owner authorized; no password or login information is requested or stored by this mission"
+ },
+ "new_network_capture_needed": false,
+ "owner_decision_needed": "restore the licensed capture bytes to this machine (or authorize a re-capture on an existing authenticated session) so the frozen 30 can be processed end-to-end; no Seed or Production change is implied by this request",
+ "preferred_path": {
+  "action": "RESTORE the existing capture artifacts, then re-run the accepted Phase 4.9.2 pipeline on an independent working DB copy",
+  "artifacts": [
+   {
+    "container_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+    "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+    "payload_sha256": "6aec345f817cd96a0dc8eb631cdfa206deee740afb077b5f4621dd1f821fb844",
+    "symbols": 759
+   },
+   {
+    "factor_changes": 13921,
+    "factor_days": 2101752,
+    "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+    "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
+   }
+  ],
+  "verification_on_restore": "recompute SHA-256 of both artifacts and compare with the recorded values before any ingest; abort on mismatch",
+  "working_db": "a NEW independent copy under _audit/phase49-3/db/; never the Seed Candidate 57118e8f... and never the Pilot 8445624f..."
+ },
+ "request": {
+  "alternative": "re-capture these 30 symbols (type0+type7, D, countback 100000) from an owner-authorised authenticated Rahavard session",
+  "credentials": "never requested, never stored",
+  "new_network_capture_needed": false,
+  "reason": "a paired type0/type7 capture covering each member's full local window is already evidenced by ref_coverage=full; the licensed capture bytes are gitignored and absent from this machine",
+  "required_artifacts": [
+   {
+    "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+    "sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+    "sha256_kind": "container"
+   },
+   {
+    "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+    "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
+   }
+  ],
+  "series_spec": {
+   "capture_day_candle": "QUARANTINED",
+   "countback": 100000,
+   "from": "1990-01-01",
+   "resolutions": [
+    "D"
+   ],
+   "types": [
+    "type0",
+    "type7"
+   ]
+  },
+  "status": "BLOCKED_CAPTURE_BYTES_ABSENT"
+ },
+ "schema": "phase49-3-capture-restore-plan-v1",
+ "status": "BLOCKED_CAPTURE_REQUIRED"
+}

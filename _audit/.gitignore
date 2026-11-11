@@ -147,3 +147,11 @@ phase49/continuation/*.exe~
 /phase49-2/db/
 /phase49-2/bin/
 /phase49-2/product/
+
+# phase49-3: same convention as phase49-2. Licensed raw capture, working DB
+# copies and run logs stay out of Git; the derived coverage map, cohort,
+# evidence and per-stage manifests stay trackable so the next session can
+# reproduce every number without the licensed bytes.
+/phase49-3/captures/
+/phase49-3/db/
+/phase49-3/logs/

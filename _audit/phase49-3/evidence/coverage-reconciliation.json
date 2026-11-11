@@ -1,0 +1,278 @@
+{
+ "backfill_six_per_symbol_bars": {
+  "شنفت": {
+   "bar_asset_ids": [
+    "182"
+   ],
+   "first": "1991-05-11",
+   "last": "2026-11-10",
+   "ledger_asset_id": "182",
+   "raw_d_bars": 6284,
+   "symbol": "شنفت"
+  },
+  "فافق": {
+   "bar_asset_ids": [
+    "17495"
+   ],
+   "first": "2021-09-01",
+   "last": "2026-11-10",
+   "ledger_asset_id": "17495",
+   "raw_d_bars": 1078,
+   "symbol": "فافق"
+  },
+  "فخاس": {
+   "bar_asset_ids": [
+    "458"
+   ],
+   "first": "2007-10-30",
+   "last": "2026-11-10",
+   "ledger_asset_id": "458",
+   "raw_d_bars": 3900,
+   "symbol": "فخاس"
+  },
+  "فولاژ": {
+   "bar_asset_ids": [
+    "569"
+   ],
+   "first": "2011-03-09",
+   "last": "2026-11-10",
+   "ledger_asset_id": "569",
+   "raw_d_bars": 3446,
+   "symbol": "فولاژ"
+  },
+  "لخزر": {
+   "bar_asset_ids": [
+    "207"
+   ],
+   "first": "1996-03-18",
+   "last": "2026-11-08",
+   "ledger_asset_id": "207",
+   "raw_d_bars": 4078,
+   "symbol": "لخزر"
+  },
+  "مارون": {
+   "bar_asset_ids": [
+    "485"
+   ],
+   "first": "2011-12-27",
+   "last": "2026-11-10",
+   "ledger_asset_id": "485",
+   "raw_d_bars": 3243,
+   "symbol": "مارون"
+  }
+ },
+ "capture_evidence": {
+  "bars_container_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+  "bars_file": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+  "daily_bars": 4203504,
+  "index_factor_changes": 13921,
+  "index_factor_days": 2101752,
+  "index_file": "_audit/phase49-full-verification/captures/reference-index-all.json",
+  "index_sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c",
+  "merged_symbols": 759,
+  "paired_bars_per_type": {
+   "type0": 2620482,
+   "type7": 2620482
+  },
+  "raw_capture_committed": false,
+  "sum_ref_type0_bars_over_ref_full": 2101752
+ },
+ "freshness_plan": {
+  "available": 644,
+  "per_symbol_counts_committed": false,
+  "planned": 644
+ },
+ "halted_to_queue_halted": {
+  "absorbed_unmapped_or_no_instruments": 11,
+  "queue_halted": 431,
+  "ready_pilot_halted": 2,
+  "ready_pilot_halted_symbols": [
+   "غدشت",
+   "وپارس"
+  ],
+  "stale_halted": 444
+ },
+ "history_expansion": {
+  "pilot_ingested_rows": 105692,
+  "pilot_ref_days_equals_ingested_for_all_30": true,
+  "pilot_seed_rows": 34247,
+  "queue_reference_only_halted_type0_bars": 153365,
+  "queue_reference_only_seed_rows": 274635,
+  "queue_reference_only_type0_bars": 1842695
+ },
+ "local_artifact_state": {
+  "capture_bars": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+  "note": "gitignored licensed captures and both Phase 4.9 DBs are absent from this machine; every ingestable row count below is an EVIDENCED EXPECTATION from the committed index, not a local measurement",
+  "pilot_db": "_audit/phase49-2/db/market.db",
+  "reference_index": "_audit/phase49-full-verification/captures/reference-index-all.json",
+  "seed_candidate_db": "_audit/phase49-full-verification/seed/market.db"
+ },
+ "no_reference_window_5185_vs_3308": {
+  "definition_3308": "ref_coverage none surviving the priority ladder",
+  "definition_5185": "zero pack step rows AND ref_coverage none",
+  "matches_recorded_5185": true,
+  "note": "5185 and 3308 are different populations, not a contradiction: 5185 counts zero-step symbols without a reference window before the priority ladder; 3308 counts reference-less symbols after identity/asset-id/halt have been peeled off. 3308 = 3219 zero-step + 89 with pack steps.",
+  "queue_no_reference": 3308,
+  "queue_no_reference_with_steps": 89,
+  "queue_no_reference_zero_step": 3219,
+  "ref_none_with_steps": 159,
+  "ref_none_with_steps_split": {
+   "QUEUE_HALTED": 13,
+   "QUEUE_NO_INSTRUMENTS": 1,
+   "QUEUE_NO_REFERENCE": 89,
+   "QUEUE_UNMAPPED_ASSET_ID": 56
+  },
+  "split_by_final_status": {
+   "QUEUE_HALTED": 364,
+   "QUEUE_NO_INSTRUMENTS": 1467,
+   "QUEUE_NO_REFERENCE": 3219,
+   "QUEUE_UNMAPPED_ASSET_ID": 135
+  },
+  "zero_step_and_ref_none": 5185,
+  "zero_step_with_reference": 3,
+  "zero_step_with_reference_symbols": [
+   "طلا",
+   "نيك گستر",
+   "پادا"
+  ]
+ },
+ "priority_ladder": [
+  "READY_PILOT",
+  "QUEUE_UNMAPPED_ASSET_ID",
+  "QUEUE_NO_INSTRUMENTS",
+  "QUEUE_HALTED",
+  "QUEUE_NO_REFERENCE",
+  "QUEUE_REFERENCE_ONLY"
+ ],
+ "raw_cause_sizes": {
+  "ref_coverage_full": 759,
+  "ref_coverage_none": 5344,
+  "stale_halted": 444,
+  "unmapped_asset_id_in_history": 191,
+  "unresolved_no_instruments": 1468,
+  "zero_step_rows": 5188
+ },
+ "recovery_class_counts": {
+  "ALREADY_VERIFIED": 30,
+  "NEEDS_ASSET_ID_MAPPING": 191,
+  "NEEDS_HALT_RULING_AND_CAPTURE": 377,
+  "NEEDS_IDENTITY_RESOLUTION": 1468,
+  "NEEDS_NEW_CAPTURE": 3308,
+  "RECOVERABLE_EXISTING_CAPTURE": 675,
+  "RECOVERABLE_HALTED_EXISTING_CAPTURE": 54
+ },
+ "ref_full_to_queue_reference_only": {
+  "absorbed_halted": 54,
+  "identity_holds": true,
+  "queue_reference_only": 675,
+  "ready_pilot": 30,
+  "ref_coverage_full": 759
+ },
+ "ref_none_to_queue_no_reference": {
+  "absorbed_halted": 377,
+  "absorbed_no_instruments": 1468,
+  "absorbed_unmapped": 191,
+  "identity_holds": true,
+  "queue_no_reference": 3308,
+  "ref_coverage_none": 5344
+ },
+ "schema": "phase49-3-coverage-reconciliation-v1",
+ "session_completeness": {
+  "counts": {
+   "NO_REFERENCE": 5344,
+   "REFERENCE": 12,
+   "REFERENCE_SUPERSET": 747
+  },
+  "definition": "ref_coverage full guarantees type0 AND type7 span the local first/last date; it does not guarantee one reference bar per local session",
+  "ref_full_missing_sessions_symbols": [
+   {
+    "missing": 1,
+    "ref_type0_bars": 1122,
+    "seed_trading_sessions": "1123",
+    "symbol": "حآفرين"
+   },
+   {
+    "missing": 93,
+    "ref_type0_bars": 2815,
+    "seed_trading_sessions": "2908",
+    "symbol": "شبندر"
+   },
+   {
+    "missing": 75,
+    "ref_type0_bars": 2727,
+    "seed_trading_sessions": "2802",
+    "symbol": "شتران"
+   },
+   {
+    "missing": 1,
+    "ref_type0_bars": 1377,
+    "seed_trading_sessions": "1378",
+    "symbol": "شستا"
+   },
+   {
+    "missing": 1,
+    "ref_type0_bars": 3387,
+    "seed_trading_sessions": "3388",
+    "symbol": "شپديس"
+   },
+   {
+    "missing": 1,
+    "ref_type0_bars": 2978,
+    "seed_trading_sessions": "2979",
+    "symbol": "فارس"
+   },
+   {
+    "missing": 1,
+    "ref_type0_bars": 1028,
+    "seed_trading_sessions": "1029",
+    "symbol": "فزر"
+   },
+   {
+    "missing": 249,
+    "ref_type0_bars": 2392,
+    "seed_trading_sessions": "2641",
+    "symbol": "مبين"
+   },
+   {
+    "missing": 5,
+    "ref_type0_bars": 490,
+    "seed_trading_sessions": "495",
+    "symbol": "معين"
+   },
+   {
+    "missing": 2,
+    "ref_type0_bars": 155,
+    "seed_trading_sessions": "157",
+    "symbol": "هانيكو"
+   },
+   {
+    "missing": 1,
+    "ref_type0_bars": 1892,
+    "seed_trading_sessions": "1893",
+    "symbol": "ولانا"
+   },
+   {
+    "missing": 1,
+    "ref_type0_bars": 1000,
+    "seed_trading_sessions": "1001",
+    "symbol": "ولقمان"
+   }
+  ]
+ },
+ "status_counts": {
+  "QUEUE_HALTED": 431,
+  "QUEUE_NO_INSTRUMENTS": 1468,
+  "QUEUE_NO_REFERENCE": 3308,
+  "QUEUE_REFERENCE_ONLY": 675,
+  "QUEUE_UNMAPPED_ASSET_ID": 191,
+  "READY_PILOT": 30
+ },
+ "universe": {
+  "definition": "one row per price_history symbol",
+  "history_symbols": 6103
+ },
+ "verification_eligible_counts": {
+  "NO": 5345,
+  "YES": 758
+ }
+}

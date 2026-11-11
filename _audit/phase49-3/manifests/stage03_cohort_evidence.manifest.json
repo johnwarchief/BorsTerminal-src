@@ -1,0 +1,31 @@
+{
+ "candle_level_status": "BLOCKED",
+ "clock_in_payload": false,
+ "code_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "deterministic": true,
+ "inputs": {
+  "_audit/phase49-3/evidence/COHORT-SELECTION.json": "857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901",
+  "_audit/phase49-3/ledgers/COVERAGE-EXPANSION-MAP.csv": "2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22",
+  "_audit/phase49-full-verification/evidence/capture-summary.json": "6cbeb62811f42d143a9d6b5c10324e2eae57b6914e8f875a3ee0e50d6154da8b",
+  "docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28",
+  "docs/opportunity-center/phase49/HISTORY-COVERAGE-LEDGER.csv": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650"
+ },
+ "outputs": {
+  "_audit/phase49-3/evidence/capture-restore-plan.json": "af31f836e53a1f119b0a2b6df15d9520e3fe0d02b3db78479f9d144390fd4d38",
+  "_audit/phase49-3/evidence/cohort-event-evidence.json": "b7b3b7cd89a4497372b23f13fd627ee3634cb78bad9b53a200aa42f89a917529",
+  "_audit/phase49-3/ledgers/COHORT-EVENT-EVIDENCE.csv": "8dcfd38e191bec20919fbc49c5febc7ed574bb0ca713abc2dacee5ce0ad45b7e"
+ },
+ "row_counts": {
+  "cohort_symbols": 30,
+  "event_distinct_dates": 468,
+  "event_rows_joined": 493,
+  "event_rows_valid": 487,
+  "identity_audit_flag_rows": 2
+ },
+ "runtime_seconds": 0.109,
+ "schema": "phase49-3-stage-manifest-v1",
+ "script": "_audit/phase49-3/stage03_cohort_evidence.py",
+ "script_sha256": "6d02ddfcfe3317fbc52a383d4471981f60fa35750704d5233abc07970599df33",
+ "stage": "stage03_cohort_evidence",
+ "status": "PASS_EXTRACTION_ONLY"
+}
