@@ -3,6 +3,8 @@
 # هیچ‌مسیری به market.dbِ عملیاتی ندارد (tempfile.mkdtemp)؛ بی‌شبکه. ثابت می‌کند:
 #   • فقط تاریخ‌هایِ «در مرجع هست، در بانک نیست» نوشته می‌شوند؛ ردیفِ موجود هرگز عوض نمی‌شود.
 #   • هندسهٔ نامعتبر/حجمِ صفر/قیمتِ صفر کندل نمی‌شود؛ ردیفِ تکراریِ مرجع دوبار نوشته نمی‌شود.
+#   • سایهٔ بیرونِ بدنه (h<o / l>o) با قراردادِ کندل (widen) پذیرفته و اصلاحش ثبت می‌شود؛
+#     سایهٔ وارونه (high<low) و ردیفِ غیرمتناهی/بی‌قیمت/بی‌حجم با نام رد می‌شوند.
 #   • هر ردیفِ نوشته‌شده provenanceِ اجرا/مرجع دارد (backfill_runs/backfill_rows).
 #   • اجرایِ دوم idempotent است (صفر نوشتن) و rollback فقط ردیف‌هایِ همان اجرا را برمی‌دارد.
 #   • مقایسهٔ خام، مبناهایِ close (last/closing/other) و low=حراج را جدا می‌شمارد.
@@ -77,7 +79,7 @@ def main():
         ref_row("فولاد", "2024-01-01", 999, 999, 999, 999, 9),        # مشترک: باید دست‌نخورده بماند
         ref_row("فولاد", "2023-12-31", 90, 95, 80, 85, 0),            # حجمِ صفر ⇒ نامعتبر
         ref_row("فولاد", "2023-12-29", 90, 95, 80, 0, 900),           # close صفر ⇒ نامعتبر
-        ref_row("فولاد", "2023-12-28", 90, 70, 80, 85, 900),          # هندسهٔ نامعتبر
+        ref_row("فولاد", "2023-12-28", 90, 70, 95, 85, 900),          # سایهٔ وارونه: high<low
         ref_row("فولاد", "2023-12-27", 80, 88, 75, 85, 800),          # تکراری: اولی می‌ماند
         ref_row("فولاد", "2023-12-27", 81, 89, 76, 86, 801),
         ref_row("فولاد", "2023-12-26", 80, 88, 75, 85, 800, adjust="adjusted"),
@@ -94,6 +96,9 @@ def main():
     check("۱ هشِ فایلِ کاری پس از بستن", rep["work_db_sha256_after"],
           B.sha256_file(os.path.join(work, "market.db")))
     check("۱ ردیفِ نامعتبر ۳ + تکراری ۱", (rep["invalid"], rep["duplicate_conflicts"]), (3, 1))
+    check("۱ نامعتبر با نام: high<low/close<=0/volume<=0",
+          rep["totals"]["invalid_reasons"],
+          {"high<low": 1, "close<=0": 1, "volume<=0": 1})
     con = sqlite3.connect(os.path.join(work, "market.db"))
     got = con.execute("SELECT date,open,close,last,src FROM price_history"
                       " WHERE symbol='فولاد' ORDER BY date").fetchall()
@@ -148,6 +153,45 @@ def main():
     check("۴ low=حراج", st["low_auction"], 1)
     check("۴ open/high/volume برابر", (st["open_mismatch"], st["high_mismatch"],
                                         st["volume_mismatch"]), (0, 0, 0))
+
+    # قراردادِ کندل: هندسه از `widen` می‌آید نه از قضاوتِ محلی. ردیفی که فقط
+    # سایه‌اش بیرونِ بدنه است پذیرفته می‌شود و اصلاحش در گزارش می‌آید؛ ردیفِ
+    # وارونه/غیرمتناهی/بی‌قیمت با نام رد می‌شود.
+    tmp2 = tempfile.mkdtemp(prefix="p48contract_")
+    src2 = os.path.join(tmp2, "market.db")
+    work2 = os.path.join(tmp2, "work")
+    ref2 = os.path.join(tmp2, "bars.ndjson.gz")
+    temp_db(src2, [])
+    rows2 = [
+        ref_row("گواه", "2024-02-01", 90, 70, 60, 85, 100),        # h<o: widen
+        ref_row("گواه", "2024-02-02", 10, 5, 20, 8, 100),          # high<low
+        ref_row("گواه", "2024-02-03", "10", "12", "9", "nan", 100),  # غیرمتناهی
+        ref_row("گواه", "2024-02-04", 10, 12, 9, 0, 100),          # close<=0
+        ref_row("گواه", "2024-02-05", 10, 12, 9, 8, 0),            # volume<=0
+        ref_row("گواه", "2024-02-06", 10, 14, 13, 12, 100),        # l>o: widen
+    ]
+    write_ref(ref2, rows2)
+    rep_c = B.apply_backfill(src2, work2, ref2, ["گواه"], "run-contract")
+    check("۵ h<o و l>o با widen پذیرفته شدند", rep_c["inserted"], 2)
+    check("۵ نامعتبر با نام", rep_c["totals"]["invalid_reasons"],
+          {"high<low": 1, "not-finite": 1, "close<=0": 1, "volume<=0": 1})
+    check("۵ اصلاح ثبت شد", (rep_c["corrections"]["rows_corrected"],
+                             rep_c["corrections"]["high_widened"],
+                             rep_c["corrections"]["low_widened"]), (2, 1, 1))
+    con = sqlite3.connect(os.path.join(work2, "market.db"))
+    check("۵ سایه گشاد شد، بدنه دست‌نخورده",
+          con.execute("SELECT open,high,low,close,last FROM price_history"
+                      " WHERE symbol='گواه' AND date='2024-02-01'").fetchone(),
+          (90.0, 90.0, 60.0, 85.0, 85.0))
+    check("۵ کف به بدنه گشاد شد",
+          con.execute("SELECT open,high,low,close,last FROM price_history"
+                      " WHERE symbol='گواه' AND date='2024-02-06'").fetchone(),
+          (10.0, 14.0, 10.0, 12.0, 12.0))
+    con.close()
+    sample = rep_c["corrections"]["samples"][0]
+    check("۵ اصلاح دیدنی: خام/نهایی",
+          (sample["date"], sample["raw_high"], sample["high"], sample["reason"]),
+          ("2024-02-01", 70.0, 90.0, "high-widened"))
 
     print(f"\n{P} passed / {F} failed")
     return 0 if F == 0 else 1

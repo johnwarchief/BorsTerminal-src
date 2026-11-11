@@ -1,42 +1,40 @@
 {
  "tool": "phase48-backfill-v1",
- "run_id": "phase49-full-fresh-2026-11-10",
+ "run_id": "phase49-c3fix-fresh-2026-11-11",
  "dry_run": false,
- "started_at": "2026-11-11T01:39:35+00:00",
- "finished_at": "2026-11-11T01:40:16+00:00",
+ "started_at": "2026-11-11T02:25:01+00:00",
+ "finished_at": "2026-11-11T02:25:41+00:00",
  "source_db": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-finalization\\seed\\market.db",
  "source_db_sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
- "work_db": "_audit/phase49-full-verification/db/backfill\\market.db",
- "work_db_sha256_before": "b5126cccb44f5c92c09681df4503c5b9ded1cece2754116d63b24c63887ee9a4",
- "work_db_sha256_after": "a242449118241c4e07eef1deb6bb4bdbae5cd1794735b00ee91ae73a621b1d55",
+ "work_db": "_audit/phase49-full-verification/db/backfill-v2\\market.db",
+ "work_db_sha256_before": "651dacabad53215c33b4d166b42211f7360b97d113c720cbc779434042d1c577",
+ "work_db_sha256_after": "5cd6e1afffc8875d965581262809589755b555b4f33824294d6f16efa89650e4",
  "ref_path": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-full-verification\\captures\\bars-all.ndjson.gz",
  "ref_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
  "symbols": 644,
  "ref_rows": 14263,
  "ref_duplicates": 0,
  "duplicate_conflicts": 0,
- "inserted": 13603,
+ "inserted": 13605,
  "would_insert": 0,
  "skipped_existing": 15,
- "invalid": 2,
+ "invalid": 0,
  "changed_existing": 0,
  "missing_existing": 0,
  "totals": {
-  "rows_before": 530035,
-  "rows_after": 543638,
+  "rows_before": 530679,
+  "rows_after": 544284,
   "local_before": 217983,
-  "local_after": 231586,
-  "inserted": 13603,
+  "local_after": 231588,
+  "inserted": 13605,
   "would_insert": 0,
   "skipped_existing": 15,
   "ref_only": 13605,
   "overlap": 658,
-  "invalid": 2,
-  "invalid_reasons": {
-   "geometry": 2
-  },
+  "invalid": 0,
+  "invalid_reasons": {},
   "inserted_by_period": {
-   "post2024": 13603
+   "post2024": 13605
   },
   "ref_only_by_period": {
    "post2024": 13605
@@ -49,14 +47,14 @@
   "src_after": {
    "legacy-unknown": 195768,
    "board": 19327,
-   "rahavard365": 16491
+   "rahavard365": 16493
   }
  },
  "non_destructive": {
   "changed_existing": 0,
   "missing_existing": 0,
   "digest_before": "1a4c7e2eca4aaa13d26f90a60ffa6c0fdebc9c9e0ef22732b147c8f8097862fa",
-  "digest_after": "96de0b37609622e2c594c76b2b0770923fcd3a5378a14a89d829bd101cb1cdb0"
+  "digest_after": "dcc07c7f69c3a5cb365b13000d7cc9551ba95043cc55adec16521510740f83f7"
  },
  "raw_compare": {
   "local": 216464,
@@ -80,24 +78,81 @@
   "volume_mismatch": 0,
   "ref_degenerate": 66
  },
- "invalid_symbols": [
-  {
-   "symbol": "باران",
-   "invalid_reasons": {
-    "geometry": 1
+ "invalid_symbols": [],
+ "corrections": {
+  "rows_corrected": 2,
+  "high_widened": 2,
+  "low_widened": 0,
+  "rule": "candle_contract.widen — only high/low shadow; close/open untouched",
+  "by_symbol": {
+   "باران": {
+    "rows_corrected": 1,
+    "high_widened": 1,
+    "low_widened": 0
    },
-   "ref_only": 22,
-   "inserted": 21
+   "نيلي": {
+    "rows_corrected": 1,
+    "high_widened": 1,
+    "low_widened": 0
+   }
   },
-  {
-   "symbol": "نيلي",
-   "invalid_reasons": {
-    "geometry": 1
+  "samples": [
+   {
+    "symbol": "باران",
+    "date": "2026-11-04",
+    "reason": "high-widened",
+    "raw_open": 2732.0,
+    "raw_high": 2649.0,
+    "raw_low": 2579.0,
+    "raw_close": 2579.0,
+    "open": 2732.0,
+    "high": 2732.0,
+    "low": 2579.0,
+    "close": 2579.0,
+    "open_ratio": 1.059325
    },
-   "ref_only": 22,
-   "inserted": 21
+   {
+    "symbol": "نيلي",
+    "date": "2026-10-19",
+    "reason": "high-widened",
+    "raw_open": 10395.0,
+    "raw_high": 10113.0,
+    "raw_low": 10112.0,
+    "raw_close": 10113.0,
+    "open": 10395.0,
+    "high": 10395.0,
+    "low": 10112.0,
+    "close": 10113.0,
+    "open_ratio": 1.027885
+   }
+  ]
+ },
+ "fresh_inserted_dates": {
+  "باران": {
+   "date": "2026-11-04",
+   "open": 2732.0,
+   "high": 2732.0,
+   "low": 2579.0,
+   "close": 2579.0,
+   "volume": 2612076.0,
+   "last": 2579.0,
+   "src": "rahavard365",
+   "raw_high": 2649.0,
+   "correction": "high-widened"
+  },
+  "نيلي": {
+   "date": "2026-10-19",
+   "open": 10395.0,
+   "high": 10395.0,
+   "low": 10112.0,
+   "close": 10113.0,
+   "volume": 4927641.0,
+   "last": 10113.0,
+   "src": "rahavard365",
+   "raw_high": 10113.0,
+   "correction": "high-widened"
   }
- ],
+ },
  "per_symbol_summary": {
   "symbols": 644,
   "with_inserted": 643,
@@ -106,5 +161,15 @@
    "چكاوه"
   ],
   "full_per_symbol_file": "_audit/phase49-full-verification/logs/backfill-fresh-full.json"
- }
+ },
+ "raw_compare_low_mismatch": {
+  "symbol": "واحصا",
+  "date": "2026-10-11",
+  "bors_low": 37570.0,
+  "ref_low": 37660.0,
+  "abs_diff": 90.0,
+  "rel_diff": 0.00239,
+  "note": "one remaining raw_compare low mismatch in the window; the row already existed and was not inserted or changed"
+ },
+ "note": "C3-fix run: the two former geometry-invalid freshness dates (باران/نيلي) are inserted via candle_contract.widen; invalid=0."
 }

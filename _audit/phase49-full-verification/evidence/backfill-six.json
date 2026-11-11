@@ -1,43 +1,41 @@
 {
  "tool": "phase48-backfill-v1",
- "run_id": "phase49-full-six-2026-11-10",
+ "run_id": "phase49-c3fix-six-2026-11-11",
  "dry_run": false,
- "started_at": "2026-11-11T01:38:10+00:00",
- "finished_at": "2026-11-11T01:38:15+00:00",
+ "started_at": "2026-11-11T02:23:32+00:00",
+ "finished_at": "2026-11-11T02:23:40+00:00",
  "source_db": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-finalization\\seed\\market.db",
  "source_db_sha256": "2ee662980ef0dcebbb06b0679f3c0e54282984a060f3b9da62e02f0b389deffc",
- "work_db": "_audit/phase49-full-verification/db/backfill\\market.db",
+ "work_db": "_audit/phase49-full-verification/db/backfill-v2\\market.db",
  "work_db_sha256_before": "16824500be7175c3c086eba0a1b24104f4fafeae80a16b925e70571a5e9777ca",
- "work_db_sha256_after": "b5126cccb44f5c92c09681df4503c5b9ded1cece2754116d63b24c63887ee9a4",
+ "work_db_sha256_after": "651dacabad53215c33b4d166b42211f7360b97d113c720cbc779434042d1c577",
  "ref_path": "C:\\Users\\STU\\Desktop\\borsterminal\\_audit\\phase49-full-verification\\captures\\bars-all.ndjson.gz",
  "ref_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
  "symbols": 6,
  "ref_rows": 22029,
  "ref_duplicates": 0,
  "duplicate_conflicts": 0,
- "inserted": 18896,
+ "inserted": 19540,
  "would_insert": 0,
  "skipped_existing": 0,
- "invalid": 644,
+ "invalid": 0,
  "changed_existing": 0,
  "missing_existing": 0,
  "totals": {
   "rows_before": 511139,
-  "rows_after": 530035,
+  "rows_after": 530679,
   "local_before": 2628,
-  "local_after": 21524,
-  "inserted": 18896,
+  "local_after": 22168,
+  "inserted": 19540,
   "would_insert": 0,
   "skipped_existing": 0,
   "ref_only": 19540,
   "overlap": 2489,
-  "invalid": 644,
-  "invalid_reasons": {
-   "geometry": 644
-  },
+  "invalid": 0,
+  "invalid_reasons": {},
   "inserted_by_period": {
-   "pre2010": 3431,
-   "2010-2024": 15339,
+   "pre2010": 4069,
+   "2010-2024": 15345,
    "post2024": 126
   },
   "ref_only_by_period": {
@@ -50,7 +48,7 @@
    "board": 179
   },
   "src_after": {
-   "rahavard365": 18896,
+   "rahavard365": 19540,
    "legacy-unknown": 2449,
    "board": 179
   }
@@ -59,7 +57,7 @@
   "changed_existing": 0,
   "missing_existing": 0,
   "digest_before": "5391967388913fbb28e5406b91eb290a99d9b7e9cffb5763e05bca4af7da3d2e",
-  "digest_after": "dfee99d143ae97c8288e2e38254c4ecbf1129a780ac2f81de5a585b465c18696"
+  "digest_after": "8e2f39c3204e2c7bec10dc0f073f1e70ae2673dc41dcf87f1ce915c6d8aaa4b0"
  },
  "raw_compare": {
   "local": 2501,
@@ -83,6 +81,277 @@
   "volume_mismatch": 23,
   "ref_degenerate": 477
  },
+ "corrections": {
+  "rows_corrected": 644,
+  "high_widened": 183,
+  "low_widened": 461,
+  "open_fallback": 0,
+  "rule": "candle_contract.widen — only high/low shadow; close/open untouched",
+  "by_symbol": {
+   "شنفت": {
+    "rows_corrected": 540,
+    "high_widened": 157,
+    "low_widened": 383
+   },
+   "فخاس": {
+    "rows_corrected": 2,
+    "high_widened": 1,
+    "low_widened": 1
+   },
+   "لخزر": {
+    "rows_corrected": 101,
+    "high_widened": 24,
+    "low_widened": 77
+   },
+   "مارون": {
+    "rows_corrected": 1,
+    "high_widened": 1,
+    "low_widened": 0
+   }
+  },
+  "extreme_opens": [
+   {
+    "symbol": "شنفت",
+    "date": "1991-12-10",
+    "reason": "high-widened",
+    "raw_open": 42400.0,
+    "raw_high": 8600.0,
+    "raw_low": 8600.0,
+    "raw_close": 8600.0,
+    "open": 42400.0,
+    "high": 42400.0,
+    "low": 8600.0,
+    "close": 8600.0,
+    "open_ratio": 4.930233
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1996-03-05",
+    "reason": "high-widened",
+    "raw_open": 17211.0,
+    "raw_high": 9105.0,
+    "raw_low": 9105.0,
+    "raw_close": 9105.0,
+    "open": 17211.0,
+    "high": 17211.0,
+    "low": 9105.0,
+    "close": 9105.0,
+    "open_ratio": 1.89028
+   },
+   {
+    "symbol": "لخزر",
+    "date": "2005-08-14",
+    "reason": "high-widened",
+    "raw_open": 4710.0,
+    "raw_high": 4190.0,
+    "raw_low": 2410.0,
+    "raw_close": 3410.0,
+    "open": 4710.0,
+    "high": 4710.0,
+    "low": 2410.0,
+    "close": 3410.0,
+    "open_ratio": 1.381232
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1994-08-15",
+    "reason": "high-widened",
+    "raw_open": 12011.0,
+    "raw_high": 9000.0,
+    "raw_low": 9000.0,
+    "raw_close": 9000.0,
+    "open": 12011.0,
+    "high": 12011.0,
+    "low": 9000.0,
+    "close": 9000.0,
+    "open_ratio": 1.334556
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1997-06-18",
+    "reason": "high-widened",
+    "raw_open": 16095.0,
+    "raw_high": 12386.0,
+    "raw_low": 12386.0,
+    "raw_close": 12386.0,
+    "open": 16095.0,
+    "high": 16095.0,
+    "low": 12386.0,
+    "close": 12386.0,
+    "open_ratio": 1.299451
+   }
+  ],
+  "samples": [
+   {
+    "symbol": "شنفت",
+    "date": "1991-06-15",
+    "reason": "low-widened",
+    "raw_open": 15000.0,
+    "raw_high": 16000.0,
+    "raw_low": 16000.0,
+    "raw_close": 16000.0,
+    "open": 15000.0,
+    "high": 16000.0,
+    "low": 15000.0,
+    "close": 16000.0,
+    "open_ratio": 1.066667
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-06-17",
+    "reason": "low-widened",
+    "raw_open": 16000.0,
+    "raw_high": 16501.0,
+    "raw_low": 16501.0,
+    "raw_close": 16501.0,
+    "open": 16000.0,
+    "high": 16501.0,
+    "low": 16000.0,
+    "close": 16501.0,
+    "open_ratio": 1.031313
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-06-30",
+    "reason": "low-widened",
+    "raw_open": 16501.0,
+    "raw_high": 21164.0,
+    "raw_low": 21164.0,
+    "raw_close": 21164.0,
+    "open": 16501.0,
+    "high": 21164.0,
+    "low": 16501.0,
+    "close": 21164.0,
+    "open_ratio": 1.282589
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-07-30",
+    "reason": "low-widened",
+    "raw_open": 21164.0,
+    "raw_high": 25007.0,
+    "raw_low": 25007.0,
+    "raw_close": 25007.0,
+    "open": 21164.0,
+    "high": 25007.0,
+    "low": 21164.0,
+    "close": 25007.0,
+    "open_ratio": 1.181582
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-04",
+    "reason": "low-widened",
+    "raw_open": 25007.0,
+    "raw_high": 27001.0,
+    "raw_low": 27001.0,
+    "raw_close": 27001.0,
+    "open": 25007.0,
+    "high": 27001.0,
+    "low": 25007.0,
+    "close": 27001.0,
+    "open_ratio": 1.079738
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-11",
+    "reason": "low-widened",
+    "raw_open": 27001.0,
+    "raw_high": 29000.0,
+    "raw_low": 29000.0,
+    "raw_close": 29000.0,
+    "open": 27001.0,
+    "high": 29000.0,
+    "low": 27001.0,
+    "close": 29000.0,
+    "open_ratio": 1.074034
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-12",
+    "reason": "low-widened",
+    "raw_open": 29000.0,
+    "raw_high": 32000.0,
+    "raw_low": 32000.0,
+    "raw_close": 32000.0,
+    "open": 29000.0,
+    "high": 32000.0,
+    "low": 29000.0,
+    "close": 32000.0,
+    "open_ratio": 1.103448
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-17",
+    "reason": "low-widened",
+    "raw_open": 32000.0,
+    "raw_high": 32001.0,
+    "raw_low": 32001.0,
+    "raw_close": 32001.0,
+    "open": 32000.0,
+    "high": 32001.0,
+    "low": 32000.0,
+    "close": 32001.0,
+    "open_ratio": 1.000031
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-18",
+    "reason": "low-widened",
+    "raw_open": 32001.0,
+    "raw_high": 33006.0,
+    "raw_low": 33006.0,
+    "raw_close": 33006.0,
+    "open": 32001.0,
+    "high": 33006.0,
+    "low": 32001.0,
+    "close": 33006.0,
+    "open_ratio": 1.031405
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-21",
+    "reason": "low-widened",
+    "raw_open": 33006.0,
+    "raw_high": 33008.0,
+    "raw_low": 33008.0,
+    "raw_close": 33008.0,
+    "open": 33006.0,
+    "high": 33008.0,
+    "low": 33006.0,
+    "close": 33008.0,
+    "open_ratio": 1.000061
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-08-27",
+    "reason": "low-widened",
+    "raw_open": 33008.0,
+    "raw_high": 34102.0,
+    "raw_low": 34102.0,
+    "raw_close": 34102.0,
+    "open": 33008.0,
+    "high": 34102.0,
+    "low": 33008.0,
+    "close": 34102.0,
+    "open_ratio": 1.033143
+   },
+   {
+    "symbol": "شنفت",
+    "date": "1991-09-09",
+    "reason": "low-widened",
+    "raw_open": 34102.0,
+    "raw_high": 34403.0,
+    "raw_low": 34403.0,
+    "raw_close": 34403.0,
+    "open": 34102.0,
+    "high": 34403.0,
+    "low": 34102.0,
+    "close": 34403.0,
+    "open_ratio": 1.008826
+   }
+  ]
+ },
  "per_symbol": [
   {
    "symbol": "شنفت",
@@ -90,11 +359,9 @@
    "ref": 6284,
    "overlap": 431,
    "ref_only": 5853,
-   "inserted": 5313,
-   "invalid": 540,
-   "invalid_reasons": {
-    "geometry": 540
-   },
+   "inserted": 5853,
+   "invalid": 0,
+   "invalid_reasons": {},
    "first_before": "2024-08-24",
    "last_before": "2026-10-11",
    "first_after": "1991-05-11",
@@ -102,6 +369,11 @@
    "src_before": {
     "legacy-unknown": 402,
     "board": 31
+   },
+   "corrections": {
+    "rows_corrected": 540,
+    "high_widened": 157,
+    "low_widened": 383
    },
    "raw_compare": {
     "local": 433,
@@ -253,6 +525,7 @@
     "legacy-unknown": 377,
     "board": 31
    },
+   "corrections": {},
    "raw_compare": {
     "local": 408,
     "ref": 1078,
@@ -407,11 +680,9 @@
    "ref": 3900,
    "overlap": 432,
    "ref_only": 3468,
-   "inserted": 3466,
-   "invalid": 2,
-   "invalid_reasons": {
-    "geometry": 2
-   },
+   "inserted": 3468,
+   "invalid": 0,
+   "invalid_reasons": {},
    "first_before": "2024-08-24",
    "last_before": "2026-10-11",
    "first_after": "2007-10-30",
@@ -419,6 +690,11 @@
    "src_before": {
     "legacy-unknown": 403,
     "board": 31
+   },
+   "corrections": {
+    "rows_corrected": 2,
+    "high_widened": 1,
+    "low_widened": 1
    },
    "raw_compare": {
     "local": 434,
@@ -550,6 +826,7 @@
     "legacy-unknown": 408,
     "board": 31
    },
+   "corrections": {},
    "raw_compare": {
     "local": 439,
     "ref": 3446,
@@ -699,18 +976,21 @@
    "ref": 4078,
    "overlap": 399,
    "ref_only": 3679,
-   "inserted": 3578,
-   "invalid": 101,
-   "invalid_reasons": {
-    "geometry": 101
-   },
+   "inserted": 3679,
+   "invalid": 0,
+   "invalid_reasons": {},
    "first_before": "2024-08-24",
    "last_before": "2026-10-11",
-   "first_after": "1996-07-02",
+   "first_after": "1996-03-18",
    "last_after": "2026-11-08",
    "src_before": {
     "legacy-unknown": 370,
     "board": 31
+   },
+   "corrections": {
+    "rows_corrected": 101,
+    "high_widened": 24,
+    "low_widened": 77
    },
    "raw_compare": {
     "local": 401,
@@ -851,11 +1131,9 @@
    "ref": 3243,
    "overlap": 384,
    "ref_only": 2859,
-   "inserted": 2858,
-   "invalid": 1,
-   "invalid_reasons": {
-    "geometry": 1
-   },
+   "inserted": 2859,
+   "invalid": 0,
+   "invalid_reasons": {},
    "first_before": "2024-08-24",
    "last_before": "2026-10-11",
    "first_after": "2011-12-27",
@@ -863,6 +1141,11 @@
    "src_before": {
     "legacy-unknown": 489,
     "board": 24
+   },
+   "corrections": {
+    "rows_corrected": 1,
+    "high_widened": 1,
+    "low_widened": 0
    },
    "raw_compare": {
     "local": 386,

@@ -1,15 +1,18 @@
 {
  "tool": "phase49-c3-price-basis-preflight",
+ "revised_for": "C3 fix: contract-widened reference bars",
  "basis_rule": "local close = last (else closing); ref close = type0/raw/D close (last trade)",
  "tolerance": {
   "name": "OHLC_MATERIAL",
   "value": 0.05
  },
- "generated_at": "2026-11-11T01:36:52+00:00",
+ "generated_at": "2026-11-11T02:37:00+00:00",
  "source_db": "_audit/phase49-finalization/seed/market.db",
  "ref": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
  "overall_median_rel_diff": 0.00715,
+ "overall_max_rel_diff": 0.043364,
  "overall_common_dates": 2489,
+ "over_5pct_total": 0,
  "verdict": "OK",
  "per_symbol": [
   {

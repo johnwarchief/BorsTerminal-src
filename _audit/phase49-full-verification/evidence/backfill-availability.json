@@ -78,5 +78,30 @@
  ],
  "freshness_excluded": [],
  "freshness_excluded_file": "_audit/phase49-full-verification/backfill-plan/symbols-freshness-capture-blocked.csv",
- "freshness_applied_file": "_audit/phase49-full-verification/backfill-plan/symbols-freshness-applied.csv"
+ "freshness_applied_file": "_audit/phase49-full-verification/backfill-plan/symbols-freshness-applied.csv",
+ "version": 2,
+ "revalidated_at": "2026-11-11T02:37:00+00:00",
+ "revalidation": {
+  "reason": "re-checked after the C3 fix (contract-widened reference bars)",
+  "capture_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+  "capture_sha256_matches": true,
+  "planned": {
+   "six": 6,
+   "freshness": 644
+  },
+  "available": {
+   "six": 6,
+   "freshness": 644
+  },
+  "six_raw_d_bars": {
+   "شنفت": 6284,
+   "فافق": 1078,
+   "فخاس": 3900,
+   "فولاژ": 3446,
+   "لخزر": 4078,
+   "مارون": 3243
+  },
+  "freshness_symbols_with_window_bars": 644,
+  "note": "capture file, plan lists, and per-symbol availability are unchanged; the fix only changed which reference bars the tool accepts"
+ }
 }

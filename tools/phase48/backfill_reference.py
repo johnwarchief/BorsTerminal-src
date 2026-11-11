@@ -154,7 +154,16 @@ def load_ref_daily(path, symbols, since=None):
 
 
 def valid_ref_row(r):
-    """شکل/هندسهٔ ردیفِ مرجع؛ هیچ عددی اینجا ساخته نمی‌شود."""
+    """قیدهایِ شکست‌پذیرِ ردیفِ مرجع؛ هندسه از قراردادِ کندل می‌آید، نه از اینجا.
+
+    پیش از این این تابع هر ردیفی را که سایه‌اش بیرونِ بدنه بود (`h<o`/`l>o`) رد
+    می‌کرد و 646 ردیفِ معتبر (از جمله 629 ردیفِ H=L=C) بی‌صدا جا می‌ماند، در حالی
+    که خودِ `candle_contract.candle()` همان‌ها را با `widen` می‌پذیرد. اکنون تنها
+    چیزی که اینجا رد می‌شود «بی‌عدد/بی‌قیمت/بی‌حجم/غیرمتناهی» است، به‌علاوهٔ سایهٔ
+    وارونه (`high<low`): آن نقصی نیست که `widen` تعمیرش کند — بیشینه/کمینهٔ بدنه
+    جایِ بازهٔ منتشرشده می‌نشیند و بازه بی‌صدا دور ریخته می‌شود — پس با نامِ
+    `high<low` رد و به‌عنوانِ مانعِ صریح شمرده می‌شود.
+    """
     d = r.get("date")
     try:
         dt.date.fromisoformat(str(d))
@@ -175,8 +184,8 @@ def valid_ref_row(r):
         return False, "open<=0"
     if v <= 0:
         return False, "volume<=0"
-    if h < l or h < o or h < c or l > o or l > c:
-        return False, "geometry"
+    if h < l:
+        return False, "high<low"
     return True, ""
 
 
@@ -185,6 +194,36 @@ def ref_candle(sym, r):
     # ستون در قراردادِ کندل حفظ شود (close لنگر، last آخرین معامله).
     return CC.candle(sym, r["date"], r["open"], r["high"], r["low"], r["close"],
                      r["volume"], last=r["close"], value=None, src=SRC_RAHAVARD)
+
+
+def correction_of(sym, r, c):
+    """اصلاحِ قرارداد رویِ ردیفِ مرجع را توصیف می‌کند؛ هیچ عددی جز `widen` ساخته نمی‌شود.
+
+    فقط وقتی صدا زده می‌شود که `candle_contract.candle` ردیف را پذیرفته باشد. خروجی
+    None یعنی قرارداد چیزی را عوض نکرده؛ وگرنه شکل/بازهٔ خام و اصلاح‌شده با هم
+    ثبت می‌شوند تا اصلاح دیدنی و قابلِ حسابرسی باشد، نه پنهان.
+    """
+    raw_o, raw_h, raw_l = (float(r["open"]), float(r["high"]), float(r["low"]))
+    hi_changed = c["high"] != c["high_raw"]
+    lo_changed = c["low"] != c["low_raw"]
+    open_fallback = raw_o <= 0 and c["open"] > 0
+    if not (hi_changed or lo_changed or open_fallback):
+        return None
+    reasons = []
+    if hi_changed:
+        reasons.append("high-widened")
+    if lo_changed:
+        reasons.append("low-widened")
+    if open_fallback:
+        reasons.append("open-from-close")
+    return {
+        "symbol": sym, "date": r["date"], "reason": "+".join(reasons),
+        "raw_open": raw_o, "raw_high": raw_h, "raw_low": raw_l,
+        "raw_close": float(r["close"]),
+        "open": c["open"], "high": c["high"], "low": c["low"], "close": c["close"],
+        "open_ratio": round(max(c["open"], c["close"]) / min(c["open"], c["close"]), 6)
+        if min(c["open"], c["close"]) > 0 else None,
+    }
 
 
 def period_of(date_str):
@@ -364,9 +403,16 @@ def apply_backfill(src_db, work_dir, ref_path, symbols, run_id,
         inserted_by_period = collections.Counter()
         ref_only_by_period = collections.Counter()
         invalid_reasons = collections.Counter()
+        corr_totals = collections.Counter()
+        corr_by_symbol = collections.defaultdict(collections.Counter)
+        corr_rows = []
         per_symbol = []
         prov_rows = []
         inserted_dates = collections.defaultdict(list)
+        # نمونه‌هایِ دیدنی: چند ردیفِ اولِ زمانی + ردیف‌هایی با بزرگ‌ترین نسبتِ
+        # open/close تا اصلاحِ قرارداد برایِ حسابرس قابلِ بازبینی باشد.
+        CORRECTION_SAMPLES = 12
+        CORRECTION_EXTREMES = 5
         if not dry_run:
             _ensure_provenance(con)
             con.commit()
@@ -396,6 +442,17 @@ def apply_backfill(src_db, work_dir, ref_path, symbols, run_id,
                     invalid_reasons["candle-contract"] += 1
                     sym_invalid["candle-contract"] += 1
                     continue
+                corr = correction_of(sym, refs[d], c)
+                if corr:
+                    corr_totals["rows_corrected"] += 1
+                    corr_totals["high_widened"] += corr["raw_high"] != corr["high"]
+                    corr_totals["low_widened"] += corr["raw_low"] != corr["low"]
+                    corr_totals["open_fallback"] += corr["raw_open"] != corr["open"]
+                    sym_corr = corr_by_symbol[sym]
+                    sym_corr["rows_corrected"] += 1
+                    sym_corr["high_widened"] += corr["raw_high"] != corr["high"]
+                    sym_corr["low_widened"] += corr["raw_low"] != corr["low"]
+                    corr_rows.append(corr)
                 if dry_run:
                     ins += 1
                     totals["would_insert"] += 1
@@ -434,6 +491,7 @@ def apply_backfill(src_db, work_dir, ref_path, symbols, run_id,
                 "first_before": b.get("first"), "last_before": b.get("last"),
                 "first_after": first_after, "last_after": last_after,
                 "src_before": src_b,
+                "corrections": dict(corr_by_symbol.get(sym, {})),
                 "raw_compare": compare_raw_rows(
                     [r for (s, _), r in pre["rows"].items() if s == sym],
                     list(refs.values())),
@@ -483,6 +541,19 @@ def apply_backfill(src_db, work_dir, ref_path, symbols, run_id,
             for k, v in entry["raw_compare"].items():
                 if isinstance(v, int):
                     raw_totals[k] += v
+        corr_extremes = sorted(
+            [x for x in corr_rows if x.get("open_ratio") is not None],
+            key=lambda x: x["open_ratio"], reverse=True)[:CORRECTION_EXTREMES]
+        corrections = {
+            "rows_corrected": corr_totals["rows_corrected"],
+            "high_widened": corr_totals["high_widened"],
+            "low_widened": corr_totals["low_widened"],
+            "open_fallback": corr_totals["open_fallback"],
+            "rule": "candle_contract.widen — only high/low shadow; close/open untouched",
+            "by_symbol": {s: dict(c) for s, c in corr_by_symbol.items()},
+            "extreme_opens": corr_extremes,
+            "samples": corr_rows[:CORRECTION_SAMPLES],
+        }
         report = {
             "tool": TOOL_VERSION, "run_id": run_id, "dry_run": dry_run,
             "started_at": started, "finished_at": now_iso(),
@@ -516,6 +587,7 @@ def apply_backfill(src_db, work_dir, ref_path, symbols, run_id,
                 "digest_before": pre["digest"], "digest_after": post["digest"],
             },
             "raw_compare": dict(raw_totals),
+            "corrections": corrections,
             "per_symbol": per_symbol,
         }
     except Exception:
@@ -567,7 +639,7 @@ def rollback_backfill(work_db, run_id):
 
 def write_json(report, path):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
 
@@ -584,6 +656,11 @@ def write_markdown(report, path):
         f"- کپیِ کاری: `{report['work_db']}`",
         f"- ردیف‌هایِ نوشته‌شده: **{t['inserted']}** (dry-run: {t['would_insert']})؛ "
         f"فقط-مفقود در مرجع: {t['ref_only']}؛ نامعتبر: {t['invalid']}",
+        f"- نامعتبر به تفکیک: {json.dumps(t['invalid_reasons'], ensure_ascii=False)}",
+        f"- اصلاحِ قرارداد (widen رویِ سایه): **{report['corrections']['rows_corrected']}** ردیف؛ "
+        f"high: {report['corrections']['high_widened']}؛ "
+        f"low: {report['corrections']['low_widened']}؛ "
+        f"open از close: {report['corrections']['open_fallback']}",
         f"- دوره‌ها: {json.dumps(t['inserted_by_period'], ensure_ascii=False)}",
         f"- ردیف‌هایِ موجودِ تغییرکرده: **{report['non_destructive']['changed_existing']}**؛ "
         f"گم‌شده: {report['non_destructive']['missing_existing']}",
@@ -615,12 +692,30 @@ def write_markdown(report, path):
             f"| {s['symbol']} | {s['local_before']} | {s['ref']} | {s['overlap']} | "
             f"{s['ref_only']} | {s['inserted']} | {s['invalid']} | "
             f"{s['first_after'] or '—'} | {s['last_after'] or '—'} |")
+    cr = report.get("corrections") or {}
+    if cr.get("samples"):
+        lines += ["", "## اصلاح‌هایِ قرارداد (نمونه)", "",
+                  "| نماد | تاریخ | open خام | high خام | low خام | close | high نهایی | low نهایی | علت |",
+                  "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |"]
+        for x in cr["samples"]:
+            lines.append(
+                f"| {x['symbol']} | {x['date']} | {x['raw_open']:g} | {x['raw_high']:g} | "
+                f"{x['raw_low']:g} | {x['raw_close']:g} | {x['high']:g} | {x['low']:g} | "
+                f"{x['reason']} |")
+    if cr.get("extreme_opens"):
+        lines += ["", "## بزرگ‌ترین نسبتِ open/close (بازبینیِ فردی)", "",
+                  "| نماد | تاریخ | open | close | نسبت | high نهایی | low نهایی |",
+                  "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
+        for x in cr["extreme_opens"]:
+            lines.append(
+                f"| {x['symbol']} | {x['date']} | {x['open']:g} | {x['close']:g} | "
+                f"{x['open_ratio']:g} | {x['high']:g} | {x['low']:g} |")
     lines += ["", "## بازگشت", "",
               f"`python tools/phase48/backfill_reference.py rollback --work "
               f"\"{report['work_db'] or '<work>'}\" --run-id {report['run_id']}`",
               ""]
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines))
 
 
