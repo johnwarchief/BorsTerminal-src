@@ -439,7 +439,7 @@ is green after the A4 fix.
 ## 7. Reproduce
 
 ```bash
-python dev/suite_registry_guard.py              # SUITE REGISTRY GUARD OK: 258 suites
+python dev/suite_registry_guard.py              # SUITE REGISTRY GUARD OK: 260 suites
 python dev/suite_registry_guard.py --selftest   # SELFTEST OK
 python dev/test_suite_registry_guard.py         # SUITE REGISTRY TESTS OK
 python dev/build_python_ci_migration_doc.py --check

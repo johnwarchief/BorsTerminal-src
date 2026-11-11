@@ -230,7 +230,8 @@ def build(reg, evidence):
     add("## 7. Reproduce")
     add("")
     add("```bash")
-    add("python dev/suite_registry_guard.py              # SUITE REGISTRY GUARD OK: 258 suites")
+    add("python dev/suite_registry_guard.py              # SUITE REGISTRY GUARD OK: %d suites"
+        % total)
     add("python dev/suite_registry_guard.py --selftest   # SELFTEST OK")
     add("python dev/test_suite_registry_guard.py         # SUITE REGISTRY TESTS OK")
     add("python dev/build_python_ci_migration_doc.py --check")

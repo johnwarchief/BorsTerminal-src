@@ -6,6 +6,11 @@
 - Final CI: **PENDING** (`CI-FINAL-RESULTS.json` is a pending record; C8 must fill it)
 - Verdict: **`PHASE49_PARTIAL_WITH_EXPLICIT_BLOCKERS`**
 
+`PHASE49_PARTIAL_WITH_EXPLICIT_BLOCKERS` is the mission's verdict string. The design spec's
+short form is `PARTIAL_WITH_EXPLICIT_BLOCKERS`; it names the same verdict, and the mission
+string is kept here because it is the string the acceptance table and `stage11_deliverables.py`
+check.
+
 This report is written from evidence that already exists in the repository. It does not
 describe the final CI run, and it does not claim that any unverified row became verified
 because a label changed. Where a number is not measured, the row says `NOT_MEASURED`.
@@ -25,11 +30,14 @@ The verdict carries these blockers:
    step rows have an independent witness; the other 4,846 are `VERIFIED_REFERENCE` rows whose
    ratio came from the same reference index, so they confirm the source, not the step
    ([S11]).
-3. **1,358 pack steps remain unverified.** The full-reference re-review left 916
+3. **1,358 pack steps were unverified at baseline; 1,179 still are.** The full-reference
+   re-review leaves 1,179 of the 1,358 without a verified status: 916
    `INSUFFICIENT_EVIDENCE`, 118 `CONFLICT_RATIO`, 136 `PARTIAL_REFERENCE`, 5
-   `PARTIAL_OFFICIAL`, 4 `RECONSTRUCTED_AUDITED` and 179 with a `VERIFIED_*` status (78 of
-   those reference-confirmed) inside the 1,358. Across all 8,308 rows the conflict totals are
-   223 `CONFLICT_RATIO`, 6 `CONFLICT_DUPLICATE`, and 28 `INVALID_DROPPED` ([S3]).
+   `PARTIAL_OFFICIAL` and 4 `RECONSTRUCTED_AUDITED`. The other 179 now carry a `VERIFIED_*`
+   status: 45 `VERIFIED_MULTI_SOURCE` + 56 `VERIFIED_OFFICIAL` (101 independent) and 78
+   `VERIFIED_REFERENCE` (reference-confirmed, not independent). `1,179 + 179 = 1,358`.
+   Across all 8,308 rows the conflict totals are 223 `CONFLICT_RATIO`, 6
+   `CONFLICT_DUPLICATE`, and 28 `INVALID_DROPPED` ([S3]).
 4. **5,185 history symbols still have no reference window and no pack step.** Of the
    5,188 rows in the baseline validity defect, 3 acquired a full reference window (2 became
    `VERIFIED_NO_APPLICABLE_EVENT`, 1 stayed `INSUFFICIENT_EVIDENCE`); 5,185 have none
@@ -114,15 +122,16 @@ read for this report. A number that is derived from two cited files is marked in
 
 | # | Criterion | Status | Basis |
 | ---: | --- | --- | --- |
-| 1 | Review all 1,358 unverified steps | `INSUFFICIENT_EVIDENCE` | All 1,358 carry a ledger status and evidence tier, so none is unreviewed. Outcome: 916 `INSUFFICIENT_EVIDENCE`, 118 `CONFLICT_RATIO`, 136 `PARTIAL_REFERENCE`, 5 `PARTIAL_OFFICIAL`, 4 `RECONSTRUCTED_AUDITED`, 45 `VERIFIED_MULTI_SOURCE`, 56 `VERIFIED_OFFICIAL`, 78 `VERIFIED_REFERENCE` [S3]. 916 is the dominant status and no label was flipped. |
-| 2 | Audit the 6,300 `reconstructed_verified` steps | `PASS` | The audit re-derived all 6,300 pack chains: 6,293 passed, 7 failed; reasons 22 duplicate-date, 1,651 missing-provenance, 2 ratio-out-of-range, 22 symbol-identity (a row can carry more than one reason, so the reason counts do not sum to 1,661) [S3]. Disclosure: the resulting `VERIFIED_REFERENCE` rows are reference-confirmed, not independent [S11]. |
+| 1 | Review all 1,358 baseline-unverified steps | `INSUFFICIENT_EVIDENCE` | All 1,358 carry a ledger status and evidence tier, so none is unreviewed. Outcome: 1,179 remain unverified (916 `INSUFFICIENT_EVIDENCE`, 118 `CONFLICT_RATIO`, 136 `PARTIAL_REFERENCE`, 5 `PARTIAL_OFFICIAL`, 4 `RECONSTRUCTED_AUDITED`) and 179 are now `VERIFIED_*` (45 + 56 independent, 78 reference-confirmed); `1,179 + 179 = 1,358` [S3]. 916 is the dominant status and no label was flipped. |
+| 2 | Audit the 6,300 `reconstructed_verified` steps | `PASS_WITH_RESIDUAL` | The audit re-derived all 6,300 pack chains: 6,293 passed, 7 failed; reasons 22 duplicate-date, 1,651 missing-provenance, 2 ratio-out-of-range, 22 symbol-identity (a row can carry more than one reason, so the reason counts do not sum to 1,661) [S3]. The 7 residual rows are listed in section 6.5 with symbol, date, reason and final status; the criterion is not met for those 7 rows. Disclosure: the resulting `VERIFIED_REFERENCE` rows are reference-confirmed, not independent [S11]. |
 | 3 | Determine the three Volana steps | `PARTIAL_FACTOR` | Three steps (2020-03-11, 2025-07-20, 2026-05-23) carry B6 assessment `PARTIAL_REFERENCE` at a measured cumulative error of 0.198239% (above 0.100%, below 1.000%); their ledger status stays `RECONSTRUCTED_AUDITED` [S12]. Root causes: a hidden 2019 double count, a dropped 2026-07-15 step, and the absorbed 2026-08-02 ratio [S12]. |
 | 4 | Determine the status of the 6,328 no-evidence symbols and reconcile with 6,103 | `PASS` | All 6,103 history symbols carry one of six final statuses [L2]. 6,328 is reproduced exactly as 5,022 history symbols with neither evidence source + 1,306 instruments with no history; with the current pack the same definition gives 6,333 (5,027 + 1,306), a net +5 from 96 added and 8 dropped pack keys [S7]. 5,910 of the 6,103 remain `INSUFFICIENT_EVIDENCE` [S4]. |
 | 5 | Review the 5,188 unverified validity rows | `INSUFFICIENT_EVIDENCE` | 3 now have a full reference window (2 `VERIFIED_NO_APPLICABLE_EVENT`, 1 `INSUFFICIENT_EVIDENCE` with `REFERENCE_FACTOR_CHANGES_WITHOUT_STEPS`); 5,185 still have no reference and no pack step; 1,467 of the 5,185 have no instruments row [S11], [S4]. |
 | 6 | Backfill the six short-history symbols | `PASS` | All six present in the capture with raw daily bars; 19,540 rows inserted, 0 invalid, full reference date coverage (`missing_ref=0`) [S13], [S17], [S15]. |
 | 7 | Determine identity/status of instruments without history and history outside instruments | `INSUFFICIENT_EVIDENCE` | 1,468 history symbols have no instruments row and stay `unresolved_no_instruments` + `SYMBOL_IDENTITY_MISMATCH`; 1,306 named instruments have no history; 3 duplicate instrument keys are reported, 2 inside history [S4], [S7]. The identity is explicitly unresolved, not guessed. |
 | 8 | Root-cause important OHLC anomalies and gaps | `PASS` | Every emitted event has a measured root cause or the explicit residual `UNRESOLVED_SOURCE_GAP`; `uncategorized_events=0`, `unexplained_events=0`; each kind matches its independent SQL cross-check [S5]. 53,176 events still need a source this round does not have [S5]. |
-| 9 | Settle Python CI and green Production Gates | `NOT_MEASURED` | The three workflows exist and the suite registry guard is green locally (260 suites), but the final CI run has not happened; only C8 can produce PASS/FAIL. `CI-FINAL-RESULTS.json` is `PENDING_FINAL_CI` (the record itself; [S18] covers the local failure accounting). || 10 | Verify the Seed Candidate for integrity/idempotency/provenance/Go parity | `PASS` | Integrity `ok`, duplicate pairs 0, XZ and gzip round-trips equal the DB SHA, manifest hashes match, 33,145 provenance rows with 0 wrong source/type and 0 changed seed rows, 30/30 engine parity and 12/12 product checks [S10], [S15], [S8], [S9]. Release remains blocked separately by the licensing gate [M1]. |
+| 9 | Settle Python CI and green Production Gates | `NOT_MEASURED` | The three workflows exist and the suite registry guard is green locally (260 suites), but the final CI run has not happened; only C8 can produce PASS/FAIL. `CI-FINAL-RESULTS.json` is `PENDING_FINAL_CI` (the record itself; [S18] covers the local failure accounting). |
+| 10 | Verify the Seed Candidate for integrity/idempotency/provenance/Go parity | `PASS` | Integrity `ok`, duplicate pairs 0, XZ and gzip round-trips equal the DB SHA, manifest hashes match, 33,145 provenance rows with 0 wrong source/type and 0 changed seed rows, 30/30 engine parity and 12/12 product checks [S10], [S15], [S8], [S9]. Release remains blocked separately by the licensing gate [M1]. |
 
 ## 5. Capture scope and coverage
 
@@ -151,8 +160,11 @@ read for this report. A number that is derived from two cited files is marked in
 Interpretation: the capture did what the plan asked for every symbol that had an asset id.
 The 339 unmapped keys are not captured and cannot be validated from the reference; they stay
 in the symbol ledger as blockers rather than being silently dropped [S4]. Of the 339, 96 are
-pack-unverified symbols: the pack-unverified source has 782 symbols, 658 mapped and 96
-unmapped [C1].
+normalised keys that also carry unverified pack steps. The 1,358 baseline-unverified pack
+steps cover
+782 raw pack spellings, which normalise to 754 keys; 658 of those keys have an asset id and
+96 do not. Those 96 keys are an explicit reference-coverage blocker, not a mapping success
+[C1], [S4].
 
 ## 6. Adjustment chain - the step ledger
 
@@ -195,7 +207,7 @@ independently verified rows:
 | Shifted primary witness | 956 (1-5 day shift); exact-date primary witness 181 | [S11] |
 | Ratio-out-of-range but still listed | 2 (زملارد 2025-09-21, غمارگ 2025-10-06) | [S11] |
 
-### 6.3 The 1,358 unverified pack steps
+### 6.3 The 1,358 baseline-unverified pack steps
 
 | Status within the 1,358 | Rows | Source |
 | --- | ---: | --- |
@@ -209,16 +221,20 @@ independently verified rows:
 | `VERIFIED_REFERENCE` | 78 | [S3] |
 | **Total** | **1,358** | [S3] |
 
-179 of these rows carry a `VERIFIED_*` status after the full reference; only 45 + 56 = 101
-have a multi-source or official witness, and the 78 `VERIFIED_REFERENCE` rows are
-reference-derived confirmations, not independent evidence [S3], [S11]. Separately, the rerun
-moved 179 steps out of `INSUFFICIENT_EVIDENCE` (75 to `VERIFIED_REFERENCE`, 100 to
-`PARTIAL_REFERENCE`, 4 to `CONFLICT_RATIO`); that outflow is a different set of rows from the
-179 currently carrying a `VERIFIED_*` status and must not be added to it [S11]. The Seed's
-validity label for these symbols did not change: they remain part of the 6,000 `unverified`
-rows [S10].
+Of these 1,358 baseline-unverified rows, **1,179 are still unverified** after the full
+reference (916 + 118 + 136 + 5 + 4) and **179 are now `VERIFIED_*`** (45 + 56 + 78);
+`1,179 + 179 = 1,358`. Only 45 + 56 = 101 of the 179 have a multi-source or official
+witness; the 78 `VERIFIED_REFERENCE` rows are reference-derived confirmations, not
+independent evidence [S3], [S11]. Separately, the rerun moved 179 steps out of
+`INSUFFICIENT_EVIDENCE` (75 to `VERIFIED_REFERENCE`, 100 to `PARTIAL_REFERENCE`, 4 to
+`CONFLICT_RATIO`); that outflow is a different set of rows from the 179 currently carrying a
+`VERIFIED_*` status and must not be added to it [S11]. The Seed's validity label for these
+symbols did not change: they remain part of the 6,000 `unverified` rows [S10].
 
 ### 6.4 Volana
+
+Source: [S12], `_audit/phase49-full-verification/evidence/volana-rootcause.json` - the Volana
+evidence file for the three steps below.
 
 | Item | Value | Source |
 | --- | --- | --- |
@@ -234,9 +250,31 @@ promote the rows, so the ledger status stands. Fixing it requires restoring the 
 2026-07-15 step and using single-step ratios, which is a pack change, not a ledger relabel
 [S12].
 
+### 6.5 The seven failed reconstruction audits
+
+The audit re-derives every pack chain and does not read the reference, so the full-reference
+rerun did not change these outcomes: 6,293 of the 6,300 `reconstructed_verified` rows pass
+and 7 fail [S3]. The seven rows are listed here so the residual is not hidden behind the
+6,293/6,300 aggregate. Criterion 2 is `PASS_WITH_RESIDUAL`: it is not met for these rows.
+
+| Symbol | Date | Audit reason(s) | Final status | Source |
+| --- | --- | --- | --- | --- |
+| الكتروماد | 2026-07-07 | `duplicate-date`, `symbol-identity` | `CONFLICT_DUPLICATE` | [S3], [L1] |
+| الكتروماد | 2026-07-26 | `duplicate-date`, `symbol-identity` | `CONFLICT_DUPLICATE` | [S3], [L1] |
+| دبالك | 2025-01-18 | `duplicate-date`, `symbol-identity` | `CONFLICT_DUPLICATE` | [S3], [L1] |
+| زملارد | 2025-09-21 | `ratio-out-of-range` | `VERIFIED_REFERENCE` | [S3], [L1] |
+| غمارگ | 2025-10-06 | `ratio-out-of-range` | `VERIFIED_REFERENCE` | [S3], [L1] |
+| كسعدي | 2020-05-26 | `duplicate-date`, `symbol-identity` | `CONFLICT_DUPLICATE` | [S3], [L1] |
+| كسعدي | 2021-06-08 | `duplicate-date`, `symbol-identity` | `CONFLICT_RATIO` | [S3], [L1] |
+
+The two `ratio-out-of-range` rows are the only `VERIFIED_REFERENCE` rows with an
+out-of-range ratio; they stay listed and are not independent evidence [S11]. The five
+`duplicate-date` / `symbol-identity` rows sit in the duplicate and conflict buckets and do
+not become `VERIFIED_*`.
+
 ## 7. Symbol ledger and inventory reconciliation
 
-Source: [L2], 6,103 data rows, 57 columns; counts in [S4], [S11].
+Source: [L2], 6,103 data rows, 56 columns; counts in [S4], [S11].
 
 ### 7.1 Final status
 
@@ -269,7 +307,7 @@ reference and 1 that has a reference window but stays `INSUFFICIENT_EVIDENCE`. T
 | Duplicate instrument keys | 3 (`آواپارس`, `حیان072`, `کیمازی`); 2 in history | [S7] |
 | Stale status | fresh 29; recent 2,034; stale 3,596; halted 444 | [S4], [L2] |
 | Halted by instrument title | ممنوع 422; توقف 32 | [S4] |
-| Pack steps unverified | 1,358 across 782 pack symbols; 754 of those symbols are mapped | [S4] |
+| Pack steps unverified | 1,358 across 782 raw pack spellings = 754 normalised keys; 658 keys mapped, 96 unmapped | [S4], [C1] |
 
 ### 7.3 6,328 versus 6,103
 
@@ -432,10 +470,12 @@ harness, but the named Go engine suite is not part of the recorded green set.
 
 ## 12. Python CI migration
 
-The A4 document was stale at 258 suites. Two B suites added later (`test_phase49_manifest.py`
-from B0b and `test_phase49_rules_guard.py` from B4) were missing, so the document was
-regenerated with `python dev/build_python_ci_migration_doc.py --write` and `--check` now
-passes. The current registry is:
+The A4 document's reproduce line said 258 suites while the registry has 260. Two B suites
+added later (`test_phase49_manifest.py` from B0b and `test_phase49_rules_guard.py` from B4)
+were missing from the A4 table, so the document was regenerated with
+`python dev/build_python_ci_migration_doc.py --write` and `--check` now passes. The generator
+derives the count from the registry, so the line cannot go stale again. The current registry
+is:
 
 | Measure | Count |
 | --- | ---: |
@@ -497,7 +537,8 @@ Solved in this round:
 
 Not solved / explicit blockers:
 
-- 339 unmapped capture symbols; 1,358 unverified pack steps (916 IE); 5,185 zero-step rows
+- 339 unmapped capture symbols; 1,179 still-unverified pack steps (916 IE); 179 of the 1,358
+  now `VERIFIED_*` (101 independent, 78 reference-confirmed); 5,185 zero-step rows
   without reference; 6,000 unverified history symbols; 1,468 no-instrument symbols; 444
   halted symbols [S4], [S3], [S11].
 - 4,846 reference-confirmed steps counted inside the verified group, not independently

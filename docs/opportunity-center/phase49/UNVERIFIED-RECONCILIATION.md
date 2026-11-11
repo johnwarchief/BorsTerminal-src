@@ -2,8 +2,8 @@
 
 This file records what was reconciled, what was not, and what remains. It covers the 13
 rule-book reconciliation categories, the baseline validity defect, the 5,185 zero-step rows,
-the 1,358 unverified pack steps, the 339 unmapped capture symbols and the alias duplicate
-dates.
+the 1,358 baseline-unverified pack steps, the 339 unmapped capture symbols and the alias
+duplicate dates.
 
 Source keys used below:
 
@@ -113,12 +113,18 @@ looked up in the reference until an identity source is supplied [S4]. The 1,468 
 no-instrument count is one higher than the 1,467 inside this remainder because فيروزه2
 carries one pack step but no instruments row [S11].
 
-## 4. The 1,358 unverified pack steps
+## 4. The 1,358 baseline-unverified pack steps
 
 All 1,358 were re-reviewed against the all-symbol reference index. No step was promoted by
-changing a label.
+changing a label. The group splits into 1,179 still unverified and 179 now verified:
 
-| Outcome | Rows | Meaning | Source |
+| Group | Rows | Source |
+| --- | ---: | --- |
+| Still unverified (916 + 118 + 136 + 5 + 4) | 1,179 | [S3], [S11] |
+| Now `VERIFIED_*` (45 + 56 + 78) | 179 | [S3], [S11] |
+| **Total** | **1,358** | [S3] |
+
+| Outcome within the 1,358 | Rows | Meaning | Source |
 | --- | ---: | --- | --- |
 | `INSUFFICIENT_EVIDENCE` | 916 | No O1/O2/R1 witness and no auditable reconstruction | [S3] |
 | `CONFLICT_RATIO` | 118 | A witness exists and the ratio disagrees beyond `FACTOR_MATERIAL` | [S3] |
@@ -132,9 +138,16 @@ changing a label.
 
 Net movement from the full reference: 179 steps left `INSUFFICIENT_EVIDENCE` (75 to
 `VERIFIED_REFERENCE`, 100 to `PARTIAL_REFERENCE`, 4 to `CONFLICT_RATIO`). The remaining 916
-is the residual [S11]. Separately, the 1,358 rows currently include 179 with a `VERIFIED_*`
-status: 101 independent (45 + 56) and 78 reference-confirmed. The two 179 counts are
-different sets and must not be added or equated [S3], [S11].
+`INSUFFICIENT_EVIDENCE` rows are the largest residual; together with the other four
+non-verified statuses the still-unverified total is 1,179 [S11]. Separately, the 1,358 rows
+now include 179 with a `VERIFIED_*` status: 101 independent (45 + 56) and 78
+reference-confirmed. The outflow 179 and the verified 179 are different sets and must not be
+added or equated [S3], [S11].
+
+The reconstruction audit is a separate check that does not read the reference: of the 6,300
+`reconstructed_verified` rows, 6,293 pass and 7 fail. The seven rows (symbol, date, reason,
+final status) are listed in section 6.5 of `FULL-VERIFICATION-REPORT.md`; they are carried as
+a residual, not closed by a label change [S3], [L1].
 
 ## 5. The 339 unmapped capture symbols
 
@@ -145,15 +158,17 @@ different sets and must not be added or equated [S3], [S11].
 | Asset-map symbols | 828 | [S4] |
 | Mapped | 758 | [S4] |
 | Unmapped (`NO_ASSET_ID`) | 339 | [S4] |
-| - of which pack-unverified symbols | 96 (the pack-unverified source has 782 symbols: 658 mapped, 96 unmapped) | [C1] |
+| - of which pack-unverified keys | 96 (the 1,358 unverified steps cover 782 raw spellings = 754 keys: 658 mapped, 96 unmapped) | [C1] |
 | History symbols with an asset id | 758 | [S4] |
 | History symbols without an asset id | 5,345 | [S4] |
 
 Why it matters: an unmapped symbol has no reference bars, so no step in it can acquire a
 reference witness. It stays in the symbol ledger with its actual status; nothing is inferred.
 What remains: the owner must supply an asset-id map for those 339 keys, or accept that they
-are outside reference coverage this round. The pack still has steps for 754 of the 782
-unverified pack symbols because those symbols did map [S4].
+are outside reference coverage this round. The 782 raw spellings carrying the 1,358
+baseline-unverified steps collapse to 754 normalised keys; 658 of those keys mapped and carry the steps, while the
+other 96 did not map and cannot acquire a reference witness. That 96-key gap is an explicit
+blocker, not a mapping success [S4], [C1].
 
 ## 6. Alias duplicate dates
 
@@ -190,9 +205,13 @@ counts disagree with the pack.
 
 | Open item | Count | Why it is open | Required source or decision |
 | --- | ---: | --- | --- |
-| `INSUFFICIENT_EVIDENCE` pack steps | 916 | No witness in O1/O2/R1 or auditable reconstruction | A reference or official witness, or an explicit owner acceptance |
-| `CONFLICT_RATIO` pack steps | 223 (118 inside the 1,358) | Witness ratio disagrees | Resolve the pack/event ratio conflict |
+| Still-unverified baseline pack steps | 1,179 = 916 `INSUFFICIENT_EVIDENCE` + 118 `CONFLICT_RATIO` + 136 `PARTIAL_REFERENCE` + 5 `PARTIAL_OFFICIAL` + 4 `RECONSTRUCTED_AUDITED` | No verified witness for these rows | A reference or official witness, or an explicit owner acceptance |
+| `CONFLICT_RATIO` pack steps across all rows | 223 (118 inside the 1,358) | Witness ratio disagrees | Resolve the pack/event ratio conflict |
+| Unverified history symbols | 6,000 = 5,910 `INSUFFICIENT_EVIDENCE` + 90 `CONFLICT` | Symbol-level aggregation of the step statuses | Reference, official witness or identity source |
 | Zero-step rows without reference | 5,185 | No reference window and no pack step | Reference index or asset id |
+| Reference-confirmed steps inside the verified group | 4,846 (not independent) | The ratio came from the same reference index | An independent witness (official event or second source) |
+| Failed reconstruction audits | 7 of 6,300 `reconstructed_verified` | Chain audit failed on 2 ratio-out-of-range and 5 duplicate/identity rows | Pack correction; listed row by row in the report section 6.5 |
+| Halted symbols | 444 | Instrument state is halted | Halt snapshot or owner decision |
 | No-instrument history symbols | 1,468 | Identity cannot be resolved from `instruments` | Identity source (ISIN/ins_code) |
 | Unmapped capture symbols | 339 | No asset id | Asset-id map |
 | Unresolved anomaly events | 53,176 | No full-history first-trade/halt tape | `daily_prices.price_first` and halt snapshots |
