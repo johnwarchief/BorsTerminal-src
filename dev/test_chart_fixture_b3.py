@@ -87,6 +87,50 @@ def read_json(path):
         return json.load(f)
 
 
+def json_diff(want, got, path="", tol=1e-9, state=None):
+    """Difference report for the oracle freshness check.
+
+    Numbers are compared like the Go parity walker (relative 1e-9, the frozen
+    EXACT_EQ tolerance) because libm differs in the last ulp across platforms;
+    every non-numeric value and every key must match exactly. Returns a state
+    dict: ``diffs`` (empty means equal) and ``max`` (largest relative delta).
+    """
+    if state is None:
+        state = {"diffs": [], "max": 0.0}
+    if len(state["diffs"]) >= 8:
+        return state
+    if isinstance(want, bool) or isinstance(got, bool):
+        if want is not got:
+            state["diffs"].append("%s: %r != %r" % (path or "/", want, got))
+        return state
+    if isinstance(want, (int, float)) and isinstance(got, (int, float)):
+        den = max(abs(want), 1e-12)
+        delta = abs(got - want) / den
+        state["max"] = max(state["max"], delta)
+        if delta > tol:
+            state["diffs"].append("%s: %r != %r (rel=%g)" % (path or "/", want, got, delta))
+        return state
+    if isinstance(want, dict) and isinstance(got, dict):
+        for k in sorted(set(want) | set(got)):
+            if k not in got:
+                state["diffs"].append("%s/%s: missing in fresh" % (path, k))
+            elif k not in want:
+                state["diffs"].append("%s/%s: extra in fresh" % (path, k))
+            else:
+                json_diff(want[k], got[k], path + "/" + str(k), tol, state)
+        return state
+    if isinstance(want, list) and isinstance(got, list):
+        if len(want) != len(got):
+            state["diffs"].append("%s: length %d != %d" % (path or "/", len(want), len(got)))
+            return state
+        for i, (a, b) in enumerate(zip(want, got)):
+            json_diff(a, b, path + "/%d" % i, tol, state)
+        return state
+    if want != got:
+        state["diffs"].append("%s: %r != %r" % (path or "/", want, got))
+    return state
+
+
 def dump_logical(path):
     """Logical SQLite content: table names, columns and sorted rows.
 
@@ -453,10 +497,13 @@ def main() -> int:
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"})
             fresh_v = read_json(vpath) if proc.returncode == 0 and os.path.exists(vpath) else None
         committed_v = read_json(vectors_path)
+        vs = json_diff(committed_v, fresh_v) if fresh_v is not None else None
         check("FTS engine vectors equal a fresh oracle run",
-              fresh_v is not None and fresh_v == committed_v,
-              "rc=%d %s" % (proc.returncode,
-                            (proc.stderr or b"")[-200:].decode("utf-8", "replace")))
+              vs is not None and not vs["diffs"],
+              "rc=%d max_rel=%g %s %s" % (proc.returncode,
+                                          (vs or {}).get("max", 0.0),
+                                          "; ".join((vs or {}).get("diffs") or []),
+                                          (proc.stderr or b"")[-200:].decode("utf-8", "replace")))
         dead = sorted(k for k, pred in branch.items()
                       if not (committed_v.get("cases") or {}).get(k)
                       or not pred(committed_v["cases"][k]))

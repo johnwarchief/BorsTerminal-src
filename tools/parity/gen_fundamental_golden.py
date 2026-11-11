@@ -80,7 +80,8 @@ def call(fn, *args):
 def dump(scenario, name, body):
     path = os.path.join(OUT, scenario)
     os.makedirs(path, exist_ok=True)
-    with open(os.path.join(path, name + ".json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(path, name + ".json"), "w", encoding="utf-8",
+              newline="\n") as f:
         json.dump(body, f, ensure_ascii=False, indent=1)
         f.write("\n")
 

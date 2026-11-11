@@ -263,10 +263,13 @@ def case_content(scen, name, d):
         return (st.get("1_growth") is None and a1.get("data_gap") is True
                 and axis("4").get("data_gap") is not False), "all gaps, no fabricated zero"
     if name == "fund_mixed":
-        # ردیف‌هایِ «1404-12-30» (خط تیره) و رقمِ فارسی بی‌دوره‌اند ⇒ محور ۳ na
-        return (st.get("3_gross_margin") is None and axis("3").get("na") is True
-                and a1.get("monetary_pct") == 33.3 and len(a1.get("series") or []) == 4), \
-            "pct=%r series=%d" % (a1.get("monetary_pct"), len(a1.get("series") or []))
+        # پس از گیتِ هویتِ چهارمحوری، نمادِ بی‌ردیف در instruments دیگر حکمِ
+        # شرکتی نمی‌گیرد: «FTS ندارد»، نه REJECT. تلهٔ تاریخ‌هایِ مختلط هنوز
+        # از monetary_pct سنجیده می‌شود (۷۰۰/۵۲۵ ⇒ ۳۳٬۳٪، یعنی ردیف‌هایِ خط‌تیره و
+        # رقمِ فارسی حذف شده‌اند)، و مرزِ تاریخ در quarters_mixed جدا پین است.
+        return (d.get("verdict") == "FTS ندارد" and d.get("applicable") is False
+                and st.get("3_gross_margin") is None and a1.get("monetary_pct") == 33.3), \
+            "verdict=%r pct=%r" % (d.get("verdict"), a1.get("monetary_pct"))
     return False, "no content predicate for %r" % name
 
 

@@ -12,13 +12,13 @@ Branch: `mission/phase49-full-verification-python-ci-2026-11-10`.
 | --- | ---: |
 | Suites in the runner (`SUITES` + `JS_SUITES`) | 260 |
 | A - live product/data contract | 17 |
-| B - data / research / CI-tooling guard | 37 |
-| C - legacy Python backend, API, UI or build surface | 206 |
+| B - data / research / CI-tooling guard | 36 |
+| C - legacy Python backend, API, UI or build surface | 207 |
 | D - obsolete, checked code deleted | 0 |
-| Legacy lane (`profile=legacy` rows) | 209 (206 C + 3 A) |
-| KEEP | 51 |
+| Legacy lane (`profile=legacy` rows) | 210 (207 C + 3 A) |
+| KEEP | 50 |
 | MIGRATE (named Go/TS test owns the behaviour) | 8 |
-| DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 201 |
+| DEPRECATE (legacy lane, named owner, dated retirement) | 202 |
 | REMOVE (deleted code) | 0 |
 
 Category = what the suite exercises. Disposition = what happens to it.
@@ -40,8 +40,8 @@ unused.
 | Lane | Workflow (Task A5) | Selection | Gate | Contents |
 | --- | --- | --- | --- | --- |
 | Production | `guards.yml` | `python dev/run_all_tests.py --profile production` inside `data-integrity`: Category A only; Python is a test harness, never product runtime | blocking | Go (`go-backend`, `go-race`, `go-windows`), `frontend-v2`, `delivery-contract`, `data-integrity` (A only), `repo-hygiene`, `zero-python-runtime` |
-| Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 37 B suites (data contracts, fixture oracles, stdlib tooling guards) |
-| Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 209 suites (206 C + 3 A): MIGRATE until retired + DEPRECATE |
+| Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 36 B suites (data contracts, fixture oracles, stdlib tooling guards) |
+| Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 210 suites (207 C + 3 A): MIGRATE until retired + DEPRECATE |
 
 `python-guards` and `js-syntax` leave the production gate; the legacy lane keeps them
 visible without blocking a release. The registry guard (`dev/suite_registry_guard.py`)
@@ -85,7 +85,7 @@ excerpt's own `# sha256:` header repeats).
 | 3 | `dev/soft_warnings_v974.py` | MEASURED_FAIL | C/DEPRECATE | ModuleNotFoundError: No module named 'fastapi' via soft_warnings -> confidence_engine -> fts_engine.scan_symbol -> api.fundamental | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_soft_warnings_v974.py.txt) |
 | 4 | `dev/mstat_local_v975.py` | MEASURED_FAIL | C/DEPRECATE | ModuleNotFoundError: No module named 'requests' at dev/mstat_local_v975.py:35 -> test_tsetmc.py:17 | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_mstat_local_v975.py.txt) |
 | 5 | `dev/test_board_fixture_v1120.py` | NOT_MEASURED | B/KEEP | B1: 5/6 checks pass; the only failing check is 'goldens equal a fresh oracle run (parsed JSON)' with ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_board_fixture_v1120.py.txt) |
-| 6 | `dev/test_mstat_fixture_v1121.py` | NOT_MEASURED | B/KEEP | B2: 63/64 checks pass; the only failing check is 'goldens equal a fresh oracle run (parsed JSON)' with ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_mstat_fixture_v1121.py.txt) |
+| 6 | `dev/test_mstat_fixture_v1121.py` | MEASURED_FAIL | C/DEPRECATE | C8 CI (fastapi installed): 63/64 — the only failure is 'goldens equal a fresh oracle run (parsed JSON)'. A fresh in-process oracle run vs the committed goldens differs in 20/26 files: 366 keys added, 0 keys removed, 0 va | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_mstat_fixture_v1121.py.txt) |
 | 7 | `dev/test_chart_fixture_b3.py` | NOT_MEASURED | B/KEEP | B3: 44 passed / 3 failed; all three failures (goldens oracle, FTS engine vectors, CDN-seam negative control) die on ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_chart_fixture_b3.py.txt) |
 | 8 | `dev/test_fundamental_fixture_b4.py` | NOT_MEASURED | B/KEEP | B4: 43 passed / 2 failed. The only failing checks are the two fastapi oracle sections: 'fundamental goldens equal a fresh oracle run' (ModuleNotFoundError: No module named 'fastapi') and 'card oracle runs clean' (rc=1, s | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_fixture_b4.py.txt) |
 | 9 | `dev/test_fundamental_vectors_b4.py` | NOT_MEASURED | B/KEEP | 1/2: 'both oracle scripts run' fails — tools/parity/gen_fundamental_vectors.py rc=1 with ModuleNotFoundError: No module named 'fastapi' | [excerpt](../../../_audit/phase49-full-verification/evidence/ci-failure-excerpts/dev_test_fundamental_vectors_b4.py.txt) |
@@ -109,7 +109,8 @@ Statuses: `MEASURED_FAIL` = reproduced here (the failure is real); `NOT_MEASURED
 the only failing section needs a dependency this machine cannot install
 (`fastapi`/`requests`/`httpx`, no PyPI route); `NAMED_SKIP` = the runner reports a
 named SKIP for a gitignored fixture (never a silent green); `FIXED_IN_A4` = the test
-is green after the A4 fix.
+is green after the A4 fix; `FIXED_IN_C8` = the test was re-measured with FastAPI
+installed and the data lane was made green by the C8 fixes below.
 
 ### Carried defects fixed in A4
 
@@ -139,6 +140,35 @@ is green after the A4 fix.
    checks. Before: `FAIL card/card_no_sales has content` (42 passed / 3 failed). After:
    `PASS card/card_no_sales has content` (43 passed / 2 failed; both remaining reds are
    the `fastapi` oracle sections listed above). No golden or fixture byte changed.
+
+### Carry-over fixed in C8 (FastAPI installed; real CI parity)
+
+1. **B4 stale goldens** (`dev/test_fundamental_fixture_b4.py`). With the oracle runnable,
+   the freshness check failed on 9 `fund_*` goldens (27 checked). They were regenerated
+   with `tools/parity/gen_fundamental_golden.py`, never hand-edited, and the oracle now
+   writes `newline="\n"` so its bytes are platform-stable. The diff is the engine work
+   since 2026-10-31: the per-symbol `freshness` block (b68593f7), the four-axes
+   indicator fields (b2c5085f/773f2e1c), and the retirement of `monetary.series` from the
+   payload. The `sectors`, `quarters_*` and `tape_*` goldens are byte-unchanged, so
+   `TestFundamentalGoldens` and `TestCardGoldens` stay green. The `fund_mixed` content
+   predicate now asserts the four-axes identity gate (`FTS ندارد` for a symbol without
+   an instrument row); the mixed-date trap remains pinned by its `monetary_pct=33.3`
+   (700/525) and by `quarters_mixed`, which still requires no dated rows.
+2. **B3 vector freshness on Linux** (`dev/test_chart_fixture_b3.py`). The committed
+   `fts_vectors.json` is Python oracle output consumed by Go `TestFTSVectors` at the
+   parity 1e-9 numeric tolerance; exact float equality also failed on the Linux runner
+   for last-ulp libm differences in the oracle's `math.sin` inputs. The freshness check
+   now applies the same 1e-9 relative tolerance to numbers, requires every key and every
+   non-numeric value to match exactly, and prints the first differences plus `max_rel`.
+   This mirrors the frozen `EXACT_EQ` tolerance; it does not weaken any discrete assert.
+3. **B2 reclassified to legacy** (`dev/test_mstat_fixture_v1121.py`). The C8 CI run with
+   FastAPI installed showed 63/64: the oracle now adds 366 keys the Go port does not
+   emit (v11.2.1 breadth basis/dropped, market_cap, queue_basis, value_source, and the
+   legacy board panels gold/indexcards/orderflows/ownership/tops/treemap). Regenerating
+   the mstat goldens breaks five Go tests with `missing in go`, so the Python-only
+   additions cannot be made the Go contract. The suite is now `C/DEPRECATE`, legacy
+   lane (report-only), with the Go tests that read the same fixture/goldens named as
+   the live gate. The failure stays visible; it is an explicit divergence blocker.
 
 ## 5. Method (and what was deliberately *not* migrated)
 
@@ -370,7 +400,7 @@ is green after the A4 fix.
 | `dev/test_mainwatch_flags_v1.py` | C | DEPRECATE | legacy | `-` | mainwatch tape flags of api; internal/mstat owns the flags (TestMainwatchGoldens, TestMainwatchFlagShapes) | 2026-11-10 |
 | `dev/test_market_phase_v1.py` | A | KEEP | production | `-` | product state contract: session phase comes from the official market state; no verdict is allowed without a phase. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
 | `dev/test_market_state_stages_v1.py` | A | KEEP | production | `-` | product state contract: staged verdict, one-sided partial liquidity and no lookahead in the market state. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
-| `dev/test_mstat_fixture_v1121.py` | B | KEEP | data | `-` | B2 mstat fixture: goldens and pinned clock; the oracle imports api.market, so locally NOT_MEASURED (fastapi absent) | - |
+| `dev/test_mstat_fixture_v1121.py` | C | DEPRECATE | legacy | `backend-go/internal/mstat/board_test.go:TestBoardMatchesGolden` | B2 oracle compares the retired Python mstat engine with the committed goldens. C8 showed the live Go port intentionally does not emit the Python-only additions (v11.2.1 breadth basis/dropped, market_cap/queue_basis/value_source, and the legacy board panels gold/indexcards/orderflows/ownership/tops/treemap); regenerating the goldens breaks 5 Go tests. The Go contract is pinned by internal/mstat tests that read the same fixture and goldens; this suite now runs report-only in the legacy lane and its failure stays visible. | 2026-11-11 |
 | `dev/test_notifications_v1.py` | A | KEEP | production | `-` | product data contract: notifications come only from CODAL, every item carries a tracing_no and url, unclassified is never 'low'. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
 | `dev/test_official_ledger_dedupe_v1.py` | C | DEPRECATE | legacy | `-` | one official ledger row applied once in the Python chain; internal/tsetmc TestDeduplicationAndUpsert owns ingest dedupe; the chain-side application is not ported | 2026-11-10 |
 | `dev/test_phase47_ingestion_v1.py` | C | DEPRECATE | legacy | `-` | Phase 4.7 ingestion rules of the Python writer; internal/live and internal/store own Go ingestion (TestPersistPreservesStoredPricesOnZero) | 2026-11-10 |

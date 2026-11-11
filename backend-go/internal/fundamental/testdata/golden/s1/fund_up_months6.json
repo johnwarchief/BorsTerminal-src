@@ -50,6 +50,7 @@
  },
  "profile": {
   "kind": "production",
+  "margin_class": "production",
   "label": "تولیدی / صادراتی",
   "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
   "volume_applicable": true,
@@ -60,200 +61,7 @@
   "1": {
    "monetary": {
     "monetary_pct": 50.0,
-    "series": [
-     {
-      "year": 1404,
-      "month": 12,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1860.0,
-      "ytd_revenue_prev": 1240.0,
-      "period_end": "1404/12"
-     },
-     {
-      "year": 1404,
-      "month": 11,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1820.0,
-      "ytd_revenue_prev": 1213.3333333333333,
-      "period_end": "1404/11"
-     },
-     {
-      "year": 1404,
-      "month": 10,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1780.0,
-      "ytd_revenue_prev": 1186.6666666666667,
-      "period_end": "1404/10"
-     },
-     {
-      "year": 1404,
-      "month": 9,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1740.0,
-      "ytd_revenue_prev": 1160.0,
-      "period_end": "1404/09"
-     },
-     {
-      "year": 1404,
-      "month": 8,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1700.0,
-      "ytd_revenue_prev": 1133.3333333333333,
-      "period_end": "1404/08"
-     },
-     {
-      "year": 1404,
-      "month": 7,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1660.0,
-      "ytd_revenue_prev": 1106.6666666666667,
-      "period_end": "1404/07"
-     },
-     {
-      "year": 1404,
-      "month": 6,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1620.0,
-      "ytd_revenue_prev": 1080.0,
-      "period_end": "1404/06"
-     },
-     {
-      "year": 1404,
-      "month": 5,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1580.0,
-      "ytd_revenue_prev": 1053.3333333333333,
-      "period_end": "1404/05"
-     },
-     {
-      "year": 1404,
-      "month": 4,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1540.0,
-      "ytd_revenue_prev": 1026.6666666666667,
-      "period_end": "1404/04"
-     },
-     {
-      "year": 1404,
-      "month": 3,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1500.0,
-      "ytd_revenue_prev": 1000.0,
-      "period_end": "1404/03"
-     },
-     {
-      "year": 1404,
-      "month": 2,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1460.0,
-      "ytd_revenue_prev": 973.3333333333334,
-      "period_end": "1404/02"
-     },
-     {
-      "year": 1404,
-      "month": 1,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1420.0,
-      "ytd_revenue_prev": 946.6666666666666,
-      "period_end": "1404/01"
-     },
-     {
-      "year": 1403,
-      "month": 12,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1380.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/12"
-     },
-     {
-      "year": 1403,
-      "month": 11,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1340.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/11"
-     },
-     {
-      "year": 1403,
-      "month": 10,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1300.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/10"
-     },
-     {
-      "year": 1403,
-      "month": 9,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1260.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/09"
-     },
-     {
-      "year": 1403,
-      "month": 8,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1220.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/08"
-     },
-     {
-      "year": 1403,
-      "month": 7,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1180.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/07"
-     },
-     {
-      "year": 1403,
-      "month": 6,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1140.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/06"
-     },
-     {
-      "year": 1403,
-      "month": 5,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1100.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/05"
-     },
-     {
-      "year": 1403,
-      "month": 4,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1060.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/04"
-     },
-     {
-      "year": 1403,
-      "month": 3,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 1020.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/03"
-     },
-     {
-      "year": 1403,
-      "month": 2,
-      "monthly_revenue": 40.0,
-      "ytd_revenue": 980.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/02"
-     },
-     {
-      "year": 1403,
-      "month": 1,
-      "monthly_revenue": 940.0,
-      "ytd_revenue": 940.0,
-      "ytd_revenue_prev": null,
-      "period_end": "1403/01"
-     }
-    ],
+    "basis": null,
     "ytd_now_bt": 0.2,
     "ytd_prev_bt": 0.1,
     "ytd_now_mrl": 1860.0,
@@ -300,7 +108,8 @@
     "note_breadth": "فقط 0 از 12 ماهِ سپری‌شده بهتر شده — رشد حجم فراگیر نیست.",
     "rule_ref": "F-01b"
    },
-   "pass": false
+   "pass": false,
+   "reason": "رشد اسمی +50.0٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته)."
   },
   "2": {
    "years_required": 3,
@@ -363,6 +172,7 @@
    "reason": "",
    "evidence_tier": "audited_year_end",
    "strict_evidence": true,
+   "evidence_label": "سالانهٔ حسابرسی‌شده",
    "eps_yoy_pct": [
     null,
     22.0,
@@ -402,11 +212,13 @@
    "optimal": false,
    "threshold": 20.0,
    "optimal_threshold": 30.0,
+   "margin_tier": "floor",
    "formula": "(سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰",
    "band": "acceptable",
    "ideal": false,
    "ideal_threshold": 30.0,
    "na": false,
+   "na_kind": null,
    "reason": "",
    "rule_ref": "F-03"
   },
@@ -433,6 +245,9 @@
    "potential_pass": true,
    "rule_ref": "F-04",
    "gate": "OR",
+   "acceptance_path": "sales_to_mcap",
+   "annualize_months": 12,
+   "annualize_label": "سالانه‌شده از دورهٔ 12 ماهه",
    "pass": true,
    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
    "annual": {
@@ -814,10 +629,7 @@
   "mandatory_sectors": [
    "خودرو",
    "نیروگاه",
-   "قند و شکر",
-   "لاستیک",
-   "شوینده",
-   "بیمه"
+   "لاستیک"
   ],
   "free_sectors": [
    "سیمان",
@@ -833,6 +645,7 @@
    "نفت",
    "محصولات فلزی"
   ],
+  "reject_insurance": true,
   "watchlist_max": 50,
   "mcap_min_hmt": 0.0,
   "holdings_sales_na": true,
@@ -859,5 +672,51 @@
  },
  "ref_symbol": null,
  "ref_reason": null,
+ "freshness": {
+  "symbol": "عادی01",
+  "as_of": "2027-02-08T15:11:02+03:30",
+  "axes": {
+   "1_growth": {
+    "as_of": null,
+    "source": "monthly_sales",
+    "tracing_no": 1023,
+    "period_end": null,
+    "state": "fresh",
+    "reason": ""
+   },
+   "2_eps_trend": {
+    "as_of": "2027-02-08T15:11:02+03:30",
+    "source": "financial_statements",
+    "tracing_no": 5005,
+    "period_end": "1404/12/29",
+    "state": "fresh",
+    "reason": ""
+   },
+   "3_gross_margin": {
+    "as_of": "2027-02-08T15:11:02+03:30",
+    "source": "financial_statements",
+    "tracing_no": 5005,
+    "period_end": "1404/12/29",
+    "state": "fresh",
+    "reason": ""
+   },
+   "4_sales_to_mcap": {
+    "as_of": "2026-10-28",
+    "source": "monthly_sales+market_watch",
+    "tracing_no": 1023,
+    "period_end": null,
+    "state": "fresh",
+    "reason": ""
+   },
+   "5_industry": {
+    "as_of": "2026-10-28",
+    "source": "instruments",
+    "tracing_no": null,
+    "period_end": null,
+    "state": "fresh",
+    "reason": ""
+   }
+  }
+ },
  "fs_count": 6
 }

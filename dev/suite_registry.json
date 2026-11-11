@@ -2345,13 +2345,13 @@
    "script": "dev/test_mstat_fixture_v1121.py",
    "label": "B2 mstat fixture + goldens + pinned clock are current",
    "kind": "SUITES",
-   "category": "B",
-   "disposition": "KEEP",
-   "profile": "data",
-   "go_equivalent": null,
+   "category": "C",
+   "disposition": "DEPRECATE",
+   "profile": "legacy",
+   "go_equivalent": "backend-go/internal/mstat/board_test.go:TestBoardMatchesGolden",
    "ts_equivalent": null,
-   "reason": "B2 mstat fixture: goldens and pinned clock; the oracle imports api.market, so locally NOT_MEASURED (fastapi absent)",
-   "retirement_date": null
+   "reason": "B2 oracle compares the retired Python mstat engine with the committed goldens. C8 showed the live Go port intentionally does not emit the Python-only additions (v11.2.1 breadth basis/dropped, market_cap/queue_basis/value_source, and the legacy board panels gold/indexcards/orderflows/ownership/tops/treemap); regenerating the goldens breaks 5 Go tests. The Go contract is pinned by internal/mstat tests that read the same fixture and goldens; this suite now runs report-only in the legacy lane and its failure stays visible.",
+   "retirement_date": "2026-11-11"
   },
   "dev/test_notifications_v1.py": {
    "script": "dev/test_notifications_v1.py",
