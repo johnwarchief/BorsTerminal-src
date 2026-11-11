@@ -166,19 +166,51 @@ def check_ci_record(path):
     if record.get("expected_workflows") != expected:
         raise SystemExit(
             "stage11_deliverables: expected_workflows must be %s" % expected)
+    if record.get("status") == "COMPLETE":
+        runs = record.get("runs") or []
+        if not runs:
+            raise SystemExit(
+                "stage11_deliverables: a complete CI record needs runs")
+        seen = {r.get("workflow") for r in runs}
+        if seen != set(expected):
+            raise SystemExit(
+                "stage11_deliverables: CI record workflows %s != %s"
+                % (sorted(seen), expected))
+        for run in runs:
+            if not run.get("url") or not run.get("run_id"):
+                raise SystemExit(
+                    "stage11_deliverables: CI run %r lacks url/run_id"
+                    % run.get("workflow"))
+            if run.get("conclusion") not in ("success", "failure"):
+                raise SystemExit(
+                    "stage11_deliverables: CI run %r has no conclusion"
+                    % run.get("workflow"))
+            for job in run.get("jobs") or []:
+                if not job.get("name") or not job.get("details_url"):
+                    raise SystemExit(
+                        "stage11_deliverables: CI job without name/url in %r"
+                        % run.get("workflow"))
     return record
 
 
-def verify_report(path):
+def verify_report(path, record=None):
     with open(path, encoding="utf-8") as fh:
         text = fh.read()
     verdict = "PHASE49_PARTIAL_WITH_EXPLICIT_BLOCKERS"
     if verdict not in text:
         raise SystemExit(
             "stage11_deliverables: report does not state the verdict %s" % verdict)
-    if "PENDING_FINAL_CI" not in text and "PENDING" not in text:
+    if record and record.get("status") == "PENDING_FINAL_CI" \
+            and "PENDING" not in text:
         raise SystemExit(
             "stage11_deliverables: report must disclose the pending final CI")
+    if record and record.get("status") == "COMPLETE":
+        if "CI-FINAL-RESULTS.json" not in text:
+            raise SystemExit(
+                "stage11_deliverables: report does not cite CI-FINAL-RESULTS.json")
+        if record.get("commit_sha") not in text:
+            raise SystemExit(
+                "stage11_deliverables: report does not cite the CI commit")
     return verdict
 
 
@@ -194,7 +226,7 @@ def main():
 
     manifest = check_manifest(os.path.join(DOCS, "FINAL-SEED-MANIFEST.json"))
     record = check_ci_record(os.path.join(DOCS, "CI-FINAL-RESULTS.json"))
-    verdict = verify_report(os.path.join(DOCS, "FULL-VERIFICATION-REPORT.md"))
+    verdict = verify_report(os.path.join(DOCS, "FULL-VERIFICATION-REPORT.md"), record)
 
     for name in DELIVERABLES:
         path = os.path.join(DOCS, name)

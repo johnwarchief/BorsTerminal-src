@@ -1,10 +1,97 @@
 {
-  "status": "PENDING_FINAL_CI",
-  "commit_sha": "19d3a885feb6f463ae36907caf43acd07092df7a",
-  "expected_workflows": [
-    "guards",
-    "python-tooling",
-    "python-legacy"
-  ],
-  "runs": []
+ "commit_sha": "ea179e3c69aba0c7c9bc9648bfe480d214a790a7",
+ "branch": "mission/phase49-full-verification-python-ci-2026-11-10",
+ "repository": "johnwarchief/BorsTerminal-src",
+ "status": "COMPLETE",
+ "expected_workflows": ["guards", "python-tooling", "python-legacy"],
+ "fetched_at": "2026-11-11T08:32:00Z",
+ "runs": [
+  {
+   "workflow": "guards",
+   "run_id": 42985995885,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885",
+   "conclusion": "success",
+   "jobs": [
+    {
+     "name": "frontend v2 (typecheck / vitest / build)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407172640"
+    },
+    {
+     "name": "data integrity guards (ingestion / candles / backfill)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407172916"
+    },
+    {
+     "name": "go backend (vet / ast-arch / unit-tests)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407172927"
+    },
+    {
+     "name": "EOL / attributes / no tracked junk",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407172934"
+    },
+    {
+     "name": "go backend on windows (windows-2022)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407173023"
+    },
+    {
+     "name": "go race detector (cmd/borsd + generation runtime)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407173038"
+    },
+    {
+     "name": "go backend on windows (windows-latest)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407173096"
+    },
+    {
+     "name": "zero-python runtime proof (Go process tree)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130407173276"
+    },
+    {
+     "name": "desktop delivery (Windows bundle + Tauri shell + installer)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995885/job/130409280813"
+    }
+   ]
+  },
+  {
+   "workflow": "python-tooling",
+   "run_id": 42985995514,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995514",
+   "conclusion": "success",
+   "note": "data lane: 36 suites, ALL SUITES PASSED (20 counted, 14 exit-code-only, 2 named skips for gitignored fixtures); job log sha256 829e92767cfd275ca2e227d7fb39db12967b6179ac3eb38fb7219ea8b9408963",
+   "jobs": [
+    {
+     "name": "data/research suites (python dev/run_all_tests.py --profile data)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995514/job/130407171185"
+    }
+   ]
+  },
+  {
+   "workflow": "python-legacy",
+   "run_id": 42985995569,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995569",
+   "conclusion": "success",
+   "note": "report-only lane (continue-on-error). The legacy Python job fails by design, and that failure stays visible: 30 of 211 legacy suites are red (retired Python engine/API guards, including B2 after its C8 reclassification). The workflow conclusion is success because the lane never blocks a release. Job log sha256 01e4b9b81cf4bc0c4f0721779c00e48fd3c1194e186938f94768efe4e531ea9b",
+   "jobs": [
+    {
+     "name": "legacy static JS syntax (report-only)",
+     "conclusion": "success",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995569/job/130407171195"
+    },
+    {
+     "name": "legacy Python maintenance (report-only)",
+     "conclusion": "failure",
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/42985995569/job/130407171633",
+     "report_only": true
+    }
+   ]
+  }
+ ]
 }
