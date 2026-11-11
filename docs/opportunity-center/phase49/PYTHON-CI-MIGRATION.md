@@ -10,13 +10,13 @@ Branch: `mission/phase49-full-verification-python-ci-2026-11-10`.
 
 | Measure | Count |
 | --- | ---: |
-| Suites in the runner (`SUITES` + `JS_SUITES`) | 258 |
+| Suites in the runner (`SUITES` + `JS_SUITES`) | 260 |
 | A - live product/data contract | 17 |
-| B - data / research / CI-tooling guard | 35 |
+| B - data / research / CI-tooling guard | 37 |
 | C - legacy Python backend, API, UI or build surface | 206 |
 | D - obsolete, checked code deleted | 0 |
 | Legacy lane (`profile=legacy` rows) | 209 (206 C + 3 A) |
-| KEEP | 49 |
+| KEEP | 51 |
 | MIGRATE (named Go/TS test owns the behaviour) | 8 |
 | DEPRECATE (legacy lane, named owner, retirement 2026-11-10) | 201 |
 | REMOVE (deleted code) | 0 |
@@ -40,7 +40,7 @@ unused.
 | Lane | Workflow (Task A5) | Selection | Gate | Contents |
 | --- | --- | --- | --- | --- |
 | Production | `guards.yml` | `python dev/run_all_tests.py --profile production` inside `data-integrity`: Category A only; Python is a test harness, never product runtime | blocking | Go (`go-backend`, `go-race`, `go-windows`), `frontend-v2`, `delivery-contract`, `data-integrity` (A only), `repo-hygiene`, `zero-python-runtime` |
-| Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 35 B suites (data contracts, fixture oracles, stdlib tooling guards) |
+| Data / tooling | `python-tooling.yml` | `python dev/run_all_tests.py --profile data` | blocking for data and tooling | 37 B suites (data contracts, fixture oracles, stdlib tooling guards) |
 | Legacy | `python-legacy.yml` | `python dev/run_all_tests.py --profile legacy` | `continue-on-error: true` (report-only) | 209 suites (206 C + 3 A): MIGRATE until retired + DEPRECATE |
 
 `python-guards` and `js-syntax` leave the production gate; the legacy lane keeps them
@@ -377,6 +377,8 @@ is green after the A4 fix.
 | `dev/test_phase48_backfill_history_v1.py` | B | KEEP | data | `-` | backfill: reference history writes only missing dates with provenance and rollback, and is idempotent | - |
 | `dev/test_phase48_history_verify_v1.py` | B | KEEP | data | `-` | data validation: raw/adjusted split, close basis and factor-chain classification of the reference history | - |
 | `dev/test_phase49_correction_parity_v1.py` | A | KEEP | production | `-` | Python<->Go parity fixture for literal H/L and raw pack corrections; the Go engine must match this oracle. No Go/TS equivalent exists; the Python guard remains until a targeted port (spec 12.6). | - |
+| `dev/test_phase49_manifest.py` | B | KEEP | data | `-` | guards the Phase 4.9.1 stage manifest helper used by every verification stage | - |
+| `dev/test_phase49_rules_guard.py` | B | KEEP | data | `-` | guards the Phase 4.9.1 status-rules file: the five frozen tolerances are read from the existing Phase 4.9 AST and the 13 reconciliation categories cannot drift | - |
 | `dev/test_portable_v1.py` | C | DEPRECATE | legacy | `-` | portable mode of the Python launcher; the Go/Tauri distribution owns portability | 2026-11-10 |
 | `dev/test_ra365_round20_formula_oracle_v1.py` | B | KEEP | data | `-` | oracle: proven Rahavard DPS/reserve formulas stay separated from the unverified contribution formula | - |
 | `dev/test_ra365_round21_long_gap_share_v1.py` | C | DEPRECATE | legacy | `-` | Round 21 share change inside a long suspension in the Python chain; internal/chart adjust engine owns the chain (Test20FamousSymbols_AdjustmentScenarios); this round rule is not ported | 2026-11-10 |
