@@ -1,0 +1,84 @@
+{
+ "schema": "phase49-2-baseline-v1",
+ "branch": "mission/phase49-full-verification-python-ci-2026-11-10",
+ "head": "6d63e89d964e078f388189143b21d3cfc247f117",
+ "main": "9a919e82f5b836cc7ec4be5ba04a39ec2f74b4e2",
+ "worktree_dirty": true,
+ "counts": {
+  "step_rows": 8308,
+  "step_status": {
+   "CONFLICT_RATIO": 223,
+   "VERIFIED_REFERENCE": 4933,
+   "RECONSTRUCTED_AUDITED": 608,
+   "VERIFIED_MULTI_SOURCE": 955,
+   "INSUFFICIENT_EVIDENCE": 916,
+   "PARTIAL_OFFICIAL": 408,
+   "VERIFIED_OFFICIAL": 95,
+   "PARTIAL_REFERENCE": 136,
+   "CONFLICT_DUPLICATE": 6,
+   "INVALID_DROPPED": 28
+  },
+  "baseline_unverified_rows": 1358,
+  "still_unverified_steps": 1179,
+  "became_verified_steps": 179,
+  "symbol_rows": 6103,
+  "symbol_status": {
+   "INSUFFICIENT_EVIDENCE": 5910,
+   "CONFLICT": 90,
+   "RECONSTRUCTED_VERIFIED": 46,
+   "VERIFIED_WITH_EVENTS": 55,
+   "VERIFIED_NO_APPLICABLE_EVENT": 2
+  },
+  "symbols_without_reference_coverage": 5344,
+  "symbols_without_reference_and_step": 5185,
+  "halted_symbols": 444,
+  "symbols_without_instruments": 1468,
+  "unmapped_asset_symbols": 339,
+  "reference_derived_rows": 105367,
+  "seed_rows": 544284,
+  "rows_added_vs_base": 33145,
+  "anomaly_events": 60909,
+  "anomaly_by_kind": {
+   "DUPLICATE_DATE": 0,
+   "INVALID_OHLC": 306,
+   "OPEN_EQ_PREV_CLOSE": 57911,
+   "ZERO_FIELDS": 0,
+   "ZERO_VOLUME": 2692
+  },
+  "anomaly_unresolved_gap": 53176,
+  "anomaly_unresolved_by_kind": {
+   "OPEN_EQ_PREV_CLOSE": 50680,
+   "ZERO_VOLUME": 2496
+  },
+  "invalid_ohlc_rows": 306,
+  "invalid_ohlc_by_root_cause": {
+   "source_open_zero": 12,
+   "source_shadow_and_open_zero": 294
+  },
+  "post_backfill_events": 7,
+  "post_backfill_blockers": 4,
+  "post_backfill_blocker_dates": [
+   {
+    "date": "1995-07-26",
+    "symbol": "شنفت"
+   },
+   {
+    "date": "2026-11-02",
+    "symbol": "طلا"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "تپسي"
+   },
+   {
+    "date": "2026-11-10",
+    "symbol": "غشان"
+   }
+  ]
+ },
+ "source_files": {
+  "steps_ledger_sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28",
+  "symbols_ledger_sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650",
+  "seed_manifest_sha256": "6a930818b05f3ef180064e7c8c908830bac5a72d89b28111dd43fba9cb859aa7"
+ }
+}

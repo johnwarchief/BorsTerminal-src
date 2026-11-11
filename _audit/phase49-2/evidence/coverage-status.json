@@ -1,0 +1,700 @@
+{
+ "schema": "phase49-2-coverage-status-v1",
+ "rows": 6103,
+ "status_counts": {
+  "QUEUE_NO_REFERENCE": 3308,
+  "QUEUE_NO_INSTRUMENTS": 1468,
+  "QUEUE_REFERENCE_ONLY": 675,
+  "QUEUE_HALTED": 431,
+  "QUEUE_UNMAPPED_ASSET_ID": 191,
+  "READY_PILOT": 30
+ },
+ "named_cases": {
+  "شنفت": {
+   "symbol": "شنفت",
+   "status": "READY_PILOT",
+   "queue_reason": "",
+   "ref_coverage": "full",
+   "step_rows": "26",
+   "rows": "433",
+   "first_date": "2024-08-24",
+   "last_date": "2026-10-11",
+   "stale_status": "recent",
+   "identity_status": "resolved_instruments",
+   "anomalies_legacy": 1075,
+   "invalid_ohlc_legacy": 0,
+   "pilot_raw_rows": 6284,
+   "pilot_raw_first": "1991-05-11",
+   "pilot_raw_last": "2026-11-10",
+   "pilot_factors": 50,
+   "pilot_adjusted_rows": 6284,
+   "pilot_verified_exact": "6284/6284",
+   "pilot_max_rel_error": 1.887379141862766e-15,
+   "pilot_revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "notes": "24 reference steps absent from the old pack; 29 measured events stay type-unclassified"
+  },
+  "طلا": {
+   "symbol": "طلا",
+   "status": "READY_PILOT",
+   "queue_reason": "",
+   "ref_coverage": "full",
+   "step_rows": "0",
+   "rows": "497",
+   "first_date": "2024-08-24",
+   "last_date": "2026-10-11",
+   "stale_status": "recent",
+   "identity_status": "resolved_instruments",
+   "anomalies_legacy": 2,
+   "invalid_ohlc_legacy": 0,
+   "pilot_raw_rows": 2209,
+   "pilot_raw_first": "2017-06-10",
+   "pilot_raw_last": "2026-11-10",
+   "pilot_factors": 1,
+   "pilot_adjusted_rows": 2209,
+   "pilot_verified_exact": "2209/2209",
+   "pilot_max_rel_error": 2.220446049250313e-16,
+   "pilot_revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "notes": "1 reference steps absent from the old pack; 1 measured events stay type-unclassified"
+  },
+  "تپسي": {
+   "symbol": "تپسي",
+   "status": "READY_PILOT",
+   "queue_reason": "",
+   "ref_coverage": "full",
+   "step_rows": "5",
+   "rows": "74",
+   "first_date": "2026-06-21",
+   "last_date": "2026-10-11",
+   "stale_status": "recent",
+   "identity_status": "resolved_instruments",
+   "anomalies_legacy": 8,
+   "invalid_ohlc_legacy": 0,
+   "pilot_raw_rows": 738,
+   "pilot_raw_first": "2022-06-14",
+   "pilot_raw_last": "2026-11-10",
+   "pilot_factors": 5,
+   "pilot_adjusted_rows": 738,
+   "pilot_verified_exact": "738/738",
+   "pilot_max_rel_error": 3.3306690738754696e-16,
+   "pilot_revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "notes": "1 reference steps absent from the old pack; 1 measured events stay type-unclassified"
+  },
+  "غشان": {
+   "symbol": "غشان",
+   "status": "READY_PILOT",
+   "queue_reason": "",
+   "ref_coverage": "full",
+   "step_rows": "10",
+   "rows": "436",
+   "first_date": "2024-08-24",
+   "last_date": "2026-10-11",
+   "stale_status": "recent",
+   "identity_status": "resolved_instruments",
+   "anomalies_legacy": 15,
+   "invalid_ohlc_legacy": 0,
+   "pilot_raw_rows": 3719,
+   "pilot_raw_first": "2005-06-13",
+   "pilot_raw_last": "2026-11-10",
+   "pilot_factors": 25,
+   "pilot_adjusted_rows": 3719,
+   "pilot_verified_exact": "3719/3719",
+   "pilot_max_rel_error": 9.992007221626409e-16,
+   "pilot_revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "notes": "16 reference steps absent from the old pack; 13 measured events stay type-unclassified"
+  },
+  "ولانا": {
+   "symbol": "ولانا",
+   "status": "READY_PILOT",
+   "queue_reason": "",
+   "ref_coverage": "full",
+   "step_rows": "10",
+   "rows": "1893",
+   "first_date": "2013-11-30",
+   "last_date": "2026-11-09",
+   "stale_status": "fresh",
+   "identity_status": "resolved_instruments",
+   "anomalies_legacy": 86,
+   "invalid_ohlc_legacy": 0,
+   "pilot_raw_rows": 1892,
+   "pilot_raw_first": "2013-11-30",
+   "pilot_raw_last": "2026-11-10",
+   "pilot_factors": 11,
+   "pilot_adjusted_rows": 1892,
+   "pilot_verified_exact": "1892/1892",
+   "pilot_max_rel_error": 6.661338147750939e-16,
+   "pilot_revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "notes": "2 pack ratios superseded by the fresh reference; 2 reference steps absent from the old pack; 3 measured events stay type-unclassified"
+  }
+ },
+ "pilot": {
+  "غگرجي": {
+   "raw_rows": 4508,
+   "raw_first": "1991-04-22",
+   "raw_last": "2026-11-10",
+   "factors": 36,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4508,
+   "max_rel_error": 1.9984014443252818e-15,
+   "verified": 4508,
+   "exact": 4508,
+   "kinds": {
+    "capital_increase": 3,
+    "corporate_action_unclassified": 22,
+    "dividend": 11
+   },
+   "pack_audit": {
+    "missing_pack_step": 29,
+    "no_reference_change": 1
+   }
+  },
+  "هجرت": {
+   "raw_rows": 1591,
+   "raw_first": "2019-08-10",
+   "raw_last": "2026-11-10",
+   "factors": 9,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 1591,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 1591,
+   "exact": 1591,
+   "kinds": {
+    "dividend": 9
+   },
+   "pack_audit": {
+    "no_reference_change": 1
+   }
+  },
+  "وپارس": {
+   "raw_rows": 4315,
+   "raw_first": "2004-11-30",
+   "raw_last": "2026-11-10",
+   "factors": 23,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4315,
+   "max_rel_error": 1.1102230246251565e-15,
+   "verified": 4315,
+   "exact": 4315,
+   "kinds": {
+    "capital_increase": 3,
+    "corporate_action_unclassified": 13,
+    "dividend": 7
+   },
+   "pack_audit": {
+    "missing_pack_step": 20,
+    "no_reference_change": 1
+   }
+  },
+  "داسوه": {
+   "raw_rows": 5342,
+   "raw_first": "1994-02-27",
+   "raw_last": "2026-11-04",
+   "factors": 40,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 5342,
+   "max_rel_error": 8.881784197001252e-16,
+   "verified": 5342,
+   "exact": 5342,
+   "kinds": {
+    "capital_increase": 2,
+    "corporate_action_unclassified": 23,
+    "dividend": 15
+   },
+   "pack_audit": {
+    "missing_pack_step": 31,
+    "no_reference_change": 1
+   }
+  },
+  "ولانا": {
+   "raw_rows": 1892,
+   "raw_first": "2013-11-30",
+   "raw_last": "2026-11-10",
+   "factors": 11,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 1892,
+   "max_rel_error": 6.661338147750939e-16,
+   "verified": 1892,
+   "exact": 1892,
+   "kinds": {
+    "corporate_action_unclassified": 3,
+    "dividend": 8
+   },
+   "pack_audit": {
+    "missing_pack_step": 2,
+    "superseded_ratio": 2
+   }
+  },
+  "لپارس": {
+   "raw_rows": 5811,
+   "raw_first": "1991-04-06",
+   "raw_last": "2026-11-10",
+   "factors": 30,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 5811,
+   "max_rel_error": 6.661338147750939e-16,
+   "verified": 5811,
+   "exact": 5811,
+   "kinds": {
+    "corporate_action_unclassified": 17,
+    "dividend": 13
+   },
+   "pack_audit": {
+    "missing_pack_step": 22,
+    "no_reference_change": 1
+   }
+  },
+  "تپسي": {
+   "raw_rows": 738,
+   "raw_first": "2022-06-14",
+   "raw_last": "2026-11-10",
+   "factors": 5,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 738,
+   "max_rel_error": 3.3306690738754696e-16,
+   "verified": 738,
+   "exact": 738,
+   "kinds": {
+    "corporate_action_unclassified": 1,
+    "dividend": 4
+   },
+   "pack_audit": {
+    "missing_pack_step": 1,
+    "no_reference_change": 1
+   }
+  },
+  "غشان": {
+   "raw_rows": 3719,
+   "raw_first": "2005-06-13",
+   "raw_last": "2026-11-10",
+   "factors": 25,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 3719,
+   "max_rel_error": 9.992007221626409e-16,
+   "verified": 3719,
+   "exact": 3719,
+   "kinds": {
+    "capital_increase": 2,
+    "corporate_action_unclassified": 13,
+    "dividend": 10
+   },
+   "pack_audit": {
+    "missing_pack_step": 16,
+    "no_reference_change": 1
+   }
+  },
+  "سخند": {
+   "raw_rows": 1950,
+   "raw_first": "2015-07-04",
+   "raw_last": "2026-11-10",
+   "factors": 85,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 1950,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 1950,
+   "exact": 1950,
+   "kinds": {
+    "corporate_action_unclassified": 11,
+    "dividend": 74
+   },
+   "pack_audit": {
+    "missing_pack_step": 11,
+    "no_reference_change": 1
+   }
+  },
+  "خودرو": {
+   "raw_rows": 6757,
+   "raw_first": "1993-08-01",
+   "raw_last": "2026-11-10",
+   "factors": 38,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 6757,
+   "max_rel_error": 7.771561172376096e-16,
+   "verified": 6757,
+   "exact": 6757,
+   "kinds": {
+    "capital_increase": 2,
+    "corporate_action_unclassified": 32,
+    "dividend": 4
+   },
+   "pack_audit": {
+    "missing_pack_step": 25
+   }
+  },
+  "سرود": {
+   "raw_rows": 4850,
+   "raw_first": "2003-06-07",
+   "raw_last": "2026-11-10",
+   "factors": 28,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4850,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 4850,
+   "exact": 4850,
+   "kinds": {
+    "capital_increase": 1,
+    "corporate_action_unclassified": 17,
+    "dividend": 10
+   },
+   "pack_audit": {
+    "missing_pack_step": 9
+   }
+  },
+  "مارون": {
+   "raw_rows": 3243,
+   "raw_first": "2011-12-27",
+   "raw_last": "2026-11-10",
+   "factors": 16,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 3243,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 3243,
+   "exact": 3243,
+   "kinds": {
+    "capital_increase": 1,
+    "corporate_action_unclassified": 5,
+    "dividend": 10
+   },
+   "pack_audit": {}
+  },
+  "سبهان": {
+   "raw_rows": 4088,
+   "raw_first": "2003-07-15",
+   "raw_last": "2026-11-10",
+   "factors": 26,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4088,
+   "max_rel_error": 1.5543122344752192e-15,
+   "verified": 4088,
+   "exact": 4088,
+   "kinds": {
+    "capital_increase": 1,
+    "corporate_action_unclassified": 13,
+    "dividend": 12
+   },
+   "pack_audit": {
+    "missing_pack_step": 8
+   }
+  },
+  "شصفها": {
+   "raw_rows": 4149,
+   "raw_first": "2000-02-13",
+   "raw_last": "2026-11-10",
+   "factors": 17,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4149,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 4149,
+   "exact": 4149,
+   "kinds": {
+    "corporate_action_unclassified": 16,
+    "dividend": 1
+   },
+   "pack_audit": {
+    "missing_pack_step": 13
+   }
+  },
+  "كمند": {
+   "raw_rows": 2182,
+   "raw_first": "2017-07-29",
+   "raw_last": "2026-11-10",
+   "factors": 110,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 2182,
+   "max_rel_error": 8.881784197001252e-16,
+   "verified": 2182,
+   "exact": 2182,
+   "kinds": {
+    "corporate_action_unclassified": 28,
+    "dividend": 82
+   },
+   "pack_audit": {
+    "missing_pack_step": 28
+   }
+  },
+  "دالبر": {
+   "raw_rows": 4798,
+   "raw_first": "1997-03-11",
+   "raw_last": "2026-11-10",
+   "factors": 44,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4798,
+   "max_rel_error": 8.881784197001252e-16,
+   "verified": 4798,
+   "exact": 4798,
+   "kinds": {
+    "capital_increase": 3,
+    "corporate_action_unclassified": 29,
+    "dividend": 12
+   },
+   "pack_audit": {
+    "missing_pack_step": 15
+   }
+  },
+  "طلا": {
+   "raw_rows": 2209,
+   "raw_first": "2017-06-10",
+   "raw_last": "2026-11-10",
+   "factors": 1,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 2209,
+   "max_rel_error": 2.220446049250313e-16,
+   "verified": 2209,
+   "exact": 2209,
+   "kinds": {
+    "corporate_action_unclassified": 1
+   },
+   "pack_audit": {
+    "missing_pack_step": 1
+   }
+  },
+  "كالا": {
+   "raw_rows": 1673,
+   "raw_first": "2019-02-05",
+   "raw_last": "2026-11-10",
+   "factors": 8,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 1673,
+   "max_rel_error": 3.3306690738754696e-16,
+   "verified": 1673,
+   "exact": 1673,
+   "kinds": {
+    "corporate_action_unclassified": 4,
+    "dividend": 4
+   },
+   "pack_audit": {
+    "missing_pack_step": 1,
+    "no_reference_change": 1
+   }
+  },
+  "ثباغ": {
+   "raw_rows": 3428,
+   "raw_first": "2011-05-11",
+   "raw_last": "2026-11-10",
+   "factors": 21,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 3428,
+   "max_rel_error": 6.661338147750939e-16,
+   "verified": 3428,
+   "exact": 3428,
+   "kinds": {
+    "capital_increase": 2,
+    "corporate_action_unclassified": 10,
+    "dividend": 9
+   },
+   "pack_audit": {
+    "missing_pack_step": 11,
+    "no_reference_change": 1
+   }
+  },
+  "دارا": {
+   "raw_rows": 1689,
+   "raw_first": "2019-08-26",
+   "raw_last": "2026-11-10",
+   "factors": 44,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 1689,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 1689,
+   "exact": 1689,
+   "kinds": {
+    "corporate_action_unclassified": 3,
+    "dividend": 41
+   },
+   "pack_audit": {
+    "missing_pack_step": 3,
+    "no_reference_change": 1
+   }
+  },
+  "غدشت": {
+   "raw_rows": 3513,
+   "raw_first": "1996-03-18",
+   "raw_last": "2026-11-10",
+   "factors": 29,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 3513,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 3513,
+   "exact": 3513,
+   "kinds": {
+    "capital_increase": 2,
+    "corporate_action_unclassified": 12,
+    "dividend": 15
+   },
+   "pack_audit": {
+    "missing_pack_step": 6,
+    "no_reference_change": 1
+   }
+  },
+  "ارمغان": {
+   "raw_rows": 1685,
+   "raw_first": "2019-10-15",
+   "raw_last": "2026-11-10",
+   "factors": 84,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 1685,
+   "max_rel_error": 1.6653345369377348e-15,
+   "verified": 1685,
+   "exact": 1685,
+   "kinds": {
+    "corporate_action_unclassified": 3,
+    "dividend": 81
+   },
+   "pack_audit": {
+    "missing_pack_step": 3,
+    "superseded_ratio": 1
+   }
+  },
+  "ثتران": {
+   "raw_rows": 3237,
+   "raw_first": "2012-01-11",
+   "raw_last": "2026-11-10",
+   "factors": 8,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 3237,
+   "max_rel_error": 2.220446049250313e-16,
+   "verified": 3237,
+   "exact": 3237,
+   "kinds": {
+    "corporate_action_unclassified": 6,
+    "dividend": 2
+   },
+   "pack_audit": {
+    "missing_pack_step": 7,
+    "no_reference_change": 1
+   }
+  },
+  "چكاوه": {
+   "raw_rows": 4417,
+   "raw_first": "1997-09-24",
+   "raw_last": "2026-11-02",
+   "factors": 27,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4417,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 4417,
+   "exact": 4417,
+   "kinds": {
+    "corporate_action_unclassified": 19,
+    "dividend": 8
+   },
+   "pack_audit": {
+    "missing_pack_step": 14
+   }
+  },
+  "شنفت": {
+   "raw_rows": 6284,
+   "raw_first": "1991-05-11",
+   "raw_last": "2026-11-10",
+   "factors": 50,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 6284,
+   "max_rel_error": 1.887379141862766e-15,
+   "verified": 6284,
+   "exact": 6284,
+   "kinds": {
+    "capital_increase": 6,
+    "corporate_action_unclassified": 29,
+    "dividend": 15
+   },
+   "pack_audit": {
+    "missing_pack_step": 24
+   }
+  },
+  "گكيش": {
+   "raw_rows": 2042,
+   "raw_first": "2013-10-19",
+   "raw_last": "2026-11-10",
+   "factors": 18,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 2042,
+   "max_rel_error": 6.661338147750939e-16,
+   "verified": 2042,
+   "exact": 2042,
+   "kinds": {
+    "corporate_action_unclassified": 8,
+    "dividend": 10
+   },
+   "pack_audit": {
+    "missing_pack_step": 8,
+    "no_reference_change": 1
+   }
+  },
+  "خمهر": {
+   "raw_rows": 4626,
+   "raw_first": "2004-03-10",
+   "raw_last": "2026-11-10",
+   "factors": 11,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4626,
+   "max_rel_error": 4.440892098500626e-16,
+   "verified": 4626,
+   "exact": 4626,
+   "kinds": {
+    "capital_increase": 2,
+    "corporate_action_unclassified": 6,
+    "dividend": 3
+   },
+   "pack_audit": {
+    "missing_pack_step": 9,
+    "no_reference_change": 1
+   }
+  },
+  "پارند": {
+   "raw_rows": 2443,
+   "raw_first": "2016-07-09",
+   "raw_last": "2026-11-10",
+   "factors": 115,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 2443,
+   "max_rel_error": 8.881784197001252e-16,
+   "verified": 2443,
+   "exact": 2443,
+   "kinds": {
+    "corporate_action_unclassified": 33,
+    "dividend": 82
+   },
+   "pack_audit": {
+    "missing_pack_step": 33
+   }
+  },
+  "شپارس": {
+   "raw_rows": 3600,
+   "raw_first": "1993-04-25",
+   "raw_last": "2026-11-10",
+   "factors": 31,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 3600,
+   "max_rel_error": 6.661338147750939e-16,
+   "verified": 3600,
+   "exact": 3600,
+   "kinds": {
+    "capital_increase": 4,
+    "corporate_action_unclassified": 9,
+    "dividend": 18
+   },
+   "pack_audit": {
+    "missing_pack_step": 6,
+    "no_reference_change": 1
+   }
+  },
+  "كچاد": {
+   "raw_rows": 4913,
+   "raw_first": "2003-10-19",
+   "raw_last": "2026-11-10",
+   "factors": 37,
+   "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+   "adjusted_rows": 4913,
+   "max_rel_error": 8.881784197001252e-16,
+   "verified": 4913,
+   "exact": 4913,
+   "kinds": {
+    "capital_increase": 3,
+    "corporate_action_unclassified": 18,
+    "dividend": 16
+   },
+   "pack_audit": {
+    "missing_pack_step": 9
+   }
+  }
+ },
+ "note": "READY_PILOT requires reference_raw + measured factors + adjusted candles + exact reference verification. Every other status is a queue reason, not a global gate."
+}

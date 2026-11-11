@@ -1,0 +1,182 @@
+[
+ {
+  "symbol": "ارمغان",
+  "asset_id": 1656,
+  "ins_code": "31366347648583654",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "تپسي",
+  "asset_id": 18145,
+  "ins_code": "3839324986781871",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "ثباغ",
+  "asset_id": 619,
+  "ins_code": "68909035712962732",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "ثتران",
+  "asset_id": 587,
+  "ins_code": "20926459161497908",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "خمهر",
+  "asset_id": 398,
+  "ins_code": "17330546482145553",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "خودرو",
+  "asset_id": 167,
+  "ins_code": "65883838195688438",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "دارا",
+  "asset_id": 6734,
+  "ins_code": "62012736978844991",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "داسوه",
+  "asset_id": 20,
+  "ins_code": "12387472624849835",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "دالبر",
+  "asset_id": 251,
+  "ins_code": "60451823714332895",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "سبهان",
+  "asset_id": 373,
+  "ins_code": "32525655729432562",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "سخند",
+  "asset_id": 811,
+  "ins_code": "59598536122397373",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "سرود",
+  "asset_id": 302,
+  "ins_code": "11964419322927535",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "شصفها",
+  "asset_id": 322,
+  "ins_code": "18346219759153870",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "شنفت",
+  "asset_id": 182,
+  "ins_code": "14073782708315535",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "شپارس",
+  "asset_id": 8,
+  "ins_code": "61102694810476197",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "طلا",
+  "asset_id": 2672,
+  "ins_code": "46700660505281786",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "غدشت",
+  "asset_id": 6,
+  "ins_code": "2434703913394836",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "غشان",
+  "asset_id": 434,
+  "ins_code": "31791737198597563",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "غگرجي",
+  "asset_id": 30,
+  "ins_code": "31024260997481994",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "كالا",
+  "asset_id": 537,
+  "ins_code": "44549439964296944",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "كمند",
+  "asset_id": 2768,
+  "ins_code": "34718633636164421",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "كچاد",
+  "asset_id": 382,
+  "ins_code": "18027801615184692",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "لپارس",
+  "asset_id": 88,
+  "ins_code": "5187018329202415",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "مارون",
+  "asset_id": 485,
+  "ins_code": "53449700212786324",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "هجرت",
+  "asset_id": 325,
+  "ins_code": "5317427172344706",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "ولانا",
+  "asset_id": 599,
+  "ins_code": "66830065858417081",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "وپارس",
+  "asset_id": 422,
+  "ins_code": "33293588228706998",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "پارند",
+  "asset_id": 1951,
+  "ins_code": "70595828753641750",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "چكاوه",
+  "asset_id": 238,
+  "ins_code": "24254843881948059",
+  "basis": "real_close"
+ },
+ {
+  "symbol": "گكيش",
+  "asset_id": 695,
+  "ins_code": "44665761767777759",
+  "basis": "real_close"
+ }
+]

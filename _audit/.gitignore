@@ -140,3 +140,10 @@ phase49/continuation/*.exe~
 /phase49-full-verification/logs/
 /phase49-full-verification/ledgers/
 /phase49-full-verification/backfill-plan/
+
+# phase49-2: licensed raw capture stays out of Git; derived evidence/ledgers
+# stay trackable. DBs and EXEs are covered by *.db / *.exe above.
+/phase49-2/rahavard/pilot-capture.json
+/phase49-2/db/
+/phase49-2/bin/
+/phase49-2/product/

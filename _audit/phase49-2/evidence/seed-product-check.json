@@ -1,0 +1,112 @@
+{
+ "schema": "phase49-2-seed-product-check-v1",
+ "seed": "_audit/phase49-full-verification/seed/market.db",
+ "seed_counts": {
+  "price_history": 544284,
+  "symbols": 6103,
+  "history_validity": 6103,
+  "reference_derived_rows": 105367,
+  "integrity": "ok"
+ },
+ "symbols": {
+  "فولاد": {
+   "status": "success",
+   "candles": 3689,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "factors": 3689,
+   "events": 26,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-09"
+  },
+  "شنفت": {
+   "status": "success",
+   "candles": 6286,
+   "first": "1991-05-11",
+   "last": "2026-11-10",
+   "factors": 6286,
+   "events": 13,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-10"
+  },
+  "شبندر": {
+   "status": "success",
+   "candles": 2816,
+   "first": "2012-06-24",
+   "last": "2026-11-09",
+   "factors": 2816,
+   "events": 16,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-09"
+  },
+  "وبملت": {
+   "status": "success",
+   "candles": 3525,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "factors": 3525,
+   "events": 20,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-09"
+  },
+  "خودرو": {
+   "status": "success",
+   "candles": 3572,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "factors": 3572,
+   "events": 9,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-09"
+  },
+  "تپسي": {
+   "status": "success",
+   "candles": 90,
+   "first": "2026-06-21",
+   "last": "2026-11-10",
+   "factors": 90,
+   "events": 5,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-10"
+  },
+  "طلا": {
+   "status": "success",
+   "candles": 518,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "factors": 518,
+   "events": 0,
+   "adjust_source": "no-adjustment-event",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-10"
+  },
+  "غشان": {
+   "status": "success",
+   "candles": 443,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "factors": 443,
+   "events": 10,
+   "adjust_source": "local-cache",
+   "functional_status": "AVAILABLE_REFERENCE_CORRECTION",
+   "last_data_time": "2026-11-10"
+  }
+ },
+ "checks": {
+  "seed_integrity_ok": true,
+  "seed_rows_544284": true,
+  "seed_symbols_6103": true,
+  "seed_reference_rows_105367": true,
+  "all_symbols_responded": true,
+  "all_symbols_have_candles": true,
+  "factors_match_candles": true,
+  "all_have_source": true
+ },
+ "ok": true
+}

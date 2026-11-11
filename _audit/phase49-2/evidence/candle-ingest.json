@@ -1,0 +1,32 @@
+{
+ "schema": "phase49-2-candle-ingest-v1",
+ "seed": "_audit/phase49-full-verification/seed/market.db",
+ "seed_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+ "db": "_audit/phase49-2/db/market.db",
+ "db_sha256": "721ccfcceed0b63d307aec7f097edc9bf30c52a4566cdc9da39f39a428ab54db",
+ "capture": "_audit/phase49-2/rahavard/pilot-capture.json",
+ "capture_sha256": "6c8999ec2401a37a1c17370be6d06f155055d8d593b99c08100d3dd42beb8834",
+ "run_id": "phase49-2-pilot-6c8999ec2401",
+ "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+ "pilot_symbols": 30,
+ "capture_day": "2026-11-11",
+ "partial_bars_excluded": 30,
+ "counts": {
+  "reference_raw_rows": 105692,
+  "reference_adjusted_rows": 105692,
+  "adjustment_factors": 1027,
+  "kinds": {
+   "capital_increase": 37,
+   "corporate_action_unclassified": 404,
+   "dividend": 586
+  },
+  "audit": {
+   "missing_pack_step": 365,
+   "no_reference_change": 16,
+   "superseded_ratio": 3
+  },
+  "corporate_actions": 1232,
+  "conflicts_with_seed_raw": 10982,
+  "missing_pack_steps": 365
+ }
+}

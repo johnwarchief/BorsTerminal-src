@@ -1,0 +1,994 @@
+{
+ "schema": "phase49-2-engine-parity-v1",
+ "binary": "_audit/phase49-full-verification/borsd.exe",
+ "db": "_audit/phase49-full-verification/seed/market.db",
+ "pack": "data/ra365_corrections/ra365-phase49-rebuild-full-v2",
+ "capture_sha256": "6c8999ec2401a37a1c17370be6d06f155055d8d593b99c08100d3dd42beb8834",
+ "tolerance": 1e-06,
+ "symbols": [
+  {
+   "symbol": "ارمغان",
+   "candles": 104,
+   "first": "2026-06-13",
+   "last": "2026-11-10",
+   "common_dates": 102,
+   "max_rel": 0.025703436861065576,
+   "median_rel": 0.025703436861065354,
+   "worst": {
+    "date": "2026-07-08",
+    "rel": 0.025703436861065576,
+    "raw": 10024,
+    "factor": 0.9228375189212802,
+    "got": 9250.523289666913,
+    "want": 9018.71141036249
+   },
+   "q_changes": 5,
+   "engine_changes": 4,
+   "missing_engine_steps": [
+    {
+     "date": "2026-11-07",
+     "ratio": 0.974940673943996
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "تپسي",
+   "candles": 90,
+   "first": "2026-06-21",
+   "last": "2026-11-10",
+   "common_dates": 88,
+   "max_rel": 5.688687666185106,
+   "median_rel": 5.688687666185106,
+   "worst": {
+    "date": "2026-06-29",
+    "rel": 5.688687666185106,
+    "raw": 12850,
+    "factor": 1.0,
+    "got": 12850.0,
+    "want": 1921.1541398417546
+   },
+   "q_changes": 1,
+   "engine_changes": 0,
+   "missing_engine_steps": [
+    {
+     "date": "2026-11-10",
+     "ratio": 0.149506158742549
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "ثباغ",
+   "candles": 460,
+   "first": "2024-08-31",
+   "last": "2026-11-10",
+   "common_dates": 457,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2025-01-18",
+    "rel": 2.220446049250313e-16,
+    "raw": 10330,
+    "factor": 0.512087964189522,
+    "got": 5289.868670077762,
+    "want": 5289.8686700777625
+   },
+   "q_changes": 3,
+   "engine_changes": 3,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "ثتران",
+   "candles": 464,
+   "first": "2024-08-31",
+   "last": "2026-11-10",
+   "common_dates": 462,
+   "max_rel": 0.0,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-08-31",
+    "rel": 0.0,
+    "raw": 7430,
+    "factor": 1.0,
+    "got": 7430.0,
+    "want": 7430
+   },
+   "q_changes": 0,
+   "engine_changes": 0,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "خمهر",
+   "candles": 98,
+   "first": "2026-06-13",
+   "last": "2026-11-10",
+   "common_dates": 96,
+   "max_rel": 0.0,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2026-06-13",
+    "rel": 0.0,
+    "raw": 2199,
+    "factor": 1.0,
+    "got": 2199.0,
+    "want": 2199
+   },
+   "q_changes": 0,
+   "engine_changes": 0,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "خودرو",
+   "candles": 3572,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "common_dates": 3570,
+   "max_rel": 0.015638791298067112,
+   "median_rel": 0.002733485193622487,
+   "worst": {
+    "date": "2011-11-13",
+    "rel": 0.015638791298067112,
+    "raw": 2072,
+    "factor": 0.0038123279685940443,
+    "got": 7.89914355092686,
+    "want": 7.7775126537173
+   },
+   "q_changes": 13,
+   "engine_changes": 9,
+   "missing_engine_steps": [
+    {
+     "date": "2015-07-22",
+     "ratio": 0.9942631767658646
+    },
+    {
+     "date": "2016-07-25",
+     "ratio": 0.9985025456723581
+    },
+    {
+     "date": "2017-07-25",
+     "ratio": 0.9944792050055209
+    },
+    {
+     "date": "2018-07-23",
+     "ratio": 0.9972739663789179
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "دارا",
+   "candles": 527,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 525,
+   "max_rel": 0.0,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-08-24",
+    "rel": 0.0,
+    "raw": 13418,
+    "factor": 1.0,
+    "got": 13418.0,
+    "want": 13418
+   },
+   "q_changes": 0,
+   "engine_changes": 0,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "داسوه",
+   "candles": 454,
+   "first": "2024-08-31",
+   "last": "2026-11-04",
+   "common_dates": 453,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-08-31",
+    "rel": 2.220446049250313e-16,
+    "raw": 30610,
+    "factor": 0.929906542056075,
+    "got": 28464.43925233646,
+    "want": 28464.439252336455
+   },
+   "q_changes": 1,
+   "engine_changes": 1,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "دالبر",
+   "candles": 3621,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "common_dates": 3619,
+   "max_rel": 5.551115123125783e-16,
+   "median_rel": 1.1102230246251565e-16,
+   "worst": {
+    "date": "2014-09-20",
+    "rel": 5.551115123125783e-16,
+    "raw": 11340,
+    "factor": 0.009142359997619436,
+    "got": 103.6743623730044,
+    "want": 103.67436237300446
+   },
+   "q_changes": 29,
+   "engine_changes": 29,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "سبهان",
+   "candles": 3366,
+   "first": "2010-01-06",
+   "last": "2026-11-09",
+   "common_dates": 3364,
+   "max_rel": 6.661338147750939e-16,
+   "median_rel": 4.440892098500626e-16,
+   "worst": {
+    "date": "2010-10-13",
+    "rel": 6.661338147750939e-16,
+    "raw": 13100,
+    "factor": 0.0007195398924443353,
+    "got": 9.425972591020793,
+    "want": 9.425972591020788
+   },
+   "q_changes": 18,
+   "engine_changes": 18,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "سخند",
+   "candles": 506,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 504,
+   "max_rel": 4.440892098500626e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2025-11-10",
+    "rel": 4.440892098500626e-16,
+    "raw": 10031,
+    "factor": 0.9332382575520888,
+    "got": 9361.312961505002,
+    "want": 9361.312961505006
+   },
+   "q_changes": 18,
+   "engine_changes": 18,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "سرود",
+   "candles": 3674,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "common_dates": 3672,
+   "max_rel": 0.3381406913701821,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2010-01-09",
+    "rel": 0.3381406913701821,
+    "raw": 2241,
+    "factor": 0.005514490557205804,
+    "got": 12.357973338698208,
+    "want": 9.235182382836237
+   },
+   "q_changes": 19,
+   "engine_changes": 17,
+   "missing_engine_steps": [
+    {
+     "date": "2010-05-16",
+     "ratio": 0.7557666214382628
+    },
+    {
+     "date": "2013-07-07",
+     "ratio": 0.9888046848088163
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "شصفها",
+   "candles": 2500,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "common_dates": 2496,
+   "max_rel": 2.204210749700797,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2010-01-04",
+    "rel": 2.204210749700797,
+    "raw": 2359,
+    "factor": 0.0297918311380729,
+    "got": 70.27892965471398,
+    "want": 21.933304374962383
+   },
+   "q_changes": 4,
+   "engine_changes": 1,
+   "missing_engine_steps": [
+    {
+     "date": "2010-07-14",
+     "ratio": 0.8099581908019734
+    },
+    {
+     "date": "2011-07-23",
+     "ratio": 0.903181189488248
+    },
+    {
+     "date": "2015-03-14",
+     "ratio": 0.4266202258694979
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "شنفت",
+   "candles": 6286,
+   "first": "1991-05-11",
+   "last": "2026-11-10",
+   "common_dates": 6284,
+   "max_rel": 12141.8066886419,
+   "median_rel": 17.396847909112648,
+   "worst": {
+    "date": "1991-05-11",
+    "rel": 12141.8066886419,
+    "raw": 15000,
+    "factor": 0.03293658783457619,
+    "got": 494.04881751864286,
+    "want": 0.04068654226215795
+   },
+   "q_changes": 50,
+   "engine_changes": 13,
+   "missing_engine_steps": [
+    {
+     "date": "1991-07-30",
+     "ratio": 0.8964367651276146
+    },
+    {
+     "date": "1993-08-23",
+     "ratio": 0.9115044247787627
+    },
+    {
+     "date": "1994-08-15",
+     "ratio": 0.8715862870424175
+    },
+    {
+     "date": "1995-07-26",
+     "ratio": 0.3229665071770341
+    },
+    {
+     "date": "1996-07-20",
+     "ratio": 0.8873159682899201
+    },
+    {
+     "date": "1996-08-31",
+     "ratio": 0.6865653822045779
+    },
+    {
+     "date": "1997-07-28",
+     "ratio": 0.8411214953271032
+    },
+    {
+     "date": "1998-08-11",
+     "ratio": 0.785123966942146
+    },
+    {
+     "date": "1999-09-06",
+     "ratio": 0.8233839632638661
+    },
+    {
+     "date": "1999-12-15",
+     "ratio": 0.6784919999999991
+    },
+    {
+     "date": "2000-07-26",
+     "ratio": 0.8198198198198207
+    },
+    {
+     "date": "2001-07-29",
+     "ratio": 0.8699609882964879
+    },
+    {
+     "date": "2002-07-23",
+     "ratio": 0.9423132391116243
+    },
+    {
+     "date": "2003-04-15",
+     "ratio": 0.4999999999999993
+    },
+    {
+     "date": "2003-08-04",
+     "ratio": 0.9143968871595369
+    },
+    {
+     "date": "2004-07-19",
+     "ratio": 0.9021794420315348
+    },
+    {
+     "date": "2005-07-30",
+     "ratio": 0.8723404255319162
+    },
+    {
+     "date": "2005-10-02",
+     "ratio": 0.49999999999999883
+    },
+    {
+     "date": "2006-07-24",
+     "ratio": 0.8872679045092838
+    },
+    {
+     "date": "2007-04-14",
+     "ratio": 0.6666666666666675
+    },
+    {
+     "date": "2007-07-07",
+     "ratio": 0.9001414662561366
+    },
+    {
+     "date": "2007-12-18",
+     "ratio": 0.6000000000000022
+    },
+    {
+     "date": "2008-07-20",
+     "ratio": 0.8901443816698049
+    },
+    {
+     "date": "2009-08-08",
+     "ratio": 0.8888888888888864
+    },
+    {
+     "date": "2010-06-01",
+     "ratio": 0.9960182025028468
+    },
+    {
+     "date": "2011-07-16",
+     "ratio": 0.9627329192546543
+    },
+    {
+     "date": "2012-07-02",
+     "ratio": 0.9770658900618892
+    },
+    {
+     "date": "2013-05-21",
+     "ratio": 0.9070459193158545
+    },
+    {
+     "date": "2014-06-17",
+     "ratio": 0.30906973358567535
+    },
+    {
+     "date": "2015-06-23",
+     "ratio": 0.8855935932412208
+    },
+    {
+     "date": "2016-03-05",
+     "ratio": 0.7500000000000002
+    },
+    {
+     "date": "2016-05-31",
+     "ratio": 0.8403575989782865
+    },
+    {
+     "date": "2016-10-29",
+     "ratio": 0.8327466230045041
+    },
+    {
+     "date": "2017-06-14",
+     "ratio": 0.8703112529928165
+    },
+    {
+     "date": "2018-06-13",
+     "ratio": 0.8975269845607314
+    },
+    {
+     "date": "2019-01-07",
+     "ratio": 0.6517154907101357
+    },
+    {
+     "date": "2019-06-08",
+     "ratio": 0.8386757382338489
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "شپارس",
+   "candles": 443,
+   "first": "2024-08-31",
+   "last": "2026-11-10",
+   "common_dates": 441,
+   "max_rel": 4.440892098500626e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-11-25",
+    "rel": 4.440892098500626e-16,
+    "raw": 4295,
+    "factor": 0.13287451954925297,
+    "got": 570.6960614640415,
+    "want": 570.6960614640417
+   },
+   "q_changes": 3,
+   "engine_changes": 3,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "طلا",
+   "candles": 518,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 516,
+   "max_rel": 9.0,
+   "median_rel": 9.0,
+   "worst": {
+    "date": "2024-08-24",
+    "rel": 9.0,
+    "raw": 276599,
+    "factor": 1.0,
+    "got": 276599.0,
+    "want": 27659.9
+   },
+   "q_changes": 1,
+   "engine_changes": 0,
+   "missing_engine_steps": [
+    {
+     "date": "2026-11-02",
+     "ratio": 0.1
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "غدشت",
+   "candles": 419,
+   "first": "2024-08-31",
+   "last": "2026-10-11",
+   "common_dates": 417,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-09-23",
+    "rel": 2.220446049250313e-16,
+    "raw": 13260,
+    "factor": 0.169140822245188,
+    "got": 2242.807302971193,
+    "want": 2242.8073029711927
+   },
+   "q_changes": 5,
+   "engine_changes": 5,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "غشان",
+   "candles": 443,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 441,
+   "max_rel": 2.8331717752856576,
+   "median_rel": 2.833171775285656,
+   "worst": {
+    "date": "2024-08-26",
+    "rel": 2.8331717752856576,
+    "raw": 2938,
+    "factor": 0.8325960680193549,
+    "got": 2446.167247840865,
+    "want": 638.1574819089788
+   },
+   "q_changes": 3,
+   "engine_changes": 2,
+   "missing_engine_steps": [
+    {
+     "date": "2026-11-10",
+     "ratio": 0.260880560179299
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "غگرجي",
+   "candles": 97,
+   "first": "2026-06-13",
+   "last": "2026-11-10",
+   "common_dates": 96,
+   "max_rel": 0.0,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2026-06-13",
+    "rel": 0.0,
+    "raw": 2268,
+    "factor": 1.0,
+    "got": 2268.0,
+    "want": 2268
+   },
+   "q_changes": 0,
+   "engine_changes": 0,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "كالا",
+   "candles": 459,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 457,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-12-08",
+    "rel": 2.220446049250313e-16,
+    "raw": 6360,
+    "factor": 0.335565107609344,
+    "got": 2134.1940843954276,
+    "want": 2134.194084395428
+   },
+   "q_changes": 2,
+   "engine_changes": 2,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "كمند",
+   "candles": 528,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 526,
+   "max_rel": 0.02558116914697317,
+   "median_rel": 0.02558116914697095,
+   "worst": {
+    "date": "2025-03-12",
+    "rel": 0.02558116914697317,
+    "raw": 10057,
+    "factor": 0.6184886909750108,
+    "got": 6220.140765135684,
+    "want": 6064.991199389206
+   },
+   "q_changes": 27,
+   "engine_changes": 26,
+   "missing_engine_steps": [
+    {
+     "date": "2026-11-07",
+     "ratio": 0.9750569044006071
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "كچاد",
+   "candles": 3668,
+   "first": "2010-01-02",
+   "last": "2026-11-09",
+   "common_dates": 3666,
+   "max_rel": 0.18053800324968483,
+   "median_rel": 4.440892098500626e-16,
+   "worst": {
+    "date": "2010-06-28",
+    "rel": 0.18053800324968483,
+    "raw": 4410,
+    "factor": 0.0031085154862180203,
+    "got": 13.70855329422147,
+    "want": 11.612123672838765
+   },
+   "q_changes": 28,
+   "engine_changes": 27,
+   "missing_engine_steps": [
+    {
+     "date": "2012-06-02",
+     "ratio": 0.8470714176479585
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "لپارس",
+   "candles": 450,
+   "first": "2024-08-31",
+   "last": "2026-11-10",
+   "common_dates": 448,
+   "max_rel": 4.440892098500626e-16,
+   "median_rel": 2.220446049250313e-16,
+   "worst": {
+    "date": "2024-09-01",
+    "rel": 4.440892098500626e-16,
+    "raw": 22670,
+    "factor": 0.9322689597187812,
+    "got": 21134.53731682477,
+    "want": 21134.537316824764
+   },
+   "q_changes": 3,
+   "engine_changes": 3,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "مارون",
+   "candles": 3245,
+   "first": "2011-12-27",
+   "last": "2026-11-10",
+   "common_dates": 3243,
+   "max_rel": 6.672952094852052,
+   "median_rel": 0.10190044326692727,
+   "worst": {
+    "date": "2012-02-20",
+    "rel": 6.672952094852052,
+    "raw": 16329,
+    "factor": 0.08152063565404699,
+    "got": 1331.1504595949334,
+    "want": 173.4860902478501
+   },
+   "q_changes": 16,
+   "engine_changes": 7,
+   "missing_engine_steps": [
+    {
+     "date": "2012-07-11",
+     "ratio": 0.8761191508530907
+    },
+    {
+     "date": "2013-06-09",
+     "ratio": 0.8035634283351177
+    },
+    {
+     "date": "2014-06-07",
+     "ratio": 0.7956525070882999
+    },
+    {
+     "date": "2015-06-23",
+     "ratio": 0.7886508396062559
+    },
+    {
+     "date": "2016-07-04",
+     "ratio": 0.8477550794441677
+    },
+    {
+     "date": "2017-07-30",
+     "ratio": 0.8548417306611715
+    },
+    {
+     "date": "2018-07-24",
+     "ratio": 0.8971441076704244
+    },
+    {
+     "date": "2019-02-24",
+     "ratio": 0.49999999999999933
+    },
+    {
+     "date": "2019-07-10",
+     "ratio": 0.9075230036528421
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "هجرت",
+   "candles": 423,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 421,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-08-31",
+    "rel": 2.220446049250313e-16,
+    "raw": 21800,
+    "factor": 0.0614256344497004,
+    "got": 1339.0788310034688,
+    "want": 1339.0788310034686
+   },
+   "q_changes": 3,
+   "engine_changes": 3,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "ولانا",
+   "candles": 1893,
+   "first": "2013-11-30",
+   "last": "2026-11-09",
+   "common_dates": 1891,
+   "max_rel": 0.6670035847264719,
+   "median_rel": 0.0010107541794153185,
+   "worst": {
+    "date": "2026-07-15",
+    "rel": 0.6670035847264719,
+    "raw": 9000,
+    "factor": 0.125053330052361,
+    "got": 1125.4799704712489,
+    "want": 3379.856115107916
+   },
+   "q_changes": 11,
+   "engine_changes": 9,
+   "missing_engine_steps": [
+    {
+     "date": "2019-03-19",
+     "ratio": 0.997298027560116
+    },
+    {
+     "date": "2026-07-15",
+     "ratio": 0.3333333333333333
+    },
+    {
+     "date": "2026-08-02",
+     "ratio": 0.37553956834532404
+    }
+   ],
+   "extra_engine_steps": [
+    {
+     "date": "2026-08-02",
+     "ratio": 7.996588332204274
+    }
+   ],
+   "ratio_diffs": [
+    {
+     "date": "2026-08-02",
+     "observed": 0.37553956834532404,
+     "engine": 7.996588332204274,
+     "engine_date": "2026-08-02"
+    }
+   ],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "وپارس",
+   "candles": 432,
+   "first": "2024-08-31",
+   "last": "2026-10-11",
+   "common_dates": 430,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-09-14",
+    "rel": 2.220446049250313e-16,
+    "raw": 1770,
+    "factor": 0.31268,
+    "got": 553.4436000000001,
+    "want": 553.4436
+   },
+   "q_changes": 2,
+   "engine_changes": 2,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "پارند",
+   "candles": 528,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 526,
+   "max_rel": 0.02559859840373857,
+   "median_rel": 0.025598598403737682,
+   "worst": {
+    "date": "2025-11-08",
+    "rel": 0.02559859840373857,
+    "raw": 10015,
+    "factor": 0.756704646569868,
+    "got": 7578.397035397228,
+    "want": 7389.2427770400545
+   },
+   "q_changes": 27,
+   "engine_changes": 26,
+   "missing_engine_steps": [
+    {
+     "date": "2026-11-07",
+     "ratio": 0.975040334060928
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "چكاوه",
+   "candles": 3305,
+   "first": "2010-01-04",
+   "last": "2026-11-02",
+   "common_dates": 3303,
+   "max_rel": 0.07572791557744862,
+   "median_rel": 1.1102230246251565e-16,
+   "worst": {
+    "date": "2010-01-09",
+    "rel": 0.07572791557744862,
+    "raw": 3542,
+    "factor": 0.035759027841241214,
+    "got": 126.65847661367638,
+    "want": 117.74211190353499
+   },
+   "q_changes": 13,
+   "engine_changes": 11,
+   "missing_engine_steps": [
+    {
+     "date": "2010-04-19",
+     "ratio": 0.9315068493150703
+    },
+    {
+     "date": "2016-06-22",
+     "ratio": 0.9979562640506875
+    }
+   ],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  },
+  {
+   "symbol": "گكيش",
+   "candles": 439,
+   "first": "2024-08-24",
+   "last": "2026-11-10",
+   "common_dates": 437,
+   "max_rel": 2.220446049250313e-16,
+   "median_rel": 0.0,
+   "worst": {
+    "date": "2024-08-24",
+    "rel": 2.220446049250313e-16,
+    "raw": 7240,
+    "factor": 0.9769055095632322,
+    "got": 7072.795889237801,
+    "want": 7072.7958892378
+   },
+   "q_changes": 2,
+   "engine_changes": 2,
+   "missing_engine_steps": [],
+   "extra_engine_steps": [],
+   "ratio_diffs": [],
+   "engine_version": "ra365-phase49-rebuild-full-v2"
+  }
+ ]
+}

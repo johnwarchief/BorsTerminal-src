@@ -1,0 +1,32 @@
+{
+ "schema": "phase49-2-update-chain-proof-v1",
+ "db": "_audit/phase49-2/db/update-test.db",
+ "symbol": "تپسي",
+ "cutoff": "2026-11-10",
+ "last_pre_event_date": "2026-11-01",
+ "before": {
+  "revision": "2e8c231840e7674ac416f75cdf70727345e38904287d807b9a5e0c0113ae553a",
+  "factor_last_pre_event": 1.0,
+  "adjusted_rows": 105691
+ },
+ "after": {
+  "revision": "d638ef369b6a2311edc606c82366f86c29b10ac814c8550f59b97e72e6412803",
+  "factor_last_pre_event": 0.149506158742549,
+  "factor_at_cutoff": 1.0,
+  "adjusted_rows": 105692,
+  "adjusted_sha256": "c101bfd65a2276243d0fed496258162cb406bb18227c8b3d6f386645e5471c06",
+  "repeat_sha256": "c101bfd65a2276243d0fed496258162cb406bb18227c8b3d6f386645e5471c06"
+ },
+ "checks": {
+  "revision_changed": true,
+  "factor_table_changed": true,
+  "before_factor_is_one": true,
+  "after_factor_is_measured_split": true,
+  "after_event_factor_is_one": true,
+  "repeat_build_idempotent": true,
+  "repeat_revision_stable": true,
+  "rows_before": 105691,
+  "rows_after": 105692
+ },
+ "ok": true
+}

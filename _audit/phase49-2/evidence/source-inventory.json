@@ -1,0 +1,805 @@
+{
+ "sources": {},
+ "db": {
+  "root": {
+   "path": "market.db",
+   "size": 26378240,
+   "sha256": "c0979d4e61a369c4107952b8b70a7df21a887da8bf2db73d9114cb3e1511c8a9",
+   "tables": {
+    "price_history": {
+     "rows": 2209,
+     "columns": [
+      "symbol",
+      "date",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "last",
+      "value",
+      "src"
+     ]
+    },
+    "daily_prices": {
+     "rows": 3680,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "p_closing",
+      "price_min",
+      "price_max",
+      "price_yesterday",
+      "price_first",
+      "q_tot_tran",
+      "q_tot_cap",
+      "price_change",
+      "fetched_at",
+      "market_cap",
+      "market_cap_src",
+      "z_tot_tran",
+      "p_last"
+     ]
+    },
+    "instrument_state": {
+     "rows": 483,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "c_etaval",
+      "c_etaval_title",
+      "under_supervision",
+      "last_h_even",
+      "real_heven",
+      "source",
+      "fetched_at"
+     ]
+    },
+    "tape_history": {
+     "rows": 2281,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "price_min",
+      "price_max",
+      "q_tot_tran5j",
+      "q_tot_cap",
+      "fetched_at"
+     ]
+    },
+    "tape_flag_day": {
+     "error": "no such table: tape_flag_day"
+    },
+    "adjust_events": {
+     "error": "no such table: adjust_events"
+    },
+    "history_validity": {
+     "error": "no such table: history_validity"
+    },
+    "instruments": {
+     "rows": 3680,
+     "columns": [
+      "ins_code",
+      "l_val18",
+      "l_val30",
+      "sector_code",
+      "sector_name",
+      "total_shares",
+      "eps",
+      "pe",
+      "base_vol",
+      "updated_at",
+      "isin",
+      "c_gr_val_cot",
+      "paper_type"
+     ]
+    },
+    "market_watch": {
+     "rows": 3680,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "h_even",
+      "p_closing",
+      "p_last",
+      "price_min",
+      "price_max",
+      "allowed_min",
+      "allowed_max",
+      "price_yesterday",
+      "price_first",
+      "q_tot_tran",
+      "q_tot_cap",
+      "z_tot_tran",
+      "price_change",
+      "eps",
+      "pe",
+      "total_shares",
+      "sector_code",
+      "fetched_at",
+      "market_cap",
+      "market_cap_src",
+      "flow",
+      "p_red_tran",
+      "buy_op",
+      "buy_q_vol",
+      "buy_q_val",
+      "buy_q_cnt",
+      "sell_q_vol",
+      "sell_q_val",
+      "sell_q_cnt",
+      "buy_q1_vol",
+      "buy_q1_px",
+      "sell_q1_vol",
+      "sell_q1_px",
+      "buy_q1_cnt"
+     ]
+    },
+    "monthly_sales": {
+     "rows": 0,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "title",
+      "period_end",
+      "year",
+      "month",
+      "monthly_revenue",
+      "ytd_revenue",
+      "monthly_revenue_prev",
+      "ytd_revenue_prev",
+      "pdf_url",
+      "excel_url",
+      "monthly_volume",
+      "ytd_volume",
+      "volume_unit"
+     ]
+    },
+    "financial_statements": {
+     "rows": 0,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "company_name",
+      "title",
+      "report_kind",
+      "period_months",
+      "period_end",
+      "publish_date",
+      "revenue",
+      "gross_profit",
+      "operating_profit",
+      "net_profit",
+      "total_assets",
+      "total_liabilities",
+      "total_equity",
+      "capital",
+      "retained_earnings",
+      "basic_eps",
+      "unit",
+      "url",
+      "fetched_at",
+      "has_operating_sales",
+      "is_audited",
+      "is_consolidated",
+      "fiscal_year",
+      "unit_norm"
+     ]
+    },
+    "codal_notices": {
+     "rows": 74,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "company_name",
+      "title",
+      "letter_code",
+      "publish_date",
+      "sent_date",
+      "url",
+      "fetched_at",
+      "pdf_url",
+      "excel_url"
+     ]
+    },
+    "seed_manifest": {
+     "error": "no such table: seed_manifest"
+    },
+    "price_adjust_events": {
+     "rows": 1000,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "symbol",
+      "p_closing",
+      "p_closing_not_adjusted",
+      "corporate_type_code",
+      "ratio",
+      "source",
+      "fetched_at"
+     ]
+    },
+    "share_change_events": {
+     "rows": 3513,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "symbol",
+      "shares_old",
+      "shares_new",
+      "ratio",
+      "source",
+      "fetched_at"
+     ]
+    }
+   }
+  },
+  "seed": {
+   "path": "_audit/phase49-full-verification/seed/market.db",
+   "size": 281088000,
+   "sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+   "tables": {
+    "price_history": {
+     "rows": 544284,
+     "columns": [
+      "symbol",
+      "date",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "last",
+      "value",
+      "src"
+     ]
+    },
+    "daily_prices": {
+     "rows": 118774,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "p_closing",
+      "price_min",
+      "price_max",
+      "price_yesterday",
+      "price_first",
+      "q_tot_tran",
+      "q_tot_cap",
+      "price_change",
+      "fetched_at",
+      "market_cap",
+      "market_cap_src",
+      "z_tot_tran",
+      "p_last",
+      "repair_src"
+     ]
+    },
+    "instrument_state": {
+     "rows": 2421,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "c_etaval",
+      "c_etaval_title",
+      "under_supervision",
+      "last_h_even",
+      "real_heven",
+      "source",
+      "fetched_at"
+     ]
+    },
+    "tape_history": {
+     "rows": 232472,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "price_min",
+      "price_max",
+      "q_tot_tran5j",
+      "fetched_at",
+      "q_tot_cap"
+     ]
+    },
+    "tape_flag_day": {
+     "error": "no such table: tape_flag_day"
+    },
+    "adjust_events": {
+     "rows": 12829,
+     "columns": [
+      "symbol",
+      "date",
+      "ratio",
+      "source"
+     ]
+    },
+    "history_validity": {
+     "rows": 6103,
+     "columns": [
+      "symbol",
+      "rows",
+      "first_date",
+      "last_date",
+      "reference_coverage",
+      "ref_days",
+      "ref_first",
+      "ref_last",
+      "factor_steps",
+      "factor_verified",
+      "factor_reconstructed",
+      "factor_unverified",
+      "raw_open_verified",
+      "raw_open_corrected",
+      "factor_parity",
+      "adjusted_max_abs",
+      "status",
+      "notes"
+     ]
+    },
+    "instruments": {
+     "rows": 5944,
+     "columns": [
+      "ins_code",
+      "l_val18",
+      "l_val30",
+      "sector_code",
+      "sector_name",
+      "total_shares",
+      "eps",
+      "pe",
+      "base_vol",
+      "updated_at",
+      "paper_type",
+      "isin",
+      "c_gr_val_cot"
+     ]
+    },
+    "market_watch": {
+     "rows": 5946,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "h_even",
+      "p_closing",
+      "p_last",
+      "price_min",
+      "price_max",
+      "allowed_min",
+      "allowed_max",
+      "price_yesterday",
+      "price_first",
+      "q_tot_tran",
+      "q_tot_cap",
+      "z_tot_tran",
+      "price_change",
+      "eps",
+      "pe",
+      "total_shares",
+      "sector_code",
+      "fetched_at",
+      "buy_q_vol",
+      "buy_q_val",
+      "buy_q_cnt",
+      "sell_q_vol",
+      "sell_q_val",
+      "sell_q_cnt",
+      "buy_q1_vol",
+      "buy_q1_px",
+      "sell_q1_vol",
+      "sell_q1_px",
+      "market_cap",
+      "market_cap_src",
+      "buy_q1_cnt",
+      "flow",
+      "p_red_tran",
+      "buy_op"
+     ]
+    },
+    "monthly_sales": {
+     "rows": 14957,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "title",
+      "period_end",
+      "year",
+      "month",
+      "monthly_revenue",
+      "ytd_revenue",
+      "pdf_url",
+      "excel_url",
+      "monthly_revenue_prev",
+      "ytd_revenue_prev",
+      "monthly_volume",
+      "ytd_volume",
+      "volume_unit"
+     ]
+    },
+    "financial_statements": {
+     "rows": 8723,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "company_name",
+      "title",
+      "report_kind",
+      "period_months",
+      "period_end",
+      "publish_date",
+      "revenue",
+      "gross_profit",
+      "operating_profit",
+      "net_profit",
+      "total_assets",
+      "total_liabilities",
+      "total_equity",
+      "capital",
+      "retained_earnings",
+      "basic_eps",
+      "unit",
+      "url",
+      "fetched_at",
+      "is_audited",
+      "is_consolidated",
+      "fiscal_year",
+      "unit_norm",
+      "has_operating_sales"
+     ]
+    },
+    "codal_notices": {
+     "rows": 36350,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "company_name",
+      "title",
+      "letter_code",
+      "publish_date",
+      "sent_date",
+      "url",
+      "fetched_at",
+      "pdf_url",
+      "excel_url"
+     ]
+    },
+    "seed_manifest": {
+     "rows": 18,
+     "columns": [
+      "key",
+      "value"
+     ]
+    },
+    "price_adjust_events": {
+     "rows": 1001,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "symbol",
+      "p_closing",
+      "p_closing_not_adjusted",
+      "corporate_type_code",
+      "ratio",
+      "source",
+      "fetched_at"
+     ]
+    },
+    "share_change_events": {
+     "rows": 3483,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "symbol",
+      "shares_old",
+      "shares_new",
+      "ratio",
+      "source",
+      "fetched_at"
+     ]
+    }
+   }
+  },
+  "work": {
+   "path": "_audit/phase49-full-verification/db/backfill-v2/market.db",
+   "size": 287117312,
+   "sha256": "52ccaf6af65789defc88fee0d7754a1aff54e25161200ba699d87b1edb08124f",
+   "tables": {
+    "price_history": {
+     "rows": 544284,
+     "columns": [
+      "symbol",
+      "date",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "last",
+      "value",
+      "src"
+     ]
+    },
+    "daily_prices": {
+     "rows": 118774,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "p_closing",
+      "price_min",
+      "price_max",
+      "price_yesterday",
+      "price_first",
+      "q_tot_tran",
+      "q_tot_cap",
+      "price_change",
+      "fetched_at",
+      "market_cap",
+      "market_cap_src",
+      "z_tot_tran",
+      "p_last",
+      "repair_src"
+     ]
+    },
+    "instrument_state": {
+     "rows": 2421,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "c_etaval",
+      "c_etaval_title",
+      "under_supervision",
+      "last_h_even",
+      "real_heven",
+      "source",
+      "fetched_at"
+     ]
+    },
+    "tape_history": {
+     "rows": 232472,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "price_min",
+      "price_max",
+      "q_tot_tran5j",
+      "fetched_at",
+      "q_tot_cap"
+     ]
+    },
+    "tape_flag_day": {
+     "error": "no such table: tape_flag_day"
+    },
+    "adjust_events": {
+     "rows": 12829,
+     "columns": [
+      "symbol",
+      "date",
+      "ratio",
+      "source"
+     ]
+    },
+    "history_validity": {
+     "rows": 6103,
+     "columns": [
+      "symbol",
+      "rows",
+      "first_date",
+      "last_date",
+      "reference_coverage",
+      "ref_days",
+      "ref_first",
+      "ref_last",
+      "factor_steps",
+      "factor_verified",
+      "factor_reconstructed",
+      "factor_unverified",
+      "raw_open_verified",
+      "raw_open_corrected",
+      "factor_parity",
+      "adjusted_max_abs",
+      "status",
+      "notes"
+     ]
+    },
+    "instruments": {
+     "rows": 5944,
+     "columns": [
+      "ins_code",
+      "l_val18",
+      "l_val30",
+      "sector_code",
+      "sector_name",
+      "total_shares",
+      "eps",
+      "pe",
+      "base_vol",
+      "updated_at",
+      "paper_type",
+      "isin",
+      "c_gr_val_cot"
+     ]
+    },
+    "market_watch": {
+     "rows": 5946,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "h_even",
+      "p_closing",
+      "p_last",
+      "price_min",
+      "price_max",
+      "allowed_min",
+      "allowed_max",
+      "price_yesterday",
+      "price_first",
+      "q_tot_tran",
+      "q_tot_cap",
+      "z_tot_tran",
+      "price_change",
+      "eps",
+      "pe",
+      "total_shares",
+      "sector_code",
+      "fetched_at",
+      "buy_q_vol",
+      "buy_q_val",
+      "buy_q_cnt",
+      "sell_q_vol",
+      "sell_q_val",
+      "sell_q_cnt",
+      "buy_q1_vol",
+      "buy_q1_px",
+      "sell_q1_vol",
+      "sell_q1_px",
+      "market_cap",
+      "market_cap_src",
+      "buy_q1_cnt",
+      "flow",
+      "p_red_tran",
+      "buy_op"
+     ]
+    },
+    "monthly_sales": {
+     "rows": 14957,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "title",
+      "period_end",
+      "year",
+      "month",
+      "monthly_revenue",
+      "ytd_revenue",
+      "pdf_url",
+      "excel_url",
+      "monthly_revenue_prev",
+      "ytd_revenue_prev",
+      "monthly_volume",
+      "ytd_volume",
+      "volume_unit"
+     ]
+    },
+    "financial_statements": {
+     "rows": 8723,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "company_name",
+      "title",
+      "report_kind",
+      "period_months",
+      "period_end",
+      "publish_date",
+      "revenue",
+      "gross_profit",
+      "operating_profit",
+      "net_profit",
+      "total_assets",
+      "total_liabilities",
+      "total_equity",
+      "capital",
+      "retained_earnings",
+      "basic_eps",
+      "unit",
+      "url",
+      "fetched_at",
+      "is_audited",
+      "is_consolidated",
+      "fiscal_year",
+      "unit_norm",
+      "has_operating_sales"
+     ]
+    },
+    "codal_notices": {
+     "rows": 36350,
+     "columns": [
+      "tracing_no",
+      "symbol",
+      "company_name",
+      "title",
+      "letter_code",
+      "publish_date",
+      "sent_date",
+      "url",
+      "fetched_at",
+      "pdf_url",
+      "excel_url"
+     ]
+    },
+    "seed_manifest": {
+     "rows": 10,
+     "columns": [
+      "key",
+      "value"
+     ]
+    },
+    "price_adjust_events": {
+     "rows": 1001,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "symbol",
+      "p_closing",
+      "p_closing_not_adjusted",
+      "corporate_type_code",
+      "ratio",
+      "source",
+      "fetched_at"
+     ]
+    },
+    "share_change_events": {
+     "rows": 3483,
+     "columns": [
+      "ins_code",
+      "d_even",
+      "symbol",
+      "shares_old",
+      "shares_new",
+      "ratio",
+      "source",
+      "fetched_at"
+     ]
+    }
+   }
+  }
+ },
+ "files": {
+  "codal.db": {
+   "missing": true
+  },
+  "market.db.lzma": {
+   "missing": true
+  },
+  "codal.db.lzma": {
+   "missing": true
+  },
+  "_audit/phase49-full-verification/captures/bars-all.ndjson.gz": {
+   "size": 145864430,
+   "sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a"
+  },
+  "_audit/phase49-full-verification/captures/reference-index-all.json": {
+   "size": 2010378,
+   "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
+  },
+  "_audit/phase49-full-verification/capture-plan/symbols.json": {
+   "size": 113531,
+   "sha256": "4e5ad3d67d3db6a9e4eedb3fe7d7908ab2be707dca9656d7af5eb0ad52de27b0"
+  },
+  "_audit/phase49-full-verification/capture-plan/capture-unmapped.json": {
+   "size": 48010,
+   "sha256": "da1ffb55429fbbfdd3f124683bc608ccbfe3c3a763792a58d0767880e128a2bb"
+  },
+  "_audit/phase49-full-verification/ledgers/ADJUSTMENT-EVIDENCE-LEDGER.csv": {
+   "size": 2527513,
+   "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
+  },
+  "_audit/phase49-full-verification/ledgers/HISTORY-COVERAGE-LEDGER.csv": {
+   "size": 2057162,
+   "sha256": "c3ad3741daaa55b849fb51aca7cc066ea859d0469de2eb85d82471988a69a650"
+  },
+  "data/ra365_corrections/ra365-phase49-rebuild-full-v2": {
+   "dir": true,
+   "entries": 3
+  }
+ }
+}

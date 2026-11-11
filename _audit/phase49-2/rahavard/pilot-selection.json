@@ -1,0 +1,506 @@
+{
+ "schema": "phase49-2-pilot-selection-v1",
+ "pool": 758,
+ "chosen": 30,
+ "classes": {
+  "dps_only": 11,
+  "combined": 10,
+  "base_gap": 2,
+  "share_only": 3,
+  "product_or_unproven": 3,
+  "no_pack_steps": 1
+ },
+ "events_total": 680,
+ "history_min": "2001-10-24",
+ "history_max": "2026-10-14",
+ "symbols": [
+  {
+   "symbol": "ارمغان",
+   "asset_id": 1656,
+   "ins_code": "31366347648583654",
+   "basis": "real_close",
+   "events": 82,
+   "first": "2020-01-07",
+   "last": "2026-10-10",
+   "signatures": [
+    "fund_dps",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "high event count (>=40 steps)"
+  },
+  {
+   "symbol": "تپسي",
+   "asset_id": 18145,
+   "ins_code": "3839324986781871",
+   "basis": "real_close",
+   "events": 5,
+   "first": "2022-10-08",
+   "last": "2026-06-21",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "mandatory: named blocker/concentration case"
+  },
+  {
+   "symbol": "ثباغ",
+   "asset_id": 619,
+   "ins_code": "68909035712962732",
+   "basis": "real_close",
+   "events": 11,
+   "first": "2020-01-12",
+   "last": "2026-05-24",
+   "signatures": [
+    "dps",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "recent listing (first step >= 2020)"
+  },
+  {
+   "symbol": "ثتران",
+   "asset_id": 587,
+   "ins_code": "20926459161497908",
+   "basis": "real_close",
+   "events": 2,
+   "first": "2020-09-26",
+   "last": "2024-08-31",
+   "signatures": [
+    "base_gap",
+    "product"
+   ],
+   "class": "base_gap",
+   "reason": "signature class: base_gap"
+  },
+  {
+   "symbol": "خمهر",
+   "asset_id": 398,
+   "ins_code": "17330546482145553",
+   "basis": "real_close",
+   "events": 3,
+   "first": "2021-01-11",
+   "last": "2026-06-13",
+   "signatures": [
+    "base_gap",
+    "product",
+    "share"
+   ],
+   "class": "share_only",
+   "reason": "signature class: share_only"
+  },
+  {
+   "symbol": "خودرو",
+   "asset_id": 167,
+   "ins_code": "65883838195688438",
+   "basis": "real_close",
+   "events": 13,
+   "first": "2010-07-25",
+   "last": "2025-04-22",
+   "signatures": [
+    "product",
+    "reference-step",
+    "share"
+   ],
+   "class": "share_only",
+   "reason": "signature class: share_only"
+  },
+  {
+   "symbol": "دارا",
+   "asset_id": 6734,
+   "ins_code": "62012736978844991",
+   "basis": "real_close",
+   "events": 42,
+   "first": "2020-01-21",
+   "last": "2024-08-24",
+   "signatures": [
+    "fund_dps",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "high event count (>=40 steps)"
+  },
+  {
+   "symbol": "داسوه",
+   "asset_id": 20,
+   "ins_code": "12387472624849835",
+   "basis": "real_close",
+   "events": 10,
+   "first": "2018-01-14",
+   "last": "2026-05-24",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "pa",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "signature class: dps_only"
+  },
+  {
+   "symbol": "دالبر",
+   "asset_id": 251,
+   "ins_code": "60451823714332895",
+   "basis": "real_close",
+   "events": 29,
+   "first": "2010-05-08",
+   "last": "2026-05-23",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "pa",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "signature class: combined"
+  },
+  {
+   "symbol": "سبهان",
+   "asset_id": 373,
+   "ins_code": "32525655729432562",
+   "basis": "real_close",
+   "events": 18,
+   "first": "2010-05-24",
+   "last": "2026-06-15",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "signature class: combined"
+  },
+  {
+   "symbol": "سخند",
+   "asset_id": 811,
+   "ins_code": "59598536122397373",
+   "basis": "real_close",
+   "events": 75,
+   "first": "2020-01-07",
+   "last": "2026-02-07",
+   "signatures": [
+    "fund_dps",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "high event count (>=40 steps)"
+  },
+  {
+   "symbol": "سرود",
+   "asset_id": 302,
+   "ins_code": "11964419322927535",
+   "basis": "real_close",
+   "events": 19,
+   "first": "2010-05-16",
+   "last": "2026-07-27",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product",
+    "reference-step",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "signature class: combined"
+  },
+  {
+   "symbol": "شصفها",
+   "asset_id": 322,
+   "ins_code": "18346219759153870",
+   "basis": "real_close",
+   "events": 4,
+   "first": "2010-07-14",
+   "last": "2026-07-13",
+   "signatures": [
+    "reference-step",
+    "unproven_gap"
+   ],
+   "class": "product_or_unproven",
+   "reason": "signature class: product/unproven"
+  },
+  {
+   "symbol": "شنفت",
+   "asset_id": 182,
+   "ins_code": "14073782708315535",
+   "basis": "real_close",
+   "events": 26,
+   "first": "2010-06-01",
+   "last": "2026-08-08",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "reference-step",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "mandatory: named blocker/concentration case"
+  },
+  {
+   "symbol": "شپارس",
+   "asset_id": 8,
+   "ins_code": "61102694810476197",
+   "basis": "real_close",
+   "events": 26,
+   "first": "2006-08-02",
+   "last": "2026-01-25",
+   "signatures": [
+    "base_gap+share",
+    "dps",
+    "no_event",
+    "pa",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "long history (first step <= 2009)"
+  },
+  {
+   "symbol": "طلا",
+   "asset_id": 2672,
+   "ins_code": "46700660505281786",
+   "basis": "real_close",
+   "events": 0,
+   "first": null,
+   "last": null,
+   "signatures": [],
+   "class": "no_pack_steps",
+   "reason": "mandatory: named blocker/concentration case"
+  },
+  {
+   "symbol": "غدشت",
+   "asset_id": 6,
+   "ins_code": "2434703913394836",
+   "basis": "real_close",
+   "events": 24,
+   "first": "2001-10-24",
+   "last": "2026-10-14",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "no_event",
+    "pa",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "long history (first step <= 2009)"
+  },
+  {
+   "symbol": "غشان",
+   "asset_id": 434,
+   "ins_code": "31791737198597563",
+   "basis": "real_close",
+   "events": 10,
+   "first": "2020-05-31",
+   "last": "2026-02-22",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "no_event",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "mandatory: named blocker/concentration case"
+  },
+  {
+   "symbol": "غگرجي",
+   "asset_id": 30,
+   "ins_code": "31024260997481994",
+   "basis": "real_close",
+   "events": 8,
+   "first": "2020-01-13",
+   "last": "2026-06-13",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "recent listing (first step >= 2020)"
+  },
+  {
+   "symbol": "كالا",
+   "asset_id": 537,
+   "ins_code": "44549439964296944",
+   "basis": "real_close",
+   "events": 8,
+   "first": "2020-07-05",
+   "last": "2026-06-07",
+   "signatures": [
+    "base_gap",
+    "dps+share",
+    "product"
+   ],
+   "class": "base_gap",
+   "reason": "signature class: base_gap"
+  },
+  {
+   "symbol": "كمند",
+   "asset_id": 2768,
+   "ins_code": "34718633636164421",
+   "basis": "real_close",
+   "events": 82,
+   "first": "2020-01-07",
+   "last": "2026-10-10",
+   "signatures": [
+    "fund_dps"
+   ],
+   "class": "dps_only",
+   "reason": "high event count (>=40 steps)"
+  },
+  {
+   "symbol": "كچاد",
+   "asset_id": 382,
+   "ins_code": "18027801615184692",
+   "basis": "real_close",
+   "events": 28,
+   "first": "2010-06-12",
+   "last": "2026-05-26",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product",
+    "reference-step",
+    "share"
+   ],
+   "class": "combined",
+   "reason": "signature class: combined"
+  },
+  {
+   "symbol": "لپارس",
+   "asset_id": 88,
+   "ins_code": "5187018329202415",
+   "basis": "real_close",
+   "events": 9,
+   "first": "2020-07-25",
+   "last": "2026-07-18",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "seeded random fill (diversity tail)"
+  },
+  {
+   "symbol": "مارون",
+   "asset_id": 485,
+   "ins_code": "53449700212786324",
+   "basis": "real_close",
+   "events": 16,
+   "first": "2012-07-11",
+   "last": "2026-09-08",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "pa",
+    "reference-step"
+   ],
+   "class": "dps_only",
+   "reason": "signature class: dps_only"
+  },
+  {
+   "symbol": "هجرت",
+   "asset_id": 325,
+   "ins_code": "5317427172344706",
+   "basis": "real_close",
+   "events": 10,
+   "first": "2020-05-10",
+   "last": "2026-06-28",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "product"
+   ],
+   "class": "dps_only",
+   "reason": "seeded random fill (diversity tail)"
+  },
+  {
+   "symbol": "ولانا",
+   "asset_id": 599,
+   "ins_code": "66830065858417081",
+   "basis": "real_close",
+   "events": 10,
+   "first": "2016-08-03",
+   "last": "2026-08-02",
+   "signatures": [
+    "no_event",
+    "product",
+    "reference-step",
+    "unproven_gap"
+   ],
+   "class": "product_or_unproven",
+   "reason": "mandatory: named blocker/concentration case"
+  },
+  {
+   "symbol": "وپارس",
+   "asset_id": 422,
+   "ins_code": "33293588228706998",
+   "basis": "real_close",
+   "events": 4,
+   "first": "2020-04-19",
+   "last": "2026-07-29",
+   "signatures": [
+    "product",
+    "share"
+   ],
+   "class": "share_only",
+   "reason": "signature class: share_only"
+  },
+  {
+   "symbol": "پارند",
+   "asset_id": 1951,
+   "ins_code": "70595828753641750",
+   "basis": "real_close",
+   "events": 82,
+   "first": "2020-01-07",
+   "last": "2026-10-10",
+   "signatures": [
+    "fund_dps"
+   ],
+   "class": "dps_only",
+   "reason": "high event count (>=40 steps)"
+  },
+  {
+   "symbol": "چكاوه",
+   "asset_id": 238,
+   "ins_code": "24254843881948059",
+   "basis": "real_close",
+   "events": 13,
+   "first": "2010-04-19",
+   "last": "2023-06-06",
+   "signatures": [
+    "base_gap",
+    "dps",
+    "pa",
+    "product",
+    "reference-step"
+   ],
+   "class": "dps_only",
+   "reason": "signature class: dps_only"
+  },
+  {
+   "symbol": "گكيش",
+   "asset_id": 695,
+   "ins_code": "44665761767777759",
+   "basis": "real_close",
+   "events": 11,
+   "first": "2020-01-15",
+   "last": "2026-02-01",
+   "signatures": [
+    "no_event",
+    "product",
+    "unproven_gap"
+   ],
+   "class": "product_or_unproven",
+   "reason": "signature class: product/unproven"
+  }
+ ]
+}

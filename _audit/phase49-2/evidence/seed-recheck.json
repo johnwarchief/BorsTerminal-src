@@ -1,0 +1,44 @@
+{
+ "schema": "phase49-2-seed-recheck-v1",
+ "seed": {
+  "db": "_audit/phase49-full-verification/seed/market.db",
+  "db_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "db_size": 281088000,
+  "lzma_sha256": "07e67f9c781abfe62ea7557b3a84ff25136ea63035f6949db30611db179e2aa3",
+  "gzip_sha256": "9512202b9854326838d15b7ade46ccf5db99d4467b686693866fd3e06ede5d31",
+  "lzma_roundtrip_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5",
+  "gzip_roundtrip_sha256": "57118e8fc99ff69c9e9812002f1d72571f357c23287fc1880a2f00b8292bbcb5"
+ },
+ "counts": {
+  "price_history": 544284,
+  "history_validity": 6103,
+  "instruments": 5944,
+  "instrument_state": 2421,
+  "daily_prices": 118774,
+  "adjust_events": 12829
+ },
+ "reference_derived_rows": 105367,
+ "symbols_with_history": 6103,
+ "duplicate_pairs": 0,
+ "integrity_check": [
+  "ok"
+ ],
+ "owner_approval": "docs/opportunity-center/phase49-2/OWNER-APPROVAL-REFERENCE-DERIVED.json",
+ "checks": {
+  "db_sha_matches_manifest": true,
+  "lzma_sha_matches_manifest": true,
+  "gzip_sha_matches_manifest": true,
+  "lzma_roundtrip_matches_db": true,
+  "gzip_roundtrip_matches_db": true,
+  "db_size_matches_manifest": true,
+  "integrity_ok": true,
+  "duplicates_zero": true,
+  "reference_rows_manifest_match": true,
+  "symbols_manifest_match": true,
+  "db_capture_sha_matches_approval": true,
+  "db_index_sha_matches_approval": true,
+  "approval_covers_db_sha": true,
+  "approval_count_matches": true
+ },
+ "ok": true
+}
