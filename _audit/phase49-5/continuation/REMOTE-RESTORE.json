@@ -55,10 +55,19 @@
   "remote_bytes_downloaded": true,
   "portability_gate_closed": true,
   "source_ci": {
-    "commit": "9569f748afb41891080c68d72ac222cbc0bdf367",
-    "python_legacy": {"run_id": 43247297638, "conclusion": "success"},
-    "python_tooling": {"run_id": 43247297855, "conclusion": "success"},
-    "guards": {"run_id": 43247297705, "conclusion": "success", "successful_jobs": 9}
+    "hygiene_fix_commit": {
+      "sha": "9569f748afb41891080c68d72ac222cbc0bdf367",
+      "python_legacy": {"run_id": 43247297638, "conclusion": "success"},
+      "python_tooling": {"run_id": 43247297855, "conclusion": "success"},
+      "guards": {"run_id": 43247297705, "conclusion": "success", "successful_jobs": 9}
+    },
+    "receipt_commit": {
+      "sha": "09ede84470048eb048f9a21a675bb8c3bcb44740",
+      "python_legacy": {"run_id": 43257822072, "conclusion": "success"},
+      "python_tooling": {"run_id": 43257821964, "conclusion": "success"},
+      "guards": {"run_id": 43257821971, "conclusion": "success", "successful_jobs": 9}
+    },
+    "branch_verified_by": "git ls-remote refs/heads/mission/phase49-5-parity-browser-go-main"
   },
   "limitations": [
     "GitHub upload alone is not availability proof; this receipt records the bytes downloaded back from the private repository and restored from them",
