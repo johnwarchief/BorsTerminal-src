@@ -1,10 +1,10 @@
 # معماری هوشمندی تکنیکال BorsTerminal
-## Technical Intelligence, Adaptive Indicators & Kronos Forecasting
+## Technical Intelligence, Adaptive Signal Intelligence & Market Forecasting
 
-- تاریخ: 2026-11-10
-- وضعیت: معماری پایه برای بررسی و اجرای مرحله‌ای؛ جهت کلی با مالک پروژه توافق شده است.
-- دامنه: زیرساخت‌های تکنیکال و یادگیری که باید پیش از Opportunity Lab آماده شوند.
-- وضعیت پیاده‌سازی: این سند به‌تنهایی به معنی شروع پیاده‌سازی، تغییر قواعد FTS، فعال‌سازی مدل‌ها یا انتشار قابلیت نیست.
+- تاریخ بازبینی معماری: 2026-11-12
+- وضعیت: معماری و روش‌شناسی دو مسیر اصلی ML تثبیت شده است؛ انتخاب مدل عملیاتی منوط به Benchmark داده بورس ایران است.
+- دامنه: داده و Featureهای بازار، موتور canonical FTS، تشخیص قطعی ساختار و الگو، Adaptive Signal Intelligence، Market Forecasting و سرویس‌های پشتیبان Regime/Volatility.
+- وضعیت اجرا: این سند قرارداد معماری و نقشه راه است؛ به‌تنهایی مجوز شروع پیاده‌سازی، تغییر قواعد FTS، Fine-tuning، فعال‌سازی Production یا انتشار قابلیت نیست.
 
 ---
 
@@ -17,7 +17,7 @@
 1. **قواعد canonical استراتژی FTS:** همان منطق مصوب جزوه، چارت و رأی‌های مالک؛ بدون بازنویسی یا تغییر ضمنی.
 2. **تشخیص ساختار و الگوها:** محاسبه و شناسایی رویدادهایی مانند Jet، Pullback، CHoCH، کانال و الگوهای کلاسیک.
 3. **یادگیری تطبیقی کیفیت الگوها:** یادگیری اینکه هر الگو در چه شرایطی و با چه احتمال و ریسکی به نتیجه می‌رسد.
-4. **پیش‌بینی سری زمانی با Kronos:** پیش‌بینی توزیعی و چندافقی کندل‌ها و روند احتمالی آینده، با آموزش و ارزیابی اختصاصی بورس ایران.
+4. **پیش‌بینی سری زمانی و مسیر بازار:** پیش‌بینی توزیعی و چندافقی OHLCV با خانواده‌ای از مدل‌های تخصصی کندل و Time-Series Foundation Models؛ Kronos یکی از نامزدهاست، نه انتخاب از پیش قطعی.
 
 این چهار خروجی می‌توانند در آینده در Opportunity Lab کنار هم مصرف شوند، اما نباید به یک مدل واحد، یک امتیاز مبهم یا یک مرجع تصمیم‌گیری غیرقابل‌توضیح تبدیل شوند.
 
@@ -63,7 +63,7 @@
 - **Canonical FTS Engine**
 - **Deterministic Pattern & Indicator Engine**
 - **Adaptive Signal Intelligence**
-- **Kronos Forecasting Engine**
+- **Market Forecasting Engine** (Kronos و سایر نامزدهای OHLCV/TSFM)
 
 سپس خروجی هر موتور با قرارداد مشخص در **Technical Intelligence Registry / Result Store** ثبت می‌شود و در چارت، پنل تکنیکال، اسکرینر و در آینده Opportunity Lab قابل‌مصرف خواهد بود.
 
@@ -302,11 +302,13 @@ Outcome باید delayed-label باشد. کندل جدید به‌تنهایی �
 
 ---
 
-## 8. Kronos Forecasting Engine
+## 8. Market Forecasting Engine (Kronos & TSFM Candidates)
 
 ### 8.1 جایگاه و هدف
 
-Kronos یک مسیر مستقل برای پیش‌بینی سری زمانی مالی است. در BorsTerminal هدف، استفاده پژوهشی و سپس آموزش تکمیلی آن با داده‌های خود بورس ایران است تا در صورت عبور از معیارها بتواند:
+**به‌روزرسانی تصمیم 2026-11-12:** عنوان «Kronos Forecasting» در نسخه‌های قبلی، نام یک نامزد پژوهشی بود و نباید به‌عنوان قفل معماری روی یک مدل تلقی شود. فهرست نامزدها، اولویت آزمایش، خط‌پایه‌ها و ملاحظات مجوز در بخش 17 مرجع انتخاب مدل است. هیچ مدل خارجی پیش از ارزیابی روی Snapshotهای بورس ایران، مدل Production محسوب نمی‌شود.
+
+این موتور یک مسیر مستقل برای پیش‌بینی سری زمانی مالی است. Kronos یکی از مدل‌های تخصصی این مسیر است؛ اما انتخاب نهایی از میان مدل‌های K-line و عمومی TSFM، پس از Benchmark روی داده بورس ایران انجام می‌شود. هدف، استفاده پژوهشی، مقایسه Zero-shot و در صورت اثبات ارزش افزوده، آموزش تکمیلی مدل منتخب است تا بتواند:
 
 - توالی احتمالی کندل‌های آینده را پیش‌بینی کند؛
 - سناریوهای چندکندلی و چندافقی تولید کند؛
@@ -451,7 +453,7 @@ Fine-tuning می‌تواند در محیط Python/PyTorch انجام شود، �
 
 - چارت قیمت باید کندل را عنصر اصلی نگه دارد.
 - الگوها و لایه‌ها باید قابل روشن/خاموش کردن و دارای legend قابل فهم باشند.
-- FTS، Pattern Library، Adaptive Assessment و Kronos Forecast در UI باید نام و نقش متمایز داشته باشند.
+- FTS، Pattern Library، Adaptive Assessment و Market Forecast در UI باید نام و نقش متمایز داشته باشند.
 - نتیجه پیش‌بینی با داده واقعی کندل اشتباه گرفته نشود؛ کندل پیش‌بینی‌شده باید ظاهر و برچسب مجزا داشته باشد.
 - احتمال موفقیت، محدوده عدم‌قطعیت و تعداد نمونه نمایش داده شود؛ درصد بدون توضیح مبنای آن مجاز نیست.
 - timestamp، منبع، price basis، نسخه الگوریتم و stale/unknown بودن داده قابل مشاهده باشد.
@@ -502,14 +504,15 @@ Fine-tuning می‌تواند در محیط Python/PyTorch انجام شود، �
 - ارزیابی KNN/Pattern Memory و مدل‌های tabular؛
 - Champion/Challenger و پایش drift.
 
-### TI-5 — Kronos Iran Adaptation
+### TI-5 — Forecasting Model Benchmark & Iran Adaptation
 
-- تثبیت Dataset و baseline؛
-- ارزیابی pretrained؛
-- Fine-tuning روی دیتابیس بورس ایران؛
-- ارزیابی Walk-forward و Holdout؛
+- تثبیت Dataset و baselineهای آماری/ساده؛
+- Benchmark نامزدهای Kronos، KiT، FinCast، Chronos-2، TiRex-2 و Granite TTM r2.1 در حالت pretrained؛
+- مقایسه مدل‌ها به تفکیک تایم‌فریم، افق، price basis و رژیم؛
+- Fine-tuning فقط برای نامزدهایی که در ارزیابی اولیه ارزش افزوده نشان داده‌اند؛
+- ارزیابی Walk-forward و Holdout قفل‌شده؛
 - آزمون Runtime native و بسته‌بندی بدون Python؛
-- فعال‌سازی فقط پس از عبور از Gate.
+- فعال‌سازی فقط پس از عبور از Gate و بررسی مجوز.
 
 ### TI-6 — Integration & Stability
 
@@ -545,7 +548,7 @@ AutoTrader و اجرای سفارش، در صورت تصمیم مالک، مأم
 
 ## 14. تصمیم‌های باز که باید با شواهد بسته شوند
 
-1. نسخه دقیق Kronos، checkpoint، tokenizer، license و روش Fine-tuning.
+1. مدل/مدل‌های منتخب هر وظیفه Forecasting، checkpoint، tokenizer، license، baseline و نیاز یا عدم نیاز به Fine-tuning.
 2. Datasetهای قابل استفاده، پوشش تاریخی و مرز raw/adjusted.
 3. افق‌های اولیه Forecast و تایم‌فریم‌های پشتیبانی‌شده.
 4. Runtime native مناسب Kronos و footprint واقعی آن.
@@ -760,7 +763,7 @@ The same Holdout must not become an iterative tuning surface. Where many strateg
 
 The tracks share validated data and eligible Feature infrastructure, but keep independent targets, experiments, model registries, metrics and release gates.
 
-**Kronos Forecasting Track**
+**Market Forecasting Track**
 
 - Target: future OHLCV sequence/distribution for explicitly declared horizons and timeframes.
 - Keep raw and adjusted experiments separate.
@@ -863,4 +866,310 @@ This methodology adapts relevant ideas from the following sources to BorsTermina
 - Marcos López de Prado, The 10 Reasons Most Machine Learning Funds Fail (2018): supplementary discussion of common financial-ML failure modes. https://ssrn.com/abstract=3104816
 - Hudson & Thames MLFinLab documentation: implementation reference for Purged/Embargo CV and CPCV; use as an implementation aid, not as a replacement for verifying the mathematics and adapting multi-symbol date grouping. https://random-docs.readthedocs.io/en/latest/implementations/cross_validation.html
 
-The original architecture Sections 1–15, FTS source precedence, model/runtime boundaries and independent Kronos/Adaptive split remain in force. This section adds research-method discipline; it does not change canonical FTS methodology.
+The original architecture Sections 1–15, FTS source precedence, model/runtime boundaries and independent Market Forecasting/Adaptive split remain in force. This section adds research-method discipline; it does not change canonical FTS methodology.
+
+
+---
+
+## 17. Model Selection Architecture & Hugging Face Shortlist
+
+**تصمیم معماری — 2026-11-12**
+
+این بخش مرجع فعلی نامزدهای مدل، وظایف، محدودیت‌های مجوز و ترتیب Benchmark است. نامزدبودن به معنی تأیید کیفیت روی بورس ایران، مجوز استفاده تجاری، انتخاب Runtime یا اجازه فعال‌سازی Production نیست. هر نتیجه باید با revision دقیق Code/Model/Checkpoint و Dataset ثبت شود.
+
+### 17.1 مرزبندی نهایی اجزا
+
+| جزء | مسئولیت | مرز مسئولیت |
+|---|---|---|
+| Canonical FTS Engine | اجرای قواعد رسمی FTS و تولید verdict قطعی | مستقل از ML؛ بدون بازنویسی توسط مدل |
+| Deterministic Pattern & Indicator Engine | تشخیص عددی ساختار، الگو و رویداد | تشخیص شکل/رویداد؛ نه تخمین احتمال موفقیت |
+| Adaptive Signal Intelligence | ارزیابی outcome و کیفیت Setup/Detector | فقط با event، label و execution contract معتبر |
+| Market Forecasting Engine | پیش‌بینی توزیعی و چندافقی OHLCV/مسیر بازار | سناریوی احتمالی؛ نه سیگنال قطعی یا جایگزین FTS |
+| Regime Service | تخمین وضعیت/رژیم بازار | context مستقل از verdict قطعی FTS |
+| Volatility Service | تخمین نوسان و ریسک در افق مشخص | وظیفه جدا از پیش‌بینی بازده یا مسیر قیمت |
+
+چهار موتور تحلیلی مستقل داریم؛ Regime و Volatility سرویس‌های پشتیبان‌اند و الزاماً به Foundation Model مستقل نیاز ندارند.
+
+### 17.2 مرز Go، Python و Production Runtime
+
+- **Tauri v2 + React/V2 + Go backend + SQLite** معماری محصول باقی می‌ماند.
+- Go مالک APIهای محصول، دسترسی داده، ارکستراسیون، FTS و قرارداد اتصال به نتایج تحلیل است.
+- Python/PyTorch برای پژوهش، آماده‌سازی داده، آموزش، Benchmark، اعتبارسنجی و ابزارهای آفلاین مجاز است.
+- نصب و اجرای Production نباید به نصب Python یا اجرای Python server وابسته شود.
+- مسیر Production باید با Runtime قابل‌بسته‌بندی و ترجیحاً CPU-first اثبات شود؛ گزینه‌هایی مانند ONNX یا Runtime native فقط پس از تست صحت خروجی، کارایی، footprint، Startup، آپدیت و Rollback انتخاب می‌شوند.
+- GPU برای پژوهش و در صورت امکان‌سنجی برای inference اختیاری است؛ وجود GPU شرط کارکرد محصول نیست.
+- این سند انتخاب قطعی ONNX، ONNX Runtime، CUDA یا کتابخانه خاص دیگری را انجام نمی‌دهد. انتخاب Runtime یک Gate مستقل است.
+- React/V2 خروجی‌های ثبت‌شده را نمایش می‌دهد و مسئول اجرای مدل یا تکرار محاسبات نیست.
+- بارگذاری هم‌زمان همه مدل‌ها در RAM/VRAM پیش‌فرض نیست؛ سیاست load/unload و صف اجرای مدل‌ها باید در Runtime آزموده شود.
+
+### 17.3 نامزدهای Market Forecasting
+
+وظیفه Forecasting، پیش‌بینی چندافقی OHLCV و سناریوهای احتمالی است. هیچ رتبه‌بندی جهانی یا مقاله‌ای جای ارزیابی محلی را نمی‌گیرد.
+
+| اولویت آزمایش | مدل | نقش و دلیل ورود | مجوز/محدودیت |
+|---|---|---|---|
+| موج اول | [Kronos-mini](https://huggingface.co/NeoQuasar/Kronos-mini) و [Kronos-small](https://huggingface.co/NeoQuasar/Kronos-small) | مدل تخصصی K-line؛ mini با 4.1M پارامتر و context برابر 2048، small با 24.7M و context برابر 512 | Model Card مجوز MIT را اعلام می‌کند؛ tokenizer و preprocessing متناظر با checkpoint باید Pin شوند. |
+| موج اول، مشروط به بررسی مجوز | [KiT 284M](https://huggingface.co/Lucifer744/KiT_model) | مدل diffusion برای تولید مسیر کندل؛ نامزد تخصصی چندبازاری و چند Granularity | مخزن رسمی [Luciferbobo/KiT](https://github.com/Luciferbobo/KiT) مجوز AGPL-3.0 اعلام می‌کند. فعلاً Research/Benchmark؛ پیش از هر استفاده یا توزیع در محصول، تعهدات مجوز و سازگاری با مدل توزیع محصول باید بررسی و تأیید شوند. |
+| موج اول | [FinCast](https://huggingface.co/Vincent05R/FinCast) | مدل مالی 1B با معماری sparse MoE؛ رقیب مهم برای مقایسه مالی و چنددامنه‌ای | Model Card مجوز Apache-2.0 اعلام می‌کند. بسته‌بندی inference و آزمون PEFT از موارد نیازمند بررسی/تکمیل در Model Card هستند؛ بلوغ کد و Runtime جداگانه ممیزی شود. |
+| موج اول | [Chronos-2](https://huggingface.co/amazon/chronos-2) | مرجع عمومی 120M برای univariate/multivariate و covariates؛ context تا 8192 و prediction horizon تا 1024 طبق Model Card | Apache-2.0؛ سازگاری ساختار ورودی با ویژگی‌های بازار ایران باید بررسی شود. |
+| موج اول | [TiRex-2](https://huggingface.co/NX-AI/TiRex-2) | مدل zero-shot چندمتغیره با past/future-known covariates؛ 38.4M پارامتر فعال در حالت univariate و 44.1M پارامتر فعال اضافی برای multivariate | Apache-2.0؛ محدودیت‌های Intended Use و شرایط استقرار رسمی نیز بررسی شوند. |
+| موج اول | [Granite Timeseries TTM r2.1](https://huggingface.co/ibm-granite/granite-timeseries-ttm-r2) | مدل‌های سبک؛ مناسب مقایسه هزینه اجرا و پشتیبانی روزانه/هفتگی در نسخه r2.1 | Apache-2.0؛ شاخه و پیکربندی context/prediction length باید Pin شوند. |
+| موج دوم | [TimesFM 2.5](https://huggingface.co/google/timesfm-2.5-200m-pytorch) | baseline عمومی با context طولانی؛ فقط در صورت ارزش افزوده موج اول | Apache-2.0 طبق Model Card بررسی‌شده؛ footprint و وابستگی‌ها اندازه‌گیری شوند. |
+| ذخیره پژوهشی | [PatchTST-FM-r2](https://huggingface.co/ibm-granite/granite-timeseries-patchtst-fm-r2) | رقیب سنگین‌تر برای Benchmark تکمیلی در صورت ناکافی‌بودن موج اول | شرایط مجوز دوگانه و هزینه محاسباتی پیش از استفاده دقیقاً بررسی شود. |
+
+**ملاحظات KiT:**
+
+- دو Bundle منتشرشده یکسان نیستند: «step_market_284M» برای نتایج مقاله و «step_market_284M_train260410» برای نسخه A-share-only. این دو نباید مخلوط شوند.
+- فایل‌های instruments.json و stats.json متعلق به همان Bundle باید همراه Checkpoint نگهداری شوند؛ شناسه‌های instrument نباید بی‌دلیل بازشماری شوند.
+- نگاشت نمادهای بورس ایران که در واژگان آموزش KiT وجود ندارند باید آزمایش شود؛ پشتیبانی از نماد جدید فرض نمی‌شود.
+- توصیه 6GB+ VRAM در مخزن رسمی تضمین عملکرد یا اجرای بی‌نقص روی سخت‌افزار هدف نیست.
+
+**ملاحظات FinCast:** ادعای اجرای inference روی سخت‌افزار مصرف‌کننده جای Benchmark محلی نیست. حافظه اوج، سرعت، دقت و قابلیت بسته‌بندی باید روی سیستم هدف اندازه‌گیری شوند.
+
+### 17.4 نامزدهای Adaptive Signal Intelligence
+
+Classification و Regression دو وظیفه مستقل‌اند؛ یک مدل لازم نیست در هر دو برنده شود.
+
+| وظیفه | نامزد | کاربرد | مجوز/ملاحظه |
+|---|---|---|---|
+| Classification | [TabICLv2](https://huggingface.co/DataikuNLP/TabICL) | نامزد اصلی In-Context Learning برای probability/quality classification | BSD-3-Clause در Model Card؛ revision دقیق checkpoint و کد Pin شود. |
+| Classification و Regression | [TabDPT](https://huggingface.co/Layer6/TabDPT) | رقیب tabular foundation model با zero-shot prediction برای هر دو وظیفه | Apache-2.0؛ نسخه inference package و وابستگی‌ها Pin شوند. |
+| Regression / Predictive Distribution | [Nori](https://huggingface.co/Synthefy/Nori) | تخمین توزیع پیامد و quantileهای متعدد؛ مدل پایه حدود 5.9M پارامتر | Apache-2.0؛ Nori مدل Regression است، نه Classifier موفقیت. |
+| Required local baselines | CatBoost و LightGBM | خط پایه اجباری Classification و Regression روی Dataset خود پروژه | مدل pretrained در Hugging Face نیست؛ نسخه، seed و config ثبت شود. |
+| Simple baseline | Logistic/regularized linear | خط پایه ساده و قابل‌تفسیر طبقه‌بندی | پیش از مدل پیچیده‌تر اجرا شود. |
+
+ترتیب موج اول:
+1. CatBoost و LightGBM برای Classifier و Regressor.
+2. TabICLv2 Classifier و TabDPT Classifier.
+3. TabICLv2 Regressor و TabDPT Regressor.
+4. Nori برای توزیع R-multiple، MFE/MAE یا targetهای regression دارای برچسب معتبر.
+5. انتخاب مستقل Champion برای classification و regression.
+
+TabICLv2 یا TabDPT به‌دلیل برتری در Benchmark عمومی، خودکار برنده بورس ایران تلقی نمی‌شوند؛ معیار انتخاب، عملکرد محلی در Walk-forward، Holdout و کالیبراسیون است.
+
+### 17.5 Regime و Volatility
+
+**Regime Detection**
+- موج اول: HMM، GMM و روش‌های آماری/خوشه‌بندی با Featureهای point-in-time.
+- در صورت وجود برچسب معتبر و تعریف مستقل رژیم، CatBoost به‌عنوان روش supervised مقایسه شود.
+- [MOMENT-1-large](https://huggingface.co/AutonLab/MOMENT-1-large) با مجوز MIT فقط نامزد پژوهشی موج دوم برای embedding/classification/anomaly detection است؛ تخصص مالی ندارد و جزء اجباری Runtime نیست.
+
+**Volatility Forecasting**
+- Baselineهای اجباری: HAR-RV، GARCH/GJR-GARCH و CatBoost با Featureهای نوسان.
+- Kronos، KiT و سایر TSFMها فقط رقیب آزمایشی‌اند؛ کیفیت پیش‌بینی مسیر قیمت، اثبات کیفیت پیش‌بینی نوسان نیست.
+- مطالعه منتشرشده در نوامبر 2026 روی حدود 5,000 سهم A-share برای پیش‌بینی نوسان روز بعد گزارش کرده Kronos در آزمایش zero-shot، MAE حدود 2.4 تا 2.6 برابر HAR-RV داشته است. این نتیجه فقط مربوط به همان وظیفه، بازار و پروتکل است و به پیش‌بینی بازده یا تمام وظایف K-line تعمیم داده نمی‌شود؛ بااین‌حال HAR-RV در BorsTerminal baseline اجباری این وظیفه است.
+- معیارهای نوسان باید شامل QLIKE و معیارهای خطای مناسب، با تعریف روشن target و پنجره محاسبه باشند.
+
+### 17.6 مدل‌های کم‌اولویت یا خارج از مسیر محصول
+
+- **TabPFN-3.5:** مجوز سپتامبر 2026 استفاده از مدل، مشتقات و خروجی‌ها را برای کاربرد تجاری/Production محدود می‌کند و برای Production به مجوز تجاری جداگانه نیاز دارد. تا اخذ مجوز روشن، وارد مسیر محصول و تصمیم تجاری نمی‌شود؛ هر ارزیابی پژوهشی نیز باید در محدوده مجوز انجام شود.
+- **ULTRON:** به‌دلیل دامنه آموزش محدود گزارش‌شده (نمونه کم از سهام/ETFهای آمریکا با داده یک‌دقیقه‌ای) و شواهد عملکرد اولیه ضعیف، اولویت پایینی دارد؛ فقط با فرضیه و دلیل جدید بازبینی شود.
+- مدل‌های دارای مجوز غیرتجاری یا پژوهش‌محور، حتی اگر از نظر فنی قوی باشند، جایگزین نامزدهای قابل‌استفاده در محصول نیستند.
+
+### 17.7 قاعده مجوز و زنجیره تأمین مدل
+
+مجوز Checkpoint، کد inference، tokenizer، فایل‌های کمکی، Dataset و وابستگی‌ها باید جداگانه ثبت شوند. مجوز Model Card برای وزن‌ها لزوماً مجوز یکسان همه اجزای وابسته نیست.
+
+پیش از استفاده Production یا توزیع همراه برنامه، Model Card، فایل LICENSE، revision و الزامات notice، attribution، source disclosure و redistribution بررسی و در Model Registry ثبت شوند. وضعیت مجوز هر Candidate یکی از این موارد باشد: APPROVED_FOR_PRODUCT، RESEARCH_ONLY، LEGAL_REVIEW_REQUIRED یا REJECTED. این برچسب‌ها جای بررسی حقوقی موردی را نمی‌گیرند.
+
+### 17.8 سخت‌افزار و سیاست Runtime
+
+سخت‌افزار مرجع آزمایش محلی RTX 4060 با 8GB VRAM و 32GB RAM است؛ ظرفیت واقعی باید با اندازه‌گیری تعیین شود، نه صرفاً تعداد پارامتر یا حجم فایل مدل.
+
+برای هر Candidate حداقل موارد زیر ثبت شود:
+- حجم کامل artifact شامل Runtime، مدل و وابستگی‌ها؛
+- Cold-start و warm inference latency؛
+- CPU، RAM و اوج VRAM؛
+- batch size و طول context/horizon؛
+- throughput و رفتار تحت بار هم‌زمان؛
+- رفتار بدون GPU و هنگام کمبود منابع؛
+- امکان unload و آزادسازی حافظه؛
+- پایداری و برابری خروجی در Runtime قابل‌بسته‌بندی با مرجع پژوهشی.
+
+هیچ مدل به‌دلیل ادعای اجرای آن روی RTX 4060 یا دستگاه مصرف‌کننده از آزمون سخت‌افزار هدف معاف نمی‌شود. بارگذاری هم‌زمان چند Checkpoint بزرگ پیش‌فرض نیست.
+
+### 17.9 قرارداد خروجی ML Insights
+
+خروجی هر تحلیل ML حداقل این فیلدهای معنایی را داشته باشد؛ نام‌گذاری JSON در قرارداد API تعیین می‌شود:
+
+- symbol_id، timeframe، price_basis؛
+- decision_at، data_as_of، computed_at؛
+- dataset_snapshot_id، feature_schema_version؛
+- model_id، model_version، checkpoint_revision؛
+- task_id و forecast_horizon یا outcome_horizon؛
+- prediction یا scenario_distribution؛
+- uncertainty و calibration_status در صورت کاربرد؛
+- matured_sample_count و base_rate برای Adaptive probability؛
+- regime_context و volatility_context در صورت وجود؛
+- data_quality_status، stale_status و runtime_status.
+
+خروجی Forecast، برآورد outcome و verdict قطعی FTS باید در API و UI قابل‌تفکیک باشند. احتمال خام یا uncalibrated با عنوان «اطمینان» نمایش داده نشود. مدل حق صدور سفارش، فعال‌کردن Strategy یا تغییر verdict canonical را ندارد.
+
+---
+
+## 18. Implementation Roadmap — ترتیب الزام‌آور اجرا
+
+مراحل داده، برچسب‌گذاری و ارزیابی مقدم بر آموزش و اتصال Production هستند. مسیرهای Adaptive و Forecasting پس از آماده‌شدن زیرساخت مشترک می‌توانند موازی پیش بروند.
+
+### Stage 0 — Architecture & Contract Freeze
+- تثبیت مرز Go، FTS، Detectorها، دو مسیر ML و سرویس‌های پشتیبان؛
+- تثبیت قراردادهای Market Data، Feature، Detector Event، Outcome، Forecast و ML Result؛
+- تثبیت وضعیت‌های unknown، insufficient_data، stale، pending و خطا؛
+- تعریف Model Registry و Experiment Registry؛
+- ثبت سیاست نسخه‌بندی Dataset، Feature، Label، Checkpoint، Runtime و API.
+
+**Deliverables:** معماری اجرایی، schemaهای نسخه‌دار و فهرست تصمیم‌های باز.  
+**Exit Gate:** مالکیت هر داده و مسئولیت هر موتور روشن باشد و قرارداد متناقضی بین FTS و ML باقی نماند.
+
+### Stage 1 — Iranian Market Dataset Audit & Snapshot
+- ممیزی coverage، gap، duplicate، تعدیل، شناسه و تغییر نماد، توقف، بازگشایی و رویداد شرکتی؛
+- تعریف صریح Raw و Adjusted و نسخه Adjustment Chain؛
+- ساخت Snapshotهای immutable و Manifest شامل زمان استخراج، منبع، checksum و config؛
+- ساخت تقویم معاملاتی و وضعیت session؛
+- تشخیص محدودیت survivorship و تاریخچه ناقص؛
+- ثبت کیفیت و پوشش به تفکیک نماد، تایم‌فریم و دوره.
+
+**Deliverables:** Dataset Snapshot و Manifest نسخه‌دار.  
+**Exit Gate:** داده مرجع قابل بازتولید باشد و محدودیت پوشش آن ثبت شده باشد؛ اطلاعات آینده وارد رکوردهای گذشته نشود.
+
+### Stage 2 — Feature Store & Adaptive Outcome Labels
+- ساخت Featureهای مشترک point-in-time با schema و version؛
+- ثبت Snapshot ویژگی هر Detector/Setup در زمان تصمیم؛
+- ساخت Outcome Ledger شامل همه eventها، نه فقط نمونه‌های موفق؛
+- تعریف target، سمت، زمان تصمیم، ورود قابل اجرا، target/stop/time barrier و execution assumptions برای هر Setup؛
+- مدیریت PENDING تا بلوغ کامل outcome؛
+- ثبت NO_FILL، HALTED_OR_UNTRADEABLE، INVALIDATED و INSUFFICIENT_DATA؛
+- محاسبه MFE، MAE، R-multiple و زمان رسیدن به outcome در صورت امکان؛
+- طراحی purge/embargo براساس information interval رویدادهای هم‌پوشان.
+
+**Deliverables:** Feature Dataset و Outcome Dataset نسخه‌دار.  
+**Exit Gate:** تست point-in-time، label maturity، no-fill و هم‌پوشانی بدون نشت آینده Pass شوند.
+
+### Stage 3 — Shared Benchmark & Experiment Harness
+- ساخت Split Engine زمانی و Walk-forward؛
+- قرار دادن همه نمادهای یک تاریخ در یک temporal fold؛
+- آزمون held-out symbols به‌صورت جداگانه؛
+- پیاده‌سازی Purge/Embargo برای label intervalها؛
+- قفل‌کردن final Holdout قبل از انتخاب مدل/Feature؛
+- ثبت تمام trials، config، seed، commit، checkpoint، hardware و checksum؛
+- تست منفی برای date leakage، cross-symbol split، preprocessing leakage و Holdout reuse.
+
+**Deliverables:** ابزار Benchmark قابل بازتولید برای دو مسیر ML.  
+**Exit Gate:** اجرای مجدد آزمایش قابل ردیابی باشد و تست‌های نشت اطلاعات را تشخیص دهد.
+
+### Stage 4 — Classical Baselines
+**Adaptive:** Logistic/regularized، CatBoost Classifier/Regressor، LightGBM Classifier/Regressor و در صورت توجیه KNN/Pattern Memory.  
+**Volatility:** HAR-RV، GARCH/GJR-GARCH و CatBoost با ویژگی‌های نوسان.  
+**Regime:** HMM، GMM و روش‌های آماری/خوشه‌بندی.  
+**Forecasting:** Last-value/persistence و baselineهای آماری متناسب با تایم‌فریم.
+
+**Deliverables:** baseline report جدا برای هر task و horizon.  
+**Exit Gate:** معیار مقایسه محلی و عملکرد پایه قابل اتکا وجود داشته باشد.
+
+### Stage 5 — Adaptive Model Benchmark
+- TabICLv2 Classifier و TabDPT Classifier در مقایسه با Logistic، CatBoost و LightGBM؛
+- TabICLv2 Regressor، TabDPT Regressor و Nori در مقایسه با Regressorهای محلی؛
+- گزارش PR-AUC، Brier، LogLoss، calibration، base rate، sample count و metricهای regression/quantile؛
+- تحلیل برحسب Setup، regime، صنعت، نماد، دوره و افق؛
+- ثبت تمام trialها و نتایج منفی.
+
+**Deliverables:** Adaptive benchmark report و پیشنهاد Champion جداگانه برای classification و regression.  
+**Exit Gate:** بهبود out-of-sample نسبت به baselineها با پایداری و کالیبراسیون قابل دفاع.
+
+### Stage 6 — Market Forecasting Benchmark
+- اجرای موج اول Kronos-mini/small، KiT 284M، FinCast، Chronos-2، TiRex-2 و Granite TTM r2.1؛
+- نگهداری مدل، tokenizer، normalization و mappingهای متناظر در revisionهای Pin‌شده؛
+- آزمایش Raw و Adjusted به‌صورت جدا؛
+- ارزیابی به تفکیک تایم‌فریم، horizon، regime، نماد و نقدشوندگی؛
+- گزارش normalized error، directional metrics، RankIC در صورت تناسب، quantile loss، CRPS و interval coverage/calibration؛
+- اجرای موج دوم TimesFM 2.5 یا PatchTST-FM-r2 فقط در صورت نیاز و با بررسی مجوز/هزینه؛
+- جداسازی Forecast Quality از Economic Utility.
+
+**Deliverables:** Forecast benchmark report و نامزدهای برتر هر horizon/task.  
+**Exit Gate:** بهبود out-of-sample و calibration نسبت به baselineهای مربوط اثبات شود و مجوز/محدودیت Candidate بررسی شده باشد.
+
+### Stage 7 — Selective Fine-tuning
+- فقط Candidateهای عبورکرده از Stage 5/6 وارد Fine-tuning شوند؛
+- Zero-shot و Fine-tuned با split و داده یکسان مقایسه شوند؛
+- training config، seed، hardware و checkpoint ثبت شوند؛
+- Fine-tuning فقط با بهبود پایدار پذیرفته شود؛
+- مدل با نتیجه بدتر یا نامطمئن به نسخه پایه یا baseline بازگردد.
+
+**Deliverables:** گزارش pretrained در برابر fine-tuned و Checkpoint نسخه‌دار.  
+**Exit Gate:** بهبود روی Validation و Test مجاز اثبات شود، بدون tuning روی Holdout قفل‌شده.
+
+### Stage 8 — Go Integration in Shadow Mode
+- تعریف قرارداد ML API داخلی و نسخه‌بندی‌شده؛
+- اتصال Go به Runtime قابل‌بسته‌بندی منتخب پس از اثبات امکان‌پذیری؛
+- ثبت درخواست، پاسخ، خطا، timeout، مدل، Feature و Dataset version؛
+- اتصال به Setupهای FTS از طریق immutable event/feature snapshot؛
+- اجرای Shadow و replay بدون تغییر verdict canonical یا سفارش؛
+- fallback به unavailable/unknown به‌جای توقف کل برنامه.
+
+**Deliverables:** Shadow integration report و trace قابل ردیابی.  
+**Exit Gate:** عدم تغییر FTS، صحت داده، پایداری Runtime، timeout/fallback و footprint واقعی تأیید شود.
+
+### Stage 9 — UI Pilot
+- نمایش FTS و ML به‌صورت مجزا؛
+- نمایش سناریو و عدم‌قطعیت Forecast؛
+- نمایش احتمال calibrated همراه base rate و تعداد نمونه؛
+- نمایش Regime و Volatility به‌عنوان context؛
+- نمایش timestamp، نسخه، کیفیت و stale state؛
+- عدم نمایش درصد گمراه‌کننده برای نمونه ناکافی یا مدل uncalibrated.
+
+**Deliverables:** Pilot قابل ارزیابی در Opportunity/Technical UI.  
+**Exit Gate:** تفاوت خروجی قطعی FTS و برآورد احتمالی ML برای کاربر روشن باشد.
+
+### Stage 10 — Controlled Acceptance & Monitoring
+- Champion/Challenger با دوره مشاهده و acceptance criteria از پیش ثبت‌شده؛
+- پایش prediction quality، calibration، feature/data drift، regime drift، latency و منابع؛
+- نگهداری Checkpoint پذیرفته‌شده و مسیر rollback؛
+- retraining فقط با Dataset و Label بالغ و نسخه‌دار؛
+- عدم promotion خودکار مدل جدید؛
+- هرگونه استفاده از خروجی برای تصمیم عملیاتی یا معامله نیازمند تصمیم مستقل مالک است.
+
+**Deliverables:** Acceptance report، Model Registry فعال و runbook نگهداری/rollback.  
+**Exit Gate:** معیارهای فنی، آماری، مجوزی و محصولی Pass شوند.
+
+---
+
+## 19. Mapping به TI Phases و نحوه موازی‌سازی
+
+Roadmap بالا ترتیب اجرایی وابستگی‌ها را مشخص می‌کند؛ TI Phases بخش 12 گروه‌بندی کاری زیرساخت تکنیکال را حفظ می‌کنند:
+
+| TI Phase فعلی | پوشش در Roadmap | توضیح |
+|---|---|---|
+| Gate A | پیش‌نیاز Stage 1 | داده، Adjustment Chain و Performance باید معتبر باشند |
+| TI-1 Audit | Stage 0–1 | ممیزی قابلیت‌ها و داده پیش از توسعه تکراری |
+| TI-2 FTS & Structural Foundation | Stage 1–3 در بخش داده و Detector | قواعد FTS مستقل از مدل می‌مانند |
+| TI-3 Classical Pattern Library | قرارداد Detector در Stage 0–2؛ اجرای Detector طبق اولویت مستقل | فقط الگوهای دارای تعریف/test پذیرفته شوند |
+| TI-4 Outcome Ledger & Adaptive | Stage 2–5 | ابتدا outcome، سپس baseline و مدل‌های Tabular |
+| TI-5 Forecasting | Stage 1، 3، 4 و 6–7 | Benchmark همه نامزدها، نه Kronos-only |
+| TI-6 Integration & Stability | Stage 8–10 | ابتدا Shadow، سپس Pilot و پذیرش کنترل‌شده |
+
+**موازی‌سازی مجاز:**
+- تیم Data/Feature مسئول Stage 1–3 و قرارداد مشترک است.
+- پس از تثبیت Snapshot و Benchmark Harness، تیم Adaptive می‌تواند Stage 4–5 را اجرا کند.
+- هم‌زمان تیم Forecasting می‌تواند آزمایش Stage 4 و 6 را پیش ببرد.
+- تیم Regime/Volatility می‌تواند baselineهای Stage 4 را با همان Snapshotها اجرا کند.
+- Integration در Stage 8 نباید پیش از خروجی نسخه‌دار Stage 5/6 به Production وابسته شود.
+- UI Pilot در Stage 9 منتظر قرارداد ثابت خروجی و نتایج قابل نمایش می‌ماند.
+
+هیچ تیمی مجاز نیست Dataset، temporal split، feature meaning یا event labels اختصاصی و ناسازگار با قرارداد مرجع بسازد.
+
+---
+
+## 20. Acceptance Principles & Final Architecture Decision
+
+1. معماری و مرزهای مسئولیت تثبیت شده‌اند؛ انتخاب مدل‌های Champion هنوز باز و مبتنی بر شواهد محلی است.
+2. FTS canonical، Forecast و Adaptive Outcome سه نوع نتیجه متفاوت‌اند و نباید در یک verdict ادغام شوند.
+3. Detector هندسی/عددی مسئول تشخیص Setup است؛ Adaptive مسئول تخمین پیامد آن است.
+4. Forecasting مسیرهای ممکن را برآورد می‌کند و به‌تنهایی اثبات‌کننده edge معاملاتی نیست.
+5. Regime و Volatility context مستقل‌اند و کیفیتشان با baselineهای وظیفه‌محور سنجیده می‌شود.
+6. مدل ساده‌تر، سبک‌تر یا قابل‌توضیح‌تر در صورت عملکرد بهتر بر Foundation Model پیچیده ترجیح دارد.
+7. Leaderboard، تعداد پارامتر و ادعای VRAM جای آزمون روی بورس ایران و سخت‌افزار واقعی را نمی‌گیرد.
+8. فایل مدل، کد و artifactهای حجیم خارج از Git نگهداری شوند؛ Git فقط manifest، revision، checksum، config و گزارش قابل‌ردیابی را نگه دارد.
+9. انتخاب یا ارتقای مدل، مجوز تغییر FTS، خودکارسازی سفارش یا انتشار محصول نیست.
+10. هر نتیجه نهایی با یکی از verdictهای PASS، FAIL، BLOCKED، NOT_MEASURED یا INSUFFICIENT_DATA ثبت شود.
+
+**تصمیم نهایی معماری:** BorsTerminal چهار موتور تحلیلی مستقل (FTS، deterministic pattern/indicator، Adaptive Signal Intelligence و Market Forecasting) به‌علاوه سرویس‌های پشتیبان Regime و Volatility دارد. دو مسیر اصلی یادگیری Adaptive و Forecasting هستند. Python در چرخه پژوهش/آموزش استفاده می‌شود؛ Production Runtime باید بدون وابستگی الزامی Python و با بسته‌بندی، صحت خروجی، امنیت، کارایی و Rollback اثبات شود. مدل‌های منتخب قابل تعویض‌اند و فقط پس از عبور از Dataset، Benchmark، مجوز و Shadow/Pilot وارد وضعیت پذیرفته‌شده می‌شوند.
