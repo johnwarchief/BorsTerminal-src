@@ -1,0 +1,5280 @@
+{
+ "base_commit": "18563a6659d5d20b3c74105826ca84b4704340b2",
+ "before_after_delta": {
+  "api": {
+   "adjusted_diff_rows_after": 0,
+   "adjusted_diff_rows_before": 1707,
+   "adjusted_max_rel_after": {
+    "close": 1.5543122344752192e-15,
+    "high": 1.5543122344752192e-15,
+    "low": 1.5543122344752192e-15,
+    "open": 1.5543122344752192e-15
+   },
+   "adjusted_max_rel_before": {
+    "close": 1.5543122344752192e-15,
+    "high": 2.8828571428571426,
+    "low": 0.4350649350649354,
+    "open": 1.5543122344752192e-15
+   },
+   "raw_diff_rows_after": 0,
+   "raw_diff_rows_before": 1707,
+   "rows_served_after": 38492,
+   "rows_served_before": 38492,
+   "symbols_pass_after": 13,
+   "symbols_pass_before": 6,
+   "volume_mismatch_after": 0,
+   "volume_mismatch_before": 0
+  },
+  "engine": {
+   "adjusted_diff_rows_after": 0,
+   "adjusted_diff_rows_before": 1707,
+   "adjusted_max_rel_after": {
+    "close": 1.5543122344752192e-15,
+    "high": 1.5543122344752192e-15,
+    "low": 1.5543122344752192e-15,
+    "open": 1.5543122344752192e-15
+   },
+   "adjusted_max_rel_before": {
+    "close": 1.5543122344752192e-15,
+    "high": 2.8828571428571426,
+    "low": 0.4350649350649354,
+    "open": 1.5543122344752192e-15
+   },
+   "raw_diff_rows_after": 0,
+   "raw_diff_rows_before": 0,
+   "rows_served_after": 38492,
+   "rows_served_before": 38492,
+   "symbols_pass_after": 13,
+   "symbols_pass_before": 6,
+   "volume_mismatch_after": 0,
+   "volume_mismatch_before": 0
+  }
+ },
+ "binaries": {
+  "after": {
+   "borsd": {
+    "path": "_audit/phase49-4/bin/borsd.exe",
+    "sha256": "27ea06c088c58d6fead302ac4951263aee455d997310e4e57dfbedb619a95de2"
+   },
+   "candlebuild": {
+    "path": "_audit/phase49-4/bin/candlebuild.exe",
+    "sha256": "4d28cece967b735750fb4668fee32a882253a9425d20471babfd3e98addd56ef"
+   }
+  },
+  "before": {
+   "borsd": {
+    "path": "_audit/phase49-3/bin/borsd.exe",
+    "sha256": "a797c88343f49a4d20240b452cdacfcf193cc332f7738ecfdef41983ba319cd7"
+   },
+   "candlebuild": {
+    "path": "_audit/phase49-3/bin/candlebuild.exe",
+    "sha256": "ba34c90be644060d1ff45b7477f2eafb61a39be78169282a72554501babd3673"
+   }
+  }
+ },
+ "cohort": {
+  "count": 13,
+  "new_member_spellings": [
+   "وپترو",
+   "وملت",
+   "شكلر",
+   "فولاد",
+   "پكرمان",
+   "وسديد",
+   "شتران",
+   "كوثر",
+   "دبالك",
+   "هامرز",
+   "فن افزار",
+   "نيك گستر",
+   "ثپهران"
+  ],
+  "symbols": [
+   "ثپهران",
+   "دبالك",
+   "شتران",
+   "شكلر",
+   "فن افزار",
+   "فولاد",
+   "كوثر",
+   "نيك گستر",
+   "هامرز",
+   "وسديد",
+   "وملت",
+   "وپترو",
+   "پكرمان"
+  ],
+  "zero_event_symbols": [
+   "نيك گستر"
+  ]
+ },
+ "elapsed_seconds": 168.8,
+ "failures": [],
+ "head_commit": "18563a6659d5d20b3c74105826ca84b4704340b2",
+ "layers": {
+  "api": {
+   "after": {
+    "db_copy_sha256": "e31ae6f946275073b50f929500234016a51f4ac2d9c939e9af4f38a329c05904",
+    "measured_path_symbols": [
+     "ثپهران",
+     "دبالك",
+     "شتران",
+     "شكلر",
+     "فن افزار",
+     "فولاد",
+     "كوثر",
+     "نيك گستر",
+     "هامرز",
+     "وسديد",
+     "وملت",
+     "وپترو",
+     "پكرمان"
+    ],
+    "not_measured_path_symbols": [],
+    "per_symbol": [
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "declared_count": 126,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.866633115249119,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 126,
+      "rows_served": 126,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "ثپهران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 337.95578646806666,
+        "date": "2016-05-28",
+        "factor": 0.07857609543549562,
+        "reference_type7": 337.95578646806655,
+        "served": 4301
+       },
+       "high": {
+        "adjusted": 339.2130039950346,
+        "date": "2016-06-11",
+        "factor": 0.07857609543549562,
+        "reference_type7": 339.2130039950345,
+        "served": 4317
+       },
+       "low": {
+        "adjusted": 337.0914494182762,
+        "date": "2016-05-28",
+        "factor": 0.07857609543549562,
+        "reference_type7": 337.0914494182761,
+        "served": 4290
+       },
+       "open": {
+        "adjusted": 338.03436256350216,
+        "date": "2016-05-29",
+        "factor": 0.07857609543549562,
+        "reference_type7": 338.03436256350204,
+        "served": 4302
+       }
+      },
+      "declared_count": 2478,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.0502160030267774,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2478,
+      "rows_served": 2478,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1,
+      "status": "PASS",
+      "symbol": "دبالك",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 8.881784197001252e-16,
+       "high": 8.881784197001252e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 718.5295592625017,
+        "date": "2021-10-25",
+        "factor": 0.1607448678439601,
+        "reference_type7": 718.5295592625012,
+        "served": 4470
+       },
+       "high": {
+        "adjusted": 712.9034888879631,
+        "date": "2021-11-01",
+        "factor": 0.1607448678439601,
+        "reference_type7": 712.9034888879626,
+        "served": 4435
+       },
+       "low": {
+        "adjusted": 720.7799874123172,
+        "date": "2021-10-23",
+        "factor": 0.1607448678439601,
+        "reference_type7": 720.7799874123166,
+        "served": 4484
+       },
+       "open": {
+        "adjusted": 720.1370079409413,
+        "date": "2021-11-02",
+        "factor": 0.1607448678439601,
+        "reference_type7": 720.1370079409407,
+        "served": 4480
+       }
+      },
+      "declared_count": 2727,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 1.6576233507092306e-05,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2727,
+      "rows_served": 2727,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "شتران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2.2152787526107187,
+        "date": "2004-02-08",
+        "factor": 0.0009758937236170567,
+        "reference_type7": 2.2152787526107196,
+        "served": 2270
+       },
+       "high": {
+        "adjusted": 2.2152787526107187,
+        "date": "2004-02-08",
+        "factor": 0.0009758937236170567,
+        "reference_type7": 2.2152787526107196,
+        "served": 2270
+       },
+       "low": {
+        "adjusted": 2.2113751777162505,
+        "date": "2004-02-08",
+        "factor": 0.0009758937236170567,
+        "reference_type7": 2.2113751777162514,
+        "served": 2266
+       },
+       "open": {
+        "adjusted": 2.2113751777162505,
+        "date": "2004-02-08",
+        "factor": 0.0009758937236170567,
+        "reference_type7": 2.2113751777162514,
+        "served": 2266
+       }
+      },
+      "declared_count": 4400,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.0009758937236170567,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 6,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4400,
+      "rows_served": 4400,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 6,
+      "status": "PASS",
+      "symbol": "شكلر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 5.551115123125783e-16,
+       "high": 5.551115123125783e-16,
+       "low": 5.551115123125783e-16,
+       "open": 5.551115123125783e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       },
+       "high": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       },
+       "low": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       },
+       "open": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       }
+      },
+      "declared_count": 698,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.16345761970816697,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 698,
+      "rows_served": 698,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فن افزار",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 6.661338147750939e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 25.380302154975215,
+        "date": "2016-07-24",
+        "factor": 0.01912607547473641,
+        "reference_type7": 25.3803021549752,
+        "served": 1327
+       },
+       "high": {
+        "adjusted": 24.328368003864714,
+        "date": "2016-07-23",
+        "factor": 0.01912607547473641,
+        "reference_type7": 24.3283680038647,
+        "served": 1272
+       },
+       "low": {
+        "adjusted": 143.06104932147474,
+        "date": "2019-04-10",
+        "factor": 0.037647644558282824,
+        "reference_type7": 143.06104932147463,
+        "served": 3800
+       },
+       "open": {
+        "adjusted": 138.20450317345626,
+        "date": "2019-04-06",
+        "factor": 0.037647644558282824,
+        "reference_type7": 138.20450317345615,
+        "served": 3671
+       }
+      },
+      "declared_count": 4266,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.0014082563020512493,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4266,
+      "rows_served": 4266,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فولاد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 1291.1735028910596,
+        "date": "2021-08-04",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1291.1735028910591,
+        "served": 12800
+       },
+       "high": {
+        "adjusted": 1356.7409073347462,
+        "date": "2021-08-04",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1356.7409073347458,
+        "served": 13450
+       },
+       "low": {
+        "adjusted": 1312.7603098925194,
+        "date": "2021-08-03",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1312.760309892519,
+        "served": 13014
+       },
+       "open": {
+        "adjusted": 1362.9950289893748,
+        "date": "2021-08-24",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1362.9950289893743,
+        "served": 13512
+       }
+      },
+      "declared_count": 2569,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.007325402226429981,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2569,
+      "rows_served": 2569,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "كوثر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "declared_count": 572,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 1,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 572,
+      "rows_served": 572,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1,
+      "status": "PASS",
+      "symbol": "نيك گستر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 1.2212453270876722e-15,
+       "high": 1.2212453270876722e-15,
+       "low": 1.2212453270876722e-15,
+       "open": 1.2212453270876722e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.1153170175085,
+        "served": 10055
+       },
+       "high": {
+        "adjusted": 4445.557397108703,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.557397108709,
+        "served": 10056
+       },
+       "low": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.1153170175085,
+        "served": 10055
+       },
+       "open": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.1153170175085,
+        "served": 10055
+       }
+      },
+      "declared_count": 1114,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.2837879105980839,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 3,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 1114,
+      "rows_served": 1114,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 3,
+      "status": "PASS",
+      "symbol": "هامرز",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 6.661338147750939e-16,
+       "low": 6.661338147750939e-16,
+       "open": 6.661338147750939e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 0.00033554048333563383,
+        "reference_type7": 0.6881935313213854,
+        "served": 2051
+       },
+       "high": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 0.00033554048333563383,
+        "reference_type7": 0.6881935313213854,
+        "served": 2051
+       },
+       "low": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 0.00033554048333563383,
+        "reference_type7": 0.6881935313213854,
+        "served": 2051
+       },
+       "open": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 0.00033554048333563383,
+        "reference_type7": 0.6881935313213854,
+        "served": 2051
+       }
+      },
+      "declared_count": 3562,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 9.768394696763086e-05,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 86,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3562,
+      "rows_served": 3562,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 86,
+      "status": "PASS",
+      "symbol": "وسديد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 0.10754817421452104,
+        "reference_type7": 124.75588208884436,
+        "served": 1160
+       },
+       "high": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 0.10754817421452104,
+        "reference_type7": 124.75588208884436,
+        "served": 1160
+       },
+       "low": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 0.10754817421452104,
+        "reference_type7": 124.75588208884436,
+        "served": 1160
+       },
+       "open": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 0.10754817421452104,
+        "reference_type7": 124.75588208884436,
+        "served": 1160
+       }
+      },
+      "declared_count": 5278,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.0486123883865656,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 584,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 5278,
+      "rows_served": 5278,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 584,
+      "status": "PASS",
+      "symbol": "وملت",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 1.1102230246251565e-15,
+       "high": 1.1102230246251565e-15,
+       "low": 1.1102230246251565e-15,
+       "open": 1.1102230246251565e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 0.004112332231009335,
+        "reference_type7": 7.406310348047803,
+        "served": 1801
+       },
+       "high": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 0.004112332231009335,
+        "reference_type7": 7.406310348047803,
+        "served": 1801
+       },
+       "low": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 0.004112332231009335,
+        "reference_type7": 7.406310348047803,
+        "served": 1801
+       },
+       "open": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 0.004112332231009335,
+        "reference_type7": 7.406310348047803,
+        "served": 1801
+       }
+      },
+      "declared_count": 6714,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.004112332231009335,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1005,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 6714,
+      "rows_served": 6714,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1005,
+      "status": "PASS",
+      "symbol": "وپترو",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 1.5543122344752192e-15,
+       "high": 1.5543122344752192e-15,
+       "low": 1.5543122344752192e-15,
+       "open": 1.5543122344752192e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 0.0001512097723403968,
+        "reference_type7": 0.3246473812148324,
+        "served": 2147
+       },
+       "high": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 0.0001512097723403968,
+        "reference_type7": 0.3246473812148324,
+        "served": 2147
+       },
+       "low": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 0.0001512097723403968,
+        "reference_type7": 0.3246473812148324,
+        "served": 2147
+       },
+       "open": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 0.0001512097723403968,
+        "reference_type7": 0.3246473812148324,
+        "served": 2147
+       }
+      },
+      "declared_count": 3988,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 7.10695281253566e-05,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 22,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3988,
+      "rows_served": 3988,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 22,
+      "status": "PASS",
+      "symbol": "پكرمان",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     }
+    ],
+    "server": {
+     "pid": 10976,
+     "port": 18107,
+     "returncode": 1
+    },
+    "summary": {
+     "adjusted_diff_rows": {},
+     "adjusted_diff_total": 0,
+     "adjusted_max_rel": {
+      "close": 1.5543122344752192e-15,
+      "high": 1.5543122344752192e-15,
+      "low": 1.5543122344752192e-15,
+      "open": 1.5543122344752192e-15
+     },
+     "raw_diff_rows": {},
+     "raw_diff_total": 0,
+     "raw_layer_measured": true,
+     "raw_max_rel": {
+      "close": 0.0,
+      "high": 0.0,
+      "low": 0.0,
+      "open": 0.0
+     },
+     "reference_open_outside_rows": 1708,
+     "rows_extra": 0,
+     "rows_missing": 0,
+     "rows_served": 38492,
+     "rows_without_factor": 0,
+     "served_open_outside_rows": 1708,
+     "symbols": 13,
+     "symbols_partial": [],
+     "symbols_pass": 13,
+     "volume_mismatch_rows": 0
+    }
+   },
+   "before": {
+    "db_copy_sha256": "e31ae6f946275073b50f929500234016a51f4ac2d9c939e9af4f38a329c05904",
+    "measured_path_symbols": [
+     "ثپهران",
+     "دبالك",
+     "شتران",
+     "شكلر",
+     "فن افزار",
+     "فولاد",
+     "كوثر",
+     "هامرز",
+     "وسديد",
+     "وملت",
+     "وپترو",
+     "پكرمان"
+    ],
+    "not_measured_path_symbols": [
+     "نيك گستر"
+    ],
+    "per_symbol": [
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "declared_count": 126,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.866633115249119,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 126,
+      "rows_served": 126,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "ثپهران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 1
+      },
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 0.003273322422258751,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 337.95578646806666,
+        "date": "2016-05-28",
+        "factor": 0.07857609543549562,
+        "reference_type7": 337.95578646806655,
+        "served": 4301
+       },
+       "high": {
+        "adjusted": 253.70740684337335,
+        "date": "2015-07-11",
+        "factor": 0.05912547351278801,
+        "reference_type7": 252.87965021419427,
+        "served": 4291
+       },
+       "low": {
+        "adjusted": 337.0914494182762,
+        "date": "2016-05-28",
+        "factor": 0.07857609543549562,
+        "reference_type7": 337.0914494182761,
+        "served": 4290
+       },
+       "open": {
+        "adjusted": 338.03436256350216,
+        "date": "2016-05-29",
+        "factor": 0.07857609543549562,
+        "reference_type7": 338.03436256350204,
+        "served": 4302
+       }
+      },
+      "declared_count": 2478,
+      "diff_sample": [
+       {
+        "date": "2015-07-11",
+        "field": "high",
+        "layer": "raw",
+        "reference": 4277,
+        "served": 4291
+       },
+       {
+        "adjusted": 253.70740684337335,
+        "date": "2015-07-11",
+        "factor": 0.05912547351278801,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 252.87965021419427,
+        "served": 4291
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 0.0502160030267774,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 1
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.003273322422258529,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2478,
+      "rows_served": 2478,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "دبالك",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 8.881784197001252e-16,
+       "high": 8.881784197001252e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 718.5295592625017,
+        "date": "2021-10-25",
+        "factor": 0.1607448678439601,
+        "reference_type7": 718.5295592625012,
+        "served": 4470
+       },
+       "high": {
+        "adjusted": 712.9034888879631,
+        "date": "2021-11-01",
+        "factor": 0.1607448678439601,
+        "reference_type7": 712.9034888879626,
+        "served": 4435
+       },
+       "low": {
+        "adjusted": 720.7799874123172,
+        "date": "2021-10-23",
+        "factor": 0.1607448678439601,
+        "reference_type7": 720.7799874123166,
+        "served": 4484
+       },
+       "open": {
+        "adjusted": 720.1370079409413,
+        "date": "2021-11-02",
+        "factor": 0.1607448678439601,
+        "reference_type7": 720.1370079409407,
+        "served": 4480
+       }
+      },
+      "declared_count": 2727,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 1.6576233507092306e-05,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2727,
+      "rows_served": 2727,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "شتران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 3,
+       "low": 3
+      },
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 0.010842952081147272,
+       "low": 0.047692071768133615,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2.2152787526107187,
+        "date": "2004-02-08",
+        "factor": 0.0009758937236170567,
+        "reference_type7": 2.2152787526107196,
+        "served": 2270
+       },
+       "high": {
+        "adjusted": 111.78402362592136,
+        "date": "2015-06-02",
+        "factor": 0.0386795929501458,
+        "reference_type7": 110.58495624446684,
+        "served": 2890
+       },
+       "low": {
+        "adjusted": 28.066059013495632,
+        "date": "2011-07-12",
+        "factor": 0.0045194942050717606,
+        "reference_type7": 29.471621711272945,
+        "served": 6210
+       },
+       "open": {
+        "adjusted": 2.2113751777162505,
+        "date": "2004-02-08",
+        "factor": 0.0009758937236170567,
+        "reference_type7": 2.2113751777162514,
+        "served": 2266
+       }
+      },
+      "declared_count": 4400,
+      "diff_sample": [
+       {
+        "date": "2006-01-14",
+        "field": "high",
+        "layer": "raw",
+        "reference": 1233,
+        "served": 1237
+       },
+       {
+        "adjusted": 1.7812461981622907,
+        "date": "2006-01-14",
+        "factor": 0.0014399726743429997,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.775486307464919,
+        "served": 1237
+       },
+       {
+        "date": "2006-01-16",
+        "field": "high",
+        "layer": "raw",
+        "reference": 1229,
+        "served": 1233
+       },
+       {
+        "adjusted": 1.7754863074649185,
+        "date": "2006-01-16",
+        "factor": 0.0014399726743429997,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.769726416767547,
+        "served": 1233
+       },
+       {
+        "date": "2006-01-23",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1180,
+        "served": 1174
+       },
+       {
+        "adjusted": 1.6905279196786818,
+        "date": "2006-01-23",
+        "factor": 0.0014399726743429997,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.69916775572474,
+        "served": 1174
+       },
+       {
+        "date": "2006-07-31",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1759,
+        "served": 1691
+       },
+       {
+        "adjusted": 2.858470973586012,
+        "date": "2006-07-31",
+        "factor": 0.0016904027046635197,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 2.9734183575031317,
+        "served": 1691
+       },
+       {
+        "date": "2011-07-12",
+        "field": "low",
+        "layer": "raw",
+        "reference": 6521,
+        "served": 6210
+       },
+       {
+        "adjusted": 28.066059013495632,
+        "date": "2011-07-12",
+        "factor": 0.0045194942050717606,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 29.471621711272945,
+        "served": 6210
+       },
+       {
+        "date": "2015-06-02",
+        "field": "high",
+        "layer": "raw",
+        "reference": 2859,
+        "served": 2890
+       },
+       {
+        "adjusted": 111.78402362592136,
+        "date": "2015-06-02",
+        "factor": 0.0386795929501458,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 110.58495624446684,
+        "served": 2890
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 0.0009758937236170567,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 3,
+       "low": 3
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.010842952081147272,
+       "low": 0.047692071768133726,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 6,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4400,
+      "rows_served": 4400,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "شكلر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 5.551115123125783e-16,
+       "high": 5.551115123125783e-16,
+       "low": 5.551115123125783e-16,
+       "open": 5.551115123125783e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       },
+       "high": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       },
+       "low": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       },
+       "open": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 0.47296940541491883,
+        "reference_type7": 2572.9535654571596,
+        "served": 5440
+       }
+      },
+      "declared_count": 698,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.16345761970816697,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 698,
+      "rows_served": 698,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فن افزار",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 6.661338147750939e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 25.380302154975215,
+        "date": "2016-07-24",
+        "factor": 0.01912607547473641,
+        "reference_type7": 25.3803021549752,
+        "served": 1327
+       },
+       "high": {
+        "adjusted": 24.328368003864714,
+        "date": "2016-07-23",
+        "factor": 0.01912607547473641,
+        "reference_type7": 24.3283680038647,
+        "served": 1272
+       },
+       "low": {
+        "adjusted": 143.06104932147474,
+        "date": "2019-04-10",
+        "factor": 0.037647644558282824,
+        "reference_type7": 143.06104932147463,
+        "served": 3800
+       },
+       "open": {
+        "adjusted": 138.20450317345626,
+        "date": "2019-04-06",
+        "factor": 0.037647644558282824,
+        "reference_type7": 138.20450317345615,
+        "served": 3671
+       }
+      },
+      "declared_count": 4266,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.0014082563020512493,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4266,
+      "rows_served": 4266,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فولاد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 1291.1735028910596,
+        "date": "2021-08-04",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1291.1735028910591,
+        "served": 12800
+       },
+       "high": {
+        "adjusted": 1356.7409073347462,
+        "date": "2021-08-04",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1356.7409073347458,
+        "served": 13450
+       },
+       "low": {
+        "adjusted": 1312.7603098925194,
+        "date": "2021-08-03",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1312.760309892519,
+        "served": 13014
+       },
+       "open": {
+        "adjusted": 1362.9950289893748,
+        "date": "2021-08-24",
+        "factor": 0.10087292991336402,
+        "reference_type7": 1362.9950289893743,
+        "served": 13512
+       }
+      },
+      "declared_count": 2569,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 0.007325402226429981,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2569,
+      "rows_served": 2569,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "كوثر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-db-unseen",
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "declared_count": 572,
+      "diff_sample": [],
+      "factor_max": 1,
+      "factor_min": 1,
+      "live_injected": false,
+      "measured_path": false,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 572,
+      "rows_served": 572,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1,
+      "status": "PASS",
+      "symbol": "نيك گستر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 3
+      },
+      "adjusted_max_rel": {
+       "close": 1.2212453270876722e-15,
+       "high": 0.07921086547040712,
+       "low": 1.2212453270876722e-15,
+       "open": 1.2212453270876722e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.1153170175085,
+        "served": 10055
+       },
+       "high": {
+        "adjusted": 4241.230741295582,
+        "date": "2023-07-19",
+        "factor": 0.3896041467293388,
+        "reference_type7": 3929.9370280588423,
+        "served": 10886
+       },
+       "low": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.1153170175085,
+        "served": 10055
+       },
+       "open": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 0.4420800912001495,
+        "reference_type7": 4445.1153170175085,
+        "served": 10055
+       }
+      },
+      "declared_count": 1114,
+      "diff_sample": [
+       {
+        "date": "2023-07-19",
+        "field": "high",
+        "layer": "raw",
+        "reference": 10087,
+        "served": 10886
+       },
+       {
+        "adjusted": 4241.230741295582,
+        "date": "2023-07-19",
+        "factor": 0.3896041467293388,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 3929.9370280588423,
+        "served": 10886
+       },
+       {
+        "date": "2025-06-10",
+        "field": "high",
+        "layer": "raw",
+        "reference": 10048,
+        "served": 10266
+       },
+       {
+        "adjusted": 6663.959242628349,
+        "date": "2025-06-10",
+        "factor": 0.649129090456687,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 6522.449100908791,
+        "served": 10266
+       },
+       {
+        "date": "2026-08-31",
+        "field": "high",
+        "layer": "raw",
+        "reference": 10219,
+        "served": 10507
+       },
+       {
+        "adjusted": 9697.288529405316,
+        "date": "2026-08-31",
+        "factor": 0.9229359978495589,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 9431.482962024644,
+        "served": 10507
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 0.2837879105980839,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 3
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.07921086547040757,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 3,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 1114,
+      "rows_served": 1114,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "هامرز",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 53,
+       "low": 33
+      },
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 0.2857575757575752,
+       "low": 0.4350649350649354,
+       "open": 6.661338147750939e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 0.00033554048333563383,
+        "reference_type7": 0.6881935313213854,
+        "served": 2051
+       },
+       "high": {
+        "adjusted": 1.0399703398750566,
+        "date": "1997-01-27",
+        "factor": 0.00012255130095157395,
+        "reference_type7": 0.8088385862803884,
+        "served": 8486
+       },
+       "low": {
+        "adjusted": 0.5330981591393467,
+        "date": "1997-06-22",
+        "factor": 0.00012255130095157395,
+        "reference_type7": 0.9436450173271198,
+        "served": 4350
+       },
+       "open": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 0.00033554048333563383,
+        "reference_type7": 0.6881935313213854,
+        "served": 2051
+       }
+      },
+      "declared_count": 3562,
+      "diff_sample": [
+       {
+        "date": "1996-12-18",
+        "field": "low",
+        "layer": "raw",
+        "reference": 9998,
+        "served": 8355
+       },
+       {
+        "adjusted": 1.0239161194504003,
+        "date": "1996-12-18",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.2252679069138368,
+        "served": 8355
+       },
+       {
+        "date": "1996-12-21",
+        "field": "low",
+        "layer": "raw",
+        "reference": 9998,
+        "served": 8600
+       },
+       {
+        "adjusted": 1.0539411881835359,
+        "date": "1996-12-21",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.2252679069138368,
+        "served": 8600
+       },
+       {
+        "date": "1997-01-05",
+        "field": "high",
+        "layer": "raw",
+        "reference": 9136,
+        "served": 9150
+       },
+       {
+        "adjusted": 1.1213444037069016,
+        "date": "1997-01-05",
+        "factor": 0.00012255130095157395,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.11962868549358,
+        "served": 9150
+       },
+       {
+        "date": "1997-01-06",
+        "field": "low",
+        "layer": "raw",
+        "reference": 9000,
+        "served": 8996
+       },
+       {
+        "adjusted": 1.1024715033603592,
+        "date": "1997-01-06",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.102961708564166,
+        "served": 8996
+       },
+       {
+        "date": "1997-01-11",
+        "field": "low",
+        "layer": "raw",
+        "reference": 8997,
+        "served": 8700
+       },
+       {
+        "adjusted": 1.0661963182786933,
+        "date": "1997-01-11",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.1025940546613113,
+        "served": 8700
+       },
+       {
+        "date": "1997-01-27",
+        "field": "high",
+        "layer": "raw",
+        "reference": 6600,
+        "served": 8486
+       },
+       {
+        "adjusted": 1.0399703398750566,
+        "date": "1997-01-27",
+        "factor": 0.00012255130095157395,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.8088385862803884,
+        "served": 8486
+       },
+       {
+        "date": "1997-04-06",
+        "field": "low",
+        "layer": "raw",
+        "reference": 8000,
+        "served": 7999
+       },
+       {
+        "adjusted": 0.9802878563116401,
+        "date": "1997-04-06",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.980410407612592,
+        "served": 7999
+       },
+       {
+        "date": "1997-06-09",
+        "field": "low",
+        "layer": "raw",
+        "reference": 7700,
+        "served": 7001
+       },
+       {
+        "adjusted": 0.8579816579619692,
+        "date": "1997-06-09",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.9436450173271198,
+        "served": 7001
+       },
+       {
+        "date": "1997-06-10",
+        "field": "low",
+        "layer": "raw",
+        "reference": 7700,
+        "served": 7000
+       },
+       {
+        "adjusted": 0.8578591066610176,
+        "date": "1997-06-10",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.9436450173271198,
+        "served": 7000
+       },
+       {
+        "date": "1997-06-22",
+        "field": "low",
+        "layer": "raw",
+        "reference": 7700,
+        "served": 4350
+       },
+       {
+        "adjusted": 0.5330981591393467,
+        "date": "1997-06-22",
+        "factor": 0.00012255130095157395,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.9436450173271198,
+        "served": 4350
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 9.768394696763086e-05,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 53,
+       "low": 33
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.28575757575757565,
+       "low": 0.43506493506493504,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 86,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3562,
+      "rows_served": 3562,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "وسديد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 76,
+       "low": 508
+      },
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 2.8828571428571426,
+       "low": 0.17923497267759558,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 0.10754817421452104,
+        "reference_type7": 124.75588208884436,
+        "served": 1160
+       },
+       "high": {
+        "adjusted": 66.06423581734265,
+        "date": "1995-09-16",
+        "factor": 0.0486123883865656,
+        "reference_type7": 17.01433593529796,
+        "served": 1359
+       },
+       "low": {
+        "adjusted": 110.17563788633085,
+        "date": "1996-03-16",
+        "factor": 0.0733526217618714,
+        "reference_type7": 134.23529782422466,
+        "served": 1502
+       },
+       "open": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 0.10754817421452104,
+        "reference_type7": 124.75588208884436,
+        "served": 1160
+       }
+      },
+      "declared_count": 5278,
+      "diff_sample": [
+       {
+        "date": "1995-09-09",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1381,
+        "served": 1350
+       },
+       {
+        "adjusted": 65.62672432186356,
+        "date": "1995-09-09",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 67.1337083618471,
+        "served": 1350
+       },
+       {
+        "date": "1995-09-13",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1359,
+        "served": 1355
+       },
+       {
+        "adjusted": 65.86978626379639,
+        "date": "1995-09-13",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 66.06423581734265,
+        "served": 1355
+       },
+       {
+        "date": "1995-09-16",
+        "field": "high",
+        "layer": "raw",
+        "reference": 350,
+        "served": 1359
+       },
+       {
+        "adjusted": 66.06423581734265,
+        "date": "1995-09-16",
+        "factor": 0.0486123883865656,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 17.01433593529796,
+        "served": 1359
+       },
+       {
+        "date": "1995-09-20",
+        "field": "high",
+        "layer": "raw",
+        "reference": 1380,
+        "served": 1382
+       },
+       {
+        "adjusted": 67.18232075023366,
+        "date": "1995-09-20",
+        "factor": 0.0486123883865656,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 67.08509597346053,
+        "served": 1382
+       },
+       {
+        "date": "1995-09-25",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1381,
+        "served": 1380
+       },
+       {
+        "adjusted": 67.08509597346053,
+        "date": "1995-09-25",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 67.1337083618471,
+        "served": 1380
+       },
+       {
+        "date": "1995-09-27",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1387,
+        "served": 1386
+       },
+       {
+        "adjusted": 67.37677030377992,
+        "date": "1995-09-27",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 67.4253826921665,
+        "served": 1386
+       },
+       {
+        "date": "1995-10-02",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1400,
+        "served": 1392
+       },
+       {
+        "adjusted": 67.66844463409932,
+        "date": "1995-10-02",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 68.05734374119184,
+        "served": 1392
+       },
+       {
+        "date": "1995-10-07",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1421,
+        "served": 1420
+       },
+       {
+        "adjusted": 69.02959150892315,
+        "date": "1995-10-07",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 69.07820389730972,
+        "served": 1420
+       },
+       {
+        "date": "1995-10-09",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1430,
+        "served": 1423
+       },
+       {
+        "adjusted": 69.17542867408285,
+        "date": "1995-10-09",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 69.5157153927888,
+        "served": 1423
+       },
+       {
+        "date": "1995-10-11",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1450,
+        "served": 1433
+       },
+       {
+        "adjusted": 69.6615525579485,
+        "date": "1995-10-11",
+        "factor": 0.0486123883865656,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 70.48796316052012,
+        "served": 1433
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 0.0486123883865656,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 76,
+       "low": 508
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 2.882857142857143,
+       "low": 0.17923497267759558,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 584,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 5278,
+      "rows_served": 5278,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "وملت",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 418,
+       "low": 587
+      },
+      "adjusted_max_rel": {
+       "close": 1.1102230246251565e-15,
+       "high": 0.8809815950920261,
+       "low": 0.13320724128613792,
+       "open": 1.1102230246251565e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 0.004112332231009335,
+        "reference_type7": 7.406310348047803,
+        "served": 1801
+       },
+       "high": {
+        "adjusted": 80.45827010793614,
+        "date": "1996-01-03",
+        "factor": 0.013121048615123311,
+        "reference_type7": 42.77461848530196,
+        "served": 6132
+       },
+       "low": {
+        "adjusted": 20.56456397779797,
+        "date": "1995-10-01",
+        "factor": 0.006410400242455727,
+        "reference_type7": 23.724891297328618,
+        "served": 3208
+       },
+       "open": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 0.004112332231009335,
+        "reference_type7": 7.406310348047803,
+        "served": 1801
+       }
+      },
+      "declared_count": 6714,
+      "diff_sample": [
+       {
+        "date": "1995-07-11",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1805,
+        "served": 1801
+       },
+       {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-11",
+        "factor": 0.004112332231009335,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.4227596769718405,
+        "served": 1801
+       },
+       {
+        "date": "1995-07-12",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1807,
+        "served": 1805
+       },
+       {
+        "adjusted": 7.422759676971849,
+        "date": "1995-07-12",
+        "factor": 0.004112332231009335,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.430984341433859,
+        "served": 1805
+       },
+       {
+        "date": "1995-07-15",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1810,
+        "served": 1807
+       },
+       {
+        "adjusted": 7.430984341433867,
+        "date": "1995-07-15",
+        "factor": 0.004112332231009335,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.4433213381268875,
+        "served": 1807
+       },
+       {
+        "date": "1995-07-16",
+        "field": "low",
+        "layer": "raw",
+        "reference": 1815,
+        "served": 1810
+       },
+       {
+        "adjusted": 7.4433213381268954,
+        "date": "1995-07-16",
+        "factor": 0.004112332231009335,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.4638829992819336,
+        "served": 1810
+       },
+       {
+        "date": "1995-09-10",
+        "field": "high",
+        "layer": "raw",
+        "reference": 1750,
+        "served": 2050
+       },
+       {
+        "adjusted": 13.14132049703424,
+        "date": "1995-09-10",
+        "factor": 0.006410400242455727,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 11.21820042429751,
+        "served": 2050
+       },
+       {
+        "date": "1995-09-13",
+        "field": "low",
+        "layer": "raw",
+        "reference": 2050,
+        "served": 2000
+       },
+       {
+        "adjusted": 12.820800484911453,
+        "date": "1995-09-13",
+        "factor": 0.006410400242455727,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 13.141320497034226,
+        "served": 2000
+       },
+       {
+        "date": "1995-09-19",
+        "field": "low",
+        "layer": "raw",
+        "reference": 2065,
+        "served": 2063
+       },
+       {
+        "adjusted": 13.224655700186164,
+        "date": "1995-09-19",
+        "factor": 0.006410400242455727,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 13.237476500671061,
+        "served": 2063
+       },
+       {
+        "date": "1995-09-23",
+        "field": "low",
+        "layer": "raw",
+        "reference": 2170,
+        "served": 2101
+       },
+       {
+        "adjusted": 13.468250909399481,
+        "date": "1995-09-23",
+        "factor": 0.006410400242455727,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 13.910568526128912,
+        "served": 2101
+       },
+       {
+        "date": "1995-09-26",
+        "field": "low",
+        "layer": "raw",
+        "reference": 2720,
+        "served": 2565
+       },
+       {
+        "adjusted": 16.44267662189894,
+        "date": "1995-09-26",
+        "factor": 0.006410400242455727,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 17.43628865947956,
+        "served": 2565
+       },
+       {
+        "date": "1995-09-27",
+        "field": "low",
+        "layer": "raw",
+        "reference": 3100,
+        "served": 2765
+       },
+       {
+        "adjusted": 17.724756670390086,
+        "date": "1995-09-27",
+        "factor": 0.006410400242455727,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 19.872240751612733,
+        "served": 2765
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 0.004112332231009335,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 418,
+       "low": 587
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.8809815950920246,
+       "low": 0.13320724128613892,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1005,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 6714,
+      "rows_served": 6714,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "وپترو",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjust_source": "local-measured-factors",
+      "adjusted_diff_rows": {
+       "high": 10,
+       "low": 12
+      },
+      "adjusted_max_rel": {
+       "close": 1.5543122344752192e-15,
+       "high": 0.16872727272727195,
+       "low": 0.047619047619049004,
+       "open": 1.5543122344752192e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 0.0001512097723403968,
+        "reference_type7": 0.3246473812148324,
+        "served": 2147
+       },
+       "high": {
+        "adjusted": 6.457404054042436,
+        "date": "2006-04-24",
+        "factor": 0.0020091487411457486,
+        "reference_type7": 5.525159038150813,
+        "served": 3214
+       },
+       "low": {
+        "adjusted": 0.7776502577506141,
+        "date": "2000-03-06",
+        "factor": 0.00021601396048628172,
+        "reference_type7": 0.816532770638146,
+        "served": 3600
+       },
+       "open": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 0.0001512097723403968,
+        "reference_type7": 0.3246473812148324,
+        "served": 2147
+       }
+      },
+      "declared_count": 3988,
+      "diff_sample": [
+       {
+        "date": "1999-09-12",
+        "field": "low",
+        "layer": "raw",
+        "reference": 2990,
+        "served": 2976
+       },
+       {
+        "adjusted": 0.45000028248502083,
+        "date": "1999-09-12",
+        "factor": 0.0001512097723403968,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.45211721929778703,
+        "served": 2976
+       },
+       {
+        "date": "1999-09-20",
+        "field": "high",
+        "layer": "raw",
+        "reference": 3297,
+        "served": 3379
+       },
+       {
+        "adjusted": 0.5109378207382007,
+        "date": "1999-09-20",
+        "factor": 0.0001512097723403968,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.4985386194062889,
+        "served": 3379
+       },
+       {
+        "date": "1999-09-22",
+        "field": "low",
+        "layer": "raw",
+        "reference": 3360,
+        "served": 3350
+       },
+       {
+        "adjusted": 0.5065527373403292,
+        "date": "1999-09-22",
+        "factor": 0.0001512097723403968,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.5080648350637339,
+        "served": 3350
+       },
+       {
+        "date": "1999-10-20",
+        "field": "low",
+        "layer": "raw",
+        "reference": 3530,
+        "served": 3446
+       },
+       {
+        "adjusted": 0.5210688754850074,
+        "date": "1999-10-20",
+        "factor": 0.0001512097723403968,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.5337704963616015,
+        "served": 3446
+       },
+       {
+        "date": "1999-12-26",
+        "field": "low",
+        "layer": "raw",
+        "reference": 4596,
+        "served": 4550
+       },
+       {
+        "adjusted": 0.6880044641488055,
+        "date": "1999-12-26",
+        "factor": 0.0001512097723403968,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.6949601136764646,
+        "served": 4550
+       },
+       {
+        "date": "2000-03-06",
+        "field": "low",
+        "layer": "raw",
+        "reference": 3780,
+        "served": 3600
+       },
+       {
+        "adjusted": 0.7776502577506141,
+        "date": "2000-03-06",
+        "factor": 0.00021601396048628172,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.816532770638146,
+        "served": 3600
+       },
+       {
+        "date": "2000-03-14",
+        "field": "low",
+        "layer": "raw",
+        "reference": 4700,
+        "served": 4650
+       },
+       {
+        "adjusted": 1.00446491626121,
+        "date": "2000-03-14",
+        "factor": 0.00021601396048628172,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.0152656142855254,
+        "served": 4650
+       },
+       {
+        "date": "2000-04-12",
+        "field": "low",
+        "layer": "raw",
+        "reference": 4705,
+        "served": 4703
+       },
+       {
+        "adjusted": 1.0159136561669828,
+        "date": "2000-04-12",
+        "factor": 0.00021601396048628172,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.0163456840879568,
+        "served": 4703
+       },
+       {
+        "date": "2000-08-05",
+        "field": "low",
+        "layer": "raw",
+        "reference": 4939,
+        "served": 4937
+       },
+       {
+        "adjusted": 1.1799142125931934,
+        "date": "2000-08-05",
+        "factor": 0.0002389941690486517,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.1803922009312922,
+        "served": 4937
+       },
+       {
+        "date": "2000-08-29",
+        "field": "high",
+        "layer": "raw",
+        "reference": 5261,
+        "served": 5265
+       },
+       {
+        "adjusted": 1.2583043000411511,
+        "date": "2000-08-29",
+        "factor": 0.0002389941690486517,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.2573483233649583,
+        "served": 5265
+       }
+      ],
+      "factor_max": 1,
+      "factor_min": 7.10695281253566e-05,
+      "live_injected": false,
+      "measured_path": true,
+      "provenance_not_reference": [],
+      "raw_diff_rows": {
+       "high": 10,
+       "low": 12
+      },
+      "raw_layer_measured": true,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.16872727272727284,
+       "low": 0.04761904761904767,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 22,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3988,
+      "rows_served": 3988,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "پكرمان",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     }
+    ],
+    "server": {
+     "pid": 8260,
+     "port": 18106,
+     "returncode": 1
+    },
+    "summary": {
+     "adjusted_diff_rows": {
+      "high": 564,
+      "low": 1143
+     },
+     "adjusted_diff_total": 1707,
+     "adjusted_max_rel": {
+      "close": 1.5543122344752192e-15,
+      "high": 2.8828571428571426,
+      "low": 0.4350649350649354,
+      "open": 1.5543122344752192e-15
+     },
+     "raw_diff_rows": {
+      "high": 564,
+      "low": 1143
+     },
+     "raw_diff_total": 1707,
+     "raw_layer_measured": true,
+     "raw_max_rel": {
+      "close": 0.0,
+      "high": 2.882857142857143,
+      "low": 0.43506493506493504,
+      "open": 0.0
+     },
+     "reference_open_outside_rows": 1708,
+     "rows_extra": 0,
+     "rows_missing": 0,
+     "rows_served": 38492,
+     "rows_without_factor": 0,
+     "served_open_outside_rows": 1,
+     "symbols": 13,
+     "symbols_partial": [
+      "دبالك",
+      "شكلر",
+      "هامرز",
+      "وسديد",
+      "وملت",
+      "وپترو",
+      "پكرمان"
+     ],
+     "symbols_pass": 6,
+     "volume_mismatch_rows": 0
+    }
+   }
+  },
+  "engine": {
+   "after": {
+    "build": {
+     "adjusted_rows": 122944,
+     "exact_rows": 122944,
+     "max_rel_error": 1.5543122344752192e-15,
+     "mismatch_rows": 0,
+     "missing_reference_adjusted": [],
+     "missing_reference_raw": [],
+     "revisions": [
+      "56ccb0ef32895612d1467b8463de80b372a5334a0cc1e0045404c170ede55a8c",
+      "6aec345f817cd96a0dc8eb631cdfa206deee740afb077b5f4621dd1f821fb844",
+      "56ccb0ef32895612d1467b8463de80b372a5334a0cc1e0045404c170ede55a8c",
+      "6aec345f817cd96a0dc8eb631cdfa206deee740afb077b5f4621dd1f821fb844",
+      "56ccb0ef32895612d1467b8463de80b372a5334a0cc1e0045404c170ede55a8c"
+     ],
+     "symbols": 43,
+     "verified_rows": 122944,
+     "worst_date": "2010-08-02",
+     "worst_symbol": "گوهر"
+    },
+    "db_copy_sha256": "5d0720fd7127ce5345ad9a0015dfc60d5263d2a1ce4c79eafc26e28587304450",
+    "per_symbol": [
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 126,
+      "rows_served": 126,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "ثپهران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 337.95578646806666,
+        "date": "2016-05-28",
+        "factor": 1.0,
+        "reference_type7": 337.95578646806655,
+        "served": 337.95578646806666
+       },
+       "high": {
+        "adjusted": 339.2130039950346,
+        "date": "2016-06-11",
+        "factor": 1.0,
+        "reference_type7": 339.2130039950345,
+        "served": 339.2130039950346
+       },
+       "low": {
+        "adjusted": 337.0914494182762,
+        "date": "2016-05-28",
+        "factor": 1.0,
+        "reference_type7": 337.0914494182761,
+        "served": 337.0914494182762
+       },
+       "open": {
+        "adjusted": 338.03436256350216,
+        "date": "2016-05-29",
+        "factor": 1.0,
+        "reference_type7": 338.03436256350204,
+        "served": 338.03436256350216
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2478,
+      "rows_served": 2478,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1,
+      "status": "PASS",
+      "symbol": "دبالك",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 8.881784197001252e-16,
+       "high": 8.881784197001252e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 718.5295592625017,
+        "date": "2021-10-25",
+        "factor": 1.0,
+        "reference_type7": 718.5295592625012,
+        "served": 718.5295592625017
+       },
+       "high": {
+        "adjusted": 712.9034888879631,
+        "date": "2021-11-01",
+        "factor": 1.0,
+        "reference_type7": 712.9034888879626,
+        "served": 712.9034888879631
+       },
+       "low": {
+        "adjusted": 720.7799874123172,
+        "date": "2021-10-23",
+        "factor": 1.0,
+        "reference_type7": 720.7799874123166,
+        "served": 720.7799874123172
+       },
+       "open": {
+        "adjusted": 720.1370079409413,
+        "date": "2021-11-02",
+        "factor": 1.0,
+        "reference_type7": 720.1370079409407,
+        "served": 720.1370079409413
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2727,
+      "rows_served": 2727,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "شتران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2.2152787526107187,
+        "date": "2004-02-08",
+        "factor": 1.0,
+        "reference_type7": 2.2152787526107196,
+        "served": 2.2152787526107187
+       },
+       "high": {
+        "adjusted": 2.2152787526107187,
+        "date": "2004-02-08",
+        "factor": 1.0,
+        "reference_type7": 2.2152787526107196,
+        "served": 2.2152787526107187
+       },
+       "low": {
+        "adjusted": 2.2113751777162505,
+        "date": "2004-02-08",
+        "factor": 1.0,
+        "reference_type7": 2.2113751777162514,
+        "served": 2.2113751777162505
+       },
+       "open": {
+        "adjusted": 2.2113751777162505,
+        "date": "2004-02-08",
+        "factor": 1.0,
+        "reference_type7": 2.2113751777162514,
+        "served": 2.2113751777162505
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 6,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4400,
+      "rows_served": 4400,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 6,
+      "status": "PASS",
+      "symbol": "شكلر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 5.551115123125783e-16,
+       "high": 5.551115123125783e-16,
+       "low": 5.551115123125783e-16,
+       "open": 5.551115123125783e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       },
+       "high": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       },
+       "low": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       },
+       "open": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 698,
+      "rows_served": 698,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فن افزار",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 6.661338147750939e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 25.380302154975215,
+        "date": "2016-07-24",
+        "factor": 1.0,
+        "reference_type7": 25.3803021549752,
+        "served": 25.380302154975215
+       },
+       "high": {
+        "adjusted": 24.328368003864714,
+        "date": "2016-07-23",
+        "factor": 1.0,
+        "reference_type7": 24.3283680038647,
+        "served": 24.328368003864714
+       },
+       "low": {
+        "adjusted": 143.06104932147474,
+        "date": "2019-04-10",
+        "factor": 1.0,
+        "reference_type7": 143.06104932147463,
+        "served": 143.06104932147474
+       },
+       "open": {
+        "adjusted": 138.20450317345626,
+        "date": "2019-04-06",
+        "factor": 1.0,
+        "reference_type7": 138.20450317345615,
+        "served": 138.20450317345626
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4266,
+      "rows_served": 4266,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فولاد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 1291.1735028910596,
+        "date": "2021-08-04",
+        "factor": 1.0,
+        "reference_type7": 1291.1735028910591,
+        "served": 1291.1735028910596
+       },
+       "high": {
+        "adjusted": 1356.7409073347462,
+        "date": "2021-08-04",
+        "factor": 1.0,
+        "reference_type7": 1356.7409073347458,
+        "served": 1356.7409073347462
+       },
+       "low": {
+        "adjusted": 1312.7603098925194,
+        "date": "2021-08-03",
+        "factor": 1.0,
+        "reference_type7": 1312.760309892519,
+        "served": 1312.7603098925194
+       },
+       "open": {
+        "adjusted": 1362.9950289893748,
+        "date": "2021-08-24",
+        "factor": 1.0,
+        "reference_type7": 1362.9950289893743,
+        "served": 1362.9950289893748
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2569,
+      "rows_served": 2569,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "كوثر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 572,
+      "rows_served": 572,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1,
+      "status": "PASS",
+      "symbol": "نيك گستر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 1.2212453270876722e-15,
+       "high": 1.2212453270876722e-15,
+       "low": 1.2212453270876722e-15,
+       "open": 1.2212453270876722e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.1153170175085,
+        "served": 4445.115317017503
+       },
+       "high": {
+        "adjusted": 4445.557397108703,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.557397108709,
+        "served": 4445.557397108703
+       },
+       "low": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.1153170175085,
+        "served": 4445.115317017503
+       },
+       "open": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.1153170175085,
+        "served": 4445.115317017503
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 3,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 1114,
+      "rows_served": 1114,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 3,
+      "status": "PASS",
+      "symbol": "هامرز",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 6.661338147750939e-16,
+       "low": 6.661338147750939e-16,
+       "open": 6.661338147750939e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 1.0,
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6881935313213849
+       },
+       "high": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 1.0,
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6881935313213849
+       },
+       "low": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 1.0,
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6881935313213849
+       },
+       "open": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 1.0,
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6881935313213849
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 86,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3562,
+      "rows_served": 3562,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 86,
+      "status": "PASS",
+      "symbol": "وسديد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 1.0,
+        "reference_type7": 124.75588208884436,
+        "served": 124.7558820888444
+       },
+       "high": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 1.0,
+        "reference_type7": 124.75588208884436,
+        "served": 124.7558820888444
+       },
+       "low": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 1.0,
+        "reference_type7": 124.75588208884436,
+        "served": 124.7558820888444
+       },
+       "open": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 1.0,
+        "reference_type7": 124.75588208884436,
+        "served": 124.7558820888444
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 584,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 5278,
+      "rows_served": 5278,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 584,
+      "status": "PASS",
+      "symbol": "وملت",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 1.1102230246251565e-15,
+       "high": 1.1102230246251565e-15,
+       "low": 1.1102230246251565e-15,
+       "open": 1.1102230246251565e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 1.0,
+        "reference_type7": 7.406310348047803,
+        "served": 7.406310348047811
+       },
+       "high": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 1.0,
+        "reference_type7": 7.406310348047803,
+        "served": 7.406310348047811
+       },
+       "low": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 1.0,
+        "reference_type7": 7.406310348047803,
+        "served": 7.406310348047811
+       },
+       "open": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 1.0,
+        "reference_type7": 7.406310348047803,
+        "served": 7.406310348047811
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1005,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 6714,
+      "rows_served": 6714,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1005,
+      "status": "PASS",
+      "symbol": "وپترو",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 1.5543122344752192e-15,
+       "high": 1.5543122344752192e-15,
+       "low": 1.5543122344752192e-15,
+       "open": 1.5543122344752192e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 1.0,
+        "reference_type7": 0.3246473812148324,
+        "served": 0.3246473812148319
+       },
+       "high": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 1.0,
+        "reference_type7": 0.3246473812148324,
+        "served": 0.3246473812148319
+       },
+       "low": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 1.0,
+        "reference_type7": 0.3246473812148324,
+        "served": 0.3246473812148319
+       },
+       "open": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 1.0,
+        "reference_type7": 0.3246473812148324,
+        "served": 0.3246473812148319
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 22,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3988,
+      "rows_served": 3988,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 22,
+      "status": "PASS",
+      "symbol": "پكرمان",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     }
+    ],
+    "summary": {
+     "adjusted_diff_rows": {},
+     "adjusted_diff_total": 0,
+     "adjusted_max_rel": {
+      "close": 1.5543122344752192e-15,
+      "high": 1.5543122344752192e-15,
+      "low": 1.5543122344752192e-15,
+      "open": 1.5543122344752192e-15
+     },
+     "raw_diff_rows": {},
+     "raw_diff_total": 0,
+     "raw_layer_measured": false,
+     "raw_max_rel": {
+      "close": 0.0,
+      "high": 0.0,
+      "low": 0.0,
+      "open": 0.0
+     },
+     "reference_open_outside_rows": 1708,
+     "rows_extra": 0,
+     "rows_missing": 0,
+     "rows_served": 38492,
+     "rows_without_factor": 0,
+     "served_open_outside_rows": 1708,
+     "symbols": 13,
+     "symbols_partial": [],
+     "symbols_pass": 13,
+     "volume_mismatch_rows": 0
+    }
+   },
+   "before": {
+    "build": {
+     "adjusted_rows": 121174,
+     "exact_rows": 121174,
+     "max_rel_error": 1.5543122344752192e-15,
+     "mismatch_rows": 0,
+     "missing_reference_adjusted": [],
+     "missing_reference_raw": [],
+     "revisions": [
+      "56ccb0ef32895612d1467b8463de80b372a5334a0cc1e0045404c170ede55a8c"
+     ],
+     "symbols": 41,
+     "verified_rows": 121174,
+     "worst_date": "2010-08-02",
+     "worst_symbol": "گوهر"
+    },
+    "db_copy_sha256": "5f1a3ff19fecc415c8c17671f14c79d6f78dd2562fc002cf6362ea17a3444c01",
+    "per_symbol": [
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 126,
+      "rows_served": 126,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "ثپهران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 1
+      },
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 0.003273322422258751,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 337.95578646806666,
+        "date": "2016-05-28",
+        "factor": 1.0,
+        "reference_type7": 337.95578646806655,
+        "served": 337.95578646806666
+       },
+       "high": {
+        "adjusted": 253.70740684337335,
+        "date": "2015-07-11",
+        "factor": 1.0,
+        "reference_type7": 252.87965021419427,
+        "served": 253.70740684337335
+       },
+       "low": {
+        "adjusted": 337.0914494182762,
+        "date": "2016-05-28",
+        "factor": 1.0,
+        "reference_type7": 337.0914494182761,
+        "served": 337.0914494182762
+       },
+       "open": {
+        "adjusted": 338.03436256350216,
+        "date": "2016-05-29",
+        "factor": 1.0,
+        "reference_type7": 338.03436256350204,
+        "served": 338.03436256350216
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 253.70740684337335,
+        "date": "2015-07-11",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 252.87965021419427,
+        "served": 253.70740684337335
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2478,
+      "rows_served": 2478,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "دبالك",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 8.881784197001252e-16,
+       "high": 8.881784197001252e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 718.5295592625017,
+        "date": "2021-10-25",
+        "factor": 1.0,
+        "reference_type7": 718.5295592625012,
+        "served": 718.5295592625017
+       },
+       "high": {
+        "adjusted": 712.9034888879631,
+        "date": "2021-11-01",
+        "factor": 1.0,
+        "reference_type7": 712.9034888879626,
+        "served": 712.9034888879631
+       },
+       "low": {
+        "adjusted": 720.7799874123172,
+        "date": "2021-10-23",
+        "factor": 1.0,
+        "reference_type7": 720.7799874123166,
+        "served": 720.7799874123172
+       },
+       "open": {
+        "adjusted": 720.1370079409413,
+        "date": "2021-11-02",
+        "factor": 1.0,
+        "reference_type7": 720.1370079409407,
+        "served": 720.1370079409413
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2727,
+      "rows_served": 2727,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "شتران",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 3,
+       "low": 3
+      },
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 0.010842952081147272,
+       "low": 0.047692071768133615,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2.2152787526107187,
+        "date": "2004-02-08",
+        "factor": 1.0,
+        "reference_type7": 2.2152787526107196,
+        "served": 2.2152787526107187
+       },
+       "high": {
+        "adjusted": 111.78402362592136,
+        "date": "2015-06-02",
+        "factor": 1.0,
+        "reference_type7": 110.58495624446684,
+        "served": 111.78402362592136
+       },
+       "low": {
+        "adjusted": 28.066059013495632,
+        "date": "2011-07-12",
+        "factor": 1.0,
+        "reference_type7": 29.471621711272945,
+        "served": 28.066059013495632
+       },
+       "open": {
+        "adjusted": 2.2113751777162505,
+        "date": "2004-02-08",
+        "factor": 1.0,
+        "reference_type7": 2.2113751777162514,
+        "served": 2.2113751777162505
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 1.7812461981622907,
+        "date": "2006-01-14",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.775486307464919,
+        "served": 1.7812461981622907
+       },
+       {
+        "adjusted": 1.7754863074649185,
+        "date": "2006-01-16",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.769726416767547,
+        "served": 1.7754863074649185
+       },
+       {
+        "adjusted": 1.6905279196786818,
+        "date": "2006-01-23",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.69916775572474,
+        "served": 1.6905279196786818
+       },
+       {
+        "adjusted": 2.858470973586012,
+        "date": "2006-07-31",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 2.9734183575031317,
+        "served": 2.858470973586012
+       },
+       {
+        "adjusted": 28.066059013495632,
+        "date": "2011-07-12",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 29.471621711272945,
+        "served": 28.066059013495632
+       },
+       {
+        "adjusted": 111.78402362592136,
+        "date": "2015-06-02",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 110.58495624446684,
+        "served": 111.78402362592136
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 6,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4400,
+      "rows_served": 4400,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "شكلر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 5.551115123125783e-16,
+       "high": 5.551115123125783e-16,
+       "low": 5.551115123125783e-16,
+       "open": 5.551115123125783e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       },
+       "high": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       },
+       "low": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       },
+       "open": {
+        "adjusted": 2572.953565457158,
+        "date": "2024-12-09",
+        "factor": 1.0,
+        "reference_type7": 2572.9535654571596,
+        "served": 2572.953565457158
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 698,
+      "rows_served": 698,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فن افزار",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 6.661338147750939e-16,
+       "low": 8.881784197001252e-16,
+       "open": 8.881784197001252e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 25.380302154975215,
+        "date": "2016-07-24",
+        "factor": 1.0,
+        "reference_type7": 25.3803021549752,
+        "served": 25.380302154975215
+       },
+       "high": {
+        "adjusted": 24.328368003864714,
+        "date": "2016-07-23",
+        "factor": 1.0,
+        "reference_type7": 24.3283680038647,
+        "served": 24.328368003864714
+       },
+       "low": {
+        "adjusted": 143.06104932147474,
+        "date": "2019-04-10",
+        "factor": 1.0,
+        "reference_type7": 143.06104932147463,
+        "served": 143.06104932147474
+       },
+       "open": {
+        "adjusted": 138.20450317345626,
+        "date": "2019-04-06",
+        "factor": 1.0,
+        "reference_type7": 138.20450317345615,
+        "served": 138.20450317345626
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 4266,
+      "rows_served": 4266,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "فولاد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 4.440892098500626e-16,
+       "low": 4.440892098500626e-16,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 1291.1735028910596,
+        "date": "2021-08-04",
+        "factor": 1.0,
+        "reference_type7": 1291.1735028910591,
+        "served": 1291.1735028910596
+       },
+       "high": {
+        "adjusted": 1356.7409073347462,
+        "date": "2021-08-04",
+        "factor": 1.0,
+        "reference_type7": 1356.7409073347458,
+        "served": 1356.7409073347462
+       },
+       "low": {
+        "adjusted": 1312.7603098925194,
+        "date": "2021-08-03",
+        "factor": 1.0,
+        "reference_type7": 1312.760309892519,
+        "served": 1312.7603098925194
+       },
+       "open": {
+        "adjusted": 1362.9950289893748,
+        "date": "2021-08-24",
+        "factor": 1.0,
+        "reference_type7": 1362.9950289893743,
+        "served": 1362.9950289893748
+       }
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 0,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 2569,
+      "rows_served": 2569,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PASS",
+      "symbol": "كوثر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {},
+      "adjusted_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "adjusted_worst": {
+       "close": null,
+       "high": null,
+       "low": null,
+       "open": null
+      },
+      "diff_sample": [],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 572,
+      "rows_served": 572,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 1,
+      "status": "PASS",
+      "symbol": "نيك گستر",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 3
+      },
+      "adjusted_max_rel": {
+       "close": 1.2212453270876722e-15,
+       "high": 0.07921086547040712,
+       "low": 1.2212453270876722e-15,
+       "open": 1.2212453270876722e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.1153170175085,
+        "served": 4445.115317017503
+       },
+       "high": {
+        "adjusted": 4241.230741295582,
+        "date": "2023-07-19",
+        "factor": 1.0,
+        "reference_type7": 3929.9370280588423,
+        "served": 4241.230741295582
+       },
+       "low": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.1153170175085,
+        "served": 4445.115317017503
+       },
+       "open": {
+        "adjusted": 4445.115317017503,
+        "date": "2024-01-13",
+        "factor": 1.0,
+        "reference_type7": 4445.1153170175085,
+        "served": 4445.115317017503
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 4241.230741295582,
+        "date": "2023-07-19",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 3929.9370280588423,
+        "served": 4241.230741295582
+       },
+       {
+        "adjusted": 6663.959242628349,
+        "date": "2025-06-10",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 6522.449100908791,
+        "served": 6663.959242628349
+       },
+       {
+        "adjusted": 9697.288529405316,
+        "date": "2026-08-31",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 9431.482962024644,
+        "served": 9697.288529405316
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 3,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 1114,
+      "rows_served": 1114,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "هامرز",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 53,
+       "low": 33
+      },
+      "adjusted_max_rel": {
+       "close": 6.661338147750939e-16,
+       "high": 0.2857575757575752,
+       "low": 0.4350649350649354,
+       "open": 6.661338147750939e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 1.0,
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6881935313213849
+       },
+       "high": {
+        "adjusted": 1.0399703398750566,
+        "date": "1997-01-27",
+        "factor": 1.0,
+        "reference_type7": 0.8088385862803884,
+        "served": 1.0399703398750566
+       },
+       "low": {
+        "adjusted": 0.5330981591393467,
+        "date": "1997-06-22",
+        "factor": 1.0,
+        "reference_type7": 0.9436450173271198,
+        "served": 0.5330981591393467
+       },
+       "open": {
+        "adjusted": 0.6881935313213849,
+        "date": "2000-02-27",
+        "factor": 1.0,
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6881935313213849
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 1.0239161194504003,
+        "date": "1996-12-18",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.2252679069138368,
+        "served": 1.0239161194504003
+       },
+       {
+        "adjusted": 1.0539411881835359,
+        "date": "1996-12-21",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.2252679069138368,
+        "served": 1.0539411881835359
+       },
+       {
+        "adjusted": 1.1213444037069016,
+        "date": "1997-01-05",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.11962868549358,
+        "served": 1.1213444037069016
+       },
+       {
+        "adjusted": 1.1024715033603592,
+        "date": "1997-01-06",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.102961708564166,
+        "served": 1.1024715033603592
+       },
+       {
+        "adjusted": 1.0661963182786933,
+        "date": "1997-01-11",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.1025940546613113,
+        "served": 1.0661963182786933
+       },
+       {
+        "adjusted": 1.0399703398750566,
+        "date": "1997-01-27",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.8088385862803884,
+        "served": 1.0399703398750566
+       },
+       {
+        "adjusted": 0.9802878563116401,
+        "date": "1997-04-06",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.980410407612592,
+        "served": 0.9802878563116401
+       },
+       {
+        "adjusted": 0.8579816579619692,
+        "date": "1997-06-09",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.9436450173271198,
+        "served": 0.8579816579619692
+       },
+       {
+        "adjusted": 0.8578591066610176,
+        "date": "1997-06-10",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.9436450173271198,
+        "served": 0.8578591066610176
+       },
+       {
+        "adjusted": 0.5330981591393467,
+        "date": "1997-06-22",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.9436450173271198,
+        "served": 0.5330981591393467
+       },
+       {
+        "adjusted": 0.9353115288624124,
+        "date": "1997-07-12",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.934943874959558,
+        "served": 0.9353115288624124
+       },
+       {
+        "adjusted": 0.7840227981593862,
+        "date": "1998-04-13",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.7829623525351854,
+        "served": 0.7840227981593862
+       },
+       {
+        "adjusted": 0.7628138856753631,
+        "date": "1998-06-14",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.7598092897401268,
+        "served": 0.7628138856753631
+       },
+       {
+        "adjusted": 0.7598092897401265,
+        "date": "1998-06-30",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.7594558078653931,
+        "served": 0.7598092897401265
+       },
+       {
+        "adjusted": 0.5772959933588658,
+        "date": "1999-01-16",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.6212090466570357,
+        "served": 0.5772959933588658
+       },
+       {
+        "adjusted": 0.6885290718047207,
+        "date": "2000-03-06",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6885290718047207
+       },
+       {
+        "adjusted": 0.6878579908380493,
+        "date": "2000-03-11",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.6881935313213854,
+        "served": 0.6878579908380493
+       },
+       {
+        "adjusted": 0.6888646122880563,
+        "date": "2000-03-14",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.688529071804721,
+        "served": 0.6888646122880563
+       },
+       {
+        "adjusted": 0.6908778551880701,
+        "date": "2000-04-19",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.6905423147047348,
+        "served": 0.6908778551880701
+       },
+       {
+        "adjusted": 0.691884476638077,
+        "date": "2000-04-29",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.6925555576047486,
+        "served": 0.691884476638077
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 86,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3562,
+      "rows_served": 3562,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "وسديد",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 76,
+       "low": 508
+      },
+      "adjusted_max_rel": {
+       "close": 4.440892098500626e-16,
+       "high": 2.8828571428571426,
+       "low": 0.17923497267759558,
+       "open": 4.440892098500626e-16
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 1.0,
+        "reference_type7": 124.75588208884436,
+        "served": 124.7558820888444
+       },
+       "high": {
+        "adjusted": 66.06423581734265,
+        "date": "1995-09-16",
+        "factor": 1.0,
+        "reference_type7": 17.01433593529796,
+        "served": 66.06423581734265
+       },
+       "low": {
+        "adjusted": 110.17563788633085,
+        "date": "1996-03-16",
+        "factor": 1.0,
+        "reference_type7": 134.23529782422466,
+        "served": 110.17563788633085
+       },
+       "open": {
+        "adjusted": 124.7558820888444,
+        "date": "1998-02-02",
+        "factor": 1.0,
+        "reference_type7": 124.75588208884436,
+        "served": 124.7558820888444
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 65.62672432186356,
+        "date": "1995-09-09",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 67.1337083618471,
+        "served": 65.62672432186356
+       },
+       {
+        "adjusted": 65.86978626379639,
+        "date": "1995-09-13",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 66.06423581734265,
+        "served": 65.86978626379639
+       },
+       {
+        "adjusted": 66.06423581734265,
+        "date": "1995-09-16",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 17.01433593529796,
+        "served": 66.06423581734265
+       },
+       {
+        "adjusted": 67.18232075023366,
+        "date": "1995-09-20",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 67.08509597346053,
+        "served": 67.18232075023366
+       },
+       {
+        "adjusted": 67.08509597346053,
+        "date": "1995-09-25",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 67.1337083618471,
+        "served": 67.08509597346053
+       },
+       {
+        "adjusted": 67.37677030377992,
+        "date": "1995-09-27",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 67.4253826921665,
+        "served": 67.37677030377992
+       },
+       {
+        "adjusted": 67.66844463409932,
+        "date": "1995-10-02",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 68.05734374119184,
+        "served": 67.66844463409932
+       },
+       {
+        "adjusted": 69.02959150892315,
+        "date": "1995-10-07",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 69.07820389730972,
+        "served": 69.02959150892315
+       },
+       {
+        "adjusted": 69.17542867408285,
+        "date": "1995-10-09",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 69.5157153927888,
+        "served": 69.17542867408285
+       },
+       {
+        "adjusted": 69.6615525579485,
+        "date": "1995-10-11",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 70.48796316052012,
+        "served": 69.6615525579485
+       },
+       {
+        "adjusted": 70.73102510245295,
+        "date": "1995-10-14",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 70.92547465599921,
+        "served": 70.73102510245295
+       },
+       {
+        "adjusted": 71.75188525857082,
+        "date": "1995-10-15",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 72.9185825798484,
+        "served": 71.75188525857082
+       },
+       {
+        "adjusted": 77.82843380689152,
+        "date": "1995-10-22",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 78.31455769075718,
+        "served": 77.82843380689152
+       },
+       {
+        "adjusted": 79.04374351655566,
+        "date": "1995-10-23",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 79.09235590494224,
+        "served": 79.04374351655566
+       },
+       {
+        "adjusted": 82.88412219909435,
+        "date": "1995-10-24",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 84.43971862746444,
+        "served": 82.88412219909435
+       },
+       {
+        "adjusted": 85.12029206487637,
+        "date": "1995-10-25",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 87.50229909581807,
+        "served": 85.12029206487637
+       },
+       {
+        "adjusted": 90.17598045707919,
+        "date": "1995-10-29",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 90.95377867126423,
+        "served": 90.17598045707919
+       },
+       {
+        "adjusted": 92.75243704156716,
+        "date": "1995-10-31",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 93.14133614865969,
+        "served": 92.75243704156716
+       },
+       {
+        "adjusted": 93.9677467512313,
+        "date": "1995-11-01",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 94.30803346993726,
+        "served": 93.9677467512313
+       },
+       {
+        "adjusted": 94.64832018864323,
+        "date": "1995-11-06",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 94.69693257702978,
+        "served": 94.64832018864323
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 584,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 5278,
+      "rows_served": 5278,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "وملت",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 418,
+       "low": 587
+      },
+      "adjusted_max_rel": {
+       "close": 1.1102230246251565e-15,
+       "high": 0.8809815950920261,
+       "low": 0.13320724128613792,
+       "open": 1.1102230246251565e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 1.0,
+        "reference_type7": 7.406310348047803,
+        "served": 7.406310348047811
+       },
+       "high": {
+        "adjusted": 80.45827010793614,
+        "date": "1996-01-03",
+        "factor": 1.0,
+        "reference_type7": 42.77461848530196,
+        "served": 80.45827010793614
+       },
+       "low": {
+        "adjusted": 20.56456397779797,
+        "date": "1995-10-01",
+        "factor": 1.0,
+        "reference_type7": 23.724891297328618,
+        "served": 20.56456397779797
+       },
+       "open": {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-09",
+        "factor": 1.0,
+        "reference_type7": 7.406310348047803,
+        "served": 7.406310348047811
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 7.406310348047811,
+        "date": "1995-07-11",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.4227596769718405,
+        "served": 7.406310348047811
+       },
+       {
+        "adjusted": 7.422759676971849,
+        "date": "1995-07-12",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.430984341433859,
+        "served": 7.422759676971849
+       },
+       {
+        "adjusted": 7.430984341433867,
+        "date": "1995-07-15",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.4433213381268875,
+        "served": 7.430984341433867
+       },
+       {
+        "adjusted": 7.4433213381268954,
+        "date": "1995-07-16",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 7.4638829992819336,
+        "served": 7.4433213381268954
+       },
+       {
+        "adjusted": 13.14132049703424,
+        "date": "1995-09-10",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 11.21820042429751,
+        "served": 13.14132049703424
+       },
+       {
+        "adjusted": 12.820800484911453,
+        "date": "1995-09-13",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 13.141320497034226,
+        "served": 12.820800484911453
+       },
+       {
+        "adjusted": 13.224655700186164,
+        "date": "1995-09-19",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 13.237476500671061,
+        "served": 13.224655700186164
+       },
+       {
+        "adjusted": 13.468250909399481,
+        "date": "1995-09-23",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 13.910568526128912,
+        "served": 13.468250909399481
+       },
+       {
+        "adjusted": 16.44267662189894,
+        "date": "1995-09-26",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 17.43628865947956,
+        "served": 16.44267662189894
+       },
+       {
+        "adjusted": 17.724756670390086,
+        "date": "1995-09-27",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 19.872240751612733,
+        "served": 17.724756670390086
+       },
+       {
+        "adjusted": 20.14147756179589,
+        "date": "1995-09-30",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 20.423535172463925,
+        "served": 20.14147756179589
+       },
+       {
+        "adjusted": 20.56456397779797,
+        "date": "1995-10-01",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 23.724891297328618,
+        "served": 20.56456397779797
+       },
+       {
+        "adjusted": 23.85309930217776,
+        "date": "1995-10-23",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 24.05182170969386,
+        "served": 23.85309930217776
+       },
+       {
+        "adjusted": 25.128768950426448,
+        "date": "1995-10-25",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 25.321080957700094,
+        "served": 25.128768950426448
+       },
+       {
+        "adjusted": 25.449288962549236,
+        "date": "1995-10-28",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 25.513392964973765,
+        "served": 25.449288962549236
+       },
+       {
+        "adjusted": 25.673652971035185,
+        "date": "1995-10-29",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 26.154432989219337,
+        "served": 25.673652971035185
+       },
+       {
+        "adjusted": 26.28264099406848,
+        "date": "1995-10-30",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 26.31469299528073,
+        "served": 26.28264099406848
+       },
+       {
+        "adjusted": 26.923681018314053,
+        "date": "1995-11-19",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 27.91729305589466,
+        "served": 26.923681018314053
+       },
+       {
+        "adjusted": 28.237813068017477,
+        "date": "1995-11-21",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 28.84680109105074,
+        "served": 28.237813068017477
+       },
+       {
+        "adjusted": 28.87244269202059,
+        "date": "1995-11-22",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 28.84680109105074,
+        "served": 28.87244269202059
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 1005,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 6714,
+      "rows_served": 6714,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "وپترو",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     },
+     {
+      "adjusted_diff_rows": {
+       "high": 10,
+       "low": 12
+      },
+      "adjusted_max_rel": {
+       "close": 1.5543122344752192e-15,
+       "high": 0.16872727272727195,
+       "low": 0.047619047619049004,
+       "open": 1.5543122344752192e-15
+      },
+      "adjusted_worst": {
+       "close": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 1.0,
+        "reference_type7": 0.3246473812148324,
+        "served": 0.3246473812148319
+       },
+       "high": {
+        "adjusted": 6.457404054042436,
+        "date": "2006-04-24",
+        "factor": 1.0,
+        "reference_type7": 5.525159038150813,
+        "served": 6.457404054042436
+       },
+       "low": {
+        "adjusted": 0.7776502577506141,
+        "date": "2000-03-06",
+        "factor": 1.0,
+        "reference_type7": 0.816532770638146,
+        "served": 0.7776502577506141
+       },
+       "open": {
+        "adjusted": 0.3246473812148319,
+        "date": "1999-09-07",
+        "factor": 1.0,
+        "reference_type7": 0.3246473812148324,
+        "served": 0.3246473812148319
+       }
+      },
+      "diff_sample": [
+       {
+        "adjusted": 0.45000028248502083,
+        "date": "1999-09-12",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.45211721929778703,
+        "served": 0.45000028248502083
+       },
+       {
+        "adjusted": 0.5109378207382007,
+        "date": "1999-09-20",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 0.4985386194062889,
+        "served": 0.5109378207382007
+       },
+       {
+        "adjusted": 0.5065527373403292,
+        "date": "1999-09-22",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.5080648350637339,
+        "served": 0.5065527373403292
+       },
+       {
+        "adjusted": 0.5210688754850074,
+        "date": "1999-10-20",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.5337704963616015,
+        "served": 0.5210688754850074
+       },
+       {
+        "adjusted": 0.6880044641488055,
+        "date": "1999-12-26",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.6949601136764646,
+        "served": 0.6880044641488055
+       },
+       {
+        "adjusted": 0.7776502577506141,
+        "date": "2000-03-06",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 0.816532770638146,
+        "served": 0.7776502577506141
+       },
+       {
+        "adjusted": 1.00446491626121,
+        "date": "2000-03-14",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.0152656142855254,
+        "served": 1.00446491626121
+       },
+       {
+        "adjusted": 1.0159136561669828,
+        "date": "2000-04-12",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.0163456840879568,
+        "served": 1.0159136561669828
+       },
+       {
+        "adjusted": 1.1799142125931934,
+        "date": "2000-08-05",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.1803922009312922,
+        "served": 1.1799142125931934
+       },
+       {
+        "adjusted": 1.2583043000411511,
+        "date": "2000-08-29",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.2573483233649583,
+        "served": 1.2583043000411511
+       },
+       {
+        "adjusted": 1.2573483233649565,
+        "date": "2000-10-04",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.2571093291959095,
+        "served": 1.2573483233649565
+       },
+       {
+        "adjusted": 1.257109329195908,
+        "date": "2000-10-08",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.290568512862721,
+        "served": 1.257109329195908
+       },
+       {
+        "adjusted": 1.290807507031768,
+        "date": "2000-10-09",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.290568512862721,
+        "served": 1.290807507031768
+       },
+       {
+        "adjusted": 1.5319526236018575,
+        "date": "2000-12-19",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.5317136294328106,
+        "served": 1.5319526236018575
+       },
+       {
+        "adjusted": 1.53147463526376,
+        "date": "2001-01-01",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.5295626819113728,
+        "served": 1.53147463526376
+       },
+       {
+        "adjusted": 1.5271727402208843,
+        "date": "2001-01-08",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.5295626819113728,
+        "served": 1.5271727402208843
+       },
+       {
+        "adjusted": 1.5307576527566142,
+        "date": "2001-02-05",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 1.5298016760804214,
+        "served": 1.5307576527566142
+       },
+       {
+        "adjusted": 1.425494565249217,
+        "date": "2002-03-19",
+        "factor": 1.0,
+        "field": "low",
+        "layer": "adjusted",
+        "reference_type7": 1.4260004185371,
+        "served": 1.425494565249217
+       },
+       {
+        "adjusted": 6.457404054042436,
+        "date": "2006-04-24",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 5.525159038150813,
+        "served": 6.457404054042436
+       },
+       {
+        "adjusted": 5.861459627437952,
+        "date": "2007-01-10",
+        "factor": 1.0,
+        "field": "high",
+        "layer": "adjusted",
+        "reference_type7": 5.838740791672694,
+        "served": 5.861459627437952
+       }
+      ],
+      "raw_diff_rows": {},
+      "raw_layer_measured": false,
+      "raw_max_rel": {
+       "close": 0.0,
+       "high": 0.0,
+       "low": 0.0,
+       "open": 0.0
+      },
+      "reference_open_outside_rows": 22,
+      "rows_extra": [],
+      "rows_extra_count": 0,
+      "rows_missing": [],
+      "rows_missing_count": 0,
+      "rows_reference": 3988,
+      "rows_served": 3988,
+      "rows_without_factor": 0,
+      "rows_without_factor_sample": [],
+      "served_open_outside_rows": 0,
+      "status": "PARTIAL",
+      "symbol": "پكرمان",
+      "volume_mismatch_rows": 0,
+      "volume_mismatch_sample": []
+     }
+    ],
+    "summary": {
+     "adjusted_diff_rows": {
+      "high": 564,
+      "low": 1143
+     },
+     "adjusted_diff_total": 1707,
+     "adjusted_max_rel": {
+      "close": 1.5543122344752192e-15,
+      "high": 2.8828571428571426,
+      "low": 0.4350649350649354,
+      "open": 1.5543122344752192e-15
+     },
+     "raw_diff_rows": {},
+     "raw_diff_total": 0,
+     "raw_layer_measured": false,
+     "raw_max_rel": {
+      "close": 0.0,
+      "high": 0.0,
+      "low": 0.0,
+      "open": 0.0
+     },
+     "reference_open_outside_rows": 1708,
+     "rows_extra": 0,
+     "rows_missing": 0,
+     "rows_served": 38492,
+     "rows_without_factor": 0,
+     "served_open_outside_rows": 1,
+     "symbols": 13,
+     "symbols_partial": [
+      "دبالك",
+      "شكلر",
+      "هامرز",
+      "وسديد",
+      "وملت",
+      "وپترو",
+      "پكرمان"
+     ],
+     "symbols_pass": 6,
+     "volume_mismatch_rows": 0
+    }
+   }
+  }
+ },
+ "mission": "phase49-5-43symbol-independent-db",
+ "not_measured": {
+  "browser_transform": "stage12 frontend transform not run for the 13",
+  "instruments_table_absent": "schema-only working DB",
+  "live_feed": "--no-loops; liveInjected is recorded as returned",
+  "ui_screenshot": "no browser was driven against this DB"
+ },
+ "payload_file": "_audit/phase49-5/db/api-payloads-13.json",
+ "reference_law": {
+  "statement": "type7 = type0 x factor for open/high/low/close; type7.volume == type0.volume",
+  "tolerance": 1e-09,
+  "tolerance_unchanged": true,
+  "widening_applied_to_reference": false
+ },
+ "schema": "phase49-5-runtime-parity-13-v1",
+ "status": "PASS",
+ "substrate": {
+  "bars_capture_sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+  "capture_day_quarantine": "2026-11-11",
+  "copies_under": "_audit/phase49-5/db/runtime",
+  "original_opened_read_only": true,
+  "reference_rows_skipped_by_engine_rules": {},
+  "reference_rows_type0": 38492,
+  "reference_rows_type7": 38492,
+  "working_db": "_audit/phase49-5/db/market43.db",
+  "working_db_sha256": "e31ae6f946275073b50f929500234016a51f4ac2d9c939e9af4f38a329c05904"
+ }
+}

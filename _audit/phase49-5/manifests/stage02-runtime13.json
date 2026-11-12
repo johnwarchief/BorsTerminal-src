@@ -1,0 +1,40 @@
+{
+ "db_written": false,
+ "elapsed_seconds": 168.8,
+ "generated_at": "2026-11-12T21:25:58Z",
+ "inputs": {
+  "_audit/phase49-3/bin/borsd.exe": {
+   "sha256": "a797c88343f49a4d20240b452cdacfcf193cc332f7738ecfdef41983ba319cd7"
+  },
+  "_audit/phase49-3/bin/candlebuild.exe": {
+   "sha256": "ba34c90be644060d1ff45b7477f2eafb61a39be78169282a72554501babd3673"
+  },
+  "_audit/phase49-4/bin/borsd.exe": {
+   "sha256": "27ea06c088c58d6fead302ac4951263aee455d997310e4e57dfbedb619a95de2"
+  },
+  "_audit/phase49-4/bin/candlebuild.exe": {
+   "sha256": "4d28cece967b735750fb4668fee32a882253a9425d20471babfd3e98addd56ef"
+  },
+  "_audit/phase49-4/db/engine-after/market.db": {
+   "sha256": "b5e895c979a9bd18ec0b20292ae027a1194969b9dea1f49388d566e40be8573a"
+  },
+  "_audit/phase49-5/cohort/COHORT43.json": {
+   "sha256": "2d1ccbbdcefce12015f3bd2fc49d8660aa78959c55f32f3079ec47fdf0776365"
+  },
+  "_audit/phase49-full-verification/evidence/capture-summary.json": {
+   "sha256": "6cbeb62811f42d143a9d6b5c10324e2eae57b6914e8f875a3ee0e50d6154da8b"
+  }
+ },
+ "outputs": {
+  "_audit/phase49-5/db/api-payloads-13.json": {
+   "sha256": "ee83380ec02f0b7533d5137550beab270f07d625b9f05e0eecc6513e349dc09a"
+  },
+  "_audit/phase49-5/evidence/RUNTIME-PARITY-13.json": {
+   "bytes": 142692,
+   "sha256": "ae11dea2b6487a229b9fe89b54c37466eda80d47dd78cb68f0800145df782fc1"
+  }
+ },
+ "schema": "phase49-5-stage-manifest-v1",
+ "stage": "stage02_runtime13",
+ "status": "PASS"
+}

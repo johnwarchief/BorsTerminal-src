@@ -1,0 +1,34 @@
+{
+ "db_written": false,
+ "elapsed_ms": 410.7,
+ "generated_at": "2026-11-12T21:04:59Z",
+ "idempotent_payload": true,
+ "inputs": {
+  "_audit/phase49-3/evidence/COHORT-SELECTION.json": {
+   "bytes": 51450,
+   "sha256": "857573dd33676d18fda6243806786690eec70abbf8bcee965d48d825eaa77901"
+  },
+  "_audit/phase49-3/ledgers/COVERAGE-EXPANSION-MAP.csv": {
+   "bytes": 2962335,
+   "sha256": "2a3237894def68b0ee341dbe7aa8eb23f4078b2640d9ebf7b33ef53bffa3ef22"
+  },
+  "_audit/phase49-full-verification/captures/reference-index-all.json": {
+   "bytes": 2010378,
+   "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
+  },
+  "docs/opportunity-center/phase49/ADJUSTMENT-EVIDENCE-LEDGER.csv": {
+   "bytes": 2527513,
+   "sha256": "c0ab45bf60ba8d95fa4f4f33d60d4fa6f465a62c07271053c8ca7781f5114a28"
+  }
+ },
+ "outputs": {
+  "_audit/phase49-5/cohort/COHORT43.json": {
+   "bytes": 67741,
+   "rows": 43,
+   "sha256": "2d1ccbbdcefce12015f3bd2fc49d8660aa78959c55f32f3079ec47fdf0776365"
+  }
+ },
+ "schema": "phase49-5-stage-manifest-v1",
+ "stage": "stage00_cohort43",
+ "status": "PASS"
+}
