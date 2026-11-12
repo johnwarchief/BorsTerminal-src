@@ -60,6 +60,7 @@ frontend/src-tauri/target/
 *.sqlite3
 *.lzma
 *.rar
+!docs/technical-indicators/inbox/Indicator.rar
 *.zip
 *.7z
 
