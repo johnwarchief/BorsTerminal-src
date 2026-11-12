@@ -7,10 +7,10 @@
 # head_commit_at_build: 4454dcfb01d86a1d40b439c34a3ead67179992c5 (parent of the delivery commit; a file cannot contain the SHA of the commit that carries it)
 # delivery_commit: announced in the delivery message and bound by evidence/CI-<sha8>.json
 # ci_status: COMPLETE
-# ci_commit: 92ef800fd575f93c9c3f8a58742317b5831d5e8e
+# ci_commit: e3d859161370d0e4f1456050b6d7489d504619ab
 # ci_jobs: workflows_success=True jobs_success=False blocking_jobs_success=True (python-legacy is continue-on-error: workflow success is NOT all-jobs success)
 # ci_report_only_attribution: legacy Python maintenance (report-only): 30/211 failed here vs 30/211 at base, identical_sets=True new=0 resolved=0
-# ci_preserved_chain: 92ef800f=COMPLETE(blocking=True,jobs=False) (each commit's CI record kept separately; none overwritten, every run head_sha == its commit_sha)
+# ci_preserved_chain: 92ef800f=COMPLETE(blocking=True,jobs=False) e3d85916=COMPLETE(blocking=True,jobs=False) (each commit's CI record kept separately; none overwritten, every run head_sha == its commit_sha)
 # reference_law: type7 = type0 x factor for open/high/low/close; type7.volume == type0.volume
 # reference_law_tolerance: 1e-09 unchanged=True widening_applied_to_reference=False
 # reference_law_correction: stage07/stage08 built a WIDENED baseline, which manufactured the high/low divergences; they are superseded, not rewritten, and correcting the law makes the check stricter (no attribution bucket)
@@ -33,9 +33,10 @@
 # section: 1=deliverables 2=evidence/manifests 3=mission scripts 4=code, gates and pinned inputs 5=gitignored run artifacts and licensed inputs
 # note: this manifest does not list itself
 # --- section 1 ---
-11c3bd4b0aa26b6c740e458e58d3c1af8953f01ae5eb13aee54ba9c62fa77faf  47082  docs/opportunity-center/phase49-4/RUNTIME-PARITY-REPORT.md
+2f90ba8dfe1795f6707bb48a43b6a2ea0072a5fe4fed7b7c1f1ec4fce08d2ff0  48933  docs/opportunity-center/phase49-4/RUNTIME-PARITY-REPORT.md
 # --- section 2 ---
 0ed65de8fd1cea4e93eb9bbe167dee68617afce4e3a628e9fe98cf13eb12e502  7633  _audit/phase49-4/evidence/CI-92ef800f.json
+a3e695a590100fd52ecfdd8f0d71d02e92a41b1fa3e127072745d6c10085eec7  7633  _audit/phase49-4/evidence/CI-e3d85916.json
 468d24dd5d9ee7decb4ec02147fd72cae4320763a89684c7921ea047d8aa9f48  2981  _audit/phase49-4/evidence/FIXTURE-ROWS.json
 031156dd0067f39d226eafc468cacf63d2e62d2c0b563c3e24c31a1c6e35128d  335610  _audit/phase49-4/evidence/FRONTEND-PARITY.json
 724fc406d8cb05f2b3f4c11864ed92942c545f5bb1711cb2a8388a9611ede3d8  486  _audit/phase49-4/evidence/GUARD-CONTROL-WORKTREE.json
