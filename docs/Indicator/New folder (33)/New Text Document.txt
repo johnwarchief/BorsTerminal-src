@@ -1,0 +1,12 @@
+Indicator CTZ Swing Exhaustion Levels for Trading View 
+
+Where does this swing end, and when? Statistical swing targets + kernel trend, tuned for crypto.
+
+Most indicators tell you a swing has ended after it's over. This one estimates WHERE and WHEN the live swing is likely to end, using the chart's own history of past swings.
+
+It tracks every swing on your chart (measured in ATR), learns how far and how long swings of this size usually run, and projects:
+
+• 3 exhaustion levels (50% / 75% / 90%)
+• A time window for when the swing is likely to finish
+• Live odds that the top or bottom is already in
+• A kernel regression trend, so you know whether the swing is moving WITH or AGAINST the trend

@@ -1,0 +1,7 @@
+Indicator Automatic Wedge & Channel Detector for Trading View
+
+Automatic Wedge & Channel Detector identifies developing price structures directly on the chart, helping traders recognize where price is compressing, expanding, or moving within established boundaries.
+
+Instead of requiring trendlines to be drawn manually, the indicator analyzes confirmed pivot highs and lows, tests multiple boundary combinations, and selects the structure that best fits recent price action. It can detect parallel channels, converging wedges, symmetrical triangles, ascending or descending triangle-style formations, and expanding structures.
+
+The goal is not simply to draw two lines. The indicator evaluates how well price respects both boundaries by considering touches, spacing, violations, structural width, balance between the upper and lower sides, and the age of the pattern. This helps reduce arbitrary trendlines and prioritize structures that are better supported by actual price behaviour.

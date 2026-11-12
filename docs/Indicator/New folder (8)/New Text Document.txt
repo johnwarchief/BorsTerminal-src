@@ -1,0 +1,21 @@
+
+
+Indicator SMC Order Block Scorer for Trading View
+
+This is a professional-grade Smart Money Concepts (SMC) indicator for TradingView that goes far beyond basic order block detection. It automatically identifies swing structure breaks (BOS/CHoCH), finds Order Blocks, and then scores each OB from 0-100 based on volume profile confluence (POC, Value Area, HVN). Every order block gets a grade (A+/A/B/C) so you instantly know which zones matter most.
+[11/2/2026 12:02 PM] Reza Hekmat: What it draws:
+
+📈 Market Structure Labels — BOS (Break of Structure) and CHoCH (Change of Character) markers
+📉 Structure Break Lines — Dashed/dotted lines showing the broken swing level
+📦 Order Block Boxes — Colored rectangles marking institutional supply/demand zones:
+🟢 Teal = Bullish OB (demand zone)
+🔴 Red = Bearish OB (supply zone)
+🏷 OB Labels — Grade + Score + Tags (POC · VA · HVN)
+📏 50% Equilibrium Line — Dotted midline through each OB
+📊 Volume Profile — Side histogram showing volume distribution:
+🔴 POC (Point of Control) — highest volume price
+🔵 VA (Value Area) — 70% of volume
+🟡 HVN (High Volume Nodes) — volume peaks
+📊 HVN Zones — Horizontal shaded bands across the chart
+📋 Info Table — Status panel showing top 3 OBs with scores and grades
+🔔 Alerts — 9 alert conditions for all events

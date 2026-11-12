@@ -1,0 +1,5 @@
+Indicator Pivot Channel TrendLines [Big Beluga] for Trading View
+
+This is an advanced technical analysis indicator  automatically map structural pivot points, project dynamic trendline channels, and track directional breakout signals directly on the chart. Traditional manual trendline drawing is often subjective and time-consuming, while standard indicators fail to account for slope progression and volatility filters. To solve this limitation, this script combines an automated pivot detection engine with ATR-filtered extension lines and real-time breakout triggers.
+
+It visualizes key market highs and lows, dotted projection channels, and directional signals. The core calculations identify confirmed pivot extremes using configurable lookback periods, compute slope values between successive pivots, and filter out insignificant structures using ATR thresholds. Customizable color palettes, line styles, and extension lengths allow traders to fine-tune the geometric mappings across various asset classes & timeframe

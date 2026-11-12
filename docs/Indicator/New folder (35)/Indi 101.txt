@@ -1,0 +1,1267 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+// © AlphaX
+//@version=6
+indicator("[ A L P H A X ] Elliott Wave Detection & Fibonacci Golden Zone", shorttitle="AlphaX Wave", overlay=true,
+  max_labels_count=500, max_bars_back=500, max_boxes_count=500, max_lines_count=500)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// █████████████████████████ ALPHAX WAVE ██████████████████████████████████████
+// ███████████ Elliott Wave × Fibonacci × Momentum Confluence █████████████████
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ USER INPUTS ═══════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+swingLen         = input.int(6,      "Swing Detection Length",     minval=2,   maxval=20,   group="Wave Detection")
+showWaveLabels   = input.bool(true,  "Show Wave Count Labels",                              group="Wave Detection")
+showWaveLines    = input.bool(true,  "Show Wave Structure Lines",                           group="Wave Detection")
+showImpulse      = input.bool(true,  "Show Impulse Completion",                             group="Wave Detection")
+showCorrective   = input.bool(true,  "Show Corrective Patterns",                            group="Wave Detection")
+showWave3Setup   = input.bool(true,  "Show Wave 3 Setup Markers",                           group="Wave Detection")
+waveCooldown     = input.int(18,     "Wave Pattern Cooldown",      minval=10,  maxval=100,  group="Wave Detection")
+
+showFibBoxes     = input.bool(true,  "Show Fib Golden Zone Boxes",                          group="Fibonacci")
+fibMaxBoxes      = input.int(3,      "Max Fib Zone Boxes",         minval=1,   maxval=8,    group="Fibonacci")
+fibMaxAge        = input.int(80,     "Fib Zone Max Age (bars)",    minval=20,  maxval=300,  group="Fibonacci")
+
+rsiLen           = input.int(14,     "RSI Length",                  minval=5,   maxval=30,   group="Momentum")
+rsiSmooth        = input.int(5,      "RSI Smoothing",              minval=2,   maxval=15,   group="Momentum")
+macdFast         = input.int(12,     "MACD Fast",                  minval=5,   maxval=20,   group="Momentum")
+macdSlow         = input.int(26,     "MACD Slow",                  minval=15,  maxval=40,   group="Momentum")
+macdSig          = input.int(9,      "MACD Signal",                minval=3,   maxval=15,   group="Momentum")
+showDivergence   = input.bool(true,  "Show RSI Divergence",                                 group="Momentum")
+
+volLen           = input.int(20,     "Volume MA Length",            minval=5,   maxval=50,   group="Volume")
+volSpikeMulti    = input.float(1.6,  "Volume Spike Multiplier",    minval=1.1, maxval=4.0,  step=0.1, group="Volume")
+showVolSpike     = input.bool(false, "Show Volume Spike Dots",                               group="Volume")
+
+showEmaFast      = input.bool(true,  "Show Fast EMA",                                      group="EMA Settings")
+showEmaMedium    = input.bool(true,  "Show Medium EMA",                                    group="EMA Settings")
+showEmaSlow      = input.bool(true,  "Show Slow EMA",                                      group="EMA Settings")
+emaFastLen       = input.int(21,     "Fast EMA Length",             minval=1,   maxval=500, group="EMA Settings")
+emaMedLen        = input.int(50,     "Medium EMA Length",           minval=1,   maxval=500, group="EMA Settings")
+emaSlowLen       = input.int(200,    "Slow EMA Length",             minval=1,   maxval=500, group="EMA Settings")
+
+showCloud        = input.bool(true,  "Show Trend Cloud",                                   group="Trend Cloud")
+cloudFastLen     = input.int(9,      "Cloud Fast Length",           minval=3,   maxval=50,  group="Trend Cloud")
+cloudSlowLen     = input.int(26,     "Cloud Slow Length",           minval=10,  maxval=100, group="Trend Cloud")
+
+minConfluence    = input.int(3,      "Min Confluence Score",        minval=1,   maxval=8,   group="Confluence Engine")
+showSignals      = input.bool(true,  "Show Entry Signals",                                  group="Confluence Engine")
+signalCooldown   = input.int(10,     "Signal Cooldown (bars)",      minval=3,   maxval=50,  group="Confluence Engine")
+signalOffset     = input.float(3.0,  "Signal Label Offset (x ATR)",minval=1.0, maxval=8.0,  step=0.5, group="Confluence Engine")
+showGradeC       = input.bool(false, "Show Grade C Signals",                                 group="Confluence Engine")
+showGradeD       = input.bool(false, "Show Grade D Signals",                                 group="Confluence Engine")
+
+showSLTP         = input.bool(true,  "Show Stop Loss & Targets",                            group="SL / TP")
+slAtrMulti       = input.float(2.0,  "Stop Loss (x ATR)",          minval=0.5, maxval=5.0,  step=0.5, group="SL / TP")
+tp1AtrMulti      = input.float(2.5,  "Target 1 (x ATR)",           minval=1.0, maxval=8.0,  step=0.5, group="SL / TP")
+tp2AtrMulti      = input.float(5.0,  "Target 2 (x ATR)",           minval=2.0, maxval=15.0, step=0.5, group="SL / TP")
+limitSLTPHistory = input.bool(true,  "Limit SL/TP History",                                 group="SL / TP")
+sltpHistory      = input.int(8,      "SL/TP History Count",         minval=1,   maxval=50,  group="SL / TP")
+int MAX_SLTP_GROUPS = 150  // Hard cap: 150 trades × 3 labels/lines = 450 labels/lines, within TV 500 limit
+moveToBreakEven  = input.bool(true,  "Move SL to Break Even after TP1",                     group="SL / TP")
+showDash         = input.bool(true,   "Show Dashboard",                                    group="Display")
+dashPos          = input.string("Top Right", "Dashboard Position",
+  options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"],                         group="Display")
+dashSize         = input.string("Tiny", "Dashboard Text Size",
+  options=["Tiny", "Small", "Normal"],                                                      group="Display")
+color colDashBg  = input.color(#0a0a0a, "Dashboard Background",                            group="Display")
+
+color BULL_PRIMARY   = input.color(#c8e624, "Bull Primary",       group="Theme")
+color BULL_BRIGHT    = input.color(#d4f03a, "Bull Bright",        group="Theme")
+color BULL_DIM       = input.color(#9ab81c, "Bull Dim",           group="Theme")
+color BEAR_PRIMARY   = input.color(#ff1744, "Bear Primary",       group="Theme")
+color BEAR_BRIGHT    = input.color(#ff5252, "Bear Bright",        group="Theme")
+color BEAR_DIM       = input.color(#d50032, "Bear Dim",           group="Theme")
+color WAVE_COLOR     = input.color(#ab47bc, "Wave Primary",       group="Theme")
+color WAVE_BRIGHT    = input.color(#ce93d8, "Wave Bright",        group="Theme")
+color WAVE_DIM       = input.color(#7b1fa2, "Wave Dim",           group="Theme")
+color FIB_COLOR      = input.color(#e1bee7, "Fibonacci Levels",   group="Theme")
+color FIB_DIM        = input.color(#9c27b0, "Fibonacci Dim",      group="Theme")
+color NEUTRAL_COLOR  = input.color(#555555, "Neutral",            group="Theme")
+color EMA_FAST_CLR   = input.color(#c8e624, "Fast EMA",           group="Theme")
+color EMA_MED_CLR    = input.color(#888888, "Medium EMA",         group="Theme")
+color EMA_SLOW_CLR   = input.color(#555555, "Slow EMA",           group="Theme")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ CORE CALCULATIONS ════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+atrVal    = ta.atr(14)
+emaFast   = ta.ema(close, emaFastLen)
+emaMedium = ta.ema(close, emaMedLen)
+emaSlow   = ta.ema(close, emaSlowLen)
+
+emaTrendBull  = emaFast > emaMedium and emaMedium > emaSlow
+emaTrendBear  = emaFast < emaMedium and emaMedium < emaSlow
+priceAboveEma = close > emaSlow
+priceBelowEma = close < emaSlow
+
+plot(showEmaFast   ? emaFast   : na, "Fast EMA",   color=EMA_FAST_CLR, linewidth=1, style=plot.style_cross)
+plot(showEmaMedium ? emaMedium : na, "Medium EMA",  color=EMA_MED_CLR,  linewidth=1)
+plot(showEmaSlow   ? emaSlow   : na, "Slow EMA",    color=EMA_SLOW_CLR, linewidth=2)
+
+cloudFast = (ta.highest(high, cloudFastLen) + ta.lowest(low, cloudFastLen)) / 2
+cloudSlow = (ta.highest(high, cloudSlowLen) + ta.lowest(low, cloudSlowLen)) / 2
+cloudBull = cloudFast > cloudSlow
+cloudBear = cloudFast < cloudSlow
+
+pCF = plot(showCloud ? cloudFast : na, "Cloud Fast",
+  color=color.new(cloudBull ? BULL_PRIMARY : BEAR_PRIMARY, 60), linewidth=1)
+pCS = plot(showCloud ? cloudSlow : na, "Cloud Slow",
+  color=color.new(cloudBull ? BULL_DIM : BEAR_DIM, 60), linewidth=1)
+fill(pCF, pCS,
+  color=showCloud ? color.new(cloudBull ? BULL_PRIMARY : BEAR_PRIMARY, 88) : na,
+  title="Cloud Fill")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ MOMENTUM ENGINE ══════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+rsiRaw       = ta.rsi(close, rsiLen)
+rsiSmoothed  = ta.ema(rsiRaw, rsiSmooth)
+rsiSlopeUp   = rsiSmoothed > rsiSmoothed[1] and rsiSmoothed > rsiSmoothed[2]
+rsiSlopeDown = rsiSmoothed < rsiSmoothed[1] and rsiSmoothed < rsiSmoothed[2]
+rsiOB        = rsiRaw > 70
+rsiOS        = rsiRaw < 30
+
+[macdLine, macdSignal, macdHist] = ta.macd(close, macdFast, macdSlow, macdSig)
+macdBull      = macdLine > macdSignal
+macdBear      = macdLine < macdSignal
+macdMomUp     = macdHist > macdHist[1]
+macdMomDown   = macdHist < macdHist[1]
+macdCrossUp   = ta.crossover(macdLine, macdSignal)
+macdCrossDown = ta.crossunder(macdLine, macdSignal)
+
+stochK    = ta.stoch(close, high, low, 14)
+stochD    = ta.sma(stochK, 3)
+stochBull = stochK > stochD and stochK < 80
+stochBear = stochK < stochD and stochK > 20
+
+int momBullScore = 0
+momBullScore += rsiSlopeUp and rsiRaw > 40 and rsiRaw < 75 ? 1 : 0
+momBullScore += macdBull ? 1 : 0
+momBullScore += macdMomUp ? 1 : 0
+momBullScore += stochBull ? 1 : 0
+momBullScore += macdCrossUp ? 1 : 0
+
+int momBearScore = 0
+momBearScore += rsiSlopeDown and rsiRaw < 60 and rsiRaw > 25 ? 1 : 0
+momBearScore += macdBear ? 1 : 0
+momBearScore += macdMomDown ? 1 : 0
+momBearScore += stochBear ? 1 : 0
+momBearScore += macdCrossDown ? 1 : 0
+
+bool momBullish = momBullScore >= 2
+bool momBearish = momBearScore >= 2
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ VOLUME ENGINE ═════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+volSma      = ta.sma(volume, volLen)
+volSpike    = volume > volSma * volSpikeMulti
+volAboveAvg = volume > volSma
+relVol      = volSma > 0 ? volume / volSma : 1.0
+
+plotshape(showVolSpike and volSpike,
+  title="Volume Spike", style=shape.circle, location=location.bottom,
+  color=close > open ? color.new(BULL_DIM, 30) : color.new(BEAR_DIM, 30), size=size.tiny)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ SWING DETECTION ══════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+pivHigh = ta.pivothigh(high, swingLen, swingLen)
+pivLow  = ta.pivotlow(low,   swingLen, swingLen)
+
+var array<float> shPrices = array.new_float(0)
+var array<int>   shBars   = array.new_int(0)
+var array<float> slPrices = array.new_float(0)
+var array<int>   slBars   = array.new_int(0)
+
+int maxSwings = 12
+
+if not na(pivHigh)
+    array.push(shPrices, pivHigh)
+    array.push(shBars,   bar_index - swingLen)
+    if array.size(shPrices) > maxSwings
+        array.shift(shPrices)
+        array.shift(shBars)
+
+if not na(pivLow)
+    array.push(slPrices, pivLow)
+    array.push(slBars,   bar_index - swingLen)
+    if array.size(slPrices) > maxSwings
+        array.shift(slPrices)
+        array.shift(slBars)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ ELLIOTT WAVE ENGINE ═════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+int shSz = array.size(shPrices)
+int slSz = array.size(slPrices)
+bool enoughData = shSz >= 3 and slSz >= 3
+
+var int   lastWaveBar    = 0
+var int   waveTrend      = 0
+var bool  impulseActive  = false
+var float wave1Start     = na
+var float wave5End       = na
+var int   wave5EndBar    = na
+var float impulseRange   = na
+var bool  bullImpulseNow = false
+var bool  bearImpulseNow = false
+
+bullImpulseNow := false
+bearImpulseNow := false
+
+if enoughData and barstate.isconfirmed and (bar_index - lastWaveBar) >= waveCooldown
+
+    float sh0 = array.get(shPrices, shSz - 1)
+    float sh1 = array.get(shPrices, shSz - 2)
+    float sh2 = array.get(shPrices, shSz - 3)
+    int   shB0 = array.get(shBars, shSz - 1)
+    int   shB1 = array.get(shBars, shSz - 2)
+    int   shB2 = array.get(shBars, shSz - 3)
+
+    float sl0 = array.get(slPrices, slSz - 1)
+    float sl1 = array.get(slPrices, slSz - 2)
+    float sl2 = array.get(slPrices, slSz - 3)
+    int   slB0 = array.get(slBars, slSz - 1)
+    int   slB1 = array.get(slBars, slSz - 2)
+    int   slB2 = array.get(slBars, slSz - 3)
+
+    // ── Bullish Impulse ────────────────────────────────────────────────────────
+    float w1R = sh2 - sl2
+    float w3R = sh1 - sl1
+    float w2Ret = w1R > 0 ? (sh2 - sl1) / w1R : 0
+    float w4Ret = w3R > 0 ? (sh1 - sl0) / w3R : 0
+
+    bool bR1 = sl1 > sl2
+    bool bR2 = w3R >= w1R * 0.7
+    bool bR3 = sl0 > sl1 * 0.995
+    bool bR4 = sh0 > sh1 * 0.995
+    bool bR5 = w2Ret > 0.15 and w2Ret < 0.95
+    bool bR6 = w4Ret > 0.10 and w4Ret < 0.90
+    bool bTO = slB2 < shB2 and shB2 < slB1 and slB1 < shB1 and shB1 < slB0 and slB0 < shB0
+    bool bullImpulse = bR1 and bR2 and bR3 and bR4 and bR5 and bR6 and bTO and sh0 > sh2
+
+    // ── Bearish Impulse ────────────────────────────────────────────────────────
+    float bw1R = sh2 - sl2
+    float bw3R = sh1 - sl1
+    float bw2Ret = bw1R > 0 ? (sh1 - sl2) / bw1R : 0
+    float bw4Ret = bw3R > 0 ? (sh0 - sl1) / bw3R : 0
+
+    bool beR1 = sh1 < sh2
+    bool beR2 = bw3R >= bw1R * 0.7
+    bool beR3 = sh0 < sh1 * 1.005
+    bool beR4 = sl0 < sl1 * 1.005
+    bool beR5 = bw2Ret > 0.15 and bw2Ret < 0.95
+    bool beR6 = bw4Ret > 0.10 and bw4Ret < 0.90
+    bool beTO = shB2 < slB2 and slB2 < shB1 and shB1 < slB1 and slB1 < shB0 and shB0 < slB0
+    bool bearImpulse = beR1 and beR2 and beR3 and beR4 and beR5 and beR6 and beTO and sl0 < sl2
+
+    // ── Draw Bullish Impulse ───────────────────────────────────────────────────
+    if bullImpulse
+        bullImpulseNow := true
+        impulseActive  := true
+        waveTrend      := 1
+        wave1Start     := sl2
+        wave5End       := sh0
+        wave5EndBar    := shB0
+        impulseRange   := sh0 - sl2
+        lastWaveBar    := bar_index
+
+        if showWaveLabels
+            label.new(slB2, sl2, "0", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_up)
+            label.new(shB2, sh2, "1", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_down)
+            label.new(slB1, sl1, "2", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_up)
+            label.new(shB1, sh1, "3", color=WAVE_BRIGHT, textcolor=#1a1a1a, size=size.small, style=label.style_label_down)
+            label.new(slB0, sl0, "4", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_up)
+            label.new(shB0, sh0, "5", color=WAVE_BRIGHT, textcolor=#1a1a1a, size=size.small, style=label.style_label_down)
+
+        if showWaveLines
+            line.new(slB2, sl2, shB2, sh2, color=color.new(WAVE_BRIGHT, 25), width=2)
+            line.new(shB2, sh2, slB1, sl1, color=color.new(WAVE_DIM, 50),    width=1, style=line.style_dashed)
+            line.new(slB1, sl1, shB1, sh1, color=color.new(WAVE_BRIGHT, 15), width=3)
+            line.new(shB1, sh1, slB0, sl0, color=color.new(WAVE_DIM, 50),    width=1, style=line.style_dashed)
+            line.new(slB0, sl0, shB0, sh0, color=color.new(WAVE_BRIGHT, 25), width=2)
+
+    // ── Draw Bearish Impulse ───────────────────────────────────────────────────
+    if bearImpulse
+        bearImpulseNow := true
+        impulseActive  := true
+        waveTrend      := -1
+        wave1Start     := sh2
+        wave5End       := sl0
+        wave5EndBar    := slB0
+        impulseRange   := sh2 - sl0
+        lastWaveBar    := bar_index
+
+        if showWaveLabels
+            label.new(shB2, sh2, "0", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_down)
+            label.new(slB2, sl2, "1", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_up)
+            label.new(shB1, sh1, "2", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_down)
+            label.new(slB1, sl1, "3", color=WAVE_BRIGHT, textcolor=#1a1a1a, size=size.small, style=label.style_label_up)
+            label.new(shB0, sh0, "4", color=WAVE_DIM,    textcolor=#ffffff, size=size.tiny,  style=label.style_label_down)
+            label.new(slB0, sl0, "5", color=WAVE_BRIGHT, textcolor=#1a1a1a, size=size.small, style=label.style_label_up)
+
+        if showWaveLines
+            line.new(shB2, sh2, slB2, sl2, color=color.new(BEAR_BRIGHT, 25), width=2)
+            line.new(slB2, sl2, shB1, sh1, color=color.new(BEAR_DIM, 50),    width=1, style=line.style_dashed)
+            line.new(shB1, sh1, slB1, sl1, color=color.new(BEAR_BRIGHT, 15), width=3)
+            line.new(slB1, sl1, shB0, sh0, color=color.new(BEAR_DIM, 50),    width=1, style=line.style_dashed)
+            line.new(shB0, sh0, slB0, sl0, color=color.new(BEAR_BRIGHT, 25), width=2)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ CORRECTIVE WAVE DETECTION ════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var bool  abcActive   = false
+var int   lastAbcBar  = 0
+var bool  bullCorrNow = false
+var bool  bearCorrNow = false
+
+bullCorrNow := false
+bearCorrNow := false
+
+int abcCD = waveCooldown
+
+if impulseActive and waveTrend == 1 and not na(wave5End) and not na(wave1Start) and slSz >= 1 and (bar_index - lastAbcBar) >= abcCD
+    float rLow    = array.get(slPrices, slSz - 1)
+    int   rLowBar = array.get(slBars, slSz - 1)
+    if rLowBar > wave5EndBar
+        float drop = wave5End - rLow
+        float iRng = wave5End - wave1Start
+        float aRet = iRng > 0 ? drop / iRng : 0
+        if aRet > 0.20 and aRet < 0.72
+            bullCorrNow := true
+            abcActive   := true
+            lastAbcBar  := bar_index
+
+if impulseActive and waveTrend == -1 and not na(wave5End) and not na(wave1Start) and shSz >= 1 and (bar_index - lastAbcBar) >= abcCD
+    float rHigh    = array.get(shPrices, shSz - 1)
+    int   rHighBar = array.get(shBars, shSz - 1)
+    if rHighBar > wave5EndBar
+        float bounce = rHigh - wave5End
+        float iRng   = wave1Start - wave5End
+        float aRet   = iRng > 0 ? bounce / iRng : 0
+        if aRet > 0.20 and aRet < 0.72
+            bearCorrNow := true
+            abcActive   := true
+            lastAbcBar  := bar_index
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ FIBONACCI ENGINE ═════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var float fib382 = na
+var float fib500 = na
+var float fib618 = na
+var float fibTop = na
+var float fibBot = na
+
+bool priceAtFib382 = false
+bool priceAtFib500 = false
+bool priceAtFib618 = false
+float fibTol = atrVal * 0.6
+
+if impulseActive and not na(wave5End) and not na(wave1Start)
+    if waveTrend == 1
+        fibTop := wave5End
+        fibBot := wave1Start
+    else
+        fibTop := wave1Start
+        fibBot := wave5End
+    float fibRange = fibTop - fibBot
+    fib382 := fibTop - fibRange * 0.382
+    fib500 := fibTop - fibRange * 0.500
+    fib618 := fibTop - fibRange * 0.618
+    priceAtFib382 := math.abs(close - fib382) < fibTol
+    priceAtFib500 := math.abs(close - fib500) < fibTol
+    priceAtFib618 := math.abs(close - fib618) < fibTol
+
+bool priceAtAnyFib = priceAtFib382 or priceAtFib500 or priceAtFib618
+
+type FibZone
+    box     bx
+    float   top
+    float   bottom
+    int     startBar
+    bool    isBull
+    bool    active
+
+var array<FibZone> fibZones = array.new<FibZone>()
+
+if showFibBoxes and (bullImpulseNow or bearImpulseNow) and not na(fib382) and not na(fib618)
+    if array.size(fibZones) >= fibMaxBoxes
+        old = array.shift(fibZones)
+        box.delete(old.bx)
+    float zTop = math.max(fib382, fib618)
+    float zBot = math.min(fib382, fib618)
+    newZone = FibZone.new(
+      bx=box.new(bar_index, zTop, bar_index + 5, zBot,
+         border_color=color.new(FIB_COLOR, 40), bgcolor=color.new(FIB_DIM, 92),
+         border_width=1, border_style=line.style_dotted, extend=extend.right),
+      top=zTop, bottom=zBot, startBar=bar_index, isBull=waveTrend==1, active=true)
+    array.push(fibZones, newZone)
+
+var bool priceInBullFib = false
+var bool priceInBearFib = false
+priceInBullFib := false
+priceInBearFib := false
+
+if array.size(fibZones) > 0
+    for i = array.size(fibZones) - 1 to 0
+        fz = array.get(fibZones, i)
+        if fz.active
+            if bar_index - fz.startBar > fibMaxAge
+                fz.active := false
+                box.delete(fz.bx)
+                array.remove(fibZones, i)
+                continue
+            if low <= fz.top and high >= fz.bottom
+                if fz.isBull
+                    priceInBullFib := true
+                else
+                    priceInBearFib := true
+            filled = false
+            if fz.isBull and close < fz.bottom - atrVal * 1.5
+                filled := true
+            if not fz.isBull and close > fz.top + atrVal * 1.5
+                filled := true
+            if filled
+                fz.active := false
+                box.delete(fz.bx)
+                array.remove(fibZones, i)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ RSI DIVERGENCE ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+pivLB = 5
+rsiPH = ta.pivothigh(rsiRaw, pivLB, pivLB)
+rsiPL = ta.pivotlow(rsiRaw,  pivLB, pivLB)
+prcPH = ta.pivothigh(high,   pivLB, pivLB)
+prcPL = ta.pivotlow(low,     pivLB, pivLB)
+
+var float pRL = na, var float pPL = na, var int pRLB = na
+var float cRL = na, var float cPL = na, var int cRLB = na
+var float pRH = na, var float pPH = na, var int pRHB = na
+var float cRH = na, var float cPH = na, var int cRHB = na
+
+if not na(rsiPL)
+    pRL := cRL, pPL := cPL, pRLB := cRLB
+    cRL := rsiPL, cPL := prcPL, cRLB := bar_index - pivLB
+
+if not na(rsiPH)
+    pRH := cRH, pPH := cPH, pRHB := cRHB
+    cRH := rsiPH, cPH := prcPH, cRHB := bar_index - pivLB
+
+bool rsiBullDiv = showDivergence and
+  not na(pPL) and not na(cPL) and not na(pRL) and not na(cRL) and
+  cPL < pPL and cRL > pRL and
+  bar_index - cRLB <= 3 and cRLB - pRLB >= 5 and cRLB - pRLB <= 50
+
+bool rsiBearDiv = showDivergence and
+  not na(pPH) and not na(cPH) and not na(pRH) and not na(cRH) and
+  cPH > pPH and cRH < pRH and
+  bar_index - cRHB <= 3 and cRHB - pRHB >= 5 and cRHB - pRHB <= 50
+
+plotshape(rsiBullDiv, title="RSI Bull Div", style=shape.diamond,
+  location=location.belowbar, color=BULL_DIM, size=size.tiny)
+plotshape(rsiBearDiv, title="RSI Bear Div", style=shape.diamond,
+  location=location.abovebar, color=BEAR_DIM, size=size.tiny)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ WAVE 3 SETUP ═════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+bool wave3BullSetup = false
+bool wave3BearSetup = false
+
+if shSz >= 2 and slSz >= 2
+    float rH0 = array.get(shPrices, shSz - 1)
+    float rL0 = array.get(slPrices, slSz - 1)
+    float rH1 = array.get(shPrices, shSz - 2)
+    float rL1 = array.get(slPrices, slSz - 2)
+
+    float pb = rH1 != rL1 ? (rH1 - rL0) / (rH1 - rL1) : 0
+    wave3BullSetup := rL0 > rL1 and pb > 0.15 and pb < 0.90 and close > rH1 and close > open
+
+    float bpb = rH1 != rL1 ? (rH0 - rL1) / (rH1 - rL1) : 0
+    wave3BearSetup := rH0 < rH1 and bpb > 0.15 and bpb < 0.90 and close < rL1 and close < open
+
+plotshape(wave3BullSetup and showWave3Setup, title="W3 Bull",
+  style=shape.triangleup, location=location.belowbar, color=WAVE_BRIGHT, size=size.tiny)
+plotshape(wave3BearSetup and showWave3Setup, title="W3 Bear",
+  style=shape.triangledown, location=location.abovebar, color=WAVE_BRIGHT, size=size.tiny)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ CONFLUENCE SCORING ═══════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+int bullCF = 0
+bullCF += wave3BullSetup ? 1 : 0
+bullCF += (bearCorrNow or (abcActive and waveTrend == -1)) ? 1 : 0
+bullCF += priceInBullFib ? 1 : 0
+bullCF += priceAtAnyFib and (waveTrend == 1 or priceInBullFib) ? 1 : 0
+bullCF += momBullish ? 1 : 0
+bullCF += rsiBullDiv ? 1 : 0
+bullCF += (volAboveAvg and close > open) ? 1 : 0
+bullCF += emaTrendBull or (priceAboveEma and emaFast > emaMedium) ? 1 : 0
+
+int bearCF = 0
+bearCF += wave3BearSetup ? 1 : 0
+bearCF += (bullCorrNow or (abcActive and waveTrend == 1)) ? 1 : 0
+bearCF += priceInBearFib ? 1 : 0
+bearCF += priceAtAnyFib and (waveTrend == -1 or priceInBearFib) ? 1 : 0
+bearCF += momBearish ? 1 : 0
+bearCF += rsiBearDiv ? 1 : 0
+bearCF += (volAboveAvg and close < open) ? 1 : 0
+bearCF += emaTrendBear or (priceBelowEma and emaFast < emaMedium) ? 1 : 0
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ CONFIDENCE ════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+calcBullConf() =>
+    float c = 0.0
+    c += wave3BullSetup ? 22.0 : 0.0
+    c += (bearCorrNow or (abcActive and waveTrend == -1)) ? 12.0 : 0.0
+    c += priceInBullFib ? 15.0 : 0.0
+    c += priceAtFib618 ? 7.0 : priceAtFib500 ? 5.0 : priceAtFib382 ? 4.0 : 0.0
+    c += momBullish ? 12.0 : 0.0
+    c += momBullScore >= 4 ? 6.0 : momBullScore >= 3 ? 3.0 : 0.0
+    c += macdCrossUp ? 5.0 : 0.0
+    c += rsiSlopeUp and rsiRaw > 45 and rsiRaw < 70 ? 4.0 : 0.0
+    c += rsiBullDiv ? 10.0 : 0.0
+    c += volAboveAvg and close > open ? 5.0 : 0.0
+    c += volSpike and close > open ? 3.0 : 0.0
+    c += emaTrendBull ? 8.0 : (priceAboveEma ? 4.0 : 0.0)
+    c += cloudBull ? 4.0 : 0.0
+    c -= rsiOB ? 5.0 : 0.0
+    math.max(0.0, math.min(100.0, c))
+
+calcBearConf() =>
+    float c = 0.0
+    c += wave3BearSetup ? 22.0 : 0.0
+    c += (bullCorrNow or (abcActive and waveTrend == 1)) ? 12.0 : 0.0
+    c += priceInBearFib ? 15.0 : 0.0
+    c += priceAtFib618 ? 7.0 : priceAtFib500 ? 5.0 : priceAtFib382 ? 4.0 : 0.0
+    c += momBearish ? 12.0 : 0.0
+    c += momBearScore >= 4 ? 6.0 : momBearScore >= 3 ? 3.0 : 0.0
+    c += macdCrossDown ? 5.0 : 0.0
+    c += rsiSlopeDown and rsiRaw < 55 and rsiRaw > 30 ? 4.0 : 0.0
+    c += rsiBearDiv ? 10.0 : 0.0
+    c += volAboveAvg and close < open ? 5.0 : 0.0
+    c += volSpike and close < open ? 3.0 : 0.0
+    c += emaTrendBear ? 8.0 : (priceBelowEma ? 4.0 : 0.0)
+    c += cloudBear ? 4.0 : 0.0
+    c -= rsiOS ? 5.0 : 0.0
+    math.max(0.0, math.min(100.0, c))
+
+float bullConf = calcBullConf()
+float bearConf = calcBearConf()
+
+getGrade(float conf) =>
+    conf >= 70 ? "A+" : conf >= 55 ? "A" : conf >= 40 ? "B" : conf >= 25 ? "C" : "D"
+
+getGradeColor(float conf, bool isBull) =>
+    conf >= 70 ? (isBull ? BULL_BRIGHT : BEAR_BRIGHT) :
+      conf >= 55 ? (isBull ? BULL_PRIMARY : BEAR_PRIMARY) :
+      conf >= 40 ? (isBull ? BULL_DIM : BEAR_DIM) : NEUTRAL_COLOR
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ SIGNAL GENERATION ════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var int lastSigBar = 0
+bool cdOK = (bar_index - lastSigBar) >= signalCooldown
+
+string bullGrade = getGrade(calcBullConf())
+string bearGrade = getGrade(calcBearConf())
+bool bullSignal  = showSignals and bullCF >= minConfluence and cdOK and close > open
+  and (showGradeC or bullGrade != "C")
+  and (showGradeD or bullGrade != "D")
+bool bearSignal  = showSignals and bearCF >= minConfluence and cdOK and close < open
+  and (showGradeC or bearGrade != "C")
+  and (showGradeD or bearGrade != "D")
+
+if bullSignal and bearSignal
+    if bullCF > bearCF
+        bearSignal := false
+    else if bearCF > bullCF
+        bullSignal := false
+    else
+        bullSignal := false
+        bearSignal := false
+
+if bullSignal or bearSignal
+    lastSigBar := bar_index
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ SL/TP TRACKING SYSTEM ═══════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type TradeLevel
+    line  horizLine
+    line  vertLine
+    label lbl
+    float price
+    int   sigBar
+    bool  isBull
+    int   levelType  // 0=SL, 1=TP1, 2=TP2
+    bool  hit
+    bool  active
+
+var array<TradeLevel> tradeLevels = array.new<TradeLevel>()
+
+calcSLTP(bool isBull, float conf) =>
+    float atrFloor = atrVal * slAtrMulti * 0.7
+    float atrCap   = atrVal * slAtrMulti * 1.8
+    float minRR1   = tp1AtrMulti / slAtrMulti
+    float minRR2   = tp2AtrMulti / slAtrMulti
+    float tp1Floor = atrVal * tp1AtrMulti * 0.8
+    float tp2Floor = atrVal * tp2AtrMulti * 0.8
+
+    // ── STOP LOSS: Structure-based ─────────────────────────────────────────────
+    float sl = atrVal * slAtrMulti
+
+    // Find nearest swing for structure-based SL
+    if isBull and slSz >= 2
+        float nearestSwingLow = na
+        for j = slSz - 1 to math.max(0, slSz - 5)
+            float sPrice = array.get(slPrices, j)
+            int   sBar   = array.get(slBars, j)
+            if sPrice < close and bar_index - sBar <= 50
+                if na(nearestSwingLow) or sPrice > nearestSwingLow
+                    nearestSwingLow := sPrice
+        if not na(nearestSwingLow)
+            float structSL = close - nearestSwingLow + atrVal * 0.3
+            if structSL >= atrFloor and structSL <= atrCap
+                sl := structSL
+
+    if not isBull and shSz >= 2
+        float nearestSwingHigh = na
+        for j = shSz - 1 to math.max(0, shSz - 5)
+            float sPrice = array.get(shPrices, j)
+            int   sBar   = array.get(shBars, j)
+            if sPrice > close and bar_index - sBar <= 50
+                if na(nearestSwingHigh) or sPrice < nearestSwingHigh
+                    nearestSwingHigh := sPrice
+        if not na(nearestSwingHigh)
+            float structSL = nearestSwingHigh - close + atrVal * 0.3
+            if structSL >= atrFloor and structSL <= atrCap
+                sl := structSL
+
+    // Apply confidence modifier to SL
+    float confMod = conf >= 70 ? 0.85 : conf >= 55 ? 0.92 : conf >= 40 ? 1.0 : 1.15
+    sl := math.max(atrFloor, math.min(atrCap, sl * confMod))
+
+    // ── TP1: Nearest structure target or Fibonacci ─────────────────────────────
+    float t1 = sl * minRR1
+
+    // Check nearest swing target
+    if isBull and shSz >= 2
+        float nearestTarget = na
+        for j = shSz - 1 to math.max(0, shSz - 6)
+            float sPrice = array.get(shPrices, j)
+            int   sBar   = array.get(shBars, j)
+            if sPrice > close and bar_index - sBar <= 80
+                float dist = sPrice - close
+                if dist > sl * 1.2
+                    if na(nearestTarget) or dist < nearestTarget
+                        nearestTarget := dist
+        if not na(nearestTarget)
+            t1 := nearestTarget
+
+    if not isBull and slSz >= 2
+        float nearestTarget = na
+        for j = slSz - 1 to math.max(0, slSz - 6)
+            float sPrice = array.get(slPrices, j)
+            int   sBar   = array.get(slBars, j)
+            if sPrice < close and bar_index - sBar <= 80
+                float dist = close - sPrice
+                if dist > sl * 1.2
+                    if na(nearestTarget) or dist < nearestTarget
+                        nearestTarget := dist
+        if not na(nearestTarget)
+            t1 := nearestTarget
+
+    // Check Fibonacci levels as TP1 candidates
+    if impulseActive and not na(fib382) and not na(fib500)
+        float fibT1 = na
+        if isBull
+            if fib382 > close and fib382 - close > sl * 1.2
+                fibT1 := fib382 - close
+            else if fib500 > close and fib500 - close > sl * 1.2
+                fibT1 := fib500 - close
+        else
+            if fib382 < close and close - fib382 > sl * 1.2
+                fibT1 := close - fib382
+            else if fib500 < close and close - fib500 > sl * 1.2
+                fibT1 := close - fib500
+        if not na(fibT1) and (fibT1 < t1 or t1 <= sl * minRR1)
+            t1 := fibT1
+
+    // Enforce minimum R:R and ATR floor
+    t1 := math.max(t1, sl * minRR1)
+    t1 := math.max(t1, tp1Floor)
+
+    // ── TP2: Extended structure target, Fibonacci extension, or wave target ────
+    float t2 = sl * minRR2
+
+    // Wave-based target (Fibonacci extension of impulse)
+    if impulseActive and not na(impulseRange) and impulseRange > 0
+        float waveT2 = impulseRange * 0.618
+        if waveT2 > t2
+            t2 := waveT2
+
+    // Check further swing targets
+    if isBull and shSz >= 3
+        float farTarget = na
+        for j = shSz - 1 to math.max(0, shSz - 8)
+            float sPrice = array.get(shPrices, j)
+            int   sBar   = array.get(shBars, j)
+            if sPrice > close and bar_index - sBar <= 120
+                float dist = sPrice - close
+                if dist > t1 * 1.3
+                    if na(farTarget) or dist < farTarget
+                        farTarget := dist
+        if not na(farTarget)
+            t2 := farTarget
+
+    if not isBull and slSz >= 3
+        float farTarget = na
+        for j = slSz - 1 to math.max(0, slSz - 8)
+            float sPrice = array.get(slPrices, j)
+            int   sBar   = array.get(slBars, j)
+            if sPrice < close and bar_index - sBar <= 120
+                float dist = close - sPrice
+                if dist > t1 * 1.3
+                    if na(farTarget) or dist < farTarget
+                        farTarget := dist
+        if not na(farTarget)
+            t2 := farTarget
+
+    // Check Fibonacci extension for TP2
+    if impulseActive and not na(fib618)
+        float fibT2 = na
+        if isBull and fib618 > close
+            fibT2 := fib618 - close
+        if not isBull and fib618 < close
+            fibT2 := close - fib618
+        if not na(fibT2) and fibT2 > t1 * 1.2 and fibT2 > t2
+            t2 := fibT2
+
+    // Enforce minimum R:R, ATR floor, and TP2 > TP1
+    t2 := math.max(t2, sl * minRR2)
+    t2 := math.max(t2, tp2Floor)
+    t2 := math.max(t2, t1 * 1.5)
+    
+    [sl, t1, t2]
+
+// Count active SLTP groups (each signal = 3 levels: SL + TP1 + TP2)
+countActiveSLTP() =>
+    int count = 0
+    int lastBar = -1
+    int sz = array.size(tradeLevels)
+    if sz > 0
+        for i = 0 to sz - 1
+            tl = array.get(tradeLevels, i)
+            if tl.active and tl.sigBar != lastBar
+                count += 1
+                lastBar := tl.sigBar
+    count
+
+// Remove oldest SLTP group if over limit
+trimSLTP() =>
+    int effectiveLimit = limitSLTPHistory ? sltpHistory : MAX_SLTP_GROUPS
+    int groups = countActiveSLTP()
+    if groups > effectiveLimit and array.size(tradeLevels) >= 3
+        for _j = 0 to 2
+            if array.size(tradeLevels) > 0
+                oldest = array.shift(tradeLevels)
+                line.delete(oldest.horizLine)
+                line.delete(oldest.vertLine)
+                label.delete(oldest.lbl)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ VISUAL OUTPUT ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Impulse Completion ─────────────────────────────────────────────────────────
+if showImpulse and bullImpulseNow
+    label.new(bar_index, high,
+      text="IMPULSE ▲ COMPLETE", yloc=yloc.abovebar,
+      color=color.new(WAVE_DIM, 10), textcolor=WAVE_BRIGHT,
+      size=size.tiny, style=label.style_label_down)
+
+if showImpulse and bearImpulseNow
+    label.new(bar_index, low,
+      text="IMPULSE ▼ COMPLETE", yloc=yloc.belowbar,
+      color=color.new(WAVE_DIM, 10), textcolor=WAVE_BRIGHT,
+      size=size.tiny, style=label.style_label_up)
+
+// ── Corrective Labels ──────────────────────────────────────────────────────────
+if showCorrective and bullCorrNow
+    label.new(bar_index, low,
+      text="ABC ▲ CORRECTION ZONE", yloc=yloc.belowbar,
+      color=color.new(WAVE_DIM, 10), textcolor=WAVE_BRIGHT,
+      size=size.tiny, style=label.style_label_up)
+
+if showCorrective and bearCorrNow
+    label.new(bar_index, high,
+      text="ABC ▼ CORRECTION ZONE", yloc=yloc.abovebar,
+      color=color.new(WAVE_DIM, 10), textcolor=WAVE_BRIGHT,
+      size=size.tiny, style=label.style_label_down)
+
+// ── Entry Signals with SL/TP Lines ────────────────────────────────────────────
+if bullSignal
+    grade    = getGrade(bullConf)
+    gradeClr = getGradeColor(bullConf, true)
+
+    string det = ""
+    det += wave3BullSetup ? "✓W3 " : ""
+    det += (bearCorrNow or (abcActive and waveTrend == -1)) ? "✓ABC " : ""
+    det += priceInBullFib ? "✓FIB " : ""
+    det += priceAtAnyFib ? "✓FLV " : ""
+    det += momBullish ? "✓MOM " : ""
+    det += rsiBullDiv ? "✓DIV " : ""
+    det += (volAboveAvg and close > open) ? "✓VOL " : ""
+    det += (emaTrendBull or (priceAboveEma and emaFast > emaMedium)) ? "✓EMA " : ""
+
+    txt = "▲  L O N G" +
+      "\n" + grade + " | " + str.tostring(math.round(bullConf)) + "%" +
+      " | " + str.tostring(bullCF) + "/8" +
+      "\n" + det
+
+    float lY = low - (atrVal * signalOffset)
+    line.new(bar_index, low, bar_index, lY,
+      color=color.new(gradeClr, 40), style=line.style_dotted, width=1)
+    label.new(bar_index, lY, text=txt,
+      color=color.new(gradeClr, 10), textcolor=#1a1a1a,
+      size=size.small, style=label.style_label_up)
+
+    if showSLTP
+        [sl, t1, t2] = calcSLTP(true, bullConf)
+        float slP  = close - sl
+        float tp1P = close + t1
+        float tp2P = close + t2
+        int   lEnd = bar_index + 4
+
+        trimSLTP()
+
+        // SL
+        slHL = line.new(bar_index, slP, lEnd, slP,
+          color=color.new(BEAR_PRIMARY, 55), style=line.style_dotted, width=1)
+        slVL = line.new(bar_index, low, bar_index, slP,
+          color=color.new(BEAR_PRIMARY, 55), style=line.style_dotted, width=1)
+        slLB = label.new(lEnd, slP, "SL " + str.tostring(slP, format.mintick),
+          color=color.new(BEAR_PRIMARY, 92), textcolor=color.new(BEAR_PRIMARY, 30),
+          size=size.tiny, style=label.style_label_left)
+        array.push(tradeLevels, TradeLevel.new(slHL, slVL, slLB, slP, bar_index, true, 0, false, true))
+
+        // TP1
+        tp1HL = line.new(bar_index, tp1P, lEnd, tp1P,
+          color=color.new(BULL_DIM, 55), style=line.style_dotted, width=1)
+        tp1VL = line.new(bar_index, close, bar_index, tp1P,
+          color=color.new(BULL_DIM, 55), style=line.style_dotted, width=1)
+        tp1LB = label.new(lEnd, tp1P, "TP1 " + str.tostring(tp1P, format.mintick),
+          color=color.new(BULL_DIM, 92), textcolor=color.new(BULL_DIM, 30),
+          size=size.tiny, style=label.style_label_left)
+        array.push(tradeLevels, TradeLevel.new(tp1HL, tp1VL, tp1LB, tp1P, bar_index, true, 1, false, true))
+
+        // TP2
+        tp2HL = line.new(bar_index, tp2P, lEnd, tp2P,
+          color=color.new(BULL_BRIGHT, 55), style=line.style_dotted, width=1)
+        tp2VL = line.new(bar_index, close, bar_index, tp2P,
+          color=color.new(BULL_BRIGHT, 55), style=line.style_dotted, width=1)
+        tp2LB = label.new(lEnd, tp2P, "TP2 " + str.tostring(tp2P, format.mintick),
+          color=color.new(BULL_BRIGHT, 92), textcolor=color.new(BULL_BRIGHT, 30),
+          size=size.tiny, style=label.style_label_left)
+        array.push(tradeLevels, TradeLevel.new(tp2HL, tp2VL, tp2LB, tp2P, bar_index, true, 2, false, true))
+
+if bearSignal
+    grade    = getGrade(bearConf)
+    gradeClr = getGradeColor(bearConf, false)
+
+    string det = ""
+    det += wave3BearSetup ? "✓W3 " : ""
+    det += (bullCorrNow or (abcActive and waveTrend == 1)) ? "✓ABC " : ""
+    det += priceInBearFib ? "✓FIB " : ""
+    det += priceAtAnyFib ? "✓FLV " : ""
+    det += momBearish ? "✓MOM " : ""
+    det += rsiBearDiv ? "✓DIV " : ""
+    det += (volAboveAvg and close < open) ? "✓VOL " : ""
+    det += (emaTrendBear or (priceBelowEma and emaFast < emaMedium)) ? "✓EMA " : ""
+
+    txt = "▼  S H O R T" +
+      "\n" + grade + " | " + str.tostring(math.round(bearConf)) + "%" +
+      " | " + str.tostring(bearCF) + "/8" +
+      "\n" + det
+
+    float lY = high + (atrVal * signalOffset)
+    line.new(bar_index, high, bar_index, lY,
+      color=color.new(gradeClr, 40), style=line.style_dotted, width=1)
+    label.new(bar_index, lY, text=txt,
+      color=color.new(gradeClr, 10), textcolor=#ffffff,
+      size=size.small, style=label.style_label_down)
+
+    if showSLTP
+        [sl, t1, t2] = calcSLTP(false, bearConf)
+        float slP  = close + sl
+        float tp1P = close - t1
+        float tp2P = close - t2
+        int   lEnd = bar_index + 4
+
+        trimSLTP()
+
+        // SL
+        slHL = line.new(bar_index, slP, lEnd, slP,
+          color=color.new(BEAR_PRIMARY, 55), style=line.style_dotted, width=1)
+        slVL = line.new(bar_index, high, bar_index, slP,
+          color=color.new(BEAR_PRIMARY, 55), style=line.style_dotted, width=1)
+        slLB = label.new(lEnd, slP, "SL " + str.tostring(slP, format.mintick),
+          color=color.new(BEAR_PRIMARY, 92), textcolor=color.new(BEAR_PRIMARY, 30),
+          size=size.tiny, style=label.style_label_left)
+        array.push(tradeLevels, TradeLevel.new(slHL, slVL, slLB, slP, bar_index, false, 0, false, true))
+
+        // TP1
+        tp1HL = line.new(bar_index, tp1P, lEnd, tp1P,
+          color=color.new(BULL_DIM, 55), style=line.style_dotted, width=1)
+        tp1VL = line.new(bar_index, close, bar_index, tp1P,
+          color=color.new(BULL_DIM, 55), style=line.style_dotted, width=1)
+        tp1LB = label.new(lEnd, tp1P, "TP1 " + str.tostring(tp1P, format.mintick),
+          color=color.new(BULL_DIM, 92), textcolor=color.new(BULL_DIM, 30),
+          size=size.tiny, style=label.style_label_left)
+        array.push(tradeLevels, TradeLevel.new(tp1HL, tp1VL, tp1LB, tp1P, bar_index, false, 1, false, true))
+
+        // TP2
+        tp2HL = line.new(bar_index, tp2P, lEnd, tp2P,
+          color=color.new(BULL_BRIGHT, 55), style=line.style_dotted, width=1)
+        tp2VL = line.new(bar_index, close, bar_index, tp2P,
+          color=color.new(BULL_BRIGHT, 55), style=line.style_dotted, width=1)
+        tp2LB = label.new(lEnd, tp2P, "TP2 " + str.tostring(tp2P, format.mintick),
+          color=color.new(BULL_BRIGHT, 92), textcolor=color.new(BULL_BRIGHT, 30),
+          size=size.tiny, style=label.style_label_left)
+        array.push(tradeLevels, TradeLevel.new(tp2HL, tp2VL, tp2LB, tp2P, bar_index, false, 2, false, true))
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ SL/TP HIT TRACKING ═══════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Helper: is SL already hit for this trade?
+f_isSLHit(int sigBar) =>
+    bool result = false
+    int sz = array.size(tradeLevels)
+    if sz > 0
+        for k = 0 to sz - 1
+            kl = array.get(tradeLevels, k)
+            if kl.sigBar == sigBar and kl.levelType == 0 and kl.hit
+                result := true
+                break
+    result
+
+// Helper: is TP1 already hit for this trade?
+f_isTP1Hit(int sigBar) =>
+    bool result = false
+    int sz = array.size(tradeLevels)
+    if sz > 0
+        for k = 0 to sz - 1
+            kl = array.get(tradeLevels, k)
+            if kl.sigBar == sigBar and kl.levelType == 1 and kl.hit
+                result := true
+                break
+    result
+
+if array.size(tradeLevels) > 0
+    for i = 0 to array.size(tradeLevels) - 1
+        tl = array.get(tradeLevels, i)
+        if tl.active and not tl.hit
+
+            bool hitNow = false
+            if tl.isBull
+                hitNow := tl.levelType == 0 ? low <= tl.price : high >= tl.price
+            else
+                hitNow := tl.levelType == 0 ? high >= tl.price : low <= tl.price
+
+            if hitNow
+                // ── SL hit — always processes, closes the trade ────────────
+                if tl.levelType == 0
+                    tl.hit := true
+                    bool isBE = str.startswith(label.get_text(tl.lbl), "BE")
+                    if isBE
+                        label.set_color(tl.lbl,     color.new(NEUTRAL_COLOR, 15))
+                        label.set_textcolor(tl.lbl, #ffffff)
+                        label.set_text(tl.lbl,      label.get_text(tl.lbl) + " ✓")
+                    else
+                        label.set_color(tl.lbl,     color.new(BEAR_PRIMARY, 15))
+                        label.set_textcolor(tl.lbl, #ffffff)
+
+                // ── TP1 hit — only if SL not already hit ──────────────────
+                else if tl.levelType == 1 and not f_isSLHit(tl.sigBar)
+                    tl.hit := true
+                    label.set_color(tl.lbl,     color.new(BULL_DIM, 15))
+                    label.set_textcolor(tl.lbl, #1a1a1a)
+                    // Move SL to break even if enabled
+                    if moveToBreakEven
+                        for j = 0 to array.size(tradeLevels) - 1
+                            sl_tl = array.get(tradeLevels, j)
+                            if sl_tl.sigBar == tl.sigBar and sl_tl.levelType == 0 and not sl_tl.hit
+                                float bePrice = line.get_y2(sl_tl.vertLine)
+                                sl_tl.price   := bePrice
+                                line.set_y1(sl_tl.horizLine, bePrice)
+                                line.set_y2(sl_tl.horizLine, bePrice)
+                                line.set_y2(sl_tl.vertLine,  bePrice)
+                                label.set_y(sl_tl.lbl,       bePrice)
+                                label.set_text(sl_tl.lbl,    "BE " + str.tostring(bePrice, format.mintick))
+                                label.set_color(sl_tl.lbl,     color.new(NEUTRAL_COLOR, 60))
+                                label.set_textcolor(sl_tl.lbl, color.new(#ffffff, 40))
+                                break
+
+                // ── TP2 hit — only if SL not already hit ──────────────────
+                else if tl.levelType == 2 and not f_isSLHit(tl.sigBar)
+                    tl.hit := true
+                    label.set_color(tl.lbl,     color.new(BULL_BRIGHT, 15))
+                    label.set_textcolor(tl.lbl, #1a1a1a)
+                    
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ DASHBOARD ════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+color colTL = #cccccc
+color colNL = #888888
+color colDV = #555555
+
+f_dPos(p) =>
+    switch p
+        "Top Right"    => position.top_right
+        "Top Left"     => position.top_left
+        "Bottom Right" => position.bottom_right
+        => position.bottom_left
+
+f_dSz(s) =>
+    switch s
+        "Tiny"   => size.tiny
+        "Small"  => size.small
+        => size.normal
+
+dTxtSz = f_dSz(dashSize)
+
+string wpText = "SCANNING"
+color  wpClr  = colNL
+if bullImpulseNow
+    wpText := "▲ IMPULSE 1-5"
+    wpClr  := WAVE_BRIGHT
+else if bearImpulseNow
+    wpText := "▼ IMPULSE 1-5"
+    wpClr  := WAVE_BRIGHT
+else if bullCorrNow
+    wpText := "▲ CORRECTIVE ABC"
+    wpClr  := WAVE_COLOR
+else if bearCorrNow
+    wpText := "▼ CORRECTIVE ABC"
+    wpClr  := WAVE_COLOR
+else if impulseActive
+    wpText := waveTrend == 1 ? "▲ IMPULSE ACTIVE" : "▼ IMPULSE ACTIVE"
+    wpClr  := WAVE_DIM
+
+string fibSt = "NO ACTIVE ZONE"
+color  fibCl = colNL
+if priceInBullFib
+    fibSt := "IN GOLDEN ZONE ▲"
+    fibCl := FIB_COLOR
+else if priceInBearFib
+    fibSt := "IN GOLDEN ZONE ▼"
+    fibCl := FIB_COLOR
+else if priceAtFib618
+    fibSt := "AT 61.8%"
+    fibCl := FIB_DIM
+else if priceAtFib500
+    fibSt := "AT 50.0%"
+    fibCl := FIB_DIM
+else if priceAtFib382
+    fibSt := "AT 38.2%"
+    fibCl := FIB_DIM
+
+string momTx = "— FLAT"
+color  momCl = colNL
+if momBullScore >= 4
+    momTx := "▲▲ STRONG BULL"
+    momCl := BULL_BRIGHT
+else if momBullish
+    momTx := "▲ BULLISH"
+    momCl := BULL_PRIMARY
+else if momBearScore >= 4
+    momTx := "▼▼ STRONG BEAR"
+    momCl := BEAR_BRIGHT
+else if momBearish
+    momTx := "▼ BEARISH"
+    momCl := BEAR_PRIMARY
+
+string vrdTxt = "✕  NO CLEAR EDGE"
+color  vrdClr = colNL
+if bullCF >= 5 and momBullish and (emaTrendBull or priceAboveEma)
+    vrdTxt := "✓  HIGH CONFIDENCE LONG"
+    vrdClr := BULL_BRIGHT
+else if bearCF >= 5 and momBearish and (emaTrendBear or priceBelowEma)
+    vrdTxt := "✓  HIGH CONFIDENCE SHORT"
+    vrdClr := BEAR_BRIGHT
+else if bullCF >= minConfluence and momBullish
+    vrdTxt := "△  LEAN LONG — CAUTION"
+    vrdClr := BULL_DIM
+else if bearCF >= minConfluence and momBearish
+    vrdTxt := "▽  LEAN SHORT — CAUTION"
+    vrdClr := BEAR_DIM
+else if bullCF >= minConfluence and bearCF >= minConfluence
+    vrdTxt := "✕  MIXED — STAND ASIDE"
+
+int aFibZ = 0
+if array.size(fibZones) > 0
+    for i = 0 to array.size(fibZones) - 1
+        if array.get(fibZones, i).active
+            aFibZ += 1
+
+var table dash = na
+if showDash
+    dash := table.new(f_dPos(dashPos), 3, 15,
+      bgcolor=color.new(colDashBg, 0), border_width=1,
+      border_color=color.new(colDV, 70), frame_width=2,
+      frame_color=color.new(colDV, 35))
+
+if showDash and barstate.islast
+    string ttSz = dashSize == "Tiny" ? size.small : dashSize == "Small" ? size.normal : size.large
+
+    table.cell(dash, 0, 0, "A L P H A X   W A V E",
+      text_color=WAVE_BRIGHT, text_size=ttSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 0, "", bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 0, "", bgcolor=color.new(colDashBg, 0))
+    table.merge_cells(dash, 0, 0, 2, 0)
+
+    table.cell(dash, 0, 1, "ELLIOTT  ×  FIBONACCI  ×  MOMENTUM",
+      text_color=colNL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 1, "", bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 1, "", bgcolor=color.new(colDashBg, 0))
+    table.merge_cells(dash, 0, 1, 2, 1)
+
+    table.cell(dash, 0, 2, "METRIC", text_color=colNL, text_size=dTxtSz, bgcolor=color.new(colDV, 85))
+    table.cell(dash, 1, 2, "STATE",  text_color=colNL, text_size=dTxtSz, bgcolor=color.new(colDV, 85))
+    table.cell(dash, 2, 2, "DETAIL", text_color=colNL, text_size=dTxtSz, bgcolor=color.new(colDV, 85))
+
+    table.cell(dash, 0, 3, "WAVE PHASE", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 3, wpText, text_color=wpClr, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 3, waveTrend == 1 ? "TREND ▲" : waveTrend == -1 ? "TREND ▼" : "—",
+      text_color=waveTrend == 1 ? BULL_DIM : waveTrend == -1 ? BEAR_DIM : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 4, "FIBONACCI", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 4, fibSt, text_color=fibCl, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 4, "ZONES: " + str.tostring(aFibZ),
+      text_color=colNL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 5, "MOMENTUM", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 5, momTx, text_color=momCl, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 5, str.tostring(momBullScore) + "▲  " + str.tostring(momBearScore) + "▼",
+      text_color=colNL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 6, "EMA TREND", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 6, emaTrendBull ? "▲ BULL ALIGNED" : emaTrendBear ? "▼ BEAR ALIGNED" : "— MIXED",
+      text_color=emaTrendBull ? BULL_PRIMARY : emaTrendBear ? BEAR_PRIMARY : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 6, priceAboveEma ? "PRICE > 200" : priceBelowEma ? "PRICE < 200" : "AT 200",
+      text_color=priceAboveEma ? BULL_DIM : priceBelowEma ? BEAR_DIM : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 7, "CLOUD", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 7, cloudBull ? "▲ BULLISH" : cloudBear ? "▼ BEARISH" : "— FLAT",
+      text_color=cloudBull ? BULL_PRIMARY : cloudBear ? BEAR_PRIMARY : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 7, "", bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 8, "──────────────────────────────",
+      text_color=colDV, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 8, "", bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 8, "", bgcolor=color.new(colDashBg, 0))
+    table.merge_cells(dash, 0, 8, 2, 8)
+
+    table.cell(dash, 0, 9, "REL VOLUME", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 9,
+      relVol > volSpikeMulti * 1.5 ? "SPIKE" : relVol > volSpikeMulti ? "HIGH" : relVol > 1.0 ? "NORMAL" : "DRY",
+      text_color=relVol > volSpikeMulti ? BULL_BRIGHT : relVol > 1.0 ? colNL : NEUTRAL_COLOR,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 9, str.tostring(math.round(relVol * 100) / 100, "#.##") + "x",
+      text_color=relVol > volSpikeMulti ? BULL_BRIGHT : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 10, "RSI", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 10,
+      rsiOB ? "OVERBOUGHT" : rsiOS ? "OVERSOLD" : rsiSlopeUp ? "▲ RISING" : rsiSlopeDown ? "▼ FALLING" : "— NEUTRAL",
+      text_color=rsiOB ? BEAR_BRIGHT : rsiOS ? BULL_BRIGHT : rsiSlopeUp ? BULL_DIM : rsiSlopeDown ? BEAR_DIM : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 10, str.tostring(math.round(rsiRaw)),
+      text_color=rsiOB ? BEAR_PRIMARY : rsiOS ? BULL_PRIMARY : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 11, "──────────────────────────────",
+      text_color=colDV, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 11, "", bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 11, "", bgcolor=color.new(colDashBg, 0))
+    table.merge_cells(dash, 0, 11, 2, 11)
+
+    table.cell(dash, 0, 12, "BULL SCORE", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 12,
+      str.tostring(bullCF) + " / 8  •  " + str.tostring(math.round(bullConf)) + "%",
+      text_color=bullCF >= minConfluence ? BULL_PRIMARY : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 12, getGrade(bullConf),
+      text_color=getGradeColor(bullConf, true),
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 13, "BEAR SCORE", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 13,
+      str.tostring(bearCF) + " / 8  •  " + str.tostring(math.round(bearConf)) + "%",
+      text_color=bearCF >= minConfluence ? BEAR_PRIMARY : colNL,
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 13, getGrade(bearConf),
+      text_color=getGradeColor(bearConf, false),
+      text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+
+    table.cell(dash, 0, 14, "VERDICT", text_color=colTL, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 1, 14, vrdTxt, text_color=vrdClr, text_size=dTxtSz, bgcolor=color.new(colDashBg, 0))
+    table.cell(dash, 2, 14, "", bgcolor=color.new(colDashBg, 0))
+    table.merge_cells(dash, 1, 14, 2, 14)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════ ALERTS ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+
+alertcondition(bullSignal, title="Wave Long Signal",
+  message="AlphaX Wave: LONG confluence on {{ticker}} {{interval}}")
+alertcondition(bearSignal, title="Wave Short Signal",
+  message="AlphaX Wave: SHORT confluence on {{ticker}} {{interval}}")
+alertcondition(bullImpulseNow, title="Bullish Impulse Complete",
+  message="AlphaX Wave: Bullish impulse 1-5 on {{ticker}} {{interval}}")
+alertcondition(bearImpulseNow, title="Bearish Impulse Complete",
+  message="AlphaX Wave: Bearish impulse 1-5 on {{ticker}} {{interval}}")
+alertcondition(wave3BullSetup, title="Wave 3 Bull Setup",
+  message="AlphaX Wave: Wave 3 bull setup on {{ticker}} {{interval}}")
+alertcondition(wave3BearSetup, title="Wave 3 Bear Setup",
+  message="AlphaX Wave: Wave 3 bear setup on {{ticker}} {{interval}}")
+alertcondition(rsiBullDiv, title="RSI Bull Divergence",
+  message="AlphaX Wave: RSI bull divergence on {{ticker}} {{interval}}")
+alertcondition(rsiBearDiv, title="RSI Bear Divergence",
+  message="AlphaX Wave: RSI bear divergence on {{ticker}} {{interval}}")
+alertcondition(bullCorrNow, title="Bullish ABC Correction",
+  message="AlphaX Wave: Bullish ABC correction on {{ticker}} {{interval}}")
+alertcondition(bearCorrNow, title="Bearish ABC Correction",
+  message="AlphaX Wave: Bearish ABC correction on {{ticker}} {{interval}}")
+
+

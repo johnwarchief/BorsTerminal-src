@@ -1,0 +1,9 @@
+Human Level Structure Engine MT5
+
+Market Structure Shift (CHoCH) is used to confirm a directional reversal.
+
+Bullish CHoCH occurs when price breaks above the last confirmed Lower High (LH), shifting bias from bearish to bullish. Bearish CHoCH occurs when price breaks below the last confirmed Higher Low (HL), shifting bias from bullish to bearish.
+
+After confirmation, Areas of Interest (AOI) are mapped for execution. Common zones include Fibonacci Equilibrium anchored from the origin swing, and a post-CHoCH Fair Value Gap (FVG) formed within the first three candles of the breakout impulse, treated as an imbalance-based entry area.
+
+Risk and targets are defined structurally. For buys, stop loss is placed below the origin swing low (0% Fibonacci anchor). For sells, stop loss is placed above the origin swing high (0% anchor). TP1 is set at the breakout structure level (100%). TP2 targets

@@ -1,0 +1,14 @@
+Indicator Elliott Wave Detection & Fibonacci Golden Zone for  Trading View
+Automated Elliott Wave impulse detection (1–5) with strict rule validation
+ABC corrective pattern recognition with retracement depth validation
+Wave 3 Setup Scanner — identifies the strongest wave initiation points
+Fibonacci Golden Zone projection with intelligent lifecycle management
+8-factor confluence scoring — Wave, ABC, Fibonacci, Fibonacci Level, Momentum, Divergence, Volume, EMA
+Weighted confidence scoring (0–100%) with A+ through D grade classification
+Detailed signal labels showing grade, confidence, confluence count, and active factor checklist
+Structure-based SL/TP system — swing levels, Fibonacci targets, and wave projections
+Automatic break-even protection when TP1 is hit
+Real-time hit tracking with visual color changes on SL/TP labels
+Trend Cloud with gradient fill for instant directional bias
+Triple EMA system (21/50/200) for structural trend context
+RSI divergence detection with pivot-based validation
