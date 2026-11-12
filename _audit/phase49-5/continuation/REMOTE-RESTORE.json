@@ -1,20 +1,70 @@
 {
-  "status": "PENDING_REMOTE_VERIFICATION",
+  "status": "PASS_REMOTE_VERIFIED",
   "data_repository": "johnwarchief/BorsTerminal-continuation-data",
   "data_branch": "main",
-  "data_commit": "6a2721ab2a0c5be63c7a0b521248a5de454c47a9",
+  "data_commit": "f6447619add1e4f0c83801fdc2f1ae680e5f78b9",
+  "data_commit_proof": "ls-remote refs/heads/main equals local HEAD of the incremental uploader",
+  "visibility": "private",
+  "last_verified_uploaded_parts": 6,
+  "downloaded_parts_verified": 6,
+  "download_warehouse": "E:/bors_work/tmp/p495-portability/github-download",
+  "downloaded_tooling_identical_to_source": ["manifest.json", "restore.py", "test_restore.py"],
+  "downloaded_safety_tests": {"tests": 12, "failures": 0, "errors": 0},
+  "incomplete_remote_kit_negative_control": "PASS: at the 1-of-6-parts ref the downloaded restore.py rejected the missing part before creating any destination file",
+  "remote_restore": {
+    "command": "python github-download/restore.py --manifest github-download/manifest.json --data-root github-download --destination remote-restored --report verification/remote-restore-receipt.json",
+    "receipt": "E:/bors_work/tmp/p495-portability/verification/remote-restore-receipt.json",
+    "status": "PASS",
+    "file_count": 10,
+    "archive_sha256": "1c4d9ed2c438fedc157dbf69cac047234f669636e2ab2255b2d788a6ed9521ac",
+    "archive_bytes": 217884449,
+    "independent_reverification": "all 10 sizes and SHA-256 recomputed from the restored files against the downloaded manifest: match",
+    "sqlite": [
+      {
+        "path": "_audit/phase49-3/db/cohort.db",
+        "integrity_check": "ok",
+        "reference_raw": 84452,
+        "reference_adjusted": 84452,
+        "adjusted_candles": 83254,
+        "candle_build_revisions": 29,
+        "distinct_symbols_in_reference_raw": 30,
+        "symbols_without_adjustment_factors": 1
+      },
+      {
+        "path": "_audit/phase49-4/db/engine-after/market.db",
+        "integrity_check": "ok",
+        "reference_raw": 84452,
+        "reference_adjusted": 84452,
+        "adjusted_candles": 84452,
+        "candle_build_revisions": 30,
+        "distinct_symbols_in_reference_raw": 30,
+        "symbols_without_adjustment_factors": 1
+      }
+    ],
+    "capture_bytes_match_previously_measured_evidence": {
+      "file": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+      "sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a",
+      "pinned_by": "_audit/phase49-4/evidence/FIXTURE-ROWS.json"
+    }
+  },
   "manifest_sha256": "c87721c931e8ac4ffe712f4076c0b0395c4572e4ebb79b69bd7568b11ff68e7e",
-  "archive_sha256": "1c4d9ed2c438fedc157dbf69cac047234f669636e2ab2255b2d788a6ed9521ac",
-  "archive_bytes": 217884449,
   "parts": 6,
   "files": 10,
   "local_roundtrip": "PASS",
   "restore_unit_tests": {"tests": 12, "failures": 0, "errors": 0},
-  "remote_bytes_downloaded": false,
-  "portability_gate_closed": false,
+  "remote_bytes_downloaded": true,
+  "portability_gate_closed": true,
+  "source_ci": {
+    "commit": "9569f748afb41891080c68d72ac222cbc0bdf367",
+    "python_legacy": {"run_id": 43247297638, "conclusion": "success"},
+    "python_tooling": {"run_id": 43247297855, "conclusion": "success"},
+    "guards": {"run_id": 43247297705, "conclusion": "success", "successful_jobs": 9}
+  },
   "limitations": [
-    "GitHub upload is in progress; local restoration is not remote availability proof",
-    "Second-machine toolchain installation has not been exercised",
-    "Installation into the destination is not a whole-directory transaction; interrupted copy requires a fresh destination"
+    "GitHub upload alone is not availability proof; this receipt records the bytes downloaded back from the private repository and restored from them",
+    "Second-machine toolchain installation (Go, Node, Chromium, Python packages) has not been exercised on another host",
+    "Installation into the destination is not a whole-directory transaction; an interrupted copy must be retried into a fresh destination",
+    "The two archived cohort databases are the historical Phase49.3/Phase49.4 states, not new Phase49.5 measurements: the 30-symbol cohort holds one zero-factor symbol with no adjusted candles, and the 13 symbols still to be measured are not in either database, so the next stage must ingest them from the restored capture",
+    "Tokens, cookies, browser profiles, oc directories and personal databases are deliberately excluded"
   ]
 }
