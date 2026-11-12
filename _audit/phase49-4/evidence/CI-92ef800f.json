@@ -1,0 +1,193 @@
+{
+ "schema": "phase49-4-ci-results-v1",
+ "mission": "Phase 4.9.4 runtime parity with Rahavard",
+ "commit_sha": "92ef800fd575f93c9c3f8a58742317b5831d5e8e",
+ "branch": "mission/phase49-4-runtime-parity-2026-11-12",
+ "repository": "johnwarchief/BorsTerminal-src",
+ "base_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "expected_workflows": [
+  "guards",
+  "python-tooling",
+  "python-legacy"
+ ],
+ "fetched_at": "2026-11-12T12:03:42Z",
+ "runs": [
+  {
+   "workflow": "guards",
+   "run_id": 43212087210,
+   "run_number": 1133,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210",
+   "workflow_conclusion": "success",
+   "head_sha": "92ef800fd575f93c9c3f8a58742317b5831d5e8e",
+   "jobs": [
+    {
+     "name": "go backend (vet / ast-arch / unit-tests)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161998361"
+    },
+    {
+     "name": "go backend on windows (windows-2022)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161998746"
+    },
+    {
+     "name": "go race detector (cmd/borsd + generation runtime)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161998822"
+    },
+    {
+     "name": "frontend v2 (typecheck / vitest / build)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161998893"
+    },
+    {
+     "name": "go backend on windows (windows-latest)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161998909"
+    },
+    {
+     "name": "data integrity guards (ingestion / candles / backfill)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161999020"
+    },
+    {
+     "name": "zero-python runtime proof (Go process tree)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161999099"
+    },
+    {
+     "name": "EOL / attributes / no tracked junk",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131161999145"
+    },
+    {
+     "name": "desktop delivery (Windows bundle + Tauri shell + installer)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087210/job/131164631543"
+    }
+   ],
+   "jobs_total": 9,
+   "jobs_success": 9,
+   "jobs_failure": 0
+  },
+  {
+   "workflow": "python-tooling",
+   "run_id": 43212087223,
+   "run_number": 15,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087223",
+   "workflow_conclusion": "success",
+   "head_sha": "92ef800fd575f93c9c3f8a58742317b5831d5e8e",
+   "jobs": [
+    {
+     "name": "data/research suites (python dev/run_all_tests.py --profile data)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": false,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087223/job/131161997561"
+    }
+   ],
+   "jobs_total": 1,
+   "jobs_success": 1,
+   "jobs_failure": 0
+  },
+  {
+   "workflow": "python-legacy",
+   "run_id": 43212087275,
+   "run_number": 15,
+   "url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087275",
+   "workflow_conclusion": "success",
+   "head_sha": "92ef800fd575f93c9c3f8a58742317b5831d5e8e",
+   "jobs": [
+    {
+     "name": "legacy Python maintenance (report-only)",
+     "conclusion": "failure",
+     "status": "completed",
+     "report_only": true,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087275/job/131161997816"
+    },
+    {
+     "name": "legacy static JS syntax (report-only)",
+     "conclusion": "success",
+     "status": "completed",
+     "report_only": true,
+     "details_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087275/job/131161998251"
+    }
+   ],
+   "jobs_total": 2,
+   "jobs_success": 1,
+   "jobs_failure": 1
+  }
+ ],
+ "missing_workflows": [],
+ "all_workflows_success": true,
+ "all_jobs_success": false,
+ "all_blocking_jobs_success": true,
+ "report_only_job_failures": [
+  {
+   "workflow": "python-legacy",
+   "job": "legacy Python maintenance (report-only)",
+   "conclusion": "failure"
+  }
+ ],
+ "report_only_failure_attribution": [
+  {
+   "workflow": "python-legacy",
+   "job": "legacy Python maintenance (report-only)",
+   "base_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+   "status": "MEASURED",
+   "base_run_id": 43018306670,
+   "base_job_id": 130514848221,
+   "base_job_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43018306670/job/130514848221",
+   "this_job_id": 131161997816,
+   "this_job_url": "https://github.com/johnwarchief/BorsTerminal-src/actions/runs/43212087275/job/131161997816",
+   "this_commit_counts": {
+    "suites_total": 211,
+    "suites_ok": 181,
+    "suites_failed": 30
+   },
+   "base_commit_counts": {
+    "suites_total": 211,
+    "suites_ok": 181,
+    "suites_failed": 30
+   },
+   "parse_complete_both": true,
+   "failed_sets_identical": true,
+   "new_failures": [],
+   "resolved_failures": [],
+   "caused_by_this_mission": false
+  }
+ ],
+ "report_only_failures_caused_by_this_mission": 0,
+ "complete": true,
+ "status": "COMPLETE",
+ "honesty": {
+  "workflow_success_is_not_job_success": "python-legacy marks both jobs continue-on-error, so its workflow can report success while its jobs fail; all_jobs_success and all_blocking_jobs_success are reported separately and neither is inferred from the workflow conclusion",
+  "sha_binding": "every run listed here has head_sha equal to commit_sha; CI on any other commit is never presented as CI on this commit",
+  "local_legacy_python_lane": "the local dev/run_all_tests.py run failed 152 suites because this host's Python 3.15.2 lacks fastapi/numpy/pandas/uvicorn/openpyxl/jdatetime and frontend/node_modules is absent; a detached clean control worktree at HEAD produced 261/261 identical per-suite results, so the cause is environmental. CI installs requirements.txt and is the authority for that lane (see evidence/GUARD-CONTROL.json)",
+  "legacy_lane_attribution": "each report-only failure is compared suite-by-suite against the same job at the base commit; a failure is attributed to this mission only if its failed-suite set gains a name. Suite names contain commas, so the runner's FAILED summary is never comma-split; per-suite lines are parsed and the summary is rebuilt from them to prove completeness",
+  "not_measured": "no real UI screenshot and no canvas pixel measurement exist for this phase; every parity layer is an API or transform measurement and is never called a UI test"
+ },
+ "collection_logic": {
+  "reused_from": "_audit/phase49-3/fetch_ci.py",
+  "reused_unchanged": true,
+  "relabelling_limited_to": "schema, mission and honesty prose only"
+ }
+}

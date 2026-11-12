@@ -298,16 +298,20 @@ def evidence_facts():
     return s11, s12, s13, s14, s15
 
 
-def ci_facts():
+def ci_facts(records=None):
     """Read the preserved per-commit CI chain; never overwrite a record."""
     status, csha, jobs, legacy, chain = "PENDING (no CI run recorded yet)", "-", \
         "NOT_MEASURED", "NOT_MEASURED", "NONE"
     parts = []
-    files = sorted(f for f in os.listdir(os.path.join(AUDIT, "evidence"))
-                   if f.startswith("CI-") and f.endswith(".json"))
+    if records is None:
+        records = [(f, _LOAD("_audit/phase49-4/evidence/" + f))
+                   for f in sorted(os.listdir(os.path.join(AUDIT, "evidence")))
+                   if f.startswith("CI-") and f.endswith(".json")]
+    # A later commit's SHA can sort before an earlier one's, so the headline
+    # (last record wins) must follow fetch time, not filename order.
+    records = sorted(records, key=lambda fr: (fr[1].get("fetched_at", ""), fr[0]))
     seen = set()
-    for fname in files:
-        r = _LOAD("_audit/phase49-4/evidence/" + fname)
+    for fname, r in records:
         rsha = r.get("commit_sha", "?")
         gate(rsha not in seen, "%s binds a commit already recorded" % fname)
         seen.add(rsha)
@@ -463,8 +467,78 @@ def selftest():
     print("  selftest %-52s %s" % ("untouched evidence passes (positive control)",
                                    "CAUGHT" if positive else "MISSED"))
     ok = ok and positive
+    ok = ci_selftest() and ok
     print("manifest selftest:", "PASS" if ok else "FAIL")
     return 0 if ok else 1
+
+
+def ci_selftest():
+    """Prove the CI gates fire, and that the headline names the newest commit.
+
+    The chain holds one record per commit, so filename order is not recency:
+    a later commit can sort before an earlier one. Synthetic records are used
+    only here; no evidence file is written or perturbed on disk.
+    """
+    import copy
+
+    real = _LOAD("_audit/phase49-4/evidence/CI-92ef800f.json")
+
+    def record(sha8, fetched):
+        r = copy.deepcopy(real)
+        r["commit_sha"] = sha8 * 5
+        r["fetched_at"] = fetched
+        for run in r["runs"]:
+            run["head_sha"] = r["commit_sha"]
+        return ("CI-%s.json" % sha8, r)
+
+    def check(label, records, want_fire=None, want_headline=None):
+        fired, got = False, None
+        try:
+            got = ci_facts(records)
+        except SystemExit:
+            fired = True
+        if want_fire is None:
+            good = (not fired) and got[1] == want_headline
+        else:
+            good = fired == want_fire
+        print("  selftest %-52s %s" % (label, "CAUGHT" if good else "MISSED"))
+        return good
+
+    def one(mutate):
+        r = copy.deepcopy(real)
+        mutate(r)
+        return [("CI-92ef800f.json", r)]
+
+    ok = True
+    for label, mutate in [
+        ("ci record is not COMPLETE",
+         lambda r: r.__setitem__("status", "IN_PROGRESS")),
+        ("ci record pinned to another base commit",
+         lambda r: r.__setitem__("base_commit", "0" * 40)),
+        ("report-only failure blamed on this mission",
+         lambda r: r.__setitem__("report_only_failures_caused_by_this_mission", 1)),
+        ("a ci run's head_sha is not its commit_sha",
+         lambda r: r["runs"][0].__setitem__("head_sha", "0" * 40)),
+        ("legacy suite parse incomplete",
+         lambda r: r["report_only_failure_attribution"][0].__setitem__(
+             "parse_complete_both", False)),
+    ]:
+        ok = check(label, one(mutate), want_fire=True) and ok
+    ok = check("two ci records bind the same commit",
+               [("CI-92ef800f.json", copy.deepcopy(real)),
+                ("CI-ffffffff.json", copy.deepcopy(real))],
+               want_fire=True) and ok
+    ok = check("untouched ci record passes (positive control)",
+               one(lambda r: None), want_fire=False) and ok
+    ok = check("legacy attribution NOT_MEASURED is reported, not gated",
+               one(lambda r: r["report_only_failure_attribution"][0].__setitem__(
+                   "status", "NOT_MEASURED")), want_fire=False) and ok
+    # The newer commit sorts FIRST by filename; the headline must still be it.
+    ok = check("headline names the newest commit, not the first filename",
+               [record("11111111", "2026-11-12T13:00:00Z"),
+                record("99999999", "2026-11-12T12:00:00Z")],
+               want_headline="1" * 40) and ok
+    return ok
 
 
 def main():

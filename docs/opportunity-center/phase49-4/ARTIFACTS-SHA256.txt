@@ -6,11 +6,11 @@
 # base_commit: e09ccd95d51c94082640cda75ef3de2b2008f9d2 (pinned engine base)
 # head_commit_at_build: 4454dcfb01d86a1d40b439c34a3ead67179992c5 (parent of the delivery commit; a file cannot contain the SHA of the commit that carries it)
 # delivery_commit: announced in the delivery message and bound by evidence/CI-<sha8>.json
-# ci_status: PENDING (no CI run recorded yet)
-# ci_commit: -
-# ci_jobs: NOT_MEASURED (python-legacy is continue-on-error: workflow success is NOT all-jobs success)
-# ci_report_only_attribution: NOT_MEASURED
-# ci_preserved_chain: NONE (each commit's CI record kept separately; none overwritten, every run head_sha == its commit_sha)
+# ci_status: COMPLETE
+# ci_commit: 92ef800fd575f93c9c3f8a58742317b5831d5e8e
+# ci_jobs: workflows_success=True jobs_success=False blocking_jobs_success=True (python-legacy is continue-on-error: workflow success is NOT all-jobs success)
+# ci_report_only_attribution: legacy Python maintenance (report-only): 30/211 failed here vs 30/211 at base, identical_sets=True new=0 resolved=0
+# ci_preserved_chain: 92ef800f=COMPLETE(blocking=True,jobs=False) (each commit's CI record kept separately; none overwritten, every run head_sha == its commit_sha)
 # reference_law: type7 = type0 x factor for open/high/low/close; type7.volume == type0.volume
 # reference_law_tolerance: 1e-09 unchanged=True widening_applied_to_reference=False
 # reference_law_correction: stage07/stage08 built a WIDENED baseline, which manufactured the high/low divergences; they are superseded, not rewritten, and correcting the law makes the check stricter (no attribution bucket)
@@ -33,8 +33,9 @@
 # section: 1=deliverables 2=evidence/manifests 3=mission scripts 4=code, gates and pinned inputs 5=gitignored run artifacts and licensed inputs
 # note: this manifest does not list itself
 # --- section 1 ---
-1727bf09c6e52857571ed2af7bb7b3994e8303d3a8286f5de83ded81e2a49ab5  39696  docs/opportunity-center/phase49-4/RUNTIME-PARITY-REPORT.md
+11c3bd4b0aa26b6c740e458e58d3c1af8953f01ae5eb13aee54ba9c62fa77faf  47082  docs/opportunity-center/phase49-4/RUNTIME-PARITY-REPORT.md
 # --- section 2 ---
+0ed65de8fd1cea4e93eb9bbe167dee68617afce4e3a628e9fe98cf13eb12e502  7633  _audit/phase49-4/evidence/CI-92ef800f.json
 468d24dd5d9ee7decb4ec02147fd72cae4320763a89684c7921ea047d8aa9f48  2981  _audit/phase49-4/evidence/FIXTURE-ROWS.json
 031156dd0067f39d226eafc468cacf63d2e62d2c0b563c3e24c31a1c6e35128d  335610  _audit/phase49-4/evidence/FRONTEND-PARITY.json
 724fc406d8cb05f2b3f4c11864ed92942c545f5bb1711cb2a8388a9611ede3d8  486  _audit/phase49-4/evidence/GUARD-CONTROL-WORKTREE.json
@@ -48,7 +49,7 @@ b1422a41969e77de5f73d2d068f2e842030ca924b66d62788b100321b490d7a1  408  _audit/ph
 48b0e5e074012fa511cdd2c7afa074622094867698b7d25b055b93644544aa94  248  _audit/phase49-4/manifests/stage14-guard-control.json
 1da4c9cb15851171e61bb4a9b7495942b2535437755fbdbf554db17e35d6c0cd  255  _audit/phase49-4/manifests/stage15-runtime-tests.json
 # --- section 3 ---
-378d2621479f03f8daed0a3ea149acbadd083099302fb643bcb39c7196100c12  34855  _audit/phase49-4/build_artifacts_manifest.py
+885fa270571fce7c967f06ba22fc5c461417839b71863c53cf5d41c3da2bbc18  38020  _audit/phase49-4/build_artifacts_manifest.py
 c25ce80ba0491df05eb88444695919e24e85b0a39ba1f2085341f746239f85ee  4159  _audit/phase49-4/extract_fixtures.py
 35ab68480b5526420ac0e350dbec380c33aa6aa5a861b771532ae1bc1cb81b2c  3296  _audit/phase49-4/gen_chart_fixture.py
 f03aa31aa0aa2942a54e19aac3e6c3c69b7acfb3a20e984abf9716853b9dea00  5158  _audit/phase49-4/gen_go_fixture.py
