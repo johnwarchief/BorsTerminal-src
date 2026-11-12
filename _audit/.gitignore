@@ -156,3 +156,10 @@ phase49/continuation/*.exe~
 /phase49-3/db/
 /phase49-3/logs/
 /phase49-3/bin/
+
+# phase49-4: same convention. Working DB copies, the rebuilt binaries and the
+# dumped API payloads are licensed-derived bytes and stay out of Git; the
+# parity evidence, manifests and the measurement scripts stay trackable.
+/phase49-4/db/
+/phase49-4/logs/
+/phase49-4/bin/

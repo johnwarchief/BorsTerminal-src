@@ -3,13 +3,13 @@ package chart
 import (
 	"context"
 	"database/sql"
-
-	candlecontract "borsterminal/backend/internal/candle"
 )
 
 // measuredFactorEvents returns the reference-measured adjustment factors when
-// the independent candle DB carries them (Phase 4.9.2). A missing table or a
-// symbol without rows is not an error: older DBs keep the pack/official path.
+// the independent candle DB carries them (Phase 4.9.2). A missing table is not
+// an error: older DBs keep the pack/official path. A symbol the reference series
+// covers but no event touches is still covered -- zero events is a measured
+// fact, not an absence of evidence.
 func (s *Service) measuredFactorEvents(ctx context.Context, symbol string) ([]canonEvent, string, bool) {
 	rows, err := s.market.QueryContext(ctx,
 		"SELECT date, ratio, kind, revision FROM adjustment_factors "+
@@ -40,9 +40,29 @@ func (s *Service) measuredFactorEvents(ctx context.Context, symbol string) ([]ca
 		}
 	}
 	if len(out) == 0 {
-		return nil, "", false
+		return s.referenceOnlyCoverage(ctx, symbol)
 	}
 	return out, revision, true
+}
+
+// referenceOnlyCoverage هویتِ سری مرجع را برای نمادِ بدون رویداد برمی‌گرداند؛
+// زنجیرهٔ ضرایب تهی است و لنگر همان capture است.
+func (s *Service) referenceOnlyCoverage(ctx context.Context, symbol string) ([]canonEvent, string, bool) {
+	var n int
+	var capture, run sql.NullString
+	if err := s.market.QueryRowContext(ctx,
+		"SELECT COUNT(*), MAX(capture_sha256), MAX(run_id) FROM reference_raw "+
+			"WHERE symbol=?", symbol).Scan(&n, &capture, &run); err != nil || n == 0 {
+		return nil, "", false
+	}
+	revision := ""
+	if capture.Valid {
+		revision = capture.String
+	}
+	if revision == "" && run.Valid {
+		revision = run.String
+	}
+	return []canonEvent{}, revision, true
 }
 
 // referenceRawHistory returns the captured Rahavard type0 raw candles for a
@@ -87,10 +107,10 @@ func (s *Service) referenceRawHistory(ctx context.Context, symbol string) ([]map
 		if low.Valid {
 			lRaw = low.Float64
 		}
-		h, l := candlecontract.Widen(o, hRaw, lRaw, closeP.Float64, 0)
+		// سری مرجع دست‌نخورده می‌ماند: openِ بیرون از [low,high] هندسۀ خودِ Rahavard است.
 		out = append(out, map[string]any{
 			"symbol": symbol, "time": date.String, "date": date.String,
-			"open": o, "high": h, "low": l, "high_raw": hRaw, "low_raw": lRaw,
+			"open": o, "high": hRaw, "low": lRaw, "high_raw": hRaw, "low_raw": lRaw,
 			"close": closeP.Float64, "last": nil, "value": nil,
 			"volume": v, "src": "rahavard-type0",
 		})

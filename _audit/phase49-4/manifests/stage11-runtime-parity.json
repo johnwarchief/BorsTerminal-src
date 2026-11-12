@@ -1,0 +1,10 @@
+{
+ "elapsed_seconds": 31.093,
+ "exit_code": 0,
+ "finished_utc": "2026-11-12T10:17:56Z",
+ "payload_path": "_audit/phase49-4/evidence/RUNTIME-PARITY.json",
+ "payload_sha256": "14a075a79821ec6599dae9beda0dc7fe1af4022fd93ea06f4fa0fb7026768fec",
+ "stage": "stage11_runtime_parity",
+ "started_utc": "2026-11-12T10:17:25Z",
+ "working_db_sha256": "99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd"
+}

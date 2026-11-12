@@ -1,0 +1,3919 @@
+{
+ "schema": "phase49-4-guard-control-v1",
+ "mission": "Phase 4.9.4 runtime parity with Rahavard",
+ "status": "PASS",
+ "failures": [],
+ "purpose": "prove the local legacy-Python guard failures pre-date this phase and are caused by missing local dependencies, not by the fix",
+ "method": {
+  "control": "a detached git worktree at HEAD with zero local changes",
+  "worktree": "the mission worktree carrying the Phase 4.9.4 changes",
+  "runner": "python dev/run_all_tests.py (unchanged in both; delegates to dev/gate_db_guard.py, which copies the DB and fingerprints it)",
+  "comparison": "exact per-suite status + exit code + reported counts",
+  "log_hash_convention": "log_sha256 is the digest of the file bytes, which is what sha256sum reports; these logs are CRLF, so a text-mode read yields a different digest and is recorded separately as log_sha256_lf_normalized",
+  "no_guard_weakened": true,
+  "no_suite_skipped_or_removed": true,
+  "no_threshold_changed": true
+ },
+ "worktree": {
+  "log": "_audit/phase49-4/logs/dev-guards.log",
+  "log_sha256": "50685ef2914e31c6b56f4a8ac58fec0950573eb814a6b1bb8388e5812b624373",
+  "log_sha256_lf_normalized": "4c33f00ce1f8d86905854bd6956f9c2d1a8672415904b28d8b84479864875158",
+  "log_bytes": 130999,
+  "log_crlf_pairs": 1486,
+  "protected_db_fingerprint": "04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0",
+  "protected_db_unchanged": true,
+  "totals_line": null,
+  "all_suites_passed": false
+ },
+ "control": {
+  "log": "_audit/phase49-4/logs/dev-guards-control.log",
+  "log_sha256": "a8111e0a8a0a9905a6d8718eeed9e73c735a245af19535e72f4c5bc5861095c1",
+  "log_sha256_lf_normalized": "8aa6da0b59b72e45a6f4c324b521693fd9da8d93626bb671735e42f8f45f4a22",
+  "log_bytes": 133103,
+  "log_crlf_pairs": 1485,
+  "protected_db_fingerprint": "04137b38f7f47fa461a415c152e3ca43b9fd85524ed3341d61a4c0fac7f25ff0",
+  "protected_db_unchanged": true,
+  "totals_line": null,
+  "all_suites_passed": false
+ },
+ "tally_worktree": {
+  "status_counts": {
+   "OK": 107,
+   "FAIL": 152,
+   "SKIP": 2
+  },
+  "fail_root_causes": {
+   "(no import error captured)": 12,
+   "fastapi": 128,
+   "uvicorn": 1,
+   "jdatetime": 1,
+   "openpyxl": 1,
+   "numpy": 7,
+   "pandas": 2
+  },
+  "suites_total": 261
+ },
+ "tally_control": {
+  "status_counts": {
+   "OK": 107,
+   "FAIL": 152,
+   "SKIP": 2
+  },
+  "fail_root_causes": {
+   "(no import error captured)": 12,
+   "fastapi": 128,
+   "uvicorn": 1,
+   "jdatetime": 1,
+   "openpyxl": 1,
+   "numpy": 7,
+   "pandas": 2
+  },
+  "suites_total": 261
+ },
+ "suites_compared": 261,
+ "suites_identical": 261,
+ "suites_mismatched": [],
+ "failures_attributed_to_missing_modules": 140,
+ "failures_without_an_import_error": [
+  {
+   "suite": "codal FTS pipeline + ADB fallback + session window",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "chart API guard: installed klinecharts v10 exports, no dead legacy path",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "10/18",
+   "worktree_detail": "10/18",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "mstat dashboard computed from local market.db",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "0 pass / 1 fail",
+   "worktree_detail": "0 pass / 1 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "B2 mstat fixture + goldens + pinned clock are current",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "63 pass / 1 fail",
+   "worktree_detail": "63 pass / 1 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "fundamental + tape-history fixture, oracle, goldens",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "43/45",
+   "worktree_detail": "43/45",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "log has a clock and survives a hard death",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "3 pass / 0 fail",
+   "worktree_detail": "3 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "notebook numeric examples reproduce; its two internal conflicts stay open",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "35/45",
+   "worktree_detail": "35/45",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "22/24",
+   "worktree_detail": "22/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one money-unit definition; per-row scale; unitless never becomes a fabricated rial number",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "33/34",
+   "worktree_detail": "33/34",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "harness: guard outputs are actually counted, silence is reported as silence",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "33/33",
+   "worktree_detail": "33/33",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "board freshness: session day + abstaining market pulse",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "21/24",
+   "worktree_detail": "21/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  }
+ ],
+ "local_python": "3.15.2",
+ "ci_authority": "CI installs requirements.txt on Python 3.12; the per-job CI record for the final commit is the authority for the legacy Python lane, not this local run",
+ "per_suite": [
+  {
+   "suite": "structure / undefined-names",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "FTS filter isolation",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "23/23",
+   "worktree_detail": "23/23",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal FTS pipeline + ADB fallback + session window",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "calendar py<->js categories",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "17 pass / 0 fail",
+   "worktree_detail": "17 pass / 0 fail",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "calendar 429 captcha handoff: begin/image/end + retry",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "11/11",
+   "worktree_detail": "11/11",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal fetch 429 captcha: retry same page, token on session",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "6/6",
+   "worktree_detail": "6/6",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "chart API guard: installed klinecharts v10 exports, no dead legacy path",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "10/18",
+   "worktree_detail": "10/18",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "m141/liquidity parity + anti-N+1",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "ADB retry/reconnect + wifi restore",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "26/26",
+   "worktree_detail": "26/26",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "triple-confirmation confidence engine",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "soft pass/warn/fail/nodata — no hard vetoes",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "confidence_engine weekly bucket == chart Saturday bucket",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "mstat dashboard computed from local market.db",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "1/1",
+   "worktree_detail": "1/1",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "cold concurrent panel requests share one snapshot build",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "1/1",
+   "worktree_detail": "1/1",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "get_db schema checks run once per DB schema_version",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "mstat panel cache: session-aware TTL and data-key invalidation",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "notification source facts cache by DB identity + content key",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "1/1",
+   "worktree_detail": "1/1",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "TEDPIX series: content ETag, fresh-cache 304, refresh/limit invalidation",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "lightweight market closes map: same row values, ETag/304",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "single market row: same p_closing, ETag/304, unknown stays null",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "screener symbols= returns exactly the same row as the full payload",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "funnel GET == POST body for same inputs",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "funnel data signature changes with revision/screener/tech",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "market LAST: source LAST wins, zero is not missing, no stale/derived price",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "11/11",
+   "worktree_detail": "11/11",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "industry queue depth: missing stays null, available depth is summed",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "8/8",
+   "worktree_detail": "8/8",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "official price-weighted index card; missing index stays unavailable, not zero",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "13/13",
+   "worktree_detail": "13/13",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "client value provenance: native/mixed/reconstructed, no hidden fallback",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "7/7",
+   "worktree_detail": "7/7",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "official TSETMC index impact; derived fallback is explicitly labelled",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "12/12",
+   "worktree_detail": "12/12",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "mainwatch rows carry the tape flags, never a fabricated one",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "watchlist store + triple matrix + parity",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "patch/update system guard",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "55/55",
+   "worktree_detail": "55/55",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "make_patch --from arg parsing",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "delta patch select/apply + fallback",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "fund sheet: سود سهام هرگز «فروش» نمی‌شود",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "18/18",
+   "worktree_detail": "18/18",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "0 pass / 1 fail",
+   "worktree_detail": "0 pass / 1 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "سنِ دادهٔ ریلیز سنجیده می‌شود: کهنه=هشدار، کهنه‌تر از baseline=رد",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "38/38",
+   "worktree_detail": "38/38",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "ادغامِ کدال: محلیِ تازه‌تر هرگز بازنویسی نمی‌شود",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "ادغامِ market.db: دادهٔ بازارِ کاربر با ارتقا له نمی‌شود",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "22/22",
+   "worktree_detail": "22/22",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "پاک‌سازیِ chunkهایِ مردهٔ frontend، با درختِ ساختگی",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "8/8",
+   "worktree_detail": "8/8",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "چارتِ یکتا: هر متدِ Chart باید در باندلِ خودش باشد و باندلِ دومی نباشد",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "3/3",
+   "worktree_detail": "3/3",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "blank published total refuses a component line for فروش",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "board cache is stale-while-revalidate, single-flight, honest on failure",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "live 5s board tick: one request, shared row map, closed-window refuses to write",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "23/23",
+   "worktree_detail": "23/23",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "server FTS reads the full adjusted series the chart draws, not the starved raw table",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS analysis cache key carries the price basis (with a negative control)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "weekly gate + weekly hourglass stay frozen (measured on real bank rows)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "canonical adjustment: mode semantics split, single scaled series, honest fallback",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "unproven base-price gaps (positive, fund micro) never enter the adjustment chain",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "functional availability statuses: complete, partial window, no-event classes, source gap, stale",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Rahavard data contract fixture: type0/type7 factor, OHLC, weekly sum, LAST basis",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "official fund distributions + single-session backfill enter the canonical chain",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "cross-sectional session anomaly: synthetic positives, official-row negatives, typed-event survival",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "RC3: several VOL=0 halt rows collapse to ONE event; telescoped factor (series) unchanged; independent events never merge",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "RC1: switching display basis (last<->closing) never moves the CLOSING adjustment anchor and never fabricates a missing last",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "api/ma: SMA == independent rolling mean, None before window-1, and the canonical adjustment factor actually shifts the MA",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "9/9",
+   "worktree_detail": "9/9",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "§B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "14/14",
+   "worktree_detail": "14/14",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Phase4.7 ingestion: NULL src is legacy-unknown (never published), thin board snapshot never erases a traded daily_prices row, idempotent replay",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "37/37",
+   "worktree_detail": "37/37",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Phase4.8 S4: reference backfill writes only missing dates, provenance+rollback, idempotent, never overwrites",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "29/29",
+   "worktree_detail": "29/29",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Phase4.8 S4: API raw/adjusted split, close basis, factor chain and constant-offset classification",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "14/14",
+   "worktree_detail": "14/14",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Phase4 engine: per-type factor formulas",
+   "control_status": "SKIP",
+   "worktree_status": "SKIP",
+   "control_rc": null,
+   "worktree_rc": null,
+   "control_detail": "hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check (fixture missing: _audit/ra365_ref_bars.json",
+   "worktree_detail": "hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check (fixture missing: _audit/ra365_ref_bars.json",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Phase5 ledger: official source-ratio (no proxy), same-day dedup w/ priceAdjust precedence, incomplete/invalid never fabricated, idempotent, wrong-instrument empty, CODAL type only when unique, effective!=publish",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "24/24",
+   "worktree_detail": "24/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "chart fib belts and setup markers come from the one server engine, over the current wave",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "repo hygiene / dead-code stays gone",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "127/127",
+   "worktree_detail": "127/127",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "FTS v10 EPS evidence ladder + partial table row",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS universe: classifier + bulk_scan/card agree on a temp DB",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS indicator 1 FS path: helper + bulk_scan/card basis parity on a temp DB",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "1b parity + vol=-100 regression",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "honest N/A: row fields, reasons, newest-period only",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "EPS evidence labels: one tier label on card, row and scan_symbol",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "margin tiers: 20/30 gate unchanged, 50 label-only, N/A stays None",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "indicator 4 acceptance paths: sales_to_mcap vs profit_potential, annualize label",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "sector gate: three booklet mandatory industries, insurance separate veto",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "monthly universe: company scope on a temp DB, indicator 1 falls back to FS",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "technical setups stay three-state (null != false) and each rule matches the notebook",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "engine 3 contract: explicit input states, thresholds only from the engine itself, prefix-stability (no future data), ATR-vs-floor split, and zero writes to the FTS vote",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "11/11",
+   "worktree_detail": "11/11",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "pullback / key-levels / structure-points behavior + the strict pivot rule (flat TSETMC rows draw no ceiling)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "candle integrity + published-TSETMC parity along feed → engine → chart",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "TSETMC market-cap source of truth + risk filters",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "screener<->card parity + ind-4 exemption engine vs card",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "scan_symbol == bulk_scan on every symbol + raw-threshold boundary",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "materialized fts_results == live evaluate_v10, field by field",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "indicator-3 no-data is 'not measured', never 'rejected' (both cache paths)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "14/14",
+   "worktree_detail": "14/14",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal logic contract F-01..F-05 (amendment)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "14 pass / 2 fail",
+   "worktree_detail": "14 pass / 2 fail",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS v2.2 db contract: writer/reader/schema agree",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "26 pass / 0 fail",
+   "worktree_detail": "26 pass / 0 fail",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "BORS_DATA_DIR seam: override wins, unset keeps the repo paths",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "7/7",
+   "worktree_detail": "7/7",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "B1 board fixture + goldens + SQL text are current",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "5/6",
+   "worktree_detail": "5/6",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "B2 mstat fixture + goldens + pinned clock are current",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "63 pass / 1 fail",
+   "worktree_detail": "63 pass / 1 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "B3 chart fixture + goldens + offline seams are current",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "44/47",
+   "worktree_detail": "44/47",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "fundamental + tape-history fixture, oracle, goldens",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "43/45",
+   "worktree_detail": "43/45",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "layer vectors are a fresh oracle run, not hand-edited",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "1/2",
+   "worktree_detail": "1/2",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "DB isolation: temp copy, logical fingerprint, fetch-loop gate",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one official ledger row is applied once, even across a long suspension",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "DPS factor = close_ex/(close_ex+dps); reserve capital change = pv/nw",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "official no-cash share evidence: deterministic ingest, idempotent, paid-in rejected",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 14: capital vs share ratio, official DPS, type7 P and no silent fallback",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 15: DPS source-ratio duplicate, combined gap, evidence-gated 10-day window",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 16: type7 DPS base is the effective candle closing (holdout)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 16: an empty/partial gate DB is refused before copying",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 17: observed gap/share precedence over a separate DPS",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 17: general CODAL composition parser (Farak/after-label/stage)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 17: staged migration is keyed, idempotent, reversible",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 18: raw OHLC mapping, basis, tolerance and cause taxonomy",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 18: raw mismatch attribution is evidence-backed",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "5/5",
+   "worktree_detail": "5/5",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 18: published price_history repair is keyed, prioritized and idempotent",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "14/14",
+   "worktree_detail": "14/14",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 20: proven Rahavard DPS/reserve formulas; contribution S remains unverified",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "8/8",
+   "worktree_detail": "8/8",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 21: an official share change inside a long suspension still adjusts",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 22: multiple official PA rows on one date are all applied",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 22: isolated small unproven base gaps are noise; combined ones survive",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 22: a DPS row keeps the candle-closing formula over the sharpened PA ratio",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 23: the live DPS base is the parsed official close, not the DB close",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 24: a shrinking feed never promotes a fabricated base gap; cache writes are idempotent",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 25: the official share leg of an observed base gap is applied once",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 25: a combined share+DPS action keeps the official price leg",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 27: D/W/M audit keys, aggregation, re-anchoring and stamp-independent pairing",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 27: shadow source modes never mix sources in one series and mark UNAVAILABLE",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 28: aligned factor-chain debugger classifies RATIO_DIFF/EXTRA/REF_ONLY",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 29: a combined base gap absorbs its share and DPS legs exactly once",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 30: /api/chart/{symbol} is wired to the live handler, not a candles helper",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "uvicorn"
+   ],
+   "worktree_missing_modules": [
+    "uvicorn"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 31: /api/chart exposes the literal high/low the Rahavard type7 shows",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 32B: versioned factor/raw corrections replace or suppress by effective date",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 32C: future events survive the pack horizon; corrected high_raw moves the visible high/low",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Phase 4.9: Python↔Go parity fixture — literal H/L + raw pack corrections, overlay near-date dedup, canonical factors",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "76/76",
+   "worktree_detail": "76/76",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 32D: non-comparable W/M keys get the reference calendar bar, or an explicit unavailable",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 32E: the FTS weekly/monthly resampler uses the reference calendar bars when covered",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 32F: the formula audit buckets steps and official coverage; the formula already matches official fund ratios",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "24/24",
+   "worktree_detail": "24/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 32G: Rahavard performance formula — close_ex/(close_ex+dps), par/(par+dps), rights at the effective close",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 32H: announced assembly DividendPerShare parser + live close/(close+dps) formula locks",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "16/16",
+   "worktree_detail": "16/16",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Round 32H: the chart prefers the Codal DPS with the official close; PA-D path stays the fallback",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "Round 32H: Codal DPS ingest writes only proven rows, resumes, and respects the request budget",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "jdatetime"
+   ],
+   "worktree_missing_modules": [
+    "jdatetime"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "official fund distributions drive (P-D)/P factor; same-date typed event survives",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "history repair writes src=published on a temp DB; closed gate writes nothing",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "all eleven version anchors state the same release",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "1 pass / 0 fail",
+   "worktree_detail": "1 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "version anchor guard unit tests: match, mismatch and missing",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "install watchdog waits without blocking and runs the setup",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS guide defaults: FE drawer mirrors the server",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "78 pass / 0 fail",
+   "worktree_detail": "78 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "hourglass RSI period, oversold threshold and MA52 mode are configurable",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "weekly downtrend/neutral is a hard veto; no-data is not",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "major-swing trend grading: System 1 judge preserved, no lookahead, provisional is information only",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "assembly veto: fresh outside the cache, no-data is not a veto",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "weekly trend verdict from live pivots or the recent window, never a stale pivot",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS engine publishes no made-up numbers (week, fib, stop, MA52, na)",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "market.db merges a new bundled baseline over the existing database",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "11 pass / 0 fail",
+   "worktree_detail": "11 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "pack refuses a baseline with fewer rows than the committed one",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "25/25",
+   "worktree_detail": "25/25",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "derived columns at insert (backfill selftest)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "incremental sync: new symbol + new monthly report",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "6 pass / 0 fail",
+   "worktree_detail": "6 pass / 0 fail",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "mstat params: unknown group/tab is a loud 400, a legitimately-empty category still returns 200",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "market map scope: alias groups resolve, top50 uses the engine stamp, label never lies",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "32/32",
+   "worktree_detail": "32/32",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "breadth/queue basis: card and timeline count the same universe; stale-basis points are masked",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "28/28",
+   "worktree_detail": "28/28",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "R1/R2 housekeeping: dedupe + prev-year backfill",
+   "control_status": "SKIP",
+   "worktree_status": "SKIP",
+   "control_rc": null,
+   "worktree_rc": null,
+   "control_detail": "fixture missing: market.db.lzma",
+   "worktree_detail": "fixture missing: market.db.lzma",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "onedir build contract: hiddenimports + shape",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "1 pass / 0 fail",
+   "worktree_detail": "1 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "live board audit: zero-volume / no-CT edge cases",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "Windows + GPU/software-render guard",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "23 pass / 0 fail",
+   "worktree_detail": "23 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "log has a clock and survives a hard death",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "3 pass / 0 fail",
+   "worktree_detail": "3 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "candle fidelity: geometry repair + anchored adjustment",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "live candle: session date, both chart endpoints, cache untouched",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "candles from the board table + geometry repair + no prune-before-fetch",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "41/41",
+   "worktree_detail": "41/41",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "last/closing are separate columns; no fabricated last, anchor untouched",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "single price resolver (last|closing) + adjustment anchor invariance",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "no history pruning, incremental sync, idempotent second run",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "13/13",
+   "worktree_detail": "13/13",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one candle contract: shared geometry, writer priority, same numbers from every source",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "22/22",
+   "worktree_detail": "22/22",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "adjustment also from restated close on zero-volume rows; four negative controls",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "one notice = one extraction; shared period never blocks another symbol",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "75/75",
+   "worktree_detail": "75/75",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one canonical period rule; SQL and Python agree; every consumer sees one count",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "51/51",
+   "worktree_detail": "51/51",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one reference-row rule for quarters; digit script never decides; losers preserved",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "notice identity = tracing_no; re-ingest never adds or deletes a row",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "13/13",
+   "worktree_detail": "13/13",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "notebook numeric examples reproduce; its two internal conflicts stay open",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "35/45",
+   "worktree_detail": "35/45",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "22/24",
+   "worktree_detail": "22/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one canonical symbol-identity layer; ISIN gate; card and bulk see the same rows",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "58/58",
+   "worktree_detail": "58/58",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "one money-unit definition; per-row scale; unitless never becomes a fabricated rial number",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "33/34",
+   "worktree_detail": "33/34",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "durable codal queue: states, checkpoint, backoff, claim race, restart recovery",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "42/42",
+   "worktree_detail": "42/42",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "automatic codal notice discovery: durable id checkpoint, late/revision/no-dup/network-failure",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "45/45",
+   "worktree_detail": "45/45",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "instrument universe ledger: new/rename/id-change/deactivated/removed, non-company classes held out",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "39/39",
+   "worktree_detail": "39/39",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "ui-independent scheduler: dynamic wakeup, crawler-busy yield, single worker, deferred recalc, offline CLI",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "48/48",
+   "worktree_detail": "48/48",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "27/27",
+   "worktree_detail": "27/27",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "fundamental HTTP layer: card provenance, missing!=zero, 404 not 500, health schema fields, failed cycle never successful",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "real HTTP 429 over a loopback socket: backoff ladder, cursor frozen, failed cycle never successful",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "8/8",
+   "worktree_detail": "8/8",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "process probe: ttl + stale-while-revalidate + single-flight, endpoint payload and semantics unchanged",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "mstat panels: stale-while-revalidate + stale cap + single-flight, errors never cached, 3 negative controls",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "watchlist export: real xlsx/csv round-trip, numeric cells, nulls, provenance sheet, input gates",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "openpyxl"
+   ],
+   "worktree_missing_modules": [
+    "openpyxl"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "per-capita sell reaches the wire: drop-list, shared zero-denominator rule, schema and export column",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "16/16",
+   "worktree_detail": "16/16",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "the identity guard really detects the six historical defects (mutation control)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "9/9",
+   "worktree_detail": "9/9",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "board-class digit suffix resolves only with ISIN evidence",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "9/9",
+   "worktree_detail": "9/9",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "fresh data invalidates the dependent caches; no crawler child in the frozen build",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "indicator math: MA divisor, Wilder RSI seed, and FTS last/closing are oracle-exact",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "pulse scopes match tradersarena + no half-written market total",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "66/66",
+   "worktree_detail": "66/66",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "tape filters: five formulas match the notebook",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "tape smart-money: two new file filters, one canonical judge",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "pandas"
+   ],
+   "worktree_missing_modules": [
+    "pandas"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "tape thresholds: below/at/above boundary for the five untested constants",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "tape flag history: per-day record, no double count, honest gaps",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "pandas"
+   ],
+   "worktree_missing_modules": [
+    "pandas"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "fts trend fixtures: weekly gate beats daily setup",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "tsetmc p0: native client values, corporate events, state",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "165/165",
+   "worktree_detail": "165/165",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "real/legal share: value basis, both sides independent, no volume estimate",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "29/29",
+   "worktree_detail": "29/29",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "screener candidate = tape∧technicalfundamental pass; no bypass door",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "funnel build lock never held while waiting for the screener warm-up",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "notification centre: codal-only source, explainable levels, dedupe",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "30/30",
+   "worktree_detail": "30/30",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "session phase from the official market state; no verdict without a phase",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "30/30",
+   "worktree_detail": "30/30",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "time-aware market state: staged verdict, one-sided partial liquidity, no lookahead",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "18/19",
+   "worktree_detail": "18/19",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "portable mode: explicit marker, isolated data/port, never spawns the installer",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "single writer: one backend per market.db",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "funnel registry: every txt filter pinned to its source",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "funnel engine: ordered intersection, weekly gate, fund modes",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "strategy settings: fib evidence, per-timeframe conditions, clock threshold",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "funnel presets: distinct chains, gates AND distinct engine output",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "numpy"
+   ],
+   "worktree_missing_modules": [
+    "numpy"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "live trading-status universe: executed vs quoted, dedupe, staleness",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "17/17",
+   "worktree_detail": "17/17",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "user watchlist CRUD: get() on a missing row, upsert identity, cap layering",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati: broker contract on mock, no blind retry",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "20/20",
+   "worktree_detail": "20/20",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati: monotonic-anchored scheduler + clock quality",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "32/32",
+   "worktree_detail": "32/32",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati: phased latency probe, no fabricated estimate",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "21/21",
+   "worktree_detail": "21/21",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati: dry-run default, reconcile-only after unknown, limits",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "50/50",
+   "worktree_detail": "50/50",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "32/34",
+   "worktree_detail": "32/34",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati connect layer: allow-listed login window, session state only from a real probe, no secret persistence, mock cycle with duplicate-send guard",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "p0 gates: unverified session cannot POST, confirm phrase validated in backend, absence from the order list is not failure, fail-closed risk config, JSON 404 for unknown /api/*, preview independent of the send gate, per-id cancel lock",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "broker connection: disk adapter selection with env precedence, write gate env-only, read-only mode refuses POST, session proof names the route that verified it, 401 never connected, config/portfolio leak nothing",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati tab: cancel semantics (explicit confirm, per-row lock, read-back proof) + events filters",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "54/54",
+   "worktree_detail": "54/54",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "harness: guard outputs are actually counted, silence is reported as silence",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "33/33",
+   "worktree_detail": "33/33",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "persian text: no stray CJK, no eaten section digit",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "4/4",
+   "worktree_detail": "4/4",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "QA route table is derived from routes.tsx, never hand-listed",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "4/4",
+   "worktree_detail": "4/4",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "sarkhati: order state + queue position, never a fabricated zero",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "24/24",
+   "worktree_detail": "24/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "board history windows: materialized == inline",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "hot state: field-aware diff, RAM==SQL board, honest delta",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "board freshness: session day + abstaining market pulse",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "21/24",
+   "worktree_detail": "21/24",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "portfolio weights: value-based + no fake zero",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "boot page: real download/extract progress, RTL page, handoff + error",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "36/36",
+   "worktree_detail": "36/36",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "engine3 vs engine1: provably different pivot sets, both anti-repaint",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "anti-repaint: two-time pivots, prefix-stability, no future-look in payload",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "wave direction: extremes rule kept, provisional flag moves no fib zone",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "codal updater 26-col schema",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal staging validation gates",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "109 pass / 0 fail",
+   "worktree_detail": "109 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal no-ADB orchestrator dry-run",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "codal event-driven 5-axis: cadence, invalidate, quarantine, locks, freshness",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "58 pass / 0 fail",
+   "worktree_detail": "58 pass / 0 fail",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "codal snapshot meta",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "32/32",
+   "worktree_detail": "32/32",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal publish dry-run/last-good",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "59/59",
+   "worktree_detail": "59/59",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "codal scheduler + startup catch-up",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "calendar Cat6 merge",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "codal client meta compare",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "suite registry guard unit tests: category/profile/disposition/lane agreement",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "runner lanes: --list/--profile/--only select from the registry, not by category",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "stage manifest helper: input/output hashes deterministic",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "status rules: five frozen tolerances and 13 categories match the existing parity code (AST)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "46/46",
+   "worktree_detail": "46/46",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "fixture: fts_v10 payloads",
+   "control_status": "FAIL",
+   "worktree_status": "FAIL",
+   "control_rc": 1,
+   "worktree_rc": 1,
+   "control_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "worktree_detail": "بی‌شمارش (فقط exit code)  [بی‌شمارش]",
+   "control_missing_modules": [
+    "fastapi"
+   ],
+   "worktree_missing_modules": [
+    "fastapi"
+   ],
+   "identical": true
+  },
+  {
+   "suite": "FTS v10 fundamental table UI render (headless)",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "17 pass / 0 fail",
+   "worktree_detail": "17 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  },
+  {
+   "suite": "FTS CODAL settings panel: validate + storage + apply",
+   "control_status": "OK",
+   "worktree_status": "OK",
+   "control_rc": 0,
+   "worktree_rc": 0,
+   "control_detail": "45 pass / 0 fail",
+   "worktree_detail": "45 pass / 0 fail",
+   "control_missing_modules": [],
+   "worktree_missing_modules": [],
+   "identical": true
+  }
+ ]
+}

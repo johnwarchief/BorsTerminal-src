@@ -32,13 +32,17 @@ func (s *Service) ChartDB(w http.ResponseWriter, r *http.Request) {
 	body := s.chartDBBody(r.Context(), symbol, 3)
 	// معادلِ wrapperِ مسیرِ پایتون (`get_chart_db_visible`): کندلِ دیدنی
 	// literal + تصحیح‌های فیلد خامِ بستهٔ نسخه‌دار، پس از price_basis و FTS.
-	// نمادِ پوشش‌داده‌شده با فاکتورهای مرجع، سریِ خامِ type0 خودش را دارد؛
-	// تصحیحِ نمایشیِ بسته روی آن اعمال نمی‌شود.
+	// resetِ نمایشی روی هر دو مسیر لازم است: price_basis در خروجیِ payload سایه
+	// را گِشاد می‌کند و قراردادی منجمد است، پس همین‌جا به مقدارِ خام برمی‌گردد.
+	// تصحیح‌های بسته از TSETMC می‌آیند و روی سری‌ای که خودش از Rahavard آمده
+	// اعمال نمی‌شوند.
 	if cands, ok := body["candles"].([]map[string]any); ok {
+		var pack *CorrectionPack
 		if _, _, measured := s.measuredFactorEvents(r.Context(), symbol); !measured {
-			ins := s.resolveInsCode(r.Context(), symbol)
-			body["candles"] = literalDisplayCandles(LoadPack(s.dataDir), ins, symbol, cands)
+			pack = LoadPack(s.dataDir)
 		}
+		ins := s.resolveInsCode(r.Context(), symbol)
+		body["candles"] = literalDisplayCandles(pack, ins, symbol, cands)
 	}
 	httpapi.WriteJSON(w, http.StatusOK, body)
 }

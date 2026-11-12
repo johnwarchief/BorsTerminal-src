@@ -1,0 +1,7 @@
+{
+ "stage": "stage14_guard_control",
+ "finished_utc": "2026-11-12T11:11:17Z",
+ "payload_path": "_audit/phase49-4/evidence/GUARD-CONTROL.json",
+ "payload_sha256": "f8ee85be8b60fb152bf0375d7fa53f0d3dd045aa7277ed870f832f9338cc6068",
+ "exit_code": 0
+}

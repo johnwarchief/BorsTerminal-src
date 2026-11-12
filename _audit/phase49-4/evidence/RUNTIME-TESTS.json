@@ -1,0 +1,255 @@
+{
+ "schema": "phase49-4-runtime-tests-v1",
+ "mission": "Phase 4.9.4 runtime parity with Rahavard",
+ "status": "PASS",
+ "failures": [],
+ "base_commit": "e09ccd95d51c94082640cda75ef3de2b2008f9d2",
+ "head_commit": "4454dcfb01d86a1d40b439c34a3ead67179992c5",
+ "branch": "mission/phase49-4-runtime-parity-2026-11-12",
+ "measurement": {
+  "kind": "the repo's own test and gate commands, executed fresh",
+  "is_ui_test": false,
+  "screenshot": "NOT_MEASURED",
+  "note": "no browser was driven here; the frontend lane is tsc + vitest over the real modules, not a rendered UI"
+ },
+ "frozen_contracts": {
+  "paths": [
+   "candle_contract.py",
+   "price_basis.py",
+   "codal_periods.py",
+   "backend-go/internal/candle/candle.go"
+  ],
+  "diff_vs_base": "(empty)",
+  "unchanged": true,
+  "owner_ruling": "candle_contract.py and candle.go must not change"
+ },
+ "engine_diff_vs_base": "backend-go/internal/candlebuild/candlebuild.go     |  53 ++++--\n .../internal/candlebuild/candlebuild_test.go       | 155 +++++++++++++++-\n backend-go/internal/chart/handlers.go              |  12 +-\n backend-go/internal/chart/measured.go              |  34 +++-\n backend-go/internal/chart/measured_test.go         | 206 ++++++++++++++++++++-\n frontend-v2/src/features/chart/api/useChart.ts     |  12 +-\n 6 files changed, 442 insertions(+), 30 deletions(-)",
+ "new_engine_test_files": [
+  "backend-go/internal/candlebuild/reference_fixture_test.go",
+  "backend-go/internal/candlebuild/reference_zeroevent_fixture_test.go",
+  "backend-go/internal/chart/reference_literal_fixture_test.go",
+  "frontend-v2/src/__tests__/chart-parity.spec.ts"
+ ],
+ "lanes": [
+  {
+   "label": "go-build",
+   "command": "C:\\Program Files\\Go\\bin\\go.EXE build ./...",
+   "cwd": "backend-go",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-go-build.log",
+   "log_sha256": "ae626744f6ce8b2996b2dd4cba6120011afc214acdd69c2afe068752041f45e8",
+   "output_tail": [],
+   "pass": true
+  },
+  {
+   "label": "go-test",
+   "command": "C:\\Program Files\\Go\\bin\\go.EXE test ./... -count=1",
+   "cwd": "backend-go",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-go-test.log",
+   "log_sha256": "63a08168f56bc91ddae592b026511d139732fef8e402b264c042e267bfcd4926",
+   "output_tail": [
+    "ok  \tborsterminal/backend/internal/seed\t2.902s",
+    "ok  \tborsterminal/backend/internal/selection\t0.040s",
+    "ok  \tborsterminal/backend/internal/snapshot\t14.060s",
+    "ok  \tborsterminal/backend/internal/store\t0.358s",
+    "ok  \tborsterminal/backend/internal/symbolid\t2.395s",
+    "ok  \tborsterminal/backend/internal/sync\t1.290s",
+    "ok  \tborsterminal/backend/internal/tapeflags\t0.046s",
+    "ok  \tborsterminal/backend/internal/tapehistory\t0.859s",
+    "ok  \tborsterminal/backend/internal/tsetmc\t0.360s",
+    "ok  \tborsterminal/backend/internal/update\t1.242s",
+    "ok  \tborsterminal/backend/internal/watchlist\t0.420s",
+    "ok  \tborsterminal/backend/internal/worker\t1.003s"
+   ],
+   "parsed": {
+    "packages_ok": 55,
+    "packages_no_test_files": 3,
+    "failures": 0
+   },
+   "pass": true,
+   "parsed_from_log_on_disk": {
+    "packages_ok": 55,
+    "packages_no_test_files": 3,
+    "failures": 0
+   },
+   "log_reparse_agrees": true
+  },
+  {
+   "label": "gofmt",
+   "command": "C:\\Program Files\\Go\\bin\\gofmt.EXE -l backend-go/internal/candlebuild/candlebuild.go backend-go/internal/candlebuild/candlebuild_test.go backend-go/internal/candlebuild/reference_fixture_test.go backend-go/internal/candlebuild/reference_zeroevent_fixture_test.go backend-go/internal/chart/handlers.go backend-go/internal/chart/measured.go backend-go/internal/chart/measured_test.go backend-go/internal/chart/reference_literal_fixture_test.go",
+   "cwd": ".",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-gofmt.log",
+   "log_sha256": "ca6d068076ad62f60378f45f22a9f7d3cfaed3a7b86281f4f40fb3514c710877",
+   "output_tail": [],
+   "unformatted_files": [],
+   "pass": true
+  },
+  {
+   "label": "v2-tsc",
+   "command": "C:\\Users\\PCMOD\\AppData\\Roaming\\npm\\npx.CMD tsc -b",
+   "cwd": "frontend-v2",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-v2-tsc.log",
+   "log_sha256": "6c78dee82dc5bec546210cbf502498dcecb4a0e413fff442009effbac9a07a79",
+   "output_tail": [
+    "[stderr]",
+    "npm warn install-scripts .npmrc allow-scripts setting is being ignored because --allow-scripts was passed on the command line",
+    "npm notice run bors-terminal-ui@1.0.95 npx",
+    "npm notice run tsc -b"
+   ],
+   "pass": true
+  },
+  {
+   "label": "v2-vitest",
+   "command": "C:\\Users\\PCMOD\\AppData\\Roaming\\npm\\npx.CMD vitest run",
+   "cwd": "frontend-v2",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-v2-vitest.log",
+   "log_sha256": "649c54ec354d347a03237ab41c54d74ac21d33cddfb88644b1f468c25a93508a",
+   "output_tail": [
+    "    at div",
+    "    at div",
+    "    at div",
+    "    at FundamentalScreenTable (E:\\bors_work\\phase49-3\\frontend-v2\\src\\features\\fundamental\\ui\\FundamentalScreenTable.tsx:79:35)",
+    "Warning: An update to FundamentalScreenTable inside a test was not wrapped in act(...).",
+    "When testing, code that causes React state updates should be wrapped into act(...):",
+    "act(() => {",
+    "  /* fire events that update state */",
+    "});",
+    "/* assert on the output */",
+    "This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act",
+    "    at FundamentalScreenTable (E:\\bors_work\\phase49-3\\frontend-v2\\src\\features\\fundamental\\ui\\FundamentalScreenTable.tsx:79:35)"
+   ],
+   "parsed": {
+    "parse_complete": true,
+    "files_failed": 0,
+    "files_passed": 107,
+    "tests_failed": 0,
+    "tests_passed": 867
+   },
+   "pass": true,
+   "parsed_from_log_on_disk": {
+    "parse_complete": true,
+    "files_failed": 0,
+    "files_passed": 107,
+    "tests_failed": 0,
+    "tests_passed": 867
+   },
+   "log_reparse_agrees": true
+  },
+  {
+   "label": "version-anchor",
+   "command": "C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.15-64\\python.exe dev/version_anchor_guard.py",
+   "cwd": ".",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-version-anchor.log",
+   "log_sha256": "2208499274626c204d3cd27afbceb3f824f2302e6c6cde15cecfabb2ce675687",
+   "output_tail": [
+    "    ok  frontend-v2/package.json = 1.0.95",
+    "    ok  frontend-v2/package-lock.json#version = 1.0.95",
+    "    ok  frontend-v2/package-lock.json#packages[\"\"] = 1.0.95",
+    "    ok  backend-go/cmd/bors-producer/main.go = 1.0.95",
+    "    ok  src-tauri/tauri.conf.json = 1.0.95",
+    "    ok  src-tauri/Cargo.toml = 1.0.95",
+    "    ok  installer/bors_setup.iss AppVersion = 1.0.95",
+    "    ok  frontend/package.json = 1.0.95",
+    "    ok  package-lock.json#version = 1.0.95",
+    "    ok  package-lock.json#packages[\"\"] = 1.0.95",
+    "11 checks, 0 failed",
+    "VERSION ANCHOR GUARD OK"
+   ],
+   "anchor_ok": true,
+   "pass": true
+  },
+  {
+   "label": "persian-glyph",
+   "command": "C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.15-64\\python.exe dev/persian_glyph_guard.py",
+   "cwd": ".",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-persian-glyph.log",
+   "log_sha256": "102f2746e6ef189ba263872ec142e7630e86a0ace94d409042d5c863aeb35bdc",
+   "output_tail": [
+    "persian_glyph_guard — نویسهٔ بیگانه و رقمِ افتاده درِ متنِ فارسی",
+    "  (اطلاعی: 822 سطرِ ك/ي عربی بیرونِ فایل‌هایِ سرخطی — اکثراً املاىِ نمادهایِ تابلو، پس گیت نیست؛ §۳)",
+    "  ok   هیچ متنِ فارسیِ آلوده به CJK/هنگول (بیرونِ استثنایِ ثبت‌شده)",
+    "  ok   هیچ سطرِ banner بی‌شماره",
+    "  ok   ك/ي عربی درِ فایل‌هایِ سرخطی نیست",
+    "  ok   استثنا فقط همان یک فایلِ ثبت‌شده است",
+    "persian_glyph_guard: 4 passed / 0 failed"
+   ],
+   "parsed": {
+    "parse_complete": true,
+    "passed": 4,
+    "failed": 0
+   },
+   "pass": true,
+   "parsed_from_log_on_disk": {
+    "parse_complete": true,
+    "passed": 4,
+    "failed": 0
+   },
+   "log_reparse_agrees": true
+  },
+  {
+   "label": "persian-glyph-selftest",
+   "command": "C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.15-64\\python.exe dev/persian_glyph_guard.py --selftest",
+   "cwd": ".",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-persian-glyph-selftest.log",
+   "log_sha256": "3f6af9334283ff64cb05bc0b77663a4380b1b4cb98dba6d7ac90b86e90e1cd00",
+   "output_tail": [
+    "  ok   selftest: سنسورِ «ك عربی» سم را می‌بیند",
+    "  ok   selftest: «سطرِ سالم» داوری نمی‌شود",
+    "  ok   selftest: «bannerِ شماره‌دار» داوری نمی‌شود",
+    "  ok   selftest: «توضیحِ قانون درِ متن» داوری نمی‌شود",
+    "  ok   selftest: «استثنایِ ثبت‌شده» داوری نمی‌شود",
+    "  ok   selftest: بی‌فایل هیچ سنسوری رأی نمی‌دهد",
+    "  ok   selftest: coverage — سمِ CJK درِ «.tsx» ازِ scan() در می‌آید",
+    "  ok   selftest: coverage — فایلِ سالمِ «.tsx» رأی نمی‌گیرد",
+    "  ok   selftest: coverage — سمِ CJK درِ «.mts» ازِ scan() در می‌آید",
+    "  ok   selftest: coverage — فایلِ سالمِ «.mts» رأی نمی‌گیرد",
+    "  ok   selftest: coverage — پسوندِ پوشش‌داده‌نشده اسکن نمی‌شود (کنترلِ منفی)",
+    "persian_glyph_guard: 13 passed / 0 failed"
+   ],
+   "parsed": {
+    "parse_complete": true,
+    "passed": 13,
+    "failed": 0
+   },
+   "pass": true,
+   "parsed_from_log_on_disk": {
+    "parse_complete": true,
+    "passed": 13,
+    "failed": 0
+   },
+   "log_reparse_agrees": true
+  },
+  {
+   "label": "guard-control-selftest",
+   "command": "C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.15-64\\python.exe _audit/phase49-4/stage14_guard_control.py --selftest",
+   "cwd": ".",
+   "exit_code": 0,
+   "log": "_audit/phase49-4/logs/stage15-guard-control-selftest.log",
+   "log_sha256": "b3eb3919e533ea1ebcfc4208629ebe21173e6cdc8f621f41ea54d239e4beb796",
+   "output_tail": [
+    "  selftest status flip on 'structure / undefined-names'   CAUGHT",
+    "  selftest count edit on 'calendar py<->js categories'    CAUGHT",
+    "  selftest dropped suite 'structure / undefined-names'    CAUGHT",
+    "GUARD CONTROL SELFTEST OK"
+   ],
+   "all_controls_caught": true,
+   "pass": true
+  }
+ ],
+ "local_legacy_python_lane": {
+  "status": "NOT_MEASURED_HERE",
+  "reason": "dev/run_all_tests.py needs fastapi/numpy/pandas which this host's Python 3.15.2 lacks; stage14 proved its 152 failures are identical on a clean control worktree, and CI is the authority for that lane",
+  "evidence": "_audit/phase49-4/evidence/GUARD-CONTROL.json"
+ },
+ "not_measured": {
+  "ui_screenshot": "no browser render was exercised by any lane here",
+  "legacy_frontend_v1_tests": "frontend/node_modules is absent on this host; v1 was measured by stage13, not fixed"
+ }
+}

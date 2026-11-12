@@ -51,13 +51,15 @@ export function toKlineBars(
     .map((candle) => {
       const timeKey = String(candle.time).slice(0, 10);
       const factor = (adjustment !== 0 && factorMap.size > 0 ? factorMap.get(timeKey) : undefined) ?? 1.0;
+      // Rahavard: type7 = type0 × factor برای هر چهار قیمت، و حجمِ type7 عیناً
+      // برابرِ type0 است (۸۴٬۴۵۲ ردیفِ اندازه‌گیری‌شده، صفر استثنا).
       return {
         timestamp: new Date(String(candle.time)).getTime(),
-        open: Math.round(candle.open * factor),
-        high: Math.round(candle.high * factor),
-        low: Math.round(candle.low * factor),
-        close: Math.round(candle.close * factor),
-        volume: factor > 0 ? Math.round((candle.volume ?? 0) / factor) : (candle.volume ?? 0),
+        open: candle.open * factor,
+        high: candle.high * factor,
+        low: candle.low * factor,
+        close: candle.close * factor,
+        volume: candle.volume ?? 0,
       };
     });
 }

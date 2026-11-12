@@ -1,0 +1,7 @@
+{
+ "stage": "stage12_frontend_parity",
+ "finished_utc": "2026-11-12T10:19:25Z",
+ "payload_path": "_audit/phase49-4/evidence/FRONTEND-PARITY.json",
+ "payload_sha256": "031156dd0067f39d226eafc468cacf63d2e62d2c0b563c3e24c31a1c6e35128d",
+ "exit_code": 0
+}

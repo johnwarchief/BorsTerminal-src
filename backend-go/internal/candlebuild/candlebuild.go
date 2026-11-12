@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	candlecontract "borsterminal/backend/internal/candle"
 	"borsterminal/backend/internal/chart"
 )
 
@@ -69,15 +68,16 @@ func ensureSchema(db *sql.DB) error {
 }
 
 // Build recomputes adjusted_candles and adjustment_verification for every
-// symbol that has measured factors. It is idempotent: a second run deletes and
-// rewrites the same rows with the same revision.
+// symbol the reference series covers, with or without measured events. It is
+// idempotent: a second run deletes and rewrites the same rows with the same
+// revision.
 func Build(db *sql.DB) (Result, error) {
 	res := Result{Revisions: []string{}, MissingRaw: []string{},
 		MissingVerify: []string{}}
 	if err := ensureSchema(db); err != nil {
 		return res, err
 	}
-	symbols, err := symbolsWithFactors(db)
+	symbols, err := coveredSymbols(db)
 	if err != nil {
 		return res, err
 	}
@@ -90,8 +90,12 @@ func Build(db *sql.DB) (Result, error) {
 	return res, nil
 }
 
-func symbolsWithFactors(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT DISTINCT symbol FROM adjustment_factors ORDER BY symbol")
+// coveredSymbols یک نماد را پوشیده می‌داند اگر سری مرجع دارد، چه رویدادِ
+// اندازه‌گیری‌شده داشته باشد چه نداشته باشد.
+func coveredSymbols(db *sql.DB) ([]string, error) {
+	rows, err := db.Query(
+		"SELECT symbol FROM adjustment_factors UNION " +
+			"SELECT symbol FROM reference_raw ORDER BY symbol")
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +116,6 @@ func buildSymbol(db *sql.DB, symbol, now string, res *Result) error {
 	if err != nil {
 		return err
 	}
-	if len(factors) == 0 {
-		return nil
-	}
 	raw, err := loadRaw(db, symbol)
 	if err != nil {
 		return err
@@ -126,7 +127,15 @@ func buildSymbol(db *sql.DB, symbol, now string, res *Result) error {
 	times := make([]string, len(raw))
 	dates := make([]string, len(factors))
 	ratios := make([]float64, len(factors))
-	revision, capture := factors[0].revision, factors[0].capture
+	revision, capture := "", ""
+	if len(factors) == 0 {
+		revision, capture, err = referenceIdentity(db, symbol)
+		if err != nil {
+			return err
+		}
+	} else {
+		revision, capture = factors[0].revision, factors[0].capture
+	}
 	for i, r := range raw {
 		times[i] = r.date
 	}
@@ -161,10 +170,11 @@ func buildSymbol(db *sql.DB, symbol, now string, res *Result) error {
 		if o <= 0 {
 			o = r.close
 		}
-		h, l := candlecontract.Widen(o, r.high, r.low, r.close, 0)
+		// سری مرجع دست‌نخورده می‌ماند: type7 = type0 × factor، بدون Widen.
 		if _, err := tx.Exec(
 			"INSERT INTO adjusted_candles VALUES(?,?,?,?,?,?,?,?,?)",
-			symbol, r.date, o*f, h*f, l*f, r.close*f, r.volume, f, revision); err != nil {
+			symbol, r.date, o*f, r.high*f, r.low*f, r.close*f, r.volume, f,
+			revision); err != nil {
 			return err
 		}
 		res.AdjustedRows++
@@ -247,6 +257,25 @@ func loadFactors(db *sql.DB, symbol string) ([]factorRow, error) {
 		out = append(out, f)
 	}
 	return out, rows.Err()
+}
+
+// referenceIdentity لنگرِ نمادِ بدون رویداد است: همان capture که سری مرجع از
+// آن آمده، چون هیچ ردیفِ ضریبی وجود ندارد که revision بدهد.
+func referenceIdentity(db *sql.DB, symbol string) (string, string, error) {
+	var capture, run sql.NullString
+	if err := db.QueryRow(
+		"SELECT MAX(capture_sha256), MAX(run_id) FROM reference_raw WHERE symbol=?",
+		symbol).Scan(&capture, &run); err != nil {
+		return "", "", err
+	}
+	revision := ""
+	if capture.Valid {
+		revision = capture.String
+	}
+	if revision == "" && run.Valid {
+		revision = run.String
+	}
+	return revision, capture.String, nil
 }
 
 func loadRaw(db *sql.DB, symbol string) ([]rawRow, error) {

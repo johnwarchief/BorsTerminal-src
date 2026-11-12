@@ -1,0 +1,11 @@
+{
+ "purpose": "detached control worktree for the Phase 4.9.4 guard comparison",
+ "path": "E:/bors_work/tmp/p494-control",
+ "head_commit": "4454dcfb01d86a1d40b439c34a3ead67179992c5",
+ "branch": "(detached)",
+ "local_changes": [],
+ "clean": true,
+ "market_db_sha256": "c0979d4e61a369c4107952b8b70a7df21a887da8bf2db73d9114cb3e1511c8a9",
+ "removed_after_run": true,
+ "note": "created by this phase, used only for the control guard run, then removed; no pre-existing worktree was touched"
+}

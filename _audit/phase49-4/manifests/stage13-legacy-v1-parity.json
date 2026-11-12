@@ -1,0 +1,8 @@
+{
+ "stage": "stage13_legacy_v1_parity",
+ "finished_utc": "2026-11-12T10:34:40Z",
+ "payload_path": "_audit/phase49-4/evidence/LEGACY-V1-PARITY.json",
+ "payload_sha256": "e04a2c800df1f4e3bcc0943489fa43a535fe3fb2f02caee771345f3c3e1fc245",
+ "measure_only": true,
+ "exit_code": 0
+}

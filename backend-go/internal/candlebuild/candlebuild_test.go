@@ -2,12 +2,13 @@ package candlebuild
 
 import (
 	"database/sql"
+	"math"
 	"testing"
 
 	_ "modernc.org/sqlite"
 )
 
-func fixture(t *testing.T) *sql.DB {
+func newDB(t *testing.T) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
@@ -29,6 +30,12 @@ func fixture(t *testing.T) *sql.DB {
 			t.Fatal(err)
 		}
 	}
+	return db
+}
+
+func fixture(t *testing.T) *sql.DB {
+	t.Helper()
+	db := newDB(t)
 	raw := []struct {
 		d, o, h, l, c, v float64
 	}{
@@ -168,5 +175,151 @@ func TestVerificationFlagsMismatch(t *testing.T) {
 	}
 	if status != "DIFF" {
 		t.Fatalf("status %q", status)
+	}
+}
+
+func referenceFixtureDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db := newDB(t)
+	for _, r := range referenceFixtureRaw {
+		if _, err := db.Exec("INSERT INTO reference_raw VALUES(?,?,?,?,?,?,?,?,?)",
+			referenceFixtureSymbol, r.date, r.open, r.high, r.low, r.close,
+			r.volume, "run", "cap"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for d, c := range referenceFixtureAdjustedClose {
+		if _, err := db.Exec("INSERT INTO reference_adjusted VALUES(?,?,?,?)",
+			referenceFixtureSymbol, d, c, "cap"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, f := range referenceFixtureFactors {
+		if _, err := db.Exec(
+			"INSERT INTO adjustment_factors(symbol,date,ratio,kind,revision,"+
+				"capture_sha256) VALUES(?,?,?,?,?,?)",
+			referenceFixtureSymbol, f.date, f.ratio, f.kind, f.revision,
+			f.capture); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return db
+}
+
+func TestBuildMatchesReferenceType7(t *testing.T) {
+	db := referenceFixtureDB(t)
+	if _, err := Build(db); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := db.Query(
+		"SELECT date, open, high, low, close, volume, factor FROM adjusted_candles "+
+			"WHERE symbol=? ORDER BY date", referenceFixtureSymbol)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	seen := 0
+	for rows.Next() {
+		var d string
+		var o, h, l, c, v, f float64
+		if err := rows.Scan(&d, &o, &h, &l, &c, &v, &f); err != nil {
+			t.Fatal(err)
+		}
+		want, ok := referenceFixtureType7[d]
+		if !ok {
+			t.Fatalf("unexpected date %s", d)
+		}
+		seen++
+		for _, fld := range []struct {
+			name      string
+			got, want float64
+		}{
+			{"open", o, want[0]}, {"high", h, want[1]}, {"low", l, want[2]},
+			{"close", c, want[3]}, {"volume", v, want[4]},
+		} {
+			rel := math.Abs(fld.got/fld.want - 1)
+			if rel > 1e-9 {
+				t.Errorf("%s %s: got %.17g want %.17g (rel %.3g)",
+					d, fld.name, fld.got, fld.want, rel)
+			}
+		}
+		if d == "2026-11-10" && f != 1.0 {
+			t.Errorf("chain anchor factor = %v, want 1", f)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if seen != len(referenceFixtureType7) {
+		t.Fatalf("materialized %d of %d reference rows",
+			seen, len(referenceFixtureType7))
+	}
+}
+
+func TestBuildCoversZeroEventReferenceSymbol(t *testing.T) {
+	db := newDB(t)
+	for _, r := range zeroEventRows {
+		if _, err := db.Exec("INSERT INTO reference_raw VALUES(?,?,?,?,?,?,?,?,?)",
+			zeroEventSymbol, r.date, r.open, r.high, r.low, r.close, r.volume,
+			zeroEventRun, zeroEventCapture); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Exec("INSERT INTO reference_adjusted VALUES(?,?,?,?)",
+			zeroEventSymbol, r.date, r.close, zeroEventCapture); err != nil {
+			t.Fatal(err)
+		}
+	}
+	res, err := Build(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Symbols != 1 || res.AdjustedRows != len(zeroEventRows) {
+		t.Fatalf("zero-event reference symbol not materialized: %+v", res)
+	}
+	if res.ExactRows != len(zeroEventRows) || res.MismatchRows != 0 {
+		t.Fatalf("identity chain must verify exact: %+v", res)
+	}
+	rows, err := db.Query(
+		"SELECT date, open, high, low, close, volume, factor, revision "+
+			"FROM adjusted_candles WHERE symbol=? ORDER BY date", zeroEventSymbol)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	seen := 0
+	for rows.Next() {
+		var d, revision string
+		var o, h, l, c, v, f float64
+		if err := rows.Scan(&d, &o, &h, &l, &c, &v, &f, &revision); err != nil {
+			t.Fatal(err)
+		}
+		if seen >= len(zeroEventRows) {
+			t.Fatalf("more rows than the reference carries")
+		}
+		want := zeroEventRows[seen]
+		seen++
+		if d != want.date {
+			t.Fatalf("date %q, want %q", d, want.date)
+		}
+		for _, fld := range []struct {
+			name      string
+			got, want float64
+		}{
+			{"open", o, want.open}, {"high", h, want.high}, {"low", l, want.low},
+			{"close", c, want.close}, {"volume", v, want.volume}, {"factor", f, 1.0},
+		} {
+			if fld.got != fld.want {
+				t.Errorf("%s %s = %v, want %v", d, fld.name, fld.got, fld.want)
+			}
+		}
+		if revision != zeroEventCapture {
+			t.Errorf("%s revision = %q, want the capture identity", d, revision)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if seen != len(zeroEventRows) {
+		t.Fatalf("materialized %d of %d rows", seen, len(zeroEventRows))
 	}
 }
