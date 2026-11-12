@@ -1,0 +1,20 @@
+{
+  "status": "PENDING_REMOTE_VERIFICATION",
+  "data_repository": "johnwarchief/BorsTerminal-continuation-data",
+  "data_branch": "main",
+  "data_commit": "6a2721ab2a0c5be63c7a0b521248a5de454c47a9",
+  "manifest_sha256": "c87721c931e8ac4ffe712f4076c0b0395c4572e4ebb79b69bd7568b11ff68e7e",
+  "archive_sha256": "1c4d9ed2c438fedc157dbf69cac047234f669636e2ab2255b2d788a6ed9521ac",
+  "archive_bytes": 217884449,
+  "parts": 6,
+  "files": 10,
+  "local_roundtrip": "PASS",
+  "restore_unit_tests": {"tests": 12, "failures": 0, "errors": 0},
+  "remote_bytes_downloaded": false,
+  "portability_gate_closed": false,
+  "limitations": [
+    "GitHub upload is in progress; local restoration is not remote availability proof",
+    "Second-machine toolchain installation has not been exercised",
+    "Installation into the destination is not a whole-directory transaction; interrupted copy requires a fresh destination"
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "schema": "phase49-continuation-v1",
+  "source_repository": "johnwarchief/BorsTerminal-src",
+  "source_commit": "a1961c4b22fb136e2b69db8c3309a0284deb98a6",
+  "source_branch": "mission/phase49-5-parity-browser-go-main",
+  "data_repository": "johnwarchief/BorsTerminal-continuation-data",
+  "visibility_required": "private",
+  "scope": "Phase49.5 continuation inputs; no 13-symbol runtime or 30-symbol browser result yet",
+  "archive": {
+    "format": "zip",
+    "size": 217884449,
+    "sha256": "1c4d9ed2c438fedc157dbf69cac047234f669636e2ab2255b2d788a6ed9521ac"
+  },
+  "parts": [
+    {
+      "path": "phase49-continuation.zip.001",
+      "size": 41943040,
+      "sha256": "4d1b30deef44da7b0d7ffbabedbbdff9f8c9c0c1c5e66449298e5001915a3430"
+    },
+    {
+      "path": "phase49-continuation.zip.002",
+      "size": 41943040,
+      "sha256": "6592446e4e1b966884522d3853627a76d8a8bbe4a618960dd0ca4614b08ca196"
+    },
+    {
+      "path": "phase49-continuation.zip.003",
+      "size": 41943040,
+      "sha256": "efebe9ec128ca6729c62ae6d7e3dc1de406220b39e78400c8ddd2a1d321459b5"
+    },
+    {
+      "path": "phase49-continuation.zip.004",
+      "size": 41943040,
+      "sha256": "cba87ca46909806e1139e0460d581edcbe7f888af63e90ec58df7aefbd706b2f"
+    },
+    {
+      "path": "phase49-continuation.zip.005",
+      "size": 41943040,
+      "sha256": "35529aa485be21ea74cd3c900464c662404b462e980b72481acfc1f834f938a4"
+    },
+    {
+      "path": "phase49-continuation.zip.006",
+      "size": 8169249,
+      "sha256": "53d6a6fd1b35fe231cbaddf56e8c22653c8fbfa963a6717727587e9c97bfd2d2"
+    }
+  ],
+  "files": [
+    {
+      "path": "_audit/phase49-full-verification/captures/bars-all.ndjson.gz",
+      "size": 145864430,
+      "sha256": "272336c036d647ed7b2090853c84c3a2d3da6126a0bfae60e987198169b3b14a"
+    },
+    {
+      "path": "_audit/phase49-full-verification/captures/reference-index-all.json",
+      "size": 2010378,
+      "sha256": "83544012448fc19100e7b140dbcfc2e4d27eca317f667204c343f810acc92e1c"
+    },
+    {
+      "path": "_audit/phase49-3/db/cohort.db",
+      "size": 65437696,
+      "sha256": "99ad41262e32e0b6fd1b8b9af0b9a3b3154732684c880ef1df90541739bbb0bd",
+      "sqlite": {
+        "integrity_check": [
+          "ok"
+        ],
+        "tables": {
+          "adjusted_candles": 83254,
+          "adjustment_factor_audit": 287,
+          "adjustment_factors": 606,
+          "adjustment_verification": 83254,
+          "candle_build_revisions": 29,
+          "candle_capture_runs": 1,
+          "candle_ingest_conflicts": 0,
+          "corporate_actions": 0,
+          "factor_action_links": 335,
+          "reference_adjusted": 84452,
+          "reference_raw": 84452
+        }
+      }
+    },
+    {
+      "path": "_audit/phase49-4/db/engine-after/market.db",
+      "size": 65941504,
+      "sha256": "b5e895c979a9bd18ec0b20292ae027a1194969b9dea1f49388d566e40be8573a",
+      "sqlite": {
+        "integrity_check": [
+          "ok"
+        ],
+        "tables": {
+          "adjusted_candles": 84452,
+          "adjustment_factor_audit": 287,
+          "adjustment_factors": 606,
+          "adjustment_verification": 84452,
+          "candle_build_revisions": 30,
+          "candle_capture_runs": 1,
+          "candle_ingest_conflicts": 0,
+          "corporate_actions": 0,
+          "factor_action_links": 335,
+          "reference_adjusted": 84452,
+          "reference_raw": 84452
+        }
+      }
+    },
+    {
+      "path": "_audit/phase49-3/bin/borsd.exe",
+      "size": 22188032,
+      "sha256": "a797c88343f49a4d20240b452cdacfcf193cc332f7738ecfdef41983ba319cd7"
+    },
+    {
+      "path": "_audit/phase49-3/bin/candlebuild.exe",
+      "size": 13572608,
+      "sha256": "ba34c90be644060d1ff45b7477f2eafb61a39be78169282a72554501babd3673"
+    },
+    {
+      "path": "_audit/phase49-4/bin/borsd.exe",
+      "size": 22190080,
+      "sha256": "27ea06c088c58d6fead302ac4951263aee455d997310e4e57dfbedb619a95de2"
+    },
+    {
+      "path": "_audit/phase49-4/bin/candlebuild.exe",
+      "size": 13573632,
+      "sha256": "4d28cece967b735750fb4668fee32a882253a9425d20471babfd3e98addd56ef"
+    },
+    {
+      "path": "_audit/phase49-4/db/api-payloads.json",
+      "size": 67354463,
+      "sha256": "ce200b74d8acf8ea71180239fbe24eafee15efdab375bce828bf15ca2bab6adf"
+    },
+    {
+      "path": "_audit/phase49-4/db/cohort-bars.json",
+      "size": 46253430,
+      "sha256": "ee8936678f66c6433cb0c4e87dda3e41f9148123d7144bc58dfc242840ccba8e"
+    }
+  ],
+  "exclusions": [
+    "oc directories, API tokens, browser profiles, cookies, credentials",
+    "negative-control and duplicate DBs",
+    "Seed and Pilot DBs absent on this host; not required by schema-only cohort ingest",
+    "node_modules and browser binaries; reinstall build dependencies from lockfiles"
+  ],
+  "sources_unchanged": true
+}
