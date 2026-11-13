@@ -19,3 +19,13 @@ def test_candle_cleaning_small(tmp_path, monkeypatch):
     assert c.execute("SELECT COUNT(*) FROM candle WHERE t=0").fetchone()[0] == 0
     assert c.execute("SELECT utc FROM candle").fetchone()[0] == "1970-01-01T00:00:01Z"
     c.close()
+
+def test_adjustments_from_pack(tmp_path):
+    out = tmp_path / "technical.db"
+    build_technical.build_adjustments(str(out))
+    c = sqlite3.connect(str(out))
+    n = c.execute("SELECT COUNT(*) FROM adjustment_event").fetchone()[0]
+    assert n == 8280
+    f = c.execute("SELECT COUNT(*) FROM adjustment_factor").fetchone()[0]
+    assert f > 0
+    c.close()
