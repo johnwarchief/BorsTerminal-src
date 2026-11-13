@@ -1,0 +1,1 @@
+"""Phase 4.9.7 data-layer separation: shared metadata + technical builders."""
