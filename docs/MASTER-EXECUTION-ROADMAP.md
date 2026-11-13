@@ -409,20 +409,21 @@ Evaluate lightweight baselines first, followed by evolutionary rule search / gen
 
 ### 12. Local ML data foundation and ML Engine
 
-The Market Signal Journal is a prerequisite for serious local ML. Build a reproducible historical dataset with versioned feature schemas and separately versioned outcome labels, including configurable horizons such as 3/5/10 trading sessions, returns, maximum favorable/adverse excursion and explicit outcome definitions where data permits.
+**Internal execution order (owner-approved 2026-11-13; this does not reorder the active product missions above):**
 
-Hard requirements:
-- No look-ahead or future-data leakage.
-- Features must carry availability timestamps.
-- Distinguish actual observations from reconstructed records.
-- Preserve rejected and unsuccessful candidates, not only winners.
-- Use time-aware train/validation/test partitions and walk-forward evaluation.
-- Establish simple baselines before complex models.
-- Keep training, validation, model registry and local inference separate.
-- ML remains an evidence/ranking layer; it does not silently override deterministic FTS rules.
-- Do not auto-promote or retrain a production model without explicit validation and promotion gates.
+1. Build the compact Operational Technical DB from the immutable Rahavard reference archive and connect it to Go through a dedicated read-only database handle. The approximately 5.2 GB size remains an estimate until built and measured.
+2. Complete deterministic technical analysis and source-to-chart parity, including the four printed FTS chart pages (F/Fundamental, T/Technical, S/Selection-Tape, M/Reverse-engineering and Capital Management). The chart is a rendering of canonical rules, not an independent judge.
+3. Build the Market Signal Journal, point-in-time Feature Store and versioned outcome labels.
+4. Train technical-pattern quality models.
+5. Build and validate the five-state market-regime model.
+6. Train volatility, downside-risk and liquidity-risk models.
+7. Validate candle-sequence and probabilistic future-path models, retaining Kronos as a first-class candidate and comparing it with Chronos-Bolt, TimesFM and justified specialist architectures.
+8. Calibrate and paper-test the specialist outputs.
+9. Build Opportunity Discovery / final ranking **last**, using only validated specialist outputs.
 
-Do not begin by training a large model over an unreliable dataset. First prove data contracts, historical point-in-time integrity, labels and evaluation methodology.
+The five existing canonical fundamental FTS axes remain available features; the ML layer consumes them with correct historical publication/availability timestamps and does not redefine their formulas. FTS stays deterministic and independent of ML.
+
+See the authoritative detailed sequence, data contracts and acceptance gates in `docs/ML-ENGINE-ROADMAP.md`. No model training begins before the Operational Technical DB is connected and the deterministic technical/FTS correctness gates pass.
 
 ### 13. Android release — independent, strictly gated lane
 
@@ -2639,30 +2640,69 @@ The journal is also a prerequisite for the local ML data foundation in the next 
 
 # 12. P2 — Local ML Engine and reproducible research dataset
 
-The detailed model roadmap remains in `docs/ML-ENGINE-ROADMAP.md`. The current owner-approved dependency is:
+This section is the execution contract for the ML workstream. It does not authorize starting before the current owner-approved product missions and dependencies are complete. Its detailed architecture is maintained in `docs/ML-ENGINE-ROADMAP.md`.
 
-**Canonical raw/history data → Market Signal Journal → versioned feature snapshots → versioned future-outcome labels → time-aware validation → baseline models → local ML Lab → approved local inference**
+## 12.1 Technical-first sequence
 
-The ML data foundation must be built before training complex models.
+**Operational Technical DB → Go read-only integration → deterministic technical + FTS/chart parity → Market Signal Journal + PIT Feature Store + labels → pattern models → five-state regime → volatility/risk → candle-sequence/path models (Kronos retained) → specialist validation/paper research → Opportunity Discovery/ranking last.**
 
-Mandatory data contracts:
-- Every feature has a source, schema version, observation timestamp and availability timestamp.
-- Keep raw observations, computed features, model outputs and future outcome labels separate.
-- Preserve rejected/failed/unknown FTS observations as well as passing candidates.
-- Distinguish live-observed and later-reconstructed history.
-- Version FTS/technical/fundamental rules used to generate each feature snapshot.
-- Do not mix information published after a historical decision into that decision's feature set.
-- Labels such as returns after 3/5/10 sessions, MFE and MAE require explicit, versioned definitions and valid future data.
-- Use chronological train/validation/test splits and walk-forward evaluation; prevent survivorship bias and look-ahead leakage.
-- Establish deterministic/statistical baselines before more complex algorithms.
-- Local ML remains complementary to deterministic FTS and cannot silently override hard FTS rules.
-- Production model promotion requires explicit evidence and versioned acceptance; no silent auto-retraining/promotion from live outcomes.
+### Gate A — Operational Technical DB and Go connection
 
-Potential model families and training/inference design are detailed in `docs/ML-ENGINE-ROADMAP.md`. Keep compute appropriate for available local hardware; prefer lightweight tabular baselines first and justify more expensive models with out-of-sample evidence.
+- Preserve the full reference archive unchanged and immutable.
+- Build a compact, versioned Operational Technical DB; the roughly 5.2 GB target from Phase 4.9.7 is an estimate, not a measured result.
+- Keep this DB separate from existing `market.db`, `codal.db`, `user.db`, `research.db` and `oc_client.db`.
+- Add a dedicated read-only Go connection; keep a single writer in the approved data-production pipeline.
+- Preserve raw/adjusted candle semantics, OHLCV/amount, adjustment factors/events, instrument identity, provenance, timestamps and the Iranian trading-session calendar.
+- Verify schema, hashes/counts, missing/duplicate/zero handling, corporate-action behavior, sample-symbol parity, query performance, generation switching and enforced read-only behavior.
 
-### Acceptance gate
+**Exit:** Go serves the expected real daily/weekly/monthly series from the operational DB and all integrity/parity/performance gates pass. No training before this gate.
 
-A reproducible point-in-time dataset and outcome-label pipeline exist; a sample dataset can be regenerated deterministically; temporal leakage checks pass; a baseline is compared with a meaningful non-ML baseline; and all results can be traced to source data, features, labels and model version.
+### Gate B — Deterministic technical analysis and four-page FTS chart
+
+Complete and validate the canonical building blocks: candle geometry, confirmed pivots, HH/HL/LH/LL, BOS/CHoCH, support/resistance, breakout/failure/retest, pullback, Fibonacci, Jet, indicators, classical continuation/reversal patterns, multi-timeframe context, sector-relative strength and chart overlays.
+
+Reconcile all four printed FTS pages against the FTS booklet, FTS chart source, owner rulings and current code. Page T is the technical methodology; F/S/M pages remain part of the full end-to-end FTS decision and visual explanation. The display model must never make its own independent decision.
+
+**Exit:** Python/Go/chart parity and Golden Vectors pass; confirmed outputs do not repaint or use future information; each canonical chart element has a real producer, provenance and visible representation.
+
+### Gate C — Point-in-Time research data
+
+- Use the canonical Market Signal Journal and retain pass, reject, unknown, not-applicable, not-evaluated and error states.
+- Distinguish observed EOD/intraday observations from later reconstructed states.
+- Version the five feature pillars and all rule/engine versions.
+- Keep feature snapshots separate from future labels; enforce publication/availability timestamps, adjustment semantics, survivorship control and trading-session time.
+- Retain all five existing fundamental FTS axes as separate canonical features; do not recreate their formulas in ML.
+- Record forward returns, target-before-invalidation, MFE, MAE, realized volatility, drawdown and liquidity/no-fill outcomes with explicit versioned horizons.
+
+**Exit:** deterministic reproducible dataset; no-look-ahead, survivorship and corporate-action audits pass.
+
+### Gates D–H — Specialist technical models
+
+1. **Pattern quality:** Logistic/ElasticNet baselines, then LightGBM/CatBoost for pattern confirmation/failure, invalidation and conditional outcomes.
+2. **Five-state market regime:** test bullish, bearish, range/neutral, liquidity-contraction and shock/limit-locked states; compare interpretable baselines with HMM/Markov-switching. Keep market-wide and per-symbol regimes separate and allow unknown/probabilistic outputs.
+3. **Volatility and risk:** ATR/realized-volatility/EWMA baselines, GARCH/EGARCH/HAR-RV where supported, quantile/tail risk, VaR/Expected Shortfall, drawdown and liquidity/execution risk.
+4. **Candle sequence and path forecasting:** retain Kronos-mini; correct its Go integration to the official PyTorch implementation and real OHLCV/amount input; compare Chronos-Bolt, TimesFM and justified PatchTST/iTransformer candidates. Use the Iranian session calendar, not fixed 24-hour increments. Zero-shot and simple baselines precede fine-tuning.
+
+Each gate requires walk-forward evaluation, calibrated uncertainty, regime/horizon breakdowns, compute/resource benchmarks and evidence that it beats a meaningful baseline.
+
+### Gate I — Specialist integration and paper research
+
+Integrate model outputs through versioned, auditable contracts. Test calibration, redundancy, regime stability, costs, queue/no-fill assumptions and drift. Research success does not automatically authorize Stable/production promotion.
+
+### Gate J — Opportunity Discovery / ranking (last)
+
+Only after specialist technical, regime, risk and forecast models pass may a final ranker combine them with FTS status, the five fundamental axes, breadth, sector strength, tape evidence and data freshness. It must show its trace/uncertainty and must never convert an FTS hard reject or unknown into a pass.
+
+## 12.2 Runtime and compute boundary
+
+- Research/training: owner-controlled Python Research Plane on the local machine; use Colab only for explicit bounded GPU jobs with dataset-scope hashes, environment manifests and checkpointed outputs.
+- Product runtime: Go + Tauri. Training dependencies and arbitrary Python research plugins do not enter client runtime.
+- Research datasets and research.db stay outside Producer snapshots and client/user databases.
+- Only versioned, validated inference artifacts may be considered for Go integration, subject to the current Opportunity Lab approval/signing gate.
+
+## 12.3 Acceptance gate
+
+The workstream is complete only when: the operational DB is connected read-only to Go; technical and four-page FTS parity is proven; PIT datasets and labels are reproducible; each specialist model has calibrated out-of-sample evidence; the Kronos path uses real market data; and Opportunity Discovery adds incremental value beyond the specialist engines. No silent retraining, automatic promotion or weakening of deterministic FTS is allowed.
 
 ---
 
@@ -2825,7 +2865,7 @@ Performance measurement must be performed under a real market-open workload wher
 
 Android publication is an independent, conditional release lane: publish only if all mandatory security/signing/CI/compatibility/rollback/device gates are verified. Otherwise keep publication blocked without stopping unrelated work.
 
-The Market Signal Journal and its point-in-time data contract are strategic infrastructure for the later local ML system. Record both observed and rejected/unknown outcomes, use versioned rules/features and future labels, and enforce no-look-ahead validation. ML must complement deterministic FTS, not replace or silently override it.
+The Market Signal Journal and its point-in-time data contract are strategic infrastructure for the later local ML system. Record both observed and rejected/unknown outcomes, use versioned rules/features and future labels, and enforce no-look-ahead validation. Once the ML workstream is opened, follow the technical-first sequence in §12 and docs/ML-ENGINE-ROADMAP.md: operational Technical DB to Go first, deterministic technical/FTS parity next, specialist technical models after that, and Opportunity Discovery last. ML must complement deterministic FTS, not replace or silently override it.
 
 ---
 
