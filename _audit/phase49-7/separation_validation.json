@@ -1,0 +1,23 @@
+{
+ "integrity": {
+  "pass": true,
+  "evidence": "technical.db integrity_check"
+ },
+ "no_placeholder": {
+  "pass": true,
+  "evidence": "t=0 rows=0"
+ },
+ "no_dup_t": {
+  "pass": true,
+  "evidence": "dup-t groups=0"
+ },
+ "alias_reproduction": {
+  "pass": true,
+  "evidence": "real_close==last & type0==type5 on 591 (2816 bars)"
+ },
+ "row_reconciliation": {
+  "pass": true,
+  "evidence": "technical=69180503 ref_distinct_no_t0=69180503"
+ },
+ "all_pass": true
+}
