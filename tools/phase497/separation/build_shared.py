@@ -58,7 +58,7 @@ def build_usd_rate(c):
     ref = paths.ro_conn(paths.REF_DB)
     rows = []
     for t, cl in ref.execute("SELECT t,c FROM candles WHERE asset_id=2 AND res='D' AND basis='close' AND adj='type0' AND t>0"):
-        d = datetime.datetime.utcfromtimestamp(t/1000).strftime("%Y-%m-%d")
+        d = datetime.datetime.fromtimestamp(t/1000, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
         rows.append((d, cl, 2))
     c.executemany("INSERT OR REPLACE INTO usd_rate VALUES (?,?,?)", rows); ref.close()
 
