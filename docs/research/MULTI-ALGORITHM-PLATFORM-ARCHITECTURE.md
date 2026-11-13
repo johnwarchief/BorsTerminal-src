@@ -448,11 +448,11 @@ flowchart TD
 
     Trainer --> ONNXExport
     ONNXExport -->|فایل مدل سبک Sidecar JSON/ONNX| ORT
-    fundamental.db --> DataAccess["Domain Data Access Layer<br/>Repositories + Revision Contracts"]
-    tape.db --> DataAccess
-    technical.db --> DataAccess
-    reference.db --> DataAccess
-    user.db --> DataAccess
+    FUNDDB["fundamental.db"] --> DataAccess["Domain Data Access Layer<br/>Repositories + Revision Contracts"]
+    TAPEDB["tape.db"] --> DataAccess
+    TECHDB["technical.db"] --> DataAccess
+    REFDB["reference.db"] --> DataAccess
+    USERDB["user.db"] --> DataAccess
     DataAccess --> MemoryCache
     MemoryCache --> Engine_Runtime
     Engine_Runtime --> UI
