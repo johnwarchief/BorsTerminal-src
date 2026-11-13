@@ -1,8 +1,9 @@
 # BorsTerminal ML Engine — Long-Term Roadmap
 
-**Status:** Planned / Long-term; gated by the Market Signal Journal and point-in-time data integrity  
-**Date:** 2026-10-13  
-**Scope:** Desktop + Android, with a shared model/feature contract where practical.
+**Status:** Owner-approved technical-first architecture; implementation remains phase-gated.  
+**Architecture update:** 2026-11-13  
+**Runtime:** Go + Tauri + local SQLite. **Research/training:** owner-controlled Python Research Plane; temporary Colab/Kaggle GPU only for explicitly approved jobs.  
+**Supersedes:** the earlier "ranking first" sequence and the old ML phase order in this document.
 
 ## 1. Vision
 
@@ -12,25 +13,32 @@ This is **not** a plan to depend on an online AI model or an external inference 
 
 The target architecture is a local engine composed of multiple algorithms and specialized models that can learn from historical BorsTerminal data and provide statistical evidence alongside the existing deterministic engines.
 
-The long-term goal is:
+The execution order is deliberately **technical-first; opportunity discovery is the final consumer**:
 
 ```
-FTS / Technical / Fundamental / Market
-                ↓
-        Feature Engineering
-                ↓
-          ML Engine
-     ┌──────────┼───────────┐
-     │          │           │
-   Ranking   Pattern      Regime
-    Model     Models      Models
-     │          │           │
-     └──────────┼───────────┘
-                ↓
-         ML Composite Score
-                ↓
-      Master / Portfolio Layer
+Reference Archive (immutable)
+          ↓
+Operational Technical DB ── read-only Go data service
+          ↓
+Technical correctness + FTS four-page parity
+          ↓
+Canonical deterministic features / Market Signal Journal
+          ↓
+Point-in-Time Feature Store + versioned outcome labels
+          ↓
+┌───────────────────────────────────────────────────────────┐
+│ 1. Pattern quality models                                 │
+│ 2. Five-state market regime + symbol context              │
+│ 3. Volatility, downside and liquidity-risk models         │
+│ 4. Candle-sequence / probabilistic path forecasting       │
+└───────────────────────────────────────────────────────────┘
+          ↓
+Walk-forward validation → calibrated outputs → paper research
+          ↓
+Final Opportunity Discovery / ranking / portfolio context
 ```
+
+FTS remains a separate deterministic methodology and is not an ML target to be replaced. The five canonical fundamental axes already implemented in BorsTerminal are reused as time-correct features; they are not redefined by the ML layer.
 
 ## 2. Core architectural rule
 
@@ -55,11 +63,25 @@ FTS = "Is this setup permitted by the rules?"
 ML  = "How statistically strong is a permitted setup?"
 ```
 
-## 3. First target: ranking, not price prophecy
+### Runtime / Research separation and database-serving contract
 
-The first production-oriented ML capability should **not** be "predict tomorrow's price."
+- The Rahavard reference archive is an immutable, cold source of historical evidence. It is not copied wholesale into every client runtime.
+- Build a separately versioned **Operational Technical DB** from the archive. The Phase 4.9.7 estimate of roughly 5.2 GB is a planning estimate only; it is not an accepted artifact until the database is built, measured, integrity-checked and benchmarked.
+- Keep the existing market.db and codal.db contracts intact. The Go runtime receives a dedicated, explicit **read-only** connection to the operational technical database; it must not write to the source database or silently merge it into market.db.
+- Preserve raw candles, adjusted candles, adjustment basis/factors, corporate-action events, trading-session calendar, instrument identity/crosswalk, source provenance and schema version. Never fabricate OHLCV or fill unknown values with zero.
+- Future candles and corporate-action updates must not depend on the owner's Rahavard account. Use the approved local source pipeline (TSETMC/CODAL and verified official inputs); use Rahavard's historical adjusted series only as a reference corpus for validation.
+- Go is the product runtime. Python is restricted to owner-side research, dataset generation, model training and offline validation. Model artifacts cross into Go only through an explicit, versioned and validated inference contract; no arbitrary Python plugin or training process is shipped to client runtime.
+- research.db and research artifacts stay outside Producer snapshots and outside client/user databases, following docs/opportunity-center/04-TECHNICAL-ARCHITECTURE.md.
 
-The preferred starting point is **ranking / setup-quality estimation**.
+**Database connection acceptance gate:** schema/identity mapping, row counts and checksums, raw/adjusted basis, corporate-action semantics, missing/duplicate handling, representative symbol parity, query latency, memory use, generation/version switching and read-only enforcement must all pass before technical development or ML consumes the new DB.
+
+## 3. Final integrated target: opportunity ranking comes last
+
+Opportunity ranking is an important final product capability, **not the first model to train**.
+
+Before ranking can be trusted, BorsTerminal must have verified technical data, complete deterministic technical analysis, the canonical FTS chart/methodology path, valid pattern outcomes, a validated five-state regime model, risk/volatility estimates and calibrated candle-path forecasts.
+
+Only after those specialist outputs pass independent out-of-sample validation should a final ranker combine them with market, tape and the five existing fundamental FTS axes.
 
 Example:
 
@@ -92,64 +114,87 @@ Setup quality score:                            82/100
 
 The ML Engine should support multiple algorithms/models rather than one monolithic model.
 
-### 4.1 Ranking / classification
+### 4.1 Pattern and technical-structure models — first learning target
 
-Candidate families:
+The deterministic technical engine remains responsible for **detecting and geometrically describing** patterns. ML estimates their statistical quality, context and conditional outcomes; it does not replace the detector or rewrite canonical FTS rules.
 
-- LightGBM
-- XGBoost
-- Random Forest
-- Logistic Regression
-- Other lightweight tabular learners justified by validation
+Start with pattern-level classification/ranking using versioned pattern events and point-in-time features:
 
-Potential tasks:
+- Double top / double bottom; head-and-shoulders and inverse; triple top/bottom.
+- Flags and pennants; ascending, descending and symmetrical triangles.
+- Rising/falling wedges; channels and rectangles.
+- Breakout, failed breakout, retest/pullback and continuation/reversal structures.
+- FTS-specific structures: weekly/daily trend, Jet, corrective pullback, Fibonacci zones, CHoCH and the setups explicitly defined in the FTS source material.
 
-- setup quality classification
-- probability of positive return
-- probability of breakout confirmation
-- probability of reaching a predefined target before invalidation
-- ranking of FTS-approved candidates
+Candidate models: Logistic Regression / calibrated classifiers as baselines, then LightGBM and CatBoost. Neural sequence classifiers (small 1D-CNN/GRU/Transformer) are later challengers only when they beat these baselines out of sample.
 
-### 4.2 Pattern / structure models
+The model should estimate outcomes such as probability of confirmation, invalidation, target-before-stop, and conditional MFE/MAE. It must use the detector's formation/confirmation timestamp, not a retrospectively identified pattern anchor.
 
-Potential tasks:
+### 4.2 Five-state market-regime models — second learning target
 
-- swing high / swing low classification
-- impulse-wave detection
-- pullback detection
-- breakout detection
-- BOS / CHoCH classification
-- double-bottom / double-top classification
-- accumulation / distribution pattern classification
+The regime system must distinguish **market-wide regime** from **individual-symbol regime**. The five-state market taxonomy to test is:
 
-The first versions should preferably reuse the canonical deterministic swing/structure representation instead of replacing it blindly.
+1. Directional bullish market.
+2. Directional bearish market.
+3. Range / neutral market.
+4. Liquidity contraction / low-participation market.
+5. Shock / limit-locked / dislocated market.
 
-### 4.3 Market-regime models
+These are initial research definitions, not hard-coded truths. Their boundaries and precedence must be tested against the Iranian market's breadth, index structure, value/volume, order-book and queue participation, realized volatility and cross-sectional dispersion. If the evidence cannot distinguish a state, return unknown or a probability distribution rather than force a label.
 
-Potential regimes:
+Start with an interpretable rule-based baseline; compare HMM / Markov-switching and other probabilistic regime models. Regime outputs are probabilities plus state duration/transition evidence, not merely a colored label.
 
-- directional uptrend
-- directional downtrend
-- range / neutral
-- high-volatility regime
-- low-volatility regime
-- other statistically validated regimes
+### 4.3 Volatility, downside and market-risk models — third learning target
 
-The regime can later control feature selection or ensemble weighting.
+This is separate from predicting direction. Candidate methods:
 
-For example, trend-following features may receive less weight during a validated range regime.
+- ATR and realized-volatility baselines.
+- EWMA, GARCH / EGARCH and, when intraday/realized measures support it, HAR-RV.
+- Quantile models for conditional return/range distributions.
+- Downside risk: VaR, Expected Shortfall, drawdown distribution, tail-event probability, MFE/MAE and volatility regime.
+- Execution/liquidity risk: gap risk, limit-lock probability, queue/no-fill risk, spread/slippage proxies and stale/insufficient-liquidity states.
 
-### 4.4 Unsupervised learning
+Evaluate volatility forecasts with appropriate loss functions (e.g. QLIKE where applicable), and tail-risk estimates with coverage/calibration tests. Do not treat price direction accuracy as a risk-model acceptance metric.
+
+### 4.4 Candle-sequence and probabilistic future-path models — fourth learning target
+
+**Kronos remains a first-class candidate and must not be dropped.** It is the domain-specific OHLCV sequence model already downloaded and benchmarked in the repository.
+
+Model comparison set:
+
+- **Kronos-mini** — first local reference model for multichannel candle-sequence forecasting; official PyTorch implementation is tools/kronos_engine_official.py.
+- **Chronos-Bolt-Tiny** — lightweight probabilistic forecasting comparator and possible CPU deployment candidate.
+- **TimesFM** — broader time-series foundation-model comparator; model-version license and deployment conditions must be checked separately.
+- **PatchTST / iTransformer** — trainable specialist architectures if the data and benchmarks justify them.
+- Naive/seasonal, drift, linear and volatility-based forecasts — mandatory baselines.
+
+The current Kronos integration is not yet accepted as an Iranian-market forecast: Go currently calls the older tools/kronos_inference.py path and supplies closes/timestamps, while Kronos expects real multichannel OHLCV plus amount. The integration gate requires the official inference path, real OHLCV/volume/amount, correct trading-session timestamps (not fixed 86,400-second increments), explicit model/fallback reporting and reproducible CPU/GPU benchmarks. Synthetic OHLCV proxies are allowed only in labelled synthetic tests, never in real-data acceptance.
+
+Evaluate path distributions, not just P50: quantile/CRPS or pinball loss, empirical P10/P90 coverage, interval width, calibration by regime/horizon, path coherence, and performance against simple baselines. Fine-tuning is allowed only after zero-shot and baseline evaluation on the same time-aware splits.
+
+### 4.5 Final opportunity ranking / classification — last learning target
+
+Only after 4.1–4.4 have validated outputs should a final LightGBM/CatBoost ranker or calibrated classifier combine:
+
+- deterministic pattern/structure results and learned pattern quality;
+- market and symbol regime probabilities;
+- volatility, downside and liquidity-risk estimates;
+- Kronos/Chronos/other forecast distributions and uncertainty;
+- canonical FTS state and the five existing fundamental axes;
+- market breadth, sector-relative strength, tape/order-flow and data freshness where historically available.
+
+The ranker is a final decision-support layer. It cannot change a hard FTS reject into a pass, cannot hide missing data, and cannot label a pattern/forecast as a guaranteed trade.
+
+### 4.6 Unsupervised learning and anomaly research
 
 Potential uses:
 
-- clustering symbols by behavior
-- clustering historical setups
-- discovering recurring market regimes
-- anomaly detection
-- similarity search for "historically similar setups"
+- clustering symbols and setups by behavior;
+- discovering recurring regime subtypes;
+- anomaly detection in candles, volume, corporate actions and model residuals;
+- similarity search for historically comparable technical structures.
 
-Unsupervised outputs are research signals until they pass the same validation discipline as supervised models.
+Unsupervised outputs remain research hypotheses until independently validated.
 
 ## 5. Ensemble architecture
 
@@ -214,6 +259,16 @@ Possible feature groups:
 - other features already canonicalized by the Fundamental engine
 
 Fundamental feature definitions must come from the existing BorsTerminal source-of-truth rules and must not be re-invented inside ML.
+
+The five canonical FTS fundamental axes are already available in BorsTerminal and must be consumed as five separately versioned, point-in-time feature groups (not collapsed to a single score):
+
+- **F-01:** revenue/sales growth.
+- **F-02:** sustained profitability and EPS trend.
+- **F-03:** gross-profit margin.
+- **F-04:** annualized sales relative to market value.
+- **F-05:** industry outlook and pricing regime (free/market-based versus administered pricing), including applicability/unknown states.
+
+The exact formulas, thresholds, vetoes and sector rules remain those of the canonical FTS sources and owner rulings. ML must consume their actual values/statuses and publication/availability timestamps; it must not independently redefine the five axes.
 
 ### Market microstructure / order flow
 
@@ -561,83 +616,126 @@ Android should focus on:
 
 Training large models on Android is not a target.
 
-## 16. Phased implementation plan
+## 16. Owner-approved technical-first implementation sequence
 
-### Phase 0 — Data foundations
+The order below is mandatory for this ML workstream. It does not reorder unrelated owner-approved product priorities in the Master Execution Roadmap; it defines what happens **after the ML/technical workstream is opened**.
 
-Before serious ML work:
+### Phase 0 — Build and connect the Operational Technical DB to Go
 
-- canonical candle contract
-- stable timestamps
-- verified market/fundamental provenance
-- corporate-action semantics
-- deterministic technical structure outputs
-- reproducible historical datasets
-- no-lookahead dataset builder
+- Preserve the Rahavard reference archive unchanged as a cold, immutable research source.
+- Build the compact operational Technical DB from verified historical series. The approximately 5.2 GB size is an estimate until measured.
+- Keep technical candles/adjustment data separate from the existing market.db, codal.db, user.db, research.db and oc_client.db.
+- Add an explicit read-only Go database handle and typed query/service contracts; Go must not become a second writer.
+- Include instrument identity, raw/adjusted price basis, OHLCV/amount, source and availability timestamps, corporate-action/factor history, trading calendar and schema/version metadata.
+- Verify row counts, hashes, schema, duplicate/missing/zero semantics, price-basis behavior, corporate-action handling, sample symbol parity, query latency, memory, generation switching and read-only enforcement.
 
-**Exit criterion:** identical input data + same versioned feature pipeline produces identical features.
+**Exit gate:** Go can serve reproducible real candles for representative symbols/timeframes from the new DB, and all integrity/parity/performance gates pass. No ML training begins before this gate.
 
-### Phase 1 — Dataset and experience store
+### Phase 1 — Complete deterministic technical analysis and FTS/chart parity
 
-Build:
+Audit and complete existing code rather than duplicating it. Existing frontend-v2 pattern detectors/registry and current Go chart services are starting points, not proof of completeness.
 
-- feature schema
-- outcome/label schema
-- historical dataset generator
-- signal/setup result store
-- dataset versioning
+Required coverage:
 
-**Exit criterion:** a reproducible training dataset can be regenerated from a fixed snapshot.
+- candle geometry, confirmed pivots and non-repainting swing structure;
+- HH/HL/LH/LL trend classification on daily/weekly/monthly timeframes;
+- BOS / CHoCH, support/resistance, breakout/failure/retest and pullback;
+- canonical Fibonacci anchors/zones, Jet and the FTS-specific setups;
+- classical reversal and continuation pattern library with forming/confirmed/invalidated lifecycle;
+- indicators and derived features (trend, momentum, volatility, volume, divergence);
+- sector/index-relative strength, market breadth and multi-timeframe context;
+- candle/session calendar and corporate-action-aware price-basis correctness.
 
-### Phase 2 — First ranking/classification models
+The four printed FTS chart pages remain the canonical product map: **F = fundamental, T = technical, S = selection/tape, M = reverse-engineering/capital management**. Reconcile the chart against docs/جزوه FTS.pdf, docs/FTS.CHART_3.pdf, docs/FTS-RULE-ALGORITHM-MAP.md, docs/CHART-FOUR-PAGES-PARITY.md and owner rulings. Each node must map to a canonical rule, actual computation, input/provenance and visible chart evidence. The chart model/layout is presentation; it must not independently judge signals.
 
-Start with lightweight tabular models.
+FTS remains deterministic. Python/Go/chart parity and Golden Vectors are required before any FTS result is treated as validated.
 
-Initial experiments:
+**Exit gate:** deterministic technical outputs, chart overlays, four-page FTS mapping and Go/API behavior pass source-to-chart parity; no repaint/look-ahead defects remain in confirmed outputs.
 
-- Logistic Regression baseline
-- Random Forest baseline
-- LightGBM/XGBoost candidate
+### Phase 2 — Market Signal Journal, Point-in-Time Feature Store and labels
 
-**Exit criterion:** every model has time-aware validation and an explicit comparison against simple baselines.
+- Use the canonical Market Signal Journal; do not create a competing history of FTS/technical states.
+- Preserve all instruments and states: pass, reject, unknown, not-applicable, not-evaluated, error.
+- Distinguish observed EOD, observed intraday and reconstructed states.
+- Build versioned feature snapshots with source, rule/model version, observation time and availability time.
+- Use the five canonical feature pillars: candle/price, technical structure, market/tape, breadth/regime, and the five fundamental FTS axes.
+- Keep raw features, engineered features, forecast/model outputs and future outcome labels in separate datasets.
+- Define 1/3/5/10/20-session labels as appropriate: forward return, target-before-invalidation, MFE, MAE, realized volatility, drawdown and liquidity/no-fill outcomes.
+- Account for symbol listing/delisting and survivorship, corporate-action basis, trading calendar and incomplete historical tape/order-book coverage.
 
-### Phase 3 — ML Composite / Ensemble
+**Exit gate:** a fixed dataset can be regenerated deterministically; every feature is point-in-time valid; labels are versioned; leakage and survivorship audits pass.
 
-Add specialized models:
+### Phase 3 — Train technical-pattern quality models
 
-- trend/setup quality
-- breakout
-- volume
-- regime
-- fundamental features
+- Build deterministic pattern-event datasets from the Phase 1 engines.
+- Train interpretable baselines first (Logistic/ElasticNet), then LightGBM/CatBoost.
+- Estimate pattern confirmation, failure, invalidation, target-before-stop and conditional MFE/MAE.
+- Evaluate by pattern family, market regime, symbol liquidity and timeframe.
+- Deep sequence classifiers are challengers only after tabular baselines.
 
-Combine them into a versioned ensemble.
+**Exit gate:** meaningful out-of-sample improvement over baselines with calibrated probabilities and no retrospective pattern-timestamp leakage.
 
-**Exit criterion:** ensemble performance is demonstrably better and more stable than the baseline models across multiple out-of-sample periods.
+### Phase 4 — Train the five-state market-regime system
 
-### Phase 4 — ML Lab
+Candidate states: bullish directional, bearish directional, range/neutral, liquidity contraction, and shock/limit-locked. Validate that these are empirically distinguishable; keep market-wide and symbol-level regimes separate.
 
-Expose the research workflow in BorsTerminal.
+- Begin with a transparent rules-based baseline.
+- Compare HMM / Markov-switching and validated probabilistic alternatives.
+- Return state probabilities, confidence, duration and transition diagnostics; allow unknown/uncertain.
+- Test stability across different historical regimes and data-coverage levels.
 
-**Exit criterion:** model training/evaluation results are reproducible and inspectable without editing source code.
+**Exit gate:** regime classifications are stable, calibrated and economically meaningful out of sample; no forced label on insufficient evidence.
 
-### Phase 5 — Production ranking
+### Phase 5 — Train volatility and risk models
 
-Integrate ML scores into Master/Portfolio as decision-support information.
+- Build realized-volatility and ATR/EWMA baselines.
+- Compare GARCH/EGARCH and HAR-RV where data frequency supports them.
+- Add conditional quantile, downside-tail, VaR/Expected Shortfall and drawdown estimates.
+- Model liquidity, limit-lock and execution/no-fill risk separately from price-direction risk.
 
-**Exit criterion:** ML never changes a deterministic FTS hard reject into a pass, and model version/provenance is visible.
+**Exit gate:** risk estimates pass coverage/calibration and loss-function tests; risk is evaluated separately from return-direction accuracy.
 
-### Phase 6 — Advanced pattern/regime learning
+### Phase 6 — Validate and fine-tune candle-sequence/path models
 
-Explore:
+Comparison order:
 
-- structural pattern models
-- unsupervised clustering
-- anomaly detection
-- similarity search
-- regime-aware ensembles
+1. Naive/drift/linear/volatility baselines.
+2. Kronos-mini using the official PyTorch implementation and real six-channel OHLCV+amount.
+3. Chronos-Bolt-Tiny as a lightweight probabilistic comparator.
+4. TimesFM under a separately reviewed model-version license.
+5. PatchTST / iTransformer if data volume and benchmark evidence justify them.
 
-Only validated components progress to production.
+Run locally on the owner's machine and use Colab only for scoped, reproducible GPU jobs. First compare zero-shot models; fine-tune only those that demonstrate a meaningful baseline gap. Store model/tokenizer revisions, dataset hash, feature/label versions, environment lock, seed, parameters and metrics.
+
+**Exit gate:** path distributions are calibrated by horizon and regime, beat appropriate non-ML baselines, and meet local inference/resource constraints. Synthetic OHLCV is never accepted as real-market evidence.
+
+### Phase 7 — Specialized-model integration and paper research
+
+- Combine pattern, regime, risk and sequence forecasts through a versioned, auditable interface.
+- Measure calibration, correlation/redundancy, stability and performance contribution of each model.
+- Use paper/replay research, cost/queue-aware execution assumptions, Drift monitoring and explicit model registry.
+- No automatic production promotion or silent retraining.
+
+**Exit gate:** repeated walk-forward/paper evidence across different market conditions and explicit owner-reviewed model acceptance.
+
+### Phase 8 — Final Opportunity Discovery and ranking (last)
+
+Only now build the final opportunity ranker/ensemble. Its inputs include validated technical patterns, five-state regime, risk/volatility, probabilistic candle paths, FTS state, the five fundamental axes, sector/breadth/tape evidence and freshness.
+
+- Begin with transparent and explainable baselines, then LightGBM/CatBoost ranking.
+- Rank only after mandatory deterministic gates and risk/data-quality exclusions.
+- Show rank trace, supporting models, uncertainty and reasons.
+- Never convert a hard FTS reject or unknown into an accepted FTS candidate.
+- Contextual Bandits/strategy allocation remain later research, after a reliable outcome journal exists.
+
+**Exit gate:** Opportunity Discovery demonstrably adds value beyond the specialist engines on untouched out-of-sample periods and paper results. This is the final consumer, not the starting point of the ML program.
+
+### Research compute and product runtime
+
+- Local PC: data engineering, audit, LightGBM/CatBoost, HMM/GARCH, CPU/GPU inference benchmarks and reproducibility.
+- Google Colab: temporary GPU training/fine-tuning for bounded jobs; checkpoint frequently; record environment and data-scope hashes. Never depend on Colab for a permanent service.
+- Runtime: Go + Tauri; only validated model artifacts and stable inference contracts may be integrated. Research Python and training dependencies remain outside the client runtime.
+- The current Opportunity Lab architecture's approval gate remains authoritative; research success alone does not imply a model is Stable or distributable.
 
 ## 17. Non-goals
 
