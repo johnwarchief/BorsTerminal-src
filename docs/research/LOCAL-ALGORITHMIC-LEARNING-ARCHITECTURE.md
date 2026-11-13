@@ -19,6 +19,7 @@
    - [۱.۵ زیرساخت فعلی بکتست، شبیه‌سازی و ثبت تاریخی](#۱۵-زیرساخت-فعلی-بکتست-شبیهسازی-و-ثبت-تاریخی)
    - [۱.۶ کفایت داده و تحلیل شکاف اطلاعاتی](#۱۶-کفایت-داده-و-تحلیل-شکاف-اطلاعاتی)
    - [۱.۷ ممیزی اولیهٔ دارایی‌های تکنیکال و الگوهای موجود](#۱۷-ممیزی-اولیه-داراییهای-تکنیکال-و-الگوهای-موجود-reuse-first)
+   - [۱.۸ جداسازی دامنه‌ای پایگاه‌های داده](#۱۸-جداسازی-دامنهای-پایگاههای-داده-پیشنهاد-هدف)
 2. [معماری پیشنهادی سیستم الگوریتمی یادگیرنده](#2-معماری-پیشنهادی-سیستم-الگوریتمی-یادگیرنده)
    - [۲.۱ اصول راهبردی و فلسفه طراحی](#۲۱-اصول-راهبردی-و-فلسفه-طراحی)
    - [۲.۲ نمودار جریان معماری کلان (System Architecture Diagram)](#۲۲-نمودار-جریان-معماری-کلان-system-architecture-diagram)
@@ -66,26 +67,28 @@
 
 ---
 
-### ۱.۲ محل ذخیره و قرارداد داده‌های تاریخی و کندل‌ها
+### ۱.۲ وضعیت واقعی ذخیره‌سازی و قرارداد داده‌ها در snapshot فعلی
 
-داده‌های بازار در دو پایگاه داده SQLite و قراردادهای پایتونی منجمد ذخیره و مدیریت می‌شوند:
+در `main`، دو مسیر فیزیکی اصلی تعریف شده‌اند: `market.db` از طریق `bors_config.DB_PATH` و `user.db` از طریق `USER_DB_PATH`. اما `market.db` یک بانک تک‌دامنه‌ای نیست؛ داده‌های بنیادی، تکنیکال و تابلوخوانی در آن مخلوط‌اند.
 
-1. **پایگاه داده اصلی `market.db`:**
-   - جدول `price_history` ([candle_contract.py#L43-L56](file:///c:/Users/PCMOD/Desktop/BorsTerminal/candle_contract.py#L43-L56)): ستون‌های `(symbol, date, open, high, low, close, volume, last, value, src)`. این جدول انبار اصلی کندل‌های روزانه است.
-   - پوشش تاریخی: طبق سند [confidence_engine.py#L17-L29](file:///c:/Users/PCMOD/Desktop/BorsTerminal/confidence_engine.py#L17-L29)، جدول `price_history` برای ۲۵۱۵ نماد ردیف دارد اما تنها ۸۶۸ نماد دارای سابقه بیش از ۶۰ کندل معتبر هستند.
-   - جدول `daily_prices`: اسنپ‌شات موقت نشست‌های اخیر (تنها شامل حدود ۹ نشست معاملاتی در نسخه فعلی دیتابیس است و برای تاریخچه دوربرد قابل استفاده نیست).
-   - جدول `client_type` و `client_type_value`: آمار معاملات حقیقی و حقوقی شامل حجم و ارزش خرید/فروش و تعداد خریدار/فروشنده به ازای هر نماد و تاریخ `d_even`.
-   - جدول `adjust_events`, `price_adjust_events`, `share_change_events`: رویدادهای افزایش سرمایه و سود نقدی برای تعدیل قیمت‌ها.
-   - جدول `financial_statements` و `monthly_sales`: صورت‌های مالی ۱۲ ماهه، ۳ ماهه و گزارش‌های درآمد فعالیت ماهانه کدال.
+| دامنه | جدول‌ها/ماژول‌های فعلی | مالکیت فعلی |
+|---|---|---|
+| تکنیکال و قیمت | `price_history`، `daily_prices` و رویدادهای تعدیل | `market.db`؛ schema در `test_tsetmc.py` و `tsetmc_p0_schema.py` |
+| تابلوخوانی | `market_watch`، `client_type`، `client_type_value`، `order_book`، `tape_history`، `mstat_snap` و وضعیت‌های TSETMC | `market.db` |
+| بنیادی/Codal | `codal_notices`، `codal_extracted`، `financial_statements`، `monthly_sales`، `fts_results` و جدول‌های `codal_pipeline` | `market.db`؛ schema و writer اصلی در `codal_fetcher.py` و `codal_pipeline.py` |
+| اطلاعات شخصی | `user_watchlists`، `selection_decisions` و تنظیمات کاربر | `user.db`؛ مهاجرت جدول‌های قدیمی از `market.db` در `api/_core.py` |
+| تاریخچهٔ پرچم‌های تابلو | `tape_flag_day` و `tape_flag_day_meta` | اکنون در `user.db` نوشته می‌شود تا با baseline بازار جایگزین نشود؛ در هدف به `tape.db` منتقل می‌شود |
 
-2. **قرارداد هندسه کندل (`candle_contract.py`):**
-   - قاعده گسترش سایه ([candle_contract.py#L69-L88](file:///c:/Users/PCMOD/Desktop/BorsTerminal/candle_contract.py#L69-L88)): تابع `widen(open_, high, low, *prices)`. سایه کندل بر اساس داده‌های خام گسترش می‌یابد ولی قیمت پایانی و بدنه دستکاری نمی‌شوند تا اعوجاج داده‌های ناقص TSETMC مهار شود.
-   - حق تقدم مالکیت سطر ([candle_contract.py#L32-L41](file:///c:/Users/PCMOD/Desktop/BorsTerminal/candle_contract.py#L32-L41)): ردیف‌های با منبع `published` بالاترین اولویت را دارند (`rank=2`) و اسنپ‌شات‌های زنده تابلو (`board`, `rank=1`) حق بازنویسی کندل‌های منتشرشده نهایی را ندارند.
+**وابستگی مهم:** `api/fundamental.py` و `fts_engine.py` در همان اتصال هم `financial_statements/monthly_sales` و هم `market_watch/instruments` را می‌خوانند. `api/market.py` نیز هم‌زمان `market_watch` و `price_history` را join می‌کند. پس جداسازی فیزیکی بدون repository و بازطراحی queryها عملی نیست.
 
-3. **قرارداد لنگر و مبنای قیمت (`price_basis.py`):**
-   - تفکیک `last` و `closing` ([price_basis.py#L1-L28](file:///c:/Users/PCMOD/Desktop/BorsTerminal/price_basis.py#L1-L28)): انتخاب مبنای قیمت برای محاسبات تکنیکال سمت سرور انجام می‌شود. قیمت پایانی (`closing`) همواره لنگر اصلی تعدیل است و انتخاب کاربر (`last` یا `closing`) روی لنگر زنجیره اثر نمی‌گذارد تا مقیاس تاریخی نشکند.
+**Codal snapshot:** فایل `codal.db.lzma` از قبل به‌عنوان artifact مستقل دریافت می‌شود، ولی `api/_sync_codal.py` جدول‌های آن را در `market.db` merge می‌کند؛ بنابراین snapshot مستقل است، نه بانک عملیاتی مستقل.
 
----
+قراردادهای قیمت همچنان مستقل از مسیر فیزیکی بانک‌اند:
+- `candle_contract.py` مالک قرارداد کیفیت/منشأ کندل و اولویت published در برابر board است.
+- `price_basis.py` مالک انتخاب `last/closing` است؛ هر دو مقدار و لنگر تعدیل باید حفظ شوند.
+- رویدادهای افزایش سرمایه و سود نقدی باید کنار زنجیرهٔ تکنیکالِ تعدیل قیمت نگهداری شوند.
+
+جزئیات جدول‌به‌جدول و هدف جداسازی در [`DATABASE-DOMAIN-SEPARATION-ARCHITECTURE.md`](./DATABASE-DOMAIN-SEPARATION-ARCHITECTURE.md) آمده است.
 
 ### ۱.۳ موتورهای تابلوخوانی و خروجی فیلترها
 
@@ -200,6 +203,16 @@
 
 ---
 
+### ۱.۸ جداسازی دامنه‌ای پایگاه‌های داده (پیشنهاد هدف)
+
+بانک واحد فعلی باید به مالکیت‌های مستقل تقسیم شود: `fundamental.db` برای Codal و بنیادی، `tape.db` برای تابلو، و `technical.db` برای قیمت/کندل/تعدیلات. `reference.db` مرجع مشترک هویت نماد و `user.db` دادهٔ شخصی کاربر را نگه می‌دارند. `analytics.db` فقط هنگامی اضافه می‌شود که Feature Store و خروجی‌های یادگیرنده واقعاً پیاده‌سازی شوند.
+
+قانونِ اشتراک: تاریخچهٔ OHLCV فقط در `technical.db` مالک دارد؛ الگوریتم‌های تابلو می‌توانند آن را مصرف کنند، ولی نسخهٔ دوم از همان تاریخچه در `tape.db` نمی‌سازند. در مقابل، معاملات حقیقی/حقوقی، صف و عمق سفارش فقط در `tape.db` هستند. پنج شاخص بنیادی و نتایج FTS در `fundamental.db` می‌مانند و برای ارزش بازار/هویت نماد از API خواندن `tape/reference` استفاده می‌کنند.
+
+**وضعیت:** پیشنهاد معماری است، نه مهاجرت انجام‌شده. پیش از جابه‌جایی هر جدول باید تمام writerها/readers، DDLها، joinها، snapshotها و تست‌های آن شناسایی شوند.
+
+---
+
 ## ۲. معماری پیشنهادی سیستم الگوریتمی یادگیرنده
 
 ### ۲.۱ اصول راهبردی و فلسفه طراحی
@@ -283,7 +296,7 @@ flowchart TD
 
 ### ۴.۱ ساختار انباره ویژگی‌های محلی (Local Point-in-Time Feature Store)
 
-برای جلوگیری از هرگونه نشت اطلاعات آینده و بازتولیدناپذیری، یک پایگاه داده مجزا با نام پیشنهادی `features.db` (یا جداول مشخص در `user.db` جهت ایزوله ماندن از بازنویسی `market.db`) طراحی می‌شود:
+برای جلوگیری از نشت اطلاعات آینده و بازتولیدناپذیری، Feature Store در مرحلهٔ یادگیری به‌صورت `analytics.db` مستقل طراحی می‌شود. دادهٔ خام در بانک دامنهٔ مالک خود باقی می‌ماند؛ `analytics.db` فقط snapshotهای مشتق‌شده و versioned را با ارجاع به revision منابع نگه می‌دارد. این بانک جایگزین `user.db` نیست و تا شروع فاز Feature Store ساخته نمی‌شود:
 
 ```sql
 CREATE TABLE IF NOT EXISTS feature_snapshot (
