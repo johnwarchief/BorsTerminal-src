@@ -255,7 +255,7 @@ stateDiagram-v2
 بر اساس ممیزی واقعیت داده‌های مخزن ([`docs/research/PHASE-0-DATA-REALITY-AUDIT.md`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/PHASE-0-DATA-REALITY-AUDIT.md))، ۱۷ خانواده الگوریتمی در این نسخه فهرست شده‌اند؛ ترتیب اولویت با roadmap تکنیکال‌محور هماهنگ شده است:
 
 | ردیف | خانواده الگوریتمی | مثال‌های عینی | اولویت / مرحله | پیش‌نیاز داده‌ای | وضعیت فعلی در این snapshot |
-| :---: | :--- | :--- | :---: | :--- | :--- | :--- |
+| :---: | :--- | :--- | :---: | :--- | :--- |
 | **۱** | **هندسه کندل و سوئینگ/پیوت** | OHLC geometry, ATR, ZigZag, Local Extrema | **P0 · تکنیکال** | OHLCV و قرارداد کندل | زیرساخت موجود؛ پوشش و parity هر روش باید جدا سنجیده شود |
 | **۲** | **ساختار و روند تکنیکال** | HH/HL/LH/LL، major/minor swings، BOS/CHoCH | **P0 · تکنیکال** | OHLCV چندتایم‌فریمی | `major_swings.py`، `trend_classify.py`، FTS و `structure_engine3.py` موجودند؛ قابلیت موازی نسازید |
 | **۳** | **الگوهای کلاسیک و ساختاری** | Double Top/Bottom، Head & Shoulders، SMC/OB/FVG | **P0 · تکنیکال** | پیوت، روند پیشین و تأیید الگو | دارایی‌های کاندید در inbox؛ ممیزی تک‌به‌تک باز است |
