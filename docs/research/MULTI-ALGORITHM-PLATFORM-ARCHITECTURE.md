@@ -1,10 +1,10 @@
 # BorsTerminal — معماری پلتفرم هوش چندالگوریتمی (Multi-Algorithm Intelligence Platform)
 ## سند طراحی جامع زیرساخت الگوریتم‌ها، راهبردها، مدل‌های یادگیرنده و مصورسازی بورس‌ترمینال
 
-**تاریخ تدوین:** ۲۴ مهر ۱۴۰۵ (2026-10-15)  
+**تاریخ تدوین اولیه:** ۲۴ مهر ۱۴۰۵ (2026-10-15) · **بازنگری:** 2026-11-13  
 **نسخه سند:** 1.1.0 (Technical-First · Reuse-First Revision)  
 **محیط هدف:** BorsTerminal Desktop (Windows 10/11 x64 · CPU-First · PyInstaller Onedir · SQLite3 · WebView2)  
-**شاخه و کامیت مبنا:** `mission/4-axes-2026-10-10` @ [`e9db359e`](file:///c:/Users/PCMOD/Desktop/BorsTerminal) | **شاخه اصلی:** `github/main` @ [`c0402614`](file:///c:/Users/PCMOD/Desktop/BorsTerminal) (v1.0.89)  
+**مبنای بازنگری:** شاخهٔ `main` مخزن `johnwarchief/BorsTerminal-src`؛ وضعیت اجراییِ توابع و تست‌ها باید پیش از هر مأموریت پیاده‌سازی دوباره از HEAD جاری راستی‌آزمایی شود.  
 **اسناد پیش‌نیاز:**  
 - [`docs/research/PHASE-0-DATA-REALITY-AUDIT.md`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/PHASE-0-DATA-REALITY-AUDIT.md) (ممیزی قطعی داده‌های واقعی و اثبات سقف ۵۱۷ روزه)  
 - [`docs/research/symbol_coverage_phase0.csv`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/symbol_coverage_phase0.csv) (پوشش کامل ۶٬۱۶۹ نماد)  
@@ -250,26 +250,29 @@ stateDiagram-v2
 
 ## ۳. تاکسونومی جامع الگوریتم‌ها و اولویت‌بندی عملیاتی
 
-### ۳.۱ ماتریس خانواده‌های الگوریتمی ۱۴ گانه
+### ۳.۱ ماتریس خانواده‌های الگوریتمی ۱۷ گانه
 
-بر اساس ممیزی واقعیت داده‌های مخزن ([`docs/research/PHASE-0-DATA-REALITY-AUDIT.md`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/PHASE-0-DATA-REALITY-AUDIT.md))، ۱۴ خانواده الگوریتمی اولویت‌بندی شدند:
+بر اساس ممیزی واقعیت داده‌های مخزن ([`docs/research/PHASE-0-DATA-REALITY-AUDIT.md`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/PHASE-0-DATA-REALITY-AUDIT.md))، ۱۷ خانواده الگوریتمی در این نسخه فهرست شده‌اند؛ ترتیب اولویت با roadmap تکنیکال‌محور هماهنگ شده است:
 
-| ردیف | خانواده الگوریتمی | مثال‌های عینی | اولویت پیاده‌سازی | پیش‌نیاز داده‌ای واقعی | قابلیت تست روی دیتابیس موجود | هزینه پردازشی تخمینی |
-| :---: | :--- | :--- | :---: | :--- | :---: | :---: |
-| **۱** | **هندسه کندل و پیوت‌ها** | ZigZag ATR, Local Extrema, Shadow Ratios | **P0 (بسیار بالا)** | OHLCV معتبر (`price_history`) | **۱۰۰٪ (روی ۷۳۹ نماد)** | بسیار سبک (< ۰.۵ ms) |
-| **۲** | **ساختار و روند تکنیکال** | HH/HL Classifier, ATR Slope, Kaufman ER | **P0 (بسیار بالا)** | OHLCV با سابقه $\ge 60$ کندل | **۱۰۰٪ (روی ۱٬۳۱۷ نماد)** | بسیار سبک (< ۱ ms) |
-| **۳** | **سطوح و کانتکست فیبوناچی** | Fib Golden Zone (50-68%), Auto Anchors | **P0 (بسیار بالا)** | پیوت‌های ماژور تاییدشده | **۱۰۰٪ (روی ۸۲۴ نماد)** | سبک (< ۱ ms) |
-| **۴** | **تشخیص شکست و پولبک** | Donchian Breakout, Retest Holding, Squeeze | **P1 (بالا)** | OHLCV + حجم معاملات | **۱۰۰٪ (روی ۱٬۳۱۷ نماد)** | سبک (< ۱ ms) |
-| **۵** | **رژیم کلان بازار** | 5-State Macro Regime (همت + صفوف + روند) | **P1 (بالا)** | `mstat_engine` + `trend_classify` | **۱۰۰٪ (۵۱۷ نشست)** | متوسط (~ ۵ ms کل بازار) |
-| **۶** | **الگوهای چارتی کلاسیک** | Double Bottom/Top, Head & Shoulders | **P1 (بالا)** | پیوت‌های چندگانه + خط گردن | **۱۰۰٪ (روی ۸۲۴ نماد)** | متوسط (~ ۲ تا ۳ ms) |
-| **۷** | **تکانه و قدرت نسبی** | RSI-14, Cross-Sectional RS vs Index/Sector | **P2 (متوسط)** | OHLCV هم‌زمان نمادها | **۱۰۰٪ (روی ۷۳۹ نماد)** | سبک (< ۱ ms) |
-| **۸** | **نوسان‌گیری و بازگشت میانگین** | Bollinger %B, Mean Reversion in Box | **P2 (متوسط)** | OHLCV در رژیم رِنج | **۱۰۰٪ (روی ۱٬۳۱۷ نماد)** | سبک (< ۱ ms) |
-| **۹** | **مدیریت ریسک و اندازه موقعیت** | ATR Volatility Sizing, Structural Stops | **P2 (متوسط)** | ATR + پیوت‌های ماژور | **۱۰۰٪** | آنی (< ۰.۱ ms) |
-| **۱۰** | **کانتکست بنیادی نقطه در زمان** | FTS 5 Pillars (EPS Trend, Sales Growth) | **P2 (متوسط)** | صورت‌های مالی کدال + `publish_date` | **۸۰٪ (محدود به ۱٬۱۹۵ نماد)** | سبک (کوئری SQLite) |
-| **۱۱** | **رتبه‌بندی مقطعی یادگیرنده (ML)** | LightGBM Quintile Ranker, Ridge Classifier | **P3 (فاز ۳)** | بردار ویژگی‌های ستون‌های ۱ تا ۵ | **امکان‌پذیر در افق سالانه** | متوسط (~ ۵۰ ms آموزش/آفلاین) |
-| **۱۲** | **انسمبل و پایش افت (Drift)** | CUSUM Monitor, Contextual Thompson Sampling | **P3 (فاز ۴)** | سوابق بازدهی استراتژی‌ها | **۱۰۰٪** | سبک (< ۲ ms) |
-| **۱۳** | **فیلترهای جریان سفارش و صف** | Jet Filter, Queue Sweeping, Smart Money | **P4 (آینده)** | سوابق صف و مظنه (`zd1`, `qd1`) | **تاریخی: ۰٪ / بلادرنگ: بله** | سبک (در رصد بلادرنگ) |
-| **۱۴** | **مدل‌های یادگیری عمیق اختیاری** | 1D-CNN Sequence Classifier (ONNX) | **P5 (پژوهشی)** | ماتریس توالی ۲۰ روزه کندل‌ها | **آزمایشی و محدود** | سنگین‌تر (~ ۱۰ ms کلاینت) |
+| ردیف | خانواده الگوریتمی | مثال‌های عینی | اولویت / مرحله | پیش‌نیاز داده‌ای | وضعیت فعلی در این snapshot | |
+| :---: | :--- | :--- | :---: | :--- | :--- | :--- |
+| **۱** | **هندسه کندل و سوئینگ/پیوت** | OHLC geometry, ATR, ZigZag, Local Extrema | **P0 · تکنیکال** | OHLCV و قرارداد کندل | زیرساخت موجود؛ پوشش و parity هر روش باید جدا سنجیده شود | |
+| **۲** | **ساختار و روند تکنیکال** | HH/HL/LH/LL، major/minor swings، BOS/CHoCH | **P0 · تکنیکال** | OHLCV چندتایم‌فریمی | `major_swings.py`، `trend_classify.py`، FTS و `structure_engine3.py` موجودند؛ قابلیت موازی نسازید | |
+| **۳** | **الگوهای کلاسیک و ساختاری** | Double Top/Bottom، Head & Shoulders، SMC/OB/FVG | **P0 · تکنیکال** | پیوت، روند پیشین و تأیید الگو | دارایی‌های کاندید در inbox؛ ممیزی تک‌به‌تک باز است | |
+| **۴** | **حمایت/مقاومت، شکست و پولبک** | S/R zones، Breakout، Failed Breakout، Retest | **P0 · تکنیکال** | OHLCV، سطوح و کندل بسته‌شده | سورس‌های نامزد در inbox؛ ادغام تأیید نشده | |
+| **۵** | **فیبوناچی، Pitchfork و موج‌شماری** | Golden Zone، Extensions، Elliott Wave | **P0 · تکنیکال** | سوئینگ تأییدشده و anchor قابل بازتولید | چند سورس کاندید در inbox؛ نگاه‌به‌آینده باید ممیزی شود | |
+| **۶** | **واگرایی و اسیلاتورها** | RSI، BB-RSI، ADX، divergence | **P1 · تکنیکال** | OHLCV و timestamp پیوت‌های قیمت/اسیلاتور | برخی محاسبات موجود؛ منابع اضافی inbox کاندیدند | |
+| **۷** | **کانال، خط روند و وج** | Trendline، Pivot Channel، Wedge | **P1 · تکنیکال** | پیوت‌های تأییدشده | چند سورس Pine در inbox؛ منطق repaint باید بررسی شود | |
+| **۸** | **رنج، فشردگی و بازگشت میانگین** | Range Structure، Quiet Range، Bollinger %B | **P1 · تکنیکال** | OHLCV و معیار دامنه/نوسان | دارایی‌های کاندید در inbox؛ معیارها هنوز کانونیکال نشده‌اند | |
+| **۹** | **رژیم کلان بازار (پنج‌حالته)** | Bull، Bear، Range، Volatility Expansion، Volatility Compression | **P2 · پس از تکنیکال** | ویژگی‌های تکنیکال + breadth و context بازار | regime detector مستقل در snapshot فعلی اثبات نشده؛ باید ساخته و اعتبارسنجی شود | |
+| **۱۰** | **پیش‌بینی نوسان و ریسک** | Volatility/Range Forecast، MAE، Expected Shortfall، Liquidity Risk | **P3** | سری زمانی point-in-time و regime | شکاف پژوهشی؛ baselineها و مدل‌ها باید سنجیده شوند | |
+| **۱۱** | **پیش‌بینی جهت و بازده** | Up/Down/Neutral Probabilities، Return Distribution by Horizon | **P4** | تکنیکال + regime + risk context | شکاف پژوهشی؛ مدل نقطه‌قیمت قطعی هدف نیست | |
+| **۱۲** | **کشف و رتبه‌بندی فرصت بازار** | Candidate Ranking، Evidence Aggregation، Explainable Opportunity Score | **P5 · آخرین لایه** | خروجی مراحل ۱ تا ۱۱ + FTS/Risk Gate | نباید قبل از تکمیل مراحل قبلی توسعه محصولی شود | |
+| **۱۳** | **کانتکست بنیادی کانونیکال FTS** | پنج شاخص بنیادی FTS | **گیت مستقل موجود** | صورت‌های مالی و `publish_date` | قوانین رسمی مستقل‌اند؛ مدل یادگیرنده حق override ندارد | |
+| **۱۴** | **جریان سفارش و تابلوخوانی** | Smart Money، Queue Pressure، Jet و Tape Flags | **ویژگی مکمل** | دادهٔ صف/حقیقی‌حقوقی با timestamp | محدودیت تاریخچه؛ دادهٔ گذشته‌نگر موجود برای برخی فیلدها کافی نیست | |
+| **۱۵** | **مدل‌های یادگیری ماشین تبولار** | LightGBM، Logistic/Calibration، Ranking | **روش مشترک مراحل ۳ تا ۵** | feature store و برچسب‌های point-in-time | هنوز نباید به‌عنوان لایهٔ فرصت‌یابی مستقل شروع شود | |
+| **۱۶** | **انسمبل و پایش افت** | Calibration، CUSUM، Contextual Selection | **پس از اعتبارسنجی مدل‌ها** | نتایج OOS و سوابق Paper | قابلیت‌های کامل این لایه اثبات نشده‌اند | |
+| **۱۷** | **یادگیری عمیق اختیاری** | 1D-CNN/GRU/ONNX | **پژوهشی و اختیاری** | توالی تاریخی کافی و مجوز پردازش | فقط در صورت اثبات ارزش افزوده نسبت به baseline و مدل تبولار | |
 
 ---
 
