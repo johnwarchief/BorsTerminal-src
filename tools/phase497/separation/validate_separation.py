@@ -27,13 +27,13 @@ def validate(shared, tech, ref=None, structural_only=False):
             return {tt:cc for tt,cc in r.execute("SELECT t,c FROM candles WHERE asset_id=591 AND res='D' AND basis=? AND adj=?", (basis,adj))}
         rc, la, t0, t5 = ser("real_close","type0"), ser("last","type0"), ser("close","type0"), ser("close","type5")
         common = set(rc)&set(la)
-        alias_ok = all(rc[k]==la[k] for k in common) and all(t0[k]==t5[k] for k in (set(t0)&set(t5)))
+        alias_ok = len(common) > 0 and len(set(t0)&set(t5)) > 0 and all(rc[k]==la[k] for k in common) and all(t0[k]==t5[k] for k in (set(t0)&set(t5)))
         rep["alias_reproduction"] = {"pass": alias_ok, "evidence": f"real_close==last & type0==type5 on 591 ({len(common)} bars)"}
         # row reconciliation: technical distinct-mode rows == deduped reference distinct-mode rows minus t=0 padding
         # (Ruling 9: COUNT(DISTINCT ...) with '/' separators — the technical build drops identical source dups)
         ref_distinct = r.execute("SELECT COUNT(DISTINCT asset_id||'/'||res||'/'||basis||'/'||adj||'/'||t) FROM candles WHERE basis!='real_close' AND adj!='type5' AND t>0").fetchone()[0]
         tech_rows = t.execute("SELECT COUNT(*) FROM candle").fetchone()[0]
-        rep["row_reconciliation"] = {"pass": tech_rows==ref_distinct, "evidence": f"technical={tech_rows} ref_distinct_no_t0={ref_distinct}"}
+        rep["row_reconciliation"] = {"pass": tech_rows == ref_distinct and tech_rows > 0 and ref_distinct > 0, "evidence": f"technical={tech_rows} ref_distinct_no_t0={ref_distinct}"}
         r.close()
     t.close(); s.close()
     rep["all_pass"] = all(g["pass"] for g in rep.values() if isinstance(g,dict))
