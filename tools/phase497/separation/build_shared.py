@@ -1,5 +1,6 @@
 # tools/phase497/separation/build_shared.py
 import os, json, sqlite3
+import datetime
 from . import paths
 
 def _init(out):
@@ -41,5 +42,25 @@ def build_asset(c):
                   [(int(k), v) for k, v in ins.items() if k.lstrip("-").isdigit()])
     ref.close()
 
+BASES = ["real_close","close","close_usd","last","last_usd","market_cap","market_cap_usd"]
+ADJS = ["type0","type5","type7"]; RESS = ["D","W","M"]
+def build_mode_def(c):
+    rows = []
+    for res in RESS:
+        for b in BASES:
+            for a in ADJS:
+                mk = f"{res}/{b}/{a}"; alias = None
+                if b == "real_close": alias = f"{res}/last/{a}"
+                elif a == "type5": alias = f"{res}/{b}/type0"
+                rows.append((mk, res, b, a, None, alias))
+    c.executemany("INSERT OR REPLACE INTO mode_def VALUES (?,?,?,?,?,?)", rows)
+def build_usd_rate(c):
+    ref = paths.ro_conn(paths.REF_DB)
+    rows = []
+    for t, cl in ref.execute("SELECT t,c FROM candles WHERE asset_id=2 AND res='D' AND basis='close' AND adj='type0' AND t>0"):
+        d = datetime.datetime.utcfromtimestamp(t/1000).strftime("%Y-%m-%d")
+        rows.append((d, cl, 2))
+    c.executemany("INSERT OR REPLACE INTO usd_rate VALUES (?,?,?)", rows); ref.close()
+
 def build_all(out):
-    c = _init(out); build_asset(c); c.commit(); c.close()
+    c = _init(out); build_asset(c); build_mode_def(c); build_usd_rate(c); c.commit(); c.close()
