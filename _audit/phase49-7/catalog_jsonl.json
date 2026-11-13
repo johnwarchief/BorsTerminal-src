@@ -1,0 +1,2100 @@
+{
+ "source_dir": "D:/BorsTerminal-worktrees/phase49-5-resume/_audit/phase49-5/api-all",
+ "bars_files": [
+  {
+   "file": "bars_D_close_type0.jsonl",
+   "size_bytes": 576114475,
+   "records": 7436,
+   "total_bars": 4696459,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "47945",
+   "scan_s": 6.7
+  },
+  {
+   "file": "bars_D_close_type5.jsonl",
+   "size_bytes": 576114687,
+   "records": 7436,
+   "total_bars": 4696461,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "47945",
+   "scan_s": 6.8
+  },
+  {
+   "file": "bars_D_close_type7.jsonl",
+   "size_bytes": 696897274,
+   "records": 7436,
+   "total_bars": 4696461,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "37552",
+   "scan_s": 8.4
+  },
+  {
+   "file": "bars_D_close_usd_type0.jsonl",
+   "size_bytes": 703663194,
+   "records": 7425,
+   "total_bars": 4695863,
+   "distinct_asset_ids": 7425,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.9
+  },
+  {
+   "file": "bars_D_close_usd_type5.jsonl",
+   "size_bytes": 703693520,
+   "records": 7436,
+   "total_bars": 4696117,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 576
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.6
+  },
+  {
+   "file": "bars_D_close_usd_type7.jsonl",
+   "size_bytes": 719936635,
+   "records": 7436,
+   "total_bars": 4696117,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 576
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.4
+  },
+  {
+   "file": "bars_D_last_type0.jsonl",
+   "size_bytes": 576070405,
+   "records": 7436,
+   "total_bars": 4696117,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 576
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.2
+  },
+  {
+   "file": "bars_D_last_type5.jsonl",
+   "size_bytes": 576070416,
+   "records": 7436,
+   "total_bars": 4696117,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "36208",
+    "trade_symbol": "پاسارگاد",
+    "name": "سرمایه گذاری در اوراق بهادار با درآمد ثابت پاسارگاد",
+    "n": 433
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.1
+  },
+  {
+   "file": "bars_D_last_type7.jsonl",
+   "size_bytes": 696831315,
+   "records": 7436,
+   "total_bars": 4696229,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.1
+  },
+  {
+   "file": "bars_D_last_usd_type0.jsonl",
+   "size_bytes": 576109693,
+   "records": 7436,
+   "total_bars": 4696442,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "37475",
+   "scan_s": 7.1
+  },
+  {
+   "file": "bars_D_last_usd_type5.jsonl",
+   "size_bytes": 576109756,
+   "records": 7436,
+   "total_bars": 4696442,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 576
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.2
+  },
+  {
+   "file": "bars_D_last_usd_type7.jsonl",
+   "size_bytes": 696857434,
+   "records": 7436,
+   "total_bars": 4696444,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 528
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.6
+  },
+  {
+   "file": "bars_D_market_cap_type0.jsonl",
+   "size_bytes": 632878469,
+   "records": 7420,
+   "total_bars": 4695959,
+   "distinct_asset_ids": 7420,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "37552",
+   "scan_s": 7.6
+  },
+  {
+   "file": "bars_D_market_cap_type5.jsonl",
+   "size_bytes": 632880076,
+   "records": 7420,
+   "total_bars": 4695973,
+   "distinct_asset_ids": 7420,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.6
+  },
+  {
+   "file": "bars_D_market_cap_type7.jsonl",
+   "size_bytes": 632880105,
+   "records": 7420,
+   "total_bars": 4695973,
+   "distinct_asset_ids": 7420,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.6
+  },
+  {
+   "file": "bars_D_market_cap_usd_type0.jsonl",
+   "size_bytes": 732681004,
+   "records": 7420,
+   "total_bars": 4695973,
+   "distinct_asset_ids": 7420,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.8
+  },
+  {
+   "file": "bars_D_market_cap_usd_type5.jsonl",
+   "size_bytes": 732681035,
+   "records": 7420,
+   "total_bars": 4695973,
+   "distinct_asset_ids": 7420,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.7
+  },
+  {
+   "file": "bars_D_market_cap_usd_type7.jsonl",
+   "size_bytes": 732681054,
+   "records": 7420,
+   "total_bars": 4695973,
+   "distinct_asset_ids": 7420,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.8
+  },
+  {
+   "file": "bars_D_real_close_type0.jsonl",
+   "size_bytes": 605416793,
+   "records": 10715,
+   "total_bars": 4939344,
+   "distinct_asset_ids": 10715,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "600",
+    "trade_symbol": "انفورماتیک",
+    "name": "گسترش انفورماتیک ایران",
+    "n": 1
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.3
+  },
+  {
+   "file": "bars_D_real_close_type5.jsonl",
+   "size_bytes": 575569844,
+   "records": 7432,
+   "total_bars": 4692177,
+   "distinct_asset_ids": 7432,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 576
+   },
+   "last_asset_id": "47945",
+   "scan_s": 7.2
+  },
+  {
+   "file": "bars_D_real_close_type7.jsonl",
+   "size_bytes": 696817808,
+   "records": 7436,
+   "total_bars": 4696117,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 1039
+   },
+   "last_asset_id": "47945",
+   "scan_s": 8.2
+  },
+  {
+   "file": "bars_M_close_type0.jsonl",
+   "size_bytes": 104901509,
+   "records": 7435,
+   "total_bars": 1083136,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.2
+  },
+  {
+   "file": "bars_M_close_type5.jsonl",
+   "size_bytes": 104912348,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.5
+  },
+  {
+   "file": "bars_M_close_type7.jsonl",
+   "size_bytes": 112058782,
+   "records": 7435,
+   "total_bars": 1083221,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.4
+  },
+  {
+   "file": "bars_M_close_usd_type0.jsonl",
+   "size_bytes": 112896054,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 30
+   },
+   "last_asset_id": "47945",
+   "scan_s": 4.4
+  },
+  {
+   "file": "bars_M_close_usd_type5.jsonl",
+   "size_bytes": 112895260,
+   "records": 7435,
+   "total_bars": 1083217,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 30
+   },
+   "last_asset_id": "47945",
+   "scan_s": 6.2
+  },
+  {
+   "file": "bars_M_close_usd_type7.jsonl",
+   "size_bytes": 113457522,
+   "records": 7435,
+   "total_bars": 1083218,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "47945",
+   "scan_s": 4.3
+  },
+  {
+   "file": "bars_M_last_type0.jsonl",
+   "size_bytes": 104912153,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 30
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.5
+  },
+  {
+   "file": "bars_M_last_type5.jsonl",
+   "size_bytes": 104912153,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 28
+   },
+   "last_asset_id": "37616",
+   "scan_s": 3.9
+  },
+  {
+   "file": "bars_M_last_type7.jsonl",
+   "size_bytes": 112057308,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "37616",
+   "scan_s": 1.3
+  },
+  {
+   "file": "bars_M_last_usd_type0.jsonl",
+   "size_bytes": 104892514,
+   "records": 7435,
+   "total_bars": 1083068,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.4
+  },
+  {
+   "file": "bars_M_last_usd_type5.jsonl",
+   "size_bytes": 104912153,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 54
+   },
+   "last_asset_id": "37552",
+   "scan_s": 1.3
+  },
+  {
+   "file": "bars_M_last_usd_type7.jsonl",
+   "size_bytes": 112057308,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 30
+   },
+   "last_asset_id": "37552",
+   "scan_s": 1.3
+  },
+  {
+   "file": "bars_M_market_cap_type0.jsonl",
+   "size_bytes": 87086698,
+   "records": 6175,
+   "total_bars": 934201,
+   "distinct_asset_ids": 6175,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "50125",
+    "trade_symbol": "فرویح",
+    "name": "ذوب روی اصفهان (حق تقدم)",
+    "n": 4
+   },
+   "last_asset_id": "49070",
+   "scan_s": 1.0
+  },
+  {
+   "file": "bars_M_market_cap_type5.jsonl",
+   "size_bytes": 87086697,
+   "records": 6175,
+   "total_bars": 934201,
+   "distinct_asset_ids": 6175,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "50125",
+    "trade_symbol": "فرویح",
+    "name": "ذوب روی اصفهان (حق تقدم)",
+    "n": 4
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.2
+  },
+  {
+   "file": "bars_M_market_cap_type7.jsonl",
+   "size_bytes": 87086697,
+   "records": 6175,
+   "total_bars": 934201,
+   "distinct_asset_ids": 6175,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "50125",
+    "trade_symbol": "فرویح",
+    "name": "ذوب روی اصفهان (حق تقدم)",
+    "n": 4
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.1
+  },
+  {
+   "file": "bars_M_market_cap_usd_type0.jsonl",
+   "size_bytes": 87513857,
+   "records": 6175,
+   "total_bars": 934201,
+   "distinct_asset_ids": 6175,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "50125",
+    "trade_symbol": "فرویح",
+    "name": "ذوب روی اصفهان (حق تقدم)",
+    "n": 4
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.0
+  },
+  {
+   "file": "bars_M_market_cap_usd_type5.jsonl",
+   "size_bytes": 87513859,
+   "records": 6175,
+   "total_bars": 934201,
+   "distinct_asset_ids": 6175,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "50125",
+    "trade_symbol": "فرویح",
+    "name": "ذوب روی اصفهان (حق تقدم)",
+    "n": 4
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.1
+  },
+  {
+   "file": "bars_M_market_cap_usd_type7.jsonl",
+   "size_bytes": 87513859,
+   "records": 6175,
+   "total_bars": 934201,
+   "distinct_asset_ids": 6175,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "50125",
+    "trade_symbol": "فرویح",
+    "name": "ذوب روی اصفهان (حق تقدم)",
+    "n": 4
+   },
+   "last_asset_id": "1637",
+   "scan_s": 1.1
+  },
+  {
+   "file": "bars_M_real_close_type0.jsonl",
+   "size_bytes": 104911663,
+   "records": 7435,
+   "total_bars": 1083220,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 28
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.4
+  },
+  {
+   "file": "bars_M_real_close_type5.jsonl",
+   "size_bytes": 104912153,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 28
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.2
+  },
+  {
+   "file": "bars_M_real_close_type7.jsonl",
+   "size_bytes": 112057307,
+   "records": 7436,
+   "total_bars": 1083223,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 30
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.5
+  },
+  {
+   "file": "bars_W_close_type0.jsonl",
+   "size_bytes": 188091849,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 814
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.3
+  },
+  {
+   "file": "bars_W_close_type5.jsonl",
+   "size_bytes": 188090690,
+   "records": 7435,
+   "total_bars": 1713723,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "1654",
+    "trade_symbol": "آتیه ملت",
+    "name": "سرمایه‌گذاری آتیه ملت",
+    "n": 125
+   },
+   "last_asset_id": "47747",
+   "scan_s": 2.3
+  },
+  {
+   "file": "bars_W_close_type7.jsonl",
+   "size_bytes": 216295171,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "37552",
+   "scan_s": 2.7
+  },
+  {
+   "file": "bars_W_close_usd_type0.jsonl",
+   "size_bytes": 219130307,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 814
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.8
+  },
+  {
+   "file": "bars_W_close_usd_type5.jsonl",
+   "size_bytes": 219130320,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.6
+  },
+  {
+   "file": "bars_W_close_usd_type7.jsonl",
+   "size_bytes": 221713082,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 115
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.8
+  },
+  {
+   "file": "bars_W_last_type0.jsonl",
+   "size_bytes": 188089841,
+   "records": 7435,
+   "total_bars": 1713719,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.1
+  },
+  {
+   "file": "bars_W_last_type5.jsonl",
+   "size_bytes": 188091421,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.6
+  },
+  {
+   "file": "bars_W_last_type7.jsonl",
+   "size_bytes": 216286296,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 115
+   },
+   "last_asset_id": "37616",
+   "scan_s": 2.4
+  },
+  {
+   "file": "bars_W_last_usd_type0.jsonl",
+   "size_bytes": 188091018,
+   "records": 7435,
+   "total_bars": 1713730,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.5
+  },
+  {
+   "file": "bars_W_last_usd_type5.jsonl",
+   "size_bytes": 188091421,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 115
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.2
+  },
+  {
+   "file": "bars_W_last_usd_type7.jsonl",
+   "size_bytes": 216126996,
+   "records": 7435,
+   "total_bars": 1712825,
+   "distinct_asset_ids": 7435,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "33197",
+    "trade_symbol": "ارکیده",
+    "name": "سرمایه گذری ارکیده",
+    "n": 115
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.6
+  },
+  {
+   "file": "bars_W_market_cap_type0.jsonl",
+   "size_bytes": 151780903,
+   "records": 6378,
+   "total_bars": 1369310,
+   "distinct_asset_ids": 6378,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "172",
+    "trade_symbol": "خساپا",
+    "name": "سایپا",
+    "n": 1370
+   },
+   "last_asset_id": "37475",
+   "scan_s": 1.9
+  },
+  {
+   "file": "bars_W_market_cap_type5.jsonl",
+   "size_bytes": 151780903,
+   "records": 6378,
+   "total_bars": 1369310,
+   "distinct_asset_ids": 6378,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "167",
+    "trade_symbol": "خودرو",
+    "name": "ایران خودرو",
+    "n": 1595
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.0
+  },
+  {
+   "file": "bars_W_market_cap_type7.jsonl",
+   "size_bytes": 151780901,
+   "records": 6378,
+   "total_bars": 1369310,
+   "distinct_asset_ids": 6378,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "172",
+    "trade_symbol": "خساپا",
+    "name": "سایپا",
+    "n": 1370
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.8
+  },
+  {
+   "file": "bars_W_market_cap_usd_type0.jsonl",
+   "size_bytes": 162460830,
+   "records": 6378,
+   "total_bars": 1369310,
+   "distinct_asset_ids": 6378,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "167",
+    "trade_symbol": "خودرو",
+    "name": "ایران خودرو",
+    "n": 1595
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.1
+  },
+  {
+   "file": "bars_W_market_cap_usd_type5.jsonl",
+   "size_bytes": 162460830,
+   "records": 6378,
+   "total_bars": 1369310,
+   "distinct_asset_ids": 6378,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "172",
+    "trade_symbol": "خساپا",
+    "name": "سایپا",
+    "n": 1370
+   },
+   "last_asset_id": "47945",
+   "scan_s": 1.9
+  },
+  {
+   "file": "bars_W_market_cap_usd_type7.jsonl",
+   "size_bytes": 162460830,
+   "records": 6378,
+   "total_bars": 1369310,
+   "distinct_asset_ids": 6378,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "167",
+    "trade_symbol": "خودرو",
+    "name": "ایران خودرو",
+    "n": 1595
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.2
+  },
+  {
+   "file": "bars_W_real_close_type0.jsonl",
+   "size_bytes": 188091400,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.4
+  },
+  {
+   "file": "bars_W_real_close_type5.jsonl",
+   "size_bytes": 188091402,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "47945",
+   "scan_s": 2.3
+  },
+  {
+   "file": "bars_W_real_close_type7.jsonl",
+   "size_bytes": 216286280,
+   "records": 7436,
+   "total_bars": 1713732,
+   "distinct_asset_ids": 7436,
+   "dup_asset_lines": false,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "19692",
+    "trade_symbol": "آفاق",
+    "name": "سرمایه گذاری نوع دوم افق آتی",
+    "n": 227
+   },
+   "last_asset_id": "50134",
+   "scan_s": 2.7
+  }
+ ],
+ "orig_files": [
+  {
+   "file": "bars_D_real_close_type0.jsonl.orig",
+   "size_bytes": 785577881,
+   "records": 13036,
+   "total_bars": 6402529,
+   "distinct_asset_ids": 10715,
+   "dup_asset_lines": true,
+   "record_keys": [
+    "asset_id",
+    "trade_symbol",
+    "name",
+    "n",
+    "bars"
+   ],
+   "bar_keys": [
+    "time",
+    "utc",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+   ],
+   "first_record": {
+    "asset_id": "461",
+    "trade_symbol": "وتجارت",
+    "name": "بانک تجارت",
+    "n": 3635
+   },
+   "last_asset_id": "47945",
+   "scan_s": 11.8
+  }
+ ],
+ "errors": {
+  "file": "errors.jsonl",
+  "size_bytes": 23573949,
+  "records": 328908,
+  "record_keys": [
+   "asset_id",
+   "res",
+   "b",
+   "a",
+   "status"
+  ],
+  "status_dist": {
+   "200": 314937,
+   "Failed to fetch": 27,
+   "503": 105,
+   "422": 7542,
+   "500": 6297
+  }
+ },
+ "schema_uniform": {
+  "record_key_variants": 1,
+  "bar_key_variants": 1,
+  "record_keys": [
+   "asset_id",
+   "trade_symbol",
+   "name",
+   "n",
+   "bars"
+  ],
+  "bar_keys": [
+   "time",
+   "utc",
+   "open",
+   "high",
+   "low",
+   "close",
+   "volume"
+  ]
+ },
+ "totals": {
+  "bars_files": 63,
+  "total_records": 457712,
+  "total_bars": 154632933,
+  "total_bytes": 19771925537
+ }
+}

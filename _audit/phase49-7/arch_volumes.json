@@ -1,0 +1,16 @@
+{
+ "total_modes": 63,
+ "total_rows": 154632933,
+ "distinct_modes": 36,
+ "distinct_rows": 87942523,
+ "redundant_modes": 27,
+ "redundant_rows": 66690410,
+ "redundant_pct_rows": 43.1,
+ "est_t0_padding_wm": 32885250,
+ "d_nonpos_real": 265479,
+ "operational_rows_est": 55057273,
+ "ref_db_bytes": 14612127744,
+ "technical_db_bytes_est_full63": 14612127744,
+ "technical_db_bytes_est_distinct": 8310179179,
+ "technical_db_bytes_est_distinct_nopad": 5202668608
+}

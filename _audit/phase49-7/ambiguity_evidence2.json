@@ -1,0 +1,615 @@
+{
+ "wm_dup_t0": {
+  "M": {
+   "total_bars": 7048,
+   "t0_bars": 6816,
+   "distinct_t": 233,
+   "dup_groups": 1,
+   "dup_groups_t0": 1,
+   "dup_groups_real_t": 0,
+   "t0_group_size": 6816
+  },
+  "W": {
+   "total_bars": 7048,
+   "t0_bars": 5998,
+   "distinct_t": 1051,
+   "dup_groups": 1,
+   "dup_groups_t0": 1,
+   "dup_groups_real_t": 0,
+   "t0_group_size": 5998
+  }
+ },
+ "adj_broad": [
+  {
+   "type": "ارز",
+   "asset_id": 2,
+   "common": 5450,
+   "type0==type5": 5450,
+   "type0==type7": 5450,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "ارز",
+   "asset_id": 3,
+   "common": 5432,
+   "type0==type5": 5432,
+   "type0==type7": 5432,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "ارز",
+   "asset_id": 2019,
+   "common": 2983,
+   "type0==type5": 2983,
+   "type0==type7": 2983,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "ارز",
+   "asset_id": 2020,
+   "common": 2869,
+   "type0==type5": 2869,
+   "type0==type7": 2869,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "سهام",
+   "asset_id": 4,
+   "common": 3990,
+   "type0==type5": 3990,
+   "type0==type7": 2003,
+   "pct05": 100.0,
+   "pct07": 50.2
+  },
+  {
+   "type": "سهام",
+   "asset_id": 5,
+   "common": 1556,
+   "type0==type5": 1556,
+   "type0==type7": 320,
+   "pct05": 100.0,
+   "pct07": 20.6
+  },
+  {
+   "type": "سهام",
+   "asset_id": 6,
+   "common": 3225,
+   "type0==type5": 3225,
+   "type0==type7": 21,
+   "pct05": 100.0,
+   "pct07": 0.7
+  },
+  {
+   "type": "سهام",
+   "asset_id": 7,
+   "common": 2124,
+   "type0==type5": 2124,
+   "type0==type7": 76,
+   "pct05": 100.0,
+   "pct07": 3.6
+  },
+  {
+   "type": "صندوق",
+   "asset_id": 768,
+   "common": 2595,
+   "type0==type5": 2595,
+   "type0==type7": 361,
+   "pct05": 100.0,
+   "pct07": 13.9
+  },
+  {
+   "type": "صندوق",
+   "asset_id": 802,
+   "common": 2127,
+   "type0==type5": 2127,
+   "type0==type7": 49,
+   "pct05": 100.0,
+   "pct07": 2.3
+  },
+  {
+   "type": "صندوق",
+   "asset_id": 803,
+   "common": 2364,
+   "type0==type5": 2364,
+   "type0==type7": 856,
+   "pct05": 100.0,
+   "pct07": 36.2
+  },
+  {
+   "type": "صندوق",
+   "asset_id": 804,
+   "common": 2754,
+   "type0==type5": 2754,
+   "type0==type7": 2754,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "حق تقدم",
+   "asset_id": 837,
+   "common": 96,
+   "type0==type5": 96,
+   "type0==type7": 96,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "حق تقدم",
+   "asset_id": 839,
+   "common": 52,
+   "type0==type5": 52,
+   "type0==type7": 52,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "حق تقدم",
+   "asset_id": 841,
+   "common": 135,
+   "type0==type5": 135,
+   "type0==type7": 135,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "حق تقدم",
+   "asset_id": 844,
+   "common": 134,
+   "type0==type5": 134,
+   "type0==type7": 134,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "کالا",
+   "asset_id": 1554,
+   "common": 5368,
+   "type0==type5": 5368,
+   "type0==type7": 5368,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "کالا",
+   "asset_id": 1555,
+   "common": 5532,
+   "type0==type5": 5532,
+   "type0==type7": 5532,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "کالا",
+   "asset_id": 1556,
+   "common": 5330,
+   "type0==type5": 5330,
+   "type0==type7": 5330,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "کالا",
+   "asset_id": 1557,
+   "common": 5280,
+   "type0==type5": 5280,
+   "type0==type7": 5280,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "آتی",
+   "asset_id": 1939,
+   "common": 130,
+   "type0==type5": 130,
+   "type0==type7": 130,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "آتی",
+   "asset_id": 1943,
+   "common": 58,
+   "type0==type5": 58,
+   "type0==type7": 58,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "آتی",
+   "asset_id": 1964,
+   "common": 2073,
+   "type0==type5": 2073,
+   "type0==type7": 2073,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "آتی",
+   "asset_id": 1965,
+   "common": 2073,
+   "type0==type5": 2073,
+   "type0==type7": 2073,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "گواهی سپرده کالایی",
+   "asset_id": 5592,
+   "common": 633,
+   "type0==type5": 633,
+   "type0==type7": 633,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "گواهی سپرده کالایی",
+   "asset_id": 27501,
+   "common": 790,
+   "type0==type5": 790,
+   "type0==type7": 790,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "گواهی سپرده کالایی",
+   "asset_id": 28916,
+   "common": 100,
+   "type0==type5": 100,
+   "type0==type7": 100,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "گواهی سپرده کالایی",
+   "asset_id": 28917,
+   "common": 170,
+   "type0==type5": 170,
+   "type0==type7": 170,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اوراق",
+   "asset_id": 7825,
+   "common": 404,
+   "type0==type5": 404,
+   "type0==type7": 404,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اوراق",
+   "asset_id": 18680,
+   "common": 23,
+   "type0==type5": 23,
+   "type0==type7": 23,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اوراق",
+   "asset_id": 18681,
+   "common": 23,
+   "type0==type5": 23,
+   "type0==type7": 23,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اوراق",
+   "asset_id": 18682,
+   "common": 174,
+   "type0==type5": 174,
+   "type0==type7": 174,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "رمز ارز",
+   "asset_id": 17183,
+   "common": 3375,
+   "type0==type5": 3375,
+   "type0==type7": 3375,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "رمز ارز",
+   "asset_id": 17184,
+   "common": 3375,
+   "type0==type5": 3375,
+   "type0==type7": 3375,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "رمز ارز",
+   "asset_id": 17185,
+   "common": 3294,
+   "type0==type5": 3294,
+   "type0==type7": 3294,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "رمز ارز",
+   "asset_id": 17186,
+   "common": 3280,
+   "type0==type5": 3280,
+   "type0==type7": 3280,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "امتیاز تسهیلات مسکن",
+   "asset_id": 19096,
+   "common": 685,
+   "type0==type5": 685,
+   "type0==type7": 685,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "امتیاز تسهیلات مسکن",
+   "asset_id": 20090,
+   "common": 382,
+   "type0==type5": 382,
+   "type0==type7": 382,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "امتیاز تسهیلات مسکن",
+   "asset_id": 21201,
+   "common": 239,
+   "type0==type5": 239,
+   "type0==type7": 239,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "امتیاز تسهیلات مسکن",
+   "asset_id": 22153,
+   "common": 92,
+   "type0==type5": 92,
+   "type0==type7": 92,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اختیار معامله",
+   "asset_id": 27192,
+   "common": 59,
+   "type0==type5": 59,
+   "type0==type7": 59,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اختیار معامله",
+   "asset_id": 27193,
+   "common": 59,
+   "type0==type5": 59,
+   "type0==type7": 59,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اختیار معامله",
+   "asset_id": 27194,
+   "common": 60,
+   "type0==type5": 60,
+   "type0==type7": 60,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "اختیار معامله",
+   "asset_id": 27195,
+   "common": 63,
+   "type0==type5": 63,
+   "type0==type7": 63,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "سلف موازی",
+   "asset_id": 35199,
+   "common": 32,
+   "type0==type5": 32,
+   "type0==type7": 32,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "سلف موازی",
+   "asset_id": 36835,
+   "common": 193,
+   "type0==type5": 193,
+   "type0==type7": 193,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "سلف موازی",
+   "asset_id": 37296,
+   "common": 76,
+   "type0==type5": 76,
+   "type0==type7": 76,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "سلف موازی",
+   "asset_id": 37675,
+   "common": 27,
+   "type0==type5": 27,
+   "type0==type7": 27,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "جفت ارزها",
+   "asset_id": 45848,
+   "common": 5999,
+   "type0==type5": 5999,
+   "type0==type7": 5999,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "جفت ارزها",
+   "asset_id": 45849,
+   "common": 6031,
+   "type0==type5": 6031,
+   "type0==type7": 6031,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "جفت ارزها",
+   "asset_id": 45850,
+   "common": 6097,
+   "type0==type5": 6097,
+   "type0==type7": 6097,
+   "pct05": 100.0,
+   "pct07": 100.0
+  },
+  {
+   "type": "جفت ارزها",
+   "asset_id": 45851,
+   "common": 5406,
+   "type0==type5": 5406,
+   "type0==type7": 5406,
+   "pct05": 100.0,
+   "pct07": 100.0
+  }
+ ],
+ "adj_broad_summary": {
+  "sampled": 52,
+  "type0_fully_eq_type5": 52
+ },
+ "ohlc_anom_close_type7": {
+  "591": {
+   "bars": 2816,
+   "hl_violation": 0,
+   "ohlc_range_violation": 77,
+   "sample_range": [
+    [
+     1341014400000,
+     7.129405083435143,
+     7.129405083435143,
+     7.129405083435143,
+     6.979180568946606,
+     1860845
+    ],
+    [
+     1353369600000,
+     19.479112045346938,
+     19.479112045346938,
+     19.479112045346938,
+     20.2051971987082,
+     418428
+    ]
+   ]
+  },
+  "461": {
+   "bars": 3635,
+   "hl_violation": 0,
+   "ohlc_range_violation": 396,
+   "sample_range": [
+    [
+     1245542400000,
+     3.9356523836784296,
+     3.952471410959107,
+     3.9356523836784296,
+     3.9322885782222943,
+     1129370
+    ],
+    [
+     1245628800000,
+     3.945743800046836,
+     4.013019909169544,
+     3.9423799945907003,
+     3.939016189134565,
+     586908
+    ]
+   ]
+  },
+  "66": {
+   "bars": 5598,
+   "hl_violation": 0,
+   "ohlc_range_violation": 469,
+   "sample_range": [
+    [
+     947548800000,
+     0.5699981688675508,
+     0.5600694596711248,
+     0.5600694596711248,
+     0.5600694596711248,
+     42430
+    ],
+    [
+     948240000000,
+     0.5921962663873366,
+     0.5894238119566843,
+     0.5894238119566843,
+     0.5894238119566843,
+     184600
+    ]
+   ]
+  }
+ },
+ "market_cap_ohlc_sample": {
+  "bars": 2816,
+  "sample": [
+   [
+    1340496000000,
+    18.009,
+    18.009,
+    15.732,
+    15.7596,
+    690000000
+   ],
+   [
+    1340582400000,
+    16.008,
+    16.284,
+    15.8148,
+    16.0494,
+    70242200
+   ]
+  ],
+  "note": "OHLC fields carry market-cap values, not prices"
+ },
+ "t0_padding": {
+  "1636_D": {
+   "bars": 7048,
+   "t0_bars": 0
+  },
+  "1636_M": {
+   "bars": 7048,
+   "t0_bars": 6816
+  },
+  "591_D": {
+   "bars": 2816,
+   "t0_bars": 0
+  },
+  "591_M": {
+   "bars": 156,
+   "t0_bars": 0
+  },
+  "2_D": {
+   "bars": 5450,
+   "t0_bars": 0
+  },
+  "2_M": {
+   "bars": 235,
+   "t0_bars": 0
+  }
+ }
+}
