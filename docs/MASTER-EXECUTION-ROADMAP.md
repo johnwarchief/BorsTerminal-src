@@ -2661,6 +2661,8 @@ This section is the execution contract for the ML workstream. It does not author
 
 Complete and validate the canonical building blocks: candle geometry, confirmed pivots, HH/HL/LH/LL, BOS/CHoCH, support/resistance, breakout/failure/retest, pullback, Fibonacci, Jet, indicators, classical continuation/reversal patterns, multi-timeframe context, sector-relative strength and chart overlays.
 
+**Reuse-first requirement for indicator/pattern assets:** before adding any new detector or indicator, audit and reuse the materials already in `docs/technical-indicators/implemented/`, `reviewed/`, and `inbox/`, the legacy `docs/Indicator/` tree, `frontend-v2/src/features/technical/` registries/detectors and `backend-go/internal/indicators/`. The repository's 2026-11-03 triage records nine existing overlays and prioritizes S/R Retest Breakout, Wedge/Channel detection and Order-Block scoring as the next candidates. Reconcile by content hash, inspect existing formulas/tests and implement only verified gaps. Classify MQL files correctly (indicator/EA/script/library); do not execute or directly port EX4/EX5 binaries. Verify license, repaint/look-ahead, data and timeframe requirements before reuse or porting.
+
 Reconcile all four printed FTS pages against the FTS booklet, FTS chart source, owner rulings and current code. Page T is the technical methodology; F/S/M pages remain part of the full end-to-end FTS decision and visual explanation. The display model must never make its own independent decision.
 
 **Exit:** Python/Go/chart parity and Golden Vectors pass; confirmed outputs do not repaint or use future information; each canonical chart element has a real producer, provenance and visible representation.
