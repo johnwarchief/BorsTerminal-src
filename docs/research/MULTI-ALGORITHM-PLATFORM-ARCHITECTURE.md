@@ -1,16 +1,55 @@
 # BorsTerminal — معماری پلتفرم هوش چندالگوریتمی (Multi-Algorithm Intelligence Platform)
 ## سند طراحی جامع زیرساخت الگوریتم‌ها، راهبردها، مدل‌های یادگیرنده و مصورسازی بورس‌ترمینال
 
-**تاریخ تدوین:** ۲۴ مهر ۱۴۰۵ (2026-10-15)  
-**نسخه سند:** 1.0.0 (Architecture Research Specification)  
-**محیط هدف:** BorsTerminal Desktop (Windows 10/11 x64 · CPU-First · PyInstaller Onedir · SQLite3 · WebView2)  
-**شاخه و کامیت مبنا:** `mission/4-axes-2026-10-10` @ [`e9db359e`](file:///c:/Users/PCMOD/Desktop/BorsTerminal) | **شاخه اصلی:** `github/main` @ [`c0402614`](file:///c:/Users/PCMOD/Desktop/BorsTerminal) (v1.0.89)  
-**اسناد پیش‌نیاز:**  
-- [`docs/research/PHASE-0-DATA-REALITY-AUDIT.md`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/PHASE-0-DATA-REALITY-AUDIT.md) (ممیزی قطعی داده‌های واقعی و اثبات سقف ۵۱۷ روزه)  
-- [`docs/research/symbol_coverage_phase0.csv`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/symbol_coverage_phase0.csv) (پوشش کامل ۶٬۱۶۹ نماد)  
-- [`docs/research/LOCAL-ALGORITHMIC-LEARNING-ARCHITECTURE.md`](file:///c:/Users/PCMOD/Desktop/BorsTerminal/docs/research/LOCAL-ALGORITHMIC-LEARNING-ARCHITECTURE.md) (طرح اولیه یادگیری محلی)
+**تاریخ تدوین اولیه:** ۲۴ مهر ۱۴۰۵ (2026-10-15)  
+**به‌روزرسانی معماری مصوب مالک:** 2026-11-13  
+**نسخه سند:** 1.1.0 (Technical-First / Go Runtime Alignment)  
+**محیط Runtime:** BorsTerminal Desktop · Tauri + Go + SQLite · CPU-first local inference  
+**محیط Research:** Python محلی؛ Colab/GPU موقت فقط برای Jobهای محدود و تأییدشده  
+**شاخه مرجع:** `go-main`  
+**مرجع ترتیب اجرا:** `docs/ML-ENGINE-ROADMAP.md` و `docs/MASTER-EXECUTION-ROADMAP.md`. اعداد پوشش/کارایی و مسیرهای فایل نسخهٔ اولیه در این سند، snapshot تاریخی‌اند و بدون ممیزی مجدد وضعیت فعلی محسوب نمی‌شوند.
 
 ---
+
+## به‌روزرسانی معماری مصوب مالک — 2026-11-13
+
+> این بخش مرجع جاری برای مرزبندی Runtime/Research و ترتیب اجرای خانواده‌های الگوریتمی است. جدول ۱۴ خانواده در §۳٫۱ به‌عنوان **تاکسونومی اجزا** باقی می‌ماند، اما برچسب‌های P0–P5 و فازبندی اولیهٔ §۸ ترتیب اجرایی فعلی نیستند؛ ترتیب جدید در `docs/ML-ENGINE-ROADMAP.md` مرجع است.
+
+### ۱) مرز معماری فعلی
+
+- **Product Runtime:** Go + Tauri + SQLite. سرویس‌ها و قراردادهای Runtime در Go پیاده می‌شوند.
+- **Research / Training Plane:** Python روی سیستم مالک برای تحلیل، ساخت Dataset، آزمایش، آموزش، Fine-tuning و Backtest.
+- **Temporary GPU:** Colab فقط برای Job محدود، با Dataset Scope Hash، Environment Manifest، Checkpoint و خروجی قابل اعتبارسنجی.
+- **Data ownership:** Producer تنها نویسندهٔ دیتابیس‌های بازار و CODAL؛ Go Runtime آن‌ها را Read-Only مصرف می‌کند؛ Research از Snapshot تغییرناپذیر می‌خواند؛ research.db خارج از dataDir و Snapshotهای Producer می‌ماند.
+- **No Python client runtime:** Pluginهای Python، فرآیند Training یا کد پژوهشی دلخواه در کلاینت توزیع نمی‌شوند. فقط مدل/قرارداد Inference نسخه‌بندی‌شده و تأییدشده می‌تواند در Go پیاده شود.
+- **FTS:** موتور قطعی و کانونیکال باقی می‌ماند. Algorithm Registry و Research نمی‌توانند قواعد جزوه یا رأی مالک را بازنویسی کنند.
+
+بنابراین پیشنهادهای نسخهٔ اولیه دربارهٔ Dynamic Python Plugin Registry به‌عنوان Runtime، PyInstaller Onedir و اجرای مستقیم مدل پژوهشی در کلاینت، صرفاً ایده‌های تاریخی‌اند و تصمیم فعلی محسوب نمی‌شوند. مفهوم Registry، قرارداد الگوریتم، جداسازی آزمایش‌ها و مانیفست نسخه‌ها حفظ می‌شود؛ اجرای پایدار باید با قرارداد Go/IR مصوب Opportunity Lab منطبق باشد.
+
+### ۲) ترتیب فنی/یادگیری مصوب
+
+1. ساخت Operational Technical DB از آرشیو مرجع تغییرناپذیر و اتصال مستقل Read-Only به Go؛ تخمین ۵٫۲ گیگابایت تا زمان ساخت و اندازه‌گیری، قطعی نیست.
+2. تکمیل موتورهای قطعی تکنیکال: کندل/پیوت، ساختار روند، چندتایم‌فریمی، BOS/CHoCH، حمایت/مقاومت، شکست و Retest، Fibonacci، Jet، اندیکاتورها و تمام الگوهای برگشتی/ادامه‌دهنده.
+3. تکمیل تطابق چهار صفحهٔ FTS: F بنیادی، T تکنیکال، S انتخاب/تابلو، M مهندسی معکوس/مدیریت سرمایه. PDF جزوه و FTS.CHART_3 مرجع‌اند؛ مدل چارت فقط خروجی موتور را نمایش می‌دهد.
+4. ساخت Market Signal Journal، Point-in-Time Feature Store و Outcome Labels با زمان مشاهده/انتشار، نسخهٔ قانون، provenance و وضعیت observed/reconstructed.
+5. آموزش مدل کیفیت الگوها و ساختار تکنیکال؛ ابتدا Baselineهای Logistic/ElasticNet و سپس LightGBM/CatBoost.
+6. تشخیص پنج رژیم بازار: جهت‌دار صعودی، جهت‌دار نزولی، رنج/خنثی، انقباض نقدینگی، شوک/قفل بازار. بازار کل و رژیم هر نماد جدا هستند؛ HMM/Markov-Switching پس از Rule Baseline و با خروجی احتمالاتی ارزیابی می‌شوند.
+7. پیش‌بینی نوسان و ریسک: ATR/Realized Volatility/EWMA، GARCH/EGARCH/HAR-RV در صورت کفایت داده، Quantile، VaR/Expected Shortfall، Drawdown و ریسک نقدشوندگی/صف.
+8. پیش‌بینی توالی کندل و مسیر آینده: **Kronos-mini حفظ می‌شود**؛ Chronos-Bolt-Tiny، TimesFM و در صورت توجیه PatchTST/iTransformer با Baselineهای ساده مقایسه می‌شوند. Kronos فقط با موتور رسمی PyTorch و OHLCV/Amount واقعی پذیرفته است؛ ورودی closes-only یا OHLCV مصنوعی معیار بازار واقعی نیست.
+9. Paper/Replay و ترکیب خروجی مدل‌های تخصصی با کنترل Calibration، Redundancy و Drift.
+10. Opportunity Discovery و رتبه‌بندی نهایی **آخرین لایه** است و فقط خروجی مدل‌های تخصصی تأییدشده، FTS، پنج شاخص بنیادی، Tape، Breadth، صنعت و تازگی داده را مصرف می‌کند.
+
+### ۳) پنج محور بنیادی و ورودی‌های بازار
+
+پنج محور بنیادی موجود FTS (F-01 رشد فروش، F-02 سودآوری/EPS، F-03 حاشیه سود ناخالص، F-04 فروش سالانه‌شده/ارزش بازار، F-05 صنعت و نوع نرخ‌گذاری) به‌صورت پنج feature مستقل و Point-in-Time استفاده می‌شوند. فرمول‌ها و vetoها فقط از موتور کانونیکال می‌آیند.
+
+داده‌های تاریخی Tape، صف، جریان پول حقیقی/حقوقی و ریزساختار اگر در آرشیو کندل پوشش ندارند، باید از منابع موجود به‌صورت مجزا و با ثبت رو‌به‌جلو جمع‌آوری شوند؛ هیچ مدل یا دیتاستی نباید این تاریخچه را جعل کند.
+
+### ۴) پذیرش و ترتیب آموزش
+
+هیچ مدل ML پیش از عبور از دو گیت آغاز نمی‌شود: **(الف) اتصال و صحت Operational Technical DB در Go، (ب) تکمیل/اعتبارسنجی موتور تکنیکال و چارت چهارصفحه‌ای FTS.** سپس Journal/PIT/labels ساخته می‌شوند. تمام مدل‌ها باید با تقسیم زمانی، Purged Walk-Forward/Embargo، کنترل Survivorship، هزینه و صف واقعی، Baseline، Calibration و Holdout دست‌نخورده ارزیابی شوند. Opportunity ranking فقط بعد از تأیید مستقل مدل‌های Pattern، Regime، Risk و Forecast ساخته می‌شود.
+
+
 
 ## فهرست مطالب
 
