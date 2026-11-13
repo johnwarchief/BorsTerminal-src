@@ -635,6 +635,32 @@ The order below is mandatory for this ML workstream. It does not reorder unrelat
 
 Audit and complete existing code rather than duplicating it. Existing frontend-v2 pattern detectors/registry and current Go chart services are starting points, not proof of completeness.
 
+#### Mandatory reuse of the existing indicator library — no greenfield rebuild
+
+Before implementing or training any pattern/indicator capability, perform an asset-to-capability audit of the materials already committed to the repository. The audit must cover, at minimum:
+
+- `docs/technical-indicators/implemented/`: features already implemented and documented; reuse their actual runtime implementations and tests.
+- `docs/technical-indicators/reviewed/`: previously researched engines, chart/FTS parity, pivots, major swings, trend and candle fidelity; do not repeat completed investigations unless new evidence contradicts them.
+- `docs/technical-indicators/inbox/`: source files, notes, catalog attachments and screenshots that the owner collected for evaluation.
+- Legacy `docs/Indicator/`: reconcile against the curated `docs/technical-indicators/` tree by content hash; do not ignore it or create duplicate implementations.
+- Existing runtime code: `frontend-v2/src/features/technical/`, the current pattern registry/detectors, `backend-go/internal/indicators/`, FTS indicator catalog/overlays, and the canonical FTS calculation services.
+
+The current repository triage records **nine existing indicator overlays** already implemented (including Double Tap, Auto Trendline/CHoCH, SuperTrend Pullback, Breakout Retest, RSI/MA/Divergence, Fibo RSI8, SuperTrend Heikin-Ashi and channel variants). These are a starting inventory to verify against current code and tests—not permission to recreate them.
+
+The recorded next candidates are:
+1. Support/Resistance Retest Breakout (catalog item 21).
+2. Automatic Wedge & Channel Detector (item 19).
+3. Order-Block scoring / volume confirmation (items 17 and 23).
+
+These are investigation priorities, not pre-approved implementation specifications. First determine whether an equivalent calculation already exists in code or a reviewed source; then fill only the proven gap.
+
+The Telegram inbox records 64 catalog entries and 38 readable source files. Each must be classified and deduplicated by content hash. MQL4/MQL5 files must be inspected to determine whether they are indicators, Expert Advisors, scripts or libraries. Compiled EX4/EX5 files are not treated as readable source, must not be executed, and are not directly ported. The documented license audit identifies MPL-2.0 files, CC BY-NC-SA 4.0 files, and files with no stated license; check rights per asset before copying or distributing code. Where direct code reuse is not licensed or appropriate, use the material as a behavioral/formula reference only and implement from independently documented semantics where lawful.
+
+For every asset, record: source/path/hash, type, license, capability, formula/parameters, required inputs, timeframe, price basis, closed/current-candle behavior, repaint/look-ahead risk, missing-data behavior, computational cost, existing equivalent implementation, parity evidence, tests, and decision (`reuse`, `port`, `adapt`, `research-only`, `defer`, or `reject`).
+
+**Hard rule:** no new pattern or indicator implementation may start until this audit checks the existing inbox, reviewed/implemented assets and runtime code. Do not rebuild an existing capability merely because it is in a different language or folder. ML models learn the conditional quality/outcomes of deterministic pattern outputs; they do not replace the deterministic geometry engine or start from chart-image recognition by default.
+
+
 Required coverage:
 
 - candle geometry, confirmed pivots and non-repainting swing structure;
