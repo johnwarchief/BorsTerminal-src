@@ -1,0 +1,37 @@
+flowchart TD
+  Q1["Q1: Approved acceptance thresholds (OOS length, DSR/PBO cuts, min trades, cost stress, regime stability)"]:::BLOCKED
+  Q2["Q2: Research/production universe (min history, liquidity, funds/rights/low-history)"]:::BLOCKED
+  Q3["Q3: Official execution model (fee decree/date, limit source, queue-lock fill, T+2)"]:::BLOCKED
+  Q4["Q4: Strategy return basis (cash account vs Rahavard-equivalent price series)"]:::BLOCKED
+  Q6["Q6: v1 generation scope (human template/factor only vs limited search)"]:::BLOCKED
+  Q12["Q12: Instrument scope (cash equity/ETF buy-only vs funds/rights/derivatives/short)"]:::BLOCKED
+  Q15["Q15: Cloud GPU data egress permission (dataset scope, per-job approver)"]:::BLOCKED
+  Q17["Q17: Offline/revocation policy (last-approved validity, revocation application)"]:::BLOCKED
+  Q20["Q20: Default severity matrix & Critical passing Quiet Hours"]:::BLOCKED
+  Q23["Q23: Notification history retention & archive/delete policy"]:::BLOCKED
+  E2E-09["E2E-09: Owner acceptance for production cutover / legacy-version retirement"]:::BLOCKED
+  ARCH-03["ARCH-03: Process supervisor / lifecycle: single owner start-stop, readiness beyond /healthz, tray vs exit, no orphan backend"]:::OPEN
+  PROD-04["PROD-04: CODAL central Producer/Client deployment: host, scheduling, signed snapshot distribution infra, key custody, SLA"]:::OPEN
+  PROD-09["PROD-09: Final production market.db writer selection & full operational validation (Go live feed vs legacy)"]:::OPEN
+  DB-08["DB-08: Iranian-market dataset scope manifest: included/excluded/quarantined per asset_class with counts/date ranges; usd_rate disposition"]:::OPEN
+  SEC-04["SEC-04: Tauri-Go threat model + executive security tests (CSRF, DNS rebinding, port squat, local process access, secret leakage)"]:::OPEN
+  SEC-06["SEC-06: Code-signing chain + key separation (DATA/APP/APPROVAL/REGISTRY), offline approval, key rotation"]:::OPEN
+  UI-09["UI-09: Settings page (user prefs, FTS config, notification settings /settings/notifications, start page, tray, autostart)"]:::OPEN
+  CHART-07["CHART-07: Chart engine comparison / second-engine decision with vital-tool quality proof"]:::OPEN
+  BUILD-02["BUILD-02: Final Tauri production build chain: borsd + frontend-v2 dist + Tauri shell, machine-audited package contents, single updater owner"]:::OPEN
+  OBS-07["OBS-07: Notification center + settings full (filters/groups/read, sound/preview/quiet-hours, deep link) (P5.8)"]:::OPEN
+  Q20 --> OBS-07
+  Q23 --> OBS-07
+  E2E-07["E2E-07: OC P1-P6 delivery (contracts/registry, workbench, FTS adapter/Today, runtime/3-users, policy/compare/lab, generation/AI/GPU)"]:::OPEN
+  Q1 --> E2E-07
+  Q2 --> E2E-07
+  Q3 --> E2E-07
+  Q4 --> E2E-07
+  Q6 --> E2E-07
+  Q12 --> E2E-07
+  Q15 --> E2E-07
+  E2E-09["E2E-09: Owner acceptance for production cutover / legacy-version retirement"]:::OPEN
+  E2E-05 --> E2E-09
+  E2E-08 --> E2E-09
+  classDef BLOCKED fill:#c62828,color:#fff;
+  classDef OPEN fill:#9e9e9e,color:#fff;

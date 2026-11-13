@@ -1,0 +1,18 @@
+flowchart LR
+  CHART-01["CHART-01: Chart engine integration (klinecharts v10) in frontend-v2<br/>نسبی / risk high"]:::PARTIAL
+  CHART-03["CHART-03: Drawing tools (fibonacci/channel/fork/measure/annotation) + save/restore + valid raw<->adjusted mapping<br/>شروع‌نشده / risk high"]:::OPEN
+  CHART-06["CHART-06: Browser-level chart acceptance (roadmap gate D): real data, coordinate transforms, drawing persistence, visual comparison<br/>سنجیده‌نشده / risk high"]:::NOT_MEASURED
+  E2E-05["E2E-05: Final product acceptance gate (12.40.10): clean install, process-tree no Python, all capabilities, fault/concurrency scenarios, parity, UI resolutions<br/>شروع‌نشده / risk high"]:::OPEN
+  E2E-09["E2E-09: Owner acceptance for production cutover / legacy-version retirement<br/>مسدود / risk high"]:::BLOCKED
+  CHART-01 ==> CHART-03
+  CHART-03 ==> CHART-06
+  CHART-06 ==> E2E-05
+  E2E-05 ==> E2E-09
+  classDef COMPLETE fill:#2e7d32,color:#fff;
+  classDef PARTIAL fill:#f9a825,color:#fff;
+  classDef IN_PROGRESS fill:#1565c0,color:#fff;
+  classDef OPEN fill:#9e9e9e,color:#fff;
+  classDef BLOCKED fill:#c62828,color:#fff;
+  classDef NOT_MEASURED fill:#6a1b9a,color:#fff;
+  classDef DEFERRED fill:#00838f,color:#fff;
+  classDef OUT_OF_SCOPE fill:#455a64,color:#fff;
