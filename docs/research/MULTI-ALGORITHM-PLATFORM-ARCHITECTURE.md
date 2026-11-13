@@ -248,6 +248,25 @@ stateDiagram-v2
 
 ---
 
+### ۲.۵ جداسازی پایگاه‌های داده بر اساس دامنه
+
+داده‌های سامانه نباید در یک `market.db` مشترک برای همهٔ موتورهای بنیادی، تابلو و تکنیکال مخلوط بمانند. مالکیت پیشنهادی:
+
+- `fundamental.db`: اطلاعیه‌های Codal، صورت‌های مالی، فروش ماهانه، صف/ledger دریافت کدال و خروجی پنج شاخص FTS.
+- `tape.db`: snapshot تابلو، معاملات حقیقی/حقوقی، عمق سفارش، تاریخچهٔ مخصوص فرمول‌های tape، پرچم‌ها و نبض بازار.
+- `technical.db`: OHLCV و کندل کانونیکال، قیمت‌های روزانه، تعدیلات و ویژگی‌های تکنیکال.
+- `reference.db`: نگاشت واحد شناسه‌ها و aliasهای نماد؛ مرجع مشترک همهٔ دامنه‌ها.
+- `user.db`: تنظیمات، watchlist و داده‌های شخصی؛ هیچ دادهٔ خام بازار یا Codal نباید فقط در این بانک نگهداری شود.
+- `analytics.db`: در مرحلهٔ بعد، برای Feature Store نقطه‌درزمان، regime history، forecastها و experiment tracking؛ تا قبل از نیاز واقعی ایجاد نمی‌شود.
+
+**اشتراک تکنیکال و تابلو با مالکیت یکتا:** کندل و تاریخچهٔ OHLCV فقط در `technical.db` نگهداری می‌شوند. فرمول‌های tape، در صورت نیاز، دادهٔ حجم/بازده تاریخی را از `TechnicalRepository` مصرف می‌کنند؛ نباید OHLCV را در `tape.db` دوباره کپی کنند. دادهٔ زنده، حقیقی/حقوقی و عمق سفارش در `tape.db` باقی می‌ماند.
+
+**مرزبندی تراکنش:** اتصال‌های فعلی WAL هستند. `ATTACH DATABASE` برای queryهای read-only چنددامنه‌ای قابل استفاده است، اما transaction نوشتن نباید میان چند بانک پخش شود؛ در WAL، atomicity چند فایل attached به‌صورت مجموعه‌ای تضمین نمی‌شود. هر دامنه نویسنده و commit مستقل خود را دارد و هماهنگی بین دامنه‌ها با revision/outbox idempotent انجام می‌شود. [جزئیات SQLite](https://www.sqlite.org/lang_attach.html) · [WAL](https://www.sqlite.org/wal.html)
+
+طرح جدول‌به‌جدول، مرزهای مشترک و roadmap مهاجرت در [`DATABASE-DOMAIN-SEPARATION-ARCHITECTURE.md`](./DATABASE-DOMAIN-SEPARATION-ARCHITECTURE.md) ثبت شده است. این طرح هنوز proposal است؛ هیچ جدول اجرایی جابه‌جا نشده است.
+
+---
+
 ## ۳. تاکسونومی جامع الگوریتم‌ها و اولویت‌بندی عملیاتی
 
 ### ۳.۱ ماتریس خانواده‌های الگوریتمی ۱۷ گانه
@@ -416,7 +435,7 @@ flowchart TD
     end
 
     subgraph Desktop_Client ["اپلیکیشن دسکتاپ کاربر (BorsTerminal Client)"]
-        LocalSQLite[("market.db / user.db")]
+        LocalSQLite[("fundamental.db · tape.db · technical.db<br/>reference.db · user.db<br/>analytics.db (future)")]
         MemoryCache["market_state.py Cache<br/>(Revision-based Delta)"]
         
         subgraph Engine_Runtime ["موتور استنتاج محلی سبک (CPU-First Inference)"]
@@ -429,7 +448,12 @@ flowchart TD
 
     Trainer --> ONNXExport
     ONNXExport -->|فایل مدل سبک Sidecar JSON/ONNX| ORT
-    LocalSQLite --> MemoryCache
+    fundamental.db --> DataAccess["Domain Data Access Layer<br/>Repositories + Revision Contracts"]
+    tape.db --> DataAccess
+    technical.db --> DataAccess
+    reference.db --> DataAccess
+    user.db --> DataAccess
+    DataAccess --> MemoryCache
     MemoryCache --> Engine_Runtime
     Engine_Runtime --> UI
 ```
