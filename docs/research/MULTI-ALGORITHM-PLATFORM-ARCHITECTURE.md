@@ -30,6 +30,8 @@
 
 1. ساخت Operational Technical DB از آرشیو مرجع تغییرناپذیر و اتصال مستقل Read-Only به Go؛ تخمین ۵٫۲ گیگابایت تا زمان ساخت و اندازه‌گیری، قطعی نیست.
 2. تکمیل موتورهای قطعی تکنیکال: کندل/پیوت، ساختار روند، چندتایم‌فریمی، BOS/CHoCH، حمایت/مقاومت، شکست و Retest، Fibonacci، Jet، اندیکاتورها و تمام الگوهای برگشتی/ادامه‌دهنده.
+
+**قید اجباری استفاده از دارایی‌های موجود:** پیش از هر پیاده‌سازی جدید، `docs/technical-indicators/implemented/`، `reviewed/`، `inbox/`، پوشهٔ قدیمی `docs/Indicator/`، کدهای `frontend-v2/src/features/technical/` و `backend-go/internal/indicators/` باید به‌صورت hash-aware ممیزی شوند. تریاژ مخزن ۹ Overlay موجود و سه اولویت بعدی (S/R Retest، Wedge/Channel، Order-Block Scoring) را ثبت کرده است. این دارایی‌ها نقطهٔ شروع‌اند؛ موتور الگو از صفر بازنویسی نمی‌شود. فقط قابلیت‌های مفقود پس از تطبیق کد، تست و parity توسعه می‌یابند. فایل‌های EX4/EX5 اجرا یا مستقیماً پورت نمی‌شوند؛ نوع واقعی فایل MQL و مجوز هر سورس باید بررسی شود.
 3. تکمیل تطابق چهار صفحهٔ FTS: F بنیادی، T تکنیکال، S انتخاب/تابلو، M مهندسی معکوس/مدیریت سرمایه. PDF جزوه و FTS.CHART_3 مرجع‌اند؛ مدل چارت فقط خروجی موتور را نمایش می‌دهد.
 4. ساخت Market Signal Journal، Point-in-Time Feature Store و Outcome Labels با زمان مشاهده/انتشار، نسخهٔ قانون، provenance و وضعیت observed/reconstructed.
 5. آموزش مدل کیفیت الگوها و ساختار تکنیکال؛ ابتدا Baselineهای Logistic/ElasticNet و سپس LightGBM/CatBoost.
